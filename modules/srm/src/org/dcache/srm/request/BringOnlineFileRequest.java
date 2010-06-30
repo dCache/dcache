@@ -316,9 +316,9 @@ public final class BringOnlineFileRequest extends FileRequest {
 
         if(this.isPinned()) {
 
-            fileStatus.setRemainingPinTime(new Integer((int)(getRemainingLifetime()/1000)));
+            fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
-        fileStatus.setEstimatedWaitTime(new Integer((int)(getRequest().getRetryDeltaTime())));
+        fileStatus.setEstimatedWaitTime((int)(getRequest().getRetryDeltaTime()));
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
 
@@ -1089,7 +1089,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         private boolean success  = true;
         private String error;
 
-        public boolean isSuccess() {
+        public synchronized boolean  isSuccess() {
             return done && success;
         }
         public  boolean waitCompleteion(long timeout) throws InterruptedException {
@@ -1120,7 +1120,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             return error;
         }
 
-        public boolean isDone() {
+        public synchronized  boolean  isDone() {
             return done;
         }
 

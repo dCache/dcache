@@ -409,9 +409,9 @@ public final class GetFileRequest extends FileRequest {
         }
         if(this.isPinned()) {
 
-            fileStatus.setRemainingPinTime(new Integer((int)(getRemainingLifetime()/1000)));
+            fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
-        fileStatus.setEstimatedWaitTime(new Integer((int)(getRequest().getRetryDeltaTime())));
+        fileStatus.setEstimatedWaitTime((int)(getRequest().getRetryDeltaTime()));
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
 

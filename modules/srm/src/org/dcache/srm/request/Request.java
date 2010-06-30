@@ -253,7 +253,7 @@ public abstract class Request extends Job {
 
     public static Request getRequest(int requestNum)
             throws SRMInvalidRequestException {
-        return (Request) Job.getJob(new Long((long) requestNum));
+        return (Request) Job.getJob((long) requestNum);
     }
 
 

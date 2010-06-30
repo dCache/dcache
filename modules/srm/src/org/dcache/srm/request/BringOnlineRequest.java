@@ -359,10 +359,10 @@ public final class BringOnlineRequest extends ContainerRequest {
         arrayOfTBringOnlineRequestFileStatus.setStatusArray(
             getArrayOfTBringOnlineRequestFileStatus(surls));
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
-        String s ="getSrmStatusOfBringOnlineRequestResponse:";
-        s+= " StatusCode = "+response.getReturnStatus().getStatusCode().toString();
+        StringBuilder s = new StringBuilder("getSrmStatusOfBringOnlineRequestResponse:");
+        s.append(" StatusCode = "+response.getReturnStatus().getStatusCode());
         for(TBringOnlineRequestFileStatus fs :arrayOfTBringOnlineRequestFileStatus.getStatusArray()) {
-            s += " FileStatusCode = "+fs.getStatus().getStatusCode();
+            s.append(" FileStatusCode = "+fs.getStatus().getStatusCode());
         }
         logger.debug(s.toString());
         return response;

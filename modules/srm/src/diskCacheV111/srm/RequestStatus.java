@@ -3,6 +3,7 @@ package diskCacheV111.srm;
 
 public class RequestStatus implements java.io.Serializable
   {
+    private static final long serialVersionUID = -7407954557920586704L;
     public  transient static final String EMPTY="";
   public int requestId;
     public String type =EMPTY;

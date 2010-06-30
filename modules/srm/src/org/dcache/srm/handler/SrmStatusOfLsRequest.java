@@ -112,7 +112,7 @@ public class SrmStatusOfLsRequest {
                                                  TStatusCode.SRM_FAILURE);
                 }
                 ContainerRequest containerRequest =(ContainerRequest) ContainerRequest.getRequest(requestId);
-                if(request == null) {
+                if(containerRequest == null) {
                         return getFailedResponse("request for requestToken \""+
                                                  requestToken+"\"is not found",
                                                  TStatusCode.SRM_FAILURE);

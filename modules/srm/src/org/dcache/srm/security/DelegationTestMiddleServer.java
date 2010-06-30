@@ -165,8 +165,8 @@ public class DelegationTestMiddleServer {
         
     }
     
-    public static GlobusCredential service_cred;
-    public static TrustedCertificates trusted_certs;
+    private static GlobusCredential service_cred;
+    private static TrustedCertificates trusted_certs;
     
     public static GSSCredential getServiceCredential(
     String x509ServiceCert,

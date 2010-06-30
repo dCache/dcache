@@ -1070,21 +1070,20 @@ public class GridftpClient
     }
     public static String printbytes(byte[] bs)
     {
-        String out="";
+        StringBuilder sb= new StringBuilder();
         for ( int i = 0; i < bs.length; ++i)
-            out += byteToHexString(bs[i]);
-        return out;
+            byteToHexString(bs[i],sb);
+        return sb.toString();
     }
 
-    private static final String [] __map =
-    { "0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f" } ;
+    private static final char [] __map =
+    { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' } ;
 
-    static public String byteToHexString( byte b ) {
+    private static void byteToHexString( byte b, StringBuilder sb ) {
 
         int x = ( b < 0 ) ? ( 256 + (int)b ) : (int)b ;
-
-        return __map[ ((int)b >> 4 ) & 0xf ] +
-            __map[ ((int)b      ) & 0xf ] ;
+        sb.append(__map[ ((int)b >> 4 ) & 0xf ]);
+        sb.append(__map[ ((int)b      ) & 0xf ]);
     }
 
 

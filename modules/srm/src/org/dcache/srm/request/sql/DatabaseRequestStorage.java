@@ -97,7 +97,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
         
-        Long CREDENTIALID = new Long(set.getLong(next_index++));
+        Long CREDENTIALID = set.getLong(next_index++);
         int RETRYDELTATIME = set.getInt(next_index++);
         boolean SHOULDUPDATERETRYDELTATIME = set.getBoolean(next_index++);
         String DESCRIPTION = set.getString(next_index++);

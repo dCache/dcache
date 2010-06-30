@@ -35,7 +35,7 @@ public abstract class FileMetaData extends diskCacheV111.srm.FileMetaData{
 	    this.spaceTokens = new long[fmd1.spaceTokens.length];
 	    System.arraycopy(fmd1.spaceTokens,0,this.spaceTokens,0,fmd1.spaceTokens.length);
 	    this.isStored=fmd1.isStored;
-            this.fileId = fileId;
+            this.fileId = fmd1.fileId;
         }
     }
     

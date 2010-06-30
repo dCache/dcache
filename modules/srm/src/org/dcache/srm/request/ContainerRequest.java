@@ -201,7 +201,7 @@ public abstract class ContainerRequest extends Request {
                 throw new NullPointerException("fileRequestId is null");
             }
             for(FileRequest fileRequest: fileRequests) {
-                if(fileRequest.getId().equals(new Long(fileRequestId))) {
+                if(fileRequest.getId() == fileRequestId) {
                     return fileRequest;
                 }
             }

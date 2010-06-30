@@ -161,11 +161,11 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 org.apache.axis.types.URI surl = new org.apache.axis.types.URI(SURLs[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(surl);
-                pendingSurlsToIndex.put(SURLs[i],new Integer(i));
+                pendingSurlsToIndex.put(SURLs[i],i);
             }
             
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
-            srmPrepareToGetRequest.setDesiredTotalRequestTime(new Integer((int)lifetime));
+            srmPrepareToGetRequest.setDesiredTotalRequestTime((int)lifetime);
             org.dcache.srm.v2_2.TTransferParameters transferParameters = 
                 new org.dcache.srm.v2_2.TTransferParameters();
             
@@ -275,7 +275,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                             else {
                                 logger.error("size is not set in FileStatus for SURL="+SURLs[indx]);
                             }
-                            notifyOfTURL(SURLs[indx], transferUrl, requestToken,null,new Long(size) );
+                            notifyOfTURL(SURLs[indx], transferUrl, requestToken,null,size );
                             haveCompletedFileRequests = true;
                         continue;
                     }
@@ -368,11 +368,16 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 }
             }
         }
-        catch(Exception e) {
+        catch(IOException e) {
             logger.error(e.toString());
             notifyOfFailure(e);
             return;
         }
+        catch(SRMException srme) {
+            logger.error(srme.toString());
+            notifyOfFailure(srme);
+            return;
+    }
     }
     
     

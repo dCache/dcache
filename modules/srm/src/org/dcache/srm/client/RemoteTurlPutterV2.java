@@ -84,6 +84,7 @@ import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.xml.rpc.ServiceException;
 
 /**
  *
@@ -180,7 +181,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                     new org.apache.axis.types.URI(SURLs[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setTargetSURL(uri);
-                pendingSurlsToIndex.put(SURLs[i],new Integer(i));
+                pendingSurlsToIndex.put(SURLs[i],i);
             }
             
             SrmPrepareToPutRequest srmPrepareToPutRequest = new SrmPrepareToPutRequest();
@@ -203,12 +204,18 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutRequest.setArrayOfFileRequests(
                 new ArrayOfTPutFileRequest(fileRequests));            
             srmPrepareToPutRequest.setDesiredFileStorageType(storageType);
-            srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)requestLifetime));
+            srmPrepareToPutRequest.setDesiredTotalRequestTime((int)requestLifetime);
             srmPrepareToPutRequest.setOverwriteOption(overwriteMode);
             srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
-        catch(Exception e) {
+        catch(IOException e) {
+            throw new SRMException("failed to connect to "+SURLs[0],e);
+        }
+        catch(ServiceException e) {
+            throw new SRMException("failed to connect to "+SURLs[0],e);
+        }
+       catch(InterruptedException e) {
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
 
@@ -388,9 +395,14 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             }
             
         }
-        catch(Exception e) {
-            logger.error(e.toString());
-            notifyOfFailure(e);
+        catch(IOException ioe) {
+            logger.error(ioe.toString());
+            notifyOfFailure(ioe);
+            return;
+        }
+        catch(SRMException srme) {
+            logger.error(srme.toString());
+            notifyOfFailure(srme);
             return;
         }
             

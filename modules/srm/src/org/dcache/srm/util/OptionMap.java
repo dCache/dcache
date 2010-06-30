@@ -51,7 +51,7 @@ public class OptionMap<Type> {
           public IntFactory(String [] mustBeIntAttributes){ super(mustBeIntAttributes);  }
 
           public Integer make(String value) throws NonComplientArgument{ 
-                return new Integer(Integer.parseInt(value));
+                return Integer.valueOf(value);
           }
     }
 

@@ -294,7 +294,7 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     }
     
     public Long getNextId() {
-        return new Long((int)nextInt());
+        return Long.valueOf((int)nextInt());
     }
     
     long _nextLongBase = 0;

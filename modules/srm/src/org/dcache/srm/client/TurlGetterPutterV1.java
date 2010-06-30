@@ -170,7 +170,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         
         synchronized(fileIDs) {
             for(int i = 0; i<number_of_file_reqs;++i) {
-                Integer fileId = new Integer(frs[i].fileId);
+                Integer fileId = frs[i].fileId;
                 fileIDs.add(fileId);
                 
                 fileIDsMap.put(fileId,frs[i]);
@@ -285,7 +285,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                 removedIDsToResutls.put(nextID,Boolean.TRUE);
                                 removedIDsToTURL.put(nextID,frs.TURL);
                                 if(frs.size >0) {
-                                    removedIDsToSizes.put(nextID,new Long(frs.size));
+                                    removedIDsToSizes.put(nextID,frs.size);
                                 }
                                 continue;
                             }
