@@ -247,9 +247,9 @@ onerror shutdown
 #
 exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
-create org.dcache.cells.UniversalSpringCell jsrm \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/jsrm.xml \
-        -srmCellName=${cell.name} \
+        -export \
         -srmPort=${port} \
         -srmVersion=${srmVersion}  \
         -srmTimeout=${srmTimeout} \

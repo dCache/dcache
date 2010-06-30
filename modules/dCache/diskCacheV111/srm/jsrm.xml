@@ -11,13 +11,54 @@
     <property name="properties">
       <value>
         srmGracefulShutdown=2000
+        loginBrokerUpdateTime=300
+        loginBrokerUpdateThreshold=0.1
       </value>
     </property>
   </bean>
 
-  <bean id="srm" class="diskCacheV111.srm.dcache.Storage">
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+    <description>PnfsManager communication stub</description>
+    <property name="destination" value="${srmPnfsManager}"/>
+    <property name="timeout" value="${srmPnfsTimeout}"/>
+  </bean>
+
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+    <description>Client stub for directory listing</description>
+    <constructor-arg>
+      <bean class="diskCacheV111.util.PnfsHandler">
+        <constructor-arg ref="pnfs-stub"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+        init-method="start"
+        destroy-method="stop">
+    <description>Registers the door with a LoginBroker</description>
+    <property name="executor">
+      <bean class="java.util.concurrent.Executors"
+            factory-method="newSingleThreadScheduledExecutor"
+            destroy-method="shutdown">
+        <description>Thread pool for scheduled activities</description>
+      </bean>
+    </property>
+    <property name="updateTime" value="${loginBrokerUpdateTime}"/>
+    <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+    <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
+    <property name="protocolVersion" value="0.1"/>
+    <property name="protocolFamily" value="SRM"/>
+    <property name="port" value="${srmPort}"/>
+    <property name="loginBroker">
+      <bean class="dmg.cells.nucleus.CellPath">
+        <constructor-arg value="${srmLoginBroker}"/>
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="srm" class="diskCacheV111.srm.dcache.Storage"
+        init-method="start">
     <description>dCache plugin for SRM</description>
-    <constructor-arg value="${srmCellName}"/>
     <constructor-arg value="
       -srmport=${srmPort}
       -export
@@ -118,6 +159,8 @@
       -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
       -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
       -client-dns-lookup=${srmClientDNSLookup}"/>
+    <property name="directoryListSource" ref="list-handler"/>
+    <property name="loginBrokerHandler" ref="lb"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
