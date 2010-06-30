@@ -66,8 +66,18 @@ public class FQAN implements java.io.Serializable {
         return getMatcher().group(2);
     }
 
+    public boolean hasRole() {
+        String role = getRole();
+        return !role.isEmpty();
+    }
+
     public String getCapability() {
         return getMatcher().group(3);
+    }
+
+    public boolean hasCapability() {
+        String capability = getCapability();
+        return !capability.isEmpty();
     }
 
     @Override

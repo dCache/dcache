@@ -160,6 +160,46 @@ public class FQANTest {
         }
     }
 
+    @Test
+    public void testHasRoleForFqanWithNoRole() {
+        FQAN[] fqansWithoutRole =
+            buildFqanArrayWithNoneOf( FqanElements.ROLE);
+
+        for( FQAN fqanWithoutRole : fqansWithoutRole) {
+            assertFalse( "Testing " + fqanWithoutRole, fqanWithoutRole.hasRole());
+        }
+    }
+
+    @Test
+    public void testHasRoleForFqanWithRole() {
+        FQAN[] fqansWithRole =
+            buildFqanArrayWith( FqanElements.ROLE);
+
+        for( FQAN fqanWithRole : fqansWithRole) {
+            assertTrue( "Testing " + fqanWithRole, fqanWithRole.hasRole());
+        }
+    }
+
+    @Test
+    public void testHasCapabilityForFqanWithNoCapability() {
+        FQAN[] fqansWithoutCapability =
+            buildFqanArrayWithNoneOf( FqanElements.CAPABILITY);
+
+        for( FQAN fqanWithoutCapability : fqansWithoutCapability) {
+            assertFalse( "Testing " + fqanWithoutCapability, fqanWithoutCapability.hasCapability());
+        }
+    }
+
+    @Test
+    public void testHasCapabilityForFqanWithCapability() {
+        FQAN[] fqansWithCapability =
+            buildFqanArrayWith( FqanElements.CAPABILITY);
+
+        for( FQAN fqanWithCapability : fqansWithCapability) {
+            assertTrue( "Testing " + fqanWithCapability, fqanWithCapability.hasCapability());
+        }
+    }
+
     private void assertNoneEqual( FQAN[] others) {
         for( FQAN fqan1 : ALL_TYPES) {
             for( FQAN fqan2 : others) {
