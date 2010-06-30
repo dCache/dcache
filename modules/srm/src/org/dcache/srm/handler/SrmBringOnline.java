@@ -212,7 +212,7 @@ public class SrmBringOnline {
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status
-            return r.getSrmBringOnlineResponse();
+            return r.getSrmBringOnlineResponse(configuration.getBringOnlineSwitchToAsynchronousModeDelay());
         } catch(Exception e) {
             logger.error(e.toString());
             return getFailedResponse(e.toString());

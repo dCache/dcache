@@ -257,6 +257,15 @@ public abstract class FileRequest extends Job {
 
     }
 
+    protected void stateChanged(org.dcache.srm.scheduler.State oldState)
+    {
+        try {
+            ((ContainerRequest) getRequest()).fileRequestStateChanged(this);
+        } catch (SRMInvalidRequestException ire) {
+            logger.error(ire.toString());
+        }
+    }
+
     public SRMUser getUser() throws SRMInvalidRequestException {
         return getRequest().getUser();
     }

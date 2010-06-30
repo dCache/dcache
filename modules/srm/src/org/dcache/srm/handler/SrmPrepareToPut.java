@@ -294,7 +294,7 @@ public class SrmPrepareToPut {
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status
-            return r.getSrmPrepareToPutResponse();
+            return r.getSrmPrepareToPutResponse(configuration.getPutSwitchToAsynchronousModeDelay());
         } catch(Exception e) {
             logger.warn(e.toString());
             return getFailedResponse(e.toString());

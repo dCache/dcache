@@ -94,6 +94,7 @@
       -get-req-max-number-of-retries=${srmGetReqMaxNumberOfRetries}
       -get-req-retry-timeout=${srmGetReqRetryTimeout}
       -get-req-max-num-of-running-by-same-owner=${srmGetReqMaxNumOfRunningBySameOwner}
+      -get-req-switch-to-asynchronous-mode-delay=${srmGetReqSwitchToAsynchronousModeDelay}
       -bring-online-req-thread-queue-size=${srmBringOnlineReqThreadQueueSize}
       -bring-online-req-thread-pool-size=${srmBringOnlineReqThreadPoolSize}
       -bring-online-req-max-waiting-requests=${srmBringOnlineReqMaxWaitingRequests}
@@ -102,6 +103,7 @@
       -bring-online-req-max-number-of-retries=${srmBringOnlineReqMaxNumberOfRetries}
       -bring-online-req-retry-timeout=${srmBringOnlineReqRetryTimeout}
       -bring-online-req-max-num-of-running-by-same-owner=${srmBringOnlineReqMaxNumOfRunningBySameOwner}
+      -bring-online-req-switch-to-asynchronous-mode-delay=${srmBringOnlineReqSwitchToAsynchronousModeDelay}
       -put-req-thread-queue-size=${srmPutReqThreadQueueSize}
       -put-req-thread-pool-size=${srmPutReqThreadPoolSize}
       -put-req-max-waiting-requests=${srmPutReqMaxWaitingRequests}
@@ -110,6 +112,7 @@
       -put-req-max-number-of-retries=${srmPutReqMaxNumberOfRetries}
       -put-req-retry-timeout=${srmPutReqRetryTimeout}
       -put-req-max-num-of-running-by-same-owner=${srmPutReqMaxNumOfRunningBySameOwner}
+      -put-req-switch-to-asynchronous-mode-delay=${srmPutReqSwitchToAsynchronousModeDelay}
       -copy-req-thread-queue-size=${srmCopyReqThreadQueueSize}
       -copy-req-thread-pool-size=${srmCopyReqThreadPoolSize}
       -copy-req-max-waiting-requests=${srmCopyReqMaxWaitingRequests}
@@ -146,7 +149,6 @@
       -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}
       -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}
       -clean-pending-requests-on-restart=${srmCleanPendingRequestsOnRestart}
-      -use-asynchronous-ls=${srmAsynchronousLs}
       -max-number-of-ls-entries=${srmLsMaxNumberOfEntries}
       -max-number-of-ls-levels=${srmLsMaxNumberOfLevels}
       -ls-request-lifetime=${srmLsRequestLifetime}
@@ -158,6 +160,7 @@
       -ls-request-max-number-of-retries=${srmLsRequestMaxNumberOfRetries}
       -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
       -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
+      -ls-request-switch-to-asynchronous-mode-delay=${srmLsRequestSwitchToAsynchronousModeDelay}
       -client-dns-lookup=${srmClientDNSLookup}"/>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>

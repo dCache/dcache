@@ -508,6 +508,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 }
             }
         }
+        super.stateChanged(oldState);
     }
 
     public TSURLReturnStatus releaseFile() throws SRMInvalidRequestException {

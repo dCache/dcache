@@ -131,4 +131,8 @@ public class TStatusCode implements java.io.Serializable {
         return typeDesc;
     }
 
+    public boolean isProcessing()
+    {
+        return this == SRM_REQUEST_QUEUED || this == SRM_REQUEST_INPROGRESS;
+    }
 }

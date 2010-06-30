@@ -223,6 +223,8 @@ public final class Storage
 {
     private final static Logger _log = LoggerFactory.getLogger(Storage.class);
 
+    private final static String INFINITY = "infinity";
+
     private static boolean kludgeDomainMainWasRun = false;
 
     /* these are the  protocols
@@ -397,7 +399,6 @@ public final class Storage
 
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
-        config.setAsynchronousLs(isOptionSetToTrueOrYes("use-asynchronous-ls",config.isAsynchronousLs()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
 
         config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
@@ -561,6 +562,7 @@ public final class Storage
         config.setGetMaxRunningBySameOwner(
             getIntOption("get-req-max-num-of-running-by-same-owner",
             config.getGetMaxRunningBySameOwner()));
+        config.setGetSwitchToAsynchronousModeDelay(getTimeOption("get-req-switch-to-asynchronous-mode-delay", config.getGetSwitchToAsynchronousModeDelay()));
 
         config.setBringOnlineReqTQueueSize( getIntOption("bring-online-req-thread-queue-size",
             config.getBringOnlineReqTQueueSize()));
@@ -579,6 +581,7 @@ public final class Storage
         config.setBringOnlineMaxRunningBySameOwner(
             getIntOption("bring-online-req-max-num-of-running-by-same-owner",
             config.getBringOnlineMaxRunningBySameOwner()));
+        config.setBringOnlineSwitchToAsynchronousModeDelay(getTimeOption("bring-online-req-switch-to-asynchronous-mode-delay", config.getBringOnlineSwitchToAsynchronousModeDelay()));
 
 
         config.setLsReqTQueueSize( getIntOption("ls-request-thread-queue-size",
@@ -598,7 +601,7 @@ public final class Storage
         config.setLsMaxRunningBySameOwner(
             getIntOption("ls-request-max-num-of-running-by-same-owner",
             config.getLsMaxRunningBySameOwner()));
-
+        config.setLsSwitchToAsynchronousModeDelay(getTimeOption("ls-request-switch-to-asynchronous-mode-delay", config.getLsSwitchToAsynchronousModeDelay()));
 
         config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
             config.getPutReqTQueueSize()));
@@ -617,6 +620,8 @@ public final class Storage
         config.setPutMaxRunningBySameOwner(
              getIntOption("put-req-max-num-of-running-by-same-owner",
             config.getPutMaxRunningBySameOwner()));
+        config.setPutSwitchToAsynchronousModeDelay(getTimeOption("put-req-switch-to-asynchronous-mode-delay", config.getPutSwitchToAsynchronousModeDelay()));
+
         config.setCopyReqTQueueSize(getIntOption("copy-req-thread-queue-size",
             config.getCopyReqTQueueSize()));
         config.setCopyThreadPoolSize(getIntOption("copy-req-thread-pool-size",
@@ -802,6 +807,27 @@ public final class Storage
        }
     }
 
+    private long parseTime(String s)
+    {
+        return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
+    }
+
+    private long getTimeOption(String value) throws IllegalArgumentException {
+        String tmpstr = _args.getOpt(value);
+        if(tmpstr == null || tmpstr.length() == 0)  {
+            throw new IllegalArgumentException("option "+value+" is not set");
+        }
+        return parseTime(tmpstr);
+    }
+
+    private long getTimeOption(String value, long default_value) {
+        String tmpstr = _args.getOpt(value);
+        if(tmpstr == null || tmpstr.length() == 0)  {
+            return default_value;
+        }
+        return parseTime(tmpstr);
+    }
+
     private double getDoubleOption(String value) throws IllegalArgumentException {
         String tmpstr = _args.getOpt(value);
         if(tmpstr == null || tmpstr.length() == 0)  {
@@ -893,37 +919,54 @@ public final class Storage
         return info;
     }
 
-    public String fh_set_async_ls= " Syntax : set async ls [on|off]  # turn on/off asynchronous srmls execution ";
-    public String hh_set_async_ls= " [on|off]  # turn on/off asynchronous srmls execution ";
-
-    public String ac_set_async_ls_$_0_1(Args args) {
-        boolean yes = false;
-        boolean no  = false;
-        for (String s : new String[] { "on", "true", "t", "yes"}) {
-            if (s.equalsIgnoreCase(args.argv(0))) {
-                yes = true;
-                break;
-            }
-        }
-        if (yes == false) {
-            for (String s : new String[] { "off", "false", "f", "no"}) {
-                if (s.equalsIgnoreCase(args.argv(0))) {
-                    no = true;
-                    break;
-                }
-            }
-        }
-        if (no==false && yes==false) {
-            if (args.argc()==0) {
-                yes = true;
-            }
-            else {
-                return "Syntax error : "+args.argv(0)+" is unsupported value";
-            }
-        }
-        config.setAsynchronousLs(yes);
-        return "asynchronous ls is "+(config.isAsynchronousLs()?"enabled":"disabled");
+    public final static String hh_set_switch_to_async_mode_delay_get =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_get =
+        "Sets the time after which get requests are processed asynchronously.\n" +
+        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
+        "always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_get_$_1(Args args)
+    {
+        config.setGetSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
     }
+
+    public final static String hh_set_switch_to_async_mode_delay_put =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_put =
+        "Sets the time after which put requests are processed asynchronously.\n" +
+        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
+        "always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_put_$_1(Args args)
+    {
+        config.setPutSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
+    }
+
+    public final static String hh_set_switch_to_async_mode_delay_ls =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_ls =
+        "Sets the time after which ls requests are processed asynchronously.\n" +
+        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
+        "always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_ls_$_1(Args args)
+    {
+        config.setLsSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
+    }
+
+    public final static String hh_set_switch_to_async_mode_delay_bring_online =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_bring_online =
+        "Sets the time after which bring online requests are processed\n" +
+        "asynchronously. Use 'infinity' to always use synchronous replies\n" +
+        "and use 0 to always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_bring_online_$_1(Args args)
+    {
+        config.setBringOnlineSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
+    }
+
     public String fh_db_history_log= " Syntax: db history log [on|off] "+
         "# show status or enable db history log ";
     public String hh_db_history_log= " [on|off] " +

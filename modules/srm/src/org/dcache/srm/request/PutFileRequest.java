@@ -666,6 +666,8 @@ public final class PutFileRequest extends FileRequest {
 
             }
         }
+
+        super.stateChanged(oldState);
     }
 
     /**
