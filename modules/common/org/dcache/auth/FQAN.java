@@ -20,7 +20,8 @@ public class FQAN implements java.io.Serializable {
     static final long serialVersionUID = -2212735007788920585L;
     private static Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
     private static Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
-    private static Pattern p3 = Pattern.compile("(.*)(.*)(.*)");
+    private static Pattern p3 = Pattern.compile("(.*)()/Capability=(.*)");
+    private static Pattern p4 = Pattern.compile("(.*)(.*)(.*)");
     private transient Matcher m;
 
     //immutable
@@ -33,6 +34,7 @@ public class FQAN implements java.io.Serializable {
         this.fqan = fqan;
     }
 
+    @Override
     public String toString() {
         return fqan;
     }
@@ -47,7 +49,10 @@ public class FQAN implements java.io.Serializable {
             m = p2.matcher(fqan);
             if(!m.matches()) {
                 m = p3.matcher(fqan);
-                m.matches();
+                if(!m.matches()) {
+                    m = p4.matcher(fqan);
+                    m.matches();
+                }
             }
         }
         return m;
