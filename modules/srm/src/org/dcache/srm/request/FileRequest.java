@@ -77,6 +77,7 @@ import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.globus.util.GlobusURL;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
@@ -112,7 +113,7 @@ public abstract class FileRequest extends Job {
     public static final String SFN_STRING="?SFN=";
 
     //request which contains this fileRequest (which is different from request number)
-    protected Long requestId;
+    protected final Long requestId;
     protected Long credentialId;
 
     //pointer to underlying storage
@@ -269,12 +270,7 @@ public abstract class FileRequest extends Job {
      * @return Value of property requestId.
      */
     public Long getRequestId() {
-        rlock();
-        try {
-            return requestId;
-        } finally {
-            runlock();
-        }
+        return requestId;
     }
 
     public void setQOSTicket(QOSTicket qosTicket) {
@@ -367,6 +363,14 @@ public abstract class FileRequest extends Job {
              return "unknown";
          }
      }
+
+    @Override
+    public void applyJdc()
+    {
+        jdc.apply(true);
+        JDC.push(String.valueOf(requestId));
+        JDC.push(String.valueOf(id));
+    }
 
      /**
      * @return the storage

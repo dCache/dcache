@@ -93,13 +93,13 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
             java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4)
             throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmput:");
       String methodName = "put";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmput:");
 
           try {
               userCred = srmAuth.getUserCredentials();
@@ -129,18 +129,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
     public org.dcache.srm.client.axis.RequestStatus get(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmget:");
       String methodName = "get";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmget:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -173,18 +174,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
     public org.dcache.srm.client.axis.RequestStatus copy(java.lang.String[] arg0, java.lang.String[] arg1, boolean[] arg2) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmcopy:");
       String methodName = "copy";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmcopy:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -218,6 +220,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
@@ -252,13 +255,13 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus pin(java.lang.String[] arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmpin:");
       String methodName = "pin";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmpin:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -277,18 +280,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
     public org.dcache.srm.client.axis.RequestStatus unPin(java.lang.String[] arg0, int arg1) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmunpin:");
       String methodName = "unPin";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmunpin:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -307,18 +311,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
     public org.dcache.srm.client.axis.RequestStatus setFileStatus(int arg0, int arg1, java.lang.String arg2) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmsetstatus:");
       String methodName = "setFileStatus";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmsetstatus:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -347,18 +352,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
     public org.dcache.srm.client.axis.RequestStatus getRequestStatus(int arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmgetstatus:");
       String methodName = "getRequestStatus";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmgetstatus:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -387,6 +393,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
@@ -394,13 +401,13 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     java.lang.String[] arg0) throws java.rmi.RemoteException {
               log.debug("Entering ISRMImpl.getFileMetaData");
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmgetFileMetaData:");
       String methodName = "mkPermanent";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmgetFileMetaData:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -431,6 +438,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 
@@ -556,13 +564,13 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public void advisoryDelete(java.lang.String[] arg0) throws java.rmi.RemoteException {
       long startTimeStamp = System.currentTimeMillis();
+      JDC.createSession("v1:srmdelete:");
       String methodName = "advisoryDelete";
       incrementRequest(methodName);
       try {
           org.dcache.srm.server.UserCredential userCred = null;
           SRMUser user = null;
           org.dcache.srm.request.RequestCredential requestCredential = null;
-          JDC.createSession("v1:srmdelete:");
           try {
              userCred = srmAuth.getUserCredentials();
               Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
@@ -587,6 +595,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       } finally {
           srmServerGauges.update(methodName, System.currentTimeMillis() -
                   startTimeStamp);
+          JDC.clear();
       }
     }
 

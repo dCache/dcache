@@ -81,7 +81,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.JDC;
 import org.dcache.commons.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1350,7 +1349,6 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
     public void run(){
         long update_period = configuration.getOldRequestRemovePeriodSecs()*1000L;
         long history_lifetime = 1000L*24*3600*configuration.getNumDaysHistory();
-        JDC.setSchedulerContext(getClass().getName());
         while(true) {
             try {
                 Thread.sleep(update_period);

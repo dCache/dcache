@@ -1051,7 +1051,7 @@ public class CellNucleus implements ThreadFactory
             Object obj;
             try {
                 answer = new CellMessage(_message);
-                CDC.setMessageContext(answer);
+                _lock.getCdc().apply();
                 obj = answer.getMessageObject();
             } catch (SerializationException e) {
                 nesay(e.getMessage());

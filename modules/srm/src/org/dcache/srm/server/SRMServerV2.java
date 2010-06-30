@@ -182,7 +182,6 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     private final RequestExecutionTimeGauges<Class> srmServerGauges;
 
     public SRMServerV2() throws java.rmi.RemoteException{
-    	JDC.setSchedulerContext("SRMServerV2");
         try {
             // srmConn = SrmDCacheConnector.getInstance();
             log = LoggerFactory.getLogger("logger.org.dcache.authorization."+
@@ -227,6 +226,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
         long startTimeStamp = System.currentTimeMillis();
+        JDC.createSession("v2:"+requestName+":");
 
         Class requestClass = request.getClass();
         //count requests of each type
@@ -236,7 +236,6 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                     Character.toUpperCase(requestName.charAt(0))+
                     requestName.substring(1);
             try {
-                JDC.createSession("v2:"+requestName+":");
                 log.debug("Entering SRMServerV2."+requestName+"()");
                 String authorizationID  = null;
                 try {
@@ -323,12 +322,11 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 } catch(Exception ee){
                     throw new RemoteException("SRMServerV2."+requestName+"() exception",e);
                 }
-
             }
         } finally {
             srmServerGauges.update(requestClass,
                     System.currentTimeMillis() - startTimeStamp);
-
+            JDC.clear();
         }
     }
 
