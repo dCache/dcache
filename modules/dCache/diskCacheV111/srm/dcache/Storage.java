@@ -1510,19 +1510,19 @@ public final class Storage
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             String pinId) {
-        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,this);
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,_pinManagerStub);
     }
 
 
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             long srmRequestId) {
-        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,this);
+        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,_pinManagerStub);
     }
 
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks) {
-        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, callbacks,this);
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, callbacks,_pinManagerStub);
     }
 
 
