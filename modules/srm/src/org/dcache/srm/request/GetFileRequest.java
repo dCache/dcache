@@ -608,6 +608,7 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(ire.toString());
             }
         }
+
         if(State.isFinalState(state)) {
             if(getFileId() != null && getPinId() != null) {
                 UnpinCallbacks callbacks = new TheUninCallbacks(this.getId());
@@ -622,6 +623,8 @@ public final class GetFileRequest extends FileRequest {
                 getStorage().unPinFile(user,getFileId(),callbacks, getPinId());
             }
         }
+
+        super.stateChanged(oldState);
     }
 
     public TReturnStatus getReturnStatus() {

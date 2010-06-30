@@ -254,7 +254,7 @@ public class SrmPrepareToGet {
             // RequestScheduler will take care of the rest
             //getRequestScheduler.add(r);
             // Return the request status
-            return r.getSrmPrepareToGetResponse();
+            return r.getSrmPrepareToGetResponse(configuration.getGetSwitchToAsynchronousModeDelay());
         } catch(Exception e) {
             logger.warn(e.toString());
             return getFailedResponse(e.toString());

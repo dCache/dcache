@@ -273,9 +273,6 @@ public class PnfsHandler
     /**
      * Creates a directory and all its parent directories.
      *
-     * All the directories created will inherit the owner, group and
-     * mode of their parent directory.
-     *
      * REVISIT: Should eventually be moved to PnfsManager with a flag
      * in the PnfsCreateEntryMessage indicating whether parent
      * directories should be created.
@@ -285,24 +282,13 @@ public class PnfsHandler
     public FileAttributes createDirectories(FsPath path)
         throws CacheException
     {
-        FsPath parent = path.getParent();
-
-        FileAttributes attributes;
+        PnfsCreateEntryMessage message;
         try {
-            attributes =
-                getFileAttributes(parent.toString(),
-                                  EnumSet.of(OWNER,OWNER_GROUP,MODE));
+            message = createPnfsDirectory(path.toString());
         } catch (FileNotFoundCacheException e) {
-            attributes = createDirectories(parent);
-        } catch (NotInTrashCacheException e) {
-            attributes = createDirectories(parent);
+            createDirectories(path.getParent());
+            message = createPnfsDirectory(path.toString());
         }
-
-        PnfsCreateEntryMessage message =
-            createPnfsDirectory(path.toString(),
-                                attributes.getOwner(),
-                                attributes.getGroup(),
-                                attributes.getMode());
 
         /* In case of incomplete create, delete the directory right
          * away.
@@ -329,14 +315,11 @@ public class PnfsHandler
 
    }
 
-
-   public void pnfsSetFileMetaData( PnfsId pnfsId, FileMetaData meta) {
-       PnfsSetFileMetaDataMessage msg =  new PnfsSetFileMetaDataMessage( pnfsId );
-       msg.setMetaData( meta );
-       notify(msg );
-       return;
-   }
-
+    public void pnfsSetFileMetaData(PnfsId pnfsId, FileMetaData meta)
+        throws CacheException
+    {
+        pnfsRequest(new PnfsSetFileMetaDataMessage(pnfsId, meta));
+    }
 
     public void renameEntry(PnfsId pnfsId, String newName)
         throws CacheException

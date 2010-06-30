@@ -7,6 +7,7 @@ public class CellLock {
     long _timeout = 0;
     boolean _sync = true;
     CellMessage _message = null;
+    private final CDC _cdc = new CDC();
 
     public CellLock(CellMessage msg, CellMessageAnswerable callback,
             long timeout) {
@@ -45,4 +46,7 @@ public class CellLock {
         return _timeout;
     }
 
+    public CDC getCdc() {
+        return _cdc;
+    }
 }

@@ -13,8 +13,13 @@ set context -c DefaultRetentionPolicy CUSTODIAL
 set context -c pnfsFolding       false
 onerror shutdown
 
-# Load permission check related settings
-exec -shell file:${dcache.home}/share/cells/permission.fragment
+check -strong cell.name
+check -strong aclEnabled
+check -strong aclTable
+check -strong aclConnDriver
+check -strong aclConnUrl
+check -strong aclConnUser
+check aclConnPswd
 
 create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \

@@ -1856,10 +1856,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            _pnfs.createPnfsDirectory(pnfsPath,
-                                      (int) Subjects.getUid(_subject),
-                                      (int) Subjects.getPrimaryGid(_subject),
-                                      0755);
+            _pnfs.createPnfsDirectory(pnfsPath);
             reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
@@ -2185,6 +2182,25 @@ public abstract class AbstractFtpDoorV1
                 _pnfs.getFileAttributes(pnfsPath,
                                         EnumSet.of(PNFSID, TYPE,
                                                    OWNER, OWNER_GROUP));
+
+            // Extract fields of interest
+            PnfsId       myPnfsId   = attributes.getPnfsId();
+            boolean      isADir     = (attributes.getFileType() == FileType.DIR);
+            boolean      isASymLink = (attributes.getFileType() == FileType.LINK);
+            int          myUid      = attributes.getOwner();
+            int          myGid      = attributes.getGroup();
+
+            // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
+            if (isASymLink) {
+                reply("502 chmod of symbolic links is not yet supported.");
+                return;
+            }
+
+            FileMetaData newMetaData =
+                new FileMetaData(isADir,myUid,myGid,newperms);
+            _pnfs.pnfsSetFileMetaData(myPnfsId,newMetaData);
+
+            reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
             return;
@@ -2192,31 +2208,6 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied, reason: " + ce);
             return;
         }
-
-        // Extract fields of interest
-        PnfsId       myPnfsId   = attributes.getPnfsId();
-        boolean      isADir     = (attributes.getFileType() == FileType.DIR);
-        boolean      isASymLink = (attributes.getFileType() == FileType.LINK);
-        int          myUid      = attributes.getOwner();
-        int          myGid      = attributes.getGroup();
-
-        // Only file/directory owner can change permissions on that file/directory
-        if (!Subjects.hasUid(_subject, myUid)) {
-            reply("550 Permission denied. Only owner can change permissions.");
-            return;
-        }
-
-        // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
-        if (isASymLink) {
-            reply("502 chmod of symbolic links is not yet supported.");
-            return;
-        }
-
-        FileMetaData newMetaData = new FileMetaData(isADir,myUid,myGid,newperms);
-
-        _pnfs.pnfsSetFileMetaData(myPnfsId,newMetaData);
-
-        reply("200 OK");
     }
 
     public void ac_sbuf(String arg)
@@ -2794,19 +2785,13 @@ public abstract class AbstractFtpDoorV1
              * behind, even though the transfer failed.
              */
             try {
-                pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                  (int) Subjects.getUid(_subject),
-                                                  (int) Subjects.getPrimaryGid(_subject),
-                                                  0644);
+                pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
             } catch (FileExistsCacheException fnfe) {
                 if(_overwrite) {
                     warn("FTP Door: Overwrite is enabled. File \"" +
                          _transfer.path + "\" exists, and will be overwritten");
                     _pnfs.deletePnfsEntry( _transfer.path);
-                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                      (int) Subjects.getUid(_subject),
-                                                      (int) Subjects.getPrimaryGid(_subject),
-                                                      0644);
+                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
                 } else {
                     throw new FTPCommandException(553,
                                                   _transfer.path
@@ -2821,10 +2806,7 @@ public abstract class AbstractFtpDoorV1
                     warn("FTP Door: Overwrite is enabled. File \"" +
                          _transfer.path + "\" exists, and will be overwritten");
                     _pnfs.deletePnfsEntry(_transfer.path);
-                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                      (int) Subjects.getUid(_subject),
-                                                      (int) Subjects.getPrimaryGid(_subject),
-                                                      0644);
+                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
                 } else {
                     throw new FTPCommandException(553,
                                                   _transfer.path

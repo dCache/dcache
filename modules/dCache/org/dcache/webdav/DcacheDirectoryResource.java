@@ -88,7 +88,7 @@ public class DcacheDirectoryResource
     {
         try {
             FsPath path = new FsPath(_path, newName);
-            return _factory.createFile(_attributes, path, inputStream, length);
+            return _factory.createFile(path, inputStream, length);
         } catch (PermissionDeniedCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
         } catch (FileExistsCacheException e) {

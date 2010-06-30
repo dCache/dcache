@@ -15,7 +15,6 @@ import dmg.util.Args;
 import diskCacheV111.util.Base64;
 import org.dcache.auth.*;
 import gplazma.authz.AuthorizationException;
-import diskCacheV111.services.acl.GrantAllPermissionHandler;
 
 //java
 import java.net.InetAddress;

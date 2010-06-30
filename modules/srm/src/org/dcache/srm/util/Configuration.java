@@ -109,6 +109,8 @@ public class Configuration {
     public static final String ON_RESTART_RESTORE_REQUEST="restore";
     public static final String ON_RESTART_WAIT_FOR_UPDATE_REQUEST="wait-update";
 
+    private static final String INFINITY = "infinity";
+
     private boolean debug = false;
 
     private String urlcopy="../scripts/urlcopy.sh";
@@ -172,6 +174,7 @@ public class Configuration {
     private int getMaxNumOfRetries=10;
     private long getRetryTimeout=60000;
     private int getMaxRunningBySameOwner=10;
+    private long getSwitchToAsynchronousModeDelay = 0;
     private String getRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
 
     private int lsReqTQueueSize=1000;
@@ -182,6 +185,7 @@ public class Configuration {
     private int lsMaxNumOfRetries=10;
     private long lsRetryTimeout=60000;
     private int lsMaxRunningBySameOwner=10;
+    private long lsSwitchToAsynchronousModeDelay = 0;
     private String lsRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
 
     private int bringOnlineReqTQueueSize=1000;
@@ -192,6 +196,7 @@ public class Configuration {
     private int bringOnlineMaxNumOfRetries=10;
     private long bringOnlineRetryTimeout=60000;
     private int bringOnlineMaxRunningBySameOwner=10;
+    private long bringOnlineSwitchToAsynchronousModeDelay = 0;
     private String bringOnlineRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
 
     private int putReqTQueueSize=1000;
@@ -202,6 +207,7 @@ public class Configuration {
     private int putMaxNumOfRetries=10;
     private long putRetryTimeout=60000;
     private int putMaxRunningBySameOwner=10;
+    private long putSwitchToAsynchronousModeDelay = 0;
     private String putRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
 
     private int copyReqTQueueSize=1000;
@@ -263,7 +269,6 @@ public class Configuration {
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     private int sizeOfSingleRemoveBatch = 100;
-    private boolean asynchronousLs = false;
     private SRMUserPersistenceManager srmUserPersistenceManager;
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
@@ -1181,7 +1186,7 @@ public class Configuration {
         this.timeout_script = timeout_script;
     }
 
-    /** 
+    /**
      * this method returns collection of the local srm hosts.
      * A host part of the srm url (surl) is used to determine if the surl
      * references file in this storage system.
@@ -1201,7 +1206,7 @@ public class Configuration {
         }
     }
 
-    /** 
+    /**
      * This method adds values to the collection of the local srm hosts.
      * A host part of the srm url (surl) is used to determine if the surl
      * references file in this storage system.
@@ -1260,6 +1265,11 @@ public class Configuration {
      */
     public void setLocalSRM(org.dcache.srm.SRM localSRM) {
         this.localSRM = localSRM;
+    }
+
+    private String timeToString(long value)
+    {
+        return (value == Long.MAX_VALUE) ? INFINITY : String.valueOf(value);
     }
 
     @Override
@@ -1325,7 +1335,7 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.getMaxRunningBySameOwner);
         sb.append("\n\t\t getRequestRestorePolicy=").append(this.getRequestRestorePolicy);
-
+        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.getSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** BringOnlineRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.bringOnlineLifetime);
@@ -1339,6 +1349,7 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.bringOnlineMaxRunningBySameOwner);
         sb.append("\n\t\t bringOnlineRequestRestorePolicy=").append(this.bringOnlineRequestRestorePolicy);
+        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.bringOnlineSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** LsRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.lsLifetime);
@@ -1352,9 +1363,9 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.lsMaxRunningBySameOwner);
         sb.append("\n\t\t lsRequestRestorePolicy=").append(this.lsRequestRestorePolicy);
+        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.lsSwitchToAsynchronousModeDelay));
 
-
-        sb.append("\n\t\t *** PuRequests Scheduler  Parameters **");
+        sb.append("\n\t\t *** PutRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.putLifetime);
         sb.append("\n\t\t max thread queue size =").append(this.putReqTQueueSize);
         sb.append("\n\t\t max number of threads =").append(this.putThreadPoolSize);
@@ -1366,6 +1377,7 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.putMaxRunningBySameOwner);
         sb.append("\n\t\t putRequestRestorePolicy=").append(this.putRequestRestorePolicy);
+        sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.putSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** CopyRequests Scheduler  Parameters **");
         sb.append("\n\t\t request Lifetime in miliseconds =").append(this.copyLifetime);
@@ -1387,7 +1399,6 @@ public class Configuration {
         sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
-        sb.append("\n\tasync-ls=").append(this.asynchronousLs);
 
         return sb.toString();
     }
@@ -2441,12 +2452,44 @@ public class Configuration {
 	    sizeOfSingleRemoveBatch=size;
     }
 
-    public boolean isAsynchronousLs() {
-	    return asynchronousLs;
+    public long getGetSwitchToAsynchronousModeDelay()
+    {
+        return getSwitchToAsynchronousModeDelay;
     }
 
-    public void setAsynchronousLs(boolean  yes) { 
-	    asynchronousLs=yes;
+    public void setGetSwitchToAsynchronousModeDelay(long time)
+    {
+        getSwitchToAsynchronousModeDelay = time;
+    }
+
+    public long getPutSwitchToAsynchronousModeDelay()
+    {
+        return putSwitchToAsynchronousModeDelay;
+    }
+
+    public void setPutSwitchToAsynchronousModeDelay(long time)
+    {
+        putSwitchToAsynchronousModeDelay = time;
+    }
+
+    public long getLsSwitchToAsynchronousModeDelay()
+    {
+        return lsSwitchToAsynchronousModeDelay;
+    }
+
+    public void setLsSwitchToAsynchronousModeDelay(long time)
+    {
+        lsSwitchToAsynchronousModeDelay = time;
+    }
+
+    public long getBringOnlineSwitchToAsynchronousModeDelay()
+    {
+        return bringOnlineSwitchToAsynchronousModeDelay;
+    }
+
+    public void setBringOnlineSwitchToAsynchronousModeDelay(long time)
+    {
+        bringOnlineSwitchToAsynchronousModeDelay = time;
     }
 
     public int getMaxNumberOfLsLevels() {

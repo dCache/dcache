@@ -76,6 +76,7 @@ package org.dcache.srm.request;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import java.util.HashSet;
+import java.util.Date;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
@@ -96,7 +97,6 @@ public final class GetRequest extends ContainerRequest {
             LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
-
 
     public GetRequest(SRMUser user,
     Long requestCredentialId,
@@ -286,6 +286,36 @@ public final class GetRequest extends ContainerRequest {
             runlock();
         }
         return copy;
+    }
+
+    /**
+     * Waits for up to timeout milliseconds for the request to reach a
+     * non-queued state and then returns the current
+     * SrmPrepareToGetResponse for this GetRequest.
+     */
+    public final SrmPrepareToGetResponse
+        getSrmPrepareToGetResponse(long timeout)
+        throws SRMException, java.sql.SQLException, InterruptedException
+    {
+        /* To avoid a race condition between us querying the current
+         * response and us waiting for a state change notification,
+         * the notification scheme is counter based. This guarantees
+         * that we do not loose any notifications. A simple lock
+         * around the whole loop would not have worked, as the call to
+         * getSrmPrepareToGetResponse may itself trigger a state
+         * change and thus cause a deadlock when the state change is
+         * signaled.
+         */
+        Date deadline = getDateRelativeToNow(timeout);
+        int counter = _stateChangeCounter.get();
+        SrmPrepareToGetResponse response = getSrmPrepareToGetResponse();
+        while (response.getReturnStatus().getStatusCode().isProcessing() &&
+               _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+            counter = _stateChangeCounter.get();
+            response = getSrmPrepareToGetResponse();
+        }
+
+        return response;
     }
 
     public final SrmPrepareToGetResponse getSrmPrepareToGetResponse()

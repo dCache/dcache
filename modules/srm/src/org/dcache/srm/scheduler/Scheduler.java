@@ -237,8 +237,6 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 			throw new IllegalStateException("scheduler is not running");
 		}
 
-        job.setJdc(new JDC());
-
 		job.wlock();
         try {
 			State state = job.getState();
@@ -749,7 +747,6 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
     }
 
     public void run() {
-        JDC.setSchedulerContext(getId());
         while(true) {
             try {
 
@@ -813,12 +810,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         }
 
         public void run() {
-            JDC jdc = this.job.getJdc();
+            job.applyJdc();
 
-            if ( jdc != null )
-                jdc.apply();
-
-            JDC.setJobContext(job);
             try {
                 increaseNumberOfRunningThreads(job);
                 State state;
@@ -992,7 +985,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                     Scheduler.this.notifyAll();
                     notified = true;
                 }
-                JDC.clearJobContext();
+
+                JDC.clear();
             }
         }
     }

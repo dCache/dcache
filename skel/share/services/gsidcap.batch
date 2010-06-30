@@ -29,7 +29,6 @@ onerror shutdown
 
 # External definitions
 exec file:${dcache.home}/share/cells/stage.fragment doors
-exec file:${dcache.home}/share/cells/permission.fragment
 exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
 #
@@ -46,12 +45,6 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -protocolVersion=1.3.0 \
               -authorization=strong \
               -poolProxy=PoolManager \
-              -permission-handler=${permissionHandler} \
-              -aclTable=${aclTable} \
-              -aclConnDriver=${aclConnDriver} \
-              -aclConnUrl=${aclConnUrl} \
-              -aclConnUser=${aclConnUser} \
-              -aclConnPswd=${aclConnPswd} \
               -stageConfigurationFilePath=${stageConfigurationFilePath} \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
