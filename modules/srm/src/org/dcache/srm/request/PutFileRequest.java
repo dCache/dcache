@@ -447,8 +447,8 @@ public final class PutFileRequest extends FileRequest {
         firstDcapTurl = request.getFirstDcapTurl();
         if(firstDcapTurl == null) {
             try {
-                String aTurl = getStorage().getPutTurl((SRMUser)request.getUser(),getPath(),
-                        request.protocols);
+                String aTurl = getStorage().getPutTurl(getUser(),getPath(),
+                        request.getProtocols());
                 GlobusURL g_turl = new GlobusURL(aTurl);
                 if(g_turl.getProtocol().equals("dcap")) {
                     request.setFirstDcapTurl(aTurl);
@@ -529,12 +529,13 @@ public final class PutFileRequest extends FileRequest {
                 //(not in ftp root for example) this will throw exception
                 // we do not care about the return value yet
                 PutRequest request = (PutRequest) getJob(requestId);
-                String[] supported_prots = getStorage().supportedPutProtocols();
+                String[] supportedProts = getStorage().supportedPutProtocols();
                 boolean found_supp_prot=false;
+                String[] requestProtocols = request.getProtocols();
                 mark1:
-                    for(int i=0; i< supported_prots.length;++i) {
-                    for(int j=0; j<request.protocols.length; ++j) {
-                        if(supported_prots[i].equals(request.protocols[j])) {
+                for(String supportedProtocol:supportedProts) {
+                    for(String requestProtocol:requestProtocols) {
+                        if(supportedProtocol.equals(requestProtocol)) {
                             found_supp_prot = true;
                             break mark1;
                         }
@@ -1495,6 +1496,7 @@ public final class PutFileRequest extends FileRequest {
      * @return int lifetime left in millis
      *    -1 stands for infinite lifetime
      */
+    @Override
     public long extendLifetime(long newLifetime) throws SRMException {
         long remainingLifetime = getRemainingLifetime();
         if(remainingLifetime >= newLifetime) {

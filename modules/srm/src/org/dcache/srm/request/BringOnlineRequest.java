@@ -99,8 +99,8 @@ import org.apache.log4j.Logger;
 public final class BringOnlineRequest extends ContainerRequest {
     private static final Logger logger = Logger.getLogger(BringOnlineRequest.class);
     /** array of protocols supported by client or server (copy) */
-    protected String[] protocols;
-    private long desiredOnlineLifetimeInSeconds;
+    private final String[] protocols;
+    private final long desiredOnlineLifetimeInSeconds;
     
     
     public BringOnlineRequest(SRMUser user,
@@ -128,6 +128,8 @@ public final class BringOnlineRequest extends ContainerRequest {
             len = protocols.length;
             this.protocols = new String[len];
             System.arraycopy(protocols,0,this.protocols,0,len);
+        } else {
+            this.protocols = null;
         }
         this.desiredOnlineLifetimeInSeconds = desiredOnlineLifetimeInSeconds;
         len = surls.length;
@@ -192,6 +194,7 @@ public final class BringOnlineRequest extends ContainerRequest {
         client_host,
         statusCodeString);
         this.protocols = protocols;
+        this.desiredOnlineLifetimeInSeconds = 0;
        
     }
     
@@ -513,12 +516,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
     public long getDesiredOnlineLifetimeInSeconds() {
-        rlock();
-        try {
-            return desiredOnlineLifetimeInSeconds;
-        } finally {
-            runlock();
-        }
+        return desiredOnlineLifetimeInSeconds;
     }
 
 }

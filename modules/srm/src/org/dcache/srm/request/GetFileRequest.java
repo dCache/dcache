@@ -408,9 +408,9 @@ public final class GetFileRequest extends FileRequest {
         }
         if(this.isPinned()) {
 
-            fileStatus.setRemainingPinTime(new Integer((int)(getRemainingLifetime()/1000)));
+            fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
-        fileStatus.setEstimatedWaitTime(new Integer((int)(getRequest().getRetryDeltaTime())));
+        fileStatus.setEstimatedWaitTime(getRequest().getRetryDeltaTime());
         TReturnStatus returnStatus = getReturnStatus();
         fileStatus.setStatus(returnStatus);
 
@@ -597,6 +597,7 @@ public final class GetFileRequest extends FileRequest {
         }
     }
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         logger.debug("State changed from "+oldState+" to "+getState());

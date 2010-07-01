@@ -93,8 +93,8 @@ import org.apache.log4j.Logger;
  */
 public abstract class Request extends Job {
     private static final Logger logger = Logger.getLogger(Request.class);
-    private String client_host;
-    private SRMUser user;
+    private final String client_host;
+    private final SRMUser user;
     public Request(SRMUser user,
     Long requestCredentalId,
     int max_number_of_retries,
@@ -167,10 +167,7 @@ public abstract class Request extends Job {
     
     
     
-    /*
-     * public static (class) variables
-     */
-    protected Long credentialId;
+    private final Long credentialId;
 
 
     
@@ -220,12 +217,7 @@ public abstract class Request extends Job {
      * @return Value of property credentialId.
      */
     public final Long getCredentialId() {
-        rlock();
-        try {
-            return credentialId;
-        } finally {
-            runlock();
-        }
+        return credentialId;
     }
 
     public abstract String getMethod();
@@ -287,12 +279,8 @@ public abstract class Request extends Job {
      * srm user
      */
     public SRMUser getUser() {
-        rlock();
-        try {
-            return user;
-        } finally {
-            runlock();
-        }
+        // user is final, no need to synchronize on get
+        return user;
     }
 
     
@@ -429,21 +417,11 @@ public abstract class Request extends Job {
     }
 
     public String getClient_host() {
-        rlock();
-        try {
-            return client_host;
-        } finally {
-            runlock();
-        }
+        return client_host;
     }
     
     public String getSubmitterId() {
-        rlock();
-        try {
-            return Long.toString(user.getId());
-        } finally {
-            runlock();
-        }
+        return Long.toString(user.getId());
     }
 
     /**

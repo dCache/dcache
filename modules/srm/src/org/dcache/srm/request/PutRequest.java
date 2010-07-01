@@ -98,8 +98,9 @@ public final class PutRequest extends ContainerRequest{
             Logger.getLogger(PutRequest.class);
     
     // private PutFileRequest fileRequests[];
-    protected String[] protocols;
+    private final String[] protocols;
     private TOverwriteMode overwriteMode;
+
     public PutRequest(SRMUser user,
     Long requestCredentialId,
     String[] srcFileNames,
