@@ -1,0 +1,32 @@
+#!/usr/bin/make -f
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean
+
+build:
+
+install_app_data:
+	dh_testdir
+	dh_testroot
+	dh_prep
+	dh_installdirs
+	cp -Rf opt/ debian/@PackageName@/
+
+install_package_data:
+	dh_installchangelogs
+	dh_compress
+	dh_installdebconf
+	dh_installdeb
+	dh_installdocs
+	dh_fixperms
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+install: install_app_data install_package_data
+binary-indep: build install
+binary-arch: binary-indep
+binary: binary-indep
+.PHONY: clean install

@@ -1,13 +1,55 @@
-<project name="server-deb-build">
+<!--
+      note that dh_* is needed to build these debian packages
+      On Debian/Ubuntu it is available in package debhelper.
+ -->
+<project name="server-deb-build-new">
+    <property file="common/deb.properties" />
 
-    <!--
-          Debian Targets
-    -->
+    <target name="server.deb" depends="install-server"
+            description="Build the dcache-server-xxx.deb">
 
-    <target name="server.deb" depends="server.rpm" description="Build dcache-server-xxx.deb">
-        <exec dir="${rpmRpmDir}/noarch" executable="fakeroot" failonerror="true">
-            <arg line="alien -k dcache-server-${version}-${patch}.noarch.rpm" />
+        <!--  copy the package contents -->
+        <copy todir="${server.debDistDir}"
+              overwrite="true">
+            <fileset dir="${server.root.dir}" includes="**/*" />
+        </copy>
+
+        <!--  give the package files the right permissions -->
+        <chmod perm="0755">
+            <filelist dir="${server.debFilesDir}"
+                      files="${server.debExecutableFiles}" />
+        </chmod>
+
+        <!--  timestamp for the changelog -->
+        <tstamp>
+          <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z" />
+        </tstamp>
+
+        <!--  copy the package control files, replace variables -->
+        <copy todir="${server.debControlDir}" overwrite="true">
+            <fileset dir="${server.debTemplateDir}">
+                <filename name="*.template" />
+            </fileset>
+            <mapper type="glob" from="*.template" to="*" />
+            <filterset>
+                <filter token="Version" value="${version}-${patch}" />
+                <filter token="MaintainerName" value="${server.debMaintainer}" />
+                <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
+                <filter token="Timestamp" value="${timestamp}" />
+                <filter token="PackageName" value="${server.packageName}" />
+            </filterset>
+        </copy>
+
+        <chmod file="${server.debControlDir}/rules" perm="0755" />
+
+
+        <exec executable="dpkg-buildpackage" failonerror="true"
+              dir="${server.debDistDir}">
+            <!--  don't produce any source packages  -->
+            <arg line="-rfakeroot -uc -A" />
         </exec>
-    </target>
 
+        <!--  delete temporary files -->
+        <delete dir="${server.debDistDir}" />
+    </target>
 </project>

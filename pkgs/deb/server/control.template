@@ -1,0 +1,15 @@
+Source: @PackageName@
+Section: misc
+Priority: extra
+Maintainer: @MaintainerName@ <@MaintainerMail@>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.9.0
+
+Package: @PackageName@
+Architecture: all
+Description: A distributed mass storage system.
+ dCache is an efficient, modular and configurable mass storage
+ management system. It provides a system for storing and retrieving
+ huge amounts of data, distributed among a large number of heterogenous server
+ nodes, under a single virtual filesystem tree with a variety of standard
+ access methods.
