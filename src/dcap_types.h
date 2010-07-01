@@ -66,11 +66,7 @@ typedef struct {
 
 typedef struct {
 	char *buffer;
-#ifdef HAVE_OFF64_T
 	off64_t base;
-#else
-	off_t base;
-#endif
 	size_t    size;
 	size_t    used;
 	size_t    cur;
@@ -99,16 +95,8 @@ typedef struct {
 typedef struct vsp_node {
 	int dataFd;		/* data socket descriptor */
 	int fd;			/* contorl socket descriptor */
-#ifdef HAVE_OFF64_T
 	off64_t pos;		/* file current position */
-#else
-        off_t pos;            /* file current position */
-#endif
-#ifdef HAVE_OFF64_T
 	off64_t seek;		/* seek offset */
-#else
-        off_t seek;           /* seek offset */
-#endif
 	int whence;		/* seek whence */
 
 	unsigned int asciiCommand; /* the actual command */
@@ -184,11 +172,7 @@ typedef struct {
 #ifndef  _IOVEC2_
 #define _IOVEC2_
 typedef struct {
-#ifdef HAVE_OFF64_T
 	off64_t offset;
-#else
-	off_t offset;
-#endif
 	int len;
 	char *buf;
 } iovec2;

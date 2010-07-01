@@ -22,15 +22,10 @@ int        dc_open(const char *, int, ...);
 int        dc_close(int);
 ssize_t    dc_real_read(struct vsp_node *node, void *buff, size_t buflen);
 ssize_t    dc_real_write(struct vsp_node *node, const void *buff, size_t buflen);
-#ifdef HAVE_OFF64_T
 off64_t  dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
 off64_t  dc_ftello64(FILE *fp);
 int        dc_fseeko64(FILE *, off64_t, int);
-#else
-off_t  dc_real_lseek64(struct vsp_node *node, off_t offset, int whence);
-#endif
-int dc_fseeko(FILE *fp, off_t offset, int whence);
-off_t dc_ftello(FILE *fp);
+
 /*******************************************************************
  *                                                                 *
  *  dc_fxxx functions                                              *
@@ -86,7 +81,7 @@ int dc_feof(FILE *fp)
 	if( node == NULL ) {
 		return system_feof(fp);
 	}
-#if defined HAVE_FILE__FLAG
+
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) || defined(__CYGWIN__)
 	if ( ((FILE *)fp)->_flags & _IO_EOF_SEEN ) {
 #else
@@ -96,7 +91,7 @@ int dc_feof(FILE *fp)
 	}else {
 		rc = 0 ;
 	}
-#endif
+
 	m_unlock(&node->mux);
 	return rc ;
 
@@ -138,7 +133,6 @@ FILE   *dc_fopen64(const char *file, const char *mode)
 		}
 
 		/* break FILE chain */
-#ifdef HAVE_FILE__FLAG
 	#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 		fp->_chain = NULL;
 		fp->_IO_write_ptr = NULL;
@@ -148,7 +142,6 @@ FILE   *dc_fopen64(const char *file, const char *mode)
 	#else
 		fp->_flag = 0;
 	#endif
-#endif
 		fd = dc_open(file,oflags, 0644) ;
 		if ( fd < 0 ) {
 			free(fp);
@@ -183,7 +176,6 @@ FILE   *dc_fdopen(int fd, const char *mode)
 	}
 
 	/* break FILE chain */
-#ifdef HAVE_FILE__FLAG
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
 	fp->_chain = NULL;
 	fp->_IO_write_ptr = NULL;
@@ -191,7 +183,6 @@ FILE   *dc_fdopen(int fd, const char *mode)
 	fp->_flags = 0;
 #else
 	fp->_flag = 0;
-#endif
 #endif
 
 	FILE_NO(fp) = fd;
@@ -215,12 +206,10 @@ size_t dc_fread(void *ptr, size_t size, size_t items, FILE *fp)
 	switch(rc) {
 		case -1:
 		case 0:
-#ifdef HAVE_FILE__FLAG
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) || defined(__CYGWIN__)
 			((FILE *)fp)->_flags |= _IO_EOF_SEEN;
 #else
 			((FILE *)fp)->_flag |= _IOEOF;
-#endif
 #endif
 			rc = 0;
 			break ;
@@ -237,31 +226,15 @@ size_t dc_fread(void *ptr, size_t size, size_t items, FILE *fp)
 
 int dc_fseek(FILE *fp, long offset, int whence)
 {
-	return dc_fseeko(fp, (off_t)offset, whence);
+	return dc_fseeko64(fp, (off64_t)offset, whence);
 }
 
 int dc_fseeko(FILE *fp, off_t offset, int whence)
 {
-        off_t rc;
-        struct vsp_node *node;
-
-        node = get_vsp_node(FILE_NO(fp));
-        if( node == NULL ) {
-                return system_fseeko( fp, offset, whence);
-        }
-
-
-        if (fp == NULL) {
-                return -1;
-        }
-
-        rc = dc_real_lseek(node,offset,whence);
-        m_unlock(&node->mux);
-
-        return rc < 0 ? -1 : 0;
+	return dc_fseeko64(fp, (off64_t)offset, whence);
 }
 
-#ifdef HAVE_OFF64_T
+
 int dc_fseeko64(FILE *fp, off64_t offset, int whence)
 {
 
@@ -283,30 +256,18 @@ int dc_fseeko64(FILE *fp, off64_t offset, int whence)
 
 	return rc < 0 ? -1 : 0;
 }
-#endif
 
 long dc_ftell(FILE *fp)
 {
-	return (long)dc_ftello(fp);
+	return (long)dc_ftello64(fp);
 }
 
 
 off_t dc_ftello(FILE *fp)
 {
-        off_t rc;
-        struct vsp_node *node;
-        node = get_vsp_node(FILE_NO(fp));
-        if( node == NULL ) {
-                return system_ftello(fp);
-        }
-        if (fp == NULL) {
-                return -1;
-        }
-        rc = dc_real_lseek( node, (off_t)0, SEEK_CUR);
-        m_unlock(&node->mux);
-        return rc;
+	return (off_t)dc_ftello64(fp);
 }
-#ifdef HAVE_OFF64_T
+
 off64_t dc_ftello64(FILE *fp)
 {
 
@@ -330,7 +291,6 @@ off64_t dc_ftello64(FILE *fp)
 
 	return rc;
 }
-#endif
 
 size_t dc_fwrite(const void *ptr, size_t size, size_t items, FILE *fp)
 {
@@ -347,22 +307,18 @@ size_t dc_fwrite(const void *ptr, size_t size, size_t items, FILE *fp)
 
 	switch(rc) {
 		case -1:
-#ifdef HAVE_FILE__FLAG
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) || defined(__CYGWIN__)
 			((FILE *)fp)->_flags |= _IO_ERR_SEEN ;
 #else
 			((FILE *)fp)->_flag |= _IOERR ;
 #endif
-#endif
 			rc= 0 ;
 			break ;
 		case 0:
-#ifdef HAVE_FILE__FLAG
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__) || defined(__CYGWIN__)
 			((FILE *)fp)->_flags |= _IO_EOF_SEEN ;
 #else
 			((FILE *)fp)->_flag |= _IOEOF ;
-#endif
 #endif
 			break ;
 		default:
