@@ -4953,6 +4953,7 @@ public final class Manager
         }
 
         for(GroupList groupList: authRecord.getGroupLists()) {
+            if (groupList.getAttribute()==null) continue;
             FQAN voAttribute = new FQAN(groupList.getAttribute());
             String userGroup = voAttribute.getGroup();
             String userRole = voAttribute.getRole();
@@ -4984,6 +4985,7 @@ public final class Manager
             }
 
             for(GroupList groupList: authRecord.getGroupLists()) {
+                if (groupList.getAttribute()==null) continue;
                 FQAN voAttribute = new FQAN(groupList.getAttribute());
                 String userGroup = voAttribute.getGroup();
                 String userRole = voAttribute.getRole();
