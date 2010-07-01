@@ -121,6 +121,7 @@ public final class Manager
 	private int previousSchemaVersion;
 	private Args _args;
         private long _poolManagerTimeout = 60;
+        private CellStub _poolManagerStub;
 
         private String spaceManagerAuthorizationPolicyClass=
                 "diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy";
@@ -224,7 +225,10 @@ public final class Manager
                 authorizationPolicy = (SpaceManagerAuthorizationPolicy)
                         Class.forName(spaceManagerAuthorizationPolicyClass).
                         getConstructor().newInstance();
-
+                _poolManagerStub=new CellStub();
+                _poolManagerStub.setDestination(poolManager);
+                _poolManagerStub.setCellEndpoint(this);
+                _poolManagerStub.setTimeout(_poolManagerTimeout*1000L);
 		try {
 			dbinit();
 		}
@@ -4779,33 +4783,15 @@ public final class Manager
                     protocolInfo != null &&
                     storageInfo  != null) {
                         try {
-                                PoolManagerSelectLinkGroupForWriteMessage msg =
+                                PoolManagerSelectLinkGroupForWriteMessage msg=
                                         new PoolManagerSelectLinkGroupForWriteMessage(pnfsId,
                                                                                       storageInfo,
                                                                                       protocolInfo,
                                                                                       sizeInBytes);
                                 msg.setLinkGroups(linkGroupNames);
-                                CellMessage cellMessage = new CellMessage(new CellPath(poolManager),msg);
                                 logger.debug("Sending PoolManagerSelectLinkGroupForWriteMessage");
-                                //
-                                // use this for now, in the future will switch to CellStub
-                                //
-                                cellMessage = sendAndWait(cellMessage,1000L*60);
-                                if(cellMessage == null ) {
-                                        throw new SpaceException("PoolManagerSelectLinkGroupForWriteMessage: request timed out "+
-                                                                 pnfsId);
-                                }
-                                if (cellMessage.getMessageObject() == null ) {
-                                        throw new SpaceException("PoolManagerSelectLinkGroupForWriteMessage : reply message is null");
-                                }
-                                PoolManagerSelectLinkGroupForWriteMessage reply = (PoolManagerSelectLinkGroupForWriteMessage)cellMessage.getMessageObject();
-                                if(reply.getReturnCode() != 0) {
-                                        throw new SpaceException("Internal error : PoolManagerSelectLinkGroupForWriteMessage return code="+
-                                                                 reply.getReturnCode()+
-                                                                 ", message= "+
-                                                                 reply.getErrorObject().toString());
-                                }
-                                linkGroupNames=reply.getLinkGroups();
+                                msg=_poolManagerStub.sendAndWait(msg);
+                                linkGroupNames=msg.getLinkGroups();
                                 if (logger.isDebugEnabled()) {
                                         logger.debug("received PoolManagerSelectLinkGroupForWriteMessage reply, number of LinkGroups="+
                                                      linkGroupNames.size());
@@ -4813,6 +4799,19 @@ public final class Manager
                                 if(linkGroupNames.isEmpty()) {
                                         throw new SpaceAuthorizationException("PoolManagerSelectLinkGroupForWriteMessage: Failed to find LinkGroup where user is authorized to reserve space.");
                                 }
+                        }
+                        catch (TimeoutCacheException e) {
+                                throw new SpaceException(
+                                        "PoolManagerSelectLinkGroupForWriteMessage: request timed out ",
+                                        e);
+                        }
+                        catch (CacheException e) {
+                                throw new SpaceException("Internal error : PoolManagerSelectLinkGroupForWriteMessage  exception ",
+                                                         e);
+                        }
+                        catch (InterruptedException e) {
+                                throw new SpaceException("Request was interrupted",
+                                                       e);
                         }
                         catch (SpaceAuthorizationException e)  {
                                 logger.warn(e.getMessage());
@@ -4823,9 +4822,9 @@ public final class Manager
                                 throw e;
                         }
                         catch(Exception e) {
-                                throw new SpaceException("Internal error : Failed to get list of link group ids from Pool Manager "+
-                                                         e.getMessage());
+                                throw new SpaceException("Internal error : Failed to get list of link group ids from Pool Manager "+e.getMessage());
                         }
+
                 }
                 String linkGroupName = linkGroupNames.get(0);
                 VOInfo voInfo        = linkGroupNameVoInfoMap.get(linkGroupName);
