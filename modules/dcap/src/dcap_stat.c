@@ -17,12 +17,8 @@
 
 #include <stdio.h>
 #include "dcap_shared.h"
-#ifdef HAVE_OFF64_T
-off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
-#else
-off_t dc_real_lseek64(struct vsp_node *node, off_t offset, int whence);
-#endif
 
+off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
 #ifdef WIN32
 int dc_stat64(const char *path, struct _stati64 *buf);
 int dc_lstat64(const char *path, struct _stati64 *buf);
@@ -357,11 +353,8 @@ int dc_fstat64(int fd, struct stat64 *buf)
 	struct vsp_node *node;
 	int rc;
 	char *path;
-#ifdef HAVE_OFF64_T
 	off64_t size;
-#else
-	off_t size;
-#endif
+
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
@@ -374,11 +367,7 @@ int dc_fstat64(int fd, struct stat64 *buf)
 
 	/* pnfs can not show file size if file opened for write and not closed */
 	if( node->flags & O_WRONLY ) {
-#ifdef HAVE_LSEEK64
 		size = dc_real_lseek( node, 0, SEEK_CUR );
-#else
-		size = dc_real_lseek( node, 0, SEEK_CUR );
-#endif
 	}
 	path = getNodePath(node);
 

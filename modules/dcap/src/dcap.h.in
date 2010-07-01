@@ -76,15 +76,11 @@ extern int      dc_close(int);
 extern int      dc_close2(int);
 extern ssize_t  dc_read(int, void *, size_t);
 extern ssize_t  dc_readv(int, const struct iovec *, int);
-#ifdef HAVE_OFF64_T
 extern ssize_t  dc_pread64(int, void  *,  size_t, off64_t);
-#endif
 extern ssize_t  dc_write(int, const void *, size_t);
 extern ssize_t  dc_writev(int, const struct iovec *, int);
-#ifdef HAVE_OFF64_T
 extern ssize_t  dc_pwrite64(int, const void  *,  size_t, off64_t);
 extern off64_t  dc_lseek64(int, off64_t, int);
-#endif
 extern int      dc_fsync(int);
 extern int      dc_dup(int);
 extern int      dc_access( const char *, int);
@@ -125,10 +121,8 @@ extern int      dc_fflush(FILE *);
 extern int      dc_feof(FILE *);
 extern char *   dc_fgets(char *, int, FILE *);
 extern int      dc_fgetc(FILE *);
-#ifdef HAVE_OFF64_T
 extern off64_t  dc_ftello64(FILE *fp);
 extern int      dc_fseeko64(FILE *, off64_t, int);
-#endif
 /* pre-stage */
 extern int      dc_stage(const char *, time_t, const char *);
 extern int      dc_check(const char *, const char *);
@@ -137,12 +131,7 @@ extern int      dc_check(const char *, const char *);
 #define _IOVEC2_
 
 typedef struct {
-#ifdef HAVE_OFF64_T
 	off64_t offset;
-#else
-	off_t offset;
-#endif
-
 	int len;
 	char *buf;
 } iovec2;

@@ -34,17 +34,11 @@ extern int system_readv(int, const struct iovec *vector, int count);
 extern int system_write(int, const void *, size_t);
 extern int system_writev(int, const struct iovec *vector, int count);
 extern int system_close(int);
-#ifdef HAVE_LSEEK64
 extern off_t system_lseek64(int, off64_t, int);
-#endif /*HAVE_LSEEK64*/
 extern int system_pread(int, void *, size_t, off_t);
-#ifdef HAVE_PREAD64
 extern int system_pread64(int, void *, size_t, off64_t);
-#endif /*HAVE_PREAD64*/
 extern int system_pwrite(int, const void *, size_t, off_t);
-#ifdef HAVE_PWRITE64
 extern int system_pwrite64(int, const void *, size_t, off64_t);
-#endif /*HAVE_PWRITE64*/
 extern int system_stat(const char *, struct stat *);
 extern int system_fstat(int, struct stat *);
 extern int system_stat64(const char *, struct stat64 *);
@@ -81,14 +75,8 @@ extern int system_fclose(FILE *);
 extern int system_feof(FILE *);
 extern int system_ferror(FILE *);
 extern int system_fflush(FILE *);
-extern off_t system_ftello(FILE *);
-#ifdef HAVE_FTELLO64
 extern off64_t system_ftello64(FILE *);
-#endif /*HAVE_FTELLO64*/
-extern int system_fseeko(FILE *, off_t, int);
-#ifdef HAVE_FSEEKO64
 extern int system_fseeko64(FILE *, off64_t, int);
-#endif /*HAVE_FSEEKO64*/
 extern char * system_fgets( char *, int, FILE *);
 extern int system_fgetc( FILE *);
 
