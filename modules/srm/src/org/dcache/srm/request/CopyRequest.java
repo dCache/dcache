@@ -126,9 +126,9 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     private SRMProtocol remoteSrmProtocol;
     private boolean remoteSrmGet;
     private TFileStorageType storageType;
-    private TRetentionPolicy targetRetentionPolicy;
-    private TAccessLatency targetAccessLatency;
-    private TOverwriteMode overwriteMode;
+    private final TRetentionPolicy targetRetentionPolicy;
+    private final TAccessLatency targetAccessLatency;
+    private final TOverwriteMode overwriteMode;
     private String targetSpaceToken;
 
     private transient final OneToManyMap remoteSurlToFileReqIds = new OneToManyMap();
@@ -191,8 +191,9 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             fileRequests[i] = fileRequest;
         }
         this.callerSrmProtocol = callerSrmProtocol;
-        if (getConfiguration().getQosPluginClass()!=null)
-        	this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
+        if (getConfiguration().getQosPluginClass()!=null) {
+            this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
+        }
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
@@ -266,11 +267,13 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
 
         protocols = (String[]) prot_list.toArray(new String[0]);
-        if (getConfiguration().getQosPluginClass()!=null)
-        	this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
+        if (getConfiguration().getQosPluginClass()!=null) {
+            this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
+        }
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
+        this.overwriteMode = null;
      }
 
 
@@ -403,28 +406,28 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     private void makeQosReservation(int i) throws MalformedURLException, SRMException {
-    	try {
-    		CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
-        	RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
-        	QOSTicket qosTicket = getQosPlugin().createTicket(
+        try {
+            CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
+            RequestCredential credential = getCredential();
+            QOSTicket qosTicket = getQosPlugin().createTicket(
                     credential.getCredentialName(),
                     (getStorage().getFileMetaData((SRMUser)getUser(),cfr.getFromPath(), false)).size,
-		    getFrom_url(i).getURL(),
+                    getFrom_url(i).getURL(),
                     getFrom_url(i).getPort(),
                     getFrom_url(i).getPort(),
                     getFrom_url(i).getProtocol(),
-		    getTo_url(i).getURL(),
+                    getTo_url(i).getURL(),
                     getTo_url(i).getPort(),
                     getTo_url(i).getPort(),
                     getTo_url(i).getProtocol());
             getQosPlugin().addTicket(qosTicket);
             if (getQosPlugin().submit()) {
-            	cfr.setQOSTicket(qosTicket);
+                cfr.setQOSTicket(qosTicket);
                 logger.debug("QOS Ticket Received "+getQosPlugin().toString());
             }
-		} catch(Exception e) {
-			logger.error("Could not create QOS reservation: "+e.getMessage());
-		}
+        } catch(Exception e) {
+            logger.error("Could not create QOS reservation: "+e.getMessage());
+        }
     }
 
     private void getTURLs() throws SRMException,
@@ -439,7 +442,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                       org.dcache.srm.scheduler.FatalJobFailure(
                       "TargetFileStorageType "+getStorageType()+" is not supported");
             }
-            RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
+            RequestCredential credential = getCredential();
             logger.debug("obtained credential="+credential+" id="+credential.getId());
             //String ls_client = "SRM"; // make it not hard coded
 
@@ -621,13 +624,14 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             logger.debug("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
-            if (getQosPlugin() != null)
-             	makeQosReservation(i);
+            if (getQosPlugin() != null) {
+                makeQosReservation(i);
+            }
          }
 
         setRemoteSrmGet(false);
          //need to put into the remote srm system
-         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
+         RequestCredential credential = getCredential();
        if(getCallerSrmProtocol() == null || getCallerSrmProtocol() == SRMProtocol.V1_1) {
             try {
                 setGetter_putter(new RemoteTurlPutterV1(getStorage(), credential, dests, sizes, getProtocols(), this, getConfiguration().getCopyRetryTimeout(), 2 ));
@@ -675,8 +679,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
 
                 CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
                 if (getQosPlugin()!=null && cfr.getQOSTicket()!=null) {
-					getQosPlugin().sayStatus(cfr.getQOSTicket());
-				}
+                    getQosPlugin().sayStatus(cfr.getQOSTicket());
+                }
 
                 try {
                     if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
@@ -1011,27 +1015,27 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         }
     }
 
-	public final SrmCopyResponse getSrmCopyResponse()
-		throws SRMException ,java.sql.SQLException {
-		SrmCopyResponse response = new SrmCopyResponse();
-		response.setReturnStatus(getTReturnStatus());
-		response.setRequestToken(getTRequestToken());
-                ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
-                    new ArrayOfTCopyRequestFileStatus();
-                arrayOfTCopyRequestFileStatus.setStatusArray(
-                    getArrayOfTCopyRequestFileStatuses(null,null));
-		response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
-		return response;
-	}
+    public final SrmCopyResponse getSrmCopyResponse()
+        throws SRMException ,java.sql.SQLException {
+        SrmCopyResponse response = new SrmCopyResponse();
+        response.setReturnStatus(getTReturnStatus());
+        response.setRequestToken(getTRequestToken());
+        ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
+            new ArrayOfTCopyRequestFileStatus();
+        arrayOfTCopyRequestFileStatus.setStatusArray(
+            getArrayOfTCopyRequestFileStatuses(null,null));
+        response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
+        return response;
+    }
 
 
-	private String getTRequestToken() {
-                return getId().toString();
-	}
+    private String getTRequestToken() {
+        return getId().toString();
+    }
 
-	public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
+    public final TCopyRequestFileStatus[]  getArrayOfTCopyRequestFileStatuses(
         String[] fromurls,String[] tourls)
-		throws SRMException, java.sql.SQLException {
+        throws SRMException, java.sql.SQLException {
             if(fromurls != null) {
                if(tourls == null ||
                   fromurls.length != tourls.length ) {
@@ -1057,23 +1061,22 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             return copyRequestFileStatuses;
         }
 
-	public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
-		throws SRMException, java.sql.SQLException {
-                return getSrmStatusOfCopyRequest(null,null);
-	}
+    public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest()
+        throws SRMException, java.sql.SQLException {
+        return getSrmStatusOfCopyRequest(null,null);
+    }
 
-	public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)
-		throws SRMException, java.sql.SQLException {
-		SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
-		response.setReturnStatus(getTReturnStatus());
-                ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
-                    new ArrayOfTCopyRequestFileStatus();
-                arrayOfTCopyRequestFileStatus.setStatusArray(
-                    getArrayOfTCopyRequestFileStatuses(fromurls,tourls));
-
-		response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
-		return response;
-	}
+    public final SrmStatusOfCopyRequestResponse getSrmStatusOfCopyRequest(String[] fromurls,String[] tourls)
+        throws SRMException, java.sql.SQLException {
+        SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
+        response.setReturnStatus(getTReturnStatus());
+        ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
+            new ArrayOfTCopyRequestFileStatus();
+        arrayOfTCopyRequestFileStatus.setStatusArray(
+            getArrayOfTCopyRequestFileStatuses(fromurls,tourls));
+        response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
+        return response;
+    }
 
     public final FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException {
         if(surl == null ) {
@@ -1143,57 +1146,15 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
     }
 
     public TRetentionPolicy getTargetRetentionPolicy() {
-        rlock();
-        try {
-            return targetRetentionPolicy;
-        } finally {
-            runlock();
-        }
-    }
-
-    public void setTargetRetentionPolicy(TRetentionPolicy targetRetentionPolicy) {
-        wlock();
-        try {
-            this.targetRetentionPolicy = targetRetentionPolicy;
-        } finally {
-            wunlock();
-        }
+        return targetRetentionPolicy;
     }
 
     public TAccessLatency getTargetAccessLatency() {
-        rlock();
-        try {
-            return targetAccessLatency;
-        } finally {
-            runlock();
-        }
-    }
-
-    public void setTargetAccessLatency(TAccessLatency targetAccessLatency) {
-        wlock();
-        try {
-            this.targetAccessLatency = targetAccessLatency;
-        } finally {
-            wunlock();
-        }
+        return targetAccessLatency;
     }
 
     public TOverwriteMode getOverwriteMode() {
-        rlock();
-        try {
-        } finally {
-            runlock();
-        }
         return overwriteMode;
-    }
-
-    public void setOverwriteMode(TOverwriteMode overwriteMode) {
-        rlock();
-        try {
-        } finally {
-            runlock();
-        }
-        this.overwriteMode = overwriteMode;
     }
 
     public boolean isOverwrite() {
