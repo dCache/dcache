@@ -425,12 +425,13 @@ public final class BringOnlineFileRequest extends FileRequest {
                 Job.getJob(requestId);
             logger.debug("this file request's request is  "+request);
             //this will fail if the protocols are not supported
-            if(request.protocols != null && request.protocols.length > 0) {
+            String[] protocols = request.getProtocols();
+            if(protocols != null && protocols.length > 0) {
                 String[] supported_prots = getStorage().supportedGetProtocols();
                 boolean found_supp_prot=false;
                 mark1:
                 for(String supported_protocol: supported_prots) {
-                    for(String request_protocol: request.protocols) {
+                    for(String request_protocol: protocols) {
                         if(supported_protocol.equals(request_protocol)) {
                             found_supp_prot = true;
                             break mark1;
@@ -439,7 +440,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 }
                 if(!found_supp_prot) {
                     StringBuilder request_protocols = new StringBuilder("transfer protocols not supported: [");
-                    for(String request_protocol: request.protocols ) {
+                    for(String request_protocol: protocols ) {
                         request_protocols.append(request_protocol);
                         request_protocols.append(',');
                     }
@@ -622,6 +623,7 @@ public final class BringOnlineFileRequest extends FileRequest {
      * @return int lifetime left in millis
      *    -1 stands for infinite lifetime
      */
+    @Override
     public long extendLifetime(long newLifetime) throws SRMException {
         long remainingLifetime = getRemainingLifetime();
         if(remainingLifetime >= newLifetime) {
