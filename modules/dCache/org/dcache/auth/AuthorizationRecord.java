@@ -305,6 +305,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         this.name = name;
     }
 
+    @Override
     public String toString()
     {
         StringBuilder sb = new java.lang.StringBuilder("AR:");
@@ -341,9 +342,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public String getVoRole() {
         String primaryAttribute = getPrimaryAttribute();
-        if(primaryAttribute != null && !primaryAttribute.equals("")) {
-            String role = new FQAN(primaryAttribute).getRole();
-            return (role==null || role.equals("")) ? null : role;
+        if(primaryAttribute != null && !primaryAttribute.isEmpty()) {
+            FQAN fqan = new FQAN(primaryAttribute);
+            return fqan.hasRole() ? fqan.getRole() : null;
         }
         return null;
     }
@@ -351,9 +352,9 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public String getVoGroup() {
         String primaryAttribute = getPrimaryAttribute();
-        if(primaryAttribute != null && !primaryAttribute.equals("")) {
+        if(primaryAttribute != null && !primaryAttribute.isEmpty()) {
             String group = new FQAN(primaryAttribute).getGroup();
-            return (group==null || group.equals("")) ? identity : group;
+            return (group==null || group.isEmpty()) ? identity : group;
         }
         return identity;
     }
@@ -435,6 +436,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         this.authz = authz.toString();
     }
 
+    @Override
     public boolean equals(Object rec) {
        if ( this == rec ) return true;
        if ( !(rec instanceof AuthorizationRecord) ) return false;
@@ -451,6 +453,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
            root.equals(r.getRoot());
     }
 
+    @Override
     public int hashCode(){
         initHashStrings();
         return getAuthn().hashCode()^getAuthz().hashCode();
