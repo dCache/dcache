@@ -8,12 +8,12 @@ import org.dcache.auth.FQAN;
 
 
 public class LinkGroupAuthorizationFile  {
-        
-	private Map<String,LinkGroupAuthorizationRecord> records = 
+
+	private Map<String,LinkGroupAuthorizationRecord> records =
             new HashMap<String,LinkGroupAuthorizationRecord>();
 
 	public LinkGroupAuthorizationFile(String filename)
-	    throws IOException,ParseException {	
+	    throws IOException,ParseException {
 		BufferedReader bufferedReader = new BufferedReader(new FileReader(filename));
 		read(bufferedReader);
 		bufferedReader.close();
@@ -24,21 +24,21 @@ public class LinkGroupAuthorizationFile  {
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
 		read(bufferedReader);
 	}
-	
-	public Collection<LinkGroupAuthorizationRecord>  geLinkGroupAuthiorizationRecords() { 
+
+	public Collection<LinkGroupAuthorizationRecord>  geLinkGroupAuthiorizationRecords() {
 		return records.values();
 	}
-        
+
         public LinkGroupAuthorizationRecord getLinkGroupAuthorizationRecord(String LinkGroupName) {
             //records.get
             return records.get(LinkGroupName);
         }
-        
-	public void addLinkGroupAuthiorizationRecord(final LinkGroupAuthorizationRecord record) { 
+
+	public void addLinkGroupAuthiorizationRecord(final LinkGroupAuthorizationRecord record) {
 		records.put(record.getLinkGroupName(),record);
 	}
-	
-	public void dump() { 
+
+	public void dump() {
 		Iterator<LinkGroupAuthorizationRecord> itr = records.values().iterator();
 		while (itr.hasNext()) {
                         LinkGroupAuthorizationRecord record = itr.next();
@@ -46,12 +46,12 @@ public class LinkGroupAuthorizationFile  {
                         System.out.println();
 		}
 	}
-	
+
         private static final int OUTSIDE_STATE=0;
         private static final int LINKGROUP_STATE=1;
 	private static final String COMMENT_KEY="#";
 	private static final String LINKGROUP_KEY="LinkGroup";
-        
+
 	private void read(BufferedReader reader)
 		throws IOException, ParseException {
 		boolean eof = false;
@@ -63,7 +63,7 @@ public class LinkGroupAuthorizationFile  {
 		while((line = reader.readLine()) != null) {
 			icount++;
 			line = line.trim();
-			if (line.startsWith(COMMENT_KEY) ) { 
+			if (line.startsWith(COMMENT_KEY) ) {
 				continue;
 			}
                         if(state == OUTSIDE_STATE) {
@@ -83,7 +83,7 @@ public class LinkGroupAuthorizationFile  {
                         }
                         else if(state == LINKGROUP_STATE ) {
                             if(line.length() == 0) {
-                                LinkGroupAuthorizationRecord record = 
+                                LinkGroupAuthorizationRecord record =
                                     new LinkGroupAuthorizationRecord(
                                     linkGroupName, fqans);
                                 records.put(linkGroupName,record);
@@ -95,42 +95,42 @@ public class LinkGroupAuthorizationFile  {
                             FQAN fqan = new FQAN(line);
                             fqans.add(fqan);
                             continue;
-                            
+
                         }
 		}
-                
+
                 if(state == LINKGROUP_STATE ) {
-                    LinkGroupAuthorizationRecord record = 
+                    LinkGroupAuthorizationRecord record =
                         new LinkGroupAuthorizationRecord(
                         linkGroupName, fqans);
                     records.put(linkGroupName,record);
-                }	
+                }
         }
-        
-					       
 
-	public static void main(String[] argv) { 
-		if (argv.length==1) { 
-			try { 
+
+
+	public static void main(String[] argv) {
+		if (argv.length==1) {
+			try {
 				LinkGroupAuthorizationFile f = new LinkGroupAuthorizationFile(argv[0]);
                                 f.dump();
 			}
-			catch (IOException e) { 
+			catch (IOException e) {
 				System.err.println("Failed to open or read file "+argv[0]);
 				System.exit(1);
 			}
                         catch(ParseException pe) {
 				System.err.println("Failed to parse file "+argv[0]);
 				System.exit(1);
-                            
+
                         }
 		}
-		else { 
+		else {
 				System.err.println("Usage: java diskCacheV111.services.space.LinkGroupAuthorizationFile <file name>");
 				System.exit(1);
 		}
-		
-	}    
+
+	}
 }
 
 
