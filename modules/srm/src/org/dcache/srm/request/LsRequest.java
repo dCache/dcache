@@ -60,7 +60,7 @@ public final class LsRequest extends ContainerRequest {
                 fileRequests = new FileRequest[len];
                 for(int i = 0; i<len; ++i) {
                         fileRequests[i] =
-                                new LsFileRequest(this,
+                                new LsFileRequest(getId(),
                                                   requestCredentialId,
                                                   request.getArrayOfSURLs().getUrlArray()[i],
                                                   lifetime,
