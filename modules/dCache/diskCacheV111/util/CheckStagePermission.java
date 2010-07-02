@@ -18,9 +18,11 @@ import java.util.regex.PatternSyntaxException;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 
+import diskCacheV111.vehicles.StorageInfo;
+
 public class CheckStagePermission {
     private File _stageConfigFile;
-    private Long _lastTimeReadingStageConfigFile = 0L;
+    private long _lastTimeReadingStageConfigFile = 0L;
     private List<Pattern[]> _regexList;
     private final boolean _isEnabled;
 
@@ -39,13 +41,14 @@ public class CheckStagePermission {
     }
 
     /**
-     * Check whether staging is allowed for a particular subject.
+     * Check whether staging is allowed for a particular subject on a particular object.
      *
      * @param subject The subject
+     * @param storageInfo The storage info of the object
      * @return true if and only if the subject is allowed to perform
      * staging
      */
-    public boolean canPerformStaging(Subject subject)
+    public boolean canPerformStaging(Subject subject, StorageInfo storageInfo)
         throws PatternSyntaxException, IOException
     {
         if (!_isEnabled || Subjects.isRoot(subject))
@@ -55,177 +58,182 @@ public class CheckStagePermission {
             String dn = Subjects.getDn(subject);
             Collection<String> fqans = Subjects.getFqans(subject);
 
+            String storageClass = storageInfo.getStorageClass();
+            String hsm = storageInfo.getHsm();
+
+            String storeUnit = "";
+            if (storageClass != null && hsm != null) {
+                storeUnit = storageClass+"@"+hsm;
+            }
+
             if (dn == null) {
                 dn = "";
             }
 
             if (fqans.isEmpty()) {
-                return canPerformStaging(dn, "");
+                return canPerformStaging(dn, "", storeUnit);
             } else {
                 for (String fqan: fqans) {
-                    if (canPerformStaging(dn, fqan))
+                    if (canPerformStaging(dn, fqan, storeUnit))
                         return true;
                 }
                 return false;
             }
         } catch (NoSuchElementException e) {
-            throw new IllegalArgumentException("Subject has multible DNs");
+            throw new IllegalArgumentException("Subject has multiple DNs");
         }
     }
 
     /**
-    * Check whether staging is allowed for the user with given DN and FQAN.
-    *
-    * @param  dn user's Distinguished Name
-    * @param  fqan user's Fully Qualified Attribute Name
-    * @return true if the user is allowed to perform staging
-    * @throws PatternSyntaxException
-    * @throws IOException
-    */
-    public boolean canPerformStaging(String dn, FQAN fqan) throws PatternSyntaxException, IOException {
+     * Check whether staging is allowed for the user with given DN and FQAN
+     * for the object in the given storage group.
+     *
+     * @param  dn user's Distinguished Name
+     * @param  fqan user's Fully Qualified Attribute Name
+     * @param  storeUnit object's store unit
+     * @return true if the user is allowed to perform staging of the object
+     * @throws PatternSyntaxException
+     * @throws IOException
+     */
+     public boolean canPerformStaging(String dn, String fqan, String storeUnit) throws PatternSyntaxException, IOException {
 
-        String fqanStr;
-        if ( fqan != null ) {
-            fqanStr = fqan.toString();
-        } else {
-            fqanStr = "";
-        }
+         if ( !_isEnabled )
+             return true;
 
-        return canPerformStaging(dn, fqanStr);
-    }
+         if ( !_stageConfigFile.exists() ) {
+             //if file does not exist, staging is denied for all users
+             return false;
+         }
 
-    /**
-    * Check whether staging is allowed for the user with given DN and FQAN.
-    *
-    * @param  dn user's Distinguished Name
-    * @param  fqan user's Fully Qualified Attribute Name
-    * @return true if the user is allowed to perform staging
-    * @throws PatternSyntaxException
-    * @throws IOException
-    */
-    public boolean canPerformStaging(String dn, String fqan) throws PatternSyntaxException, IOException {
+         if ( fileNeedsRereading() )
+             rereadConfig();
 
-        if ( !_isEnabled )
-            return true;
+         if (fqan==null) fqan="";
 
-        if ( !_stageConfigFile.exists() ) {
-            //if file does not exist, staging is denied for all users
-            return false;
-        }
+         return userMatchesPredicates(dn, fqan, storeUnit);
+     }
 
-        if ( fileNeedsRereading() )
-            rereadConfig();
+     /**
+      * Reread the contents of the configuration file.
+      * @throws IOException
+      * @throws PatternSyntaxException
+      */
+      void rereadConfig() throws PatternSyntaxException, IOException {
+          try {
+              _fileWriteLock.lock();
+              if ( fileNeedsRereading() ) {
+                  BufferedReader reader = new BufferedReader(new FileReader(_stageConfigFile));
+                  try {
+                       _regexList = readStageConfigFile(reader);
+                       _lastTimeReadingStageConfigFile = System.currentTimeMillis();
+                  } finally {
+                       reader.close();
+                  }
+              }
+          } finally {
+              _fileWriteLock.unlock();
+          }
+      }
 
-        if (fqan==null) fqan="";
+      /**
+       * Check whether the stageConfigFile needs rereading.
+       *
+       * @return true if the file should be reread.
+       */
+       boolean fileNeedsRereading() {
+           long modificationTimeStageConfigFile;
+           modificationTimeStageConfigFile = _stageConfigFile.lastModified();
 
-        return userMatchesPredicates(dn, fqan);
-    }
+           return modificationTimeStageConfigFile > _lastTimeReadingStageConfigFile;
+       }
 
-    /**
-    * Reread the contents of the configuration file.
-    * @throws IOException
-    * @throws PatternSyntaxException
-    */
-    void rereadConfig() throws PatternSyntaxException, IOException {
-        try {
-            _fileWriteLock.lock();
-            if ( fileNeedsRereading() ) {
-                BufferedReader reader = new BufferedReader(new FileReader(_stageConfigFile));
-                try {
-                     _regexList = readStageConfigFile(reader);
-                     _lastTimeReadingStageConfigFile = System.currentTimeMillis();
-                } finally {
-                   reader.close();
+      /**
+       * Check whether the user matches predicates, that is, whether the user is in the
+       * list of authorized users that are allowed to perform staging of the object in the
+       * given storage group.
+       *
+       * @param dn user's Distinguished Name
+       * @param fqan user's FQAN as a String
+       * @param storeUnit object's storage unit
+       * @return true if the user and object match predicates
+       */
+       boolean userMatchesPredicates(String dn, String fqanStr, String storeUnit) {
+           try {
+               _fileReadLock.lock();
+               for (Pattern[] regexLine : _regexList) {
+                   if ( regexLine[0].matcher(dn).matches() ) {
+
+                       if ( regexLine[1] == null ) {
+                           return true; // line contains only DN; DN match -> STAGE allowed
+                       } else if ( regexLine[1].matcher(fqanStr).matches() && (regexLine[2] == null || regexLine[2].matcher(storeUnit).matches()) ) {
+                           return true;
+                           //two cases covered here:
+                           //line contains DN and FQAN; DN and FQAN match -> STAGE allowed
+                           //line contains DN, FQAN, storeUnit; DN, FQAN, storeUnit match -> STAGE allowed
+                       }
+                   }
+               }
+           } finally {
+               _fileReadLock.unlock();
+           }
+           return false;
+       }
+
+       /**
+        * Read configuration file and create list of compiled patterns, containing DNs and FQANs(optionally)
+        * of the users that are allowed to perform staging,
+        * as well as storage group of the object to be staged (optionally).
+        *
+        * @param  reader
+        * @return list of compiled patterns
+        * @throws IOException
+        * @throws PatternSyntaxException
+        */
+        List<Pattern[]> readStageConfigFile(BufferedReader reader) throws IOException, PatternSyntaxException {
+
+            String line = null;
+            Pattern linePattern = Pattern.compile("\"([^\"]*)\"([ \t]+\"([^\"]*)\"([ \t]+\"([^\"]*)\")?)?");
+            Matcher matcherLine;
+
+            List<Pattern[]> regexList = new ArrayList<Pattern[]>();
+
+            while ((line = reader.readLine()) != null) {
+
+                line = line.trim();
+                matcherLine = linePattern.matcher(line);
+                if ( line.startsWith("#") || line.isEmpty() ) { //commented or empty line
+                    continue;
                 }
-            }
-        } finally {
-            _fileWriteLock.unlock();
-        }
-    }
 
-    /**
-    * Check whether the stageConfigFile needs rereading.
-    *
-    * @return true if the file should be reread.
-    */
-    boolean fileNeedsRereading() {
-        Long modificationTimeStageConfigFile;
-        modificationTimeStageConfigFile = _stageConfigFile.lastModified();
+                if ( !matcherLine.matches() )
+                    continue;
 
-        return modificationTimeStageConfigFile > _lastTimeReadingStageConfigFile;
-    }
+                Pattern[] arrayPattern = new Pattern[3];
 
-    /**
-    * Check whether the user matches predicates, that is, whether the user is in the
-    * list of authorized users that are allowed to perform staging.
-    *
-    * @param dn user's Distinguished Name
-    * @param fqan user's FQAN as a String
-    * @return true if the user matches predicates.
-    */
-    boolean userMatchesPredicates(String dn, String fqanStr) {
-        try {
-            _fileReadLock.lock();
-            for (Pattern[] regexLine : _regexList) {
-                if ( regexLine[0].matcher(dn).matches() ) {
+                String matchDN = matcherLine.group(1);
+                String matchFQAN = matcherLine.group(3);
+                String matchStoreUnit = matcherLine.group(5);
 
-                    if ( regexLine[1] == null ) {
-                        return true; // DN match and FQAN does not exist -> STAGE allowed
-                    } else if ( regexLine[1].matcher(fqanStr).matches() ) {
-                        return true; // DN and FQAN match -> STAGE allowed
+                if ( matchFQAN != null ) {
+                    if (matchStoreUnit != null) { //line: DN, FQAN, StoreUnit
+                        arrayPattern[0] = Pattern.compile(matchDN);
+                        arrayPattern[1] = Pattern.compile(matchFQAN);
+                        arrayPattern[2] = Pattern.compile(matchStoreUnit);
+                        regexList.add(arrayPattern);
+                    } else { //line: DN, FQAN
+                        arrayPattern[0] = Pattern.compile(matchDN);
+                        arrayPattern[1] = Pattern.compile(matchFQAN);
+                        arrayPattern[2] = null;
+                        regexList.add(arrayPattern);
                     }
+                } else { //line: DN
+                    arrayPattern[0] = Pattern.compile(matchDN);
+                    arrayPattern[1] = null;
+                    arrayPattern[2] = null;
+                    regexList.add(arrayPattern);
                 }
             }
-        } finally {
-            _fileReadLock.unlock();
+            return regexList;
         }
-        return false;
-    }
-
-    /**
-    * Read configuration file and create list of compiled patterns, containing DNs and FQANs
-    * of the users that are allowed to perform staging.
-    *
-    * @param  reader
-    * @return list of compiled patterns
-    * @throws IOException
-    * @throws PatternSyntaxException
-    */
-    List<Pattern[]> readStageConfigFile(BufferedReader reader) throws IOException, PatternSyntaxException {
-
-        String line = null;
-        Pattern linePattern = Pattern.compile("\"([^\"]*)\"([ \t]+\"([^\"]*)\")?");
-        Matcher matcherLine;
-
-        List<Pattern[]> regexList = new ArrayList<Pattern[]>();
-
-        while ((line = reader.readLine()) != null) {
-
-            line = line.trim();
-            matcherLine = linePattern.matcher(line);
-            if ( line.startsWith("#") || line.isEmpty() ) { //commented or empty line
-                continue;
-            }
-
-            if ( !matcherLine.matches() )
-                continue;
-
-            Pattern[] arrayPattern = new Pattern[2];
-
-            String matchDN = matcherLine.group(1);
-            String matchFQAN = matcherLine.group(3);
-
-            if ( matchFQAN != null ) {
-                arrayPattern[0] = Pattern.compile(matchDN);
-                arrayPattern[1] = Pattern.compile(matchFQAN);
-                regexList.add(arrayPattern);
-            } else {
-                arrayPattern[0] = Pattern.compile(matcherLine.group(1));
-                arrayPattern[1] = null;
-                regexList.add(arrayPattern);
-            }
-        }
-        return regexList;
-    }
 
 }
