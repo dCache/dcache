@@ -18,6 +18,10 @@ import java.util.regex.Matcher;
 public class FQAN implements java.io.Serializable {
 
     static final long serialVersionUID = -2212735007788920585L;
+
+    private static final String NULL_CAPABILITY = "/Capability=NULL";
+    private static final String NULL_ROLE = "/Role=NULL";
+
     private static Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
     private static Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
     private static Pattern p3 = Pattern.compile("(.*)()/Capability=(.*)");
@@ -26,12 +30,45 @@ public class FQAN implements java.io.Serializable {
 
     //immutable
     private final String fqan;
+
     /** Creates a new instance of FQAN */
     public FQAN(String fqan) {
         if(fqan ==null ){
             throw new IllegalArgumentException("fqan is null");
         }
+
+        fqan = filterOutNullCapability(fqan);
+        fqan = filterOutNullRole( fqan);
+
         this.fqan = fqan;
+    }
+
+    private static String filterOutNullCapability( String originalFqan) {
+        String filteredFqan;
+
+        if( originalFqan.endsWith( NULL_CAPABILITY)) {
+            int newLength = originalFqan.length() - NULL_CAPABILITY.length();
+            filteredFqan = originalFqan.substring( 0, newLength);
+        } else {
+            filteredFqan = originalFqan;
+        }
+
+        return filteredFqan;
+    }
+
+    private static String filterOutNullRole( String originalFqan) {
+        int index = originalFqan.indexOf( NULL_ROLE);
+
+        if( index == -1) {
+            return originalFqan;
+        }
+
+        StringBuilder filteredFqan = new StringBuilder();
+
+        filteredFqan.append( originalFqan.substring( 0, index));
+        filteredFqan.append( originalFqan.substring( index + NULL_ROLE.length()));
+
+        return filteredFqan.toString();
     }
 
     @Override

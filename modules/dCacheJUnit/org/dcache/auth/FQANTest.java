@@ -200,6 +200,110 @@ public class FQANTest {
         }
     }
 
+
+    /*
+     * TEST for Role=NULL and Capability=NULL
+     */
+
+    @Test
+    public void testRoleNullAndNoCapabilityEqualsWithoutRole() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( EnumSet.of( FqanElements.ROLE, FqanElements.CAPABILITY));
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            FQAN fqanWithNullRole = new FQAN(fqan.toString() + "/Role=NULL");
+            assertTrue("Testing " + fqan + " equals " + fqanWithNullRole, fqan.equals( fqanWithNullRole));
+            assertTrue("Testing " + fqanWithNullRole + " equals " + fqan, fqanWithNullRole.equals( fqan));
+        }
+    }
+
+    @Test
+    public void testRoleNullAndCapabilityEqualsWithoutRole() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( EnumSet.of( FqanElements.ROLE, FqanElements.CAPABILITY));
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            String capabilitySuffix = "/Capability=" + CAPABILITY_NAME;
+
+            FQAN fqanWithoutNullRole = new FQAN(fqan + capabilitySuffix );
+            FQAN fqanWithNullRole = new FQAN(fqan + "/Role=NULL" + capabilitySuffix );
+            assertTrue("Testing " + fqanWithNullRole, fqanWithoutNullRole.equals( fqanWithNullRole));
+            assertTrue("Testing " + fqanWithNullRole, fqanWithNullRole.equals( fqanWithoutNullRole));
+        }
+    }
+
+    @Test
+    public void testCapabilityNullEqualsWithout() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( FqanElements.CAPABILITY);
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            FQAN fqanWithNullCapability = new FQAN(fqan.toString() + "/Capability=NULL");
+            assertTrue("Testing " + fqan, fqan.equals( fqanWithNullCapability));
+            assertTrue("Testing " + fqan, fqanWithNullCapability.equals( fqan));
+        }
+    }
+
+    @Test
+    public void testGetRoleForRoleNull() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( EnumSet.of( FqanElements.ROLE, FqanElements.CAPABILITY));
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            FQAN fqanWithNullRole = new FQAN(fqan.toString() + "/Role=NULL");
+            assertEquals("Checking " + fqanWithNullRole, "", fqanWithNullRole.getRole());
+        }
+    }
+
+    @Test
+    public void testGetCapabilityForCapabilityNull() {
+        FQAN[] fqansWithoutCapability =
+            buildFqanArrayWithNoneOf( FqanElements.CAPABILITY);
+
+        for(FQAN fqan : fqansWithoutCapability) {
+            FQAN fqanWithNullCapability = new FQAN(fqan + "/Capability=NULL");
+            assertEquals("Testing " + fqanWithNullCapability, "", fqanWithNullCapability.getCapability());
+        }
+    }
+
+    @Test
+    public void testToStringForRoleNullAndNoCapability() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( EnumSet.of( FqanElements.ROLE, FqanElements.CAPABILITY));
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            FQAN fqanWithNullRole = new FQAN(fqan.toString() + "/Role=NULL");
+            assertEquals("Testing " + fqan, fqan.toString(), fqanWithNullRole.toString());
+        }
+    }
+
+    @Test
+    public void testToStringForRoleNullAndSomeCapability() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( EnumSet.of( FqanElements.ROLE, FqanElements.CAPABILITY));
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            String capabilitySuffix = "/Capability=" + CAPABILITY_NAME;
+
+            FQAN fqanWithoutNullRole = new FQAN(fqan + capabilitySuffix );
+            FQAN fqanWithNullRole = new FQAN(fqan + "/Role=NULL" + capabilitySuffix );
+            assertEquals("Testing " + fqanWithoutNullRole, fqanWithoutNullRole.toString(), fqanWithNullRole.toString());
+        }
+    }
+
+    @Test
+    public void testToStringForCapabilityNull() {
+        FQAN[] fqansWithoutRoleOrCapability =
+            buildFqanArrayWithNoneOf( FqanElements.CAPABILITY);
+
+        for(FQAN fqan : fqansWithoutRoleOrCapability) {
+            FQAN fqanWithNullCapability = new FQAN(fqan.toString() + "/Capability=NULL");
+            assertEquals("Testing " + fqan, fqan.toString(), fqanWithNullCapability.toString());
+        }
+    }
+
+
+
     private void assertNoneEqual( FQAN[] others) {
         for( FQAN fqan1 : ALL_TYPES) {
             for( FQAN fqan2 : others) {
@@ -222,6 +326,11 @@ public class FQANTest {
     private static FQAN[] buildFqanArrayWithNoneOf( FqanElements allWithout) {
         return buildFqanArray( VO_NAME, GROUP_NAME, ROLE_NAME, CAPABILITY_NAME,
                 EnumSet.allOf( FqanElements.class), EnumSet.of( allWithout));
+    }
+
+    private static FQAN[] buildFqanArrayWithNoneOf( Set<FqanElements> allWithout) {
+        return buildFqanArray( VO_NAME, GROUP_NAME, ROLE_NAME, CAPABILITY_NAME,
+                EnumSet.allOf( FqanElements.class), allWithout);
     }
 
     private static FQAN[] buildFqanArrayWithOtherVo( String voName) {
