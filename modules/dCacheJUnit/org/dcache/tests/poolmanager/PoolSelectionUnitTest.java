@@ -6,8 +6,6 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +33,6 @@ public class PoolSelectionUnitTest {
     @Before
     public void setUp() throws Exception {
 
-        Logger.getLogger("logger.org.dcache.poolselection").setLevel(Level.DEBUG);
         // storage units
 
         _ci.command( new Args("psu create unit -store  h1:u1@osm" )  );

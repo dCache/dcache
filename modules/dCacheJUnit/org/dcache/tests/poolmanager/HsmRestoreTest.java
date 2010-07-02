@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.dcache.tests.cells.GenericMockCellHelper;
 import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
 import org.junit.After;

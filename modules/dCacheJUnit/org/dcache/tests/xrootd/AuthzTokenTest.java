@@ -3,8 +3,6 @@ package org.dcache.tests.xrootd;
 import java.security.GeneralSecurityException;
 import java.util.Iterator;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 import org.dcache.xrootd.security.plugins.tokenauthz.CorruptedEnvelopeException;
 import org.dcache.xrootd.security.plugins.tokenauthz.Envelope;
 import org.junit.Before;
@@ -14,17 +12,12 @@ import static org.junit.Assert.*;
 
 public class AuthzTokenTest
 {
-    static Logger logger = Logger.getLogger(AuthzTokenTest.class);
-
     private String token448Bit;
     private String token128Bit;
 
     @Before
     public void setUp() throws Exception
     {
-        BasicConfigurator.configure();
-
-
         token128Bit =
             "-----BEGIN SEALED CIPHER-----\n"+
             "4rnOjKXH9ATE+4A7-zzi8IuxrAwhg7uts5a-LJ8QDCiNke1Pkw4IgUXIsUu1e9acgdLcnuthwFRk\n"+
