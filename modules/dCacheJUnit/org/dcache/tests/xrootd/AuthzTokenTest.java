@@ -3,8 +3,6 @@ package org.dcache.tests.xrootd;
 import java.security.GeneralSecurityException;
 import java.util.Iterator;
 
-import junit.framework.TestCase;
-
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.dcache.xrootd.security.plugins.tokenauthz.CorruptedEnvelopeException;
@@ -12,17 +10,18 @@ import org.dcache.xrootd.security.plugins.tokenauthz.Envelope;
 import org.junit.Before;
 import org.junit.Test;
 
-public class AuthzTokenTest extends TestCase {
+import static org.junit.Assert.*;
 
+public class AuthzTokenTest
+{
     static Logger logger = Logger.getLogger(AuthzTokenTest.class);
 
     private String token448Bit;
     private String token128Bit;
 
     @Before
-    protected void setUp() throws Exception {
-        super.setUp();
-
+    public void setUp() throws Exception
+    {
         BasicConfigurator.configure();
 
 
@@ -99,59 +98,51 @@ public class AuthzTokenTest extends TestCase {
     //	}
 
     @Test
-    public void testEnvelope() {
+    public void testEnvelope()
+        throws CorruptedEnvelopeException, GeneralSecurityException
+    {
+        String envString =
+            "-----BEGIN ENVELOPE-----\n"+
+            "CREATOR:     Martin.Radicke\n"+
+            "UNIXTIME:    1156155563\n"+
+            "DATE:        Mon Aug 21 12:19:23 2006\n"+
+            "EXPIRES:     0\n"+
+            "EXPDATE:     never\n"+
+            "CERTIFICATE:\n"+
+            "-----BEGIN ENVELOPE BODY-----\n"+
+            "<authz>\n"+
+            "	<file>\n"+
+            "		<lfn>test_1</lfn>\n"+
+            "		<access>read</access>\n"+
+            "		<turl>root://localhost:1234/pnfs/desy.de/data/test1.root</turl>\n"+
+            "	</file>\n"+
+            "	<file>\n"+
+            "		<lfn>test2</lfn>\n"+
+            "		<access>write-once</access>\n"+
+            "		<turl>root://localhost:1234/pnfs/desy.de/data/test2.root</turl>\n"+
+            "	</file>\n"+
+            "</authz>\n"+
+            "\n"+
+            "-----END ENVELOPE BODY-----\n"+
+            "-----END ENVELOPE-----\n";
 
-        try {
-            String envString =
-                "-----BEGIN ENVELOPE-----\n"+
-                "CREATOR:     Martin.Radicke\n"+
-                "UNIXTIME:    1156155563\n"+
-                "DATE:        Mon Aug 21 12:19:23 2006\n"+
-                "EXPIRES:     0\n"+
-                "EXPDATE:     never\n"+
-                "CERTIFICATE:\n"+
-                "-----BEGIN ENVELOPE BODY-----\n"+
-                "<authz>\n"+
-                "	<file>\n"+
-                "		<lfn>test_1</lfn>\n"+
-                "		<access>read</access>\n"+
-                "		<turl>root://localhost:1234/pnfs/desy.de/data/test1.root</turl>\n"+
-                "	</file>\n"+
-                "	<file>\n"+
-                "		<lfn>test2</lfn>\n"+
-                "		<access>write-once</access>\n"+
-                "		<turl>root://localhost:1234/pnfs/desy.de/data/test2.root</turl>\n"+
-                "	</file>\n"+
-                "</authz>\n"+
-                "\n"+
-                "-----END ENVELOPE BODY-----\n"+
-                "-----END ENVELOPE-----\n";
+        Envelope env = new Envelope(envString);
+        assertTrue(env.getExpirationTime() == 0);
+        assertTrue(env.getExpirationDate() == null);
+        assertTrue(env.isValid());
 
-            Envelope env = new Envelope(envString);
-            assertTrue(env.getExpirationTime() == 0);
-            assertTrue(env.getExpirationDate() == null);
-            assertTrue(env.isValid());
-
-            int fileNumber = 0;
-            for (Iterator it = env.getFiles(); it.hasNext();fileNumber++) {
-                it.next();
-            }
-            assertTrue(fileNumber == 2);
-
-
-
-        } catch (CorruptedEnvelopeException e) {
-            logger.error(e.getMessage());
-            e.printStackTrace();
-            assertTrue(false);
-        } catch (GeneralSecurityException e) {
-            logger.error(e.getMessage());
-            e.printStackTrace();
-            assertTrue(false);
+        int fileNumber = 0;
+        for (Iterator it = env.getFiles(); it.hasNext();fileNumber++) {
+            it.next();
         }
+        assertTrue(fileNumber == 2);
+    }
 
-
-        String	envString =
+    @Test(expected=GeneralSecurityException.class)
+    public void testEnvelopeExpired()
+        throws CorruptedEnvelopeException, GeneralSecurityException
+    {
+        String envString =
             "-----BEGIN ENVELOPE-----\n"+
             "CREATOR:     Martin.Radicke\n"+
             "UNIXTIME:    1156176175\n"+
@@ -176,18 +167,7 @@ public class AuthzTokenTest extends TestCase {
             "-----END ENVELOPE BODY-----\n"+
             "-----END ENVELOPE-----\n";
 
-        try {
-
-            new Envelope(envString);
-
-        } catch (CorruptedEnvelopeException e) {
-            logger.error(e.getMessage());
-            e.printStackTrace();
-            assertTrue(false);
-        } catch (GeneralSecurityException e) {
-            logger.debug(e.getMessage() +" - test ok!");
-            assertFalse(false);
-        }
+        new Envelope(envString);
     }
 
 }
