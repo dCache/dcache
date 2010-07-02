@@ -37,7 +37,31 @@ public class FQANTest {
 
     private static final String EMPTY_STRING = "";
 
-    private static final FQAN ALL_TYPES[] = buildFqanArrayOfAllTypes();
+    private static final FQAN[] ALL_TYPES = buildFqanArrayOfAllTypes();
+
+    private static final String[] INVALID_FQANS = {
+        null,                            // null isn't valid
+        VO_NAME,                         // lack of initial '/'
+        "/-" + VO_NAME,                  // illegal initial character of VO
+        "/0" + VO_NAME,                  //    "       "        "      "  "
+        "/A" + VO_NAME,                  //    "       "        "      "  "
+        "/" + VO_NAME + "-",             // illegal final character of VO
+        "/" + VO_NAME + ".",             //    "      "        "     "  "
+        "/" + VO_NAME + "/",             // empty group not allowed
+        "/" + VO_NAME + "/=" + GROUP_NAME,          // illegal character in (sub)group
+        "/" + VO_NAME + "/" + GROUP_NAME + "=",     // illegal character in (sub)group
+        "/" + VO_NAME + "/" + GROUP_NAME + "=NULL", // illegal character in (sub)group
+        "/" + VO_NAME + "/Role=",                   // empty role not allowed
+        "/" + VO_NAME + "/Role=" + ROLE_NAME + " ", // illegal character in role
+        "/" + VO_NAME + "/Role= " + ROLE_NAME,      // illegal character in role
+        "/" + VO_NAME + "/Role=" + ROLE_NAME + ".", // illegal character in role
+        "/" + VO_NAME + "/Role=." + ROLE_NAME,      // illegal character in role
+        "/" + VO_NAME + "/Capability=",             // empty capability not allowed
+        "/" + VO_NAME + "/Capability=" + CAPABILITY_NAME + " ", // illegal character in capability
+        "/" + VO_NAME + "/Capability= " + CAPABILITY_NAME,      // illegal character in capability
+        "/" + VO_NAME + "/Capability=" + CAPABILITY_NAME + ".", // illegal character in capability
+        "/" + VO_NAME + "/Capability=." + CAPABILITY_NAME,      // illegal character in capability
+    };
 
     @Test(expected=IllegalArgumentException.class)
     public void testCreateWithNullNotAllowed() {
@@ -302,6 +326,19 @@ public class FQANTest {
         }
     }
 
+    @Test
+    public void testIsValidForValidFqans() {
+        for( FQAN fqan : ALL_TYPES) {
+            assertTrue( "Checking " + fqan + " is valid", FQAN.isValid( fqan.toString()));
+        }
+    }
+
+    @Test
+    public void testIsValidForInvalidFqans() {
+        for( String invalidFqan : INVALID_FQANS) {
+            assertFalse( "Checking " + invalidFqan + " is invalid", FQAN.isValid( invalidFqan));
+        }
+    }
 
 
     private void assertNoneEqual( FQAN[] others) {
