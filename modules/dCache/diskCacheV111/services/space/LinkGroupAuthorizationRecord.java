@@ -11,14 +11,14 @@ public class LinkGroupAuthorizationRecord {
 	private String linkGroupName;
 	List<FQAN> fqans;
 
-	
-	public LinkGroupAuthorizationRecord(String linkGroupName, 
-				 List<FQAN>  fqans) { 
+
+	public LinkGroupAuthorizationRecord(String linkGroupName,
+				 List<FQAN>  fqans) {
 		this.linkGroupName=linkGroupName;
 		this.fqans = fqans;
 	}
 
-	public String toString() { 
+    public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(getLinkGroupName());
                 for(FQAN fqan:fqans) {
@@ -26,7 +26,7 @@ public class LinkGroupAuthorizationRecord {
                     sb.append(fqan);
                 }
 		return sb.toString();
-						  
+
 	}
 
     public String getLinkGroupName() {
@@ -36,12 +36,12 @@ public class LinkGroupAuthorizationRecord {
     public List<FQAN>  getFqans() {
         return fqans;
     }
-    
+
     private static final FQAN[] zerro = new FQAN[0];
     public FQAN[]  getFqanArray() {
         return fqans.toArray(zerro);
     }
-	
+
 }
 
 
