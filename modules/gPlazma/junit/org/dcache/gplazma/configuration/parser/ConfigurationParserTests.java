@@ -11,13 +11,15 @@ import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.junit.Before;
 import org.junit.Test;
 import java.util.List;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author timur
  */
 public class ConfigurationParserTests {
-    private static final Logger logger = Logger.getLogger(ConfigurationParserTests.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfigurationParserTests.class);
 
     private static final String PAMConfigParserFactory =
             "org.dcache.gplazma.configuration.parser.DefaultConfigurationParserFactory";

@@ -24,12 +24,13 @@ import java.net.InetAddress;
 import java.util.List;
 import java.text.ParseException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.dcache.util.NetworkUtils;
 
 public class HttpProtocol_1 implements MoverProtocol
 {
-    public static final Logger _log = Logger.getLogger(HttpProtocol_1.class);
+    public static final Logger _log = LoggerFactory.getLogger(HttpProtocol_1.class);
 
     public static final int READ   =  1;
     public static final int WRITE  =  2;

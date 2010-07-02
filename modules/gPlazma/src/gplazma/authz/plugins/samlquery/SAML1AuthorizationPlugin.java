@@ -1,9 +1,7 @@
 package gplazma.authz.plugins.samlquery;
 
-import org.apache.log4j.Appender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.ConsoleAppender;
 import org.opensciencegrid.authz.client.PRIMAAuthzModule;
 import org.opensciencegrid.authz.common.LocalId;
 
