@@ -3967,17 +3967,7 @@ public final class Manager
 				LinkGroupAuthorizationRecord record =
 					linkGroupAuthorizationFile.getLinkGroupAuthorizationRecord(linkGroupName);
 				if(record != null) {
-					FQAN[] fqans = record.getFqanArray();
-					if(fqans != null  && fqans.length >0) {
-						int vos_length = fqans.length;
-						vos = new VOInfo[vos_length];
-						for(int j = 0; j<fqans.length ; ++j) {
-						    FQAN fqan = fqans[j];
-						    String voRole = fqan.hasRole() ? fqan.getRole() : "*";
-						    vos[j] = new VOInfo(fqan.getGroup(), voRole);
-						}
-
-					}
+					vos = record.getVOInfoArray();
 				}
 			}
 			try {

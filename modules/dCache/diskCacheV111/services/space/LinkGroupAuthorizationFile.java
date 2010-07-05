@@ -2,9 +2,10 @@
 package diskCacheV111.services.space;
 import java.util.*;
 import java.io.*;
-import java.lang.*;
 import java.text.ParseException;
 import org.dcache.auth.FQAN;
+
+import diskCacheV111.util.VOInfo;
 
 
 public class LinkGroupAuthorizationFile  {
@@ -58,7 +59,7 @@ public class LinkGroupAuthorizationFile  {
 		String line;
                 int state = OUTSIDE_STATE;
                 String linkGroupName = null;
-                List<FQAN> fqans = null;
+                List<VOInfo> voinfos = null;
 		int icount=0;
 		while((line = reader.readLine()) != null) {
 			icount++;
@@ -78,22 +79,22 @@ public class LinkGroupAuthorizationFile  {
                             }
                             state = LINKGROUP_STATE;
                             linkGroupName = st.nextToken();
-                            fqans = new ArrayList<FQAN>();
+                            voinfos = new ArrayList<VOInfo>();
                             continue;
                         }
                         else if(state == LINKGROUP_STATE ) {
                             if(line.length() == 0) {
                                 LinkGroupAuthorizationRecord record =
                                     new LinkGroupAuthorizationRecord(
-                                    linkGroupName, fqans);
+                                    linkGroupName, voinfos);
                                 records.put(linkGroupName,record);
                                 state = OUTSIDE_STATE;
-                                fqans =null;
+                                voinfos =null;
                                 linkGroupName = null;
                                 continue;
                             }
-                            FQAN fqan = new FQAN(line);
-                            fqans.add(fqan);
+                            VOInfo voinfo = new VOInfo(line);
+                            voinfos.add(voinfo);
                             continue;
 
                         }
@@ -102,7 +103,7 @@ public class LinkGroupAuthorizationFile  {
                 if(state == LINKGROUP_STATE ) {
                     LinkGroupAuthorizationRecord record =
                         new LinkGroupAuthorizationRecord(
-                        linkGroupName, fqans);
+                        linkGroupName, voinfos);
                     records.put(linkGroupName,record);
                 }
         }
