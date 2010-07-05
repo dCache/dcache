@@ -55,7 +55,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
         for(VOInfo voInfo:voInfos) {
             String userGroup = authRecord.getVoGroup();
             String userRole = authRecord.getVoRole();
-            if (VOInfo.match(voInfo,userGroup,userRole)) {
+            if (voInfo.match(userGroup,userRole)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
                                  " have permission to reserve ");
@@ -68,7 +68,7 @@ public class SimpleSpaceManagerAuthorizationPolicy
                 FQAN voAttribute = new FQAN(groupList.getAttribute());
                 userGroup = voAttribute.getGroup();
                 userRole = voAttribute.getRole();
-                if (VOInfo.match(voInfo,userGroup,userRole)) {
+                if (voInfo.match(userGroup,userRole)) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("userGroup : "+userGroup+", userRole : "+userRole+
                                      " have permission to reserve ");
