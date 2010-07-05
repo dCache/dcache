@@ -30,9 +30,6 @@ public final class LsFileRequest extends FileRequest {
                 LoggerFactory.getLogger(LsFileRequest.class);
         private org.apache.axis.types.URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
-        private int recursionDepth;
-        private boolean longFormat;
-
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
                 new Comparator<FileMetaData>() {
                 public int compare(FileMetaData f1,
@@ -43,19 +40,17 @@ public final class LsFileRequest extends FileRequest {
                 }
         };
 
-        public LsFileRequest(LsRequest request,
+        public LsFileRequest(Long requestId,
                              Long  requestCredentalId,
                              org.apache.axis.types.URI url,
                              long lifetime,
                              int maxNumberOfRetries) throws Exception {
 
-                super(request.getId(),
+                super(requestId,
                       requestCredentalId,
                       lifetime,
                       maxNumberOfRetries);
                 this.surl=url;
-                recursionDepth=request.getNumOfLevels();
-                longFormat=request.getLongFormat();
         }
 
         public LsFileRequest(
@@ -96,13 +91,6 @@ public final class LsFileRequest extends FileRequest {
                 }
                 catch(org.apache.axis.types.URI.MalformedURIException murle) {
                         throw new IllegalArgumentException(murle.toString());
-                }
-                try {
-                        this.recursionDepth=((LsRequest)getRequest()).getNumOfLevels();
-                        this.longFormat=((LsRequest)getRequest()).getLongFormat();
-                }
-                catch (Exception e){
-                        throw new RuntimeException("Got exception attempting to access container request "+e.getMessage());
                 }
         }
 
@@ -158,11 +146,14 @@ public final class LsFileRequest extends FileRequest {
                         if (logger.isDebugEnabled()){
                                 t0=System.currentTimeMillis();
                         }
+
                         metaDataPathDetail =
                                 getMetaDataPathDetail(path,
                                                       0,
                                                       parent.getOffset(),
-                                                      parent.getCount());
+                                                      parent.getCount(),
+                                                      parent.getNumOfLevels(),
+                                                      parent.getLongFormat());
                         if (logger.isDebugEnabled()) {
                                 logger.debug("LsFileRequest.run(), TOOK "+(System.currentTimeMillis()-t0));
                         }
@@ -283,19 +274,22 @@ public final class LsFileRequest extends FileRequest {
         public final TMetaDataPathDetail getMetaDataPathDetail(String path,
                                                                int depth,
                                                                long offset,
-                                                               long count)
+                                                               long count,
+                                                               int recursionDepth,
+                                                               boolean longFormat)
                 throws SRMException {
                 FileMetaData fmd = getStorage().getFileMetaData(getUser(),
                                                                 path,
                                                                 false);
-                TMetaDataPathDetail metaDataPathDetail=convertFileMetaDataToTMetaDataPathDetail(path,
-                                                                                                fmd,
-                                                                                                depth,
-                                                                                                longFormat);
+                TMetaDataPathDetail aMetaDataPathDetail=
+                        convertFileMetaDataToTMetaDataPathDetail(path,
+                                                                 fmd,
+                                                                 depth,
+                                                                 longFormat);
                 if(!((LsRequest)getRequest()).increaseResultsNumAndContinue()) {
-                        return metaDataPathDetail;
+                        return aMetaDataPathDetail;
                 }
-                if (fmd.isDirectory && depth<recursionDepth) {
+                if (fmd.isDirectory && depth< recursionDepth) {
                         if (recursionDepth==1) {
                                 //
                                 // for simplicity break up code into two blocks - one block
@@ -304,24 +298,28 @@ public final class LsFileRequest extends FileRequest {
                                 // there is a bit of code duplication, but code is
                                 // relatively straightforward this way
                                 //
-                                 getMetaDataPathDetail(metaDataPathDetail,
+                                 getMetaDataPathDetail(aMetaDataPathDetail,
                                                        offset,
-                                                       count);
+                                                       count,
+                                                       longFormat);
                         }
                         else {
-                                getRecursiveMetaDataPathDetail(metaDataPathDetail,
+                                getRecursiveMetaDataPathDetail(aMetaDataPathDetail,
                                                                fmd,
                                                                depth,
                                                                offset,
-                                                               count);
+                                                               count,
+                                                               recursionDepth,
+                                                               longFormat);
                         }
                 }
-                return metaDataPathDetail;
+                return aMetaDataPathDetail;
         }
 
         public final void getMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
                                                 long offset,
-                                                long count)
+                                                long count,
+                                                boolean longFormat)
                 throws SRMException {
                 List<FileMetaData> directoryList;
                 //
@@ -339,10 +337,11 @@ public final class LsFileRequest extends FileRequest {
                         new LinkedList<TMetaDataPathDetail>();
                 for (FileMetaData md : directoryList) {
                         String subpath = md.SURL;
-                        TMetaDataPathDetail dirMetaDataPathDetail=convertFileMetaDataToTMetaDataPathDetail(subpath,
-                                                                                                           md,
-                                                                                                           1,
-                                                                                                           longFormat);
+                        TMetaDataPathDetail dirMetaDataPathDetail=
+                                convertFileMetaDataToTMetaDataPathDetail(subpath,
+                                                                         md,
+                                                                         1,
+                                                                         longFormat);
                         if (!((LsRequest)getRequest()).shouldSkipThisRecord()) {
                                 metadataPathDetailList.add(dirMetaDataPathDetail);
                                 try {
@@ -368,9 +367,11 @@ public final class LsFileRequest extends FileRequest {
                                                          final FileMetaData fmd,
                                                          int depth,
                                                          long offset,
-                                                         long count)
+                                                         long count,
+                                                         int recursionDepth,
+                                                         boolean longFormat)
                 throws SRMException {
-                if (!fmd.isDirectory || depth>=recursionDepth)  return;
+                if (!fmd.isDirectory || depth >= recursionDepth)  return;
                 List<FileMetaData> directoryList;
                 //
                 // cannot use offset or count in this case since
@@ -415,10 +416,11 @@ public final class LsFileRequest extends FileRequest {
                         String subpath = md.SURL;
                         TMetaDataPathDetail dirMetaDataPathDetail;
                         if (offset==0) {
-                                dirMetaDataPathDetail=convertFileMetaDataToTMetaDataPathDetail(subpath,
-                                                                                               md,
-                                                                                               depth,
-                                                                                               longFormat);
+                                dirMetaDataPathDetail=
+                                        convertFileMetaDataToTMetaDataPathDetail(subpath,
+                                                                                 md,
+                                                                                 depth,
+                                                                                 longFormat);
                         }
                         else {
                                 FileMetaData fileMetaData=md;
@@ -430,8 +432,7 @@ public final class LsFileRequest extends FileRequest {
                                         }
                                         dirMetaDataPathDetail=convertFileMetaDataToTMetaDataPathDetail(subpath,
                                                                                                        fileMetaData,
-                                                                                                       depth,
-                                                                                                       longFormat);
+                                                                                                       depth, longFormat);
                                 }
                                 else {
                                         //
@@ -466,7 +467,9 @@ public final class LsFileRequest extends FileRequest {
                                                                        md,
                                                                        depth+1,
                                                                        offset,
-                                                                       count);
+                                                                       count,
+                                                                       recursionDepth,
+                                                                       longFormat);
                                 }
                                 catch (SRMException e) {
                                         TReturnStatus rs = new TReturnStatus();
