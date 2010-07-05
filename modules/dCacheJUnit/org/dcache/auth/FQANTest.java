@@ -42,12 +42,14 @@ public class FQANTest {
     private static final String[] INVALID_FQANS = {
         null,                            // null isn't valid
         VO_NAME,                         // lack of initial '/'
+        "/*",                            // illegal character of VO
         "/-" + VO_NAME,                  // illegal initial character of VO
         "/0" + VO_NAME,                  //    "       "        "      "  "
         "/A" + VO_NAME,                  //    "       "        "      "  "
         "/" + VO_NAME + "-",             // illegal final character of VO
         "/" + VO_NAME + ".",             //    "      "        "     "  "
         "/" + VO_NAME + "/",             // empty group not allowed
+        "/" + VO_NAME + "/*",            // illegal character in (sub)group
         "/" + VO_NAME + "/=" + GROUP_NAME,          // illegal character in (sub)group
         "/" + VO_NAME + "/" + GROUP_NAME + "=",     // illegal character in (sub)group
         "/" + VO_NAME + "/" + GROUP_NAME + "=NULL", // illegal character in (sub)group
@@ -56,6 +58,7 @@ public class FQANTest {
         "/" + VO_NAME + "/Role= " + ROLE_NAME,      // illegal character in role
         "/" + VO_NAME + "/Role=" + ROLE_NAME + ".", // illegal character in role
         "/" + VO_NAME + "/Role=." + ROLE_NAME,      // illegal character in role
+        "/" + VO_NAME + "/Role=*",                  // illegal character in role
         "/" + VO_NAME + "/Capability=",             // empty capability not allowed
         "/" + VO_NAME + "/Capability=" + CAPABILITY_NAME + " ", // illegal character in capability
         "/" + VO_NAME + "/Capability= " + CAPABILITY_NAME,      // illegal character in capability
