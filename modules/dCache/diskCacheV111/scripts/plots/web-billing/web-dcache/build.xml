@@ -45,6 +45,24 @@
         </javac>
     </target>
 
+    <target name="dist" depends="all" description="Build tar files">
+	    <!--	<tar destfile="../web-dcache.tar.gz" basedir=".." includes="web-dcache/**" compression="gzip" /> -->
+	<tar destfile="../plots.tar" basedir=".." includes="lps/**" compression="none" />
+	<exec dir='..' executable="wget">
+	    <arg value="--no-check-certificate" />
+            <arg value="--no-verbose" />
+            <arg value="https://plone4.fnal.gov/P0/DCache/groups/dcache_dev/webdcache/lps.tgz" />
+	</exec>
+	<copy todir="..">
+            <fileset dir="../../../../../../external/jpox">
+                <include name="postgresql*.jar" />
+            </fileset>
+        </copy>
+
+	<tar destfile="../web-dcache.src.tar.gz" basedir=".." includes="lps.tgz plots.tar web-dcache/** postgresql*.jar" compression="gzip" />
+    </target>
+
+
     <target name="goodbye" unless="env.CATALINA_HOME">
       <fail message="FATAL: CATALINA_HOME is not set!"/>
     </target>
