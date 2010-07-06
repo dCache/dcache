@@ -241,7 +241,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
 		job.wlock();
         try {
-			State state = job.getState();						
+			State state = job.getState();
 			if(state != State.RESTORED &&
 			   state != State.PENDING &&
 			   state != State.ASYNCWAIT &&
@@ -461,7 +461,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	// this is supposed to be the only place that removes the jobs from
-	private void updatePriorityThreadQueue()  
+	private void updatePriorityThreadQueue()
             throws java.sql.SQLException, SRMInvalidRequestException {
 		while(true) {
 			Job job = null;
@@ -552,7 +552,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	// this is supposed to be the only place that removes the jobs from
-	private void updateThreadQueue() 
+	private void updateThreadQueue()
             throws java.sql.SQLException, SRMInvalidRequestException {
 
         while(true) {
@@ -658,7 +658,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         }
     }
 
-    private void updateReadyQueue()  
+    private void updateReadyQueue()
             throws java.sql.SQLException, SRMInvalidRequestException{
         while(true) {
 
@@ -710,7 +710,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
     private boolean notified;
 
-    
+
     private boolean threadQueue(Job job)
             throws  InterruptedException
     {
@@ -722,7 +722,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
     }
 
     private boolean priorityQueue(Job job)
-            throws  InterruptedException 
+            throws  InterruptedException
     {
             if( priorityThreadQueue.offer(job,0)) {
                 jobAddedToQueue();
@@ -782,7 +782,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                 logger.error(sqle.toString());
             }
             catch(Throwable t)
-            {              
+            {
                 logger.error("Sheduler(id="+getId()+
                         ") update thread caught an exception " +
                         "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",t);
@@ -795,9 +795,9 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
     private class JobWrapper implements Runnable {
         Job job;
-        boolean started = false;		
+        boolean started = false;
         public JobWrapper(Job job) {
-            this.job = job;       
+            this.job = job;
         }
 
         public synchronized void waitStartup() throws InterruptedException{
@@ -812,7 +812,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
             notifyAll();
         }
 
-        public void run() {        	
+        public void run() {
             JDC jdc = this.job.getJdc();
 
             if ( jdc != null )
@@ -1411,6 +1411,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
      */
     public void setMaxThreadQueueSize(int maxThreadQueueSize) {
         this.maxThreadQueueSize = maxThreadQueueSize;
+        threadQueue.setCapacity(maxThreadQueueSize);
+        priorityThreadQueue.setCapacity(maxThreadQueueSize);
     }
 
     /**
@@ -1491,6 +1493,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
      */
     public void setMaxReadyQueueSize(int maxReadyQueueSize) {
         this.maxReadyQueueSize = maxReadyQueueSize;
+        readyQueue.setCapacity(maxReadyQueueSize);
     }
 
     public String toString() {
