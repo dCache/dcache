@@ -2,18 +2,12 @@ package diskCacheV111.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
+import static diskCacheV111.util.SerializableUtils.assertSerialisationExpected;
+import static diskCacheV111.util.SerializableUtils.assertDeserialisationExpected;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import diskCacheV111.util.SerializableUtils;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,7 +27,6 @@ import org.junit.Test;
 public class PnfsIdTests {
 
     private static final String SERIALISED_DATA_STRING_PREFIX = "EXPECTED_ENCODED_SERIALISED_PNFSID_";
-    private static final int STRING_LINE_LENGTH = 61;
 
     private static final String CHIMERA_ID =
             "80D1B8B90CED30430608C58002811B3285FC";
@@ -223,7 +216,7 @@ public class PnfsIdTests {
     @Test
     public void testSimpleGetBytes() {
         byte[] bytes = _simplePnfsId.getBytes();
-        String encodedBytes = encode( bytes);
+        String encodedBytes = SerializableUtils.encode( bytes);
         String expected = PNFS_SIMPLE_ID.toLowerCase();
         assertEquals( "getBytes", expected, encodedBytes);
     }
@@ -231,7 +224,7 @@ public class PnfsIdTests {
     @Test
     public void testDomainGetBytes() {
         byte[] bytes = _domainPnfsId.getBytes();
-        String encodedBytes = encode( bytes);
+        String encodedBytes = SerializableUtils.encode( bytes);
         String expected = PNFS_SIMPLE_ID.toLowerCase();
         assertEquals( "getBytes", expected, encodedBytes);
     }
@@ -239,7 +232,7 @@ public class PnfsIdTests {
     @Test
     public void testChimeraGetBytes() {
         byte[] bytes = _chimeraId.getBytes();
-        String encodedBytes = encode( bytes);
+        String encodedBytes = SerializableUtils.encode( bytes);
         String expected = CHIMERA_ID.toLowerCase();
         assertEquals( "getBytes", expected, encodedBytes);
     }
@@ -366,21 +359,21 @@ public class PnfsIdTests {
     @Test
     public void testSimpleToBinPnfsId() {
         byte[] result = _simplePnfsId.toBinPnfsId();
-        String encodedResult = encode( result);
+        String encodedResult = SerializableUtils.encode( result);
         assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_PNFS, encodedResult);
     }
 
     @Test
     public void testDomainToBinPnfsId() {
         byte[] result = _domainPnfsId.toBinPnfsId();
-        String encodedResult = encode( result);
+        String encodedResult = SerializableUtils.encode( result);
         assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_PNFS, encodedResult);
     }
 
     @Test
     public void testChimeraToBinPnfsId() {
         byte[] result = _chimeraId.toBinPnfsId();
-        String encodedResult = encode( result);
+        String encodedResult = SerializableUtils.encode( result);
         assertEquals( "toBinPnfsId", ENCODED_TOBINPNFSID_CHIMERA, encodedResult);
     }
 
@@ -433,22 +426,22 @@ public class PnfsIdTests {
     @Ignore("Only needed when generating new expected serialisation data")
     @Test
     public void testEmitSimplePnfsSerialisation() throws IOException {
-        String serialised = serialiseAndEncodeObject( _simplePnfsId);
-        emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "SIMPLE_PNFS", serialised);
+        String serialised = SerializableUtils.serialiseAndEncodeObject( _simplePnfsId);
+        SerializableUtils.emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "SIMPLE_PNFS", serialised);
     }
 
     @Ignore("Only needed when generating new expected serialisation data")
     @Test
     public void testEmitDomainPnfsSerialisation() throws IOException {
-        String serialised = serialiseAndEncodeObject( _domainPnfsId);
-        emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "DOMAIN_PNFS", serialised);
+        String serialised = SerializableUtils.serialiseAndEncodeObject( _domainPnfsId);
+        SerializableUtils.emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "DOMAIN_PNFS", serialised);
     }
 
     @Ignore("Only needed when generating new expected serialisation data")
     @Test
     public void testEmitChimeraSerialisation() throws IOException {
-        String serialised = serialiseAndEncodeObject( _chimeraId);
-        emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "CHIMERA", serialised);
+        String serialised = SerializableUtils.serialiseAndEncodeObject( _chimeraId);
+        SerializableUtils.emitJavaStringDeclaration( SERIALISED_DATA_STRING_PREFIX + "CHIMERA", serialised);
     }
 
     @Test
@@ -474,147 +467,4 @@ public class PnfsIdTests {
             assertDeserialisationExpected( "deserialise chimera", _chimeraId,
                     serialisedData);
     }
-
-    /*
-     * SUPPORT METHODS
-     */
-
-    private void assertSerialisationExpected( String message,
-                                              String encodedExpected,
-                                              Object object) throws IOException {
-        String encodedResult = serialiseAndEncodeObject( object);
-        assertEquals( message, encodedExpected, encodedResult);
-    }
-
-    private String serialiseAndEncodeObject( Object object) throws IOException {
-        ByteArrayOutputStream storage = new ByteArrayOutputStream();
-        ObjectOutput objectOutput = new ObjectOutputStream( storage);
-        objectOutput.writeObject( object);
-        objectOutput.close();
-
-        return encode( storage.toByteArray());
-    }
-
-    private void assertDeserialisationExpected( String message,
-                                                PnfsId expectedObject,
-                                                String encodedSerialisedObject)
-            throws ClassNotFoundException, IOException {
-        byte[] serialisedData = decode( encodedSerialisedObject);
-        ByteArrayInputStream byteStream =
-                new ByteArrayInputStream( serialisedData);
-        ObjectInput objectInput = new ObjectInputStream( byteStream);
-
-        Object deserialisedObject = objectInput.readObject();
-
-        assertEquals( message, expectedObject, deserialisedObject);
-    }
-
-    @Test
-    public void testDecodeEncode() throws IOException {
-        assertDecodeEncodeEquals( EXPECTED_ENCODED_SERIALISED_SIMPLE_PNFS_PNFSID);
-        assertDecodeEncodeEquals( EXPECTED_ENCODED_SERIALISED_DOMAIN_PNFS_PNFSID);
-        assertDecodeEncodeEquals( EXPECTED_ENCODED_SERIALISED_CHIMERA_PNFSID);
-    }
-
-    @Test
-    public void testEncodeDecode() throws IOException {
-        byte[] rawSimple = decode( EXPECTED_ENCODED_SERIALISED_SIMPLE_PNFS_PNFSID);
-        assertEncodeDecodeEquals( rawSimple);
-        byte[] rawDomain = decode( EXPECTED_ENCODED_SERIALISED_DOMAIN_PNFS_PNFSID);
-        assertEncodeDecodeEquals( rawDomain);
-        byte[] rawChimera = decode( EXPECTED_ENCODED_SERIALISED_CHIMERA_PNFSID);
-        assertEncodeDecodeEquals( rawChimera);
-    }
-
-    private void assertEncodeDecodeEquals( byte[] data) {
-        String encodedData = encode( data);
-        byte[] decodedEncodedData = decode( encodedData);
-        assertArrayEquals(
-                "mismatch between data and decoded version of encoded data",
-                data, decodedEncodedData);
-    }
-
-    private void assertDecodeEncodeEquals( String data) {
-        byte[] decodedData = decode( data);
-        String encodedDecodedData = encode( decodedData);
-        assertEquals(
-                "mismatch between data and encoded version of decoded data",
-                data, encodedDecodedData);
-    }
-
-    // Based on code from http://...
-    private static String encode( byte[] byteStream) {
-        StringBuilder result = new StringBuilder();
-        for( byte curr : byteStream)
-            result.append( Integer.toString( (curr & 0xff) + 0x100, 16)
-                    .substring( 1));
-        return result.toString();
-    }
-
-    // Taken from
-    // http://stackoverflow.com/questions/140131/convert-a-string-representation-of-a-hex-dump-to-a-byte-array-using-java
-    private static byte[] decode( final String encoded) {
-        if( (encoded.length() % 2) != 0)
-            throw new IllegalArgumentException(
-                                                "Input string must contain an even number of characters");
-
-        final byte result[] = new byte[encoded.length() / 2];
-        final char enc[] = encoded.toCharArray();
-        for( int i = 0; i < enc.length; i += 2) {
-            StringBuilder curr = new StringBuilder( 2);
-            curr.append( enc[i]).append( enc[i + 1]);
-            result[i / 2] = (byte) Integer.parseInt( curr.toString(), 16);
-        }
-        return result;
-    }
-
-
-    private void emitJavaStringDeclaration( String name, String data) {
-        List<String> lines = breakStringIntoLines( data);
-        String declaration = buildJavaStringDeclaration( name, lines);
-        System.out.println( declaration);
-    }
-
-    private List<String> breakStringIntoLines( String data) {
-        List<String> lines = new ArrayList<String>();
-
-        String remaining;
-        for( String current = data; current.length() > 0; current = remaining) {
-
-            int thisLineLength =
-                    current.length() < STRING_LINE_LENGTH ? current.length()
-                            : STRING_LINE_LENGTH;
-
-            String thisLine = current.substring( 0, thisLineLength);
-            remaining = current.substring( thisLineLength, current.length());
-
-            lines.add( thisLine);
-        }
-
-        return lines;
-    }
-
-    private String buildJavaStringDeclaration( String name, List<String> lines) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append( "    private static final String " +
-                   name + " =\n");
-
-        boolean isFirstLine = true;
-
-        for( String line : lines) {
-            if( isFirstLine)
-                sb.append( "                     ");
-            else
-                sb.append( "\n                   + ");
-            sb.append( "\"" + line + "\"");
-            isFirstLine = false;
-        }
-
-        sb.append( ";\n");
-
-        return sb.toString();
-    }
-
-
 }
