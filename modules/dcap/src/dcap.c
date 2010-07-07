@@ -538,7 +538,7 @@ serverConnect(struct vsp_node * node)
 		lockMember();
 		if ((node->fd = getMember(dcache_host)) != -1) {
 
-			srv = parseConfig(node->url == NULL ? dcache_host : url2config(node->url, buffer) );
+			srv = parseConfig(node->url == NULL ? dcache_host : url2config(buffer, sizeof(buffer), node->url) );
 			if (srv == NULL) {
 				unlockMember();
 				return -1;
@@ -556,7 +556,7 @@ serverConnect(struct vsp_node * node)
 
 		newQueue(0);
 		dc_debug(DC_INFO, "Creating a new control connection to %s.",dcache_host );
-		srv = parseConfig(node->url == NULL ? dcache_host : url2config(node->url, buffer) );
+		srv = parseConfig(node->url == NULL ? dcache_host : url2config(buffer, sizeof(buffer), node->url) );
 
 		if (srv == NULL) {
 			unlockMember();
