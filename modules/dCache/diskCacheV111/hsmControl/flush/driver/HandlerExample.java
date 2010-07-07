@@ -12,13 +12,13 @@ import  java.util.*;
  *
  */
  public class HandlerExample implements HsmFlushSchedulable {
- 
-     private HsmFlushControlCore _core        = null; 
+
+     private HsmFlushControlCore _core        = null;
      private CommandInterpreter  _interpreter = null ;
      private HashMap             _poolHash    = new HashMap() ;
      private boolean             _doNothing   = false ;
      private Map                 _properties  = new HashMap() ;
-     
+
      private class Pool {
         private String _name = null ;
         private Pool( String name ){  _name = name  ;}
@@ -29,7 +29,7 @@ import  java.util.*;
            _count ++ ;
         }
      }
-      
+
      public HandlerExample( CellAdapter cell , HsmFlushControlCore core ){
          core.say("HandlerExample started");
          _core = core ;
@@ -46,7 +46,7 @@ import  java.util.*;
          }
          _doNothing = args.getOpt("do-nothing") != null ;
          _properties.put( "mode" , _doNothing ? "manual" : "auto" ) ;
-         
+
          for( Iterator i = _core.getConfiguredPoolNames().iterator() ; i.hasNext() ; ){
              String poolName = i.next().toString() ;
              say("    configured pool : "+poolName+_core.getPoolByName(poolName).toString() ) ;
@@ -58,7 +58,7 @@ import  java.util.*;
      }
      public void configuredPoolAdded( String poolName ){
          say("configured pool added : "+poolName);
-         
+
      }
      public void configuredPoolRemoved( String poolName ){
          say("configured pool removed : "+poolName);
@@ -67,19 +67,19 @@ import  java.util.*;
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          say("flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
-         
+
      }
-     public void command( Args args  ){     
+     public void command( Args args  ){
          say("command : "+args);
          try{
-         
+
              Object reply = _interpreter.command( args ) ;
              if( reply == null )
                throw new
                Exception("Null pointer from command call");
-               
+
              say("Command returns : "+reply.toString() );
-              
+
          }catch(Exception ee ){
              esay("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
@@ -89,7 +89,7 @@ import  java.util.*;
         if( com.equals("auto") ){
            _doNothing = false ;
         }else if( com.equals("manual") ){
-           _doNothing = true ;        
+           _doNothing = true ;
         }
         return "" ;
      }
@@ -115,18 +115,18 @@ import  java.util.*;
          say( "Timer at : "+System.currentTimeMillis());
      }
      public void propertiesUpdated( Map properties ){
-     
+
         Set keys = new HashSet( properties.keySet() ) ;
         //
         // for all properties we support, try to change the values
         // accordingly.
         //
         for( Iterator i = keys.iterator() ; i.hasNext() ; ){
-        
+
             String key = (String)i.next() ;
-            
+
             String ourPropertyValue = (String)_properties.get( key ) ;
-            
+
             if( ourPropertyValue == null ){
                //
                // we don't support this property, so remove
@@ -135,7 +135,7 @@ import  java.util.*;
                properties.remove( key ) ;
                continue ;
             }
-            
+
             if( key.equals("mode") ){
                 Object obj = properties.get( key ) ;
                 if( obj != null ){
@@ -155,7 +155,7 @@ import  java.util.*;
                 }
             }else{
                 _properties.put( key , properties.get( key ) ) ;
-            }  
+            }
         }
         //
         // do as it would have been a query
@@ -165,9 +165,9 @@ import  java.util.*;
         //
      }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
-         
+
          if( _doNothing )return ;
-         
+
          if( ! pool.isActive() ){
              say( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
              return ;
@@ -179,7 +179,7 @@ import  java.util.*;
 
          long total    = spaceInfo.getTotalSpace() ;
          long precious = spaceInfo.getPreciousSpace() ;
-         
+
          say( "poolFlushInfoUpdated : Pool : "+poolName+";total="+total+";precious="+precious);
          //
          // loop over all storage classes of this pool and flush
@@ -187,14 +187,14 @@ import  java.util.*;
          // in 'flush' status.
          //
          for( Iterator i = pool.getStorageClassNames().iterator() ; i.hasNext() ; ){
-         
+
              String storageClass = i.next().toString() ;
-             
-             HsmFlushControlCore.FlushInfo info  = pool.getFlushInfoByStorageClass(storageClass) ;           
+
+             HsmFlushControlCore.FlushInfo info  = pool.getFlushInfoByStorageClass(storageClass) ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              long size   = flush.getTotalPendingFileSize() ;
-             
+
              say("poolFlushInfoUpdated :       class = "+storageClass+" size = "+size+" flushing = "+info.isFlushing() ) ;
              //
              // is precious size > 0 and are we not yet flushing ?
@@ -207,7 +207,7 @@ import  java.util.*;
              }catch(Exception ee ){
                 esay("poolFlushInfoUpdated : Problem flushing "+poolName+" "+storageClass+" "+ee);
              }
-                    
+
          }
      }
      /*

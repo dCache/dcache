@@ -30,7 +30,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private Statement           _stmt      = null;
     private CellAdapter         _cell      = null;
     private static DataSource   DATASOURCE = null;
-    private final static String ERRCODE_UNIQUE_VIOLATION = "23505";                                                          
+    private final static String ERRCODE_UNIQUE_VIOLATION = "23505";
 
     /**
      * Class constructor opens connection to the database and creates a
@@ -1093,7 +1093,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         private getOfflineIterator() throws SQLException {
             String sql = "SELECT ro.pnfsid " + "FROM ONLY replicas ro, pools po "
-                    + "WHERE ro.pool = po.pool AND po.status = '"  + OFFLINE_PREPARE + "' " 
+                    + "WHERE ro.pool = po.pool AND po.status = '"  + OFFLINE_PREPARE + "' "
                     + "GROUP BY ro.pnfsid "
                     + "EXCEPT "
                     + "SELECT r.pnfsid " + "FROM ("

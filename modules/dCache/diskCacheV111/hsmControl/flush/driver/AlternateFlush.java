@@ -13,21 +13,21 @@ import  java.util.*;
  *
  */
  public class AlternateFlush implements HsmFlushSchedulable {
- 
-     private HsmFlushControlCore _core        = null; 
+
+     private HsmFlushControlCore _core        = null;
      private CommandInterpreter  _interpreter = null ;
-     
+
      private String _mode = "auto" ;
      private double _percentageToFlush = 0.5 ;
      private int    _countToFlush      = 5 ;
      private int    _flushAtOnce       = 0 ;
      /**
        * Our Pool class. Contains things we need to remember.
-       * Is stored with setDriverHandle to avoid our own 
+       * Is stored with setDriverHandle to avoid our own
        * bookkeeping.
        */
      private class Pool implements HsmFlushControlCore.DriverHandle {
-     
+
         private String  name          = null ;
         private int     flushCounter  = 0 ;
         private boolean modeReady     = false ;
@@ -35,14 +35,14 @@ import  java.util.*;
         private long    preciousSpace = 0L ;
         private int     preciousFileCount = 0 ;
         private HsmFlushControlCore.Pool pool = null ;
-        
-        private Pool( String name , HsmFlushControlCore.Pool pool ){  
+
+        private Pool( String name , HsmFlushControlCore.Pool pool ){
             this.name = name ;
             this.pool = pool ;
             update() ;
         }
         public void update(){
-            
+
             PoolCellInfo cellInfo = pool.getCellInfo() ;
             if( cellInfo == null )return ;
             PoolCostInfo costInfo = cellInfo.getPoolCostInfo() ;
@@ -50,7 +50,7 @@ import  java.util.*;
 
             totalSpace        = spaceInfo.getTotalSpace() ;
             preciousSpace     = spaceInfo.getPreciousSpace() ;
-            preciousFileCount = countTotalPending() ;        
+            preciousFileCount = countTotalPending() ;
         }
         private void flush(){
            flushCounter += flushPool( pool );
@@ -61,7 +61,7 @@ import  java.util.*;
         }
         private int countTotalPending(){
             return countTotalPendingPool( pool ) ;
-        
+
         }
         public String toString(){ return name ; }
      }
@@ -75,7 +75,7 @@ import  java.util.*;
          public void push( StackEntry entry ){
              _stack.push(entry) ;
          }
-         public StackEntry pop(){ 
+         public StackEntry pop(){
              return (StackEntry)_stack.pop() ;
          }
          public boolean isEmpty(){ return _stack.empty() ; }
@@ -84,10 +84,10 @@ import  java.util.*;
          }
      }
      private EngineStack _engineStack = new EngineStack() ;
-     
+
      private int _status  = 0 ;
      private final static int QUERY_ALL_POOLS_IO_MODE = 1 ;
-     
+
      public AlternateFlush( CellAdapter cell , HsmFlushControlCore core ){
          core.say("AlternateFlush started");
          _core        = core ;
@@ -100,7 +100,7 @@ import  java.util.*;
      //
      public void init(){
          if(_evt)say("EVENT : Initiating ...");
-         
+
          Args args = _core.getDriverArgs() ;
          //
          // printout what we got from our master
@@ -119,18 +119,18 @@ import  java.util.*;
          //  As a side effect we get the actual pool modes.
          //
          for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
              pool.setDriverHandle( new Pool( pool.getName() , pool ) ) ;
              pool.setReadOnly( false ) ;
              say("init : setting readonly=false : "+pool.getName() ) ;
          }
-         
+
      }
      public void propertiesUpdated( Map properties ){
-     
+
         if(_evt)say("EVENT : propertiesUpdated : "+properties);
-        
+
         Set keys = new HashSet( properties.keySet() ) ;
         //
         // for all properties we support, try to change the values
@@ -155,7 +155,7 @@ import  java.util.*;
                    //    the requestor will get the unmodified retrun.
                    // }
                 }
-                
+
             }else if( key.equals("flush.count") ){
                 Object obj = properties.get( key ) ;
                 if( obj != null ){
@@ -168,7 +168,7 @@ import  java.util.*;
                    }catch(Exception ee ){
                       esay("Exception while seting "+key+" "+ee);
                    }
-                }           
+                }
             }else if( key.equals("flush.atonce") ){
                 Object obj = properties.get( key ) ;
                 if( obj != null ){
@@ -181,7 +181,7 @@ import  java.util.*;
                    }catch(Exception ee ){
                       esay("Exception while seting "+key+" "+ee);
                    }
-                }           
+                }
             }else if( key.equals("flush.percentage") ){
                 Object obj = properties.get( key ) ;
                 if( obj != null ){
@@ -190,12 +190,12 @@ import  java.util.*;
                       if( percent < 0.0 )
                         throw new
                         IllegalArgumentException("Value for "+key+" not supported "+obj);
-                        
+
                       _percentageToFlush = percent ;
                    }catch(Exception ee ){
                       esay("Exception while seting "+key+" "+ee);
                    }
-                }           
+                }
             }else{
                 //
                 // remove the key to inform the requestor that we don't
@@ -214,9 +214,9 @@ import  java.util.*;
         //
      }
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
-     
+
          if(_evt)say("EVENT : poolIoModeUpdated : "+pool);
-                     
+
          Pool ip = getInternalPool( pool ) ;
          ip.modeReady = true ;
          ip.update() ;
@@ -225,18 +225,18 @@ import  java.util.*;
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_evt)say("EVENT : flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
-         
+
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
             esay("flushingDone for a non configured pool : "+poolName);
             return ;
          }
-         
+
          Pool ip = getInternalPool( pool ) ;
          ip.update() ;
-      
+
          ip.flushCounter -- ;
-         
+
          if( ip.flushCounter <= 0 ){
              ip.flushCounter = 0 ;
              say("flushingDone : pool finished all flushing : "+poolName+" ; setting back to readWrite mode");
@@ -245,11 +245,11 @@ import  java.util.*;
      /*
         if( ! ip.isFlushing() ){
              say("flushingDone : pool finished all flushing : "+poolName+" ; setting back to readWrite mode");
-             pool.setReadOnly(false);        
+             pool.setReadOnly(false);
         }
       */
      }
-   
+
      public void reset(){
          if(_evt)say("EVENT : reset");
      }
@@ -261,25 +261,25 @@ import  java.util.*;
          //
          HashSet set = new HashSet() ;
          for( HsmFlushControlCore.Pool pool = nextToFlush() ; pool != null ; pool = nextToFlush() ){
-         
+
             String poolName = pool.getName() ;
-         
+
             if( set.contains(poolName) )break ;
             set.add( poolName ) ;
-            
+
             say("timer : Good candidate to flush : "+poolName);
-           
+
             Pool ip = getInternalPool( pool ) ;
             if( ! ip.modeReady )continue ;
-            
+
             pool.setReadOnly(true);
             ip.flush( ) ;
-            
+
          }
-            
+
      }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
-         
+
          if(_evt)say("EVENT : poolFlushInfoUpdated : "+pool.getName());
          if( ! pool.isActive() ){
              say( "poolFlushInfoUpdated : Pool : "+poolName+" inactive");
@@ -289,12 +289,12 @@ import  java.util.*;
          // make sure we store the incoming stuff in our internal structure.
          //
          ((Pool)getInternalPool( pool )).update() ;
-         
+
      }
      /**
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
-     public void command( Args args  ){     
+     public void command( Args args  ){
          if(_evt)say("EVENT : command : "+args);
          try{
              Object reply = _interpreter.command( args ) ;
@@ -310,19 +310,19 @@ import  java.util.*;
          if(_evt)say("EVENT : Preparing unload (ignoring)");
      }
      public void configuredPoolAdded( String poolName ){
-     
+
          if(_evt)say("EVENT : Configured pool added : "+poolName);
-         
+
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
             esay("Pool not found in _core database : "+poolName);
             return ;
          }
-           
+
          Pool ip = getInternalPool( pool ) ;
-         
+
          pool.setReadOnly(false);
-         
+
      }
      public void poolSetupUpdated(){
          if(_evt)say("EVENT : Pool Setup updated (ignoring)");
@@ -346,14 +346,14 @@ import  java.util.*;
      //               C O N V E N I E N E N T     F U N C T I O N S
      //
      private Pool getInternalPool( HsmFlushControlCore.Pool pool ){
-     
+
             Pool ip = (Pool)pool.getDriverHandle() ;
             if( ip == null ){
                esay("getInternalPool : Unconfigured pool arrived "+pool.getName()+"; configuring");
                pool.setDriverHandle( ip = new Pool( pool.getName() , pool ) ) ;
             }
             return ip ;
-     
+
      }
      /**
        *
@@ -362,14 +362,14 @@ import  java.util.*;
        * @param ip Internal pool representation.
        */
      private int flushPool( HsmFlushControlCore.Pool pool ){
-         int flushing = 0 ;         
+         int flushing = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              long size   = flush.getTotalPendingFileSize() ;
-             
+
              say("flushPool : class = "+info.getName()+" size = "+size+" flushing = "+info.isFlushing() ) ;
              //
              // is precious size > 0 and are we not yet flushing ?
@@ -383,7 +383,7 @@ import  java.util.*;
              }catch(Exception ee ){
                 esay("flushPool : Problem flushing "+pool.getName()+" "+info.getName()+" "+ee);
              }
-                    
+
          }
          return flushing ;
      }
@@ -395,10 +395,10 @@ import  java.util.*;
      private int countTotalActivePool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              total += flush.getActiveCount();
          }
          return total ;
@@ -411,10 +411,10 @@ import  java.util.*;
      private int countTotalPendingPool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              total += flush.getRequestCount();
          }
          return total ;
@@ -428,21 +428,21 @@ import  java.util.*;
        *  @return Next pool to flush or 'null' if no pool is ready yet.
        */
      private HsmFlushControlCore.Pool nextToFlush(){
-     
+
          List pools = _core.getConfiguredPools() ;
          //
          // Get all pools which are currently not flushing.
          //
          ArrayList list =  new ArrayList();
-         
+
          for( Iterator i = pools.iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next() ;
-             
+
              if(_ntf)say("nextToFlush : checking pool "+pool);
-             
+
              if( ! pool.isActive() )continue ;
-             
+
              Pool ip = (Pool)pool.getDriverHandle() ;
 
              if(  ip.isFlushing()  ){
@@ -467,14 +467,14 @@ import  java.util.*;
          int    highestCounter    = -1 ;
          double highestPercentage = -1.0 ;
          for( Iterator i = list.iterator() ; i.hasNext() ; ){
-         
+
             Pool ip = (Pool)i.next() ;
 
             if( ip.preciousFileCount > highestCounter ){
                poolWithHighestCounter = ip ;
                highestCounter = ip.preciousFileCount  ;
             }
-            
+
             double percentage = ((double)ip.preciousSpace) / ((double) ip.totalSpace) ;
             if( percentage > highestPercentage ){
                poolWithHighestPercentage = ip ;
@@ -493,12 +493,12 @@ import  java.util.*;
        * @return Number of storage class in progress of been flushed on this pool.
        */
      private int countStorageClassesFlushing( HsmFlushControlCore.Pool pool ){
-     
+
          int flushing = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
-             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() )flushing++ ;         
-                    
+
+             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() )flushing++ ;
+
          }
          return flushing ;
      }
@@ -513,10 +513,10 @@ import  java.util.*;
          }
          public int compare( Object obj1 , Object obj2 ){
             switch( _mode ){
-            
+
                case PERCENTAGE : return comparePercentage( obj1 , obj2 )  ;
                case COUNT :      return compareCount( obj1 , obj2 ) ;
-            
+
             }
             return 0;
          }
@@ -524,32 +524,32 @@ import  java.util.*;
              Object [] o = new Object[2] ;
              o[0] = obj1 ;
              o[1] = obj2 ;
-             
+
              double [] result = new double[2] ;
-             
+
              for( int i = 0 ; i < o.length ; i++ ){
-             
+
                   HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)o[i] ;
-                  Pool ip   = (Pool)pool.getDriverHandle() ;             
+                  Pool ip   = (Pool)pool.getDriverHandle() ;
                   result[i] =   ((double)ip.preciousSpace) / (double) ip.totalSpace  ;
              }
-             
+
              return new Double(result[1]).compareTo( new Double(result[0]) ) ;
          }
          public int compareCount( Object obj1 , Object obj2 ){
              Object [] o = new Object[2] ;
              o[0] = obj1 ;
              o[1] = obj2 ;
-             
+
              int [] result = new int[2] ;
-             
+
              for( int i = 0 ; i < o.length ; i++ ){
-             
+
                   HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)o[i] ;
-                  Pool ip   = (Pool)pool.getDriverHandle() ;             
+                  Pool ip   = (Pool)pool.getDriverHandle() ;
                   result[i] =  ip.preciousFileCount;
              }
-             
+
              return Integer.valueOf(result[1]).compareTo( Integer.valueOf(result[0]) ) ;
          }
      }

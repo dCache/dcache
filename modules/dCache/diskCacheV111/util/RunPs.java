@@ -7,10 +7,10 @@ import java.util.*;
 public class RunPs extends CellAdapter implements Runnable {
    private CellNucleus _nucleus = null ;
    private Thread      _worker  = null ;
-   public RunPs(  String cellName , String args ){ 
-      super( cellName , args , false ) ;  
+   public RunPs(  String cellName , String args ){
+      super( cellName , args , false ) ;
       _nucleus  = getNucleus() ;
-      useInterpreter( true ) ;                                                                               
+      useInterpreter( true ) ;
       _worker =  _nucleus.newThread(this,"worker");
       _worker.start() ;
        start() ;
@@ -37,7 +37,7 @@ public class RunPs extends CellAdapter implements Runnable {
                   }else{
                      printer.println( info.toString() + "\n" ) ;
                   }
-              } 
+              }
             */
               printer.println( new Date().toString() ) ;
               printer.flush();

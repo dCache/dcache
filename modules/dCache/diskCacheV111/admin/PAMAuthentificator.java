@@ -2,7 +2,7 @@ package diskCacheV111.admin ;
 
 import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
-import  dmg.security.digest.Crypt ; 
+import  dmg.security.digest.Crypt ;
 
 import  java.io.* ;
 import  java.util.*;
@@ -17,9 +17,9 @@ import javax.naming.directory.*;
   * PAM Authentification Cell.
   *
   */
-  
-  
-  
+
+
+
 public class PAMAuthentificator  extends CellAdapter {
 
 
@@ -34,7 +34,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
    private Args   _args          = null;
    private Date   _started       = new Date() ;
-   
+
    private int    _requestCount       = 0 ;
    private int    _badRequestCount    = 0 ;
    private int    _failedRequestCount = 0 ;
@@ -43,17 +43,17 @@ public class PAMAuthentificator  extends CellAdapter {
    private static final int USER_SERVICE_NIS   = 2 ;
    private static final int USER_SERVICE_LDAP  = 3 ;
    private static final int USER_SERVICE_CLASS = 4 ;
-   
+
    private UserPasswords    _sysPassword  = null ;
    private UserPasswords    _egPassword   = null ;
-   
+
    private UserMetaDataProvider _userServiceProvider = null ;
    private DirContext           _userServiceNIS   = null ;
    private UserPasswords        _userServiceFile  = null ;
    private int                  _userServiceType  = 0 ;
-   
+
    private final Crypt _crypt  = new Crypt() ;
-  
+
 
    public PAMAuthentificator( String cellName , String args ) throws Exception {
 
@@ -81,11 +81,11 @@ public class PAMAuthentificator  extends CellAdapter {
             _service = "dcache";
             say("'service' not defined. Using '"+_service+"' as default service");
          }
-         
+
 
          String tmp = _args.getOpt("external") ;
          if( tmp == null ){
-             
+
              if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
                 _sysPassword = new UserPasswords( new File( tmp ) ) ;
                 say( "using as SystemPasswordfile : "+tmp ) ;
@@ -94,25 +94,25 @@ public class PAMAuthentificator  extends CellAdapter {
                 _egPassword  = new UserPasswords( new File( tmp ) ) ;
                 say( "using as dCachePassword : "+tmp ) ;
             }
-                          
+
              if( ( tmp = _args.getOpt("usepam") ) != null ){
                 _pam = new PAM_Auth( _service );
                 say( "using PAM mudule") ;
              }
          }else{
             _execAuth = new ExecAuth(tmp) ;
-         }         
-         
-         
-         
+         }
+
+
+
          if( ( tmp = _args.getOpt( "users"  ) ) != null ){
             say( "using as userService : "+tmp ) ;
-            
+
             if( tmp.startsWith("nis:") ){
-            
+
                String provider = _args.getOpt("provider") ;
                provider = provider == null ? "com.sun.jndi.nis.NISCtxFactory" : provider ;
-               Hashtable<String, String> env = new Hashtable<String, String>();     
+               Hashtable<String, String> env = new Hashtable<String, String>();
                env.put(Context.INITIAL_CONTEXT_FACTORY, provider );
                // String url = tmp.substring(tmp.indexOf(":")+1);
                // url = "nis://nisserv6.desy.de/desy.afs" ;
@@ -127,7 +127,7 @@ public class PAMAuthentificator  extends CellAdapter {
             }else if( tmp.startsWith("ldap:") ){
                throw new
                IllegalArgumentException("LDap not yet supported" ) ;
-               
+
             }else if( tmp.startsWith("file:") ){
                _userServiceFile = new UserPasswords( new File( tmp.substring(5) ) ) ;
                _userServiceType = USER_SERVICE_FILE ;
@@ -140,10 +140,10 @@ public class PAMAuthentificator  extends CellAdapter {
             }else
                throw new
                IllegalArgumentException("Invalid user service provider : "+tmp ) ;
-            
+
          }
-         
-         
+
+
       }catch(Exception e) {
          start();
          kill();
@@ -154,20 +154,20 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    private UserMetaDataProvider initUserServiceProvider( String className )
       throws Exception {
-      
+
       Class  [] argClasses = { dmg.cells.nucleus.CellAdapter.class } ;
       Object [] argObjects = { this } ;
-      
+
       Class exec = Class.forName( className ) ;
-      
+
       Constructor constructor = exec.getConstructor( argClasses ) ;
-      
+
       UserMetaDataProvider provider = (UserMetaDataProvider)constructor.newInstance(argObjects);
-      
+
       addCommandListener(provider);
-      
+
       return provider ;
-      
+
    }
    public void getInfo( PrintWriter pw ){
     try{
@@ -214,37 +214,37 @@ public class PAMAuthentificator  extends CellAdapter {
      }
    }
    private boolean matchPassword( String userName , String password ){
- 
+
       String pswd     = null ;
       updatePassword() ;
- 
+
       try{
          if( userName.equals("admin" ) ){
             if( ( _sysPassword == null ) ||
                 ( ( pswd = _sysPassword.getPassword(userName) ) == null ) ){
- 
+
                if( ( _egPassword == null ) ||
                    ( ( pswd = _egPassword.getPassword(userName) ) == null ) ){
- 
+
                    pswd = DUMMY_ADMIN ;
                }
- 
+
             }
             return _crypt.crypt( pswd , password ).equals(pswd) ;
          }else{
- 
+
             if( ( _sysPassword == null ) ||
                 ( ( pswd = _sysPassword.getPassword(userName) ) == null ) ){
- 
+
                if( ( _egPassword == null ) ||
                    ( ( pswd = _egPassword.getPassword(userName) ) == null ) ){
- 
+
                    return false ;
                }
- 
+
             }
             return _crypt.crypt( pswd , password ).equals(pswd) ;
- 
+
          }
       }catch( Throwable t ){
          esay( "Found : "+t ) ;
@@ -257,7 +257,7 @@ public class PAMAuthentificator  extends CellAdapter {
          return _pam.authenticate( principal , password ) ;
       }else if( _execAuth != null ){
          try{
-            String result = 
+            String result =
                _execAuth.command( "check "+_service+
                                   " "+principal+
                                   " "+password       ) ;
@@ -272,21 +272,21 @@ public class PAMAuthentificator  extends CellAdapter {
    }
    private boolean checkAccess( String principal , String password ){
       boolean pamOk = false ;
-      try{ 
+      try{
          pamOk = authenticate( principal , password )  ;
       }catch(Exception ee ){
          esay( "_pam.authorize : "+ee ) ;
       }
       if( ! pamOk ){
          say("pam says no to <"+principal+"> (switching to local)");
-         try{ 
+         try{
             return matchPassword( principal , password ) ;
          }catch(Exception ee ){
             esay( "matchPassword : "+ee ) ;
          }
-      } 
-      return pamOk ;      
-   }  
+      }
+      return pamOk ;
+   }
    public void messageArrived( CellMessage msg ){
       Object obj     = msg.getMessageObject() ;
       Object answer  = "PANIX" ;
@@ -352,11 +352,11 @@ public class PAMAuthentificator  extends CellAdapter {
   //  r[2] : get-metainfo
   //  r[3] : <user>
   //  r[4] : <key>[,<key>[...]]
-  //  
+  //
   //  checks : nothing
-  //  
+  //
   //    response
-  //    
+  //
   //  r[0] : response
   //  r[1] : <requestor>
   //  r[2] : get-metainfo
@@ -365,7 +365,7 @@ public class PAMAuthentificator  extends CellAdapter {
   //  r[5] : <valueOfKey1>
   //  r[6] : <valueOfKey2>
   //  r[7] : ...
-  //  
+  //
   private Object
           acl_get_metainfo( Object [] request )
           throws Exception {
@@ -373,7 +373,7 @@ public class PAMAuthentificator  extends CellAdapter {
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
           ( request[4] == null ) )
-         throw new 
+         throw new
          IllegalArgumentException(
          "Not enough or illegal arguments for 'get-metainfo'" ) ;
 
@@ -384,12 +384,12 @@ public class PAMAuthentificator  extends CellAdapter {
          IllegalArgumentException("User service not configured");
       _userServiceFile.update() ;
       String [] dict = _userServiceFile.getRecord(userName) ;
-      if( dict == null ) 
-         throw new 
+      if( dict == null )
+         throw new
          IllegalArgumentException(
          "No such user : "+userName ) ;
 
-      
+
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
       List<String> result = new ArrayList<String>() ;
       while( st.hasMoreTokens() ){
@@ -421,7 +421,7 @@ public class PAMAuthentificator  extends CellAdapter {
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
           ( request[4] == null ) )
-         throw new 
+         throw new
          IllegalArgumentException(
          "Not enough or illegal arguments for 'get-metainfo'" ) ;
 
@@ -431,14 +431,14 @@ public class PAMAuthentificator  extends CellAdapter {
       if( _userServiceProvider == null )
          throw new
          IllegalArgumentException("User service not configured");
-      
+
       List<String>      attrList = new ArrayList<String>() ;
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
       while( st.hasMoreTokens() )attrList.add(st.nextToken()) ;
 
 //VP  Map map = _userServiceProvider.getUserMetaData( userName , attrList ) ;
       Map map = _userServiceProvider.getUserMetaData( principal, userName , attrList ) ;
-      
+
       String [] r = new String[5+attrList.size()] ;
       for( int i = 0 ; i < 5 ; i++ )r[i] = (String)request[i] ;
       for( int i = 5 ; i < r.length ; i++ ){
@@ -466,7 +466,7 @@ public class PAMAuthentificator  extends CellAdapter {
       if( ( request.length < 5 ) ||
           ( request[3] == null ) ||
           ( request[4] == null ) )
-         throw new 
+         throw new
          IllegalArgumentException(
          "Not enough or illegal arguments for 'check-password'" ) ;
 
@@ -478,22 +478,22 @@ public class PAMAuthentificator  extends CellAdapter {
 
       UserRecord record = (UserRecord)_map.get(userName);
       Attributes answer = null ;
-      if( ( record == null ) || 
+      if( ( record == null ) ||
           ( ( record._timestamp != 0 ) &&
             ( System.currentTimeMillis() - record._timestamp ) >  HASH_REFRESH ) ){
-          
+
            answer = _userServiceNIS.getAttributes("system/passwd/"+userName);
-           if( answer.size() == 0 ) 
-              throw new 
+           if( answer.size() == 0 )
+              throw new
               IllegalArgumentException( "No such user : "+userName ) ;
-       
+
           _map.put( userName , new UserRecord(answer) ) ;
-          
+
       }else{
           answer = record._userRecord ;
       }
 
-      
+
       StringTokenizer st = new StringTokenizer( request[4].toString() , "," ) ;
       ArrayList result = new ArrayList() ;
       while( st.hasMoreTokens() ){
@@ -586,7 +586,7 @@ public class PAMAuthentificator  extends CellAdapter {
   //  r[2] : get-metainfo
   //  r[3] : <user>
   //  r[4] : <key>[,<key>[...]]
-  //  
+  //
    public String hh_check_meta = "<user>" ;
    public String ac_check_meta_$_1(Args args ) throws Exception {
        Object [] request = new Object[5] ;
@@ -595,9 +595,9 @@ public class PAMAuthentificator  extends CellAdapter {
        request[2] = "get-metainfo" ;
        request[3] = args.argv(0);
        request[4] = "uid,gid,home,shell,fqn";
-       
+
        Object answer  =  getMetaInfo( request ) ;
-       
+
        if( answer instanceof Exception )throw (Exception)answer ;
        Object [] a = (Object [])answer ;
        StringBuffer sb = new StringBuffer() ;
@@ -606,7 +606,7 @@ public class PAMAuthentificator  extends CellAdapter {
        sb.append( " Home : "+a[7] ).append("\n") ;
        sb.append( "Shell : "+a[8] ).append("\n") ;
        sb.append( " Name : "+a[9] ).append("\n") ;
-       
+
        return sb.toString();
    }
    public String hh_check_auth = "<user> <password>" ;
@@ -634,11 +634,11 @@ public class PAMAuthentificator  extends CellAdapter {
       if( _map == null )
          throw new
          IllegalArgumentException("User map hash not needed");
-      
+
       if( _map.remove(args.argv(0)) == null )
          throw new
          IllegalArgumentException("User name not in cache : "+args.argv(0));
-         
+
       return "";
    }
    public String hh_user_map_add = "<userName> <uid> <gid> [<home> [<shell>]]" ;
@@ -648,17 +648,17 @@ public class PAMAuthentificator  extends CellAdapter {
       String gid   = args.argv(2) ;
       String home  = args.argc() > 3 ? args.argv(3) : "/dev/home" ;
       String shell = args.argc() > 4 ? args.argv(4) : "/bin/shell" ;
-      
+
       BasicAttributes attr  = new BasicAttributes() ;
       attr.put( "uidNumber" , uid ) ;
       attr.put( "gidNumber" , gid ) ;
       attr.put( "homeDirectory" , home ) ;
       attr.put( "loginShell" , shell ) ;
       attr.put( "gecos" , user ) ;
-      
+
       UserRecord ur = new UserRecord(attr) ;
       ur._timestamp  = 0L ;
-      
+
       _map.put( user , ur ) ;
       return "" ;
    }
@@ -670,5 +670,5 @@ public class PAMAuthentificator  extends CellAdapter {
       _map.clear() ;
       return "" ;
    }
-	
+
 } // End of PAMAuthentificator

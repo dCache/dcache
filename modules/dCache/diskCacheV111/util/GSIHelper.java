@@ -1,5 +1,5 @@
 /*
-COPYRIGHT STATUS: 
+COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
   software are sponsored by the U.S. Department of Energy under Contract No.
   DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -83,7 +83,7 @@ public class GSIHelper
 	private String DataToSend = null;
 	private String Error = null;
     private CellAdapter adapter = null;
-    
+
 	public GSIHelper(String executable,CellAdapter adapter)
 		throws IOException
     {
@@ -115,8 +115,8 @@ public class GSIHelper
 		say("Rcvd: <" + answer + ">");
 		return answer;
 	}
-	
-	
+
+
 	public int handleAuthData(String data)
 	{
 		say("handleAuthData(" + data + ")");
@@ -156,12 +156,12 @@ public class GSIHelper
 			return -1;
 		}
 	}
-	
+
 	public String makeMIC(String msg)
 		throws IOException
 	{
 		// returns base64 encoded MIC string
-		String answer = sendRecv("MIC " + 
+		String answer = sendRecv("MIC " +
 			Base64.byteArrayToBase64(msg.getBytes()));
 		// cut out OK
 		int inx = answer.indexOf(" ");
@@ -172,7 +172,7 @@ public class GSIHelper
 		throws IOException
 	{
 		// returns base64 encoded MIC string
-		String answer = sendRecv("ENC " + 
+		String answer = sendRecv("ENC " +
 			Base64.byteArrayToBase64(msg.getBytes()));
 		// cut out OK
 		int inx = answer.indexOf(" ");
@@ -201,23 +201,23 @@ public class GSIHelper
 		catch ( Exception e )
 		{	/* ignore */ ;	}
 		Helper.destroy();
-	}		
+	}
 
 	public String dataToSend()
 	{
 		return DataToSend;
 	}
-	
+
 	public String clientName()
 	{
 		return ClientName;
 	}
-	
+
 	public String error()
 	{
 		return Error;
 	}
-    
+
     public void say(String s)
     {
         if(adapter != null)
@@ -227,7 +227,7 @@ public class GSIHelper
             //adapter.say("GSIHelper : "+s);
         }
     }
-    
+
     public void esay(String e)
     {
         if(adapter !=null)
@@ -235,7 +235,7 @@ public class GSIHelper
             adapter.esay("GSIHelper : "+e);
         }
     }
-    
+
     public void esay(Throwable t)
     {
         if(adapter !=null)
@@ -244,8 +244,8 @@ public class GSIHelper
             adapter.esay(t);
         }
     }
-    
-    
+
+
 
 }
 

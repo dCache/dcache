@@ -17,9 +17,9 @@ import diskCacheV111.vehicles.* ;
 /**
   *  @Author: Patrick Fuhrmann
   *
-  *  The FileHoppingManager receives PoolMgrReplicateFileMsg messages from 
-  *  write pools and, depending 
-  * 
+  *  The FileHoppingManager receives PoolMgrReplicateFileMsg messages from
+  *  write pools and, depending
+  *
   */
 public class FileHoppingManager extends CellAdapter {
 
@@ -29,33 +29,33 @@ public class FileHoppingManager extends CellAdapter {
    private Object      _mapLock       = new Object() ;
    private int         _totalRequests = 0 ;
    private File        _configFile    = null ;
-   
+
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
-   
+
    public  CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.3 $" ); }
-   
+
    public FileHoppingManager( String name , String args )throws Exception {
-   
+
       super( name , FileHoppingManager.class.getName(), args , false );
-      
+
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
 
       try{
-      
+
          if( _args.argc() < 1 )
             throw new
             IllegalArgumentException(
                "Usage : <configFileName> OPTIONS ");
-         
+
          _configFile = new File( _args.argv(0) ) ;
-         
+
          if( ! _configFile.exists() ){
             File configDir = _configFile.getParentFile() ;
             if( ( configDir == null ) || ! configDir.exists() )
               throw new
               IllegalArgumentException("Config directory doesn't exit : "+configDir);
-              
+
             try{
                if( ! _configFile.createNewFile() )
                   throw new
@@ -72,12 +72,12 @@ public class FileHoppingManager extends CellAdapter {
          kill() ;
          throw ee ;
       }
-      
-      
+
+
       runSetupFile( _configFile ) ;
-      
+
       _nucleus.export();
-      
+
       start() ;
 
    }
@@ -109,13 +109,13 @@ public class FileHoppingManager extends CellAdapter {
 
    }
    private void dumpSetup() throws Exception {
-      
+
        File setupFile = _configFile.getCanonicalFile() ;
        File tmpFile   = new File( setupFile.getParent() , "."+setupFile.getName() ) ;
-         
+
        PrintWriter writer =
           new PrintWriter( new FileWriter( tmpFile ) ) ;
-          
+
        try{
           writer.print( "#\n# Setup of " ) ;
           writer.print(_nucleus.getCellName() ) ;
@@ -141,12 +141,12 @@ public class FileHoppingManager extends CellAdapter {
           try{ writer.close() ; }catch(Exception eee ){}
        }
        if( ! tmpFile.renameTo( setupFile ) ){
-       
+
           tmpFile.delete() ;
-          
+
           throw new
           IllegalArgumentException( "Rename failed : "+_configFile ) ;
-           
+
        }
        return ;
    }
@@ -158,41 +158,41 @@ public class FileHoppingManager extends CellAdapter {
        pw.println("Number of Rules : "+_map.size());
    }
    private class Entry {
-   
+
       private String  _name       = null ;
       private boolean _retry      = false ;
       private boolean _continue   = false ;
-      
+
       private String  _patternStr = null ;
-      private Pattern _pattern    = null ; 
-      
+      private Pattern _pattern    = null ;
+
       private int     _status     = 0 ;
       private String  _statusStr  = null ;
-      
+
       private String   _dest      = null ;
       private CellPath _path      = null ;
-      
+
       private String   _source    = "write" ;
-      
+
       private ProtocolInfo _info  = null ;
       private String   _hostName  = null ;
       private String   _protType  = null ;
       private int      _protMinor = 0 ;
       private int      _protMajor = 0 ;
-      
+
       private int      _hit       = 0 ;
-      
-      private Entry( String name , 
+
+      private Entry( String name ,
                      String patternStr ,
-                     String modeString 
+                     String modeString
                     ){
-                    
+
          _name       = name ;
-         
+
          _patternStr = patternStr ;
          _pattern    = Pattern.compile(patternStr) ;
-         
-         
+
+
          _statusStr  = modeString == null ? "keep" : modeString ;
          _status     = getModeByString( _statusStr ) ;
 
@@ -201,22 +201,22 @@ public class FileHoppingManager extends CellAdapter {
          StringBuffer sb = new StringBuffer() ;
          sb.append("define hop ").append(_name).append(" \"").
             append(_patternStr).append("\" ").append(_statusStr);
-         
+
          if( _info != null ){
             sb.append(" -host=").append(_hostName).
                append(" -protType=").append(_protType).
                append(" -protMinor=").append(_protMinor).
                append(" -protMajor=").append(_protMajor) ;
          }
-         
+
          if( _dest != null )
            sb.append(" -destination=").append(_dest);
-         
+
          sb.append(" -source=").append(_source) ;
-         
+
          if( _continue )sb.append(" -continue");
          if( _retry )sb.append(" -retry");
-         
+
          return sb.toString();
       }
       public void setContinue( boolean isContinue ){
@@ -231,41 +231,41 @@ public class FileHoppingManager extends CellAdapter {
       public void setDestination( String destination ){
          if( destination == null )return ;
          _dest       = destination ;
-         _path       = new CellPath( _dest ) ;      
+         _path       = new CellPath( _dest ) ;
       }
       public int getModeByString( String modeStr ){
-      
+
           int mode = Pool2PoolTransferMsg.UNDETERMINED ;
 
           if( modeStr == null ){
              mode = Pool2PoolTransferMsg.UNDETERMINED ;
           }else if( modeStr.equals("precious") ){
-             mode = Pool2PoolTransferMsg.PRECIOUS ;      
+             mode = Pool2PoolTransferMsg.PRECIOUS ;
           }else if( modeStr.equals("cached") ){
              mode = Pool2PoolTransferMsg.CACHED ;
           }else if( modeStr.equals("keep") ){
              mode = Pool2PoolTransferMsg.UNDETERMINED ;
           }else{
              throw new
-             IllegalArgumentException("Mode string : precious|cached|keep"); 
+             IllegalArgumentException("Mode string : precious|cached|keep");
           }
           return mode ;
       }
-     
+
       public void setProtocolInfo( String hostName , String protType , String protMajor , String protMinor ){
-      
-          if( ( hostName  != null ) || ( protType  != null ) || 
+
+          if( ( hostName  != null ) || ( protType  != null ) ||
               ( protMinor != null ) || ( protMajor != null )    ){
 
               _hostName  = hostName  == null ? "localhost" : hostName ;
               _protType  = protType  == null ? "DCap" : protType ;
               _protMinor = protMinor == null ? 0 : Integer.parseInt( protMinor ) ;
               _protMajor = protMajor == null ? 3 : Integer.parseInt( protMajor ) ;
-              
+
               _info = new DCapProtocolInfo(
                                  _protType, _protMajor, _protMajor,
-                                 hostName , 
-                                 0   
+                                 hostName ,
+                                 0
                         ) ;
 
           }
@@ -279,7 +279,7 @@ public class FileHoppingManager extends CellAdapter {
       }
    }
 
-   
+
    public String fh_define_hop =
       "define hop OPTIONS <name> <pattern> precious|cached|keep\n"+
       "    OPTIONS\n"+
@@ -293,42 +293,42 @@ public class FileHoppingManager extends CellAdapter {
       "         -protType=dCap|ftp...\n"+
       "         -protMinor=<minorProtocolVersion>\n"+
       "         -protMajor=<majorProtocolVersion>\n" ;
-      
-   public String hh_define_hop = 
+
+   public String hh_define_hop =
       "OPTONS <name> <pattern> precious|cached|keep # see 'help define hop'" ;
    public String ac_define_hop_$_3( Args args ){
-   
+
       String name        = args.argv(0) ;
       String patternStr  = args.argv(1) ;
       String modeStr     = args.argv(2) ;
-      
+
       String destination = args.getOpt("destination") ;
-      
+
       boolean overwrite  = args.getOpt("overwrite") != null ;
-      
+
       String hostName    = args.getOpt("host") ;
       String protocol    = args.getOpt("protType") ;
       String protMinor   = args.getOpt("protMinor") ;
       String protMajor   = args.getOpt("protMajor") ;
-      
+
       String source      = args.getOpt("source") ;
-      
+
       Entry entry = (Entry)_map.get( name ) ;
       if( ( entry != null ) && ! overwrite )
          throw new
          IllegalArgumentException("Entry already exists : "+name ) ;
-      
+
       entry = new Entry( name , patternStr , modeStr ) ;
-      
+
       entry.setProtocolInfo( hostName , protocol , protMajor , protMinor ) ;
-      
+
       entry.setDestination( destination ) ;
-      
+
       entry.setRetry( args.getOpt("retry") != null ) ;
       entry.setContinue( args.getOpt("continue") != null ) ;
-      
+
       if( source != null )entry.setSource(source) ;
-      
+
       synchronized( _mapLock ){
             _map.put( name , entry ) ;
       }
@@ -338,27 +338,27 @@ public class FileHoppingManager extends CellAdapter {
    public String ac_rename_hop_$_2( Args args ){
       String oldName = args.argv(0) ;
       String newName = args.argv(1) ;
-      
+
       synchronized( _mapLock ){
          Entry oldEntry = (Entry)_map.remove(oldName) ;
          if( oldEntry == null )
             throw new
             IllegalArgumentException("currentName not found : "+oldName );
-            
+
          Entry newEntry = (Entry)_map.get(newName) ;
          if( newEntry != null )
             throw new
             IllegalArgumentException("newName already exists: "+newName );
-      
+
          oldEntry._name = newName ;
          _map.put( newName , oldEntry ) ;
-        
+
       }
       return "" ;
    }
    public String hh_undefine_hop = "<name>" ;
    public String ac_undefine_hop_$_1( Args args ){
-   
+
       String name = args.argv(0) ;
       synchronized( _mapLock ){
           _map.remove( name ) ;
@@ -373,52 +373,52 @@ public class FileHoppingManager extends CellAdapter {
       say("replicateReplyArrived : "+message);
    }
    public void messageArrived( CellMessage message ){
-         
+
       Object   request     = message.getMessageObject() ;
-      
+
       say("messageArrived : "+request+" : "+message);
       if( request instanceof PoolMgrReplicateFileMsg ){
-      
+
          PoolMgrReplicateFileMsg replicate = (PoolMgrReplicateFileMsg)request ;
          if( replicate.isReply() ){
             replicateReplyArrived( message , replicate ) ;
             return ;
          }
          replicate.setReplyRequired(true);
-         
+
          StorageInfo storageInfo = replicate.getStorageInfo() ;
          if( storageInfo == null )return ;
-         
+
          _totalRequests ++ ;
-         
+
          String storageClass      = storageInfo.getStorageClass()+"@"+storageInfo.getHsm() ;
          String replicationSource = storageInfo.getKey("replication.source");
-         
+
          ProtocolInfo originalProtocolInfo = replicate.getProtocolInfo() ;
-        
+
          int matchCount = 0 ;
-         
+
          synchronized( _mapLock ){
-         
+
              for( Iterator i = _map.values().iterator() ; i.hasNext() ; ){
-             
+
                  Entry entry = (Entry)i.next() ;
-                 
+
                  if( ! entry._pattern.matcher( storageClass ).matches() )continue ;
 
-                 if( ! ( ( entry._source.equals("*")                     ) || 
+                 if( ! ( ( entry._source.equals("*")                     ) ||
                          ( entry._source.indexOf(replicationSource) > -1 )    ) )continue ;
-                         
+
                  matchCount ++ ;
-                 
+
                  say("Entry found for : SC=<"+storageClass+"> source="+replicationSource+" : "+entry ) ;
                  entry._hit ++ ;
-                 
+
                  CellPath path = entry._path == null ? _defaultDestinationPath : entry._path ;
 
                  replicate.setDestinationFileStatus( entry._status ) ;
 
-                 ProtocolInfo info = entry._info == null ? originalProtocolInfo : entry._info ;            
+                 ProtocolInfo info = entry._info == null ? originalProtocolInfo : entry._info ;
                  replicate.setProtocolInfo( info ) ;
 
                  try{
@@ -433,7 +433,7 @@ public class FileHoppingManager extends CellAdapter {
          say("Total match count for <"+storageClass+"> was "+matchCount ) ;
 
       }
-      
+
    }
    public String hh_save = "" ;
    public String ac_save( Args args ) throws Exception {
@@ -442,12 +442,12 @@ public class FileHoppingManager extends CellAdapter {
    }
    public String hh_ls_hop = "[<ruleName>] -count" ;
    public String ac_ls_hop_$_0_1( Args args ){
-      
+
       StringBuffer sb = new StringBuffer() ;
       boolean   count = ( args.getOpt("count") != null ) || ( args.getOpt("c") != null ) ;
-     
+
       synchronized( _mapLock ){
- 
+
          if( args.argc() == 0 ){
             if( count ){
                for( Iterator i = _map.values().iterator() ; i.hasNext() ; ){
@@ -467,12 +467,12 @@ public class FileHoppingManager extends CellAdapter {
             }
          }else{
             String ruleName = args.argv(0) ;
-            
+
             Entry e  = (Entry) _map.get( ruleName ) ;
             if( e == null )
               throw new
               IllegalArgumentException("Rule not found : "+ruleName);
-              
+
             sb.append( e.toCommandString() ).append("\n");
          }
       }

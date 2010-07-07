@@ -44,7 +44,7 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
      public void say(String s){
         manager.say("SelectPoolCompanion: "+s);
     }
-   
+
     public void esay(String s){
         manager.esay("SelectPoolCompanion: "+s);
     }
@@ -61,7 +61,7 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
                 return "UNKNOWN";
         }
     }
-    
+
     private void returnFailure(Object errorObject) {
         esay("retirning failure: ");
         if(errorObject != null) {
@@ -81,10 +81,10 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
             esay(e);
         }
     }
-    
+
     private void returnFailure(String error) {
         esay("returning failure: "+error);
-        
+
         selectPool.setReply(1,error);
         selectPoolMsg.revertDirection();
         try{
@@ -133,11 +133,11 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
             esay(" got unknown object. ignoring "+
             " : "+o);
         }
-     
+
     }
-    
+
     private void poolArrived(PoolMgrGetPoolByLink get_pool_bylink_msg) {
-        if(get_pool_bylink_msg.getPoolName() == null || 
+        if(get_pool_bylink_msg.getPoolName() == null ||
                 get_pool_bylink_msg.getReturnCode() != 0) {
             esay("pool manager could not get pool name");
             if(get_pool_bylink_msg.getErrorObject() != null  ) {
@@ -159,28 +159,28 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
         }
 
     }
-    
+
     private void askForPoolByLink() {
         say("askForPoolByLink, linkName="+linkName);
         try {
-            PoolMgrGetPoolByLink getPoolByLink = new 
+            PoolMgrGetPoolByLink getPoolByLink = new
                     PoolMgrGetPoolByLink(linkName);
             getPoolByLink.setFileSize(selectPool.getFileSize());
             state = ASKING_FOR_POOL;
             manager.sendMessage(new CellMessage(new CellPath(poolManager),getPoolByLink),
                 this,1000*60*3);
-            
+
         } catch ( Exception e) {
             returnFailure(e);
         }
         //String space = manager.getSpace(spaceId);
-        
+
     }
-    
+
     public static final void selectPool(Manager manager,String linkName,CellMessage selectPoolMsg) throws Exception {
         SelectPoolCompanion companion = new SelectPoolCompanion(manager,linkName,selectPoolMsg);
         companion.askForPoolByLink();
-        
+
     }
-    
+
 }
