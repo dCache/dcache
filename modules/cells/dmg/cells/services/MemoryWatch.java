@@ -18,9 +18,9 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private int     _generations = 2 ;
    private int     _current     = 0 ;
    private int     _maxFileSize = 1024 * 1024 ;
-   
+
    public MemoryWatch( String name , String args ) throws Exception {
-   
+
       super( name , args , false ) ;
       _nucleus  = getNucleus() ;
       try{
@@ -36,7 +36,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             }
          }
          //
-         // filesize 
+         // filesize
          //
          if( ( var = _args.getOpt("maxFilesize") ) != null ){
             try{ _maxFileSize = Integer.parseInt(var) ;
@@ -45,7 +45,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             }
          }
          //
-         // generations 
+         // generations
          //
          if( ( var = _args.getOpt("generations") ) != null ){
             try{ _generations = Integer.parseInt(var) ;
@@ -55,19 +55,19 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          }
          if( ( var = _args.getOpt("output" ) ) != null ){
             _output = true ;
-            if( ! var.equals("") )_outputFile = var ;        
+            if( ! var.equals("") )_outputFile = var ;
          }
          //
          // and  now the worker.
          //
          _queryThread = _nucleus.newThread( this , "queryThread" ) ;
-         _queryThread.start() ; 
+         _queryThread.start() ;
       }catch(Exception eex ){
          start() ;
          kill() ;
          throw eex ;
       }
-      start() ;   
+      start() ;
    }
    public void say( String str ){
       if( _output ){
@@ -85,10 +85,10 @@ public class MemoryWatch extends CellAdapter implements Runnable {
                 pw = new PrintWriter(
                           new FileWriter( name , true ) ) ;
              }
-             try{                
+             try{
                 pw.println(str) ;
              }catch(Exception ee){
-                
+
              }finally{
                 try{ pw.close() ; }catch(Exception eeee ){}
              }
@@ -109,12 +109,12 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          }catch(Exception ee ){
             esay( "Problem obtaining lib info : "+ee ) ;
             continue ;
-         }     
+         }
          try{
             long update ;
-            synchronized(_lock){ 
-                 update = _update * 1000 ; 
-            } 
+            synchronized(_lock){
+                 update = _update * 1000 ;
+            }
             Thread.sleep( update ) ;
          }catch(Exception e ){
             break ;
@@ -134,7 +134,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    public String ac_set_generations_$_1( Args args )throws CommandSyntaxException{
        int g = Integer.parseInt( args.argv(0) ) ;
        if( ( g < 1 ) || ( g > 10 ) )
-         throw new 
+         throw new
          IllegalArgumentException( "Generations not in range (1...10)" );
        _generations = g ;
        return "OutputFile generations = "+_generations ;
@@ -143,7 +143,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    public String ac_set_maxFilesize_$_1( Args args )throws CommandSyntaxException{
        int g = Integer.parseInt( args.argv(0) ) ;
        if( g < 1024 )
-         throw new 
+         throw new
          IllegalArgumentException( "maxFilesize not in range (>1k)" );
        _maxFileSize = g ;
        return "Maximum output filesize = "+_maxFileSize ;

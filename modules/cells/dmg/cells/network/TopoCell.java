@@ -115,7 +115,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
             vec.add( node ) ;
             acceptedTunnels.add( info[j]);
           }
-          
+
           // Make sure we only add the links that haven't caused a problem.
           node.setLinks( acceptedTunnels.toArray( new CellTunnelInfo [acceptedTunnels.size()]));
        }

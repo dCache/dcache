@@ -17,15 +17,15 @@ public class DataProviderCell extends CellAdapter {
     private int         _errorCounter   = 0 ;
     public DataProviderCell( String cellName , String args ){
         super( cellName , args ,false ) ;
-        
+
         _nucleus = getNucleus() ;
         _args    = getArgs() ;
-        
+
         try{
            if( _args.argc() < 1 )
-               throw new 
+               throw new
                IllegalArgumentException( "USAGE : ... <storeBase>" ) ;
-            
+
            _dir = new File( _args.argv(0) ) ;
            if( ! _dir.isDirectory() )
                throw new IllegalArgumentException( "Not a directory : "+_dir) ;
@@ -59,7 +59,7 @@ public class DataProviderCell extends CellAdapter {
       String command = args.argv(0) ;
       if( command.equals( "getclass" ) ){
          args.shift() ;
-         do_getclass_command( msg , args ) ; 
+         do_getclass_command( msg , args ) ;
       }
       return ;
    }
@@ -107,7 +107,7 @@ public class DataProviderCell extends CellAdapter {
          msg.revertDirection() ;
          sendMessage( msg ) ;
       }catch( Exception e ){
-      
+
       }
    }
 }

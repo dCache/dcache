@@ -11,12 +11,12 @@ import javax.security.auth.Subject;
 
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      ObjectLoginCell 
+public class      ObjectLoginCell
        extends    CellAdapter
        implements Runnable  {
 
@@ -29,24 +29,24 @@ public class      ObjectLoginCell
   private Gate           _readyGate   = new Gate(false) ;
   private Hashtable      _hash = new Hashtable() ;
   private CellNucleus    _nucleus ;
-  
+
   public ObjectLoginCell( String name , StreamEngine engine ){
      super( name , "" , false ) ;
-     
+
      _engine  = engine ;
      _nucleus = getNucleus() ;
      try{
-     
+
         _out  = new ObjectOutputStream( _engine.getOutputStream() ) ;
         _in   = new ObjectInputStream(  _engine.getInputStream() ) ;
         _subject = _engine.getSubject();
         _host = _engine.getInetAddress() ;
-        
+
      }catch(Exception e ){
         start() ;
         kill() ;
         throw new IllegalArgumentException( "Problem : "+e.toString() ) ;
-     } 
+     }
      _workerThread = _nucleus.newThread( this ) ;
      _workerThread.start() ;
       useInterpreter( false ) ;
@@ -65,8 +65,8 @@ public class      ObjectLoginCell
                   // have to go back to readLine to
                   // finish the ssh protocol gracefully.
                   //
-                  try{ _out.close() ; }catch(Exception ee){} 
-               }       
+                  try{ _out.close() ; }catch(Exception ee){}
+               }
            }catch( IOException e ){
               say("EOF Exception in read line : "+e ) ;
               break ;
@@ -74,18 +74,18 @@ public class      ObjectLoginCell
               say("I/O Error in read line : "+e ) ;
               break ;
            }
-        
+
         }
         say( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
-    
+
     }
   }
    public void   cleanUp(){
-   
+
      say( "Clean up called" ) ;
-     try{ _out.close() ; }catch(Exception ee){} 
+     try{ _out.close() ; }catch(Exception ee){}
      _readyGate.check() ;
      say( "finished" ) ;
 
@@ -93,7 +93,7 @@ public class      ObjectLoginCell
    public String ac_ping( Args args ) throws CommandException {
       CellMessage msg = null ;
       try{
-         msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ; 
+         msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;
          sendMessage( msg ) ;
          say( "sendMessage o.k. : "+msg ) ;
       }catch( Exception e ){
@@ -101,16 +101,16 @@ public class      ObjectLoginCell
          return "Ok weh" ;
       }
       return "Done" ;
-   
+
    }
    public int execute( MessageObjectFrame frame ){
       CellMessage msg = null ;
-      say( "Forwarding : "+frame.getCellPath() + 
+      say( "Forwarding : "+frame.getCellPath() +
                           "   "+frame.getObject().toString() ) ;
       try{
          msg = new CellMessage( frame.getCellPath() ,
                                 frame.getObject()   ) ;
-                                
+
          synchronized( _hash ){
             sendMessage( msg ) ;
             say( "sendMessage o.k. : "+msg ) ;
@@ -147,7 +147,7 @@ public class      ObjectLoginCell
       }catch(Exception e ){
            kill() ;
       }
-   }  
+   }
 
 
-} 
+}
