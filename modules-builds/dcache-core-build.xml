@@ -101,8 +101,12 @@
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
         <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
         <path refid="authz.classpath" />
-        <fileset dir="${axis.untared}" includes="**/*.jar" excludes="**/log4j-*.jar"/>
-        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${axis.untared}">
+          <include name="**/*.jar"/>
+          <exclude name="**/log4j-*.jar"/>
+          <exclude name="**/commons-logging-*.jar"/>
+        </fileset>
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
@@ -418,7 +422,6 @@
         <copy file="${libDir}/Chimera/portmap.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/grizzly-rpc.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${server.bin.dir}/classes/chimera" />
-        <copy file="${libDir}/Chimera/commons-logging.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/dbcp/c3p0.properties" todir="${server.bin.dir}/config" />
         <copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${server.bin.dir}/classes/dbcp" />
         <copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-get-acl.sh" />
@@ -569,6 +572,7 @@
             <fileset dir="${axis.untared}/lib/">
                 <include name="*.jar" />
                 <exclude name="log4j-*.jar"/>
+                <exclude name="commons-logging-*.jar"/>
             </fileset>
         </copy>
 
@@ -578,6 +582,7 @@
         <copy todir="${server.bin.dir}/classes/cog">
             <fileset dir="${libDir}/cog/${cogVersion}">
                 <include name="*.jar" />
+                <exclude name="commons-logging-*.jar"/>
             </fileset>
         </copy>
 

@@ -48,8 +48,12 @@
 
     <path id="srmclient.classpath">
         <pathelement location="${classesDir}/srm.jar" />
-        <fileset dir="${axis.untared}" includes="**/*.jar" excludes="**/log4j-*.jar"/>
-        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${axis.untared}">
+          <include name="**/*.jar"/>
+          <exclude name="**/log4j-*.jar"/>
+          <exclude name="**/commons-logging-*.jar"/>
+        </fileset>
+        <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
