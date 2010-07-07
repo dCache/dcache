@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
                         printf("  file: %s\n", url->file);
                         printf("  type: %d\n", url->type);
                         printf("  prefix: %s\n", url->prefix ? url->prefix : "none");
-                        printf("  config line: %s\n", url2config(url, str) );
+                        printf("  config line: %s\n", url2config(str, sizeof(str), url) );
                         free(url->host);
                         free(url->file);
                         if( url->prefix != NULL) free(url->prefix);

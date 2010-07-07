@@ -23,6 +23,8 @@
 #include "dcap_errno.h"
 #include "dcap_error.h"
 
+#include "dcap_url.h"
+
 #define DCAP_PREFIX "dcap://"
 #define PNFS_PREFIX "pnfs://"
 #define DEFAULT_DOOR "dcache"
@@ -175,7 +177,7 @@ dcap_url* dc_getURL( const char *path )
 	return url;
 }
 
-char * url2config( dcap_url *url , char *configLine )
+char * url2config(char *configLine, size_t configLineSize,  dcap_url *url)
 {
 	configLine[0] = '\0';
 
