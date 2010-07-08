@@ -7,6 +7,9 @@ import java.util.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
   *
@@ -17,6 +20,9 @@ import dmg.util.*;
  */
 public class       UserSecurityCell
        extends     CellAdapter            {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(UserSecurityCell.class);
 
   private final String       _cellName ;
   private final CellNucleus  _nucleus ;
@@ -52,8 +58,7 @@ public class       UserSecurityCell
                               new File( dbBase , "meta" ) ) ;
 
       }catch( Exception e ){
-         esay( "Exception while <init> : "+e ) ;
-         esay(e) ;
+         _log.warn( "Exception while <init> : "+e, e ) ;
          start() ;
          kill() ;
          throw e ;
@@ -68,7 +73,7 @@ public class       UserSecurityCell
       Object answer  = "PANIX" ;
 
       try{
-         say( "Message type : "+obj.getClass() ) ;
+         _log.info( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -78,7 +83,7 @@ public class       UserSecurityCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            say( ">"+command+"< request from "+user );
+            _log.info( ">"+command+"< request from "+user );
             //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) )
@@ -96,7 +101,7 @@ public class       UserSecurityCell
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             esay( r ) ;
+             _log.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -111,8 +116,7 @@ public class       UserSecurityCell
       try{
          sendMessage( msg ) ;
       }catch( Exception ioe ){
-         esay( "Can't send acl_response : "+ioe ) ;
-         esay(ioe) ;
+         _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
   private Object execAuthorizedString( String user , String command )
@@ -188,7 +192,7 @@ public class       UserSecurityCell
       String user = args.getOpt("auth") ;
       if( user == null )throw new Exception("Not authenticated" ) ;
       String command = args.argv(0) ;
-      say( "show all : mode="+command+";user=user") ;
+      _log.info( "show all : mode="+command+";user=user") ;
       if( command.equals("exception") )
          throw new
          Exception( "hallo otto" ) ;
@@ -242,7 +246,7 @@ public class       UserSecurityCell
           _userDb.removeContainer( user ) ;
           _aclDb.removeAclItem( "group."+user+".access" ) ;
        }catch( Exception ee ){
-          esay( args.toString()+" : "+ee ) ;
+          _log.warn( args.toString()+" : "+ee ) ;
            //
            // not an error
            //

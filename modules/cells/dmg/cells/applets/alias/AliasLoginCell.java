@@ -9,6 +9,8 @@ import java.io.* ;
 import java.net.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
   *
@@ -19,6 +21,9 @@ import javax.security.auth.Subject;
 public class      AliasLoginCell
        extends    CellAdapter
        implements Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(AliasLoginCell.class);
 
   private StreamEngine          _engine ;
   private ObjectInputStream     _in ;
@@ -66,15 +71,15 @@ public class      AliasLoginCell
                   try{ _out.close() ; }catch(Exception ee){}
                }
            }catch( IOException e ){
-              esay("EOF Exception in read line : "+e ) ;
+              _log.warn("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              esay("I/O Error in read line : "+e ) ;
+              _log.warn("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        say( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -82,21 +87,21 @@ public class      AliasLoginCell
   }
    public void   cleanUp(){
 
-     say( "Clean up called" ) ;
+     _log.info( "Clean up called" ) ;
      try{ _out.close() ; }catch(Exception ee){}
-     say( "Removing routes" ) ;
+     _log.info( "Removing routes" ) ;
      Enumeration e = _routes.elements() ;
      while( e.hasMoreElements() ){
         CellRoute route  = (CellRoute)e.nextElement() ;
         try{
            _nucleus.routeDelete( route ) ;
         }catch(Exception ee ){
-           say( "Removing route failed : "+route ) ;
+           _log.info( "Removing route failed : "+route ) ;
         }
 
      }
      _readyGate.check() ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
    public int execute( Object command ){
@@ -104,22 +109,22 @@ public class      AliasLoginCell
 
       if( command instanceof AliasCommand ){
          AliasCommand ac  = (AliasCommand) command ;
-         say( "Creating route : "+ac ) ;
+         _log.info( "Creating route : "+ac ) ;
          String action = ac.getAction() ;
          if( action.equals( "set-route" ) ){
             CellRoute route =
                new CellRoute( ac.getName() , getCellName() , CellRoute.EXACT ) ;
             try{
-               say( "Trying to remove : "+route ) ;
+               _log.info( "Trying to remove : "+route ) ;
                _nucleus.routeDelete( route ) ;
             }catch( Exception e1 ){
-               say( "Removing route failed : " + e1 ) ;
+               _log.info( "Removing route failed : " + e1 ) ;
             }
             try{
-               say( "Trying to add : "+route ) ;
+               _log.info( "Trying to add : "+route ) ;
                _nucleus.routeAdd( route ) ;
             }catch( Exception e2 ){
-               say( "Adding route failed : " + e2 ) ;
+               _log.info( "Adding route failed : " + e2 ) ;
                return 0 ;
             }
             _routes.put( ac.getName() , route ) ;
@@ -143,18 +148,18 @@ public class      AliasLoginCell
          try{
             sendMessage( (CellMessage)command ) ;
          }catch( Exception ee ){
-            esay( "Problem forwarding message : "+ee ) ;
+            _log.warn( "Problem forwarding message : "+ee ) ;
          }
       }
       return 0 ;
    }
    public void messageArrived( CellMessage msg ){
-       say( "Message arrived : "+msg ) ;
+       _log.info( "Message arrived : "+msg ) ;
        sendObject( msg ) ;
        return ;
    }
    public void messageToForward( CellMessage msg ){
-       say( "Message arrived : "+msg ) ;
+       _log.info( "Message arrived : "+msg ) ;
        sendObject( msg ) ;
        return ;
    }

@@ -9,6 +9,8 @@ import java.io.* ;
 import java.net.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
   *
@@ -19,6 +21,9 @@ import javax.security.auth.Subject;
 public class      ObjectLoginCell
        extends    CellAdapter
        implements Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(ObjectLoginCell.class);
 
   private StreamEngine          _engine ;
   private ObjectInputStream     _in ;
@@ -68,15 +73,15 @@ public class      ObjectLoginCell
                   try{ _out.close() ; }catch(Exception ee){}
                }
            }catch( IOException e ){
-              say("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              say("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        say( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -84,10 +89,10 @@ public class      ObjectLoginCell
   }
    public void   cleanUp(){
 
-     say( "Clean up called" ) ;
+     _log.info( "Clean up called" ) ;
      try{ _out.close() ; }catch(Exception ee){}
      _readyGate.check() ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
    public String ac_ping( Args args ) throws CommandException {
@@ -95,9 +100,9 @@ public class      ObjectLoginCell
       try{
          msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;
          sendMessage( msg ) ;
-         say( "sendMessage o.k. : "+msg ) ;
+         _log.info( "sendMessage o.k. : "+msg ) ;
       }catch( Exception e ){
-         esay( "Exception while sending : "+e ) ;
+         _log.warn( "Exception while sending : "+e ) ;
          return "Ok weh" ;
       }
       return "Done" ;
@@ -105,7 +110,7 @@ public class      ObjectLoginCell
    }
    public int execute( MessageObjectFrame frame ){
       CellMessage msg = null ;
-      say( "Forwarding : "+frame.getCellPath() +
+      _log.info( "Forwarding : "+frame.getCellPath() +
                           "   "+frame.getObject().toString() ) ;
       try{
          msg = new CellMessage( frame.getCellPath() ,
@@ -113,12 +118,12 @@ public class      ObjectLoginCell
 
          synchronized( _hash ){
             sendMessage( msg ) ;
-            say( "sendMessage o.k. : "+msg ) ;
-            say( "Adding to hash "+msg.getUOID() ) ;
+            _log.info( "sendMessage o.k. : "+msg ) ;
+            _log.info( "Adding to hash "+msg.getUOID() ) ;
             _hash.put( msg.getUOID() , frame ) ;
          }
       }catch( Exception e ){
-         esay( "Exception while sending : "+e ) ;
+         _log.warn( "Exception while sending : "+e ) ;
          frame.setObject( e ) ;
          sendObject( frame ) ;
          return 0 ;
@@ -126,13 +131,13 @@ public class      ObjectLoginCell
       return 0 ;
    }
    public void messageArrived( CellMessage msg ){
-       say( "Message arrived : "+msg ) ;
+       _log.info( "Message arrived : "+msg ) ;
        MessageObjectFrame frame ;
        synchronized( _hash ){
           frame = (MessageObjectFrame)_hash.remove( msg.getLastUOID() ) ;
        }
        if( frame == null ){
-          esay( "Not found in hash : "+msg.getLastUOID() ) ;
+          _log.warn( "Not found in hash : "+msg.getLastUOID() ) ;
           return ;
        }
        frame.setObject( msg.getMessageObject() ) ;

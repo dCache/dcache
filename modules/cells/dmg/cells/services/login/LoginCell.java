@@ -9,6 +9,8 @@ import java.net.* ;
 import java.lang.reflect.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
   *
@@ -19,6 +21,9 @@ import javax.security.auth.Subject;
 public class      LoginCell
        extends    CellAdapter
        implements Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(LoginCell.class);
 
   private StreamEngine   _engine ;
   private BufferedReader _in ;
@@ -87,7 +92,7 @@ public class      LoginCell
      Constructor con = null ;
      Object      o   = null ;
      for( int i = 0 ; i < args.argc() ; i++ ){
-        say( "Trying to load shell : "+args.argv(i) ) ;
+        _log.info( "Trying to load shell : "+args.argv(i) ) ;
         try{
            c = Class.forName( args.argv(i) ) ;
            int j ;
@@ -104,11 +109,11 @@ public class      LoginCell
 
            o = con.newInstance( objList[j] ) ;
            addCommandListener( o ) ;
-           say( "Added : "+args.argv(i) ) ;
+           _log.info( "Added : "+args.argv(i) ) ;
         }catch(Exception ee ){
-           esay( "Failed to load shell : "+args.argv(i)+" : "+ee ) ;
+           _log.warn( "Failed to load shell : "+args.argv(i)+" : "+ee ) ;
            if( ee instanceof InvocationTargetException ){
-              esay( "   -> Problem in constructor : "+
+              _log.warn( "   -> Problem in constructor : "+
                 ((InvocationTargetException)ee).getTargetException() ) ;
            }
         }
@@ -134,15 +139,15 @@ public class      LoginCell
                   print( prompt() ) ;
                }
            }catch( IOException e ){
-              say("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              say("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        say( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -150,11 +155,11 @@ public class      LoginCell
   }
    public void   cleanUp(){
 
-     say( "Clean up called" ) ;
+     _log.info( "Clean up called" ) ;
      println("");
      try{ _out.close() ; }catch(Exception ee){}
      _readyGate.check() ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
   public void println( String str ){

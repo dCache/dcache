@@ -5,7 +5,14 @@ import  dmg.util.* ;
 import  java.io.* ;
 import  java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SetupManager extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(SetupManager.class);
+
    private String      _cellName = null ;
    private Args        _args     = null ;
    private CellNucleus _nucleus  = null ;
@@ -41,7 +48,7 @@ public class SetupManager extends CellAdapter {
          _defaultClass = _args.getOpt("defaultClass") ;
          _defaultClass = _defaultClass == null ? "default" : _defaultClass ;
 
-         say("defaultClass set to '"+_defaultClass+"'");
+         _log.info("defaultClass set to '"+_defaultClass+"'");
 
 
       }catch(Exception ee ){
@@ -242,7 +249,7 @@ public class SetupManager extends CellAdapter {
          message.revertDirection() ;
          sendMessage(message);
       }catch(Exception ee ){
-         esay("Problems sending reply to "+message);
+         _log.warn("Problems sending reply to "+message);
       }
    }
 

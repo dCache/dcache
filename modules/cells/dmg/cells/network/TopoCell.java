@@ -5,6 +5,9 @@ import  dmg.util.* ;
 import  java.util.* ;
 import  java.io.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -12,6 +15,8 @@ import  java.io.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class TopoCell extends CellAdapter implements Runnable  {
+
+   private final static Logger _log = LoggerFactory.getLogger(TopoCell.class);
 
    private final Thread      _worker ;
    private final Object      _infoLock     = new Object() ;
@@ -27,7 +32,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
       try{
          _waitTime = Long.parseLong( wait ) * 1000L ;
       }catch(NumberFormatException ee){ /* bad values ignored */}
-      say("Update set to "+_waitTime+" millis");
+      _log.info("Update set to "+_waitTime+" millis");
       _worker = getNucleus().newThread( this ) ;
       _worker.start() ;
    }
@@ -43,10 +48,10 @@ public class TopoCell extends CellAdapter implements Runnable  {
                synchronized( _infoLock ){ _infoMap = info ; }
                _requestCount++;
            }catch(InterruptedException ie){
-               say( "Topology Thread was interrupted" ) ;
+               _log.info( "Topology Thread was interrupted" ) ;
                break ;
            }catch(Exception e){
-               esay( "Exception in Loop : "+e ) ;
+               _log.warn( "Exception in Loop : "+e ) ;
            }
        }
      }
@@ -108,7 +113,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
               domain = info[j].getRemoteCellDomainInfo().
                                       getCellDomainName() ;
             }catch( Exception npe ){
-              esay( "Exception in domain info : "+info[j].toString() );
+              _log.warn( "Exception in domain info : "+info[j].toString() );
               continue ;
             }
             node = new CellDomainNode( domain , address+":System@"+domain) ;
@@ -174,7 +179,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
     }
 
     private void setStatus(String st) {
-        say(st);
+        _log.info(st);
     }
 
 }

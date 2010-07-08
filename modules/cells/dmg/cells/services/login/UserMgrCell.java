@@ -7,6 +7,9 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.util.cdb.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
   *
@@ -17,6 +20,9 @@ import dmg.util.cdb.* ;
  */
 public class       UserMgrCell
        extends     CellAdapter            {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(UserMgrCell.class);
 
   private String       _cellName ;
   private CellNucleus  _nucleus ;
@@ -97,13 +103,13 @@ public class       UserMgrCell
       Object answer  = "PANIX" ;
 
       try{
-         say( "Message : "+obj.getClass() ) ;
+         _log.info( "Message : "+obj.getClass() ) ;
          if( ( ! ( obj instanceof Object [] ) ) ||
              (  ((Object[])obj).length < 3 )    ||
              ( !((Object[])obj)[0].equals("request") ) ){
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             esay( r ) ;
+             _log.warn( r ) ;
              throw new Exception( r ) ;
          }
          Object [] request    = (Object[])obj ;
@@ -111,7 +117,7 @@ public class       UserMgrCell
                                 "unknown" : (String)request[1] ;
          String command       = (String)request[2] ;
          UserPrivileges priv  = _userDb.getUserPrivileges( user ) ;
-         say( ">"+command+"< request from "+user ) ;
+         _log.info( ">"+command+"< request from "+user ) ;
          try{
             command  = createMethodName( command ) ;
             Method m = this.getClass().getDeclaredMethod( command , __argListDef ) ;
@@ -136,7 +142,7 @@ public class       UserMgrCell
       try{
          sendMessage( msg ) ;
       }catch( Exception ioe ){
-         esay( "Can't send acl_response : "+ioe ) ;
+         _log.warn( "Can't send acl_response : "+ioe ) ;
       }
   }
   private String createMethodName( String com ){
@@ -439,14 +445,14 @@ public class       UserMgrCell
       if( isGroup ){
          p = "add-allowed:user:"+userName ;
          if( ! priv.isAllowed( p ) ){
-            say( ">"+p+"< denied for "+priv.getUserName() ) ;
+            _log.info( ">"+p+"< denied for "+priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }
       }else{
          p = "add-allowed:user:*";
          if( ! priv.isAllowed( p ) ){
-            say( ">"+p+"< denied for "+priv.getUserName() ) ;
+            _log.info( ">"+p+"< denied for "+priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }

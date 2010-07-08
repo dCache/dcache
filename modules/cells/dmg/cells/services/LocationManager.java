@@ -7,7 +7,14 @@ import java.util.* ;
 import dmg.cells.nucleus.* ;
 import dmg.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class LocationManager extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(LocationManager.class);
+
    /**
      */
    private DatagramSocket _socket  = null ;
@@ -156,7 +163,7 @@ public class LocationManager extends CellAdapter {
                IllegalArgumentException( "Can't create : "+permFileName ) ;
             _permFile = permFile ;
          }
-         say("Persistent map file set to : "+_permFile);
+         _log.info("Persistent map file set to : "+_permFile);
          return;
       }
       private synchronized void loadPersistentMap() throws Exception {
@@ -164,11 +171,11 @@ public class LocationManager extends CellAdapter {
          ObjectInputStream in = new ObjectInputStream(
                                       new FileInputStream( _permFile ) ) ;
          Map<String, String> hm = null ;
-         say("Loading persistent map file");
+         _log.info("Loading persistent map file");
          try{
              hm = (HashMap)in.readObject() ;
 
-             say("Persistent map : "+hm);
+             _log.info("Persistent map : "+hm);
 
              for(Map.Entry<String, String> node_and_address: hm.entrySet()) {
 
@@ -178,11 +185,11 @@ public class LocationManager extends CellAdapter {
             	 NodeInfo info = getInfo( node , true ) ;
             	 if( info == null )continue ;
             	 info.setAddress( node ) ;
-            	 say( "Updated : <"+node+"> -> "+address ) ;
+            	 _log.info( "Updated : <"+node+"> -> "+address ) ;
              }
 
          }catch(Exception ee){
-             esay("Problem reading persistent map "+ee.getMessage() );
+             _log.warn("Problem reading persistent map "+ee.getMessage() );
              _permFile.delete() ;
          }finally{
             try{ in.close() ; }catch(IOException ee){}
@@ -205,7 +212,7 @@ public class LocationManager extends CellAdapter {
         	out = new ObjectOutputStream( new FileOutputStream( _permFile ) ) ;
             out.writeObject( hm ) ;
          }catch(Exception e){
-             esay("Problem writing persistent map "+e.getMessage() );
+             _log.warn("Problem writing persistent map "+e.getMessage() );
              _permFile.delete() ;
          }finally{
             if(out != null) try{ out.close() ; }catch(Exception ee){}
@@ -238,8 +245,7 @@ public class LocationManager extends CellAdapter {
             fileExists = _setupFile.exists() ;
             canWrite   = _setupFile.canWrite() ;
          }catch(Exception ee ){
-            esay("Can't check setup file <"+_setupFileName+"> : "+ee.getMessage() ) ;
-            esay(ee);
+             _log.warn("Can't check setup file <"+_setupFileName+"> : "+ee.getMessage(), ee) ;
             throw ee ;
          }
          if( fileExists && ! _setupFile.isFile() )
@@ -294,12 +300,12 @@ public class LocationManager extends CellAdapter {
              while( ( line = br.readLine() ) != null ){
                 if( line.length() < 1 )continue ;
                 if( line.charAt(0) == '#' )continue ;
-                say("Exec : "+line) ;
+                _log.info("Exec : "+line) ;
                 command( new Args(line) ) ;
              }
           }catch( EOFException eof ){
           }catch( Exception ef ){
-             esay("Ups : "+ef ) ;
+             _log.warn("Ups : "+ef ) ;
           }finally{
              try{ br.close() ; }catch(Exception ce ){}
           }
@@ -322,16 +328,14 @@ public class LocationManager extends CellAdapter {
                 packet = new DatagramPacket(new byte[1024],1024) ;
                 _socket.receive(packet);
             }catch(Exception ie){
-               esay("Exception in Server receive loop (exiting)");
-               esay(ie);
+                _log.warn("Exception in Server receive loop (exiting)", ie);
                break ;
             }
             try{
                 process( packet ) ;
                 _socket.send(packet);
             }catch(Exception se ){
-                esay("Exception in send ");
-                esay(se);
+                _log.warn("Exception in send ", se);
             }
          }
          _socket.close();
@@ -341,15 +345,15 @@ public class LocationManager extends CellAdapter {
           int   datalen = packet.getLength() ;
           InetAddress address = packet.getAddress() ;
           if( datalen <= 0 ){
-             esay( "Empty Packet arrived from "+packet.getAddress() ) ;
+             _log.warn( "Empty Packet arrived from "+packet.getAddress() ) ;
              return ;
           }
           String message = new String( data , 0 , datalen ) ;
-          say( "server query : ["+address+"] "+"("+message.length()+") "+message) ;
+          _log.info( "server query : ["+address+"] "+"("+message.length()+") "+message) ;
 
           message = (String)command( new Args( message ) ) ;
 
-          say( "server reply : "+message ) ;
+          _log.info( "server reply : "+message ) ;
           data = message.getBytes() ;
           packet.setData(data) ;
           packet.setLength(data.length);
@@ -680,25 +684,25 @@ public class LocationManager extends CellAdapter {
                int packLen  = packet.getLength();
 
                if ((data == null) || (packLen == 0)) {
-                   esay("Zero packet received");
+                   _log.warn("Zero packet received");
                    continue;
                }
 
                Args   a   = new Args(new String(data, 0, packLen));
                String tmp = a.getOpt("serial");
                if (tmp == null) {
-                   esay("Packet didn't provide a serial number");
+                   _log.warn("Packet didn't provide a serial number");
                    continue;
                }
 
                Integer      s = Integer.valueOf(tmp);
                StringBuffer b = _map.get(s);
                if (b == null) {
-                   esay("Not waiting for " + s);
+                   _log.warn("Not waiting for " + s);
                    continue;
                }
 
-               say("Reasonable reply arrived (" + s + ") : " + b);
+               _log.info("Reasonable reply arrived (" + s + ") : " + b);
 
                synchronized (b) {
                   b.append(a.toString());
@@ -708,13 +712,13 @@ public class LocationManager extends CellAdapter {
                 Thread.currentThread().interrupt();
             } catch (SocketException e) {
                 if (!Thread.currentThread().isInterrupted()) {
-                    esay("Receiver socket problem : " + e.getMessage());
+                    _log.warn("Receiver socket problem : " + e.getMessage());
                 }
             } catch (IOException e) {
-                esay("Receiver IO problem : " + e.getMessage());
+                _log.warn("Receiver IO problem : " + e.getMessage());
             }
          }
-         say("Receiver thread finished");
+         _log.info("Receiver thread finished");
       }
 
       private String askServer( String message , long waitTime )
@@ -736,7 +740,7 @@ public class LocationManager extends CellAdapter {
          long    now    = 0 ;
 
 
-         say( "Sending to "+_address+":"+_port+" : "+new String(data,0,data.length));
+         _log.info( "Sending to "+_address+":"+_port+" : "+new String(data,0,data.length));
 
          synchronized(  b ){
 
@@ -829,7 +833,7 @@ public class LocationManager extends CellAdapter {
               _repliesSent++;
 
            }catch(Exception ee){
-              esay("Problem in 'whereIs' request : "+ee ) ;
+              _log.warn("Problem in 'whereIs' request : "+ee ) ;
               _totalExceptions ++ ;
            }
          }
@@ -864,7 +868,7 @@ public class LocationManager extends CellAdapter {
          try{
              _registered  = InetAddress.getLocalHost().getHostName()+":"+portString ;
          }catch( java.net.UnknownHostException uhe ){
-             esay("Couldn't resolve hostname : "+uhe);
+             _log.warn("Couldn't resolve hostname : "+uhe);
              return null ;
          }
 
@@ -896,9 +900,9 @@ public class LocationManager extends CellAdapter {
             protocol = securityContext ;
          }
          String cellArgs  = ""+port+" "+cellClass+" "+protocol+" -lm="+getCellName();
-         say(" LocationManager starting acceptor with "+cellArgs ) ;
+         _log.info(" LocationManager starting acceptor with "+cellArgs ) ;
          Cell c = _nucleus.createNewCell( inetClass , cellName , cellArgs , true ) ;
-         say( "Created : "+c ) ;
+         _log.info( "Created : "+c ) ;
          return ;
       }
 
@@ -921,9 +925,9 @@ public class LocationManager extends CellAdapter {
              + clientKey + " "
              + clientName;
 
-         say("LocationManager starting connector with " + cellArgs);
+         _log.info("LocationManager starting connector with " + cellArgs);
          Cell c = _nucleus.createNewCell(cellClass, cellName, cellArgs, true);
-         say("Created : " + c);
+         _log.info("Created : " + c);
        }
 
       private void setDefaultRoute( String domain ) throws Exception {
@@ -946,7 +950,7 @@ public class LocationManager extends CellAdapter {
             try{
 
                String reply = _lmHandler.askServer( request , 5000 ) ;
-               say( "whatToDo got : "+reply ) ;
+               _log.info( "whatToDo got : "+reply ) ;
 
                Args args = new Args( reply ) ;
 
@@ -961,7 +965,7 @@ public class LocationManager extends CellAdapter {
                   IllegalArgumentException("Not a 'do' or not for us : "+reply ) ;
 
                if( args.argc() == 2 ){
-                  say("Nothing to do for us");
+                  _log.info("Nothing to do for us");
                   return ;
                }
 
@@ -973,22 +977,22 @@ public class LocationManager extends CellAdapter {
                return ;
 
             }catch(InterruptedException ie ){
-               esay( _toDo = "whatToDo : interrupted" ) ;
+               _log.warn( _toDo = "whatToDo : interrupted" ) ;
                break ;
             }catch(InterruptedIOException ie ){
-               esay( _toDo = "whatToDo : interrupted(io)" ) ;
+               _log.warn( _toDo = "whatToDo : interrupted(io)" ) ;
                break ;
             }catch(Exception ee ){
-               esay(_toDo = "whatToDo : exception : "+ee ) ;
+               _log.warn(_toDo = "whatToDo : exception : "+ee ) ;
             }
             try{
                Thread.sleep(10000) ;
             }catch(InterruptedException iie ){
-               esay(_toDo = "whatToDo : interrupted sleep") ;
+               _log.warn(_toDo = "whatToDo : interrupted sleep") ;
                break ;
             }
          }
-         say( "whatToDo finished" ) ;
+         _log.info( "whatToDo finished" ) ;
 
       }
       /**
@@ -1027,7 +1031,7 @@ public class LocationManager extends CellAdapter {
                      try{
                          port = Integer.parseInt(tmp);
                      }catch(Exception e ){
-                         esay("Got illegal port numnber <"+arg+">, using random");
+                         _log.warn("Got illegal port numnber <"+arg+">, using random");
                      }
                   }
                   //
@@ -1054,7 +1058,7 @@ public class LocationManager extends CellAdapter {
             }catch(InterruptedException iee ){
                throw iee ;
             }catch(Exception ee ){
-               esay("Command >"+arg+"< received : "+ee ) ;
+               _log.warn("Command >"+arg+"< received : "+ee ) ;
             }
          }
 
@@ -1094,17 +1098,17 @@ public class LocationManager extends CellAdapter {
               port = Integer.parseInt( _args.argv(0) );
               host = InetAddress.getByName("localhost") ;
               _server = new Server( port , _args ) ;
-              say("Server Setup Done") ;
+              _log.info("Server Setup Done") ;
            }else{
               port = Integer.parseInt( _args.argv(1) );
               host = InetAddress.getByName( _args.argv(0) ) ;
            }
            if( _args.getOpt("noclient") == null ){
               _client = new Client( host , port , _args ) ;
-              say("Client started");
+              _log.info("Client started");
            }
        }catch(Exception ee){
-           esay(ee) ;
+           _log.warn(ee.toString(), ee) ;
            start() ;
            kill() ;
            throw ee;

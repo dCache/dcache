@@ -9,11 +9,19 @@ import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 import  java.util.* ;
 import  java.io.* ;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  patrick
  */
 public class BroadcastCell extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(BroadcastCell.class);
+
    private class Entry {
 
       private static final int STATIC             =  1 ;
@@ -185,7 +193,7 @@ public class BroadcastCell extends CellAdapter {
             if( options.expires  > 0L )entry.setExpires(options.expires);
         }
         }catch(Exception ee ){
-            esay(ee);
+            _log.warn(ee.toString(), ee);
             throw ee ;
         }
         return "" ;
@@ -300,7 +308,7 @@ public class BroadcastCell extends CellAdapter {
             }
             if( event instanceof BroadcastRegisterMessage ){
                 BroadcastRegisterMessage reg = (BroadcastRegisterMessage)event ;
-                say("Message register : "+reg);
+                _log.info("Message register : "+reg);
                 synchronized( this ){
                     Entry entry = get( target , eventClass ) ;
                     if( entry == null )entry = register( target , eventClass ) ;
@@ -311,7 +319,7 @@ public class BroadcastCell extends CellAdapter {
                 }
             }else if( event instanceof BroadcastUnregisterMessage ){
                 BroadcastUnregisterMessage unreg = (BroadcastUnregisterMessage)event ;
-                say("Message unregister : "+unreg);
+                _log.info("Message unregister : "+unreg);
 
                 unregister( target , eventClass ) ;
 
@@ -320,15 +328,14 @@ public class BroadcastCell extends CellAdapter {
                 IllegalArgumentException("Not a valid Broadcast command " +event.getClass());
             }
         }catch(Exception ee ){
-            esay("Problem with {"+command+"}"+ee);
-            esay(ee);
+            _log.warn("Problem with {"+command+"}"+ee, ee);
             event.setReturnValues(1,ee);
         }
         msg.revertDirection() ;
         try{
             sendMessage(msg);
         }catch(Exception ee ){
-            esay("Couldn't reply : "+ee);
+            _log.warn("Couldn't reply : "+ee);
         }
     }
     public void getInfo(  PrintWriter pw ){
@@ -343,7 +350,7 @@ public class BroadcastCell extends CellAdapter {
 
     }
     public void messageArrived( CellMessage message ){
-        say("messageArrived : "+message);
+        _log.info("messageArrived : "+message);
         _received ++ ;
         if( _debug ){
             _debugging.messageArrived( message ) ;
@@ -371,16 +378,16 @@ public class BroadcastCell extends CellAdapter {
             }
             o = o.getSuperclass() ;
         }
-        say("Message arrived "+obj.getClass().getName());
+        _log.info("Message arrived "+obj.getClass().getName());
         Iterator i = classList.iterator() ;
         while( i.hasNext() ){
             String eventClass = i.next().toString() ;
-            //say("Checking :  "+eventClass);
+            //_log.info("Checking :  "+eventClass);
             forwardMessage( message , eventClass )  ;
         }
     }
     public void messageToForward( CellMessage message ){
-        say("FORWARD: "+message);
+        _log.info("FORWARD: "+message);
         _forwarded ++ ;
         Object obj = message.getMessageObject() ;
         if( ( obj != null ) && ( obj instanceof NoRouteToCellException ) ){
@@ -393,7 +400,7 @@ public class BroadcastCell extends CellAdapter {
     private synchronized void forwardMessage( CellMessage message , String classEvent ){
         Map map = (Map)_eventClassMap.get(classEvent);
         if( map == null ){
-//            say("forwardMessage : Not found in eventClassMap : "+classEvent);
+//            _log.info("forwardMessage : Not found in eventClassMap : "+classEvent);
             return ;
         }
         ArrayList list = new ArrayList() ;
@@ -422,11 +429,11 @@ public class BroadcastCell extends CellAdapter {
             //
             msg.getSourcePath().add( message.getSourcePath() );
             try{
-                say("forwardMessage : "+classEvent+" forwarding to "+origin);
+                _log.info("forwardMessage : "+classEvent+" forwarding to "+origin);
                 sendMessage(msg);
                 _sent++ ;
             }catch(Exception ee ){
-                esay("forwardMessage : FAILED "+classEvent+" forwarding to "+origin+" "+ee);
+                _log.warn("forwardMessage : FAILED "+classEvent+" forwarding to "+origin+" "+ee);
                 if( entry.isCancelOnFailure() )list.add( entry ) ;
                 entry._failed ++ ;
             }
@@ -436,7 +443,7 @@ public class BroadcastCell extends CellAdapter {
     }
     private void handleNoRouteException( NoRouteToCellException nrtc ){
         CellPath destination = nrtc.getDestinationPath() ;
-        esay("NoRouteToCell : "+nrtc);
+        _log.warn("NoRouteToCell : "+nrtc);
         //
         // find matching destinations
         //
@@ -444,13 +451,13 @@ public class BroadcastCell extends CellAdapter {
         synchronized( this ){
             Map map = (Map)_destinationMap.get(destination.getDestinationAddress());
             if( map == null ){
-                esay("Exception path not found in map : "+destination);
+                _log.warn("Exception path not found in map : "+destination);
                 return ;
             }
             for( Iterator i = map.values().iterator() ; i.hasNext() ; ){
                 Entry e = (Entry)i.next() ;
                 if( e.isCancelOnFailure() ){
-                    say("Scheduling for cancelation : "+e);
+                    _log.info("Scheduling for cancelation : "+e);
                     list.add(e);
                 }
             }
@@ -466,7 +473,7 @@ public class BroadcastCell extends CellAdapter {
             try{
                 unregister( e.getPath() , e.getTrigger() ) ;
             }catch(NoSuchElementException nse){
-                esay("PANIC : Couldn't unregister "+e);
+                _log.warn("PANIC : Couldn't unregister "+e);
             }
         }
         return ;
@@ -480,18 +487,18 @@ public class BroadcastCell extends CellAdapter {
         private void messageArrived( CellMessage message ){
             Object obj = message.getMessageObject() ;
             if( _debugMode.equals("source") ){
-                say("MessageObject : "+obj ) ;
+                _log.info("MessageObject : "+obj ) ;
             }else if( _debugMode.equals("destination" ) ){
                 if( obj instanceof BroadcastCommandMessage ){
-                    say("Broadcast Message answer : "+obj ) ;
+                    _log.info("Broadcast Message answer : "+obj ) ;
                     return ;
                 }
-                say("Replying MessageObject : "+obj ) ;
+                _log.info("Replying MessageObject : "+obj ) ;
                 message.revertDirection() ;
                 try{
                     sendMessage(message);
                 }catch(Exception ee){
-                    esay("Problems sending : "+message+"("+ee+")");
+                    _log.warn("Problems sending : "+message+"("+ee+")");
                 }
             }
             return ;

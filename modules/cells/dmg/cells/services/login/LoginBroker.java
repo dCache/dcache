@@ -6,10 +6,15 @@ import java.util.* ;
 import dmg.cells.nucleus.*;
 import dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class LoginBroker
        extends  CellAdapter
        implements Runnable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(LoginBroker.class);
 
     private int _delay = 3;
 
@@ -142,7 +147,7 @@ public class LoginBroker
           Thread.sleep(60000);
         }
      }catch(Exception ee ){
-        say("Worker interrupted due to : "+ee ) ;
+        _log.info("Worker interrupted due to : "+ee ) ;
      }
   }
   public void messageArrived( CellMessage msg ){

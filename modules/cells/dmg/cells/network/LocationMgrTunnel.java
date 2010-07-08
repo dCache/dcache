@@ -135,6 +135,9 @@ public class LocationMgrTunnel
      */
     private final static Tunnels _tunnels = new Tunnels();
 
+    private final static Logger _log =
+        LoggerFactory.getLogger(LocationMgrTunnel.class);
+
     private final static Logger _logMessages =
         LoggerFactory.getLogger("logger.org.dcache.cells.messages");
 
@@ -246,7 +249,7 @@ public class LocationMgrTunnel
                 _nucleus.sendMessage(ret);
             }
         } catch (NoRouteToCellException f) {
-            esay("Unable to deliver message and unable to return it to sender: " + msg);
+            _log.warn("Unable to deliver message and unable to return it to sender: " + msg);
         }
     }
 
@@ -293,7 +296,7 @@ public class LocationMgrTunnel
 
         try {
             _remoteDomainInfo = negotiateDomainInfo(_output, _input);
-            say("Established tunnel to " + getRemoteDomainName());
+            _log.info("Established tunnel to " + getRemoteDomainName());
 
             start();
 
@@ -305,10 +308,10 @@ public class LocationMgrTunnel
             }
         } catch (EOFException e) {
         } catch (ClassNotFoundException e) {
-            esay("Cannot deserialize object. This is most likely due to a version mismatch.");
+            _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (InterruptedException e) {
         } catch (IOException e) {
-            esay("Error while reading from tunnel: " + e.getMessage());
+            _log.warn("Error while reading from tunnel: " + e.getMessage());
         } finally {
             start();
             kill();
@@ -324,7 +327,7 @@ public class LocationMgrTunnel
                 _messagesToTunnel++;
                 send(msg);
             } catch (IOException e) {
-                esay("Error while sending message: " + e.getMessage());
+                _log.warn("Error while sending message: " + e.getMessage());
                 returnToSender(msg,
                                new NoRouteToCellException("Communication failure. Message could not be delivered."));
                 kill();
@@ -363,13 +366,13 @@ public class LocationMgrTunnel
 
     public void cleanUp()
     {
-        say("Closing tunnel to " + getRemoteDomainName());
+        _log.info("Closing tunnel to " + getRemoteDomainName());
         setDown(true);
         try {
             _socket.shutdownInput();
             _socket.close();
         } catch (IOException e) {
-            esay("Failed to close socket: " + e.getMessage());
+            _log.warn("Failed to close socket: " + e.getMessage());
         }
     }
 

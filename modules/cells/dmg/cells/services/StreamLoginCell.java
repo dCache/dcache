@@ -10,6 +10,8 @@ import java.io.* ;
 import java.net.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
   *
@@ -20,6 +22,9 @@ import javax.security.auth.Subject;
 public class      StreamLoginCell
        extends    CellAdapter
        implements Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(StreamLoginCell.class);
 
   private StreamEngine   _engine ;
   private ControlBufferedReader _in ;
@@ -73,15 +78,15 @@ public class      StreamLoginCell
                   print( prompt() ) ;
                }
            }catch( IOException e ){
-              say("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              say("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : "+e ) ;
               break ;
            }
 
         }
-        say( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -89,18 +94,18 @@ public class      StreamLoginCell
   }
    public void   cleanUp(){
 
-     say( "Clean up called" ) ;
+     _log.info( "Clean up called" ) ;
      println("");
      try{ _out.close() ; }catch(Exception ee){}
      _workerThread.interrupt() ;
      try {
          if (!_engine.getSocket().isClosed()) {
-             say("Close socket");
+             _log.info("Close socket");
              _engine.getSocket().close();
          }
      } catch (Exception ee) { ; }
 //     _readyGate.check() ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
   public void println( String str ){

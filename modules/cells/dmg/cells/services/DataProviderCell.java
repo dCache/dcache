@@ -7,8 +7,14 @@ import java.net.* ;
 import java.io.* ;
 import java.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataProviderCell extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(DataProviderCell.class);
+
     private CellNucleus _nucleus ;
     private Args        _args ;
     private File        _dir ;
@@ -65,21 +71,21 @@ public class DataProviderCell extends CellAdapter {
    }
    private void do_getclass_command( CellMessage msg , Args args ){
       String fileName = args.argv(0) ;
-      say( "Request for class : "+fileName ) ;
+      _log.info( "Request for class : "+fileName ) ;
       File file = new File( _dir , fileName+".class" ) ;
       if( ! file.canRead() ){
           fileName = fileName.replace( '.' , '/' ) ;
           file = new File( _dir , fileName+".class" ) ;
           if( ! file.canRead() ){
               reply( msg , "Class not found" ) ;
-              say( "File not found : "+fileName ) ;
+              _log.info( "File not found : "+fileName ) ;
               _errorCounter ++ ;
               return ;
           }
       }
       int len = (int)file.length() ;
       if( len == 0 ){
-          say( "File has zero length" ) ;
+          _log.info( "File has zero length" ) ;
           reply( msg , "Zero size entry found" ) ;
           _errorCounter ++ ;
           return ;
@@ -102,7 +108,7 @@ public class DataProviderCell extends CellAdapter {
    }
    private void reply( CellMessage msg , Object o ){
       try{
-         say( "returning message" + o.toString() ) ;
+         _log.info( "returning message" + o.toString() ) ;
          msg.setMessageObject( o ) ;
          msg.revertDirection() ;
          sendMessage( msg ) ;

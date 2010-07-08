@@ -6,7 +6,14 @@ import dmg.util.* ;
 import java.util.* ;
 import java.io.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MulticastCommander extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(MulticastCommander.class);
+
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
    private CellPath    _path    = new CellPath("mc") ;
@@ -25,16 +32,16 @@ public class MulticastCommander extends CellAdapter {
         try{
            sendMessage( msg ) ;
         }catch( NoRouteToCellException nrtc ){
-           esay( "NoRouteToCell in messageToForward : "+nrtc ) ;
-           esay( "Sending NoRouteToCellt to : "+source ) ;
+           _log.warn( "NoRouteToCell in messageToForward : "+nrtc ) ;
+           _log.warn( "Sending NoRouteToCellt to : "+source ) ;
            source.revert() ;
            try{
               sendMessage( new CellMessage( source , nrtc ) ) ;
            }catch(Exception ee ){
-              esay( "can't return NoRouteToCell to : "+source ) ;
+              _log.warn( "can't return NoRouteToCell to : "+source ) ;
            }
         }catch( Exception eee ){
-           esay( "Exception in messageToForward : "+eee ) ;
+           _log.warn( "Exception in messageToForward : "+eee ) ;
         }
    }
    public String hh_set_path = "<MulticastCell>" ;

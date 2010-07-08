@@ -7,6 +7,9 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.security.digest.Crypt ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
   *
@@ -17,6 +20,9 @@ import dmg.security.digest.Crypt ;
  */
 public class       AclCell
        extends     CellAdapter            {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(AclCell.class);
 
   private String       _cellName ;
   private CellNucleus  _nucleus ;
@@ -63,15 +69,14 @@ public class       AclCell
           String tmp = null ;
           if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
              _sysPassword = new UserPasswords( new File( tmp ) ) ;
-             say( "using as SystemPasswordfile : "+tmp ) ;
+             _log.info( "using as SystemPasswordfile : "+tmp ) ;
           }
           if( ( tmp = _args.getOpt( "egpassword"  ) ) != null ){
              _egPassword  = new UserPasswords( new File( tmp ) ) ;
-             say( "using as EgPasswordfile : "+tmp ) ;
+             _log.info( "using as EgPasswordfile : "+tmp ) ;
           }
       }catch( Throwable e ){
-         esay( "Exception while <init> : "+e ) ;
-         esay(e) ;
+         _log.warn( "Exception while <init> : "+e, e ) ;
          start() ;
          kill() ;
          throw e ;
@@ -88,7 +93,7 @@ public class       AclCell
       Object answer  = "PANIX" ;
 
       try{
-         say( "Message type : "+obj.getClass() ) ;
+         _log.info( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -98,7 +103,7 @@ public class       AclCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            say( ">"+command+"< request from "+user ) ;
+            _log.info( ">"+command+"< request from "+user ) ;
             try{
               if( command.equals( "check-password" ) )
                   answer  =  acl_check_password( request ) ;
@@ -114,7 +119,7 @@ public class       AclCell
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             esay( r ) ;
+             _log.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -129,8 +134,7 @@ public class       AclCell
       try{
          sendMessage( msg ) ;
       }catch( Exception ioe ){
-         esay( "Can't send acl_response : "+ioe ) ;
-         esay(ioe) ;
+         _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
   ///////////////////////////////////////////////////////////////////////////
@@ -319,7 +323,7 @@ public class       AclCell
 
          }
       }catch( Throwable t ){
-         esay( "Found : "+t ) ;
+         _log.warn( "Found : "+t ) ;
       }
       return false ;
   }
@@ -327,12 +331,12 @@ public class       AclCell
      try{
         if( _sysPassword != null )_sysPassword.update() ;
      }catch(Exception ee ){
-        esay( "Updating failed : "+_sysPassword ) ;
+        _log.warn( "Updating failed : "+_sysPassword ) ;
      }
      try{
         if( _egPassword != null )_egPassword.update() ;
      }catch(Exception ee ){
-        esay( "Updating failed : "+_egPassword ) ;
+        _log.warn( "Updating failed : "+_egPassword ) ;
      }
    }
 

@@ -6,7 +6,14 @@ import  dmg.util.* ;
 import  java.util.* ;
 import  java.io.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MemoryWatch extends CellAdapter implements Runnable {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(MemoryWatch.class);
+
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
    private long        _update  = 10 ;
@@ -32,7 +39,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          if( ( var = _args.getOpt("update") ) != null ){
             try{ _update = Integer.parseInt(var) ;
             }catch(Exception ee ){
-               esay( "Update not accepted : "+var ) ;
+               _log.warn( "Update not accepted : "+var ) ;
             }
          }
          //
@@ -41,7 +48,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          if( ( var = _args.getOpt("maxFilesize") ) != null ){
             try{ _maxFileSize = Integer.parseInt(var) ;
             }catch(Exception ee ){
-               esay( "New 'maxFilesize' not accepted : "+var ) ;
+               _log.warn( "New 'maxFilesize' not accepted : "+var ) ;
             }
          }
          //
@@ -50,7 +57,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          if( ( var = _args.getOpt("generations") ) != null ){
             try{ _generations = Integer.parseInt(var) ;
             }catch(Exception ee ){
-               esay( "New 'generations' not accepted : "+var ) ;
+               _log.warn( "New 'generations' not accepted : "+var ) ;
             }
          }
          if( ( var = _args.getOpt("output" ) ) != null ){
@@ -94,7 +101,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
              }
            }catch(Exception xx){}
          }else{
-            super.say(str) ;
+             _log.info(str) ;
          }
       }
    }
@@ -107,7 +114,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             say( " free "+fm+ " total "+tm+" used "+(tm-fm)+
                  " "+(new Date()).toString() ) ;
          }catch(Exception ee ){
-            esay( "Problem obtaining lib info : "+ee ) ;
+            _log.warn( "Problem obtaining lib info : "+ee ) ;
             continue ;
          }
          try{

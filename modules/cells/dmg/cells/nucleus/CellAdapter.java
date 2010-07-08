@@ -287,6 +287,7 @@ public class   CellAdapter
      * @return a handle to the CellNucleus connected to this cell.
      */
     public CellNucleus getNucleus() { return _nucleus; }
+
     /**
      *  prints out the specified string to <code>stdout</code>
      *  if the option was enabled by <code>setPrintoutLevel</code>.
@@ -312,7 +313,6 @@ public class   CellAdapter
      * @param Throwable to be printed to <code>stderr</code>.
      */
     public void esay(Throwable t) {  _nucleus.esay(t);  }
-
     /**
      * Setup the logging context of the calling thread. Threads
      * created from the calling thread automatically inherit this

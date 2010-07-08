@@ -6,7 +6,14 @@ import dmg.util.* ;
 import java.util.* ;
 import java.io.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MulticastCell extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(MulticastCell.class);
+
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
    private Hashtable   _classHash = new Hashtable() ;
@@ -95,7 +102,7 @@ public class MulticastCell extends CellAdapter {
        if( obj instanceof NoRouteToCellException ){
           synchronized( _ioLock ){
              NoRouteToCellException nrtc = (NoRouteToCellException)obj ;
-             say( "NRTCE arrived : "+nrtc ) ;
+             _log.info( "NRTCE arrived : "+nrtc ) ;
              removeByUOID( nrtc.getUOID() ) ;
              return ;
           }
@@ -133,7 +140,7 @@ public class MulticastCell extends CellAdapter {
               IllegalArgumentException("Illegal Command : "+mce ) ;
           }
        }catch(Exception ee ){
-          esay(ee) ;
+          _log.warn(ee.toString(), ee) ;
           mce.isOk(false);
           mce.setReplyObject(ee) ;
        }
@@ -141,7 +148,7 @@ public class MulticastCell extends CellAdapter {
        try{
           sendMessage(message);
        }catch( Exception e ){
-          esay( "Failed to reply : "+e) ;
+          _log.warn( "Failed to reply : "+e) ;
        }
    }
    private Entry getEntry( String eventClass , String eventName ){
@@ -218,29 +225,29 @@ public class MulticastCell extends CellAdapter {
        entry.setServerState(info);
 
        CellPath serverPath = entry.getSourcePath() ;
-       say( "message Path : "+path+"; serverPath : "+serverPath ) ;
+       _log.info( "message Path : "+path+"; serverPath : "+serverPath ) ;
        if( path.equals( serverPath ) ){
           Enumeration clients = entry.clients() ;
           for( ; clients.hasMoreElements() ; ){
              Client  client = (Client)clients.nextElement() ;
              CellPath outPath  = client.getPath() ;
              try{
-                say( "Distributing to "+outPath ) ;
+                _log.info( "Distributing to "+outPath ) ;
                 synchronized( _ioLock ){
                     CellMessage msg = new CellMessage( outPath , message ) ;
                     sendMessage( msg ) ;
                     client.setUOID( msg.getUOID() ) ;
                 }
              }catch(NoRouteToCellException nrtce ){
-                esay( "remove enforced for client "+path ) ;
+                _log.warn( "remove enforced for client "+path ) ;
                 entry.removeClient( path ) ;
              }catch(Throwable t ){
-                esay(t) ;
+                _log.warn(t.toString(), t) ;
              }
 
           }
        }else{
-          say( "Message from client "+path ) ;
+          _log.info( "Message from client "+path ) ;
           serverPath = (CellPath)serverPath.clone() ;
           serverPath.revert() ;
           originalMessage.getDestinationPath().add( serverPath ) ;
@@ -248,9 +255,9 @@ public class MulticastCell extends CellAdapter {
           try{
              sendMessage( originalMessage ) ;
           }catch( NoRouteToCellException ee ){
-             esay(ee) ;
+             _log.warn(ee.toString(), ee) ;
           }catch( Exception eee ){
-             esay(eee);
+             _log.warn(eee.toString(), eee);
           }
        }
    }
@@ -272,10 +279,10 @@ public class MulticastCell extends CellAdapter {
           Client  client = (Client)clients.nextElement() ;
           CellPath path  = client.getPath() ;
           try{
-             say( "Close Distributing to "+path ) ;
+             _log.info( "Close Distributing to "+path ) ;
              sendMessage( new CellMessage( path , close ) ) ;
           }catch(Throwable t ){
-             esay(t) ;
+             _log.warn(t.toString(), t) ;
           }
        }
    }
@@ -294,7 +301,7 @@ public class MulticastCell extends CellAdapter {
                  if( u == null )continue ;
                  if( u.equals( uoid ) ){
                    entry.removeClient( client.getPath() ) ;
-                   say( "Removed : "+client ) ;
+                   _log.info( "Removed : "+client ) ;
                    return ;
                  }
               }

@@ -5,6 +5,10 @@ import  dmg.util.* ;
 import  java.lang.reflect.*;
 import  java.io.* ;
 import  java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author Patrick Fuhrmann patrick.fuhrmann@desy.de
@@ -13,6 +17,10 @@ import  java.util.*;
  */
 
 public class CommandTaskCell extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(CommandTaskCell.class);
+
    private String        _cellName = null ;
    private Args          _args     = null ;
    private CellNucleus   _nucleus  = null ;
@@ -141,7 +149,7 @@ public class CommandTaskCell extends CellAdapter {
              ClientInfo info = (ClientInfo)i.next() ;
              if( ( now - info._time ) > _maxSessionLogin ){
                 String key = info.getClientKey() ;
-                say("Timer : "+key+" idle time exceeded" ) ;
+                _log.info("Timer : "+key+" idle time exceeded" ) ;
                 _clientHash.remove(key);
              }
          }
@@ -154,19 +162,18 @@ public class CommandTaskCell extends CellAdapter {
           (_worker = _nucleus.newThread(this,"Scheduler") ).start() ;
        }
        public void run(){
-          say("Scheduler worker started");
+          _log.info("Scheduler worker started");
           while( ! Thread.interrupted() ){
              try{
                  Thread.sleep(_sleepInterval);
              }catch(InterruptedException ee ){
-                 say("Worker Thread interrupted");
+                 _log.info("Worker Thread interrupted");
                  break ;
              }
              try{
                 doTiming();
              }catch(Throwable t ){
-                esay("Problem in 'doTiming' : "+t);
-                esay(t);
+                 _log.warn("Problem in 'doTiming' : "+t, t);
              }
           }
        }
@@ -195,8 +202,7 @@ public class CommandTaskCell extends CellAdapter {
          try{
             core._task.timer() ;
          }catch(Throwable t){
-            esay("Throwable in task : "+core.getName()+" : "+t);
-            esay(t);
+             _log.warn("Throwable in task : "+core.getName()+" : "+t, t);
          }
       }
       _clientHandler.cleanUp();
@@ -316,17 +322,15 @@ public class CommandTaskCell extends CellAdapter {
 
        }catch(InvocationTargetException ite ){
            Throwable cause = ite.getCause() ;
-           esay("Problem creating "+moduleName+" InvocationTargetException cause : "+cause);
+           _log.warn("Problem creating "+moduleName+" InvocationTargetException cause : "+cause, cause);
            if( cause != null ){
-              esay(cause);
               throw cause ;
            }else{
               throw ite ;
            }
 
        }catch(Exception ee ){
-           esay(ee) ;
-           esay("Problem creating "+moduleName+" "+ee);
+           _log.warn("Problem creating "+moduleName+" "+ee, ee);
            throw ee ;
        }
    }
@@ -377,7 +381,7 @@ public class CommandTaskCell extends CellAdapter {
       try{
           return super.command(args) ;
       }catch(CommandSyntaxException ee ){
-          //esay("!!1 first shot failed : "+ee);
+          //_log.warn("!!1 first shot failed : "+ee);
           return executeLocalCommand( copyArgs ) ;
       }
    }
@@ -450,7 +454,7 @@ public class CommandTaskCell extends CellAdapter {
       public ModuleExample( CommandTaskCell.CellCommandTaskCore core ){
           _cell = core.getParentCell() ;
           _core = core ;
-          _cell.say("Started : "+core.getName());
+          _log.info("Started : "+core.getName());
       }
       public String hh_send = "<destination> <message>" ;
       public String ac_send_$_2( Args args ) throws Exception {
@@ -467,7 +471,7 @@ public class CommandTaskCell extends CellAdapter {
           return sb.toString() ;
       }
       public void answerArrived( CellMessage request , CellMessage answer ){
-         _cell.say("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().toString());
+         _log.info("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().toString());
       }
       public void exceptionArrived( CellMessage request , Exception   exception ){
 
@@ -480,7 +484,7 @@ public class CommandTaskCell extends CellAdapter {
           pw.println("   Task Args : "+ _core.getTaskArgs() ) ;
       }
       public void timer(){
-          //_cell.say("Timer of "+_core.getName()+" triggered");
+          //_log.info("Timer of "+_core.getName()+" triggered");
       }
       public String toString(){
          return "I'm "+_core.getName() ;
