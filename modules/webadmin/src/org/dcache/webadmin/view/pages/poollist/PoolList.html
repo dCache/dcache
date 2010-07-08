@@ -25,12 +25,7 @@
             <th><wicket:message key="table1.total.header"></wicket:message></th>
             <th><wicket:message key="table1.free.header"></wicket:message></th>
             <th><wicket:message key="table1.precious.header"></wicket:message></th>
-            <th><span><wicket:message key="table1.layout.header1"></wicket:message>
-                    <span class="layout_precious"><wicket:message key="table1.layout.header2"></wicket:message></span>
-                    <span class="layout_used"><wicket:message key="table1.layout.header3"></wicket:message></span>
-                    <span class="layout_free"><wicket:message key="table1.layout.header4"></wicket:message></span>
-                    <wicket:message key="table1.layout.header5"></wicket:message>
-                </span>
+            <th><span wicket:id="layoutHeaderPanel"></span>
             </th>
             </tr>
             <tr wicket:id="listview">
@@ -41,11 +36,7 @@
                 <td><span wicket:id="totalSpace"></span></td>
                 <td><span wicket:id="freeSpace"></span></td>
                 <td><span wicket:id="preciousSpace"></span></td>
-                <td><div>
-                        <div class="layout_precious" wicket:id="percentagePrecious" style="width: 10.0%"></div>
-                        <div class="layout_used" wicket:id="percentageUsed" style="width: 10.0%"></div>
-                        <div class="layout_free" wicket:id="percentageFree"style="width: 70.0%"></div>
-                    </div>
+                <td><span wicket:id="layoutItemPanel"></span>
                 </td>
             </tr>
         </table>

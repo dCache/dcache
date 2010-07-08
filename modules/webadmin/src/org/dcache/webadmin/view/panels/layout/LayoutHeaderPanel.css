@@ -1,0 +1,14 @@
+@CHARSET "UTF-8";
+
+span.layout_precious {
+    color: red;
+}
+
+span.layout_used {
+    color: green;
+}
+
+span.layout_free {
+    color: yellow;
+}
+

@@ -1,0 +1,26 @@
+@CHARSET "UTF-8";
+
+div.layout_precious {
+    float: left;
+    background: red;
+    height: 10px;
+}
+
+div.layout_rest {
+    float: left;
+    background: #ff00ff;
+    height: 10px;
+}
+
+div.layout_used {
+    float: left;
+    background: green;
+    height: 10px;
+}
+
+div.layout_free {
+    float: left;
+    background: yellow;
+    height: 10px;
+}
+

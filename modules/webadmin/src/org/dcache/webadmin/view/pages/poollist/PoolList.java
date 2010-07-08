@@ -26,6 +26,8 @@ import org.dcache.webadmin.view.beans.PoolBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
+import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -45,6 +47,7 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
+        poolUsageForm.add(new LayoutHeaderPanel("layoutHeaderPanel"));
         getPoolsAction();
         ListView poolListView = new PoolBeanListView("listview",
                 new PropertyModel(this, "_poolBeans"));
@@ -142,28 +145,8 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
             item.add(new Label("totalSpace", new Long(poolBean.getTotalSpace()).toString()));
             item.add(new Label("freeSpace", new Long(poolBean.getFreeSpace()).toString()));
             item.add(new Label("preciousSpace", new Long(poolBean.getPreciousSpace()).toString()));
-            setPercentages(item, poolBean);
-        }
-
-        private void setPercentages(ListItem item, PoolBean poolBean) {
-            String preciousStyle = buildStyleAttribute(poolBean.getPercentagePrecious());
-            setStyleAttribute(item, "percentagePrecious", preciousStyle);
-            String usedStyle = buildStyleAttribute(poolBean.getPercentageUsed());
-            setStyleAttribute(item, "percentageUsed", usedStyle);
-            String freeStyle = buildStyleAttribute(poolBean.getPercentageFree());
-            setStyleAttribute(item, "percentageFree", freeStyle);
-        }
-
-        private String buildStyleAttribute(float width) {
-            String style = "width: " + (new Float(width).toString()) + "%";
-            return style;
-        }
-
-        private void setStyleAttribute(ListItem item, String markupContainerName, String styleAttribute) {
-            WebMarkupContainer layoutLabel = new WebMarkupContainer(markupContainerName);
-            layoutLabel.add(new AttributeModifier("style",
-                    new Model(styleAttribute)));
-            item.add(layoutLabel);
+            item.add(new LayoutItemPanel("layoutItemPanel", poolBean.getPercentagePrecious(),
+                    poolBean.getPercentageUsed(), poolBean.getPercentageFree()));
         }
     }
 }
