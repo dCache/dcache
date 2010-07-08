@@ -62,11 +62,6 @@ rpm: dist @PACKAGE@.spec
 
 docfiles = \
 	AUTHORS \
-	COPYING \
-	ChangeLog \
-	INSTALL \
-	NEWS \
-	README \
 	COPYING.LIB \
 	LICENSE
 
