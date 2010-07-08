@@ -44,25 +44,25 @@ public class ContextPictureEngine implements HttpResponseEngine {
 
       String [] tokens = request.getRequestTokens() ;
       int       offset = request.getRequestTokenOffset() ;
-      
+
       _nucleus.say("Offset : "+offset);
       for( int i =0 ; i < tokens.length ;i++ ){
          _nucleus.say(""+i+" -> "+tokens[i]);
       }
       if( tokens.length < 2 )
-        throw new 
+        throw new
         HttpException( 404, "Illegal Request");
-        
+
       String contextName = tokens[1] ;
-      
+
       Object obj = _nucleus.getDomainContext().get( contextName ) ;
-      
+
       if( ! ( obj instanceof byte [] ) )
-        throw new 
+        throw new
         HttpException( 404, "Not a picture");
-      
+
       byte [] picture = (byte []) obj ;
-      
+
       request.setContentType("image/png") ;
       request.printHttpHeader(picture.length) ;
       OutputStream stream = request.getOutputStream() ;

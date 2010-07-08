@@ -22,13 +22,13 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private String      _cssFile          = "/flushManager/css/default.css" ;
    private List        _managerList      = new ArrayList() ;
    private SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
-   
+
    private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare  = null ;
    private HttpFlushManagerHelper.FlushEntryComparator _flushCompare = null ;
-   
+
    public HttpHsmFlushMgrEngineV1( CellNucleus nucleus , String [] argsString ){
        _nucleus = nucleus ;
-       
+
        for( int i = 0 ; i < argsString.length ; i++ ){
           _nucleus.say("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
           if( argsString[i].startsWith("css=") ){
@@ -37,37 +37,37 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
               decodeManager( argsString[i].substring(4) ) ;
           }
        }
-        
+
       _poolCompare  = new HttpFlushManagerHelper.PoolEntryComparator() ;
       _poolCompare.setColumn(0) ;
       _flushCompare = new HttpFlushManagerHelper.FlushEntryComparator() ;
       _flushCompare.setColumn(1);
-      
+
       if( _managerList.size() == 0 )_managerList.add("FlushManager");
-      
+
       _nucleus.say("Using Manager  : "+_managerList ) ;
       _nucleus.say("Using CSS file : "+_cssFile ) ;
-       
+
    }
    private void decodeManager( String managers ){
-   
+
       managers = managers.trim() ;
-      
+
       for( StringTokenizer st = new StringTokenizer(managers,",") ; st.hasMoreTokens() ; ){
          _managerList.add( st.nextToken() ) ;
       }
-            
+
    }
    private void decodeCss( String cssDetails ){
-   
+
       cssDetails = cssDetails.trim() ;
-      
+
       if(  ( cssDetails.length() > 0 ) && ! cssDetails.equals("default") )
          _cssFile = cssDetails ;
-      
+
    }
    public void queryUrl( HttpRequest request )  throws HttpException {
-   
+
        PrintWriter pw       = request.getPrintWriter() ;
        String []   urlItems = request.getRequestTokens() ;
 
@@ -75,7 +75,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        _requestCounter ++ ;
        try{
           if( urlItems.length < 1 )return ;
-                    
+
           if( ( urlItems.length > 1 ) && ( urlItems[1].equals("css") ) ){
               //
               // the internal css stuff (if nothing else is specifed)
@@ -88,15 +88,15 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              //
              String flushManagerName = "FlushManager" ;
              Map    optionsMap       = new HashMap() ;
-             
+
              if( urlItems.length > 2 )flushManagerName = urlItems[2] ;
              if( urlItems.length > 3 )optionsMap = createMap( urlItems[3] ) ;
-            
+
              say("MAP -> "+optionsMap);
 
              printFlushHeader( pw ,  "Flush Info");
              printDirectory( pw ) ;
-             
+
              if( !  flushManagerName.equals("*") ){
 
                 StringBuffer result = new StringBuffer() ;
@@ -120,7 +120,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                 }
              }
           }
-          
+
        }catch(HttpException httpe ){
           _errorCounter ++ ;
           throw httpe ;
@@ -164,7 +164,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              if( o == null ){
                  map.put( key , value ) ;
              }else if( o instanceof List ){
-                ((List)o).add(value) ; 
+                ((List)o).add(value) ;
              }else if( o instanceof String ){
                 List l = new ArrayList() ;
                 l.add( o ) ;
@@ -174,22 +174,22 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
          }catch(NoSuchElementException nsee ){}
       }
       return map ;
-      
+
    }
    private void printCellInfo( PrintWriter pw , String flushManagerName ) throws Exception {
-   
-      CellMessage reply = 
-               _nucleus.sendAndWait( 
-                   new CellMessage( 
+
+      CellMessage reply =
+               _nucleus.sendAndWait(
+                   new CellMessage(
                        new CellPath( flushManagerName ) ,
-                          "xgetcellinfo" 
+                          "xgetcellinfo"
                                   ) ,
                                20000 ) ;
 
       if( reply == null ){ showTimeout(pw) ; return ; }
 
       Object o = reply.getMessageObject() ;
-      
+
       if( o instanceof Exception ){
          showProblem( pw , flushManagerName+" seems not to be present" ) ;
          return ;
@@ -203,19 +203,19 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
          showProblem( pw , "Something really weird arrived : "+o.getClass().getName()) ;
          return ;
       }
-   
+
    }
    private void prepareCellInfo( PrintWriter pw , String flushManagerName , FlushControlCellInfo info ){
       pw.println("<h2 class=\"s-table\">Manager : "+flushManagerName+"</h2>");
       pw.println("<center><table class=\"s-table\">");
-      
-      pw.println("<tr class=\"s-table\">");    
+
+      pw.println("<tr class=\"s-table\">");
       pw.println("<th class=\"s-table\">Cell Name</th>");
       pw.println("<th class=\"s-table\">Driver Class</th>");
       pw.println("<th class=\"s-table\">Control Type</th>");
-      
+
       pw.println("</tr><tr class=\"s-table-b\">");
-          
+
       pw.println("<td class=\"s-table\"><span class=\"s-table\">") ;
         pw.println(info.getCellName()+"@"+info.getDomainName());
       pw.println("</span></td>");
@@ -232,24 +232,24 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("<input type=\"submit\" value=\"Control Centrally\" name=\"command\">");
       pw.println("</form>");
       pw.println("</center>");
- 
+
       pw.println("<hr>");
    }
    private void printFlushManagerList( PrintWriter pw , String flushManagerName ,  Map options ) throws Exception {
-   
-      
-      CellMessage reply = 
-               _nucleus.sendAndWait( 
-                   new CellMessage( 
+
+
+      CellMessage reply =
+               _nucleus.sendAndWait(
+                   new CellMessage(
                        new CellPath( flushManagerName ) ,
-                          "ls pool -l -binary" 
+                          "ls pool -l -binary"
                                   ) ,
                                20000 ) ;
 
       if( reply == null ){ showTimeout(pw) ; return ; }
 
       Object o = reply.getMessageObject() ;
-      
+
       if( o instanceof Exception ){
          showProblem( pw , flushManagerName+" seems not to be present" ) ;
          return ;
@@ -264,26 +264,26 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
          return ;
       }
 
-   
+
    }
    private void  doActionsIfNecessary( String flushManagerName , Map options , StringBuffer output ){
-   
+
        if( ( options == null ) || ( options.size() == 1 ) )return ;
-       
+
        String command = (String)options.get("command") ;
-      
+
        if( command == null )return ;
-       
+
        if( command.startsWith("Control") ){
-       
+
           boolean  central = command.indexOf("Centrally") > -1 ;
           CellPath path    = new CellPath( flushManagerName ) ;
-          String   remote  = "set control "+( central ? "on" : "off" ) ;         
-                                 
+          String   remote  = "set control "+( central ? "on" : "off" ) ;
+
           sendCommand( path , remote , output ) ;
-               
+
        }else if( command.equals("Flush") ){
-       
+
            Object o = options.get("storageclass") ;
            List   list = null ;
            if( o == null )return ;
@@ -296,12 +296,12 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                String poolName     = st.nextToken() ;
                String storageClass = st.nextToken() ;
                String remote       = "flush pool "+poolName+" "+storageClass ;
-                                 
+
                sendCommand( path , remote , output ) ;
-           } 
-       
+           }
+
        }else if( command.startsWith( "Set" ) || command.startsWith( "Query" ) ){
-       
+
            boolean rdOnly = command.indexOf("Only"  ) > -1 ;
            boolean query  = command.indexOf("Query" ) > -1 ;
            Object o = options.get("pools") ;
@@ -315,17 +315,17 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                String poolName = it.next().toString() ;
                String remote   = query ? ( "query pool mode "+poolName ) :
                                  "set pool "+poolName+" "+( rdOnly ? "rdonly" : "rw" )  ;
-                                 
+
                sendCommand( path , remote , output ) ;
-               
-           } 
+
+           }
        }
-   
+
    }
    private void sendCommand( CellPath path , String command , StringBuffer output ){
       try{
           CellMessage result =
-             _nucleus.sendAndWait(  
+             _nucleus.sendAndWait(
 
                new CellMessage( path , command) ,
                       20000L
@@ -345,7 +345,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       }
    }
    private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map options , List list ){
-   
+
       ArrayList pools  = new ArrayList() ;
       ArrayList flushs = new ArrayList() ;
 
@@ -356,13 +356,13 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           String       poolName   = pool.getName() ;
           boolean      isReadOnly = pool.isReadOnly() ;
           PoolCellInfo cellInfo   = pool.getCellInfo() ;
-          
+
           if( cellInfo == null )continue ;
-          
+
           PoolCostInfo costInfo   = cellInfo.getPoolCostInfo() ;
 
           if( costInfo == null )continue ;
-          
+
           PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo() ;
           PoolCostInfo.PoolQueueInfo queueInfo = costInfo.getStoreQueue() ;
 
@@ -373,8 +373,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           pentry._poolName     = pool.getName() ;
           pentry._total        = totalSpace ;
           pentry._precious     = preciousSpace ;
-          pentry._isReadOnly   = isReadOnly ; 
-          pentry._flushing     = 0 ; 
+          pentry._isReadOnly   = isReadOnly ;
+          pentry._flushing     = 0 ;
 
           pools.add( pentry ) ;
 
@@ -406,8 +406,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       printFlushingPools( pw , flushManagerName , options , pools ) ;
       printFlushingStorageClasses( pw , flushManagerName , options , flushs ) ;
    }
-   private String [] _poolTableTitle = 
-        { "Action" , "PoolName" , "Pool Mode" ,  "Flushing" , "Total Size" , 
+   private String [] _poolTableTitle =
+        { "Action" , "PoolName" , "Pool Mode" ,  "Flushing" , "Total Size" ,
           "Precious Size" , "Fraction" } ;
    private void printFlushingPools( PrintWriter pw , String flushManagerName ,  Map options , List pools ){
 
@@ -424,24 +424,24 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       int row = 0 ;
       for( Iterator it = pools.iterator() ; it.hasNext() ; row++ ){
           HttpFlushManagerHelper.PoolEntry pentry = (HttpFlushManagerHelper.PoolEntry)it.next() ;
-          
+
           /*
-          pw.print( 
+          pw.print(
                     pentry._isReadOnly || ( pentry._flushing > 0 ) ?
                     "<tr class=\"s-table-e\">" :
-                    row%2 == 0 ? "<tr class=\"s-table-a\">" : "<tr class=\"s-table-b\">" 
+                    row%2 == 0 ? "<tr class=\"s-table-a\">" : "<tr class=\"s-table-b\">"
                   );
           */
           pw.print( row%2 == 0 ? "<tr class=\"s-table-a\">" : "<tr class=\"s-table-b\">" );
           pw.print("<td class=\"s-table\">");
             pw.print("<input type=\"checkbox\" name=\"pools\" value=\"");
             pw.print(pentry._poolName) ;
-            pw.print("\">");   
-            pw.print("</input>"); 
+            pw.print("\">");
+            pw.print("</input>");
           pw.println("</td>");
-          
+
           pw.print("<td class=\"s-table\">");pw.print(pentry._poolName);pw.println("</td>");
-          
+
           if( pentry._isReadOnly ){
              pw.print("<td class=\"s-table-e\">");
              pw.print("ReadOnly");
@@ -450,21 +450,21 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              pw.print("ReadWrite");
           }
           pw.println("</td>");
-          
-          pw.print(pentry._flushing>0?"<td class=\"s-table-e\">":"<td class=\"s-table\">"); 
+
+          pw.print(pentry._flushing>0?"<td class=\"s-table-e\">":"<td class=\"s-table\">");
             pw.print(pentry._flushing);
           pw.println("</td>");
-          
+
           pw.print("<td class=\"s-table\">"); pw.print(pentry._total);pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(pentry._precious);pw.println("</td>");
-          pw.print("<td class=\"s-table\">"); 
+          pw.print("<td class=\"s-table\">");
              pw.print( (float)(((double)pentry._precious/(double)pentry._total)/100.0));
           pw.println("</td>");
-          
-          
+
+
           pw.println("</tr>");
       }
-      
+
       pw.println("</table><br>");
       pw.println("<input type=\"submit\" value=\"Set Read Only\" name=\"command\">");
       pw.println("<input type=\"submit\" value=\"Set Read Write\" name=\"command\">");
@@ -472,9 +472,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("</center>");
       pw.println("</form>");
       pw.println("<hr>");
-   } 
-   private String [] _flushTableTitle = 
-        { "Action" , "PoolName" , "StorageClass" ,  "Status" , 
+   }
+   private String [] _flushTableTitle =
+        { "Action" , "PoolName" , "StorageClass" ,  "Status" ,
           "Total Size" ,  "Precious Size" , "Fraction" ,
           "Active" , "Pending" , "Failed"
         } ;
@@ -493,35 +493,35 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       int row = 0 ;
       for( Iterator it = pools.iterator() ; it.hasNext() ; row++ ){
           HttpFlushManagerHelper.FlushEntry fentry = (HttpFlushManagerHelper.FlushEntry)it.next() ;
-          
-          pw.print( 
+
+          pw.print(
                     fentry._isFlushing ?
                     "<tr class=\"s-table-e\">" :
-                    row%2 == 0 ? "<tr class=\"s-table-a\">" : "<tr class=\"s-table-b\">" 
+                    row%2 == 0 ? "<tr class=\"s-table-a\">" : "<tr class=\"s-table-b\">"
                   );
-          
+
           pw.print("<td class=\"s-table\">");
             pw.print("<input type=\"checkbox\" name=\"storageclass\" value=\"");
             pw.print(fentry._poolName+"$"+fentry._storageClass) ;
-            pw.print("\">");   
-            pw.print("</input>"); 
+            pw.print("\">");
+            pw.print("</input>");
           pw.println("</td>");
-          
+
           pw.print("<td class=\"s-table\">"); pw.print(fentry._poolName);pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(fentry._storageClass);pw.println("</td>");
-          pw.print("<td class=\"s-table\">"); 
+          pw.print("<td class=\"s-table\">");
              pw.print(fentry._isFlushing?"Flushing":"Idle");
           pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(fentry._total);pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(fentry._precious);pw.println("</td>");
-          pw.print("<td class=\"s-table\">"); 
+          pw.print("<td class=\"s-table\">");
              pw.print( (float)(((double)fentry._precious/(double)fentry._total)/100.0));
           pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(fentry._active);pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(fentry._pending);pw.println("</td>");
           pw.print("<td class=\"s-table\">"); pw.print(fentry._failed);pw.println("</td>");
 
-          
+
           pw.println("</tr>");
       }
       pw.println("</table><br>");
@@ -530,7 +530,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("</center>");
       pw.println("</form>");
       pw.println("<hr>");
-   } 
+   }
    private void printFlushHeader( PrintWriter pw , String title ){
       pw.println( "<html>");
       pw.println( "<head><title>"+title+"</title>");
@@ -549,14 +549,14 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       printDirectory( pw , -1 ) ;
    }
    private void printDirectory( PrintWriter pw  , int position ){
-   
+
       pw.println("<br><center><h2 class=\"m-table\">Flush Managers</h2><table class=\"m-table\">");
       pw.println("<tr class=\"m-table\">");
-      
+
       for( Iterator it = _managerList.iterator() ; it.hasNext() ; ){
          String managerName =(String)it.next() ;
          printDirEntry( pw , managerName  , false , "/flushManager/mgr/"+managerName+"/*" ) ;
-      }      
+      }
       pw.println("</tr>");
 
       pw.println("</table></center>");
@@ -625,7 +625,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("span.m-title { font-size:18 ; color=red ; }");
       pw.println("a.big-link:visited  { text-decoration:none ; color:red ; }");
       pw.println("a.big-link:link  { text-decoration:none ; color:red ; }");
-      pw.println("span.big-link { font-size:24 ; text-align:center }"); 
+      pw.println("span.big-link { font-size:24 ; text-align:center }");
    }
    private void say( String message ){
       _nucleus.say(message);

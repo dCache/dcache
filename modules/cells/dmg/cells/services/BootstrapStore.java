@@ -9,7 +9,7 @@ import java.io.* ;
 import java.util.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -21,19 +21,19 @@ public class BootstrapStore implements Cell {
    private CellNucleus _nucleus  ;
    private int    _requests         = 0 ;
    private int    _answeredRequests = 0 ;
-   
+
    public BootstrapStore( String cellName , String arg ){
-   
+
       Args args = new Args( arg ) ;
       if( args.argc() < 1 )
         throw new IllegalArgumentException( "Usage : ... <storebase>" ) ;
-      
+
       _storeBase = args.argv(0) ;
-      
+
       _nucleus   = new CellNucleus( this , cellName ) ;
       _nucleus.setPrintoutLevel(0) ;
-      
-   
+
+
    }
    public String toString(){
       return  _nucleus.getCellDomainName()+
@@ -72,20 +72,20 @@ public class BootstrapStore implements Cell {
                  _nucleus.say( "messageArrived : Problem with "+
                                args.argv(1)+" -> "+mse ) ;
               }
-              
-              
+
+
            }
         }
      }
    }
    public String [] readConfigDB( String name ) throws Exception {
       String filename = _storeBase+"/"+name+".conf" ;
-      BufferedReader in = 
+      BufferedReader in =
         new BufferedReader( new FileReader( filename ) ) ;
-        
+
       String str ;
       Vector vec = new Vector() ;
-      
+
       while( ( str = in.readLine() ) != null ){
          vec.addElement( str ) ;
       }
@@ -94,7 +94,7 @@ public class BootstrapStore implements Cell {
       String [] sa = new String[vecSize] ;
       for( int i = 0 ; i < vecSize ; i++ )sa[i] = (String)vec.elementAt(i) ;
       return sa ;
-     
+
    }
    public void   prepareRemoval( KillEvent ce ){
      _finalGate.check() ;

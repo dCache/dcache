@@ -7,13 +7,13 @@ import  java.io.* ;
 import  java.net.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
 public class SimpleTunnel implements Cell, Runnable, CellTunnel {
- 
+
    private CellNucleus  _nucleus         = null ;
    private Thread       _senderThread    = null ;
    private Thread       _receiverThread  = null ;
@@ -27,16 +27,16 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    private boolean         _ready        = false ;
    private Object          _readyLock    = new Object() ;
    private CellDomainInfo  _remoteDomainInfo = null ;
-   
+
    public SimpleTunnel( String cellName , String argString )
           throws Exception {
-          
+
       Args args = new Args( argString ) ;
       if( args.argc() < 2 )
            throw new IllegalArgumentException( "Wrong Usage" ) ;
-      
-      
-      _SimpleTunnel( cellName , 
+
+
+      _SimpleTunnel( cellName ,
                      args.argv(0) ,
                      new Integer( args.argv(1) ).intValue() ) ;
    }
@@ -46,37 +46,37 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    }
    private void _SimpleTunnel( String cellName , String host , int port )
           throws Exception {
-          
+
       InetAddress address = InetAddress.getByName( host ) ;
-      
+
       _socket  = new Socket( address , port ) ;
       _mode    = "Connection" ;
       _nucleus = new CellNucleus( this , cellName ) ;
 
       _connectorThread = _nucleus.newThread( this , "Connector" ) ;
       _connectorThread.start() ;
-      
-   
+
+
    }
    public SimpleTunnel( String cellName , Socket socket ){
-   
+
       _mode    = "Acception" ;
       _nucleus = new CellNucleus( this , cellName ) ;
-      
-      
+
+
       _socket  = socket ;
 
       _connectorThread = _nucleus.newThread( this , "Connector" ) ;
       _connectorThread.start() ;
-      
 
-      
+
+
    }
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
                                  _remoteDomainInfo ) ;
-   
+
    }
    private void _connector() throws Exception {
        _output.writeObject( _nucleus.getCellDomainInfo() ) ;
@@ -114,7 +114,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
            if( _mode.equals("Acception" ))_acceptor() ;
            else                           _connector() ;
            _nucleus.say( "Protocol ready ("+_remoteDomainInfo+")" ) ;
-           
+
          }catch( Exception nse ){
            _nucleus.say( " Problem in Initial Protocol : "+nse ) ;
            try{_socket.close() ;}catch(Exception ee){} ;
@@ -126,21 +126,21 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
          _receiverThread.start() ;
          _senderThread = _nucleus.newThread( this , "Sender" ) ;
          _senderThread.start() ;
-         
-         _route = new CellRoute( _remoteDomainInfo.getCellDomainName() , 
+
+         _route = new CellRoute( _remoteDomainInfo.getCellDomainName() ,
                                  _nucleus.getCellName() ,
                                  CellRoute.DOMAIN ) ;
          _nucleus.say( "Route added : "+_route );
-         _nucleus.routeAdd( _route ) ; 
+         _nucleus.routeAdd( _route ) ;
         _state = "Active" ;
-        
+
       }else if( Thread.currentThread() == _receiverThread ){
         try{
            Object obj ;
            while( ( obj = _input.readObject() ) != null ){
               CellMessage msg = (CellMessage) obj ;
               _nucleus.say( " Message from tunnel : "+msg ) ;
-              try{  
+              try{
                  _nucleus.sendMessage( msg ) ;
               }catch( NoRouteToCellException nrtce ){
                  _nucleus.say( "Exception while resending message : "+nrtce ) ;
@@ -164,22 +164,22 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
      sb.append( "Status        : "+_state+"\n" ) ;
      if( _remoteDomainInfo == null )
         sb.append( "Peer          : N.N.\n" ) ;
-     else 
+     else
         sb.append( "Peer          : "+_remoteDomainInfo.getCellDomainName()+"\n" ) ;
-     
+
      return sb.toString() ;
    }
    public void   messageArrived( MessageEvent me ){
 //     _nucleus.say( "message Arrived : "+me ) ;
      if( me instanceof RoutedMessageEvent ){
        try{
-       
+
           CellMessage msg = me.getMessage() ;
           _nucleus.say( "Message tunneling : "+msg ) ;
           _output.writeObject( msg ) ;
           _output.flush();
-          
-       
+
+
        }catch( Exception ioe ){
           _nucleus.say( "Exception while sending message : "+ioe ) ;
        }
@@ -191,7 +191,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
         }
      }else{
      }
-     
+
    }
    public synchronized void   prepareRemoval( KillEvent ce ){
      _state = "Removing" ;
@@ -203,7 +203,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
         if( ! _ready ){
            _nucleus.say( "PrepareRemoval : waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
-        } 
+        }
      }
      _nucleus.say( "PrepareRemoval : closing streams" ) ;
      try{
@@ -218,5 +218,5 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    public void   exceptionArrived( ExceptionEvent ce ){
      _nucleus.say( " exceptionArrived "+ce ) ;
    }
- 
+
 }

@@ -20,11 +20,11 @@ import  java.net.Socket ;
  *   overload the methods checkAuthentication, telnetLine
  *   and telnetControl.
  **
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
  */
 public class TelnetShell implements Cell, Runnable   {
 
@@ -35,7 +35,7 @@ public class TelnetShell implements Cell, Runnable   {
    private boolean     _authenticationRequired  = false ;
    private String      _destination = null ;
    private boolean     _syncMode  = true ;
-   
+
    private TelnetInputStream   _telnetInput ;
    private TelnetOutputStream  _telnetOutput ;
    private Thread              _telnetReceiver ;
@@ -43,11 +43,11 @@ public class TelnetShell implements Cell, Runnable   {
    private int                 _telnetState = 0 ;
    private String              _user = null , _password = null ;
    private CellShell           _cellShell ;
-   
+
    /**
     *   Contructs a new TelnetShell Cell. The constructor is usually
     *   called by a variant of the GNLCell. Overloading this class
-    *   means as well providing a constructor with exactly this 
+    *   means as well providing a constructor with exactly this
     *   signature.
     *   <pre>
     *     public class OtherTelnetShell extends TelnetShell {
@@ -60,21 +60,21 @@ public class TelnetShell implements Cell, Runnable   {
     */
    public TelnetShell( String cellName , Socket socket ) throws Exception {
         _TelnetShell( cellName , socket , false ) ;
-   } 
+   }
    public void _TelnetShell( String cellName , Socket socket , boolean auth )
           throws Exception {
-   
+
       _socket  = socket ;
       _authenticationRequired = auth ;
       _nucleus = new CellNucleus( this , cellName ) ;
       _nucleus.setPrintoutLevel(0) ;
-      
+
       _telnetInput  = new TelnetInputStream( _socket.getInputStream() ) ;
       _telnetOutput = new TelnetOutputStream( _socket.getOutputStream() ) ;
-      
+
       _telnetReceiver = new Thread( this ) ;
       _telnetReceiver.start();
-      
+
       _cellShell    = new CellShell( _nucleus ) ;
 
       _destination  = _nucleus.getCellName() ;
@@ -87,14 +87,14 @@ public class TelnetShell implements Cell, Runnable   {
       }
 
    }
-   public String prompt(){ 
-      return _destination == null ? " .. > " : (_destination+" > ")  ; 
+   public String prompt(){
+      return _destination == null ? " .. > " : (_destination+" > ")  ;
    }
    /**
    *    Overloading this methods allows to check user and password string
-   *    A return of false cancels the connection. Otherwise 
+   *    A return of false cancels the connection. Otherwise
    *    the connection proceeds.
-   */  
+   */
    public boolean checkAuthentication( String user , String password ){
       return true ;
    }
@@ -110,23 +110,23 @@ public class TelnetShell implements Cell, Runnable   {
      try{ _telnetOutput.write( d ) ;
      }catch( Exception ee ){}
    }
-   public String shell( String str ) throws CommandExitException { 
-     return _cellShell.command( str ) ; 
+   public String shell( String str ) throws CommandExitException {
+     return _cellShell.command( str ) ;
    }
    //
    //
    private void _lineReady( String str ){
-     
+
       _nucleus.say( "Line received : " + str ) ;
-      
+
       switch( _telnetState ){
-        case 0 : 
+        case 0 :
           _user = str ;
           _telnetOutput.setEcho( false ) ;
           _telnetState = 1 ;
           print( "   Password  : " ) ;
         break ;
-        case  1 : 
+        case  1 :
            _password = str ;
            _telnetOutput.setEcho( true ) ;
            _telnetState = 2 ;
@@ -141,15 +141,15 @@ public class TelnetShell implements Cell, Runnable   {
       }
    }
    public void telnetControl( byte [] d ){
-   
+
    }
    public void setEcho( boolean echo ){
       _telnetOutput.setEcho( echo ) ;
    }
    public void telnetLine( String command ) {
      try{
-        if( execute( command ) > 0 ){ finish() ; return ; } 
-        print( prompt() ) ;       
+        if( execute( command ) > 0 ){ finish() ; return ; }
+        print( prompt() ) ;
      }catch( Exception ee ){
         println( " Exception : "+ee ) ;
      }
@@ -174,7 +174,7 @@ public class TelnetShell implements Cell, Runnable   {
             return 0 ;
          }
          try{
-             CellMessage msg = new CellMessage( 
+             CellMessage msg = new CellMessage(
                      new CellPath( _destination ) ,
                      command ) ;
            if( _syncMode ){
@@ -186,7 +186,7 @@ public class TelnetShell implements Cell, Runnable   {
              Object obj = msg.getMessageObject() ;
              if( obj == null ){
                  print( msg.toString()+"\n" ) ;
-                 return 0; 
+                 return 0;
              }
              _nucleus.say( "execute : message object : "+obj.getClass() ) ;
              if( obj instanceof Object [] ){
@@ -203,7 +203,7 @@ public class TelnetShell implements Cell, Runnable   {
                 if( output.charAt(output.length()-1) != '\n' )print("\n") ;
              }
            }else{
-                      
+
              _nucleus.sendMessage(msg )  ;
              print( "Msg UOID ="+msg.getUOID()+"\n" )  ;
            }
@@ -211,10 +211,10 @@ public class TelnetShell implements Cell, Runnable   {
              print( "Problem : "+ex+"\n" )  ;
              ex.printStackTrace() ;
          }
-      
+
       }
       return 0 ;
-   
+
    }
    private int localExcecute( String str ){
       Args args = new Args( str ) ;
@@ -222,7 +222,7 @@ public class TelnetShell implements Cell, Runnable   {
          _help() ;
          return 0 ;
       }
-      
+
       if( args.argv(0).equals( "set" ) ){
           args.shift() ;
           if( args.argc() != 2 ){ _help() ; return 0 ; }
@@ -244,22 +244,22 @@ public class TelnetShell implements Cell, Runnable   {
       }else if( args.argv(0).equals( "exit" ) ){
          return 1 ;
       }else{
-         _help() ;     
+         _help() ;
       }
-      
+
       return 0 ;
    }
    private void _help(){
-         print( " set dest local\n" ) ;     
-         print( " set dest <cellAddress>\n" ) ;     
-         print( " set sync  on|off\n" ) ;     
-         print( " exit\n" ) ;     
+         print( " set dest local\n" ) ;
+         print( " set dest <cellAddress>\n" ) ;
+         print( " set sync  on|off\n" ) ;
+         print( " exit\n" ) ;
    }
    private void _runTelnetReceiver(){
       try{
          Object obj ;
          StringBuffer sb = new StringBuffer() ;
-         
+
          while( ( obj = _telnetInput.readNext() ) != null ){
            if( obj instanceof Character ){
               char c = ((Character)obj).charValue() ;
@@ -269,12 +269,12 @@ public class TelnetShell implements Cell, Runnable   {
                  sb.setLength(0) ;
                  continue ;
               }
-              sb.append( ((Character)obj).charValue() ) ; 
+              sb.append( ((Character)obj).charValue() ) ;
            }else if( obj instanceof byte [] ){
               _nucleus.say( "byte array arrived " ) ;
               telnetControl( (byte [])obj ) ;
            }
-         
+
          }
          _nucleus.say( "EOF encountered" ) ;
       }catch( Exception ioe ){
@@ -284,23 +284,23 @@ public class TelnetShell implements Cell, Runnable   {
    }
    public void finish(){
          try{_telnetOutput.close() ;}catch(Exception e){}
-         _nucleus.kill();      
+         _nucleus.kill();
    }
    public void run(){
       if( Thread.currentThread() == _telnetReceiver ){
-      
+
           _runTelnetReceiver() ;
-          
+
       }
-   
+
    }
    public String toString(){ return getInfo() ; }
-   
+
    public String getInfo(){
      return "Example Cell"+_nucleus.getCellName() ;
    }
    public void   messageArrived( MessageEvent me ){
-   
+
      if( me instanceof LastMessageEvent ){
         _nucleus.say( "Last message received; releasing lock" ) ;
         synchronized( _readyLock ){
@@ -310,8 +310,8 @@ public class TelnetShell implements Cell, Runnable   {
      }else{
         CellMessage msg = me.getMessage() ;
         println("");
-        println( " CellMessage From   : "+msg.getSourceAddress() ) ; 
-        println( " CellMessage To     : "+msg.getDestinationAddress() ) ; 
+        println( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        println( " CellMessage To     : "+msg.getDestinationAddress() ) ;
         Object obj = msg.getMessageObject() ;
         println( " CellMessage Object : "+obj.getClass().getName() ) ;
         if( obj instanceof Object [] ){
@@ -323,7 +323,7 @@ public class TelnetShell implements Cell, Runnable   {
            println( obj.toString()) ;
         }
      }
-     
+
    }
    public void   prepareRemoval( KillEvent ce ){
      _nucleus.say( "prepareRemoval received" ) ;
@@ -331,7 +331,7 @@ public class TelnetShell implements Cell, Runnable   {
         if( ! _ready ){
            _nucleus.say( "waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
-        } 
+        }
      }
      finish() ;
      _nucleus.say( "finished" ) ;
@@ -343,7 +343,7 @@ public class TelnetShell implements Cell, Runnable   {
    public static void main( String [] args ){
       new SystemCell( "telnetDomain" ) ;
       new GNLCell( "telnet" , "dmg.cells.services.TelnetShell" , 22112 ) ;
-      
+
    }
 
 }

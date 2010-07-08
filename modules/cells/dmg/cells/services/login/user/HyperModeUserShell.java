@@ -11,14 +11,14 @@ import java.io.* ;
 import java.net.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 19 Nov 2006
   */
-public class    HyperModeUserShell 
+public class    HyperModeUserShell
      extends    CommandInterpreter {
-       
+
     private CellNucleus _nucleus  = null ;
     private String      _user     = null ;
     private String      _authUser = null ;
@@ -29,7 +29,7 @@ public class    HyperModeUserShell
     private Position    _currentPosition = new Position() ;
     private boolean     _debug    = false ;
 
-    private class Position {    
+    private class Position {
         private CellPath    remote     = null ;
         private String      remoteName = null ;
         private boolean     hyperMode  = false ;
@@ -46,18 +46,18 @@ public class    HyperModeUserShell
         private Position( String removeCell ){
             hyperMode  = false ;
             remoteName = removeCell ;
-            remote     = remoteName == null ? null : new CellPath(remoteName) ; 
+            remote     = remoteName == null ? null : new CellPath(remoteName) ;
         }
         private void clearHyperMode(){
            hyperMode  = false ;
            remoteName = null ;
-           remote     = null ; 
+           remote     = null ;
            hyperPath  = new ArrayList() ;
            moduleName = null ;
         }
         private void gotoLocal(){
            remoteName = null ;
-           remote     = null ; 
+           remote     = null ;
            hyperPath  = new ArrayList() ;
            moduleName = null ;
         }
@@ -94,8 +94,8 @@ public class    HyperModeUserShell
            }
 
 
-           remote = remoteName == null ? null : new CellPath(remoteName) ; 
-            
+           remote = remoteName == null ? null : new CellPath(remoteName) ;
+
         }
        private void mergePath( Path path ){
            hyperMode = true ;
@@ -120,22 +120,22 @@ public class    HyperModeUserShell
                     }
                 }
             }
-           
+
             finish() ;
-            
+
             return;
         }
     }
-    
+
     private class Path {
-        
+
         private String  _pathString     = null ;
         private boolean _isAbsolutePath = false ;
         private boolean _isPath         = false ;
         private boolean _isDomain       = false ;
-        
+
         private String  [] _path = null ;
-        
+
         private Path( String pathString ) throws Exception {
             _pathString = pathString ;
             if( _pathString.indexOf('@') > -1 ){
@@ -166,7 +166,7 @@ public class    HyperModeUserShell
             return _isPath ;
         }
         private String getItem(int i ){
-           return ( ( i < 0 ) || ( i >= _path.length ) ) ? "" : _path[i] ; 
+           return ( ( i < 0 ) || ( i >= _path.length ) ) ? "" : _path[i] ;
         }
         private String [] getPath(){ return _path ; }
         public String toString(){ return _pathString ;}
@@ -185,7 +185,7 @@ public class    HyperModeUserShell
        _nucleus  = nucleus ;
        _user     = user ;
        _authUser = user ;
-       
+
        if( ( _instance = args.getOpt("realm") ) != null ){
            if(  _instance.equals("") ){
                try{
@@ -200,7 +200,7 @@ public class    HyperModeUserShell
     protected void say( String str ){ _nucleus.say( str ) ; }
     protected void esay( String str ){ _nucleus.esay( str ) ; }
     protected void esay( Exception e ){ _nucleus.esay(e) ; }
-    public void checkPermission( String aclName ) 
+    public void checkPermission( String aclName )
            throws AclException {
 
          Object [] request = new Object[5] ;
@@ -208,8 +208,8 @@ public class    HyperModeUserShell
          request[1] = "<nobody>" ;
          request[2] = "check-permission" ;
          request[3] = getUser() ;
-         request[4] = aclName ; 
-         CellMessage reply = null ; 
+         request[4] = aclName ;
+         CellMessage reply = null ;
          try{
             reply = _nucleus.sendAndWait(
                          new CellMessage( _path , request ) ,
@@ -218,7 +218,7 @@ public class    HyperModeUserShell
                throw new
                AclException( "Request timed out ("+_path+")" ) ;
          }catch(Exception ee ){
-            throw new 
+            throw new
             AclException( "Problem : "+ee.getMessage() ) ;
          }
          Object r = reply.getMessageObject() ;
@@ -233,15 +233,15 @@ public class    HyperModeUserShell
             throw new
             AclException( getUser() , aclName ) ;
 
-         return ;    
+         return ;
     }
     public String getHello(){
       return "\n    Cell System (user="+getUser()+")\n\n" ;
     }
-    public String getPrompt(){ 
+    public String getPrompt(){
         if( _currentPosition.hyperMode ){
             StringBuffer sb = new StringBuffer() ;
-            
+
             sb.append("(").append(getUser()).append(") ");
             if( _debug ){
                 String remote = _currentPosition.remoteName == null ? "local" : _currentPosition.remoteName;
@@ -254,7 +254,7 @@ public class    HyperModeUserShell
             return sb.toString();
         }else{
             return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
-                    ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) + 
+                    ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
                     getUser()+" > " ;
         }
     }
@@ -266,7 +266,7 @@ public class    HyperModeUserShell
         String user = args.argv(0) ;
         if( user.equals(_authUser) ){
            _user = _authUser ;
-           return "User changed BACK to "+_user ; 
+           return "User changed BACK to "+_user ;
         }else if( user.equals(_user) ){
            return "User not changed, still "+_user ;
         }
@@ -289,7 +289,7 @@ public class    HyperModeUserShell
                 CommandSyntaxException("set exception message|detail") ;
        }
        return "Exception = " +( _fullException ? "detail" : "message" ) ;
-    } 
+    }
     public String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
     public String ac_set_timeout_$_0_1( Args args ){
         if( args.argc() > 0 ){
@@ -297,15 +297,15 @@ public class    HyperModeUserShell
            if( timeout < 1000L )
                throw new
                IllegalArgumentException("<timeout> >= 1" ) ;
-           _timeout = timeout; 
-        } 
-        return "Timeout = "+(_timeout/1000L) ; 
+           _timeout = timeout;
+        }
+        return "Timeout = "+(_timeout/1000L) ;
 
     }
     public String hh_load_shell = "system|<shellClass>" ;
     public String ac_load_shell_$_1( Args args )throws Exception {
         String shellName = args.argv(0) ;
-        
+
         try{
            checkPermission( "shell.*.execute" ) ;
         }catch( AclException acle ){
@@ -317,8 +317,8 @@ public class    HyperModeUserShell
            addCommandListener( Class.forName(shellName).newInstance() ) ;
         }
         return "" ;
-    
-    }    
+
+    }
     //
     //   input                        remoteName
     // ----------------------------------------------------------------
@@ -329,7 +329,7 @@ public class    HyperModeUserShell
     //   /*/<cells>                     <cell>
     //   /<domain>|*/<cells>/<module>  see above
     //
-    public String fh_cd = 
+    public String fh_cd =
           "  SYNTAX I :\n" +
           "     cd <cellPath>\n" +
           "          <cellPath> : <cellName>[@<domainName>]\n" +
@@ -351,27 +351,27 @@ public class    HyperModeUserShell
           "\n" ;
     public String hh_cd = "<cellPath> | <cellDirectoryPath> # see 'help cd'";
     public String ac_cd_$_1( Args args )throws Exception {
-        
+
        String remoteCell = args.argv(0) ;
        Path   path       = new Path(remoteCell);
-       
+
        Position newPosition = null ;
-       
+
        if( path.isDomain() ){
             //
            // switch back do domain mode (hyper mode or not)
            //
            newPosition = new Position( remoteCell ) ;
-            
+
        }else if( _currentPosition.hyperMode ){
            //
            // we are and stay in hyper mode
            //
            newPosition = new Position( _currentPosition ) ;
            newPosition.mergePath( path ) ;
-           
+
        }else if( path.isPath() ){
-                         
+
            if( path.isAbsolutePath() ){
 
                newPosition = new Position( _currentPosition ) ;
@@ -385,22 +385,22 @@ public class    HyperModeUserShell
               throw new
               IllegalArgumentException("Need absolute path to switch to directory mode");
            }
-               
+
         }else{
            //
            //
-           // 
+           //
            newPosition = new Position( remoteCell ) ;
-          
+
        }
-       
+
        if( newPosition.remoteName != null )checkCdPermission( newPosition.remoteName ) ;
-       
+
        synchronized( this ){
            _currentPosition = newPosition ;
        }
-       
-       
+
+
        return "" ;
     }
     private void checkCdPermission( String remoteName ) throws AclException {
@@ -416,7 +416,7 @@ public class    HyperModeUserShell
              if( prefix == null )throw acle2 ;
              checkPermission( "cell."+prefix+"-pools.execute" ) ;
           }
-       }        
+       }
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
        say( "Local command "+args ) ;
@@ -429,49 +429,49 @@ public class    HyperModeUserShell
        }
     }
     /**
-      * Called by the streamobjectcell if it is running in 
+      * Called by the streamobjectcell if it is running in
       * Binary mode and a destination is provided.
       */
     public Object executeCommand( String destination , Object object )
            throws Exception {
 
        say( "Object command (dest="+destination+";Class="+object.getClass().getName()+") "+object) ;
-       
+
        checkCdPermission( destination ) ;
-       
+
        if( object instanceof String ){
-       
+
           return sendCommand( destination  , object.toString() ) ;
-                 
+
        }else{
-       
+
           CellMessage res = new CellMessage( new CellPath( destination ) , object ) ;
-          
+
           res = _nucleus.sendAndWait( res , _timeout ) ;
-          
+
           if( res == null )throw new Exception("Request timed out" ) ;
-          
+
           return res.getMessageObject() ;
        }
     }
     /**
       * This is called by the streamobjectcell if it is running
-      * in 
+      * in
       *   i) Ascii (ssh) mode or
       *  ii) Binary mode and no destination is given unless there would
       *      be a executeCommand( Obj obj), this would then be taken instead.
-      *     
+      *
       */
     public Object executeCommand( String str )throws Exception {
        say( "String command (super) "+str ) ;
-       
+
        if( str.trim().equals("") )return "" ;
-       
-       if( str.equals("..") ){ 
+
+       if( str.equals("..") ){
           _currentPosition.clearHyperMode() ;
           _currentPosition.gotoLocal() ;
-          return "" ; 
-       } 
+          return "" ;
+       }
 
        Args args = new Args( str ) ;
 
@@ -503,15 +503,15 @@ public class    HyperModeUserShell
            if( or == null )return ""  ;
            String r = or.toString() ;
            if(  r.length() < 1)return "" ;
-           if( r.substring(r.length()-1).equals("\n" ) )            
+           if( r.substring(r.length()-1).equals("\n" ) )
               return r   ;
-           else 
+           else
               return r + "\n"  ;
        }catch(Exception ee ){
            if( _debug )esay(ee) ;
            throw ee ;
        }
-        
+
     }
     protected Object sendObject( String cellPath , Object object )
        throws Exception
@@ -537,28 +537,28 @@ public class    HyperModeUserShell
 
     }
     protected Object sendCommand( String destination , String command )
-       throws Exception 
+       throws Exception
    {
-    
+
         CellPath     cellPath = new CellPath(destination);
         AuthorizedString auth = new AuthorizedString( _user , command ) ;
-        
-        CellMessage res = 
+
+        CellMessage res =
               _nucleus.sendAndWait(  new CellMessage( cellPath , auth ) , _timeout ) ;
-              
+
           if( res == null )
-             throw new 
+             throw new
              Exception("Request timed out" ) ;
-          
+
           Object obj =  res.getMessageObject() ;
-          
+
           if( ( obj instanceof Throwable ) && _fullException ){
               CharArrayWriter ca = new CharArrayWriter() ;
               ((Throwable)obj).printStackTrace(new PrintWriter(ca)) ;
               return ca.toString();
           }
           return obj ;
-    
+
     }
 
 }

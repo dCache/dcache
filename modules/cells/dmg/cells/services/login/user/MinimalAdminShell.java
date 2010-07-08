@@ -5,12 +5,12 @@ import   dmg.cells.nucleus.* ;
 import   dmg.util.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class   MinimalAdminShell 
+public class   MinimalAdminShell
        extends CommandInterpreter {
     private CellNucleus _nucleus ;
     private String      _user ;
@@ -20,30 +20,30 @@ public class   MinimalAdminShell
     public MinimalAdminShell( String user , CellNucleus nucleus , Args args ){
        _nucleus = nucleus ;
        _user    = user ;
-       
+
        for( int i = 0 ; i < args.argc() ; i++ )
           _nucleus.say( "arg["+i+"]="+args.argv(i) ) ;
-          
+
        if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) )
           throw new IllegalArgumentException( "hallo du da" )  ;
-          
+
     }
     protected String getUser(){ return _user ; }
     protected void say( String str ){ _nucleus.say( str ) ; }
     protected void esay( String str ){ _nucleus.esay( str ) ; }
     protected void esay( Exception e ){ _nucleus.esay(e) ; }
-    private void checkPrivileges( String user , 
+    private void checkPrivileges( String user ,
                                      String className ,
                                      String instanceName ,
                                      String action     )
             throws AclPermissionException  {
-    
+
        String acl = className+"."+instanceName+"."+action ;
        say("requesting acl {"+acl+"} for user "+user ) ;
-           
+
        if( ! user.equals( "patrick" ) )
           throw new
-          AclPermissionException( "Permission denied ("+acl+") for "+user ) ;  
+          AclPermissionException( "Permission denied ("+acl+") for "+user ) ;
        return  ;
     }
     private String _prompt = " >> " ;
@@ -53,9 +53,9 @@ public class   MinimalAdminShell
           if( or == null )return _prompt ;
           String r = or.toString() ;
           if(  r.length() < 1)return "" ;
-          if( r.substring(r.length()-1).equals("\n" ) )            
+          if( r.substring(r.length()-1).equals("\n" ) )
              return r   ;
-          else 
+          else
              return r + "\n"  ;
     }
     //
@@ -64,27 +64,27 @@ public class   MinimalAdminShell
     public String getPrompt(){ return _prompt ; }
     public Object executeCommand( Object obj ) throws Exception {
        say( "Object command "+obj ) ;
-       
+
        String command = obj.toString() ;
        Args args = new Args( command ) ;
        if( args.argc() == 0 )return null ;
        return executeLocalCommand( args );
     }
     protected Object sendCommand( String destination , String command )
-       throws Exception 
+       throws Exception
    {
-    
+
         CellPath cellPath = new CellPath(destination);
-        CellMessage res = 
-              _nucleus.sendAndWait( 
-                   new CellMessage( cellPath , 
-                                    new AuthorizedString( _user , 
+        CellMessage res =
+              _nucleus.sendAndWait(
+                   new CellMessage( cellPath ,
+                                    new AuthorizedString( _user ,
                                                           command)
-                                  ) , 
+                                  ) ,
               10000 ) ;
           if( res == null )throw new Exception("Request timed out" ) ;
           return res.getMessageObject() ;
-    
+
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
        say( "Loacal command "+args ) ;
@@ -125,15 +125,15 @@ public class   MinimalAdminShell
        if( ! args.argv(0).equals("system") )
           throw new
           CommandException( "Only system is currently supported" ) ;
-       
+
        //
        // check if the CellShell is allowed for us.
        //
        checkPrivileges( _user , "shells" , "system" , "execute" )  ;
-       
+
        _cellShell = new CellShell( _nucleus ) ;
        addCommandListener( _cellShell ) ;
        return "System Shell installed" ;
-    
+
     }
 }

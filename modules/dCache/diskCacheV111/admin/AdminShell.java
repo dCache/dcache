@@ -7,7 +7,7 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -24,7 +24,7 @@ public class      AdminShell extends CommandInterpreter {
        _wasAdmin = _user.equals("admin");
        for( int i = 0 ; i < args.argc() ; i++ )
           _nucleus.say( "arg["+i+"]="+args.argv(i) ) ;
-          
+
     }
     public String getPrompt(){ return _cellPath.getCellName()+"("+_user+") >> " ; }
     private void say( String str ){ _nucleus.say( str ) ; }
@@ -34,10 +34,10 @@ public class      AdminShell extends CommandInterpreter {
     }
     public String hh_id = "[<newId>]" ;
     public String ac_id_$_0_1( Args args )throws Exception {
-          
+
        if( args.argc() == 1 ){
             if( ( ! _user.equals("admin") ) && ( ! _wasAdmin ) )
-                 throw new 
+                 throw new
                  IllegalArgumentException( "Not allowed" ) ;
            _user = args.argv(0) ;
            return "" ;
@@ -63,7 +63,7 @@ public class      AdminShell extends CommandInterpreter {
         return _executeCommand( obj.toString() , true ) ;
     }
     public Object _executeCommand( String obj , boolean wasBinary ) throws Exception {
-    
+
        String str = obj ;
        String tr  = str.trim() ;
        if( tr.equals("") )return "" ;
@@ -76,20 +76,20 @@ public class      AdminShell extends CommandInterpreter {
        CellPath cellPath = null ;
        String   path     = null ;
        if( ( path = xx.getOpt("cellPath") ) != null ){
-          cellPath = new CellPath( path ) ;         
+          cellPath = new CellPath( path ) ;
        }else{
           cellPath = _cellPath ;
        }
-       
-       CellMessage res = 
-         _nucleus.sendAndWait( 
-                new CellMessage( 
-                     cellPath , 
-                     new AuthorizedString( 
-                           _user ,  
-                           str + ( wasBinary ? " -binary" : "" ) ) 
-                    ) , 
-                10000 
+
+       CellMessage res =
+         _nucleus.sendAndWait(
+                new CellMessage(
+                     cellPath ,
+                     new AuthorizedString(
+                           _user ,
+                           str + ( wasBinary ? " -binary" : "" ) )
+                    ) ,
+                10000
          ) ;
        if( res == null )throw new Exception("Request timed out" ) ;
        Object resObject = res.getMessageObject() ;
@@ -100,7 +100,7 @@ public class      AdminShell extends CommandInterpreter {
           if( resObject instanceof Exception )throw (Exception)resObject ;
           String r = resObject.toString() ;
           if( r.length() == 0 )return "" ;
-          if( r.substring(r.length()-1).equals("\n" ) )return r ;            
+          if( r.substring(r.length()-1).equals("\n" ) )return r ;
           else   return r + "\n" ;
        }
     }

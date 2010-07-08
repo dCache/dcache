@@ -7,12 +7,12 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 1 May 2001
   */
-public class      AdminShell2 
+public class      AdminShell2
        extends    dmg.cells.services.login.user.MinimalAdminShell {
     private String  _destination = null ;
     public AdminShell2( String user , CellNucleus nucleus , Args args ){
@@ -21,10 +21,10 @@ public class      AdminShell2
     public String getHello(){
       return "\n    Welcome to the dCache Admin Interface (user="+getUser()+")\n\n" ;
     }
-    public String getPrompt(){ 
-        return _destination == null ? 
+    public String getPrompt(){
+        return _destination == null ?
                "<local>("+getUser()+") "   :
-               "<"+_destination+">("+getUser()+") "; 
+               "<"+_destination+">("+getUser()+") ";
     }
     public String hh_cd = "<destinationCell>";
     public Object ac_cd_$_1( Args args ){
@@ -33,7 +33,7 @@ public class      AdminShell2
     }
     public Object executeCommand( String str )throws Exception {
        say( "String command (super) "+str ) ;
-       
+
        Object or = null ;
        Args args = new Args(str) ;
        if( _destination != null ){
@@ -50,16 +50,16 @@ public class      AdminShell2
        if( or == null )return ""  ;
        String r = or.toString() ;
        if(  r.length() < 1)return "" ;
-       if( r.substring(r.length()-1).equals("\n" ) )            
+       if( r.substring(r.length()-1).equals("\n" ) )
           return r   ;
-       else 
+       else
           return r + "\n"  ;
     }
     public Object executeCommand( String destination , Object str )
            throws Exception {
 
        say( "Object command ("+destination+") "+str) ;
-       
+
        return sendCommand( destination  , str.toString() ) ;
     }
 /*
@@ -67,15 +67,15 @@ public class      AdminShell2
            throws Exception {
 
        say( "String command ("+destination+") "+str ) ;
-       
+
        Args args = new Args(str) ;
        Object or = sendCommand( destination  , str ) ;
        if( or == null )return ""  ;
        String r = or.toString() ;
        if(  r.length() < 1)return "" ;
-       if( r.substring(r.length()-1).equals("\n" ) )            
+       if( r.substring(r.length()-1).equals("\n" ) )
           return r   ;
-       else 
+       else
           return r + "\n"  ;
     }
 */

@@ -10,13 +10,13 @@ import  dmg.cells.nucleus.* ;
 import  dmg.cells.network.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      WorksheetCell 
-       extends    jWorksheet 
+public class      WorksheetCell
+       extends    jWorksheet
        implements Cell, ActionListener, CellEventListener {
 
    private CellNucleus _nucleus   = null ;
@@ -25,10 +25,10 @@ public class      WorksheetCell
    private boolean     _talk      = true ;
    private String      _cellName  ;
    private String      _worksheetStore ;
-   
+
    public WorksheetCell( String cellName ){
       super() ;
-      
+
       //
       // the cell preparation
       //
@@ -53,9 +53,9 @@ public class      WorksheetCell
       }catch( SecurityException se ){
         _worksheetStore = null ;
       }
-      
-      
-     
+
+
+
    }
    public void actionPerformed( ActionEvent event ){
       _nucleus.say( "Action : "+event.getActionCommand() ) ;
@@ -79,15 +79,15 @@ public class      WorksheetCell
               return ;
           }
           try{
-             _nucleus.sendMessage( 
+             _nucleus.sendMessage(
                 new CellMessage(
                      new CellPath( args.argv(1) ) ,
-                     args.argv(2) ) 
+                     args.argv(2) )
              ) ;
           }catch( Exception nse ){
              answer( "Exception : "+nse+"\n" ) ;
           }
-      
+
       }else if( command.equals( "save" ) ){
           if( args.argc() == 1 ){
              saveWorksheet( _worksheetStore );
@@ -119,7 +119,7 @@ public class      WorksheetCell
           answer( sb.toString() );
       }else{
           answer( " Worksheet : Command not found : "+command+"\n" ) ;
-          return ;      
+          return ;
       }
    }
    public String toString(){
@@ -130,7 +130,7 @@ public class      WorksheetCell
    }
    public void saveWorksheet( String filename ){
       try{
-         DataOutputStream out = new DataOutputStream( 
+         DataOutputStream out = new DataOutputStream(
                                 new FileOutputStream( filename ) ) ;
          out.writeUTF( getText() ) ;
          out.close() ;
@@ -140,8 +140,8 @@ public class      WorksheetCell
    }
    public void restoreWorksheet( String filename ){
       try{
-         
-         DataInputStream in = new DataInputStream( 
+
+         DataInputStream in = new DataInputStream(
                               new FileInputStream( filename ) ) ;
          setText( in.readUTF() );
          in.close();
@@ -151,7 +151,7 @@ public class      WorksheetCell
    }
    public void   messageArrived( MessageEvent me ){
      if( me instanceof LastMessageEvent )return ;
-     
+
      CellMessage msg  = me.getMessage() ;
      Object      obj  = msg.getMessageObject() ;
      CellPath    addr = msg.getSourcePath() ;
@@ -201,7 +201,7 @@ public class      WorksheetCell
      }else if( obj instanceof Exception ){
         append( "  Excp.   : "+obj.toString() +"\n") ;
      }
-     
+
    }
    private void _execute( String str ){
      Args args = new Args( str ) ;
@@ -212,12 +212,12 @@ public class      WorksheetCell
           setFont( new Font( "Monospaced" , Font.PLAIN , fontSize ) ) ;
        }else if( args.argv(1).equals("talk") ){
           if( args.argv(2).equals("none") )_talk= false ;
-          else _talk=true ;       
+          else _talk=true ;
        }
      }catch( Exception e ){
         append( "  Exception   : "+e.getMessage() +"\n") ;
      }
-   
+
    }
    public void   prepareRemoval( KillEvent ce ){
         _nucleus.say( " prepareRemoval "+ce ) ;

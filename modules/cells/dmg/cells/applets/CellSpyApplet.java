@@ -10,15 +10,15 @@ import dmg.cells.examples.* ;
 import dmg.cells.nucleus.* ;
 import dmg.cells.network.* ;
 
-public class      CellSpyApplet 
-       extends    Applet 
+public class      CellSpyApplet
+       extends    Applet
        implements ActionListener,
                   Runnable ,
                   Cell ,
                   CellEventListener       {
   //
   // Cell Environment Stuff
-  //   
+  //
   private String      _domainName        = "<" + new Date().getTime() + ">" ;
   private boolean     _systemCellCreated = false ;
   private boolean     _tunnelCreated     = false ;
@@ -40,12 +40,12 @@ public class      CellSpyApplet
       // we need to create the SystemCell, if not yet done.
       //
       System.out.println( "Trying to create system cell" ) ;
-      try{  
+      try{
           new SystemCell( _domainName ) ;
           _systemCellCreated = true ;
       }catch( Exception ex ){
          System.out.println( "Seems to have been done before" ) ;
-      } 
+      }
       System.out.println( "Cell Environment created" ) ;
       //
       // make us a Cell
@@ -59,21 +59,21 @@ public class      CellSpyApplet
       //
       String dest = getParameter( "Galactica" ) ;
       if( _systemCellCreated && ( dest != null ) ){
-       
+
          System.out.println( "Creating tunnel" ) ;
-         try{  
+         try{
             new RetryTunnel( "et*" , dest ) ;
             _tunnelCreated = true ;
          }catch( Exception rte ){
             _tunnelCreated = false ;
             System.out.println( "Problem creating tunnel : "+rte ) ;
          }
-      }  
-      
+      }
+
       setLayout( new BorderLayout() ) ;
       _cardPanel    = new Panel( _cards = new CardLayout() )  ;
       _buttonPanel  = new Panel( new FlowLayout(FlowLayout.CENTER) ) ;
-      
+
       add( _cardPanel    , "Center" ) ;
       add( _buttonPanel  , "North" ) ;
       _worksheetButton = new Button( "Worksheet" ) ;
@@ -97,10 +97,10 @@ public class      CellSpyApplet
       _cardPanel.add( new WorksheetCell( "WSC*" ) , "worksheet" ) ;
       _cardPanel.add( new TopoCanvasCell( "Topo*" ) , "topo" ) ;
       System.out.println( "CellAppletDomain started (Init ready)" ) ;
-      
+
       if( ( _firstVisible = getParameter( "ShowUp" ) ) == null )
          _firstVisible = "worksheet" ;
-      
+
 
   }
   public void start(){
@@ -119,7 +119,7 @@ public class      CellSpyApplet
      // filter the animation events ( won't be too much ) ;
      //
      if( event.getSource() == _logo ){
-         if( command.equals( "finished" ) ){             
+         if( command.equals( "finished" ) ){
             _cards.show( _cardPanel , _firstVisible ) ;
          }
      }else if( event.getSource() == _worksheetButton ){
@@ -127,9 +127,9 @@ public class      CellSpyApplet
      }else if( event.getSource() == _topologyButton ){
          _cards.show( _cardPanel , "topo" ) ;
      }
-       
+
      System.out.println( " Ready "  ) ;
-     
+
   }
   public void run(){
   }
@@ -138,7 +138,7 @@ public class      CellSpyApplet
   }
   public void destroy(){
      System.out.println( "Applet destroying"  ) ;
-  }      
+  }
    //
    // interface from Cell
    //
@@ -162,35 +162,35 @@ public class      CellSpyApplet
    public void   prepareRemoval( KillEvent ce ){
      // this will remove whatever was stored for us
    }
-   
+
    public synchronized void  routeAdded( CellEvent ce ){
       _nucleus.say( "routeAdded : "+ce );
       if( _defaultRoute == null  ){
-      
+
          CellRoute route  = (CellRoute)ce.getSource() ;
          if( route.getRouteType() != CellRoute.DOMAIN )return ;
-         
+
          Args args = new Args( "-default *@"+route.getDomainName() ) ;
          _defaultRoute =  new CellRoute( args ) ;
-         
-         _nucleus.say( "routeAdded : adding default : "+_defaultRoute ) ;    
+
+         _nucleus.say( "routeAdded : adding default : "+_defaultRoute ) ;
          _nucleus.routeAdd( _defaultRoute ) ;
-                  
+
       }
    }
    public synchronized void  routeDeleted( CellEvent ce ){
      _nucleus.say( "routeDeleted : "+ce ) ;
       if( _defaultRoute != null  ){
-      
+
          CellRoute route  = (CellRoute)ce.getSource() ;
          if( route.getRouteType() != CellRoute.DOMAIN )return ;
-         
-         
-         _nucleus.say( "routeDeleted : removing default : "+_defaultRoute ) ;    
+
+
+         _nucleus.say( "routeDeleted : removing default : "+_defaultRoute ) ;
          _nucleus.routeDelete( _defaultRoute ) ;
-         
+
          _defaultRoute = null ;
-                  
+
       }
    }
    public void   exceptionArrived( ExceptionEvent ce ){
@@ -208,5 +208,5 @@ public class      CellSpyApplet
    public void  cellExported( CellEvent ce ){
 //     _nucleus.say( " cellExported "+ce ) ;
    }
-       
+
 }

@@ -5,7 +5,7 @@ import  java.util.* ;
 import  java.io.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -21,28 +21,28 @@ public class ConfigCell implements Cell, Runnable  {
    private CellShell   _shell ;
    private Vector      _status       = new Vector() ;
    private Object      _statusLock   = new Object() ;
-   
+
    public ConfigCell( String cellName , String cellArgs ){
-   
+
       _configBase = cellArgs ;
       _nucleus = new CellNucleus( this , cellName ) ;
-      
+
       _shell   = new CellShell( _nucleus ) ;
-      
+
       _worker  = new Thread( this ) ;
       _worker.start() ;
    }
    public void run(){
      if( Thread.currentThread() == _worker ){
-         String filename = _configBase + "/" + 
+         String filename = _configBase + "/" +
                            _nucleus.getCellDomainName() + ".conf" ;
          String line , answer ;
          setStatus( "Starting on "+filename ) ;
          try{
-            BufferedReader in = new BufferedReader( 
+            BufferedReader in = new BufferedReader(
                                 new FileReader( filename ) ) ;
             while( ( line = in.readLine() ) != null ){
-            
+
                setStatus( line ) ;
                answer = _shell.command( line ) ;
                setStatus( answer ) ;
@@ -52,7 +52,7 @@ public class ConfigCell implements Cell, Runnable  {
             setStatus( " Exc :  " + e.toString() ) ;
          }
          setStatus( "Ready" ) ;
-     
+
      }
    }
    public String toString(){ return _message ; }
@@ -76,12 +76,12 @@ public class ConfigCell implements Cell, Runnable  {
        _status.addElement( st ) ;
      }
    }
-   
+
    public String getInfo(){
      return getStatus() ;
    }
    public void   messageArrived( MessageEvent me ){
-   
+
      if( me instanceof LastMessageEvent ){
         _nucleus.say( "Last message received; releasing lock" ) ;
         synchronized( _readyLock ){
@@ -90,12 +90,12 @@ public class ConfigCell implements Cell, Runnable  {
         }
      }else{
         CellMessage msg = me.getMessage() ;
-        _nucleus.say( " CellMessage From   : "+msg.getSourceAddress() ) ; 
-        _nucleus.say( " CellMessage To     : "+msg.getDestinationAddress() ) ; 
+        _nucleus.say( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        _nucleus.say( " CellMessage To     : "+msg.getDestinationAddress() ) ;
         _nucleus.say( " CellMessage Object : "+msg.getMessageObject() ) ;
         _nucleus.say( "" ) ;
      }
-     
+
    }
    public void   prepareRemoval( KillEvent ce ){
      _nucleus.say( "prepareRemoval received" ) ;
@@ -103,7 +103,7 @@ public class ConfigCell implements Cell, Runnable  {
         if( ! _ready ){
            _nucleus.say( "waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
-        } 
+        }
      }
      _nucleus.say( "finished" ) ;
      // this will remove whatever was stored for us

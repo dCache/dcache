@@ -7,40 +7,40 @@ import  java.io.* ;
 import  java.net.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class ReflectionTunnel implements Cell, 
+public class ReflectionTunnel implements Cell,
                                     CellTunnel  {
 
    private CellNucleus  _nucleus         = null ;
    private Gate         _finalGate          = new Gate(false) ;
-   
+
    public ReflectionTunnel( String cellName , String socket )
           throws Exception {
-          
+
       _nucleus  = new CellNucleus( this , cellName ) ;
 
    }
-   
+
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
                                   _nucleus.getCellDomainInfo() ) ;
-   
+
    }
    public String toString(){ return "Reflextion Tunnel" ; }
    public String getInfo(){
      StringBuffer sb = new StringBuffer() ;
      sb.append( "Simple Tunnel : "+_nucleus.getCellName()+"\n" ) ;
-     
+
      return sb.toString() ;
    }
    public void   messageArrived( MessageEvent me ){
 //     _nucleus.say( "message Arrived : "+me ) ;
-     
+
      if( me instanceof RoutedMessageEvent ){
         CellMessage msg = me.getMessage() ;
         _nucleus.say( "messageArrived : queuing "+msg ) ;
@@ -49,14 +49,14 @@ public class ReflectionTunnel implements Cell,
         }catch( Exception eee ){
            _nucleus.say( "Problem sending :" + eee ) ;
         }
-        
+
      }else if( me instanceof LastMessageEvent ){
         _nucleus.say( "messageArrived : opening final gate" ) ;
         _finalGate.open() ;
      }else{
         _nucleus.say( "messageArrived : dumping junk message "+me ) ;
      }
-     
+
    }
    public synchronized void   prepareRemoval( KillEvent ce ){
 
@@ -66,5 +66,5 @@ public class ReflectionTunnel implements Cell,
    public void   exceptionArrived( ExceptionEvent ce ){
      _nucleus.say( "exceptionArrived : "+ce ) ;
    }
- 
+
 }
