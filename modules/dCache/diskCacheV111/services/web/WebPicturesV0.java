@@ -21,11 +21,18 @@ import diskCacheV111.vehicles.RestoreHandlerInfo ;
 
 
 import diskCacheV111.poolManager.* ;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *  @Author: Patrick Fuhrmann
   *
   */
 public class WebPicturesV0 extends CellAdapter implements Runnable {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(WebPicturesV0.class);
 
    private CellNucleus      _nucleus   = null ;
    private Args             _args      = null ;
@@ -47,7 +54,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    public WebPicturesV0( String name , String args )throws Exception {
 
       super( name , args , false ) ;
-      say("WebPictures started");
+      _log.info("WebPictures started");
       try{
          _args        = getArgs() ;
          _nucleus     = getNucleus() ;
@@ -76,23 +83,23 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
                _dimension = new Dimension( low , high ) ;
             }catch(Exception ee ){
-                esay("Invalid size string (command ignored) : "+sizeRange ) ;
+                _log.warn("Invalid size string (command ignored) : "+sizeRange ) ;
             }
          }
-         say("Image size : "+_dimension);
+         _log.info("Image size : "+_dimension);
          String intervalString = _args.getOpt("interval") ;
          if( intervalString != null )
          try{
              _sleep = 1000L * (long)Integer.parseInt(intervalString)  ;
          }catch(Exception ee ){
-             esay("Invalid 'interval' string (command ignored) : "+intervalString ) ;
+             _log.warn("Invalid 'interval' string (command ignored) : "+intervalString ) ;
          }
-         say("Interval (msec) : "+_sleep);
+         _log.info("Interval (msec) : "+_sleep);
 
          if( _args.getOpt("dontstart") != null ){ // debug only
-            say("Worker Thread not started : -dontstart");
+            _log.info("Worker Thread not started : -dontstart");
          }else{
-            say("Starting worker Thread");
+            _log.info("Starting worker Thread");
             _nucleus.newThread( this , "Worker" ).start() ;
             _wasStarted = true ;
          }
@@ -135,7 +142,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
            try{
 
-               say("Sending query : "+msg);
+               _log.info("Sending query : "+msg);
 
                sendMessage( msg ) ;
 
@@ -149,11 +156,10 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                }
 
            }catch(InterruptedException ie ){
-               esay("Worker interrupted");
+               _log.warn("Worker interrupted");
                break ;
            }catch(Exception ee ){
-               esay("Exception in while loop : "+ee ) ;
-               esay(ee);
+               _log.warn("Exception in while loop : "+ee, ee ) ;
                try{
                    synchronized( _sleeper ){
 
@@ -161,7 +167,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
                    }
                }catch(InterruptedException iee ){
-                   esay("Worker interrupted2");
+                   _log.warn("Worker interrupted2");
                    break ;
                }
            }
@@ -174,16 +180,15 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       try{
          if( obj instanceof RestoreHandlerInfo []  ){
              _currentInfo = (RestoreHandlerInfo[])obj ;
-             say("RestoreHandlerInfo ["+_currentInfo.length+"]");
+             _log.info("RestoreHandlerInfo ["+_currentInfo.length+"]");
              _lastMessageArrived = new Date() ;
              createRestorePictures();
              createFrame();
           }else{
-             esay("Unknown message type arrived : "+obj.getClass().getName());
+             _log.warn("Unknown message type arrived : "+obj.getClass().getName());
          }
       }catch(Exception ee ){
-         esay("Exception in message arrived : "+ee);
-         esay(ee);
+          _log.warn("Exception in message arrived : "+ee, ee);
       }
    }
    public String hh_go = " # start data collection" ;
@@ -243,8 +248,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
            createTransferPicture( list , "TransferHistogram3" ,            3600L * 1000L , _dimension ) ;
 
        }catch(Exception ee){
-          esay("Exception in scanTransferTable : "+ee);
-          esay(ee);
+           _log.warn("Exception in scanTransferTable : "+ee, ee);
           return ;
        }
 
@@ -267,8 +271,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           outStream.flush();
           outStream.close();
        }catch(Exception ee){
-          esay("Exception in writing createTransferPictures : "+ee);
-          esay(ee);
+           _log.warn("Exception in writing createTransferPictures : "+ee, ee);
           return ;
        }
        _cellContext.put( name+".png" , outStream.toByteArray() ) ;
@@ -283,7 +286,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
        RestoreHandlerInfo [] info = _currentInfo ;
        if( info == null ){
-           esay("Histogram not yet ready");
+           _log.warn("Histogram not yet ready");
        }else{
            Histogram histogram = prepareRestoreManagerHistogram( info , _binCount );
            paintComponent( graphics , _dimension , histogram , "Restore "+_simpleFormat.format(new Date())) ;
@@ -295,8 +298,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           outStream.flush();
           outStream.close();
        }catch(Exception ee){
-          esay("Exception in writing createRestorePictures : "+ee);
-          esay(ee);
+           _log.warn("Exception in writing createRestorePictures : "+ee, ee);
           return ;
        }
        _cellContext.put( "RestoreQueueHistogram.png" , outStream.toByteArray() ) ;
@@ -390,14 +392,14 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          maxTime = Math.max( maxTime , t[0] ) ;
       }
       long secPerBin = maxTime / (long)binCount / 1000L ;
-//      say("secPerBin : "+secPerBin);
+//      _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
       for( int n = _binDefinition.length ; pos < n ; pos++ ){
          if( _binDefinition[pos].secondsPerBin > secPerBin )break ;
       }
       histogram._bin = _binDefinition[pos] ;
       secPerBin = _binDefinition[pos].secondsPerBin ;
-//      say("Seconds per bin (fixed) : "+_binDefinition[pos]);
+//      _log.info("Seconds per bin (fixed) : "+_binDefinition[pos]);
       int [] array = new int[binCount];
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
@@ -420,14 +422,14 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int  binsPerMasterBin      = binCount / 4 ;
       long secondsPerMasterBin = binsPerMasterBin * secPerBin ;
 
-//      say("secPerBin : "+secondsPerMasterBin);
+//      _log.info("secPerBin : "+secondsPerMasterBin);
 
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
          if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin )break ;
       }
       masterPos = Math.max(masterPos-1,0);
-//      say("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
+//      _log.info("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
       histogram._secondsPerMasterBin = _binDefinition[masterPos].secondsPerBin ;
       histogram._masterBin           = _binDefinition[masterPos] ;
       histogram._secondsPerBin       = secPerBin ;
@@ -452,14 +454,14 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          youngest = Math.min( youngest , start ) ;
       }
       long secPerBin = ( now - youngest ) / (long)binCount / 1000L ;
-      say("secPerBin : "+secPerBin);
+      _log.info("secPerBin : "+secPerBin);
       int pos = 0 ;
       for( int n = _binDefinition.length ; pos < n ; pos++ ){
          if( _binDefinition[pos].secondsPerBin > secPerBin )break ;
       }
       histogram._bin = _binDefinition[pos] ;
       secPerBin = _binDefinition[pos].secondsPerBin ;
-      say("Seconds per bin (fixed) : "+_binDefinition[pos]);
+      _log.info("Seconds per bin (fixed) : "+_binDefinition[pos]);
       int [] array = new int[binCount];
       int [] erray = new int[binCount];
       long largest = secPerBin * binCount ;
@@ -481,14 +483,14 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       int  binsPerMasterBin      = binCount / 4 ;
       long secondsPerMasterBin = binsPerMasterBin * secPerBin ;
 
-      say("secPerBin : "+secondsPerMasterBin);
+      _log.info("secPerBin : "+secondsPerMasterBin);
 
       int masterPos = 0 ;
       for( int n = _binDefinition.length ; masterPos < n ; masterPos++ ){
          if( _binDefinition[masterPos].secondsPerBin >= secondsPerMasterBin )break ;
       }
       masterPos = Math.max(masterPos-1,0);
-      say("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
+      _log.info("Seconds per bin (fixed) : "+_binDefinition[masterPos]);
       histogram._secondsPerMasterBin = _binDefinition[masterPos].secondsPerBin ;
       histogram._masterBin           = _binDefinition[masterPos] ;
       histogram._secondsPerBin       = secPerBin ;
@@ -582,7 +584,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
              (float)histogram._secondsPerBin  *
              (float)pixelsPerBin ) ;
 
-//         say("Pixel : perBin : "+pixelsPerBin+
+//         _log.info("Pixel : perBin : "+pixelsPerBin+
 //                            " , perMaster : "+pixelsPerMasterBin);
          //
          // x ticks and labels

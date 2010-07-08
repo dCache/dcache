@@ -12,7 +12,14 @@ import dmg.util.* ;
 
 import diskCacheV111.pools.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(PoolInfoObserverV1.class);
+
    private CellNucleus _nucleus        = null ;
    private Args       _args            = null ;
    private HashMap    _infoMap         = new HashMap() ;
@@ -22,7 +29,6 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    private final Thread _senderThread;
    private long       _interval        = 60000 ;
    private long       _counter         = 0 ;
-   private boolean    _debug           = false ;
    private String _dCacheInstance = "?" ;
 
    private CellInfoContainer _container = new CellInfoContainer() ;
@@ -47,7 +53,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
            return "" ;
        }catch(Exception e){
-           esay(e);
+           _log.warn(e.toString(), e);
            throw e ;
        }
    }
@@ -56,7 +62,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        try{
        _container.addInfo( args.argv(0) , args.argv(1) ) ;
        }catch(Exception ee ){
-           esay(ee);
+           _log.warn(ee.toString(), ee);
            throw ee;
        }
        return "" ;
@@ -74,7 +80,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                _container.removePattern( groupClass , poolGroup , name ) ;
            }
        }catch(Exception ee ){
-           esay(ee);
+           _log.warn(ee.toString(), ee);
            throw ee ;
        }
        return "" ;
@@ -84,7 +90,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
           return _container.getInfo() ;
 
        }catch(Exception eee ){
-           esay(eee);
+           _log.warn(eee.toString(), eee);
            throw eee ;
        }
    }
@@ -96,13 +102,13 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        _nucleus.newThread(
            new Runnable(){
               public void run(){
-                  say("Starting pool manager ("+poolManagerName+") scan") ;
+                  _log.info("Starting pool manager ("+poolManagerName+") scan") ;
                   try{
                       collectPoolManagerPoolGroups(poolManagerName) ;
                   }catch(Exception ee ){
-                      esay("Problem in collectPoolManagerPoolGroups : "+ee);
+                      _log.warn("Problem in collectPoolManagerPoolGroups : "+ee);
                   }finally{
-                      say("collectPoolManagerPoolGroups done");
+                      _log.info("collectPoolManagerPoolGroups done");
                   }
               }
            }
@@ -163,19 +169,19 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
            message = new CellMessage( path , request ) ;
            message = sendAndWait( message , _poolManagerTimeout ) ;
            if( message == null ){
-               esay("Request to "+poolManager+" timed out" ) ;
+               _log.warn("Request to "+poolManager+" timed out" ) ;
                continue ;
            }
            result = message.getMessageObject() ;
            if( ! ( result instanceof Object [] ) ){
-               esay("Illegal reply (1) on "+request+ " "+result.getClass().getName() ) ;
+               _log.warn("Illegal reply (1) on "+request+ " "+result.getClass().getName() ) ;
                continue ;
            }
            Object [] props = (Object [])result ;
            if( ( props.length < 3 ) ||
                ( ! ( props[0] instanceof String ) ) ||
                ( ! ( props[1] instanceof Object [] ) ) ){
-                  esay("Illegal reply (2) on "+request ) ;
+                  _log.warn("Illegal reply (2) on "+request ) ;
                   continue ;
            }
            Object [] list = (Object [])props[1] ;
@@ -533,16 +539,14 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
       try{
-          _debug = _args.getOpt("debug") != null ;
-
           String repeatString = null ;
           try{
               repeatString  = _args.getOpt("repeatHeader" ) ;
               _repeatHeader = Math.max( 0 , Integer.parseInt( repeatString ) ) ;
           }catch(Exception ee ){
-              esay( "Parsing error in repeatHader command : "+repeatString);
+              _log.warn( "Parsing error in repeatHader command : "+repeatString);
           }
-          say("Repeat header set to "+_repeatHeader);
+          _log.info("Repeat header set to "+_repeatHeader);
 
           String instance = _args.getOpt("dCacheInstance");
 
@@ -553,8 +557,8 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
           for( int i = 0 ; i < _args.argc() ; i++ )addQuery( _args.argv(i) )  ;
 
           ( _senderThread  = _nucleus.newThread( this , "sender" ) ).start() ;
-          say("Sender started" ) ;
-          say("Collector will be started a bit delayed" ) ;
+          _log.info("Sender started" ) ;
+          _log.info("Collector will be started a bit delayed" ) ;
           _nucleus.newThread(
               new Runnable(){
                  public void run(){
@@ -562,7 +566,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
                          Thread.currentThread().sleep(_interval/2);
                          ( _collectThread =
                            _nucleus.newThread( PoolInfoObserverV1.this , "collector" ) ).start() ;
-                         say("Collector now started as well");
+                         _log.info("Collector now started as well");
                      } catch (InterruptedException e) {
                      }
                  }
@@ -572,25 +576,22 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
 
 
       }catch(Exception ee ){
-          esay( "<init> of WebCollector reports : "+ee.getMessage());
-          esay(ee);
+          _log.warn( "<init> of WebCollector reports : "+ee.getMessage(), ee);
           start() ;
           kill() ;
           throw ee ;
       }
       start() ;
    }
-   public void dsay( String message ){
-      if( _debug )say(message);
-   }
+
    private synchronized void addQuery( String destination ){
       if( _infoMap.get( destination ) != null )return ;
-      say( "Adding "+destination ) ;
+      _log.info( "Adding "+destination ) ;
       _infoMap.put( destination , new CellQueryInfo( destination ) ) ;
       return ;
    }
    private synchronized void removeQuery( String destination ){
-      say( "Removing "+destination ) ;
+      _log.info( "Removing "+destination ) ;
       _infoMap.remove( destination ) ;
       return ;
    }
@@ -608,7 +609,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
         try{
           Thread.currentThread().sleep(_interval) ;
         }catch(InterruptedException iie ){
-           say("Collector Thread interrupted" ) ;
+           _log.info("Collector Thread interrupted" ) ;
            break ;
         }
      }
@@ -631,7 +632,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
         try{
           Thread.currentThread().sleep(_interval) ;
         }catch(InterruptedException iie ){
-           say("Sender Thread interrupted" ) ;
+           _log.info("Sender Thread interrupted" ) ;
            break ;
         }
      }
@@ -644,7 +645,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       String destination = (String)path.getCellName() ;
       CellQueryInfo info = (CellQueryInfo)_infoMap.get(destination);
       if( info == null ){
-         dsay("Unexpected reply arrived from : "+path ) ;
+         _log.debug("Unexpected reply arrived from : "+path ) ;
          return ;
       }
       Object reply = message.getMessageObject() ;
@@ -713,26 +714,26 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
          return rows ;
 
       }catch( Exception e){
-         esay(e);
+          _log.warn(e.toString(), e);
          return null ;
       }
    }
 
    public void cleanUp(){
-      say( "Clean Up sequence started" ) ;
+      _log.info( "Clean Up sequence started" ) ;
       //
       // wait for the worker to be done
       //
-      say( "Waiting for collector thread to be finished");
+      _log.info( "Waiting for collector thread to be finished");
       if (_collectThread != null)
           _collectThread.interrupt();
       _senderThread.interrupt() ;
 //      Dictionary context = _nucleus.getDomainContext() ;
 //      context.remove( "cellInfoTable.html" ) ;
 
-//      say( "cellInfoTable.html removed from domain context" ) ;
+//      _log.info( "cellInfoTable.html removed from domain context" ) ;
 
-      say( "Clean Up sequence done" ) ;
+      _log.info( "Clean Up sequence done" ) ;
 
    }
    public void getInfo( PrintWriter pw ){
@@ -740,8 +741,6 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       pw.println("Update Interval : "+_interval+" [msec]");
       pw.println("        Updates : "+_counter);
       pw.println("       Watching : "+_infoMap.size()+" cells");
-      pw.println("     Debug Mode : "+(_debug?"ON":"OFF"));
-
    }
    private void prepareTopologyMap( String topologyMapName ){
 
@@ -911,7 +910,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        try{
            prepareGroupPages() ;
        }catch(Exception ee ){
-           esay(ee);
+           _log.warn(ee.toString(), ee);
        }
    }
    private void printEagle( StringBuffer sb ){
@@ -1044,7 +1043,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    }
    private void prepareBasicTable( StringBuffer sb , String className , String groupName , Map tableMap , int [] [] total ){
 
-       say("prepareBasicTable for "+className+" "+groupName+" map size "+tableMap.size() ) ;
+       _log.info("prepareBasicTable for "+className+" "+groupName+" map size "+tableMap.size() ) ;
 
        printEagle( sb , "dCache ONLINE : Pool Queues "+className+"/"+groupName) ;
        sb.append("<hr><center>").append(_topIndex).append("</center><hr>");
@@ -1059,7 +1058,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
        sb.append("<br><hr><br><address>").append(new Date().toString()).append("</address>");
        sb.append("</body>\n</html>\n") ;
 
-       say("prepareBasicTable : ready for "+className+" "+groupName);
+       _log.info("prepareBasicTable : ready for "+className+" "+groupName);
 
 
    }

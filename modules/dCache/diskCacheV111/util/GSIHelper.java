@@ -71,10 +71,16 @@ import java.util.*;
 import java.io.*;
 import diskCacheV111.util.Base64;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 //import java.net.*;
 
 public class GSIHelper
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(GSIHelper.class);
+
 	private Process Helper;
 	private InputStream StdErr, StdOut;
 	private OutputStream StdIn;
@@ -107,19 +113,19 @@ public class GSIHelper
 		StdIn.write(msg.getBytes());
 		StdIn.write('\n');
 		StdIn.flush();
-		say("Sent: <" + msg + ">");
+		_log.debug("Sent: <" + msg + ">");
 		String answer = OutReader.readLine();
 		if( answer == null )
 			answer = "";
 		answer = answer.trim();
-		say("Rcvd: <" + answer + ">");
+		_log.debug("Rcvd: <" + answer + ">");
 		return answer;
 	}
 
 
 	public int handleAuthData(String data)
 	{
-		say("handleAuthData(" + data + ")");
+		_log.debug("handleAuthData(" + data + ")");
 		try
 		{
 			DataToSend = null;
@@ -217,35 +223,5 @@ public class GSIHelper
 	{
 		return Error;
 	}
-
-    public void say(String s)
-    {
-        if(adapter != null)
-        {
-            // comment saying for now
-            // can be uncommented if debugging is needed
-            //adapter.say("GSIHelper : "+s);
-        }
-    }
-
-    public void esay(String e)
-    {
-        if(adapter !=null)
-        {
-            adapter.esay("GSIHelper : "+e);
-        }
-    }
-
-    public void esay(Throwable t)
-    {
-        if(adapter !=null)
-        {
-            adapter.esay("GSIHelper throwable: ");
-            adapter.esay(t);
-        }
-    }
-
-
-
 }
 

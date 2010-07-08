@@ -41,8 +41,13 @@ import diskCacheV111.vehicles.* ;
 import diskCacheV111.pools.* ;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
+
+    private static final Logger _log =
+        LoggerFactory.getLogger(PoolSelectionUnitV2wgap.class);
 
     private static final String __version = "$Id: PoolSelectionUnitV2wgap.java,v 1.0 2008-08-05 14:03:54 catalind Exp $";
     private static final Logger _logPoolSelection = LoggerFactory.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2wgap.class.getName());
@@ -80,7 +85,7 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
                } catch (Exception e) {
                   // throw new IllegalArgumentException( "CostTable is not defined (null pointer)");
 		  // don't throw anything - do default
-		  dsay (_cell4SelectionWithGap, "failed getting a cost table");
+		  _log.debug("failed getting a cost table");
                }
 
                if ( _costTable != null ) {
@@ -92,13 +97,13 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 			 if (_costTable.getPoolCostInfoByName(poolName) != null) {
 		            PoolCostInfo.PoolSpaceInfo plSpace = _costTable.getPoolCostInfoByName(poolName).getSpaceInfo ();
 
-			    dsay (_cell4SelectionWithGap, poolName + "> checking: " + plSpace.getGap () + " " + plSpace.getFreeSpace ());
+			    _log.debug(poolName + "> checking: " + plSpace.getGap () + " " + plSpace.getFreeSpace ());
 	                    if (plSpace.getGap () < plSpace.getFreeSpace ()) {
-			      dsay (_cell4SelectionWithGap, poolName + "> included on level " + prio);
+			      _log.debug(poolName + "> included on level " + prio);
 	                      resultList.add (poolName);
 	                    }
                          } else {
-			   dsay (_cell4SelectionWithGap, "missing data for " + poolName);
+			   _log.debug("missing data for " + poolName);
                          }
 	             }
 		     // the result can be even empty
@@ -112,10 +117,6 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
           }
           return result;
     }
-
-   protected void dsay( CellAdapter cell, String s ){
-      cell.say("DEBUG: " +s) ;
-   }
 
    private void getCostTable(CellAdapter cell)
            throws InterruptedException,
@@ -137,12 +138,12 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
                        new CellPath("PoolManager"), command);
                CellMessage reply = null;
 
-               dsay(cell, "gtCstTble(): sendMessage, " + " command=[" + command +
+               _log.debug("gtCstTble(): sendMessage, " + " command=[" + command +
                     "]\n" + "message=" + cellMessage);
 
                reply = cell.sendAndWait(cellMessage, _TO_GetFreeSpace);
 
-               dsay(cell, "DEBUG: Cst tble reply arrived");
+               _log.debug("DEBUG: Cst tble reply arrived");
 
                if (reply == null ||
                    !(reply.getMessageObject() instanceof CostModulePoolInfoTable)) {

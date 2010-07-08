@@ -13,6 +13,10 @@ import  diskCacheV111.pools.* ;
 import  java.io.*;
 import  java.util.*;
 import  java.util.regex.* ;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *  The EasyCopyCellModules needs to be launched within the
  *  dmg.cells.services.CommandTaskCell. It can drain a pool
@@ -24,6 +28,9 @@ import  java.util.regex.* ;
  */
 
 public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable, java.io.Serializable {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(EasyCopyCellModule.class);
 
    private final CellAdapter  _cell;
    private File         _base     = null ;
@@ -75,7 +82,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
        _cell = core.getParentCell() ;
        _core = core ;
-       _cell.say("Started : "+core.getName());
+       _log.info("Started : "+core.getName());
 
        String baseName = getParameter("base") ;
        String tmp      = getParameter("autogenerate");
@@ -489,10 +496,10 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                     _message = "Sending message to PoolManager failed" ;
                     throw ee ;
                  }
-                 _cell.say("Waiting for pool group reply");
+                 _log.info("Waiting for pool group reply");
                  while( _state == ST_WAITING_FOR_PGROUP )_lock.wait() ;
                  if( _state == ST_IDLE ){
-                    _cell.esay("PGroup request to PoolManager failed : "+_message);
+                    _log.warn("PGroup request to PoolManager failed : "+_message);
                     return ;
                  }
 
@@ -509,7 +516,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                   _message = "No pools specified or pool group empty";
                   return ;
               }
-              _cell.say("PoolGroup list : "+_poolGroupList);
+              _log.info("PoolGroup list : "+_poolGroupList);
               int waitingFor = 0 ;
               for (Object o : _poolGroupList) {
                   /*
@@ -523,16 +530,16 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                     _core.sendMessage( new CellMessage( new CellPath(poolName) , "xgetcellinfo") ) ;
                     waitingFor ++ ;
                  }catch(Exception ee ){
-                    _cell.esay("Couldn't send 'xgetcellinfo' to "+poolName);
+                    _log.warn("Couldn't send 'xgetcellinfo' to "+poolName);
                  }
               }
-              _cell.say("Waiting for pool infos of pgroup "+_poolGroupName);
+              _log.info("Waiting for pool infos of pgroup "+_poolGroupName);
               _message = "Waiting for PoolCellInfo(s)" ;
 
               _poolGroupList.clear();
               while( _poolGroupList.size() < waitingFor )_lock.wait() ;
 
-              _cell.say("PoolInfo list : "+_poolGroupList);
+              _log.info("PoolInfo list : "+_poolGroupList);
 
               _poolInfoHandler = new PoolInfoHandler() ;
 
@@ -569,7 +576,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
               RepositoryEntry entry = _inProgressMap.remove(pnfsId);
               if( entry == null ){
-                  _cell.esay("answerArrived : Unexpected PnfsGetStorageInfoMessage for "+pnfsId+" arrived") ;
+                  _log.warn("answerArrived : Unexpected PnfsGetStorageInfoMessage for "+pnfsId+" arrived") ;
                   return ;
               }
 
@@ -579,7 +586,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
                  PnfsGetStorageInfoMessage reply = (PnfsGetStorageInfoMessage)obj ;
                  if( reply.getReturnCode() == 0 ){
-                     _cell.say("PnfsGetStorageInfoMessage : ok for "+pnfsId);
+                     _log.info("PnfsGetStorageInfoMessage : ok for "+pnfsId);
                      try{
                          StorageInfo si = reply.getStorageInfo() ;
 
@@ -632,7 +639,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
               RepositoryEntry entry = _inProgressMap.remove(pnfsId);
               if( entry == null ){
-                  _cell.esay("answerArrived : Unexpected PnfsGetStorageInfoMessage for "+pnfsId+" arrived") ;
+                  _log.warn("answerArrived : Unexpected PnfsGetStorageInfoMessage for "+pnfsId+" arrived") ;
                   return ;
               }
 
@@ -642,7 +649,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
                  Pool2PoolTransferMsg reply = (Pool2PoolTransferMsg)obj ;
                  if( reply.getReturnCode() == 0 ){
-                     _cell.say("Pool2PoolTransferMsg : ok for "+pnfsId);
+                     _log.info("Pool2PoolTransferMsg : ok for "+pnfsId);
                      _currentNumberOfBytes += entry._size ;
                      _currentNumberOfFiles ++ ;
                      try{
@@ -694,20 +701,20 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
              try{
                 obj = ois.readObject() ;
              }catch(EOFException eof ){
-                 _cell.say("processReplication finished (interrupted="+Thread.interrupted()+")");
+                 _log.info("processReplication finished (interrupted="+Thread.interrupted()+")");
                  break ;
              }catch(ClassNotFoundException cnfe ){
-                 _cell.esay("!!! Io Loop ended du to : "+cnfe ) ;
+                 _log.warn("!!! Io Loop ended du to : "+cnfe ) ;
                  _message = "processReplication failed due to : "+cnfe ;
                  break ;
              }catch(IOException ioe ){
-                 _cell.esay("!!! Io Loop ended du to : "+ioe ) ;
+                 _log.warn("!!! Io Loop ended du to : "+ioe ) ;
                  _message = "processReplication failed due to : "+ioe ;
                  break ;
              }
 
              if( ! ( obj instanceof RepositoryEntry ) ){
-                 _cell.esay("!!! Illegal Entry found : "+obj.getClass().getName() ) ;
+                 _log.warn("!!! Illegal Entry found : "+obj.getClass().getName() ) ;
                  break ;
              }
 
@@ -729,12 +736,12 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                 storeError( entry , 5 , "Can't send StorageInfoQuery" ) ;
                 continue ;
              }
-             _cell.say("processReplication : adding : "+entry._pnfsId ) ;
+             _log.info("processReplication : adding : "+entry._pnfsId ) ;
              entry._state   = RE_WAITING_FOR_STORAGEINFO ;
              entry._message = "Waiting for storage info";
              _inProgressMap.put( entry._pnfsId , entry ) ;
           }
-          _cell.say("Waiting for outstanding requests : "+_inProgressMap.size()  );
+          _log.info("Waiting for outstanding requests : "+_inProgressMap.size()  );
 
           while( ( ! Thread.interrupted() ) && ( _inProgressMap.size() > 0 ) )_lock.wait() ;
 
@@ -814,21 +821,21 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                  try{
                     obj = ois.readObject() ;
                  }catch(EOFException eof ){
-                     _cell.say("processReplication finished (interrupted="+Thread.interrupted()+")");
+                     _log.info("processReplication finished (interrupted="+Thread.interrupted()+")");
                      break ;
                  }catch(ClassNotFoundException cnfe ){
-                     _cell.esay("!!! Io Loop ended du to : "+cnfe ) ;
+                     _log.warn("!!! Io Loop ended du to : "+cnfe ) ;
                      _message = "processReplication failed due to : "+cnfe ;
                      break ;
                  }catch(IOException ioe ){
-                     _cell.esay("!!! Io Loop ended du to : "+ioe ) ;
+                     _log.warn("!!! Io Loop ended du to : "+ioe ) ;
                      _message = "processReplication failed due to : "+ioe ;
                      break ;
                  }
                  recordCounter ++ ;
 
                  if( ! ( obj instanceof RepositoryEntry ) ){
-                     _cell.esay("!!! Illegal Entry found : "+obj.getClass().getName() ) ;
+                     _log.warn("!!! Illegal Entry found : "+obj.getClass().getName() ) ;
                      break ;
                  }
 
@@ -841,17 +848,17 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                      entry._state   = 0 ;
                      entry._message = "Can't send StorageInfoQuery" ;
                      try{ _errorOutput.writeObject(entry) ; }catch(Exception ee ){} ;
-                     _cell.esay("Can't send StorageInfoQuery : "+e);
+                     _log.warn("Can't send StorageInfoQuery : "+e);
                     _processErrorCount ++ ;
                     continue ;
                  }
-                 _cell.say("processReplication : adding : "+entry._pnfsId ) ;
+                 _log.info("processReplication : adding : "+entry._pnfsId ) ;
                  entry._state   = RE_WAITING_FOR_STORAGEINFO ;
                  entry._message = "Waiting for storage info";
                  _inProgressMap.put( entry._pnfsId , entry ) ;
 
              }
-             _cell.say("Waiting for outstanding requests : "+_inProgressMap.size()  );
+             _log.info("Waiting for outstanding requests : "+_inProgressMap.size()  );
 
              while( ( ! Thread.interrupted() ) && ( _inProgressMap.size() > 0 ) )_lock.wait() ;
 
@@ -862,7 +869,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
           }
       }catch(InterruptedException ie ){
-          _cell.esay("!!! Io Loop was interrupted" ) ;
+          _log.warn("!!! Io Loop was interrupted" ) ;
           _message = "processReplication has been interrupted" ;
       }finally{
          try{ ois.close() ; }catch(IOException eee ){}
@@ -928,7 +935,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                    try{
                        processReplication() ;
                    }catch(Exception ee ){
-                       _cell.esay("processReplication terminated : "+ee );
+                       _log.warn("processReplication terminated : "+ee );
                    }
                 }
              }, "GO"
@@ -992,7 +999,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                    try{
                        processCopyToPoolGroup() ;
                    }catch(Exception ee ){
-                       _cell.esay("processCopyToPoolGroup terminated : "+ee );
+                       _log.warn("processCopyToPoolGroup terminated : "+ee );
                    }
                 }
              }, "GO"
@@ -1077,7 +1084,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
            RepositoryEntry entry = _inProgressMap.remove(pnfsId);
            if( entry == null ){
-               _cell.esay("answerArrived : Unexpected PoolMgrReplicateFileMsg for "+pnfsId+" arrived") ;
+               _log.warn("answerArrived : Unexpected PoolMgrReplicateFileMsg for "+pnfsId+" arrived") ;
                return ;
            }
 
@@ -1085,7 +1092,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
               PoolMgrReplicateFileMsg reply = (PoolMgrReplicateFileMsg)obj ;
               if( reply.getReturnCode() == 0 ){
-                  _cell.say("PoolMgrReplicateFileMsg : ok for "+pnfsId);
+                  _log.info("PoolMgrReplicateFileMsg : ok for "+pnfsId);
               }else{
                    storeError(entry,9,"PoolMgrReplicateFileMsg : "+reply.getErrorObject());
               }
@@ -1103,7 +1110,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
            RepositoryEntry entry = _inProgressMap.remove(pnfsId);
            if( entry == null ){
-               _cell.esay("answerArrived : Unexpected StorageInfo for "+pnfsId+" arrived") ;
+               _log.warn("answerArrived : Unexpected StorageInfo for "+pnfsId+" arrived") ;
                return ;
            }
 
@@ -1114,7 +1121,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                   //
                   // everything ok
                   //
-                  _cell.esay("StorageInfo for "+pnfsId+" "+reply);
+                  _log.warn("StorageInfo for "+pnfsId+" "+reply);
                   //
                   _protocolInfo = new DCapProtocolInfo( "DCap", 3, 0,_siDestination ,2222) ;
                   StorageInfo storageInfo = reply.getStorageInfo() ;
@@ -1136,7 +1143,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                       entry._state   = RE_WAITING_FOR_REPLICATION ;
                       entry._message = "Waiting for replication" ;
                       _inProgressMap.put( pnfsId , entry ) ;
-                      _cell.say("Sending PoolMgrReplicateFileMsg request");
+                      _log.info("Sending PoolMgrReplicateFileMsg request");
 
 
                   }catch(Exception eeee ){
@@ -1163,11 +1170,11 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
       _errorNumberOfFiles ++ ;
       _errorNumberOfBytes += entry._size ;
 
-      _cell.esay("Problem "+entry._pnfsId+" ["+rc+"] "+message ) ;
+      _log.warn("Problem "+entry._pnfsId+" ["+rc+"] "+message ) ;
    }
    public void answerArrived( CellMessage request , CellMessage answer ){
 
-      _cell.say("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().getClass().getName());
+      _log.info("Answer arrived for task : "+_core.getName()+" : "+answer.getMessageObject().getClass().getName());
 
       Object sendObj = request.getMessageObject() ;
       Object obj     = answer.getMessageObject() ;
@@ -1214,7 +1221,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
    }
    public void exceptionArrived( CellMessage request , Exception   exception ){
-      _cell.say("Exception arrived for task : "+_core.getName()+" : "+exception);
+      _log.info("Exception arrived for task : "+_core.getName()+" : "+exception);
 
       Object sendObj = request.getMessageObject() ;
 
@@ -1235,7 +1242,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    }
    public void answerTimedOut( CellMessage request ){
 
-      _cell.say("Timeout arrived for task : "+_core.getName() );
+      _log.info("Timeout arrived for task : "+_core.getName() );
       Object sendObj = request.getMessageObject() ;
 
       if( _state == ST_WAITING_FOR_PGROUP ){
@@ -1340,7 +1347,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
       return sb.toString() ;
    }
    public void timer(){
-       //_cell.say("Timer of "+_core.getName()+" triggered");
+       //_log.info("Timer of "+_core.getName()+" triggered");
    }
    @Override
 public String toString(){

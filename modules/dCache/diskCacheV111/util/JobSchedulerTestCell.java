@@ -6,7 +6,14 @@ import java.util.* ;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JobSchedulerTestCell extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(JobSchedulerTestCell.class);
+
    private SimpleJobScheduler _scheduler = null ;
    public class BJob implements Batchable {
       private Args _args = null ;
@@ -25,19 +32,19 @@ public class JobSchedulerTestCell extends CellAdapter {
       public String getClient(){ return "Dummy" ; }
       public long getClientId(){ return 1001 ; }
 
-      public void queued(int id){ say("Queued : "+_name + " id " + id) ; }
-      public void unqueued(){ say("Unqueued : "+_name ) ; }
+      public void queued(int id){ _log.info("Queued : "+_name + " id " + id) ; }
+      public void unqueued(){ _log.info("Unqueued : "+_name ) ; }
       public double getTransferRate(){ return 10.00 ; }
       public void run(){
          RunSystem r = new RunSystem( "/tmp/test" , 1000 , 1000000 ) ;
          try{
-            say("Starting process" ) ;
+            _log.info("Starting process" ) ;
             r.go() ;
-            say("Process terminated / asking result" ) ;
+            _log.info("Process terminated / asking result" ) ;
             int rc = r.getExitValue() ;
-            say("Process returned : "+rc ) ;
+            _log.info("Process returned : "+rc ) ;
          }catch(Exception e){
-            say("Process throws exception : "+e ) ;
+            _log.info("Process throws exception : "+e ) ;
          }
 
       }
@@ -64,11 +71,11 @@ public class JobSchedulerTestCell extends CellAdapter {
        }
       public String getClient(){ return "Dummy" ; }
       public long getClientId(){ return 1001 ; }
-      public void queued(int id){ say("Queued : "+_name + " id " + id) ; }
-      public void unqueued(){ say("Unqueued : "+_name ) ; }
+      public void queued(int id){ _log.info("Queued : "+_name + " id " + id) ; }
+      public void unqueued(){ _log.info("Unqueued : "+_name ) ; }
       public double getTransferRate(){ return 10.00 ; }
       public void run(){
-         say( "Starting : "+_name ) ;
+         _log.info( "Starting : "+_name ) ;
          long end = System.currentTimeMillis() + _sleep ;
          long rest = _sleep ;
          while( true ){
@@ -79,17 +86,17 @@ public class JobSchedulerTestCell extends CellAdapter {
                }
                rest = end - System.currentTimeMillis() ;
                if( rest > 0 ){
-                  say("to early {"+Thread.currentThread().interrupted()+"} ["+rest+"] : "+_name ) ;
+                  _log.info("to early {"+Thread.currentThread().interrupted()+"} ["+rest+"] : "+_name ) ;
                }else{
-                  say("Expired {"+Thread.currentThread().interrupted()+"} : "+_name ) ;
+                  _log.info("Expired {"+Thread.currentThread().interrupted()+"} : "+_name ) ;
                   break ;
                }
             }catch(InterruptedException ie ){
-               say("Interrupted : "+_name ) ;
+               _log.info("Interrupted : "+_name ) ;
                break ;
             }
          }
-         say("Stopped : "+_name ) ;
+         _log.info("Stopped : "+_name ) ;
       }
 
    }

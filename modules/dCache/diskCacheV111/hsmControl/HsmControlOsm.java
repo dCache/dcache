@@ -14,7 +14,14 @@ import diskCacheV111.vehicles.StorageInfo ;
 import diskCacheV111.vehicles.OSMStorageInfo ;
 import diskCacheV111.util.* ;
 
-public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class HsmControlOsm extends CellAdapter implements Runnable {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(HsmControlOsm.class);
+
     private CellNucleus _nucleus ;
     private Args        _args ;
     private int         _requests  = 0 ;
@@ -69,23 +76,23 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
           return ;
        }
        _failed ++ ;
-       esay(error);
+       _log.warn(error);
        ((Message)obj).setFailed( 33 , error ) ;
        msg.revertDirection() ;
        try{
           sendMessage( msg ) ;
        }catch(Exception ee ){
-          esay("Problem replying : "+ee ) ;
+          _log.warn("Problem replying : "+ee ) ;
        }
     }
     public void run(){
         // HsmControlGetBfDetailsMsg
-        say("Starting working thread");
+        _log.info("Starting working thread");
         try{
             while( true ){
                 CellMessage msg = (CellMessage)_fifo.pop() ;
                 if( msg == null ){
-                    esay("fifo empty");
+                    _log.warn("fifo empty");
                     break ;
                 }
                 Message request = (Message)msg.getMessageObject() ;
@@ -102,24 +109,24 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
                    try{
                       sendMessage( msg ) ;
                    }catch(Exception ee ){
-                      esay("Problem replying : "+ee ) ;
+                      _log.warn("Problem replying : "+ee ) ;
                    }
                 }catch(Exception eee ){
                    _failed ++ ;
-                   esay(eee);
+                   _log.warn(eee.toString(), eee);
                    request.setFailed( 34 , eee.toString() ) ;
                    msg.revertDirection() ;
                    try{
                       sendMessage( msg ) ;
                    }catch(Exception ee ){
-                      esay("Problem replying : "+ee ) ;
+                      _log.warn("Problem replying : "+ee ) ;
                    }
                 }
             }
         }catch(Exception ee ){
-            esay("Got exception from run while : "+ee);
+            _log.warn("Got exception from run while : "+ee);
         }finally{
-            say("Working thread finished");
+            _log.info("Working thread finished");
         }
     }
     private Map _driverMap = new HashMap() ;
@@ -188,21 +195,8 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
             IllegalArgumentException("Driver not found for hsm="+hsm);
 
         HsmControllable hc = (HsmControllable)values[1] ;
-        say("Controller found for "+hsm+" -> "+values[0]);
+        _log.info("Controller found for "+hsm+" -> "+values[0]);
         hc.getBfDetails( storageInfo );
 
     }
-
-    public void elog(String message) {
-        esay(message);
-    }
-
-    public void log(String message) {
-        say(message);
-    }
-
-    public void plog(String message) {
-        esay(message);
-    }
-
 }

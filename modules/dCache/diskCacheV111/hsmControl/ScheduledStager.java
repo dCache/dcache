@@ -12,7 +12,14 @@ import dmg.cells.nucleus.* ;
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ScheduledStager extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(ScheduledStager.class);
+
     private CellNucleus _nucleus ;
     private Args        _args ;
     private int         _requests  = 0 ;
@@ -42,7 +49,7 @@ public class ScheduledStager extends CellAdapter {
     }
     private class QueueWatch implements Runnable {
        public void run(){
-          say("QueueWatch started" ) ;
+          _log.info("QueueWatch started" ) ;
           while( ! Thread.currentThread().interrupted() ){
              try{
                 Thread.currentThread().sleep(60000);
@@ -51,7 +58,7 @@ public class ScheduledStager extends CellAdapter {
              }
              _nucleus.updateWaitQueue() ;
           }
-          say( "QueueWatch stopped" ) ;
+          _log.info( "QueueWatch stopped" ) ;
        }
     }
     public String toString(){
@@ -68,16 +75,16 @@ public class ScheduledStager extends CellAdapter {
        _requests ++ ;
        if( obj instanceof StagerMessage ){
           StagerMessage stager = (StagerMessage)obj ;
-          say( stager.toString() ) ;
+          _log.info( stager.toString() ) ;
           _db.insert(stager);
           msg.revertDirection() ;
           try{
              sendMessage( msg ) ;
           }catch(Exception ee ){
-             esay("Problem replying : "+ee ) ;
+             _log.warn("Problem replying : "+ee ) ;
           }
        }else{
-          esay("Unknown message arrived ("+msg.getSourcePath()+") : "+
+          _log.warn("Unknown message arrived ("+msg.getSourcePath()+") : "+
                msg.getMessageObject() ) ;
          _failed ++ ;
        }
@@ -88,15 +95,15 @@ public class ScheduledStager extends CellAdapter {
          _stager = stager ;
        }
        public void answerArrived( CellMessage request , CellMessage answer ){
-          say( "Answer for : "+answer.getMessageObject() ) ;
+          _log.info( "Answer for : "+answer.getMessageObject() ) ;
           _outstandingRequests -- ;
        }
        public void exceptionArrived( CellMessage request , Exception exception ){
-          esay( "Exception for : "+_stager+" : "+exception  ) ;
+          _log.warn( "Exception for : "+_stager+" : "+exception  ) ;
           _outstandingRequests -- ;
        }
        public void answerTimedOut( CellMessage request ){
-          esay( "Timeout for : "+_stager  ) ;
+          _log.warn( "Timeout for : "+_stager  ) ;
           _outstandingRequests -- ;
        }
     }
@@ -117,7 +124,7 @@ public class ScheduledStager extends CellAdapter {
                        ) ;
              _outstandingRequests ++ ;
         }catch(Exception ee ){
-           esay("Failed to send request to PM : "+ee) ;
+           _log.warn("Failed to send request to PM : "+ee) ;
         }
     }
 
@@ -133,7 +140,7 @@ public class ScheduledStager extends CellAdapter {
        public void run(){
 
 		  long idle;
-          say("StageEngine started" ) ;
+          _log.info("StageEngine started" ) ;
           while( ! Thread.currentThread().interrupted() ){
              try{
 				msg = _db.nextSet((long)15);
@@ -146,7 +153,7 @@ public class ScheduledStager extends CellAdapter {
 
           }
 
-          say( "StageEngine stopped" ) ;
+          _log.info( "StageEngine stopped" ) ;
        }
     }
 

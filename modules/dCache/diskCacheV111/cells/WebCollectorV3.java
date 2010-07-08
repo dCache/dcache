@@ -23,8 +23,14 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.Args;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class WebCollectorV3 extends CellAdapter implements Runnable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(WebCollectorV3.class);
+
     protected static final String OPTION_REPEATHEADER = "repeatHeader";
 
     private final CellNucleus _nucleus;
@@ -35,7 +41,6 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private Thread     _collectThread;
     private Thread     _senderThread;
     private long       _counter         = 0;
-    private boolean    _debug           = false;
     private int        _repeatHeader    = 30;
     private String[]   _loginBrokerTable;
 
@@ -58,8 +63,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         {
             long start = System.currentTimeMillis();
             wait(_mode ? _shortPeriod / 2 : _regularPeriod / 2);
-            dsay("Woke up after " + (System.currentTimeMillis() - start)
-                 + " millis");
+            _log.debug("Woke up after " + (System.currentTimeMillis() - start)
+                       + " millis");
         }
 
         private synchronized void setShortPeriod(long shortPeriod)
@@ -76,14 +81,14 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         private synchronized void topologyChanged(boolean modified)
         {
-            // say("Topology changed : "+modified);
+            // _log.info("Topology changed : "+modified);
             if (!_enabled) return;
             if (modified) {
                 _started = System.currentTimeMillis();
                 if (!_mode) {
                     _mode = true;
                     notifyAll();
-                    say("Aggressive changed to ON");
+                    _log.info("Aggressive changed to ON");
                 }
 
             } else if (_mode &&
@@ -91,7 +96,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                        (_shortPeriod * _retentionFactor)) {
                 _mode = false;
                 notifyAll();
-                say("Aggressive changed to OFF");
+                _log.info("Aggressive changed to OFF");
             }
 
         }
@@ -174,17 +179,15 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _args    = getArgs();
         _nucleus = getNucleus();
         try {
-            _debug = _args.getOpt("debug") != null;
-
             if( _args.getOpt( OPTION_REPEATHEADER) != null) {
                 String optionString = null;
                 try {
                     optionString  = _args.getOpt( OPTION_REPEATHEADER);
                     _repeatHeader = Math.max(0, Integer.parseInt(optionString));
                 } catch (NumberFormatException e) {
-                    esay("Parsing error in " + OPTION_REPEATHEADER + " command : " + optionString);
+                    _log.warn("Parsing error in " + OPTION_REPEATHEADER + " command : " + optionString);
                 }
-                say("Repeat header set to "+_repeatHeader);
+                _log.info("Repeat header set to "+_repeatHeader);
             }
 
             String optionString = _args.getOpt("aggressive");
@@ -194,7 +197,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
             aggressive = !aggressive;
 
-            say("Agressive mode : "+aggressive);
+            _log.info("Agressive mode : "+aggressive);
 
             _sleepHandler = new SleepHandler(aggressive);
 
@@ -204,13 +207,13 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             if ((loginBrokers != null) && (loginBrokers.length() > 0)) {
                 _loginBrokerTable = loginBrokers.split(",");
                 for (String cellName : _loginBrokerTable) {
-                    say("Login Broker : " + cellName);
+                    _log.info("Login Broker : " + cellName);
                     addQuery(cellName);
                 }
             }
             (_senderThread  = _nucleus.newThread(this, "sender")).start();
-            say("Sender started");
-            say("Collector will be started a bit delayed");
+            _log.info("Sender started");
+            _log.info("Collector will be started a bit delayed");
             _nucleus.newThread(new Runnable() {
                                    public void run() {
                                        try {
@@ -220,7 +223,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                                        }
                                        _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
                                        _collectThread.start();
-                                       say("Collector now started as well");
+                                       _log.info("Collector now started as well");
                                    }
                                },
                                "init"
@@ -228,8 +231,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
 
         } catch (Exception e) {
-            esay("<init> of WebCollector reports : " + e.getMessage());
-            esay(e);
+            _log.warn("<init> of WebCollector reports : " + e.getMessage(), e);
             start();
             kill();
             throw e;
@@ -237,24 +239,18 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         start();
     }
 
-    public void dsay(String message)
-    {
-        if (_debug)
-            say(message);
-    }
-
     private synchronized boolean addQuery(String destination)
     {
         if (_infoMap.get(destination) != null)
             return false;
-        say("!!!Adding "+destination);
+        _log.info("!!!Adding "+destination);
         _infoMap.put(destination, new CellQueryInfo(destination));
         return true;
     }
 
     private synchronized void removeQuery(String destination)
     {
-        say("Removing "+destination);
+        _log.info("Removing "+destination);
         _infoMap.remove(destination);
     }
 
@@ -277,7 +273,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 _sleepHandler.sleep();
             }
         } catch (InterruptedException e) {
-            say("Collector Thread interrupted");
+            _log.info("Collector Thread interrupted");
         }
     }
 
@@ -292,7 +288,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                     for (String broker : _loginBrokerTable) {
                         try {
                             CellPath path = new CellPath(broker);
-                            dsay("Sending LoginBroker query to : " + path);
+                            _log.debug("Sending LoginBroker query to : " + path);
                             sendMessage(new CellMessage(path, "ls -binary"));
                         } catch (Exception ee) {
 
@@ -303,7 +299,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 synchronized (_infoLock) {
                     for (CellQueryInfo info : _infoMap.values()) {
                         try {
-                            dsay("Sending query to : " + info.getName());
+                            _log.debug("Sending query to : " + info.getName());
                             sendMessage(info.getCellMessage());
                         } catch (Exception e) {
 
@@ -313,7 +309,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 _sleepHandler.sleep();
             }
         } catch (InterruptedException iie) {
-            say("Sender Thread interrupted");
+            _log.info("Sender Thread interrupted");
         }
     }
 
@@ -324,7 +320,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         String destination = path.getCellName();
         CellQueryInfo info = _infoMap.get(destination);
         if (info == null) {
-            dsay("Unexpected reply arrived from : "+path);
+            _log.debug("Unexpected reply arrived from : "+path);
             return;
         }
         Object reply = message.getMessageObject();
@@ -332,7 +328,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         int modified = 0;
 
         if (reply instanceof CellInfo) {
-            dsay("CellInfo : "+((CellInfo)reply).getCellName());
+            _log.debug("CellInfo : "+((CellInfo)reply).getCellName());
             info.infoArrived((CellInfo)reply);
         }
         if (reply instanceof diskCacheV111.poolManager.PoolManagerCellInfo) {
@@ -345,12 +341,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
 
         if (reply instanceof dmg.cells.services.login.LoginBrokerInfo[]) {
-            dsay("Login broker reply : "+((dmg.cells.services.login.LoginBrokerInfo[])reply).length);
+            _log.debug("Login broker reply : "+((dmg.cells.services.login.LoginBrokerInfo[])reply).length);
             LoginBrokerInfo [] brokerInfos = (LoginBrokerInfo [])reply;
             synchronized (_infoLock) {
                 for (LoginBrokerInfo brokerInfo : brokerInfos) {
                     String dest = brokerInfo.getCellName();
-                    dsay("Login broker reports : " + dest);
+                    _log.debug("Login broker reports : " + dest);
                     if (addQuery(dest))
                         modified++;
                 }
@@ -410,7 +406,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                     }
                 }
             } catch (Exception e) {
-                esay(e);
+                _log.warn(e.toString(), e);
             }
 
         }
@@ -622,7 +618,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
             return rows;
         } catch (Exception e) {
-            esay(e);
+            _log.warn(e.toString(), e);
             return null;
         }
     }
@@ -651,7 +647,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             double yellow  = round(100 * freespace / (float)total);
             double blue    = Math.max(0, 100 - red - green - yellow);
 
-            say(cellInfo.getCellName() + " : " +
+            _log.info(cellInfo.getCellName() + " : " +
                 ";total=" + total + ";free=" + freespace +
                 ";precious=" + precious + ";removable=" + removable);
 
@@ -715,7 +711,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             }
             page.endRow();
         } catch (Exception e) {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
     }
 
@@ -755,7 +751,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                                             page);
                 }
             } catch(Exception e) {
-                esay(e);
+                _log.warn(e.toString(), e);
             }
         }
         page.endTable();
@@ -782,7 +778,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                     printPoolInfoRow((PoolCellInfo)cellInfo, page);
                 }
             } catch (Exception ee) {
-                esay(ee);
+                _log.warn(ee.toString(), ee);
             }
         }
         page.endTable();
@@ -832,7 +828,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                                                    pci.getPoolCostInfo().getExtendedMoverHash()));
                 }
             } catch (Exception e) {
-                esay(e);
+                _log.warn(e.toString(), e);
             }
         }
         return list;
@@ -843,9 +839,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         //
         // get the translated list
         //
-        dsay("Preparing pool cost table");
+        _log.debug("Preparing pool cost table");
         List<PoolCostEntry> list = preparePoolCostTable();
-        dsay("Preparing pool cost table done " + list.size());
+        _log.debug("Preparing pool cost table done " + list.size());
         //
         // calculate the totals ...
         //
@@ -957,26 +953,25 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             page.writeToContext("poolQueueTable.html");
 
         } catch (Exception e) {
-            esay(e);
-            esay("Collector reported : " + e.getMessage());
+            _log.warn("Collector reported : " + e.getMessage(), e);
         }
     }
 
     @Override
     public void cleanUp()
     {
-        say("Clean Up sequence started");
+        _log.info("Clean Up sequence started");
         //
         // wait for the worker to be done
         //
-        say("Waiting for collector thread to be finished");
+        _log.info("Waiting for collector thread to be finished");
         _collectThread.interrupt();
         _senderThread.interrupt();
         _nucleus.getDomainContext().remove("cellInfoTable.html");
 
-        say("cellInfoTable.html removed from domain context");
+        _log.info("cellInfoTable.html removed from domain context");
 
-        say("Clean Up sequence done");
+        _log.info("Clean Up sequence done");
 
     }
 
@@ -987,6 +982,5 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         pw.println("Update Interval : "+_sleepHandler);
         pw.println("        Updates : "+_counter);
         pw.println("       Watching : "+_infoMap.size()+" cells");
-        pw.println("     Debug Mode : "+(_debug?"ON":"OFF"));
     }
 }

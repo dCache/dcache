@@ -14,10 +14,16 @@ import dmg.cells.services.login.*;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TransferObserverV1
     extends CellAdapter
     implements Runnable
 {
+    private final Logger _log =
+        LoggerFactory.getLogger(TransferObserverV1.class);
+
     private final CellNucleus   _nucleus;
     private final Args          _args;
     private final DoorHandler   _doors;
@@ -85,7 +91,7 @@ public class TransferObserverV1
         private FieldMap(String className , Args args)
         {
             if (className == null) {
-                esay("FieldMap : 'fieldMap' not defined");
+                _log.warn("FieldMap : 'fieldMap' not defined");
                 return;
             }
 
@@ -101,9 +107,9 @@ public class TransferObserverV1
                 //
                 addCommandListener( _master ) ;
                 //
-                say("FieldMap : " + _mapClass.getName() + " loaded");
+                _log.info("FieldMap : " + _mapClass.getName() + " loaded");
             } catch (Exception ee) {
-                esay("FieldMap : Creating map class Failed : " + ee);
+                _log.warn("FieldMap : Creating map class Failed : " + ee);
             }
         }
 
@@ -116,7 +122,7 @@ public class TransferObserverV1
             try {
                 return (String)_mapOwner.invoke(_master, args);
             } catch (Exception ee) {
-                esay("Problem invoking 'mapOwner' : " + ee);
+                _log.warn("Problem invoking 'mapOwner' : " + ee);
                 return owner;
             }
         }
@@ -252,7 +258,7 @@ public class TransferObserverV1
                     _update = Long.parseLong(updateString) * 1000L;
                 }
             } catch (NumberFormatException e) {
-                esay("Illegal value for -update: " + updateString);
+                _log.warn("Illegal value for -update: " + updateString);
             }
 
             //
@@ -428,7 +434,7 @@ public class TransferObserverV1
                     collectDataSequentially();
                     _timeUsed = System.currentTimeMillis() - start;
                 } catch (Exception ee) {
-                    esay(ee);
+                    _log.warn(ee.toString(), ee);
                 }
 
                 synchronized (this) {
@@ -436,7 +442,7 @@ public class TransferObserverV1
                 }
             }
         } catch (InterruptedException e) {
-            esay("Data collector interrupted");
+            _log.warn("Data collector interrupted");
         }
     }
     //
@@ -524,7 +530,7 @@ public class TransferObserverV1
             List<LoginBrokerInfo> infoList = new ArrayList<LoginBrokerInfo>();
 
             for (String loginBroker : _loginBroker.split(",")) {
-                say("Requesting doorInfo from LoginBroker " + loginBroker);
+                _log.info("Requesting doorInfo from LoginBroker " + loginBroker);
                 try {
                     LoginBrokerInfo [] infos =
                         (LoginBrokerInfo [])request(loginBroker, "ls -binary");
@@ -537,10 +543,10 @@ public class TransferObserverV1
                         _doors.addDoor(doorName);
                         sb.append(doorName).append(",");
                     }
-                    say(sb.toString());
+                    _log.info(sb.toString());
                     infoList.addAll(Arrays.asList(infos));
                 } catch (Exception e) {
-                    say("Error from sendAndWait : " + e);
+                    _log.info("Error from sendAndWait : " + e);
                 }
             }
             updateDoorPage(infoList.toArray(new LoginBrokerInfo[infoList.size()])) ;
@@ -553,20 +559,20 @@ public class TransferObserverV1
 
         getBrokerInfo();
 
-        say("Asking doors for 'doorClientList' (one by one)");
+        _log.info("Asking doors for 'doorClientList' (one by one)");
         for (String doorName : _doors.doors()) {
-            say("Requesting client list from : " + doorName);
+            _log.info("Requesting client list from : " + doorName);
             try {
                 LoginManagerChildrenInfo info = (LoginManagerChildrenInfo)
                     request(doorName, "get children -binary");
 
-                say(doorName + " reported about " + info.getChildrenCount() +
+                _log.info(doorName + " reported about " + info.getChildrenCount() +
                     " children");
 
                 _doors.setDoorInfo(info);
             } catch (Exception e) {
                 _doors.undefineDoor(doorName);
-                say("Exception : " + e);
+                _log.info("Exception : " + e);
             }
         }
         //
@@ -584,12 +590,12 @@ public class TransferObserverV1
             for ( String child: info.getChildren()) {
                 String childDoor = child+"@"+info.getCellDomainName() ;
 
-                say("Requesting client info from : " + childDoor);
+                _log.info("Requesting client info from : " + childDoor);
                 try {
                     IoDoorInfo ioDoorInfo = (IoDoorInfo)
                         request(childDoor,"get door info -binary");
 
-                    say(childDoor + " reply ok");
+                    _log.info(childDoor + " reply ok");
 
                     List ioDoorEntries = ioDoorInfo.getIoDoorEntries();
                     if (ioDoorEntries.size() == 0)
@@ -598,7 +604,7 @@ public class TransferObserverV1
                     Iterator ios = ioDoorEntries.iterator() ;
                     while (ios.hasNext()) {
                         IoDoorEntry ioDoorEntry = (IoDoorEntry)ios.next() ;
-                        say( "Adding ioEntry : "+ioDoorEntry ) ;
+                        _log.info( "Adding ioEntry : "+ioDoorEntry ) ;
                         ioList.put(childDoor+"#"+ioDoorEntry.getSerialId(),
                                    new IoEntry(ioDoorInfo, ioDoorEntry));
                         String pool = ioDoorEntry.getPool();
@@ -608,18 +614,18 @@ public class TransferObserverV1
                     }
 
                 } catch (Exception e) {
-                    say("Exception : " + e);
+                    _log.info("Exception : " + e);
                 }
             }
         }
-        say("Asking pools for io info");
+        _log.info("Asking pools for io info");
         for (String poolName : poolHash) {
-            say("Asking pool : " + poolName);
+            _log.info("Asking pool : " + poolName);
             try {
                 IoJobInfo [] infos = (IoJobInfo [] )
                     request(poolName, "mover ls -binary");
 
-                say(poolName + " reply ok");
+                _log.info(poolName + " reply ok");
 
                 //
                 // where is our client
@@ -629,13 +635,13 @@ public class TransferObserverV1
                         info.getClientId() ;
                     IoEntry ioEntry = ioList.get(client);
                     if (ioEntry == null) {
-                        say("No entry found for : " + client);
+                        _log.info("No entry found for : " + client);
                     } else {
                         ioEntry._ioJobInfo = info;
                     }
                 }
             } catch (Exception e) {
-                say("Exception : " + e);
+                _log.info("Exception : " + e);
             }
         }
         List<IoEntry> resultList = null;

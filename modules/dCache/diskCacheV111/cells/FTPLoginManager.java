@@ -13,6 +13,9 @@ import dmg.util.*;
 import dmg.protocols.telnet.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
   *
@@ -25,6 +28,9 @@ import javax.security.auth.Subject;
 public class      FTPLoginManager
        extends    CellAdapter
        implements Cell, Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(FTPLoginManager.class);
 
   private String       _cellName ;
   private CellNucleus  _nucleus ;
@@ -96,9 +102,9 @@ public class      FTPLoginManager
 
   public void cleanUp(){
     try{
-      say( "Trying to close serverSocket" ) ;
+      _log.info( "Trying to close serverSocket" ) ;
       _serverSocket.close() ;
-      say( "Trying serverSocket close" ) ;
+      _log.info( "Trying serverSocket close" ) ;
     }catch( Exception ee ){}
   }
   private void acceptConnections(){

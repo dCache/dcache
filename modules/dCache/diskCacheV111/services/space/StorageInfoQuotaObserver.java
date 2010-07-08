@@ -14,6 +14,9 @@ import diskCacheV111.pools.* ;
 import diskCacheV111.poolManager.* ;
 import diskCacheV111.vehicles.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Patrick Fuhrmann patrick.fuhrmann@desy.de
  * @version 0.1, Aug 08, 2006
@@ -25,9 +28,11 @@ import diskCacheV111.vehicles.* ;
 
 public class StorageInfoQuotaObserver extends CellAdapter {
 
+   private final static Logger _log =
+       LoggerFactory.getLogger(StorageInfoQuotaObserver.class);
+
    private CellNucleus   _nucleus         = null ;
    private Args          _args            = null ;
-   private boolean       _debug           = false ;
    private java.io.File  _configFile      = null ;
    private Map           _poolHash        = new HashMap() ;
    private Object        _linkMapLock     = new Object() ;
@@ -166,18 +171,15 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       _nucleus = getNucleus() ;
 
       try{
-          _debug = _args.getOpt("debug") != null ;
-
           String configName = _args.getOpt("config") ;
           if( ( configName != null ) && ( ! configName.equals("") ) )_configFile = new java.io.File(configName) ;
 
-          say("Query Engine will be started a bit delayed" ) ;
+          _log.info("Query Engine will be started a bit delayed" ) ;
 
           _nucleus.newThread( new DoDelayedOnStartup() , "init" ).start() ;
 
       }catch(Exception ee ){
-          esay( "<init> of WebCollector reports : "+ee.getMessage());
-          esay(ee);
+          _log.warn( "<init> of WebCollector reports : "+ee.getMessage(), ee);
           start() ;
           kill() ;
           throw ee ;
@@ -240,56 +242,56 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           /*
            * wait for awhile before starting startup processes
            */
-          say("Collector will be delayed");
+          _log.info("Collector will be delayed");
 
           try{ Thread.currentThread().sleep(10000L) ;}
           catch(Exception ee){ return ; }
 
-          say("QueryPoolManager now starting");
+          _log.info("QueryPoolManager now starting");
 
           _nucleus.newThread( new QueryPoolManager() , "QueryPoolManager" ).start() ;
 
           try{ Thread.currentThread().sleep(10000L) ;}
           catch(Exception ee){ return ; }
 
-          say("QueryPools now starting");
+          _log.info("QueryPools now starting");
 
           _nucleus.newThread( new QueryPools() , "QueryPools" ).start() ;
        }
    }
    private class QueryPoolManager implements Runnable {
       public void run(){
-          say("Query Pool Manager worker started");
+          _log.info("Query Pool Manager worker started");
           while( true ){
 
              queryLinks() ;
              queryPoolManager() ;
              try{ Thread.currentThread().sleep(_poolManagerQueryInterval) ;}
              catch(Exception ee){
-                 esay("Query Pool Manager worker interrupted");
+                 _log.warn("Query Pool Manager worker interrupted");
                  break ;
              }
 
           }
-          say("Query Pool Manager worker finished");
+          _log.info("Query Pool Manager worker finished");
       }
    }
    private class QueryPools implements Runnable {
 
       public void run(){
-          say("Query Pools worker started");
+          _log.info("Query Pools worker started");
           while( true ){
 
              queryPools() ;
 
              try{ Thread.currentThread().sleep(_poolQueryInterval) ;}
              catch(Exception ee){
-                 esay("Query Pools worker interrupted");
+                 _log.warn("Query Pools worker interrupted");
                  break ;
              }
 
           }
-          say("Query Pools worker finished");
+          _log.info("Query Pools worker finished");
       }
 
    }
@@ -314,8 +316,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          try{
             scanLinkInfo( (List)obj ) ;
          }catch(Exception ee ){
-            esay("Problem scanning link info : "+ee ) ;
-            esay(ee);
+            _log.warn("Problem scanning link info : "+ee, ee ) ;
          }
 
       }else if( obj instanceof PoolManagerCellInfo ){
@@ -336,9 +337,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          }
 
       }else if( obj instanceof NoRouteToCellException ){
-         esay("NoRouteToCell from PoolManager");
+         _log.warn("NoRouteToCell from PoolManager");
       }else{
-         esay("Unknow message arrived from PoolManager : "+obj.getClass().getName() ) ;
+         _log.warn("Unknow message arrived from PoolManager : "+obj.getClass().getName() ) ;
       }
    }
    /**
@@ -354,14 +355,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           try{
              scanSpaceInfo( poolName , (Object [])obj ) ;
           }catch(Exception e){
-             esay("Problem scanning space info : "+e);
-             esay(e);
+             _log.warn("Problem scanning space info : "+e, e);
           }
 
       }else if( obj instanceof NoRouteToCellException ){
-          esay("messageFromPool got NoRouteToCellException : "+obj);
+          _log.warn("messageFromPool got NoRouteToCellException : "+obj);
       }else{
-          esay("messageFromPool got Unknown object : "+obj);
+          _log.warn("messageFromPool got Unknown object : "+obj);
       }
    }
    /**
@@ -397,7 +397,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        try{
            sendMessage( message ) ;
        }catch(Exception ee ){
-           esay("Problem replying PoolMgrGetPoolLinks message");
+           _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
 
    }
@@ -437,7 +437,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           query.setPoolLinkInfos( (PoolLinkInfo []) result.toArray( new PoolLinkInfo[0] ) ) ;
 
        }catch(Exception ee ){
-          esay(ee);
+          _log.warn(ee.toString(), ee);
           query.setFailed( 23 , ee ) ;
        }
 
@@ -446,7 +446,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        try{
            sendMessage( message ) ;
        }catch(Exception ee ){
-           esay("Problem replying PoolMgrGetPoolLinks message");
+           _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
 
        return ;
@@ -554,13 +554,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryPoolManager(){
 
       try{
-         if(_debug)say("Sending xgetcellinfo to "+_poolManagerName);
+         _log.debug("Sending xgetcellinfo to "+_poolManagerName);
          CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , "xgetcellinfo" );
          sendMessage( msg );
       }catch(NoRouteToCellException cee ){
-         esay("NoPath to cell : "+_poolManagerName);
+         _log.warn("NoPath to cell : "+_poolManagerName);
       }catch(Exception ee){
-         esay("Exception in sending query to pool "+_poolManagerName);
+         _log.warn("Exception in sending query to pool "+_poolManagerName);
       }
 
    }
@@ -570,13 +570,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryLinks(){
        try{
           String command = "psux ls link -x -resolve" ;
-          if(_debug)say("Sending poolManager query "+command+" to "+_poolManagerName);
+          _log.debug("Sending poolManager query "+command+" to "+_poolManagerName);
           CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , command );
           sendMessage( msg );
        }catch(NoRouteToCellException cee ){
-          esay("NoPath to cell : "+_poolManagerName);
+          _log.warn("NoPath to cell : "+_poolManagerName);
        }catch(Exception ee){
-          esay("Exception in sending query to pool : "+_poolManagerName);
+          _log.warn("Exception in sending query to pool : "+_poolManagerName);
        }
    }
    /**
@@ -601,21 +601,21 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           // }
           //
           try{
-             if(_debug)say("Sending pool query 'rep ls -s binary' to "+poolName);
+             _log.debug("Sending pool query 'rep ls -s binary' to "+poolName);
              CellMessage msg = new CellMessage( new CellPath(poolName) , "rep ls -s -sum -binary" );
              sendMessage( msg );
           }catch(NoRouteToCellException cee ){
-             esay("NoPath to cell : "+poolName);
+             _log.warn("NoPath to cell : "+poolName);
           }catch(Exception ee){
-             esay("Exception in sending query to pool : "+poolName);
+             _log.warn("Exception in sending query to pool : "+poolName);
           }
 
           if( ( _poolQuerySteps > 0 ) && (  ( counter % _poolQuerySteps ) == 0 ) ){
-             say("Waiting a while ("+_poolQueryBreak+") millis");
+             _log.info("Waiting a while ("+_poolQueryBreak+") millis");
              try{
                 if( _poolQueryBreak > 0L )Thread.sleep(_poolQueryBreak) ;
              }catch(InterruptedException ee){
-                esay("Query pool lock interrupted");
+                _log.warn("Query pool lock interrupted");
                 break ;
              }
           }
@@ -748,18 +748,6 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    //
    //   THE COMMANDER
    //
-   public String hh_set_debug = "on|off" ;
-   public String ac_set_debug_$_1( Args args ){
-      String mode = args.argv(0);
-      if( mode.equals("on") ){
-         _debug = true ;
-      }else if( mode.equals("off") ){
-         _debug = false ;
-      }else
-         throw new
-           IllegalArgumentException("set debug on|off");
-      return "";
-   }
    public String hh_show_link = "-a" ;
    public String ac_show_link_$_0( Args args ) throws Exception {
    try{
@@ -805,7 +793,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        }
        return sb.toString() ;
     }catch(Exception eeee ){
-       esay(eeee);
+       _log.warn(eeee.toString(), eeee);
        return "Failed";
     }
    }
@@ -822,7 +810,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        }
        return sb.toString();
      }catch(Exception ee){
-        esay(ee);
+         _log.warn(ee.toString(), ee);
         return "Failed";
      }
    }
@@ -870,7 +858,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           }
       }
       }catch(Exception ee ){
-         esay(ee);
+        _log.warn(ee.toString(), ee);
          return "Failed";
       }
    }

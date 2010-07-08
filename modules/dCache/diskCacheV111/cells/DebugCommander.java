@@ -13,7 +13,14 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DebugCommander extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(DebugCommander.class);
+
     private final CellNucleus _nucleus ;
     private final Args        _args ;
 
@@ -25,9 +32,9 @@ public class DebugCommander extends CellAdapter {
     }
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
-       say( "DBC : From     : "+msg.getSourcePath() ) ;
-       say( "DBC : Class    : "+obj.getClass().getName() ) ;
-       say( "DBC : toString : "+obj.toString() ) ;
+       _log.info( "DBC : From     : "+msg.getSourcePath() ) ;
+       _log.info( "DBC : Class    : "+obj.getClass().getName() ) ;
+       _log.info( "DBC : toString : "+obj.toString() ) ;
 
     }
     public String hh_send_fetch = "<hsm> <pool> <pnfsId> [-path=<poolPath>]" ;

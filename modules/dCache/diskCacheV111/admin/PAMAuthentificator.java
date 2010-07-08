@@ -11,6 +11,8 @@ import  java.lang.reflect.* ;
 import javax.naming.*;
 import javax.naming.directory.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -22,6 +24,8 @@ import javax.naming.directory.*;
 
 public class PAMAuthentificator  extends CellAdapter {
 
+   private final static Logger _log =
+       LoggerFactory.getLogger(PAMAuthentificator.class);
 
    private final int request_len  = 5;
    private final int response_len = 6;
@@ -79,7 +83,7 @@ public class PAMAuthentificator  extends CellAdapter {
          _service = _args.getOpt( "service" ) ;
          if( _service == null ){
             _service = "dcache";
-            say("'service' not defined. Using '"+_service+"' as default service");
+            _log.info("'service' not defined. Using '"+_service+"' as default service");
          }
 
 
@@ -88,16 +92,16 @@ public class PAMAuthentificator  extends CellAdapter {
 
              if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
                 _sysPassword = new UserPasswords( new File( tmp ) ) ;
-                say( "using as SystemPasswordfile : "+tmp ) ;
+                _log.info( "using as SystemPasswordfile : "+tmp ) ;
             }
             if( ( tmp = _args.getOpt( "dcachepassword"  ) ) != null ){
                 _egPassword  = new UserPasswords( new File( tmp ) ) ;
-                say( "using as dCachePassword : "+tmp ) ;
+                _log.info( "using as dCachePassword : "+tmp ) ;
             }
 
              if( ( tmp = _args.getOpt("usepam") ) != null ){
                 _pam = new PAM_Auth( _service );
-                say( "using PAM mudule") ;
+                _log.info( "using PAM mudule") ;
              }
          }else{
             _execAuth = new ExecAuth(tmp) ;
@@ -106,7 +110,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
 
          if( ( tmp = _args.getOpt( "users"  ) ) != null ){
-            say( "using as userService : "+tmp ) ;
+            _log.info( "using as userService : "+tmp ) ;
 
             if( tmp.startsWith("nis:") ){
 
@@ -120,7 +124,7 @@ public class PAMAuthentificator  extends CellAdapter {
                try{
                    _userServiceNIS = new InitialDirContext(env);
                }catch( javax.naming.NamingException ne ){
-                   esay("Can't InitialDirContext(env) "+ne ) ;
+                   _log.warn("Can't InitialDirContext(env) "+ne ) ;
                    throw ne ;
                }
                _userServiceType = USER_SERVICE_NIS ;
@@ -205,12 +209,12 @@ public class PAMAuthentificator  extends CellAdapter {
      try{
         if( _sysPassword != null )_sysPassword.update() ;
      }catch(Exception ee ){
-        esay( "Updating failed : "+_sysPassword ) ;
+        _log.warn( "Updating failed : "+_sysPassword ) ;
      }
      try{
         if( _egPassword != null )_egPassword.update() ;
      }catch(Exception ee ){
-        esay( "Updating failed : "+_egPassword ) ;
+        _log.warn( "Updating failed : "+_egPassword ) ;
      }
    }
    private boolean matchPassword( String userName , String password ){
@@ -247,7 +251,7 @@ public class PAMAuthentificator  extends CellAdapter {
 
          }
       }catch( Throwable t ){
-         esay( "Found : "+t ) ;
+         _log.warn( "Found : "+t ) ;
       }
       return false ;
    }
@@ -263,7 +267,7 @@ public class PAMAuthentificator  extends CellAdapter {
                                   " "+password       ) ;
             return result.equals("true") ;
          }catch(Exception ee ){
-            esay(ee) ;
+            _log.warn(ee.toString(), ee) ;
             return false ;
          }
       }else{
@@ -275,14 +279,14 @@ public class PAMAuthentificator  extends CellAdapter {
       try{
          pamOk = authenticate( principal , password )  ;
       }catch(Exception ee ){
-         esay( "_pam.authorize : "+ee ) ;
+         _log.warn( "_pam.authorize : "+ee ) ;
       }
       if( ! pamOk ){
-         say("pam says no to <"+principal+"> (switching to local)");
+         _log.info("pam _log.infos no to <"+principal+"> (switching to local)");
          try{
             return matchPassword( principal , password ) ;
          }catch(Exception ee ){
-            esay( "matchPassword : "+ee ) ;
+            _log.warn( "matchPassword : "+ee ) ;
          }
       }
       return pamOk ;
@@ -292,7 +296,7 @@ public class PAMAuthentificator  extends CellAdapter {
       Object answer  = "PANIX" ;
 
       try{
-         say( "Message type : "+obj.getClass() ) ;
+         _log.info( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -302,7 +306,7 @@ public class PAMAuthentificator  extends CellAdapter {
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            say( ">"+command+"< request from "+user ) ;
+            _log.info( ">"+command+"< request from "+user ) ;
             try{
               if( command.equals( "check-password" ) ){
                   answer  =  acl_check_password( request ) ;
@@ -317,7 +321,7 @@ public class PAMAuthentificator  extends CellAdapter {
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             esay( r ) ;
+             _log.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -332,8 +336,7 @@ public class PAMAuthentificator  extends CellAdapter {
       try{
          sendMessage( msg ) ;
       }catch( Exception ioe ){
-         esay( "Can't send acl_response : "+ioe ) ;
-         esay(ioe) ;
+          _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }
   private Object getMetaInfo( Object [] request )throws Exception {

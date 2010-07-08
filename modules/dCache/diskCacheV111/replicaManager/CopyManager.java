@@ -15,12 +15,18 @@ import  dmg.util.* ;
 import  java.io.* ;
 import  java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  patrick
  */
 
 public class CopyManager extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(CopyManager.class);
 
    private Object     _processLock = new Object() ;
    private boolean    _isActive    = false ;
@@ -259,7 +265,7 @@ public class CopyManager extends CellAdapter {
        return "" ;
    }
    private  void setStatus( String newStatus ){
-       say("STATUS : "+newStatus);
+       _log.info("STATUS : "+newStatus);
        synchronized( _processLock ){
            _status = newStatus ;
        }
@@ -308,7 +314,7 @@ public class CopyManager extends CellAdapter {
                //
                entry._destination = _destination[poolIndex] ;
 
-               say("Next entry to process : "+entry);
+               _log.info("Next entry to process : "+entry);
 
                synchronized( _processLock ){
 
@@ -329,18 +335,18 @@ public class CopyManager extends CellAdapter {
 //                        throw new
 //                        InterruptedException("Interrupted in 'startTransfer' loop" ) ;
 
-                   say("Starting query for : "+entry) ;
+                   _log.info("Starting query for : "+entry) ;
                    sendQuery( entry )  ;
-                   say("Starting transfer Done for : "+entry) ;
+                   _log.info("Starting transfer Done for : "+entry) ;
 
                }
            }
 
-           say( _parameter._stopped?"processing stopped":"All files submitted" ) ;
+           _log.info( _parameter._stopped?"processing stopped":"All files submitted" ) ;
 
            synchronized( _processLock ){
 
-               say("Waiting for residual transfers to be finished : "+_parameter._currentlyActive );
+               _log.info("Waiting for residual transfers to be finished : "+_parameter._currentlyActive );
 
                while( ( ! us.isInterrupted() ) &&
                       ( _parameter._currentlyActive > 0 ) )
@@ -353,7 +359,7 @@ public class CopyManager extends CellAdapter {
 
 
            }
-           say("Finished");
+           _log.info("Finished");
         }
 
    }
@@ -394,7 +400,7 @@ public class CopyManager extends CellAdapter {
            return msg.getHave() ;
 
        }catch(Exception e ){
-           esay("Problem checking file : "+pnfsId+" on pool "+poolName+" : "+e );
+           _log.warn("Problem checking file : "+pnfsId+" on pool "+poolName+" : "+e );
            if( e instanceof InterruptedException )throw (InterruptedException)e;
            return false ;
        }
@@ -411,7 +417,7 @@ public class CopyManager extends CellAdapter {
 
            _parameter._currentlyActive ++ ;
            try{
-               say("sendQuery : sending query for " + entry ) ;
+               _log.info("sendQuery : sending query for " + entry ) ;
                sendMessage( msg ) ;
            }catch(Exception ee ){
                setEntryFinished( entry , 1 , ee ) ;
@@ -434,7 +440,7 @@ public class CopyManager extends CellAdapter {
            CellMessage out = new CellMessage( new CellPath(entry._destination) , pool ) ;
 
            try{
-               say("sendQuery : sending query for " + entry ) ;
+               _log.info("sendQuery : sending query for " + entry ) ;
                sendMessage( out ) ;
                entry.state = PoolFileEntry.STATE ;
            }catch(Exception ee ){
@@ -455,7 +461,7 @@ public class CopyManager extends CellAdapter {
            CellMessage msg = new CellMessage( new CellPath(entry._destination) , pool2pool ) ;
 
            try{
-               say("startTransfer : sending 'start transfer' for "+entry ) ;
+               _log.info("startTransfer : sending 'start transfer' for "+entry ) ;
                sendMessage( msg ) ;
            }catch(Exception ee ){
                setEntryFinished( entry , 1 , ee ) ;
@@ -475,17 +481,17 @@ public class CopyManager extends CellAdapter {
            PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
 
            if( entry == null ){
-               esay("p2pAnswerArrived : entry not found in rep : "+pnfsId);
+               _log.warn("p2pAnswerArrived : entry not found in rep : "+pnfsId);
                return ;
            }
-           say("pool2poolAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
+           _log.info("pool2poolAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
            if( msg.getReturnCode() == 0 ){
 
                entry.transferOk = true ;
 
                if( entry.isPrecious() ){
 
-                   say("pool2poolAnswerArrived for "+pnfsId+" Sending precious to "+poolName);
+                   _log.info("pool2poolAnswerArrived for "+pnfsId+" Sending precious to "+poolName);
                    PoolModifyPersistencyMessage pool =
                         new PoolModifyPersistencyMessage( poolName , pnfsId , true ) ;
 
@@ -511,7 +517,7 @@ public class CopyManager extends CellAdapter {
        PnfsId pnfsId = msg.getPnfsId() ;
        synchronized( _processLock ){
            PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
-           say("poolModifyPersistencyAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
+           _log.info("poolModifyPersistencyAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
            if( msg.getReturnCode() == 0 ){
                entry.stateOk = true ;
                setEntryFinished( entry ) ;
@@ -525,15 +531,15 @@ public class CopyManager extends CellAdapter {
        PnfsId pnfsId = msg.getPnfsId() ;
        synchronized( _processLock ){
            PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
-           say("poolCheckFileAnswerArrived: "+entry+" -> "+msg ) ;
+           _log.info("poolCheckFileAnswerArrived: "+entry+" -> "+msg ) ;
            if( msg.getReturnCode() == 0 ){
 
                if( entry.state == PoolFileEntry.QUERY_1 ){
                    if( msg.getHave() ){
-                       say("poolCheckFile answer for initial query ok for "+entry ) ;
+                       _log.info("poolCheckFile answer for initial query ok for "+entry ) ;
                        startTransfer( entry ) ;
                    }else{
-                       say("poolCheckFile answer for initial query 'file not found' for "+entry);
+                       _log.info("poolCheckFile answer for initial query 'file not found' for "+entry);
                        setEntryFinished(entry);
                    }
                }else if( entry.state == PoolFileEntry.QUERY_2 ){
@@ -541,10 +547,10 @@ public class CopyManager extends CellAdapter {
                    // not used yet.
                    //
                    if( msg.getHave() ){
-                       say("poolCheckFile answer for final query ok for "+entry ) ;
+                       _log.info("poolCheckFile answer for final query ok for "+entry ) ;
                        sendState( entry ) ;
                    }else{
-                       say("poolCheckFile answer for final query 'file not found' for "+entry);
+                       _log.info("poolCheckFile answer for final query 'file not found' for "+entry);
                        setEntryFinished(entry);
                    }
                }else{
@@ -581,7 +587,7 @@ public void messageArrived( CellMessage message ){
        }else if( obj instanceof PoolCheckFileMessage ){
            poolCheckFileAnswerArrived( (PoolCheckFileMessage) obj ) ;
        }else{
-           esay("Unexpected message arrived : "+message);
+           _log.warn("Unexpected message arrived : "+message);
        }
    }
    public PoolRepository getExtendedPoolRepository( String poolName , long timeout ) throws Exception {
@@ -608,7 +614,7 @@ public void messageArrived( CellMessage message ){
                counter ++ ;
                map.put( entry.getPnfsId().toString() , entry ) ;
            }catch(Exception ee){
-               esay("Invalid format "+entryString);
+               _log.warn("Invalid format "+entryString);
            }
 
        }

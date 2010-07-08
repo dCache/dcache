@@ -14,7 +14,13 @@ import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 import diskCacheV111.pools.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HsmFlushControlManager  extends CellAdapter {
+
+    private static final Logger _log =
+        LoggerFactory.getLogger(HsmFlushControlManager.class);
 
     private CellNucleus _nucleus    = null ;
     private Args        _args       = null ;
@@ -71,7 +77,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                try{
                   _getPoolCollectionTicker = Long.parseLong(tmp) * 60L * 1000L ;
                }catch(Exception ee ){
-                  esay("Illegal value for poolCollectionUpdate : "+tmp+" (chosing "+_getPoolCollectionTicker+" millis)");
+                  _log.warn("Illegal value for poolCollectionUpdate : "+tmp+" (chosing "+_getPoolCollectionTicker+" millis)");
                }
            }
            tmp = _args.getOpt("gainControlUpdate") ;
@@ -80,7 +86,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                try{
                   _queueWatch.setGainControlTicker( gainControlTicker = Long.parseLong(tmp) * 60L * 1000L ) ;
                }catch(Exception ee ){
-                  esay("Illegal value for gainControlUpdate : "+tmp+" (chosing "+gainControlTicker+" millis)");
+                  _log.warn("Illegal value for gainControlUpdate : "+tmp+" (chosing "+gainControlTicker+" millis)");
                }
            }
            tmp = _args.getOpt("timer") ;
@@ -88,7 +94,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                try{
                   _timerInterval = Long.parseLong(tmp) * 1000L ;
                }catch(Exception ee ){
-                  esay("Illegal value for timer : "+tmp+" (chosing "+_timerInterval+" millis)");
+                  _log.warn("Illegal value for timer : "+tmp+" (chosing "+_timerInterval+" millis)");
                }
            }
 
@@ -117,13 +123,13 @@ public class HsmFlushControlManager  extends CellAdapter {
           triggerGainControl() ;
        }
        public void run(){
-          say("QueueWatch started" ) ;
+          _log.info("QueueWatch started" ) ;
 
           try{
-             say("QueueWatch : waiting awhile before starting");
+             _log.info("QueueWatch : waiting awhile before starting");
              Thread.currentThread().sleep(10000);
           }catch(InterruptedException ie ){
-             esay("QueueWatch: interrupted during initial wait. Stopping");
+             _log.warn("QueueWatch: interrupted during initial wait. Stopping");
              return ;
           }
           _status = "Running Collector" ;
@@ -165,7 +171,7 @@ public class HsmFlushControlManager  extends CellAdapter {
              _nucleus.updateWaitQueue() ;
 
           }
-          say( "QueueWatch stopped" ) ;
+          _log.info( "QueueWatch stopped" ) ;
        }
        public synchronized void triggerGainControl(){
           next_sendGainControl = System.currentTimeMillis() - 10 ;
@@ -202,10 +208,10 @@ public class HsmFlushControlManager  extends CellAdapter {
                         _control ? gainControlInterval : 0L ) ;
 
               try{
-                 if(_logEnabled)say("sendFlushControlMessage : sending PoolFlushGainControlMessage to "+poolName);
+                 if(_logEnabled)_log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to "+poolName);
                  sendMessage( new CellMessage( new CellPath(poolName) , msg ) ) ;
               }catch(Exception ee ){
-                 esay("sendFlushControlMessage : couldn't send _poolGroupHash to "+poolName);
+                 _log.warn("sendFlushControlMessage : couldn't send _poolGroupHash to "+poolName);
               }
           }
        }
@@ -361,7 +367,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            sendMessage( new CellMessage( new CellPath("PoolManager") , msg ) ) ;
 
        }catch(Exception ee ){
-           esay("setPoolReadOnly : couldn't sent message to PoolManager"+ee);
+           _log.warn("setPoolReadOnly : couldn't sent message to PoolManager"+ee);
        }
     }
     private void queryPoolMode( String poolName ){
@@ -375,7 +381,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            sendMessage( new CellMessage( new CellPath("PoolManager") , msg ) ) ;
 
        }catch(Exception ee ){
-           esay("queryPoolMode : couldn't sent message to PoolManager"+ee);
+           _log.warn("queryPoolMode : couldn't sent message to PoolManager"+ee);
        }
     }
     private class PoolCollector implements CellMessageAnswerable {
@@ -422,36 +428,36 @@ public class HsmFlushControlManager  extends CellAdapter {
        }
        private synchronized void runCollector( Collection list ){
            if( _active ){
-              esay("runCollector : Still running") ;
+              _log.warn("runCollector : Still running") ;
               return ;
            }
            _active = true ;
            CellPath path = new CellPath( "PoolManager" ) ;
            for( Iterator i = list.iterator() ; i.hasNext() ; ){
                String command = "psux ls pgroup "+i.next() ;
-               if(_logEnabled)say("runCollector sending : "+command+" to "+path);
+               if(_logEnabled)_log.info("runCollector sending : "+command+" to "+path);
                try{
 
                    sendMessage( new CellMessage( path , command ) ,
                                 true , true ,  this, 30000L ) ;
                    _waitingFor ++ ;
                }catch(Exception ee ){
-                   esay( "Coudn't send <"+command+"> to "+path+" "+ee ) ;
+                   _log.warn( "Coudn't send <"+command+"> to "+path+" "+ee ) ;
                }
           }
        }
        private synchronized void answer(){
           _waitingFor-- ;
           if( _waitingFor == 0 ){
-             if(_logEnabled)say("PoolCollector : we are done : "+_poolGroupHash);
+             if(_logEnabled)_log.info("PoolCollector : we are done : "+_poolGroupHash);
              _active = false ;
              HashMap map = new HashMap() ;
-             if(_logEnabled)say("Creating ping set");
+             if(_logEnabled)_log.info("Creating ping set");
              for( Iterator it = _poolGroupHash.values().iterator() ; it.hasNext() ; ){
                  Object [] c = (Object [])it.next() ;
                  for( int i = 0 ; i < c.length ; i++ ){
                      String pool = (String)c[i] ;
-                     if(_logEnabled)say("Adding pool : "+pool ) ;
+                     if(_logEnabled)_log.info("Adding pool : "+pool ) ;
                      HFCPool p = (HFCPool)_configuredPoolList.get( pool ) ;
                      map.put( pool , p == null ? new HFCPool(pool) : p ) ;
                  }
@@ -486,7 +492,7 @@ public class HsmFlushControlManager  extends CellAdapter {
        public void answerArrived( CellMessage request ,
                                   CellMessage answer    ){
 
-          if(_logEnabled)say("answer Arrived : "+answer ) ;
+          if(_logEnabled)_log.info("answer Arrived : "+answer ) ;
           Object reply =  answer.getMessageObject() ;
           if( ( reply instanceof Object []    ) &&
               ( ((Object [])reply).length >= 3             ) &&
@@ -496,20 +502,20 @@ public class HsmFlushControlManager  extends CellAdapter {
              Object [] r = (Object [])reply ;
              String poolGroupName = (String)r[0] ;
              _poolGroupHash.put( poolGroupName , r[1] ) ;
-             if(_logEnabled)say("PoolCollector : "+((Object [])r[1]).length+" pools arrived for "+poolGroupName);
+             if(_logEnabled)_log.info("PoolCollector : "+((Object [])r[1]).length+" pools arrived for "+poolGroupName);
 
           }else{
-             esay("PoolCollector : invalid reply arrived");
+             _log.warn("PoolCollector : invalid reply arrived");
           }
           answer() ;
        }
        public void exceptionArrived( CellMessage request ,
                                      Exception   exception ){
-          esay("PoolCollector : exceptionArrived : "+exception);
+          _log.warn("PoolCollector : exceptionArrived : "+exception);
           answer() ;
        }
        public void answerTimedOut( CellMessage request ){
-          esay("PoolCollector : answerTimedOut ");
+          _log.warn("PoolCollector : answerTimedOut ");
           answer() ;
        }
 
@@ -801,7 +807,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         synchronized( _propertyLock ){
             info.setDriverProperties( System.currentTimeMillis() - _propertiesUpdated , _properties ) ;
         }
-        //say("DRIVER PROPERTIES : "+info ) ;
+        //_log.info("DRIVER PROPERTIES : "+info ) ;
         return info ;
     }
     private class EventDispatcher implements HsmFlushControlCore, Runnable  {
@@ -877,7 +883,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            Event   event    = null ;
            boolean done     = false ;
            boolean initDone = false ;
-           say("Worker event loop started for "+_schedulerName );
+           _log.info(_printoutName+": Worker event loop started for "+_schedulerName );
 
            while( ( ! Thread.interrupted() ) && ( ! done ) ){
 
@@ -966,12 +972,11 @@ public class HsmFlushControlManager  extends CellAdapter {
 
                    }
                }catch(Throwable t ){
-                   esay("Exception reported by "+event.type+" : "+t);
-                   esay(t);
+                   _log.warn(_printoutName+": Exception reported by "+event.type+" : "+t, t);
                }
            }
-           say("Worker event loop stopped");
-           say("Preparing unload");
+           _log.info(_printoutName+": Worker event loop stopped");
+           _log.info(_printoutName+": Preparing unload");
 
            synchronized( this ){
 
@@ -980,8 +985,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                try{
                    _scheduler.prepareUnload() ;
                }catch(Throwable t ){
-                   esay("Exception in prepareUnload "+t);
-                   esay(t);
+                   _log.warn(_printoutName+": Exception in prepareUnload "+t, t);
                }
 
                _scheduler = null ;
@@ -1082,15 +1086,6 @@ public class HsmFlushControlManager  extends CellAdapter {
        public Set getConfiguredPoolNames(){
           return _poolCollector.getConfiguredPoolNames() ;
        }
-       public void say( String message ){
-          HsmFlushControlManager.this.say(_printoutName+": "+message);
-       }
-       public void esay(String message ){
-          HsmFlushControlManager.this.esay(_printoutName+": "+message);
-       }
-       public void esay( Throwable t ){
-          HsmFlushControlManager.this.esay(t);
-       }
     }
     public String hh_driver_reset = " # resets driver " ;
     public String ac_driver_reset( Args args )throws Exception {
@@ -1130,25 +1125,25 @@ public class HsmFlushControlManager  extends CellAdapter {
     //      message arrived handler
     //
     private void poolFlushDoFlushMessageArrived( PoolFlushDoFlushMessage msg ){
-        if(_logEnabled)say("poolFlushDoFlushMessageArrived : "+msg);
+        if(_logEnabled)_log.info("poolFlushDoFlushMessageArrived : "+msg);
         String poolName  = msg.getPoolName() ;
         synchronized( _poolCollector ){
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               esay("poolFlushDoFlushMessageArrived : message arrived for non configured pool : "+poolName);
+               _log.warn("poolFlushDoFlushMessageArrived : message arrived for non configured pool : "+poolName);
                return ;
             }
             String storageClass = msg.getStorageClassName()+"@"+msg.getHsmName() ;
             HFCFlushInfo info = (HFCFlushInfo)pool.flushInfos.get( storageClass ) ;
             if( info == null ){
-               esay("poolFlushDoFlushMessageArrived : message arrived for non existing storage class : "+storageClass);
+               _log.warn("poolFlushDoFlushMessageArrived : message arrived for non existing storage class : "+storageClass);
                //
                // the real one doesn't exists anymore, so we simulate one.
                //
                info = new HFCFlushInfo( pool , new StorageClassFlushInfo( msg.getHsmName() , msg.getStorageClassName() ) ) ;
             }
             if( msg.getReturnCode() != 0 ){
-               if(_logEnabled)say("Flush failed (msg="+(msg.isFinished()?"Finished":"Ack")+") : "+msg ) ;
+               if(_logEnabled)_log.info("Flush failed (msg="+(msg.isFinished()?"Finished":"Ack")+") : "+msg ) ;
 
                info.setFlushingFailed(msg.getReturnCode(),msg.getErrorObject());
                //
@@ -1157,7 +1152,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                return ;
             }
             if( msg.isFinished() ){
-                if(_logEnabled)say("Flush finished : "+msg ) ;
+                if(_logEnabled)_log.info("Flush finished : "+msg ) ;
 
                 updateFlushCellAndFlushInfos( msg , pool ) ;
                 info.setFlushingDone() ;
@@ -1168,11 +1163,11 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
     }
     private void poolFlushGainControlMessageDidntArrive( String poolName ){
-        if(_logEnabled)say("poolFlushGainControlMessageDidntArrive : "+poolName);
+        if(_logEnabled)_log.info("poolFlushGainControlMessageDidntArrive : "+poolName);
         synchronized( _poolCollector ){
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               esay("PoolFlushGainControlMessage : message arrived for non configured pool : "+poolName);
+               _log.warn("PoolFlushGainControlMessage : message arrived for non configured pool : "+poolName);
                return ;
             }
             pool.isActive    = false ;
@@ -1208,12 +1203,12 @@ public class HsmFlushControlManager  extends CellAdapter {
 
     }
     private void poolFlushGainControlMessageArrived( PoolFlushGainControlMessage msg ){
-        if(_logEnabled)say("PoolFlushGainControlMessage : "+msg);
+        if(_logEnabled)_log.info("PoolFlushGainControlMessage : "+msg);
         String poolName  = msg.getPoolName() ;
         synchronized( _poolCollector ){
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               esay("PoolFlushGainControlMessage : message arrived for non configured pool : "+poolName);
+               _log.warn("PoolFlushGainControlMessage : message arrived for non configured pool : "+poolName);
                return ;
             }
 
@@ -1223,13 +1218,13 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
     }
     private void poolModeInfoArrived( PoolManagerPoolModeMessage msg ){
-        if(_logEnabled)say("PoolManagerPoolModeMessage : "+msg ) ;
+        if(_logEnabled)_log.info("PoolManagerPoolModeMessage : "+msg ) ;
         String poolName  = msg.getPoolName() ;
         synchronized( _poolCollector ){
 
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               esay("poolModeInfoArrived : message arrived for non configured pool : "+poolName);
+               _log.warn("poolModeInfoArrived : message arrived for non configured pool : "+poolName);
                return ;
             }
             pool.mode = msg.getPoolMode() ;
@@ -1265,12 +1260,12 @@ public class HsmFlushControlManager  extends CellAdapter {
           CellPath        path = nrtc.getDestinationPath() ;
           CellAddressCore core = path.getDestinationAddress() ;
           String          cellName = core.getCellName() ;
-          esay( "NoRouteToCell : "+ cellName + " ("+path+")");
+          _log.warn( "NoRouteToCell : "+ cellName + " ("+path+")");
 
           poolFlushGainControlMessageDidntArrive( cellName ) ;
 
        }else{
-          esay("Unknown message arrived ("+msg.getSourcePath()+") : "+
+          _log.warn("Unknown message arrived ("+msg.getSourcePath()+") : "+
                msg.getMessageObject() ) ;
          _failed ++ ;
        }

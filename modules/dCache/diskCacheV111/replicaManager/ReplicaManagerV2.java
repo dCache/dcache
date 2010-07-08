@@ -21,8 +21,14 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private final static String _svnId = "$Id$";
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(ReplicaManagerV2.class);
 
   private boolean _debug = false;
   public boolean getDebugRM ( )          { return _debug; }
@@ -82,9 +88,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       String group = args.getOpt("resilientGroupName");
       if( group != null && (! group.equals("")) ) {
           _resilientPoolGroupName = group;
-          esay("resilientGroupName=" + group + "\n");
+          _log.warn("resilientGroupName=" + group + "\n");
       }else{
-        esay("Argument 'resilientGroupName' is not defined, use default settings: "
+        _log.warn("Argument 'resilientGroupName' is not defined, use default settings: "
              + " _usePoolGroup=" +_usePoolGroup
              + ((_usePoolGroup) ? (", _resilientPoolGroupName="+_resilientPoolGroupName):"")
              );
@@ -97,32 +103,32 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         boolean fatal = false;
 
         if (this.usePoolGroup()) {
-            dsay("Asking for Resilient Pools Group List, resilientPoolGroupName="
+            _log.debug("Asking for Resilient Pools Group List, resilientPoolGroupName="
                  + _resilientPoolGroupName);
 
             try {
                 _resPoolsList = getPoolGroup(_resilientPoolGroupName);
             } catch (Exception ex) {
-                esay("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName +" ####");
+                _log.warn("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName +" ####");
                 throw ex;
             }
             if (_resPoolsList == null) {
-                esay("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName +" ####");
+                _log.warn("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName +" ####");
                 throw  new Exception("Can not get Group " + _resilientPoolGroupName) ;
             }
 
-            say("Got " + _resPoolsList.size() + " pools listed in the group " +
+            _log.info("Got " + _resPoolsList.size() + " pools listed in the group " +
                 _resilientPoolGroupName);
 
             if (_resPoolsList.size() == 0) {
-                esay("ERROR: ##### Group " + _resilientPoolGroupName + " is empty ####");
+                _log.warn("ERROR: ##### Group " + _resilientPoolGroupName + " is empty ####");
                 throw  new Exception("Group " + _resilientPoolGroupName + " is empty") ;
             }
 
-            say("ResilientPools pools: " + _resPoolsList);
+            _log.info("ResilientPools pools: " + _resPoolsList);
             return _resPoolsList;
         }else{
-          dsay("Resilient pool group is not used, skip initialization");
+          _log.debug("Resilient pool group is not used, skip initialization");
         }
         return null;
     }
@@ -139,14 +145,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         }
       }
       catch (Exception ex) {
-        esay("InitResilientPools() - got exception '" + ex + "'");
+        _log.warn("InitResilientPools() - got exception '" + ex + "'");
       }
 //      finally { // error processing
-//          dsay("Can not get resilient pool list, wait 60 sec. and retry");
+//          _log.debug("Can not get resilient pool list, wait 60 sec. and retry");
 //          try {
 //              Thread.sleep(60 * 1000); // wait 60 sec. for Pool Manager
 //          } catch (InterruptedException ex1) {
-//              dsay("Getting resilient pool list, wait interrupted, retry");
+//              _log.debug("Getting resilient pool list, wait interrupted, retry");
 //          }
 //      }
     }
@@ -264,14 +270,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //  private Boolean _dbUpdated = Boolean.FALSE;
   private DBUpdateMonitor _dbUpdated = new DBUpdateMonitor();
 
-  protected void dsay(String s) {
-    if (_debug)
-      say("DEBUG: " + s);
-  }
-
     private void parseDBArgs() {
 
-        say("Parse DB arguments "+_args);
+        _log.info("Parse DB arguments "+_args);
 
         String cfURL = _args.getOpt("dbURL");
         if (cfURL != null) {
@@ -315,67 +316,67 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     if (min != null) {
       _repMin = Integer.parseInt(min);
       _adj.setMin(_repMin);
-      say("Set _repMin=" + _repMin);
+      _log.info("Set _repMin=" + _repMin);
     }
 
     String max = _args.getOpt("max");
     if (max != null) {
       _repMax = Integer.parseInt(max);
       _adj.setMax(_repMax);
-      say("Set _repMax=" + _repMax);
+      _log.info("Set _repMax=" + _repMax);
     }
 
     String delayDBStartTO = _args.getOpt("delayDBStartTO");
     if (delayDBStartTO != null) {
       _delayDBStartTO = Integer.parseInt(delayDBStartTO) * 1000;
-      say("Set _delayDBStartTO=" + _delayDBStartTO + " ms");
+      _log.info("Set _delayDBStartTO=" + _delayDBStartTO + " ms");
     }
 
     String delayAdjStartTO = _args.getOpt("delayAdjStartTO");
     if (delayAdjStartTO != null) {
       _delayAdjStartTO = Integer.parseInt(delayAdjStartTO) * 1000;
-      say("Set _delayAdjStartTO=" + _delayAdjStartTO + " ms");
+      _log.info("Set _delayAdjStartTO=" + _delayAdjStartTO + " ms");
     }
 
     String waitDBUpdateTO = _args.getOpt("waitDBUpdateTO");
     if (waitDBUpdateTO != null) {
       long timeout = Integer.parseInt(waitDBUpdateTO) * 1000L;
       _adj.setWaitDBUpdateTO(timeout);
-      say("Set waitDBUpdateTO=" + timeout + " ms");
+      _log.info("Set waitDBUpdateTO=" + timeout + " ms");
     }
 
     String waitReplicateTO = _args.getOpt("waitReplicateTO");
     if (waitReplicateTO != null) {
       long timeout = Integer.parseInt(waitReplicateTO) * 1000L;
       _adj.setWaitReplicateTO(timeout);
-      say("Set waitReplicateTO=" + timeout + " ms");
+      _log.info("Set waitReplicateTO=" + timeout + " ms");
     }
 
     String waitReduceTO = _args.getOpt("waitReduceTO");
     if (waitReduceTO != null) {
       long timeout = Integer.parseInt(waitReduceTO) * 1000L;
       _adj.setWaitReduceTO(timeout);
-      say("Set waitReduceTO=" + timeout + " ms");
+      _log.info("Set waitReduceTO=" + timeout + " ms");
     }
     String poolWatchDogPeriod = _args.getOpt("poolWatchDogPeriod");
     if (poolWatchDogPeriod != null) {
       long timeout = Integer.parseInt(poolWatchDogPeriod) * 1000L;
       _watchPools.setPeriod(timeout);
-      say("Set poolWatchDogPeriod=" + timeout + " ms");
+      _log.info("Set poolWatchDogPeriod=" + timeout + " ms");
     }
 
     String sExcludedFilesExpirationTO = _args.getOpt("excludedFilesExpirationTO");
     if (sExcludedFilesExpirationTO != null) {
       long timeout = Integer.parseInt(sExcludedFilesExpirationTO) * 1000L;
       _watchPools.setExcludedExpiration(timeout);
-      say("Set excludedFilesExpirationTO=" + timeout + " ms");
+      _log.info("Set excludedFilesExpirationTO=" + timeout + " ms");
     }
 
     String maxWorkers = _args.getOpt("maxWorkers");
     if (maxWorkers != null) {
       int mx = Integer.parseInt(maxWorkers);
       _adj.setMaxWorkers(mx);
-      say("Set adjuster maxWorkers=" + mx);
+      _log.info("Set adjuster maxWorkers=" + mx);
     }
 
     if( _args.getOpt("coldStart") != null )
@@ -412,14 +413,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     parseDBArgs();
 
-    dsay("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd=********");
+    _log.debug("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd=********");
     ReplicaDbV1.setup(_jdbcUrl, _driver, _user, _pass);
 
     try {
       _dbrmv2 = installReplicaDb();
     }
     catch ( Exception ex ) {
-      esay( "ERROR, can not instantiate replica DB - got exception, now exiting\n"
+      _log.warn( "ERROR, can not instantiate replica DB - got exception, now exiting\n"
            +"=================================================================="
            +"Check if DB server running and restart Replica Manager");
       System.exit(1);
@@ -428,58 +429,58 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     _adj        = new Adjuster( _repMin, _repMax) ;
     _watchPools = new WatchPools();
 
-    esay("ReplicaManager   version: " + _svnId );
-    esay("DCacheController version: " + super.getSvnId() );
+    _log.warn("ReplicaManager   version: " + _svnId );
+    _log.warn("DCacheController version: " + super.getSvnId() );
 
-    say("Parse arguments");
+    _log.info("Parse arguments");
     parseArgs();
 
     _resilientPools = new ResilientPools( _args );
 
     _initDbRunnable = new InitDbRunnable( _delayDBStartTO );
 
-    say("Create threads");
+    _log.info("Create threads");
     _dbThread  = getNucleus().newThread(_initDbRunnable,"RepMgr-initDB");
     _adjThread = getNucleus().newThread(_adj,           "RepMgr-Adjuster");
     _watchDog  = getNucleus().newThread(_watchPools,    "RepMgr-PoolWatchDog");
 
-    say("Start Init DB  thread");
+    _log.info("Start Init DB  thread");
     _dbThread.start();
 
-    say("Start Adjuster thread");
+    _log.info("Start Adjuster thread");
     _adjThread.start();
 
-    say("Starting cell");
+    _log.info("Starting cell");
     start();
 
   }
 
   // methods from the cellEventListener Interface
   public void cleanUp() {
-    dsay("=== cleanUp called ===");
+    _log.debug("=== cleanUp called ===");
     _stopThreads     = true;
     _runPoolWatchDog = false;
     super.cleanUp();
   }
   public void cellCreated( CellEvent ce ) {
     super.cellCreated(ce);
-    dsay("=== cellCreated called ===, ce=" +ce);
+    _log.debug("=== cellCreated called ===, ce=" +ce);
   }
   public void cellDied( CellEvent ce ) {
     super.cellDied(ce);
-    dsay("=== cellDied called ===, ce=" +ce);
+    _log.debug("=== cellDied called ===, ce=" +ce);
   }
   public void cellExported( CellEvent ce ) {
     super.cellExported(ce);
-    dsay("=== cellExported called ===, ce=" +ce);
+    _log.debug("=== cellExported called ===, ce=" +ce);
   }
   public void routeAdded( CellEvent ce ) {
     super.routeAdded(ce);
-    dsay("=== routeAdded called ===, ce=" +ce);
+    _log.debug("=== routeAdded called ===, ce=" +ce);
   }
   public void routeDeleted( CellEvent ce ) {
     super.routeDeleted(ce);
-    dsay("=== routeDeleted called ===, ce=" +ce);
+    _log.debug("=== routeDeleted called ===, ce=" +ce);
   }
   // end cellEventListener Interface
 
@@ -510,7 +511,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     List<CacheRepositoryEntryInfo> fileList = null;
     String hostName = null;
 
-    say(" dbUpdatePool " + poolName);
+    _log.info(" dbUpdatePool " + poolName);
 
     // Get pool list
     try {
@@ -520,26 +521,26 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           break;
         }
         catch (ConcurrentModificationException cmee) {
-          esay(" dbUpdatePool - Pnfs List was invalidated. retry=" + loop + " pool=" + poolName);
+          _log.warn(" dbUpdatePool - Pnfs List was invalidated. retry=" + loop + " pool=" + poolName);
           if (loop == 4)
             throw cmee;
         }
         catch(MissingResourceException mre) {
-          esay(" dbUpdatePool - Can not get PnfsId List. retry=" + loop + " pool=" + poolName);
+          _log.warn(" dbUpdatePool - Can not get PnfsId List. retry=" + loop + " pool=" + poolName);
           if (loop == 4)
             throw mre;
         }
       }
     }
     catch (Exception ee) {
-      esay(" dbUpdatePool - Problem fetching repository from " + poolName + " : " + ee);
+      _log.warn(" dbUpdatePool - Problem fetching repository from " + poolName + " : " + ee);
       if ( _debug )
         ee.printStackTrace();
       throw ee;
     }
 
     // Got pool list OK
-    say(" dbUpdatePool - Got " + fileList.size() + " pnfsIds from " + poolName);
+    _log.info(" dbUpdatePool - Got " + fileList.size() + " pnfsIds from " + poolName);
     _dbrmv2.removePool( poolName );
 //  for (Iterator n = fileList.iterator(); n.hasNext(); ) {
 //      _db.addPool( (PnfsId) n.next(), poolName);
@@ -555,20 +556,20 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                     if (hostName != null) {
                         synchronized (_hostMap) {
                             _hostMap.put(poolName, hostName);
-                            dsay("dbUpdatePool: _hostMap updated, pool=" + poolName
+                            _log.debug("dbUpdatePool: _hostMap updated, pool=" + poolName
                                    + " host=" + hostName );
                         }
                     }
                     break;
                 } catch (NoRouteToCellException ex) {
-                    esay(" dbUpdatePool - get hostname - No route to cell. retry=" + loop +
+                    _log.warn(" dbUpdatePool - get hostname - No route to cell. retry=" + loop +
                          " pool=" + poolName);
                     if (loop == 4)
                         throw ex;
                 }
             }
         } catch (Exception ee) {
-            esay(" dbUpdatePool - Problem get/set host name for the pool " +
+            _log.warn(" dbUpdatePool - Problem get/set host name for the pool " +
                  poolName +
                  " : " + ee);
             if (_debug)
@@ -585,7 +586,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   private void cleanupDb() {
     synchronized (_dbLock) {
 
-      say("Starting cleanupDb()");
+      _log.info("Starting cleanupDb()");
 
       // Save old pools state from DB into Map for hot restart
       // "pool" table will be cleared in DB and state lost
@@ -593,9 +594,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       _poolMap = new HashMap();
 
       if (_hotRestart) {
-        say("Clear DB for online pools");
+        _log.info("Clear DB for online pools");
 
-        dsay("Save old db pools state into map");
+        _log.debug("Save old db pools state into map");
 
         _dbrmv2.clearTransactions();
 
@@ -604,7 +605,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           String pool = p.next().toString();
           String poolSts = _dbrmv2.getPoolStatus(pool);
           _poolMap.put(pool, poolSts);
-          dsay("Add to poolMap : [" + pool + "] " + poolSts);
+          _log.debug("Add to poolMap : [" + pool + "] " + poolSts);
 
           if (poolSts.equals(ReplicaDb1.ONLINE)) {
             _poolsToWait.add(pool); // List old online pools in DB
@@ -615,7 +616,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         ((DbIterator)p).close();
       }
       else {
-        say("Cleanup DB");
+        _log.info("Cleanup DB");
         _dbrmv2.clearAll(); // Clear "replica" and "pools" tables
         _dbrmv2.clearTransactions();
       }
@@ -629,29 +630,29 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
   private void initDb() throws Exception {
 
-    say("Starting initDb()");
+    _log.info("Starting initDb()");
 
     synchronized (_dbLock) {
 
       initResilientPools();
 
-      dsay("Asking for Pool List");
+      _log.debug("Asking for Pool List");
 
       List allPools = getPoolList();
-      say("Got " + allPools.size() + " pools (any pools) connected");
+      _log.info("Got " + allPools.size() + " pools (any pools) connected");
 
       List pools = getPoolListResilient();
-      say("Got " + pools.size() + " resilient pools connected");
+      _log.info("Got " + pools.size() + " resilient pools connected");
 
       Iterator it = pools.iterator();
       while (it.hasNext()) {
         String poolName = (String) it.next();
         String oldStatus = null;
 
-        dsay("Got pool [" + poolName + "]");
+        _log.debug("Got pool [" + poolName + "]");
 
         oldStatus = (String) _poolMap.get(poolName);
-        dsay("Got from poolMap : " + poolName + " " + oldStatus);
+        _log.debug("Got from poolMap : " + poolName + " " + oldStatus);
 
         _dbrmv2.setPoolStatus(poolName, ReplicaDb1.OFFLINE); // ... and add it - so record will be
 
@@ -659,8 +660,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           dbUpdatePool(poolName);
         }
         catch (Exception ee) {
-          say(" initDb - Problem fetching repository from " + poolName + " : " + ee);
-          say(" initDb - pool " + poolName +" stays '"+ ReplicaDb1.OFFLINE +"'");
+          _log.info(" initDb - Problem fetching repository from " + poolName + " : " + ee);
+          _log.info(" initDb - pool " + poolName +" stays '"+ ReplicaDb1.OFFLINE +"'");
           continue;
         }
 
@@ -674,7 +675,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
         if (newStatus.equals(ReplicaDb1.ONLINE)) {
           _poolsToWait.remove(poolName);
-          dsay("Pool " + poolName + " set online, _poolsToWait.size()=" +
+          _log.debug("Pool " + poolName + " set online, _poolsToWait.size()=" +
                _poolsToWait.size());
           _cntOnlinePools++;
         }
@@ -682,7 +683,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       _useDB = true; // set flag for call back routines
 
     } // synchronized
-    say("Init DB done");
+    _log.info("Init DB done");
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -747,37 +748,37 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      workerCount   = new Semaphore(_maxWorkers);
      workerCountRM = new Semaphore(_maxWorkers);
 
-     say("Adjuster Thread started");
+     _log.info("Adjuster Thread started");
 
      // _db.setHeartBeat("Adjuster","startup");
 
      while (true) {
 
        if (_dbThread != null) {
-         say("Adjuster - wait for Init DB to finish");
+         _log.info("Adjuster - wait for Init DB to finish");
          try {
            _dbThread.join();
            break;
          }
          catch (InterruptedException ex) {
-           say(
+           _log.info(
                "Adjuster - Waiting for connections to complete was interrupted, "
                + ( (_stopThreads) ? "stop thread" : "continue"));
          }
          catch (Exception ex) {
-           say(
+           _log.info(
                "Adjuster - Got exception "+ex+"waiting for Init DB thread to complete, wait");
          }
        }
        else {
-         esay(
+         _log.warn(
              "Adjuster - did not get DB thread (it can be an error), so sleep for "
              + "60 sec and retry");
          try {
            Thread.sleep(60 * 1000); // n
          }
          catch (InterruptedException ex) {
-           say(
+           _log.info(
                "Adjuster - Waiting for connections to complete was interrupted, "
                + ( (_stopThreads) ? "stop thread" : "continue"));
          }
@@ -790,15 +791,15 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
      // Start pools watch dog thread
      if ( _watchDog == null ) {
-       say("Starting pool watch dog for the first time - internal ERROR,"
+       _log.info("Starting pool watch dog for the first time - internal ERROR,"
            +" class _watchDog not instantiated, startup aborted");
        _db.setHeartBeat("Adjuster","aborted");
        return;
      } else {
        if( _runPoolWatchDog ) {
-         say("Trying to start pool watch dog - Watch dog already running");
+         _log.info("Trying to start pool watch dog - Watch dog already running");
        }else{
-         say("Adjuster - start pool watch dog");
+         _log.info("Adjuster - start pool watch dog");
          _runPoolWatchDog = true;
          _watchDog.start();
        }
@@ -808,7 +809,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      //
      boolean haveMore;
 
-     say("=== Adjuster Ready, Start the loop ===");
+     _log.info("=== Adjuster Ready, Start the loop ===");
 
      haveMore = true; // preset not finished state to trigger first check without wait
      boolean dbUpdatedSnapshot = false;
@@ -833,13 +834,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
              _db.setHeartBeat("Adjuster", "waitDbUpdate");
 
              // Wait for update for some time
-             dsay("Adjuster : wait for DB update");
+             _log.debug("Adjuster : wait for DB update");
              _dbUpdated.wait(waitDBUpdateTO);
            }
          } // synchronized
 
          if ( stopping() ) { // check one more time after possible wait()
-           dsay("Adjuster Thread - stopping");
+           _log.debug("Adjuster Thread - stopping");
            break;
          }
 
@@ -850,17 +851,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
          // Check whether wait() broke due to update or timeout:
          if ( dbUpdatedSnapshot )
-           say("Adjuster : DB updated, scan DB and replicate or reduce");
+           _log.info("Adjuster : DB updated, scan DB and replicate or reduce");
          else if ( haveMore )
-           say("Adjuster : adjustment incomplete, rescan DB");
+           _log.info("Adjuster : adjustment incomplete, rescan DB");
          else {
            String msg = "Adjuster : no DB updates for "
                + waitDBUpdateTO / 1000L + " sec, rescan DB";
 
            if (++_cntThrottleMsgs < 5)
-             say(msg);
+             _log.info(msg);
            else if (_cntThrottleMsgs == 5) {
-             say(msg + "; throttle future 'no DB updates' messages ");
+             _log.info(msg + "; throttle future 'no DB updates' messages ");
              _throttleMsgs = true;
            }
          }
@@ -868,27 +869,27 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          haveMore = runAdjustment();
 
          if( haveMore && ! dbUpdatedSnapshot && ! _throttleMsgs )
-           say("Adjuster : pass finished, adjustment is  " +
+           _log.info("Adjuster : pass finished, adjustment is  " +
                ( (haveMore) ? "NOT complete":"complete" ) );
          else
-           dsay("Adjuster : pass finished haveMore=" +haveMore
+           _log.debug("Adjuster : pass finished haveMore=" +haveMore
               +" dbUpdatedSnapshot=" +dbUpdatedSnapshot
               +" _throttleMsgs=" + _throttleMsgs );
        }
        catch (InterruptedException ee) {
-         say("Adjuster : thread was interrupted");
+         _log.info("Adjuster : thread was interrupted");
          if( _stopThreads )
            break;
        }
      } // - update DB loop
 
      _db.setHeartBeat("Adjuster","done");
-     dsay("Adjuster : done");
+     _log.debug("Adjuster : done");
    }
 
    public boolean runAdjustment() throws InterruptedException {
 
-     dsay("Adjuster - started");
+     _log.debug("Adjuster - started");
 
      /*
       * Get list of all Writable and Readable pools for this pass of adjuster
@@ -908,7 +909,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          _poolsWritable.add(it.next());
        }
        ((DbIterator)it).close();
-       // dsay("runAdjustment - _poolsWritable.size()=" +_poolsWritable.size());
+       // _log.debug("runAdjustment - _poolsWritable.size()=" +_poolsWritable.size());
      }
 
      // get from DB pools in online, drainoff, offline-prepare state
@@ -918,7 +919,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          _poolsReadable.add(it.next());
        }
        ((DbIterator)it).close();
-       // dsay("runAdjustment - _poolsReadable.size()=" +_poolsReadable.size());
+       // _log.debug("runAdjustment - _poolsReadable.size()=" +_poolsReadable.size());
      }
 
      boolean  haveMore = false;
@@ -975,7 +976,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      }
      while ( false ); // One pass only
 
-     // dsay("runAdjustment - got to the end of iteration");
+     // _log.debug("runAdjustment - got to the end of iteration");
      // adjustment cycle complete
      return ( haveMore );
    }
@@ -984,7 +985,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     * Scan for replicas files which might be locked in drainoff pools
     */
    protected Iterator scanDrainoff() {
-     dsay("Adjuster - scan drainoff");
+     _log.debug("Adjuster - scan drainoff");
      _setStatus("Adjuster - scan drainoff");
      _db.setHeartBeat("Adjuster", "scan drainOff");
 
@@ -1001,7 +1002,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     */
 
    protected Iterator scanOffline() {
-     dsay("Adjuster - scan offline-prepare");
+     _log.debug("Adjuster - scan offline-prepare");
      _setStatus("Adjuster - scan offline-prepare");
      _db.setHeartBeat("Adjuster", "scan offline-prepare");
 
@@ -1017,7 +1018,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     * -- all other files with fewer replicas
     */
    protected Iterator scanDeficient( int min ) {
-     dsay("Adjuster - scan deficient");
+     _log.debug("Adjuster - scan deficient");
      _setStatus("Adjuster - scan deficient");
      _db.setHeartBeat("Adjuster", "scan deficient");
 
@@ -1034,7 +1035,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     */
 
    protected Iterator scanRedundant( int max ) {
-     dsay("Adjuster - scan redundant");
+     _log.debug("Adjuster - scan redundant");
      _setStatus("Adjuster - scan redundant");
      _db.setHeartBeat("Adjuster", "scan redundant");
 
@@ -1066,9 +1067,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      }
 
      if (_stopThreads)
-       dsay("processReplication() - stopThreads detected, stopping");
+       _log.debug("processReplication() - stopThreads detected, stopping");
      else if( updated )
-       dsay("processReplication() - DB update detected,  break processing of "+detail+" pools cycle");
+       _log.debug("processReplication() - DB update detected,  break processing of "+detail+" pools cycle");
 
      return ( it.hasNext() || haveMore );
    }
@@ -1112,16 +1113,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      }
 
      if ( corrupted > 0 )
-       esay("Error in processReplicateDeficient(): DB.getDeficient() record length <2 in " +corrupted + "/"+ records +" records");
+       _log.warn("Error in processReplicateDeficient(): DB.getDeficient() record length <2 in " +corrupted + "/"+ records +" records");
 
      if ( belowMin > 0 )
-       esay("Error in processReplicateDeficient(): DB.getDeficient() replica count greater or equal specified min="
+       _log.warn("Error in processReplicateDeficient(): DB.getDeficient() replica count greater or equal specified min="
             + min + " in " + belowMin +"/" +records +" records" );
 
      if ( _stopThreads )
-       dsay("processReplicateDeficient() - stopThreads detected, stopping");
+       _log.debug("processReplicateDeficient() - stopThreads detected, stopping");
      else if ( updated )
-       dsay("processReplicateDeficient() - DB update detected, break replication pass");
+       _log.debug("processReplicateDeficient() - DB update detected, break replication pass");
 
      // We are not done with iterator yet or there we some replicas we skipped
      return ( it.hasNext() || haveMore );
@@ -1168,17 +1169,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      }
 
      if (corrupted > 0)
-       esay("Error in processReplicateDeficient(): DB.getRedundant() record length <2 in " +
+       _log.warn("Error in processReplicateDeficient(): DB.getRedundant() record length <2 in " +
            corrupted + "/" + records + " records");
 
      if (aboveMax > 0)
-       esay("Error in processReplicateDeficient(): DB.getRedundant() replica count greater or equal specified max="
+       _log.warn("Error in processReplicateDeficient(): DB.getRedundant() replica count greater or equal specified max="
             + max + " in " + aboveMax + "/" + records + " records");
 
      if (_stopThreads)
-       dsay("processReduceRedundant() - stopThreads detected, stopping");
+       _log.debug("processReduceRedundant() - stopThreads detected, stopping");
      else if (updated)
-       dsay("processReduceRedundant() - DB update detected, break reduction pass");
+       _log.debug("processReduceRedundant() - DB update detected, break reduction pass");
 
      // We are not done with iterator yet or there we some replicas we skipped
      return ( it.hasNext() || haveMore );
@@ -1192,7 +1193,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //         _db.addTransaction(pnfsId, timeStamp, 0);
            _db.addExcluded(pnfsId, timeStamp, errcode, errmsg);
        }
-       say("pnfsId=" + pnfsId + " excluded from replication. ");
+       _log.info("pnfsId=" + pnfsId + " excluded from replication. ");
    }
 
    private class Replicator implements Runnable {
@@ -1213,24 +1214,24 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        public void run() {
            try {
                if (_stopThreads)
-                   say("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId +
+                   _log.info("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId +
                        " can not start - shutdown detected");
                else {
-                   say("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId +
+                   _log.info("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId +
                        " starting, now "
                        + (_maxWorkers - _wCnt) + "/" + _maxWorkers +
                        " workers are active");
                    replicate(_pnfsId);
                }
            } catch (InterruptedException ex) {
-               say("Replicator for pnfsId=" + _pnfsId + " got exception " + ex);
+               _log.info("Replicator for pnfsId=" + _pnfsId + " got exception " + ex);
            } finally {
                // release Adjuster thread waiting till locking record (exclude) is added to DB
                synchronized (this) { // synchronization is required only to invoke notify()
                  this.notifyAll();
                }
                _wCnt = workerCount.up();
-               say("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId
+               _log.info("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId
                    + " finished, now " + (_maxWorkers - _wCnt) + "/" + _maxWorkers +
                    " workers are active");
            }
@@ -1256,7 +1257,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                String exClass = mrex.getClassName();
                String exKey   = mrex.getKey();
 
-               say("replicate(" + pnfsId + ") reported : " + mrex);
+               _log.info("replicate(" + pnfsId + ") reported : " + mrex);
 
                if (exMsg.startsWith("Pnfs File not found :")
                    || exMsg.equals("Pnfs lookup failed")
@@ -1265,14 +1266,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                    // mark it 'exclude' for now
                    excludePnfsId(pnfsId, "", exMsg);
                } else {
-                   dsay("msg='" + exMsg + "'  class='" + exClass + "' key='" +
+                   _log.debug("msg='" + exMsg + "'  class='" + exClass + "' key='" +
                         exKey + "' ");
                    // not excluded - will retry
                }
                return;
            } catch (IllegalArgumentException iaex) {
                boolean sigFound = false;
-               say("replicate(" + pnfsId + ") reported : " + iaex);
+               _log.info("replicate(" + pnfsId + ") reported : " + iaex);
                String exMsg = iaex.getMessage();
                sigFound = // exMsg.startsWith("No pools found,") ||
                    exMsg.startsWith(selectSourcePoolError) ||
@@ -1288,14 +1289,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                // Report, But do not exclude
 
                if (exMsg.startsWith("replicatePnfsId, argument")) {
-                   say("There are not enough pools to get replica from or to put it to; try operation later");
+                   _log.info("There are not enough pools to get replica from or to put it to; try operation later");
                    sigFound = true;
                } else if (exMsg.startsWith("Try again :")) {
-                   say(exMsg);
+                   _log.info(exMsg);
                    sigFound = true;
                }
 
-               dsay("msg='" + exMsg + "' "
+               _log.debug("msg='" + exMsg + "' "
                     + (sigFound
                        ? "signature OK"
                        : "signature not found"
@@ -1303,14 +1304,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                        );
                return;
            } catch (Exception ee) {
-               esay("replicate(" + pnfsId + ") reported : " + ee + ", excluding");
-               esay(ee);
+               _log.warn("replicate(" + pnfsId + ") reported : " + ee + ", excluding", ee);
                excludePnfsId(pnfsId, "", ee.getMessage());
                return;
            }
 
            String poolName = observer.getDstPool();
-           say(pnfsId.toString() + " Replicating");
+           _log.info(pnfsId.toString() + " Replicating");
 
            synchronized (_dbLock) {
                _db.addTransaction(pnfsId, start, +1);
@@ -1349,13 +1349,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
            if (oErr == 0) {
                completedOK = true;
                _replicated++;
-               say(pnfsId.toString() + " replication done after " + (stop - start) +
+               _log.info(pnfsId.toString() + " replication done after " + (stop - start) +
                    " ms, result " + observer);
-               dsay("replicate(" + pnfsId
+               _log.debug("replicate(" + pnfsId
                     + ") : cleanup action record and add pnfsid to the pool="
                     + poolName + "- updating DB");
            } else {
-               say(pnfsId.toString() + " replication ERROR=" + oErr
+               _log.info(pnfsId.toString() + " replication ERROR=" + oErr
                    + ", timer=" + (stop - start) +" ms, error " + oErrMsg);
                /** todo : formalize error codes
                 */
@@ -1394,7 +1394,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
               }
             }
             if ( exclude ) {
-              say("pnfsId=" + pnfsId + " is excluded from replication. (err="
+              _log.info("pnfsId=" + pnfsId + " is excluded from replication. (err="
                   + oErr + ", " + excludeReason + ")");
             }
 
@@ -1416,23 +1416,23 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      public void run() {
        try {
          if (_stopThreads)
-           say("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " can not start - "
+           _log.info("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " can not start - "
                + "shutdown detected");
          else {
-           say("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " starting"
+           _log.info("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " starting"
                + ", now " + (_maxWorkers - _wCnt) + "/" + _maxWorkers +
                " workers are active");
            reduce(_pnfsId);
          }
        } catch (InterruptedException ex) {
-         say("Reducer for pnfsId=" + _pnfsId + " got exception " + ex);
+         _log.info("Reducer for pnfsId=" + _pnfsId + " got exception " + ex);
        } finally {
          // release Adjuster thread waiting till locking record (exclude) is added to DB
          synchronized (this) { // synchronization is required only to invoke notify()
            this.notifyAll();
          }
          _wCnt = workerCountRM.up();
-         say("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " finished"
+         _log.info("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " finished"
              + ", now " + (_maxWorkers - _wCnt) + "/" + _maxWorkers +
              " workers are active");
        }
@@ -1451,12 +1451,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        try {
          observer = (ReductionObserver) removeCopy(pnfsId, _poolsWritable);
        } catch (Exception ee) {
-         say("reduce(" + pnfsId + ") reported : " + ee);
+         _log.info("reduce(" + pnfsId + ") reported : " + ee);
          return;
        }
 
        String poolName = observer.getPool();
-       say(pnfsId.toString() + " Reducing");
+       _log.info(pnfsId.toString() + " Reducing");
 
        synchronized (_dbLock) {
          _db.addTransaction(pnfsId, start, -1);
@@ -1489,19 +1489,19 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        long timeStamp = System.currentTimeMillis();
        if (oErr == 0) {
          _removed++;
-         say(pnfsId.toString() + " reduction done after " + (stop - start) +
+         _log.info(pnfsId.toString() + " reduction done after " + (stop - start) +
              " ms, result " + observer);
          synchronized (_dbLock) {
            _db.removePool(pnfsId, poolName);
            _db.removeTransaction(pnfsId);
          }
-         dsay("reduce("+pnfsId
+         _log.debug("reduce("+pnfsId
               +") : cleanup action record and remove pnfsid from the pool="
               +poolName +"- DB updated");
        } else {
-   //       say(pnfsId.toString() + " reduction ERROR, timer=" + (stop - start) + " ms, "
+   //       _log.info(pnfsId.toString() + " reduction ERROR, timer=" + (stop - start) + " ms, "
    //           + "error " + observer.getErrorMessage() );
-         say(pnfsId.toString() + " reduction ERROR, result=[" + observer + "]");
+         _log.info(pnfsId.toString() + " reduction ERROR, result=[" + observer + "]");
 
 // it is set already
 //         if (oErr == -1) {
@@ -1513,7 +1513,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
            _db.removeTransaction(pnfsId);
            _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
          }
-         say("pnfsId=" + pnfsId + " excluded from replication. "
+         _log.info("pnfsId=" + pnfsId + " excluded from replication. "
              + "(err=" + oErr + ", " + eMsg + ")");
        }
      }
@@ -1525,18 +1525,18 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      // Aquire "worker awailable" semaphore
      do {
        try {
-         dsay("replicateAsync - get worker");
+         _log.debug("replicateAsync - get worker");
          cnt = workerCount.down();
-         dsay("replicateAsync - got worker OK");
+         _log.debug("replicateAsync - got worker OK");
 
          noWorker = false;
        }
        catch (InterruptedException ex) {
          if( _stopThreads ) {
-           say("replicateAsync: waiting for awailable worker thread interrupted, stop thread");
+           _log.info("replicateAsync: waiting for awailable worker thread interrupted, stop thread");
            return;
          } else
-           say("replicateAsync: waiting for awailable worker thread interrupted, retry");
+           _log.info("replicateAsync: waiting for awailable worker thread interrupted, retry");
        }
      } while( noWorker );
 
@@ -1553,7 +1553,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         r.wait();
       }
       catch (InterruptedException ex1) {
-        say("replicateAsync: Waiting for release from replicator thread to was interrupted, "
+        _log.info("replicateAsync: Waiting for release from replicator thread to was interrupted, "
             + ( (_stopThreads) ? "stop thread" : "continue"));
       }
      }
@@ -1565,17 +1565,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      // Aquire "worker awailable" semaphore
      do{
        try {
-         dsay("reduceAsync - get worker");
+         _log.debug("reduceAsync - get worker");
          cnt = workerCountRM.down();
-         dsay("reduceAsync - got worker - OK");
+         _log.debug("reduceAsync - got worker - OK");
          noWorker = false;
        }
        catch (InterruptedException ex) {
          if( _stopThreads ) {
-           say("reduceAsync: waiting for awailable worker thread interrupted, stop thread");
+           _log.info("reduceAsync: waiting for awailable worker thread interrupted, stop thread");
            return;
          } else
-           say("reduceAsync: waiting for awailable worker thread interrupted, retry");
+           _log.info("reduceAsync: waiting for awailable worker thread interrupted, retry");
        }
      }while( noWorker );
 
@@ -1591,7 +1591,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          r.wait();
        }
        catch (InterruptedException ex1) {
-         say("reduceAsync: Waiting for release from reducer thread was interrupted, "
+         _log.info("reduceAsync: Waiting for release from reducer thread was interrupted, "
              + ( (_stopThreads) ? "stop thread" : "continue"));
        }
      }
@@ -1658,14 +1658,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     try{
        reply = (PoolModifyModeMessage) sendObject( poolName, msg ) ;
     }catch(Exception ee ){
-       esay( "setPoolMode pool=" + poolName
+       _log.warn( "setPoolMode pool=" + poolName
             + ", mode=" + new PoolV2Mode(modeBits).toString()
             +" - got exception '"+ ee.getMessage() +"'" );
        return -1;
     }
 
     if( reply.getReturnCode() != 0 ){
-       esay( "setPoolMode pool=" + poolName
+       _log.warn( "setPoolMode pool=" + poolName
             + ", mode=" + new PoolV2Mode(modeBits).toString()
             +" - error '" +reply.getErrorObject().toString() +"'" );
        return -1;
@@ -1689,14 +1689,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       if ( cmd.equalsIgnoreCase("true") ) {
         setDebug2 ( true );
-        say("debug true" );
+        _log.info("debug true" );
         return "debug true";
       }else if ( cmd.equalsIgnoreCase("false") ) {
         setDebug2 ( false );
-        say("debug false" );
+        _log.info("debug false" );
         return "debug false";
       }
-      say("Wrong argument '" +cmd +"'");
+      _log.info("Wrong argument '" +cmd +"'");
       return "wrong argument";
     }
 
@@ -1716,7 +1716,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         } else {
             m = "Wrong argument '" + cmd + "'";
         }
-        say(m);
+        _log.info(m);
         return m;
     }
 
@@ -1736,7 +1736,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         } else {
             m = "Wrong argument '" + cmd + "'";
         }
-        say(m);
+        _log.info(m);
         return m;
     }
 
@@ -1762,7 +1762,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         poolStatus = new String(_dbrmv2.getPoolStatus(poolName));
       }
       String s = new String("Pool '" + poolName + "' status " + poolStatus);
-      say("INFO: "+ s);
+      _log.info("INFO: "+ s);
       return s;
     }
 
@@ -1778,7 +1778,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       if( _resilientPools == null ) {
           // _resilientPools was not set yet
-          dsay( sErrRet );
+          _log.debug( sErrRet );
           return sErrRet;
       }
 
@@ -1786,11 +1786,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           List l = _resilientPools.getResilientPools();
           if (l == null) {
               // usePoolGroup() == true, but we got 'null' list for resilient pools
-              dsay( sErrRet );
+              _log.debug( sErrRet );
               return sErrRet;
           } else if ( ! l.contains(poolName) ) { // pool is NOT resilient
               String sErrRet2 = "Pool " + poolName + " is not resilient pool, ignore command";
-              dsay( sErrRet2 );
+              _log.debug( sErrRet2 );
               return sErrRet2;
           }
       }
@@ -1798,7 +1798,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       synchronized (_dbLock) {
         String poolStatusOld = new String(_dbrmv2.getPoolStatus(poolName));
 
-        say("Pool '" + poolName + "' status was " + poolStatusOld);
+        _log.info("Pool '" + poolName + "' status was " + poolStatusOld);
 
         // Check this is correct command - new pool state is valid
         if (poolStatus.equals("down")
@@ -1848,18 +1848,18 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                   try {
                       dbUpdatePool(poolName);
                       _dbrmv2.setPoolStatus(poolName, poolStatus);
-                      say("setpool, pool " + poolName +
+                      _log.info("setpool, pool " + poolName +
                           " state change to '" + poolStatus + "' updated in DB");
                   } catch (Exception ex) {
-                      say(" setpool - Problem fetching repository from " + poolName +
+                      _log.info(" setpool - Problem fetching repository from " + poolName +
                           " : " + ex);
-                      say(" setpool - pool " + poolName + " stays '" + poolStatusOld +
+                      _log.info(" setpool - pool " + poolName + " stays '" + poolStatusOld +
                           "'");
                   } // try / catch
               } else {
                   // otherwise we simply change pool status in DB.
                   _dbrmv2.setPoolStatus(poolName, poolStatus);
-                  say("Pool '" + poolName + "' status set to " + poolStatus);
+                  _log.info("Pool '" + poolName + "' status set to " + poolStatus);
               }
           }
           if (poolStatus.equals("down")
@@ -1877,14 +1877,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       }
 
       if (updatedOK && setOK) {
-          say("setpool, pool " + poolName + ", notify All");
+          _log.info("setpool, pool " + poolName + ", notify All");
           _dbUpdated.wakeup();
           return "ok";
       } else {
-          say("Can not set pool '" + poolName + "' state to " + poolStatus +
+          _log.info("Can not set pool '" + poolName + "' state to " + poolStatus +
               ", ignored");
           if (updatedOK && setOK)
-              say("Tansaction error: pool state or DB modified, but not both");
+              _log.info("Tansaction error: pool state or DB modified, but not both");
           return "error";
       }
     }
@@ -1894,14 +1894,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     public String ac_ls_unique_$_1(Args args) {
       String poolName    = new String(args.argv(0));
 
-      say("pool '" +poolName +"'");
+      _log.info("pool '" +poolName +"'");
       List uniqueList = findUniqueFiles( poolName );
 
       int uniqueFiles = uniqueList.size();
-      say("Found "+ uniqueFiles +" unique files in pool '" + poolName + "'");
+      _log.info("Found "+ uniqueFiles +" unique files in pool '" + poolName + "'");
 
       for (Iterator i = uniqueList.iterator(); i.hasNext(); ) {
-        say("Unique in "+ poolName + ", pnfsId="+ i.next() );
+        _log.info("Unique in "+ poolName + ", pnfsId="+ i.next() );
       }
 
       return "Found " + uniqueFiles;
@@ -2143,7 +2143,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         _dbrmv2.addExcluded(pnfsId, timeStamp, iErr, eMsg);
       }
       String msg = "pnfsId=" + pnfsId + " excluded from replication";
-      say( msg );
+      _log.info( msg );
       return msg;
     }
 
@@ -2157,7 +2157,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         _dbrmv2.removeTransaction( pnfsId );
       }
       String msg = "pnfsId=" + pnfsId + " released";
-      say( msg + ",  (active transaction or 'exclude' status cleared)" );
+      _log.info( msg + ",  (active transaction or 'exclude' status cleared)" );
       return msg;
     }
 
@@ -2181,21 +2181,21 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       if ( cmd.equals("threads") ) {
         _stopThreads = true;
-        say("Threads were notified to stop");
+        _log.info("Threads were notified to stop");
         return "Threads were notified to stop";
       }else if ( cmd.equals("watchdog") ) {
         _runPoolWatchDog = false;
-        say("Pool watch dog notified to stop, wait for "+ _watchPools.getPeriod()
+        _log.info("Pool watch dog notified to stop, wait for "+ _watchPools.getPeriod()
             + " until it will wake up and notice the command");
         return "watch dog notified to stop";
       }
       else if (cmd.equals("adjuster")) {
         _runAdjuster = false;
-        say("adjuster notified to stop, wait for " + _watchPools.getPeriod() +
+        _log.info("adjuster notified to stop, wait for " + _watchPools.getPeriod() +
             " until it will wake up and notice the command");
         return "adjuster notified to stop";
       }
-      say("Wrong argument '" + cmd + "'");
+      _log.info("Wrong argument '" + cmd + "'");
       return "wrong argument";
     }
     */
@@ -2268,16 +2268,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       public void run() {
           if (_adj == null) {
-              say("adjuster class not instantiated yet");
+              _log.info("adjuster class not instantiated yet");
               return;
           }
-          say(_pnfsId.toString() + " Starting replication");
+          _log.info(_pnfsId.toString() + " Starting replication");
 
           try {
               _adj.reduceAsync(_pnfsId );
-              say(_pnfsId.toString() + " async reduction started");
+              _log.info(_pnfsId.toString() + " async reduction started");
           } catch (Exception ex) {
-              say(_pnfsId.toString() + " got exception " + ex);
+              _log.info(_pnfsId.toString() + " got exception " + ex);
           }
       }
   }
@@ -2293,18 +2293,18 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     public void run() {
       if ( _adj == null ) {
-        say( "adjuster class not instantiated yet" );
+        _log.info( "adjuster class not instantiated yet" );
         return;
       }
-      say(_pnfsId.toString() + " Starting replication");
+      _log.info(_pnfsId.toString() + " Starting replication");
 
       try {
           // use extended set of source pools for replication (include drainoff, offline-prepare)
         _adj.replicateAsync(_pnfsId, true);
-        say(_pnfsId.toString() + " async replication started");
+        _log.info(_pnfsId.toString() + " async replication started");
       }
       catch (Exception ex) {
-        say(_pnfsId.toString() + " got exception " + ex );
+        _log.info(_pnfsId.toString() + " got exception " + ex );
       }
     }
   }
@@ -2332,27 +2332,27 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       if ( myThread != null && _waiting ) {
         myThread.interrupt();
       } else {
-        say("DB thread does not sleep");
+        _log.info("DB thread does not sleep");
       }
     }
 
     public boolean isWaiting() { return _waiting; }
 
     public void run() {
-      say("--- DB init started ---");
+      _log.info("--- DB init started ---");
       myThread = Thread.currentThread();
 
 
       try {
-        say( _hotRestart
+        _log.info( _hotRestart
              ? "=== Hot Restart ==="
              : "=== Cold Start  ===" );
 
         cleanupDb();
 
-        dsay( "Sleep " + _delayPoolScan/1000 + " sec");
+        _log.debug( "Sleep " + _delayPoolScan/1000 + " sec");
         Thread.sleep( _delayPoolScan ); // sleep x sec while communications are established
-        dsay( "Sleep - waiting for communications to establish - is over");
+        _log.debug( "Sleep - waiting for communications to establish - is over");
 
         initDb();
 
@@ -2360,7 +2360,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           synchronized (_poolsToWait) {
 
             if (_poolsToWait.size() > 0) {
-              say("=== Adjuster wakeup is delayed for " + _delayStart/1000L +
+              _log.info("=== Adjuster wakeup is delayed for " + _delayStart/1000L +
                   " sec. for pools to connect - sleep ... ===\n");
 
               try {
@@ -2369,12 +2369,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
               }
               catch (InterruptedException ex) {
                 if (_stopThreads) {
-                  say("DB init delay interrupted, stop thread");
+                  _log.info("DB init delay interrupted, stop thread");
                   _waiting = false;
                   return;
                 }
                 else
-                  say("DB init delay interrupted, continue");
+                  _log.info("DB init delay interrupted, continue");
               }
               finally {
                 _waiting = false;
@@ -2385,13 +2385,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         }
       }
       catch (Exception ex) {
-        say("Exception in go : " + ex);
+        _log.info("Exception in go : " + ex);
         ex.printStackTrace();
       }
       finally {
           synchronized (_dbLock) {
           _initDbActive = false;
-          say("DB initialized, notify All");
+          _log.info("DB initialized, notify All");
         }
         // TODO IF I got exception, I shall not 'wakeup', but retry or shutdown
         _dbUpdated.wakeup();
@@ -2434,7 +2434,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     public void run() {
-      say("Starting pool watch dog thread");
+      _log.info("Starting pool watch dog thread");
       _restarted = true;
 
       do {
@@ -2447,17 +2447,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           runit();
         }
         catch (InterruptedException ex ){
-          say("WatchPool Thread was interrupted");
+          _log.info("WatchPool Thread was interrupted");
           break;
         }
         catch (Exception ex) {
-          say("WatchPool Thread got exception, continue");
+          _log.info("WatchPool Thread got exception, continue");
           ex.printStackTrace();
         }
       } while( _runPoolWatchDog
                && ! _stopThreads );
 
-      say("PoolWatch watch dog thread stopped");
+      _log.info("PoolWatch watch dog thread stopped");
       _db.setHeartBeat("PoolWatchDog", "stopped" );
     }
 
@@ -2506,21 +2506,21 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           && departed.size() == 0 ) {
         hbMsg = "no changes";
         if ( ++cntNoChangeMsgLastTime < 5 )
-          say("WatchPool - no pools arrived or departed");
+          _log.info("WatchPool - no pools arrived or departed");
         else if ( cntNoChangeMsgLastTime == 5 )
-          say("WatchPool - no pools arrived or departed, throttle future 'no change' messages ");
+          _log.info("WatchPool - no pools arrived or departed, throttle future 'no change' messages ");
 
       } else {
         hbMsg = "conf changed";
         cntNoChangeMsgLastTime = 0;
 
         if (arrived.size() == 0) {
-          say("WatchPool - no new pools arrived");
+          _log.info("WatchPool - no new pools arrived");
         } else {
           for (Iterator i = arrived.iterator(); i.hasNext(); ) {
             Object inext = i.next();
             String poolName = (String) inext;
-            say("WatchPool - pool arrived '" + poolName + "'");
+            _log.info("WatchPool - pool arrived '" + poolName + "'");
 
             // Check if pool was "down" and bring it "online"
             // if and only if
@@ -2543,7 +2543,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         }
 
         if (departed.size() == 0)
-          say("WatchPool - no pools departed");
+          _log.info("WatchPool - no pools departed");
         else {
           // For pools which left UPDATE pool status in DB
           // because
@@ -2553,7 +2553,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           //
           for (Iterator i = departed.iterator(); i.hasNext(); ) {
             Object inext = i.next();
-            say("WatchPool - pool departed '" + inext + "'");
+            _log.info("WatchPool - pool departed '" + inext + "'");
             synchronized (_dbLock) {
               updatePool( (String) inext, ReplicaDb1.DOWN, false);
               updated = true;
@@ -2594,7 +2594,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           dbUpdatePool(_poolName);
         }
         catch (Exception ee) {
-          say(" poolStatusChanged - Problem fetching repository from " +
+          _log.info(" poolStatusChanged - Problem fetching repository from " +
               _poolName + " : " + ee);
         }
         finally {
@@ -2624,24 +2624,24 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     if( _resilientPools == null ) {
         // _resilientPools was not set yet
-        dsay(strLocModified);
-        dsay("Resilient Pools List is not defined (yet), ignore file added/removed");
+        _log.debug(strLocModified);
+        _log.debug("Resilient Pools List is not defined (yet), ignore file added/removed");
         return;
     } else if (_resilientPools.usePoolGroup()) {
         List l = _resilientPools.getResilientPools();
         if (l == null) {
             // usePoolGroup() == true, but we got 'null' list for resilient pools
-            dsay(strLocModified);
-            dsay("Resilient Pools List is not defined (yet), ignore file added/removed");
+            _log.debug(strLocModified);
+            _log.debug("Resilient Pools List is not defined (yet), ignore file added/removed");
             return;
         } else if ( ! l.contains(poolName) ) { // pool is NOT resilient
-            dsay(strLocModified);
-            dsay("Pool " + poolName + " is not resilient pool, ignore file added/removed");
+            _log.debug(strLocModified);
+            _log.debug("Pool " + poolName + " is not resilient pool, ignore file added/removed");
             return;
         }
     }
 
-    say( strLocModified );
+    _log.info( strLocModified );
 
     synchronized (_dbLock) {
 
@@ -2649,7 +2649,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       //        return;
 
       if( ! _useDB ) {
-        say("DB not ready yet, ignore ::" + strLocModified );
+        _log.info("DB not ready yet, ignore ::" + strLocModified );
         return;
       }
 
@@ -2657,7 +2657,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       if (_debug) {
         StringBuffer sb = new StringBuffer();
         sb.append(printCacheLocation(pnfsId)).append("\n");
-        dsay( "Pool list in DB before "
+        _log.debug( "Pool list in DB before "
               +((wasAdded)?"Insertion":"Removal") +"\n"+
               "for pnfsId=" + pnfsId + " \n"
               +sb.toString() );
@@ -2669,13 +2669,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         _dbrmv2.removePool(pnfsId, poolName);
       }
 
-      dsay("cacheLocationModified() : DB updated, notify All");
+      _log.debug("cacheLocationModified() : DB updated, notify All");
 
     }
     _dbUpdated.addPnfsId( pnfsId );
     _dbUpdated.wakeupByPnfsId();
 
-    say("cacheLocationModified : pnfsID " + pnfsId
+    _log.info("cacheLocationModified : pnfsID " + pnfsId
         + (wasAdded ? " added to" : " removed from") + " pool " + poolName
         + " - DB updated");
   }
@@ -2704,7 +2704,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     if ( (_resilientPools == null)
         || (lres = _resilientPools.getResilientPools()) == null
         ) { // _resilientPools not set yet
-      dsay("Resilient Pools List is not defined (yet), ignore added replica list");
+      _log.debug("Resilient Pools List is not defined (yet), ignore added replica list");
       return;
     }
 
@@ -2720,9 +2720,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       if (lres.contains(poolName)) {
         Replica r = new Replica(pnfsId, poolName);
         rList.add(r);
-        dsay("cacheLocationAdded(List) : add replica to update list " + r);
+        _log.debug("cacheLocationAdded(List) : add replica to update list " + r);
       } else {
-        dsay("cacheLocationAdded(List) : skip replica {" + pnfsId + "," + poolName +
+        _log.debug("cacheLocationAdded(List) : skip replica {" + pnfsId + "," + poolName +
              "} - pool is not on my resilient pool list");
       }
     }
@@ -2733,7 +2733,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     synchronized (_dbLock) {
       if( ! _useDB ) {
-        dsay("cacheLocationAdded(): DB not ready yet, skip " + rList.size() +" replica updates" );
+        _log.debug("cacheLocationAdded(): DB not ready yet, skip " + rList.size() +" replica updates" );
         return;
       }
 
@@ -2743,7 +2743,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       }
     }
 
-    dsay("cacheLocationAdded(List) : added "+count +" pnfsid(s) to DB, notify All");
+    _log.debug("cacheLocationAdded(List) : added "+count +" pnfsid(s) to DB, notify All");
     _dbUpdated.wakeupByPnfsId();
   }
 
@@ -2761,19 +2761,19 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     if( _resilientPools == null ) {
         // _resilientPools was not set yet
-        dsay(strStatusChanged);
-        dsay("Resilient Pools List is not defined (yet), ignore pool status change");
+        _log.debug(strStatusChanged);
+        _log.debug("Resilient Pools List is not defined (yet), ignore pool status change");
         return;
     } else if (_resilientPools.usePoolGroup()) {
         List l = _resilientPools.getResilientPools();
         if (l == null) {
             // usePoolGroup() == true, but we got 'null' list for resilient pools
-            dsay(strStatusChanged);
-            dsay("Resilient Pools List is not defined (yet), ignore pool status change");
+            _log.debug(strStatusChanged);
+            _log.debug("Resilient Pools List is not defined (yet), ignore pool status change");
             return;
         } else if ( ! l.contains(msPool) ) { // pool is NOT resilient
-            dsay(strStatusChanged);
-            dsay("Pool " + msPool + " is not resilient pool, ignore pool status change");
+            _log.debug(strStatusChanged);
+            _log.debug("Pool " + msPool + " is not resilient pool, ignore pool status change");
             return;
         }
     }
@@ -2784,17 +2784,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       poolStatus = ReplicaDb1.ONLINE;
     else if ( msPoolStatus.equals("UNKNOWN") ) {
       poolStatus = ReplicaDb1.DOWN;
-      say( "poolStatusChanged ERROR, pool " + msPool +
+      _log.info( "poolStatusChanged ERROR, pool " + msPool +
            " state changed to '" + msPoolStatus + "'"
            + " - set pool status to " + poolStatus ) ;
     }else{
-      say( "poolStatusChanged ERROR, pool " + msPool +
+      _log.info( "poolStatusChanged ERROR, pool " + msPool +
            " state changed to unknown state '" + msPoolStatus + "'"
            + ", message ignored" ) ;
       return;
     }
 
-    say( "poolStatusChanged, pool " + msPool +
+    _log.info( "poolStatusChanged, pool " + msPool +
          " state changed to '" + poolStatus + "'" ) ;
 
     String detailString = msg.getDetailMessage();
@@ -2804,12 +2804,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       PoolV2Mode pMode = msg.getPoolMode();
       int detailCode = msg.getDetailCode();
 
-    dsay("PoolStatusChangedMessage msg=" + msg );
+    _log.debug("PoolStatusChangedMessage msg=" + msg );
     //Again:
-    dsay("pool_state=" + pState );
-    dsay("pool_mode=" + ((pMode == null) ? "null" : pMode.toString()));
-    dsay("detail_code=" + detailCode );
-    dsay("detail_string=" + ((detailString == null) ? "null" : detailString) );
+    _log.debug("pool_state=" + pState );
+    _log.debug("pool_mode=" + ((pMode == null) ? "null" : pMode.toString()));
+    _log.debug("detail_code=" + detailCode );
+    _log.debug("detail_string=" + ((detailString == null) ? "null" : detailString) );
     // end DEBUG
     }
 
@@ -2817,7 +2817,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         && detailString.equals("Replica Manager Command");
 
     if( onReplicaMgrCommand )
-      dsay("pool status changed on RM command");
+      _log.debug("pool status changed on RM command");
 
     String poolName = new String(msPool);
     /** @todo - do cleanup
@@ -2832,7 +2832,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         || poolStatus.equals("online") ) {
       synchronized (_dbLock) {
         if( ! _useDB ) {
-          say("DB not ready yet, skip DB update" );
+          _log.info("DB not ready yet, skip DB update" );
           return;
         }
         updatePool(poolName, poolStatus, doPoolInventory);
@@ -2854,12 +2854,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       String poolStatusOld = new String(_dbrmv2.getPoolStatus(poolName));
 
       if (poolStatusOld.equals("drainoff")) {
-        say("poolStatusChanged, Pool '" + poolName + "' status is " +
+        _log.info("poolStatusChanged, Pool '" + poolName + "' status is " +
             poolStatusOld
             + ", ignore pool status change messages");
 
       } else {
-      say("poolStatusChanged, Pool '" + poolName + "' status was " +
+      _log.info("poolStatusChanged, Pool '" + poolName + "' status was " +
           poolStatusOld);
 
       if (poolStatus.equals(ReplicaDb1.ONLINE))
@@ -2868,7 +2868,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       if (!doPoolInventory) {
         // update DB only
         _dbrmv2.setPoolStatus(poolName, poolStatus);
-        say("poolStatusChanged, pool " + poolName +
+        _log.info("poolStatusChanged, pool " + poolName +
             " state change to '" + poolStatus + "' updated in DB, notify All");
       }
       else { // "RESTART" || "UP"
@@ -2878,13 +2878,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         try {
           dbUpdatePool(poolName);
           _dbrmv2.setPoolStatus(poolName, poolStatus);
-          say("poolStatusChanged, pool " + poolName +
+          _log.info("poolStatusChanged, pool " + poolName +
               " state change to '" + poolStatus + "' updated in DB, notify All");
         }
         catch (Exception ee) {
-          say(" poolStatusChanged - Problem fetching repository from " +
+          _log.info(" poolStatusChanged - Problem fetching repository from " +
               poolName + " : " + ee);
-          say(" poolStatusChanged - pool " + poolName + " stays '"
+          _log.info(" poolStatusChanged - pool " + poolName + " stays '"
               +ReplicaDb1.OFFLINE+"'");
         }
       }
@@ -2894,7 +2894,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
               && _initDbRunnable.isWaiting()
               && _poolsToWait.size() == 0) {
             _poolsToWait.notifyAll();
-            dsay("Got all online pools back online, wakeup InitDB");
+            _log.debug("Got all online pools back online, wakeup InitDB");
           }
         } // synchronized (_poolsToWait)
       } // synchronized (_dbLock)
@@ -2917,7 +2917,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     String stringPnfsId = null;
 
     if( filesList == null ) {
-      dsay("PoolRemoveFilesMessage - no file list defined");
+      _log.debug("PoolRemoveFilesMessage - no file list defined");
       return;
     }
 
@@ -2928,7 +2928,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     for( int j=0; j<filesList.length; j++ ){
       if(filesList[j] == null ) {
-        dsay("ReplicaManager: pnfsid["+j+"]='null' in PoolRemoveFilesMessage");
+        _log.debug("ReplicaManager: pnfsid["+j+"]='null' in PoolRemoveFilesMessage");
       }else{
         stringPnfsId = filesList[j];
 
@@ -2936,19 +2936,19 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         try {
           pnfsId = new PnfsId( stringPnfsId );
         }catch(IllegalArgumentException ex) {
-          dsay("Can not construct pnfsId for '"+stringPnfsId+"'");
+          _log.debug("Can not construct pnfsId for '"+stringPnfsId+"'");
           continue;
         }
 
         synchronized (_dbLock) {
           if( ! _useDB ) {
-            say("DB not ready yet, skip DB update" );
+            _log.info("DB not ready yet, skip DB update" );
             return;
           }
           _dbrmv2.clearPools(pnfsId);
           fileCount++;
         }
-        dsay("ReplicaManager: PoolRemoveFiles(): pnfsId["+j+"]=" + stringPnfsId +" cleared in DB");
+        _log.debug("ReplicaManager: PoolRemoveFiles(): pnfsId["+j+"]=" + stringPnfsId +" cleared in DB");
       }
     }
 
@@ -2961,15 +2961,15 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   // Task finished - Test
 
   public void taskFinished(TaskObserver task) {
-    say("TaskFinished callback: task " + task);
+    _log.info("TaskFinished callback: task " + task);
     if (task.getType().equals("Reduction")) {
       ReductionObserver rt = (ReductionObserver) task;
-      dsay("taskFinished() reduction " + rt.getPnfsId() + " at " +
+      _log.debug("taskFinished() reduction " + rt.getPnfsId() + " at " +
           rt.getPool());
     }
     if (task.getType().equals("Replication")) {
       MoverTask mt = (MoverTask) task;
-      dsay("taskFinished() replication " + mt.getPnfsId()
+      _log.debug("taskFinished() replication " + mt.getPnfsId()
           + " from " + mt.getSrcPool()
           + " to   " + mt.getDstPool()
           );

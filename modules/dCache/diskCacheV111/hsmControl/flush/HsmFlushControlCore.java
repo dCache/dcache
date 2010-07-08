@@ -175,18 +175,7 @@ public interface HsmFlushControlCore {
     public interface DriverHandle {
 
     }
-    /**
-      * Method to print an information string to the cells printout system.
-      *
-      * @param message Message to be sent to the printout system.
-      */
-    public void say(String message ) ;
-    /**
-      * Method to print an error string to the cells printout system.
-      *
-      * @param message Message to be sent to the printout system.
-      */
-    public void esay( String message ) ;
+
     /**
       *  Returns the options given while this driver was created.
       *  If this driver was loaded with the -scheduler option

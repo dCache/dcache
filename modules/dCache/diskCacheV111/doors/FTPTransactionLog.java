@@ -32,9 +32,14 @@ import java.io.*;
 import java.net.InetAddress;
 import dmg.cells.nucleus.CellAdapter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class	FTPTransactionLog
 {
+        private final static Logger _log =
+            LoggerFactory.getLogger(FTPTransactionLog.class);
+
 	private FileWriter LWriter = null;
 	private File LogFilePath = null;
 	private String root;
@@ -58,13 +63,6 @@ public class	FTPTransactionLog
                 this.cell = cell;
 	}
 
-        private void esay(Throwable t)
-        {
-            if(cell != null){
-                cell.esay(t);
-            }
-        }
-
 	public void finalize()
 	{
 		error("Transaction abandoned");
@@ -82,7 +80,7 @@ public class	FTPTransactionLog
 		}
 		catch(IOException e)
 		{
-                    esay(e);
+                    _log.warn(e.toString(), e);
                 }
 	}
 
@@ -124,13 +122,13 @@ public class	FTPTransactionLog
 
 			}
 			catch( Exception ex) {
-                            esay(ex);
+                            _log.warn(ex.toString(), ex);
 			    addLine("Unable to process IP for transfer");
 			}
 		}
 		catch( IOException e )
 		{
-                    esay(e);
+                    _log.warn(e.toString(), e);
                 }
 	}
 
@@ -162,7 +160,7 @@ public class	FTPTransactionLog
                 }
 		try{
 			LWriter.close();	}
-		catch(Exception e)	{	esay(e);/* ignore */	}
+		catch(Exception e)	{	_log.warn(e.toString(), e);/* ignore */	}
 		LWriter = null;
 	}
 }

@@ -21,6 +21,9 @@ import java.io.*;
 import java.net.URL;
 import java.lang.reflect.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Provides access to the Storage through HTTP protocol
  * @author Patrick F.
@@ -29,6 +32,9 @@ import java.lang.reflect.*;
  */
 public class HttpDoor extends CellAdapter  implements Runnable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(HttpDoor.class);
+
   /* synchronization object */
   private Object sync = new Object();
   private String         host;
@@ -95,8 +101,8 @@ public class HttpDoor extends CellAdapter  implements Runnable
   {
     super( name , args , false );
 
-    say("Starting HttpDoor:");
-    say("$Id: HttpDoor.java,v 1.12 2003-07-03 23:39:45 cvs Exp $");
+    _log.info("Starting HttpDoor:");
+    _log.info("$Id: HttpDoor.java,v 1.12 2003-07-03 23:39:45 cvs Exp $");
 
     __init( args ) ;
 
@@ -112,19 +118,19 @@ public class HttpDoor extends CellAdapter  implements Runnable
        engine_writer =  engine.getWriter();
        if(engine_reader == null)
        {
-           esay("engine.getReader() returned null");
+           _log.warn("engine.getReader() returned null");
            throw new IllegalArgumentException("bad engine:"+
             "engine.getReader() returned null");
        }
        if(engine_output == null)
        {
-           esay("engine.getOutputStream() returned null");
+           _log.warn("engine.getOutputStream() returned null");
            throw new IllegalArgumentException("bad engine:"+
            "engine.getOutputStream() returned null");
        }
        if(engine_writer == null)
        {
-           esay("engine.getWriter() returned null");
+           _log.warn("engine.getWriter() returned null");
            throw new IllegalArgumentException("bad engine:"+
            "engine.getWriter() returned null");
        }
@@ -149,7 +155,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
     catch(IllegalArgumentException iae)
     {
          start();
-         say("done");
+         _log.info("done");
          kill();
         throw iae;
     }
@@ -202,21 +208,21 @@ public class HttpDoor extends CellAdapter  implements Runnable
           if(!method.equals("GET"))
           {
             String error_string = " method "+method+ " is not currently supported";
-            say("returnErrorHeader");
+            _log.info("returnErrorHeader");
             connectionHandler.returnErrorHeader(error_string);
             return;
           }
-          say("method = "+method+" url="+connectionHandler.getUrlString());
+          _log.info("method = "+method+" url="+connectionHandler.getUrlString());
           String[] headers = connectionHandler.getHeaders();
           for(int i = 0;i<headers.length;++i)
           {
            String header =connectionHandler.getHeaderValue(headers[i]);
-           say("header["+i+"]="+headers[i]+":"+header);
+           _log.info("header["+i+"]="+headers[i]+":"+header);
           }
-          say("processing GET method");
+          _log.info("processing GET method");
           URL url = connectionHandler.getUrl ();
           String path = url.getPath();
-          say("url returned path : "+path);
+          _log.info("url returned path : "+path);
 
           FsPath fullPath = createFullPath(path);
           if (!isAllowedPath(fullPath)) {
@@ -233,14 +239,14 @@ public class HttpDoor extends CellAdapter  implements Runnable
           {
             // redirect client to the pool url,
             // our mission is completed by now
-            say("redirecting to : "+newURL);
+            _log.info("redirecting to : "+newURL);
             connectionHandler.returnRedirectHeader(newURL);
           }
           else
           {
             // we are out of luck
             String error_string = "internal problem: can not get redirection url";
-            say("returnErrorHeader, returned url is null");
+            _log.info("returnErrorHeader, returned url is null");
             connectionHandler.returnErrorHeader(error_string);
             return;
           }
@@ -248,8 +254,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
         catch(IOException ioe)
         {
             // we are completely out of luck
-            esay("IOException : ");
-            esay(ioe);
+            _log.warn("IOException : ", ioe);
             String error_string = ioe.getMessage();
             try
             {
@@ -263,10 +268,9 @@ public class HttpDoor extends CellAdapter  implements Runnable
         }
       catch(Exception e)
       {
-            esay("Exception e: ");
-            esay(e);
+           _log.warn("Exception e: ", e);
             String error_string = e.getMessage();
-            esay("returning error header with  a string "+error_string);
+            _log.warn("returning error header with  a string "+error_string);
             try
             {
               connectionHandler.returnErrorHeader(error_string==null?e.toString():error_string);
@@ -278,7 +282,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
       }
       finally
       {
-         say("done");
+         _log.info("done");
          kill();
       }
   }
@@ -310,8 +314,8 @@ public class HttpDoor extends CellAdapter  implements Runnable
      }
      catch( diskCacheV111.util.CacheException ce)
      {
-       esay("can not find pnfsid of path : "+path);
-       esay("CacheException = "+ce);
+       _log.warn("can not find pnfsid of path : "+path);
+       _log.warn("CacheException = "+ce);
        throw new IOException("can not find pnfsid of path : "+path +" root error " +ce.getMessage());
      }
      PnfsId pnfs_id = storage_info_msg.getPnfsId();
@@ -326,26 +330,26 @@ public class HttpDoor extends CellAdapter  implements Runnable
      HttpProtocolInfo protocol_info =
        new HttpProtocolInfo("Http",1,1,host,0,this.getCellName(),
          this.getCellDomainName(),path);
-     say("created HttpProtocolInfo = "+protocol_info);
-   say("processGetRequest ,asking for read pool");
+     _log.info("created HttpProtocolInfo = "+protocol_info);
+   _log.info("processGetRequest ,asking for read pool");
    String pool = askForReadPool(pnfs_id,
                                 storage_info,
                                 protocol_info,
                                 false); /* false for read */
-   say("processGetRequest, read pool is "+pool+"asking for file");
+   _log.info("processGetRequest, read pool is "+pool+"asking for file");
    askForFile( pool ,
                pnfs_id ,
                storage_info ,
                protocol_info ,
                false      );/* false for read */
-   say("processGetRequest, asked for file");
+   _log.info("processGetRequest, asked for file");
      try
      {
        synchronized(sync)
        {
          if(getRedirectionUrl () == null)
          {
-           say("processGetRequest, waiting");
+           _log.info("processGetRequest, waiting");
            sync.wait();
          }
        }
@@ -371,8 +375,8 @@ public class HttpDoor extends CellAdapter  implements Runnable
     public void   messageArrived( CellMessage msg )
     {
        Object object = msg.getMessageObject();
-       say ("Message messageArrived ["+object.getClass()+"]="+object.toString());
-       say ("Message messageArrived source = "+msg.getSourceAddress());
+       _log.info ("Message messageArrived ["+object.getClass()+"]="+object.toString());
+       _log.info ("Message messageArrived source = "+msg.getSourceAddress());
        if(object instanceof HttpDoorUrlInfoMessage)
        {
          HttpDoorUrlInfoMessage reply =
@@ -396,8 +400,8 @@ public class HttpDoor extends CellAdapter  implements Runnable
         }
         else
         {
-            say ("Unexpected message class "+object.getClass());
-            say ("source = "+msg.getSourceAddress());
+            _log.info ("Unexpected message class "+object.getClass());
+            _log.info ("source = "+msg.getSourceAddress());
         }
     }
 
@@ -409,7 +413,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
                              ProtocolInfo protocolInfo ,
                              boolean      isWrite      ) throws Exception
   {
-    say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
+    _log.info("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
     PoolIoFileMessage poolMessage  =  isWrite ?
          (PoolIoFileMessage)
          new PoolAcceptFileMessage(
@@ -454,7 +458,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
       throw new Exception( "Pool error: "+poolReply.getErrorObject() ) ;
     }
 
-    say("Pool "+pool+" will deliver file "+pnfsId);
+    _log.info("Pool "+pool+" will deliver file "+pnfsId);
 
   }
 
@@ -503,7 +507,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
     }
 
     request =  (PoolMgrSelectPoolMsg)replyObject;
-    say("poolManagerReply = "+request);
+    _log.info("poolManagerReply = "+request);
     if( request.getReturnCode() != 0 )
     {
       throw new Exception( "Pool manager error: "+
@@ -511,7 +515,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
     }
 
     String pool = request.getPoolName();
-    say("Positive reply from pool "+pool);
+    _log.info("Positive reply from pool "+pool);
 
     return pool ;
   }

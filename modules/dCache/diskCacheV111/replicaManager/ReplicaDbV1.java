@@ -13,7 +13,8 @@ import java.text.MessageFormat;
 
 import javax.sql.DataSource;
 
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 //import uk.org.primrose.GeneralException;
 //import uk.org.primrose.vendor.standalone.*;
@@ -25,6 +26,9 @@ import javax.sql.DataSource;
  */
 public class ReplicaDbV1 implements ReplicaDb1 {
     private final static String _cvsId     = "$Id$";
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(ReplicaDbV1.class);
 
     private Connection          _conn      = null;
     private Statement           _stmt      = null;
@@ -47,7 +51,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 _stmt = _conn.createStatement();
             } catch (SQLException e) {
                 e.printStackTrace();
-                esay("Can not create DB connection");
+                _log.warn("Can not create DB connection");
                 throw(e);
             }
         }
@@ -68,7 +72,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         int iErr = ex.getErrorCode();
         String sState = ex.getSQLState();
 
-        esay("SQL exception in method " + m + ": '" + ex + "', errCode=" + iErr + " SQLState=" + sState + " SQLStatement=[" + sql
+        _log.warn("SQL exception in method " + m + ": '" + ex + "', errCode=" + iErr + " SQLState=" + sState + " SQLStatement=[" + sql
                 + "]");
     }
 
@@ -77,12 +81,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sState = ex.getSQLState();
         String exMsg = ex.getMessage().substring(5);
 
-        say("Ignore SQL exception in method " + m + ": '" + exMsg + "', errCode=" + iErr + " SQLState=" + sState
+        _log.info("Ignore SQL exception in method " + m + ": '" + exMsg + "', errCode=" + iErr + " SQLState=" + sState
                 + " SQLStatement=[" + sql + "]");
     }
 
     private void reportSQLException(SQLException ex) {
-        esay("Database access error");
+        _log.warn("Database access error");
         ex.printStackTrace();
     }
 
@@ -111,13 +115,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             String exState = ex.getSQLState();
             if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
                 String s = ex.getMessage().substring(5);
-                say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
+                _log.info("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
                         + poolName);
 //1             ignoredSQLException("addPool()", (SQLException) ex, sql);
                 ignoredSQLException("addPool()", (SQLException) ex, sql1);
             } else {
                 ex.printStackTrace();
-                esay("Database access error");
+                _log.warn("Database access error");
             }
         } finally {
             try { if (null!=pstmt) pstmt.close();  } catch (SQLException e) { }
@@ -146,7 +150,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             pstmt = conn.prepareStatement(sql);
         } catch (SQLException e) {
             e.printStackTrace();
-            esay("addPnfsToPool: prepareStatement error");
+            _log.warn("addPnfsToPool: prepareStatement error");
         }
         try {
 //            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
@@ -181,12 +185,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     String exState = ex.getSQLState();
                     if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
                         String s = ex.getMessage().substring(5);
-                        say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
+                        _log.info("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
                         ignoredSQLException("addPool()", (SQLException) ex, sql);
 
                     } else {
                         ex.printStackTrace();
-                        esay("Database access error");
+                        _log.warn("Database access error");
                     }
                 }
             }
@@ -213,7 +217,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.executeUpdate(sql);
         } catch (SQLException ex) {
-            esay("WARNING: Database access error, can not delete pnfsId='" + pnfsId.toString() + "' " + "at pool = '" + poolName
+            _log.warn("WARNING: Database access error, can not delete pnfsId='" + pnfsId.toString() + "' " + "at pool = '" + poolName
                     + "' from replicas DB table");
             reportSQLException("removePool()", ex, sql);
         } finally {
@@ -243,7 +247,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return rset.getFetchSize();
         } catch (SQLException ex) {
             ex.printStackTrace();
-            esay("Database access error");
+            _log.warn("Database access error");
             reportSQLException("countPools()", ex, sql);
             return -1;
         } finally {
@@ -273,7 +277,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.execute("COMMIT");
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Database access error");
+            _log.warn("Database access error");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -300,7 +304,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 return rset.next();
             } catch (Exception ex) {
                 ex.printStackTrace();
-                esay("Can't step to the next element of the result set");
+                _log.warn("Can't step to the next element of the result set");
             }
             return false;
         }
@@ -310,7 +314,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 return rset.getObject(1);
             } catch (Exception ex) {
                 ex.printStackTrace();
-                esay("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set");
             }
             return null;
         }
@@ -528,7 +532,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         } catch (Exception ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
 //          ex.printStackTrace();
-            esay("Can't clear the tables");
+            _log.warn("Can't clear the tables");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -556,7 +560,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         } catch (SQLException ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
 //          ex.printStackTrace();
-            esay("Can't remove pool '" + poolName + "' from the DB");
+            _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -604,7 +608,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
                 ex.printStackTrace();
-                esay("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set");
             }
             return null;
         }
@@ -668,7 +672,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 return new Object[] { rset.getObject(1), rset.getObject(2) };
             } catch (Exception ex) {
                 ex.printStackTrace();
-                esay("Can't get the next element of the result set");
+                _log.warn("Can't get the next element of the result set");
             }
             return null;
         }
@@ -737,7 +741,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't remove pool '" + poolName + "' from the DB");
+            _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -765,13 +769,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.executeUpdate(sql_i);
         } catch (SQLException ex) {
-            // say("setPoolStatus() INFO: Can't add pool '"+poolName+"'"
+            // _log.info("setPoolStatus() INFO: Can't add pool '"+poolName+"'"
             // +" to 'pools' table in DB, will try to update");
             try {
                 stmt.executeUpdate(sql_u);
             } catch (SQLException ex2) {
                 ex2.printStackTrace();
-                esay("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
+                _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
             }
         } finally {
             if (_conn == null) {
@@ -800,7 +804,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         } catch (SQLException ex) {
             reportSQLException("getPoolStatus()", ex, sql);
 
-            esay("DB: Can't get status for pool '" + poolName + "' from pools table, return 'UNKNOWN'");
+            _log.warn("DB: Can't get status for pool '" + poolName + "' from pools table, return 'UNKNOWN'");
             return "UNKNOWN";
         } finally {
             if (_conn == null) {
@@ -835,7 +839,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't add transaction to the DB");
+            _log.warn("Can't add transaction to the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -864,7 +868,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't add transaction to the DB");
+            _log.warn("Can't add transaction to the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -886,7 +890,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't remove transaction from the DB");
+            _log.warn("Can't remove transaction from the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -909,7 +913,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             count = stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't delete old records from the 'excluded' table");
+            _log.warn("Can't delete old records from the 'excluded' table");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -936,7 +940,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't clear transactions from the DB");
+            _log.warn("Can't clear transactions from the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -961,7 +965,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return rset.getLong(1);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't get data from the DB");
+            _log.warn("Can't get data from the DB");
             return -1;
         } finally {
             if (_conn == null) {
@@ -1013,7 +1017,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         } catch (Exception ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
 //          ex.printStackTrace();
-            esay("Can't remove pool '" + poolName + "' from the DB");
+            _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -1140,7 +1144,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 stmt.executeUpdate(sql_u);
             } catch (Exception ex2) {
                 ex2.printStackTrace();
-                esay("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
+                _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
             }
         } finally {
             if (_conn == null) {
@@ -1163,7 +1167,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Database access error");
+            _log.warn("Database access error");
         } finally {
             if (_conn == null) {
                 try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
@@ -1173,23 +1177,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     }
 
     //////////////////////////////// End Of Interface ///////////////////////////////////////
-
-
-    private void say(String s) {
-        if (_cell == null) {
-            System.err.println(s);
-        } else {
-            _cell.say(s);
-        }
-    }
-
-    private void esay(String s) {
-        if (_cell == null) {
-            System.err.println(s);
-        } else {
-            _cell.esay(s);
-        }
-    }
 
     public static void printClassName(Object obj) {
         System.out.println("The class of " + obj + " is " + obj.getClass().getName());

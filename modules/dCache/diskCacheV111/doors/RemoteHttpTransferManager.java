@@ -39,11 +39,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  timur
  */
 public class RemoteHttpTransferManager extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(RemoteHttpTransferManager.class);
+
     private HashMap longIdToMessageMap = new HashMap();
     private HashSet activeTransfersIDs = new HashSet();
     private HashMap activeTransfersIDsToHandlerMap = new HashMap();
@@ -286,8 +294,8 @@ public class RemoteHttpTransferManager extends CellAdapter {
     public void messageArrived( CellMessage cellMessage )
     {
         Object object = cellMessage.getMessageObject();
-        say("Message messageArrived ["+object.getClass()+"]="+object.toString());
-        say("Message messageArrived source = "+cellMessage.getSourceAddress());
+        _log.info("Message messageArrived ["+object.getClass()+"]="+object.toString());
+        _log.info("Message messageArrived source = "+cellMessage.getSourceAddress());
         if (object instanceof DoorTransferFinishedMessage)
         {
 
@@ -304,7 +312,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 }
                 else
                 {
-                    esay("DoorTransferFinishedMessage with unknown id ="+id+
+                    _log.warn("DoorTransferFinishedMessage with unknown id ="+id+
                         " or unknown sync object in longIdToMessageMap " +o);
                     return;
                 }
@@ -348,7 +356,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
         }
         catch(Exception e)
         {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
     }
 
@@ -532,7 +540,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                     transfer_request.increaseNumberOfPerformedRetries();
                     if(requeue)
                     {
-                        say("putting on queue for retry:"+cellMessage);
+                        _log.info("putting on queue for retry:"+cellMessage);
                         putOnQueue(cellMessage);
                     }
                     else
@@ -544,7 +552,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                         }
                         catch(Exception e)
                         {
-                            esay(e);
+                            _log.warn(e.toString(), e);
                         }
                     }
                 }
@@ -646,7 +654,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
 
                     if(o == null || o instanceof Long)
                     {
-                        esay(" getFromRemoteHttpUrl: wait expired ");
+                        _log.warn(" getFromRemoteHttpUrl: wait expired ");
                         //cleanup, interrupt trunsfer and return error
                         throw new java.io.IOException("getFromRemoteHttpUrl failed");
                     }
@@ -659,7 +667,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                         {
                             setState("success");
                             //success
-                            say("transfer finished successfully");
+                            _log.info("transfer finished successfully");
                             return;
                         }
                         else
@@ -677,18 +685,18 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 catch(Exception e)
                 {
                     setState("error :" +e.toString());
-                    esay(e);
+                    _log.warn(e.toString(), e);
                     if(pnfsEntry != null)
                     {
 
-                        say("pnfsEntry != null, trying to delete created pnfs entry");
+                        _log.info("pnfsEntry != null, trying to delete created pnfs entry");
                         try
                         {
                             pnfs_handler.deletePnfsEntry(pnfsFilePath);
                         }
                         catch(Exception e1)
                         {
-                            esay(e1);
+                            _log.warn(e1.toString(), e1);
                         }
                     }
                     String message = e.getMessage();
@@ -747,7 +755,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             protocolInfo ,
             0L                 );
 
-            say("PoolMgrSelectPoolMsg: " + request );
+            _log.info("PoolMgrSelectPoolMsg: " + request );
             CellMessage reply;
             try
             {
@@ -759,11 +767,11 @@ public class RemoteHttpTransferManager extends CellAdapter {
             }
             catch(Exception e)
             {
-                esay(e);
+                _log.warn(e.toString(), e);
                 throw new CacheException(e.toString());
             }
 
-            say("CellMessage (reply): " + reply );
+            _log.info("CellMessage (reply): " + reply );
             if( reply == null )
                 throw new
                 CacheException("PoolMgrSelectReadPoolMsg timed out") ;
@@ -777,7 +785,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
 
             request =  (PoolMgrSelectPoolMsg)replyObject;
 
-            say("poolManagerReply = "+request);
+            _log.info("poolManagerReply = "+request);
 
             if( request.getReturnCode() != 0 )
                 throw new
@@ -785,7 +793,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 request.getErrorObject() ) ;
 
             String pool = request.getPoolName();
-            say("Positive reply from pool "+pool);
+            _log.info("Positive reply from pool "+pool);
 
             return pool ;
 
@@ -798,7 +806,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
     boolean      isWrite,
     long id) throws CacheException {
 
-        say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
+        _log.info("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
 
         PoolIoFileMessage poolMessage ;
         if( isWrite )
@@ -831,7 +839,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             }
             catch(Exception e)
             {
-                esay(e);
+                _log.warn(e.toString(), e);
                 throw new CacheException(e.toString());
             }
 
@@ -852,7 +860,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 throw new
                 CacheException( "Pool error: "+poolReply.getErrorObject() ) ;
 
-            say("Pool "+pool+" will deliver file "+pnfsId);
+            _log.info("Pool "+pool+" will deliver file "+pnfsId);
 
     }
 
@@ -903,14 +911,14 @@ public class RemoteHttpTransferManager extends CellAdapter {
 
     private synchronized boolean new_transfer()
     {
-        say("new_transfer() num_transfers = "+num_transfers+
+        _log.info("new_transfer() num_transfers = "+num_transfers+
         " max_transfers="+max_transfers);
         if(num_transfers == max_transfers)
         {
-            say("new_transfer() returns false");
+            _log.info("new_transfer() returns false");
              return false;
         }
-        say("new_transfer() INCREMENT and return true");
+        _log.info("new_transfer() INCREMENT and return true");
         num_transfers++;
         return true;
     }
@@ -921,7 +929,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
     }
     private synchronized void finish_transfer()
     {
-        say("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
+        _log.info("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
         num_transfers--;
     }
 

@@ -13,6 +13,9 @@ import dmg.util.* ;
 
 import diskCacheV111.poolManager.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *  @Author: Patrick Fuhrmann
   *
@@ -84,6 +87,9 @@ import diskCacheV111.poolManager.* ;
   *
   */
 public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnable {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(PoolStatisticsV0.class);
 
    private CellNucleus      _nucleus   = null ;
    private Args             _args      = null ;
@@ -350,43 +356,42 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           if( ! parent.exists() )parent.mkdirs() ;
 
           try{
-              say("Starting hourly run for : "+path);
+              _log.info("Starting hourly run for : "+path);
 
               createHourlyRawFile( path , _calendar ) ;
 
-              say("Hourly run finished for : "+path);
+              _log.info("Hourly run finished for : "+path);
 
               File today = getTodayPath( _calendar ) ;
-              say("Creating daily file : "+today);
+              _log.info("Creating daily file : "+today);
 
               today.delete() ;
               copyFile( path , today ) ;
 
-              say("Daily file done : "+today);
+              _log.info("Daily file done : "+today);
 
               File yesterday = getYesterdayPath( _calendar ) ;
               if( yesterday.exists() ){
                  File diffFile  = getTodayDiffPath( _calendar ) ;
-                 say("Starting diff run for : "+yesterday);
+                 _log.info("Starting diff run for : "+yesterday);
 
                  createDiffFile( today , yesterday , diffFile ) ;
 
-                 say("Finishing diff run for : "+diffFile);
+                 _log.info("Finishing diff run for : "+diffFile);
               }
               if( _calendar.get(Calendar.HOUR_OF_DAY) == 23 ){
                  resetBillingStatistics() ;
               }
 
           }catch(Exception ee){
-              esay("Exception in full run for : "+path);
-              esay(ee);
+              _log.warn("Exception in full run for : "+path, ee);
               path.delete();
           }
 
           if( ! _createHtmlTree )return ;
           try{
 
-              say("Creating html tree");
+              _log.info("Creating html tree");
               prepareDailyHtmlFiles(_calendar) ;
               if( _calendar.get(Calendar.HOUR_OF_DAY) == 23 ){
                  updateHtmlMonth(_calendar);
@@ -395,8 +400,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               }
 
           }catch(Exception eee ){
-              esay("Exception in creating html tree for : "+path);
-              esay(eee);
+              _log.warn("Exception in creating html tree for : "+path, eee);
            }
 
        }
@@ -405,7 +409,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       if( task == _hourly ){
 
-         say("Hourly ticker : "+ new Date() ) ;
+         _log.info("Hourly ticker : "+ new Date() ) ;
 
          Calendar calendar = (Calendar)task.getCalendar().clone() ;
 
@@ -440,7 +444,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               BufferedReader br = new BufferedReader( new FileReader( x ) ) ;
               try{
                   String line = br.readLine() ;
-//                  say("DEBUG : "+i+" "+line);
+//                  _log.info("DEBUG : "+i+" "+line);
                   if( ( line == null ) || ( line.length() < 12 ) )continue ;
 
                   StringTokenizer st = new StringTokenizer(line) ;
@@ -673,13 +677,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             new Runnable(){
                public void run(){
                   try{
-                     say("Starting internal Manual run");
+                     _log.info("Starting internal Manual run");
                      synchronized( this ){ _recentPoolStatistics = null ; } ;
                      Map map = createStatisticsMap() ;
                      synchronized( this ){ _recentPoolStatistics = map ; } ;
-                     say("Finishing internal Manual run");
+                     _log.info("Finishing internal Manual run");
                   }catch(Exception e){
-                     say("Aborting internal Manual run "+e);
+                     _log.info("Aborting internal Manual run "+e);
                   }
                }
             },
@@ -692,11 +696,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             new Runnable(){
                public void run(){
                   try{
-                     say("Starting Manual run for file : "+file);
+                     _log.info("Starting Manual run for file : "+file);
                      createHourlyRawFile( file , new GregorianCalendar() ) ;
-                     say("Finishing Manual run for file : "+file);
+                     _log.info("Finishing Manual run for file : "+file);
                   }catch(Exception e){
-                     say("Aborting Manual run for file : "+file+" "+e);
+                     _log.info("Aborting Manual run for file : "+file+" "+e);
                   }
                }
             },
@@ -963,7 +967,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       File diffFile  = getTodayDiffPath( calendar ) ;
       if( ! diffFile.exists() ){
-         esay("prepareDailyHtmlFiles : File not found : "+diffFile);
+         _log.warn("prepareDailyHtmlFiles : File not found : "+diffFile);
          return ;
       }
       File dir = getHtmlPath( calendar ) ;
@@ -989,8 +993,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           printIndex( new File( dir , "index.html") , getNiceDayOfCalendar(calendar) ) ;
 
       }catch(Exception ee ){
-         esay("Can't prepare Html directory : "+dir ) ;
-         esay(ee);
+          _log.warn("Can't prepare Html directory : "+dir, ee ) ;
       }
    }
 
@@ -1282,7 +1285,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        CellMessage m =
            new CellMessage( new CellPath("PoolManager") , GET_CELL_INFO ) ;
 
-       say("getPoolRepositoryStatistics : asking PoolManager for cell info");
+       _log.info("getPoolRepositoryStatistics : asking PoolManager for cell info");
        m = _nucleus.sendAndWait( m , 20000 ) ;
        if( m == null )
           throw new
@@ -1295,7 +1298,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           IOException( "Illegal Reply from PoolManager : "+o.getClass().getName()) ;
 
        PoolManagerCellInfo info = (PoolManagerCellInfo)o ;
-       say("getPoolRepositoryStatistics :  PoolManager replied : "+info);
+       _log.info("getPoolRepositoryStatistics :  PoolManager replied : "+info);
 
        String [] poolList = info.getPoolList() ;
 
@@ -1304,15 +1307,15 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           m = new CellMessage( new CellPath(poolList[i]) , GET_REP_STATISTICS ) ;
           try{
 
-             say("getPoolRepositoryStatistics : asking "+poolList[i]+" for statistics");
+             _log.info("getPoolRepositoryStatistics : asking "+poolList[i]+" for statistics");
              m = _nucleus.sendAndWait( m , 20000 ) ;
 
              if( m == null ){
-                esay("getPoolRepositoryStatistics : timeout "+poolList[i] ) ;
+                _log.warn("getPoolRepositoryStatistics : timeout "+poolList[i] ) ;
                 continue ;
              }
 
-             say("getPoolRepositoryStatistics : "+poolList[i]+" replied : "+m);
+             _log.info("getPoolRepositoryStatistics : "+poolList[i]+" replied : "+m);
 
              Object [] result = (Object [])m.getMessageObject() ;
 
@@ -1321,14 +1324,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                  Object [] e = (Object [])result[j] ;
                  classMap.put( e[0] , e[1] ) ;
              }
-             say("getPoolRepositoryStatistics : "+poolList[i]+" replied with "+classMap);
+             _log.info("getPoolRepositoryStatistics : "+poolList[i]+" replied with "+classMap);
              map.put( poolList[i] , classMap ) ;
 
           }catch(InterruptedException ie ){
-             esay("getPoolRepositoryStatistics : sendAndWait interrupted") ;
+             _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted") ;
              throw ie ;
           }catch(Exception eee ){
-             esay("getPoolRepositoryStatistics : "+poolList[i]+" : "+eee ) ;
+             _log.warn("getPoolRepositoryStatistics : "+poolList[i]+" : "+eee ) ;
           }
        }
 
@@ -1336,7 +1339,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
    }
    private void resetBillingStatistics(){
-       say("Resetting Billing statistics");
+       _log.info("Resetting Billing statistics");
        CellMessage m =
            new CellMessage( new CellPath("billing") , RESET_POOL_STATISTICS ) ;
 
@@ -1345,7 +1348,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            _nucleus.sendMessage( m ) ;
 
        }catch(Exception ee ){
-           esay("Couldn't reset pool statistics : "+ee);
+           _log.warn("Couldn't reset pool statistics : "+ee);
        }
    }
    //
@@ -1379,7 +1382,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        CellMessage m =
            new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS ) ;
 
-       say("getBillingStatistics : asking billing for generic pool statistics");
+       _log.info("getBillingStatistics : asking billing for generic pool statistics");
        m = _nucleus.sendAndWait( m , 20000 ) ;
        if( m == null )
           throw new
@@ -1392,7 +1395,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           IOException( "Illegal Reply from billing : "+o.getClass().getName()) ;
 
        Map generic = (Map)o ;
-       say("getBillingStatistics :  billing replied with "+generic);
+       _log.info("getBillingStatistics :  billing replied with "+generic);
 
        Iterator poolNames = generic.keySet().iterator() ;
 
@@ -1403,24 +1406,24 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           m = new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS+" "+poolName ) ;
           try{
 
-             say("getBillingStatistics : asking billing for ["+poolName+"] statistics");
+             _log.info("getBillingStatistics : asking billing for ["+poolName+"] statistics");
              m = _nucleus.sendAndWait( m , 20000 ) ;
 
              if( m == null ){
-                esay("'get pool statistics' : timed out for "+poolName ) ;
+                _log.warn("'get pool statistics' : timed out for "+poolName ) ;
                 continue ;
              }
 
              Map result = (Map)m.getMessageObject() ;
-             say("getBillingStatistics :  billing replied with "+result);
+             _log.info("getBillingStatistics :  billing replied with "+result);
 
              map.put( poolName , result ) ;
 
           }catch(InterruptedException ie ){
-             esay("'get pool statistics' : sendAndWait interrupted") ;
+             _log.warn("'get pool statistics' : sendAndWait interrupted") ;
              throw ie ;
           }catch(Exception eee ){
-             esay("'get pool statistics' : "+poolName+" : "+eee ) ;
+             _log.warn("'get pool statistics' : "+poolName+" : "+eee ) ;
           }
        }
 

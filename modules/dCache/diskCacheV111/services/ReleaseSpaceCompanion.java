@@ -107,6 +107,9 @@ import diskCacheV111.vehicles.PoolFreeSpaceReservationMessage;
 
 import java.net.InetAddress;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  timur
@@ -119,6 +122,10 @@ import java.net.InetAddress;
  * the process to continue
  */
 public class ReleaseSpaceCompanion implements CellMessageAnswerable {
+
+    private static final Logger _log =
+        LoggerFactory.getLogger(ReleaseSpaceCompanion.class);
+
     private  static final int NOT_WAITING_STATE=0;
     private  static final int WAITING_POOL_RESPONSE_STATE=1;
     private volatile int state = NOT_WAITING_STATE;
@@ -131,23 +138,6 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
     // this is the name of the pool that we will reserve space on
     private String poolname;
     private long spaceSize;
-    private void say(String words_of_wisdom) {
-        if(cell!=null) {
-            cell.say(" ReleaseSpaceCompanion : "+words_of_wisdom);
-        }
-    }
-
-    private void esay(String words_of_despare) {
-        if(cell!=null) {
-            cell.esay(" ReleaseSpaceCompanion : "+words_of_despare);
-        }
-    }
-    private void esay(Throwable t) {
-        if(cell!=null) {
-            cell.esay(" ReleaseSpaceCompanion exception : ");
-            cell.esay(t);
-        }
-    }
 
     public static final String getStateString(int state) {
         switch(state) {
@@ -172,12 +162,12 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         this.spaceSize = spaceSize;
         this.callbacks = callbacks;
         this.poolname = poolname;
-        say(" constructor poolname = "+poolname+" releaseSpaceSize="+spaceSize);
+        _log.info(" constructor poolname = "+poolname+" releaseSpaceSize="+spaceSize);
     }
 
     public void answerArrived( CellMessage req , CellMessage answer ) {
         int current_state = state;
-        say("answerArrived, state="+getStateString(current_state));
+        _log.info("answerArrived, state="+getStateString(current_state));
         request = req;
         Object o = answer.getMessageObject();
         if(o instanceof Message) {
@@ -185,38 +175,38 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
             if( message instanceof PoolFreeSpaceReservationMessage  &&
             current_state == WAITING_POOL_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
-                say("PoolFreeSpaceReservationMessage  arrived");
+                _log.info("PoolFreeSpaceReservationMessage  arrived");
                 if(message.getReturnCode() != 0) {
-                    esay("PoolFreeSpaceReservationMessage message.getReturnCode () != 0");
+                    _log.warn("PoolFreeSpaceReservationMessage message.getReturnCode () != 0");
                     callbacks.ReleaseSpaceFailed(
                     "PoolFreeSpaceReservationMessage."+
                     "getReturnCode () != 0 ");
                     return ;
                 }
-                say(" Pool freed space reservation");
+                _log.info(" Pool freed space reservation");
                 PoolFreeSpaceReservationMessage freeSpace =
                 (PoolFreeSpaceReservationMessage)message;
                 if(freeSpace.getFreeSpaceReservationSize() != spaceSize) {
                     String error = "PoolFreeSpaceReservationMessage.getFreeSpaceReservationSize() is incorrect "+
                     "expected "+spaceSize+" received "+freeSpace.getFreeSpaceReservationSize();
-                    esay(error);
+                    _log.warn(error);
                     callbacks.ReleaseSpaceFailed(error);
                     return ;
                 }
-                say("total reserved space on pool="+poolname+" is "+
+                _log.info("total reserved space on pool="+poolname+" is "+
                 freeSpace.getReservedSpace());
 
                 callbacks.SpaceReleased(poolname, freeSpace.getReservedSpace());
                 return;
             }
             else {
-                esay("ignoring unexpected message : "+message);
+                _log.warn("ignoring unexpected message : "+message);
                 //callbacks.ReserveSpaceFailed("unexpected message arrived:"+message);
                 return ;
             }
         }
         else {
-            esay(" got unknown object. ignoring "+
+            _log.warn(" got unknown object. ignoring "+
             " : "+o);
             //callbacks.Error(this.toString ()+" got unknown object "+
             //" : "+o) ;
@@ -224,11 +214,11 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
     }
 
     public void exceptionArrived( CellMessage request , Exception exception ) {
-        esay("exceptionArrived "+exception+" for request "+request);
+        _log.warn("exceptionArrived "+exception+" for request "+request);
         callbacks.Exception(exception);
     }
     public void answerTimedOut( CellMessage request ) {
-        esay("answerTimedOut for request "+request);
+        _log.warn("answerTimedOut for request "+request);
         callbacks.Timeout();
     }
 
@@ -243,7 +233,7 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
     long spaceSize,
     ReleaseSpaceCallbacks callbacks,
     CellAdapter cell) {
-        cell.say(" ReleaseSpaceCompanion.releaseSpace(poolname = "+
+        _log.info(" ReleaseSpaceCompanion.releaseSpace(poolname = "+
         poolname+" releaseSpaceSize="+spaceSize+")");
 
         PoolFreeSpaceReservationMessage freeSpace =

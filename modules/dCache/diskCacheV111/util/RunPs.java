@@ -3,8 +3,14 @@ import dmg.cells.nucleus.* ;
 import java.io.*;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RunPs extends CellAdapter implements Runnable {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(RunPs.class);
+
    private CellNucleus _nucleus = null ;
    private Thread      _worker  = null ;
    public RunPs(  String cellName , String args ){
@@ -16,12 +22,12 @@ public class RunPs extends CellAdapter implements Runnable {
        start() ;
    }
    public void run(){
-     say("Worker started");
+     _log.info("Worker started");
      PrintWriter printer = null ;
      try{
        printer = new PrintWriter( new FileWriter( new File( "/tmp/RunPs.log" ) ) ) ;
      }catch( Exception ee ){
-       esay("Can't open /tmp/RunPs.log");
+       _log.warn("Can't open /tmp/RunPs.log");
        return ;
      }
      while(! Thread.currentThread().interrupted() ){
@@ -42,16 +48,16 @@ public class RunPs extends CellAdapter implements Runnable {
               printer.println( new Date().toString() ) ;
               printer.flush();
            }catch( Exception xe ){
-              esay("Can't write /tmp/RunPs.log");
+              _log.warn("Can't write /tmp/RunPs.log");
               break ;
            }
         }catch(Exception ie ){
-           say("Worker interrupted : "+ie);
+           _log.info("Worker interrupted : "+ie);
            break;
         }
      }
      try{ printer.close() ; }catch(Exception iie){}
-     say("Worker Done");
+     _log.info("Worker Done");
      kill() ;
    }
 

@@ -76,13 +76,18 @@ import org.dcache.util.FireAndForgetTask;
 
 import org.apache.log4j.NDC;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**ThreadManager Cell.<br/>
    * This Cell provides threads to processes running the same domain. It is meant to help limit the total number
    * of threads running in the jvm.
    * @see diskCacheV111.util.ThreadPool
    **/
-  public class ThreadManager extends CellAdapter implements ThreadPool, java.util.concurrent.ThreadFactory {
+ public class ThreadManager extends CellAdapter implements ThreadPool, java.util.concurrent.ThreadFactory {
+
+     private final static Logger _log =
+         LoggerFactory.getLogger(ThreadManager.class);
 
   /** Arguments specified in .batch file **/
   private Args _opt;
@@ -134,7 +139,7 @@ import org.apache.log4j.NDC;
       DELAY_CANCEL_TIME = setParam("thread-timeout", DELAY_CANCEL_TIME);
       toolong = 1000*DELAY_CANCEL_TIME;
 
-      say(this.toString() + " starting with " + THREAD_COUNT + " threads and timeout " + DELAY_CANCEL_TIME);
+      _log.info(this.toString() + " starting with " + THREAD_COUNT + " threads and timeout " + DELAY_CANCEL_TIME);
 
       //authpool = Executors.newFixedThreadPool(THREAD_COUNT);
       ThreadFactory threadFactory = new CDCThreadFactory(this);
@@ -153,11 +158,10 @@ import org.apache.log4j.NDC;
       addCommandListener(this);
       start() ;
 
-      say(this.toString() + " started");
+      _log.info(this.toString() + " started");
 
     } catch( Exception iae ){
-      esay(this.toString() + " couldn't start due to " + iae);
-      esay(iae);
+        _log.warn(this.toString() + " couldn't start due to " + iae, iae);
       start() ;
       kill() ;
       throw iae ;
@@ -169,7 +173,7 @@ import org.apache.log4j.NDC;
     //Make the cell name well-known
     //getNucleus().export();
 
-	  say(" Constructor finished" ) ;
+	  _log.info(" Constructor finished" ) ;
    }
 
   public static ThreadManager getInstance() {
@@ -221,7 +225,7 @@ import org.apache.log4j.NDC;
    if(target==null) target = "";
    String option = _opt.getOpt(name) ;
    if((option != null) && (option.length()>0)) target = option;
-   say("Using " + name + " : " + target);
+   _log.info("Using " + name + " : " + target);
    return target;
   }
 
@@ -231,7 +235,7 @@ import org.apache.log4j.NDC;
    if( ( option != null ) && ( option.length() > 0 ) ) {
      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
    }
-   say("Using " + name + " : " + target);
+   _log.info("Using " + name + " : " + target);
    return target;
   }
 
@@ -241,7 +245,7 @@ import org.apache.log4j.NDC;
    if( ( option != null ) && ( option.length() > 0 ) ) {
      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
    }
-   say("Using " + name + " : " + target);
+   _log.info("Using " + name + " : " + target);
    return target;
   }
 
@@ -367,7 +371,7 @@ import org.apache.log4j.NDC;
 
 
   public synchronized void Message( String msg1, String msg2 ) {
-    say("Message received");
+    _log.info("Message received");
   }
 
   public synchronized Thread newThread( Runnable target ){

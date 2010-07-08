@@ -14,6 +14,9 @@ import dmg.util.* ;
 import diskCacheV111.poolManager.* ;
 import diskCacheV111.vehicles.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *  @Author: Patrick Fuhrmann
   *
@@ -22,6 +25,9 @@ import diskCacheV111.vehicles.* ;
   *
   */
 public class FileHoppingManager extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(FileHoppingManager.class);
 
    private CellNucleus _nucleus       = null ;
    private Args        _args          = null ;
@@ -96,11 +102,11 @@ public class FileHoppingManager extends CellAdapter {
             if( line.length() == 0 )continue ;
             if( line.charAt(0) == '#' )continue ;
             try{
-               say( "Executing : "+line ) ;
+               _log.info( "Executing : "+line ) ;
                String answer = command( line ) ;
-               if( answer.length() > 0 )say( "Answer    : "+answer ) ;
+               if( answer.length() > 0 )_log.info( "Answer    : "+answer ) ;
             }catch( Exception ee ){
-               esay("Exception : "+ee.toString() ) ;
+               _log.warn("Exception : "+ee.toString() ) ;
             }
          }
       }finally{
@@ -366,17 +372,17 @@ public class FileHoppingManager extends CellAdapter {
       return "" ;
    }
     public void messageToForward(  CellMessage cellMessage ){
-        say("Message to forward : "+cellMessage.getMessageObject().getClass().getName());
+        _log.info("Message to forward : "+cellMessage.getMessageObject().getClass().getName());
         // super.messageToForward(cellMessage);
     }
    public void replicateReplyArrived( CellMessage message , PoolMgrReplicateFileMsg replicate ){
-      say("replicateReplyArrived : "+message);
+      _log.info("replicateReplyArrived : "+message);
    }
    public void messageArrived( CellMessage message ){
 
       Object   request     = message.getMessageObject() ;
 
-      say("messageArrived : "+request+" : "+message);
+      _log.info("messageArrived : "+request+" : "+message);
       if( request instanceof PoolMgrReplicateFileMsg ){
 
          PoolMgrReplicateFileMsg replicate = (PoolMgrReplicateFileMsg)request ;
@@ -411,7 +417,7 @@ public class FileHoppingManager extends CellAdapter {
 
                  matchCount ++ ;
 
-                 say("Entry found for : SC=<"+storageClass+"> source="+replicationSource+" : "+entry ) ;
+                 _log.info("Entry found for : SC=<"+storageClass+"> source="+replicationSource+" : "+entry ) ;
                  entry._hit ++ ;
 
                  CellPath path = entry._path == null ? _defaultDestinationPath : entry._path ;
@@ -424,13 +430,13 @@ public class FileHoppingManager extends CellAdapter {
                  try{
                     sendMessage( new CellMessage( (CellPath)path.clone() , replicate ) )  ;
                  }catch(Exception ee ){
-                    esay("Problem : couldn't forward message to : "+entry._path+" : "+ee ) ;
+                    _log.warn("Problem : couldn't forward message to : "+entry._path+" : "+ee ) ;
                  }
 
                  if( ! entry._continue )break ;
              }
          }
-         say("Total match count for <"+storageClass+"> was "+matchCount ) ;
+         _log.info("Total match count for <"+storageClass+"> was "+matchCount ) ;
 
       }
 

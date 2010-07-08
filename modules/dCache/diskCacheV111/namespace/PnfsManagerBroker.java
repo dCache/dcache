@@ -21,8 +21,13 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PnfsManagerBroker extends CellAdapter {
 
+    private final static Logger _log =
+        LoggerFactory.getLogger(PnfsManagerBroker.class);
 
     private String      _cellName  = null ;
     private Args        _args      = null ;
@@ -89,13 +94,13 @@ public class PnfsManagerBroker extends CellAdapter {
 
         Object pnfsMessage  = message.getMessageObject();
         if (! (pnfsMessage instanceof Message) ){
-            say("Unexpected message class "+pnfsMessage.getClass());
-            say("source = "+message.getSourceAddress());
+            _log.info("Unexpected message class "+pnfsMessage.getClass());
+            _log.info("source = "+message.getSourceAddress());
             return;
         }
 
         if( pnfsMessage == null ) {
-            say("Null message,  source = "+message.getSourceAddress());
+            _log.info("Null message,  source = "+message.getSourceAddress());
             return;
         }
 
@@ -125,8 +130,7 @@ public class PnfsManagerBroker extends CellAdapter {
                     forward(pnfsMessage);
 
                 }catch(Exception e ) {
-                    esay(e.getMessage());
-                   esay(e);
+                    _log.warn(e.getMessage(), e);
                     _isStopped = true;
                 }
             }
@@ -195,12 +199,12 @@ public class PnfsManagerBroker extends CellAdapter {
             try {
 
                 CellMessage msg = new CellMessage(_destination, _message.getMessageObject());
-                _nucleus.say("forvarding message to cell " + _destination.getCellName());
+                _log.info("forvarding message to cell " + _destination.getCellName());
                 if( !((PnfsMessage)_message.getMessageObject()).getReplyRequired() ) {
                     _nucleus.sendMessage(msg);
                 }else{
                     CellMessage reply = _nucleus.sendAndWait(msg, _timeout);
-                    _nucleus.say("reply to: " + _message.getSourceAddress() + " mgs=" + reply);
+                    _log.info("reply to: " + _message.getSourceAddress() + " mgs=" + reply);
 
                     Object messageObject = reply.getMessageObject();
                     if( !_domain.equals("default") && (messageObject instanceof PnfsMessage) ) {
@@ -220,8 +224,7 @@ public class PnfsManagerBroker extends CellAdapter {
             }catch (InterruptedException ie) {
 
             }catch(Exception e) {
-                _nucleus.esay(e.getMessage());
-                _nucleus.esay(e);
+                _log.warn(e.getMessage(), e);
             }
 
         }

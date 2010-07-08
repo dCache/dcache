@@ -4,7 +4,14 @@ import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 import  java.io.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MessageEventTestCell extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(MessageEventTestCell.class);
+
    private String  _cellName = null ;
    private Args    _args     = null ;
    private CellNucleus _nucleus = null ;
@@ -30,7 +37,7 @@ public class MessageEventTestCell extends CellAdapter {
                     try{
                        _timer.loop() ;
                     }catch(InterruptedException ie ){
-                       esay("Loop interrupted .. ") ;
+                       _log.warn("Loop interrupted .. ") ;
                     }
                  }
              } ,
@@ -44,23 +51,23 @@ public class MessageEventTestCell extends CellAdapter {
                          Object eventObject ,
 		         int eventType ){
 
-          say( "Event : type : "+eventType ) ;
+          _log.info( "Event : type : "+eventType ) ;
           if( eventObject instanceof CellMessage [] ){
              CellMessage [] cellMessage = (CellMessage [])eventObject ;
              for( int i = 0 ; i < cellMessage.length ; i++ ){
-                say( "   "+i+" -> "+cellMessage[i].getMessageObject() ) ;
+                _log.info( "   "+i+" -> "+cellMessage[i].getMessageObject() ) ;
              }
              if( _expectmore )
              try{
                 timer.reschedule( 20000 ) ;
              }catch(IllegalMonitorStateException ime ){
-                esay("Reschedule failed : "+ime ) ;
+                _log.warn("Reschedule failed : "+ime ) ;
              }
           }else if( eventObject instanceof Long ){
-             say("Timer expired "+eventObject ) ;
+             _log.info("Timer expired "+eventObject ) ;
              timer.addTimer(null,eventObject,this,((Long)eventObject).longValue());
           }else{
-             say( "Timer expired   Object : "+eventObject ) ;
+             _log.info( "Timer expired   Object : "+eventObject ) ;
 
           }
       }
@@ -120,7 +127,7 @@ public class MessageEventTestCell extends CellAdapter {
      return "Set number of replies to : "+_replies  ;
    }
    public void messageToForward( CellMessage msg ){
-      say("Got message to forward : "+msg ) ;
+      _log.info("Got message to forward : "+msg ) ;
    }
    public void messageArrived( CellMessage msg ){
      if( _echoOnly ){
@@ -133,16 +140,16 @@ public class MessageEventTestCell extends CellAdapter {
               for( int i = 0 ; i < _replies ; i++ ){
                  msg.setMessageObject(messageObject );
                  sendMessage(msg) ;
-                 say("Message replied "+i ) ;
+                 _log.info("Message replied "+i ) ;
               }
            }catch(Exception ee ){
-              esay("PANIC : can't return message to sender" ) ;
+              _log.warn("PANIC : can't return message to sender" ) ;
            }
         }else{
-           say("Reply suppressed");
+           _log.info("Reply suppressed");
         }
      }else{
-        say( "Message send to timer : "+msg.getMessageObject() ) ;
+        _log.info( "Message send to timer : "+msg.getMessageObject() ) ;
         _timer.messageArrived(msg) ;
      }
    }

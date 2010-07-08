@@ -6,8 +6,14 @@ import java.io.*;
 import java.util.*;
 import java.net.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PingIt extends CellAdapter implements Runnable {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(PingIt.class);
+
    private CellNucleus _nucleus = null ;
    private Thread      _worker  = null ;
    private Args        _args    = null ;
@@ -86,7 +92,7 @@ public class PingIt extends CellAdapter implements Runnable {
      pw.println( "Last Message     : "+_lastMessage ) ;
    }
    public void run(){
-     say("Ping started");
+     _log.info("Ping started");
 
      while(! Thread.currentThread().interrupted() ){
         try{
@@ -118,7 +124,7 @@ public class PingIt extends CellAdapter implements Runnable {
            failed("excp : "+ie ) ;
         }
      }
-     say("Ping Done");
+     _log.info("Ping Done");
      kill() ;
    }
    private void failed( String message ){
@@ -126,7 +132,7 @@ public class PingIt extends CellAdapter implements Runnable {
       if( _reachable ){
          _timestamp = new Date() ;
          sendMail(message) ;
-         esay(message) ;
+         _log.warn(message) ;
          _reachable = false ;
       }
 
@@ -135,7 +141,7 @@ public class PingIt extends CellAdapter implements Runnable {
       if( ! _reachable ){
          _timestamp = new Date() ;
          sendMail("ok") ;
-         esay("ok") ;
+         _log.warn("ok") ;
          _reachable = true ;
       }
 
@@ -153,7 +159,7 @@ public class PingIt extends CellAdapter implements Runnable {
          pw.println("Subject: "+_nucleus.getCellName()+"@"+_nucleus.getCellDomainName());
          pw.println(message);
       }catch(Exception ee){
-         esay("Failed to send mail to <"+mailAddress+"> : "+ee);
+         _log.warn("Failed to send mail to <"+mailAddress+"> : "+ee);
       }finally{
          try{ pw.close() ; }catch(Exception ie){}
       }
