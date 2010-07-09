@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
@@ -26,5 +27,9 @@ public class DAOFactoryImplHelper implements DAOFactory {
 
     public PoolGroupDAO getPoolGroupDAO() {
         return _poolGroupDao;
+    }
+
+    public InfoDAO getInfoDAO() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

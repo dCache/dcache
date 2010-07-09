@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -20,9 +21,7 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public PoolsDAO getPoolsDAO() {
         _log.debug("PoolsDAO requested");
-        if (_defaultCommandSenderFactory == null) {
-            throw new IllegalStateException("DefaultPoolCommandSender not set");
-        }
+        checkDefaultCommandSenderSet();
 //      maybe better make it an singleton - they all end up using one cell anyway?
         return new PoolsDAOImpl(_defaultCommandSenderFactory);
     }
@@ -30,15 +29,25 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public PoolGroupDAO getPoolGroupDAO() {
         _log.debug("PoolGroupDAO requested");
-        if (_defaultCommandSenderFactory == null) {
-            throw new IllegalStateException("DefaultPoolCommandSender not set");
-        }
+        checkDefaultCommandSenderSet();
         return new StandardPoolGroupDAO(_defaultCommandSenderFactory);
+    }
+
+    @Override
+    public InfoDAO getInfoDAO() {
+        checkDefaultCommandSenderSet();
+        return new StandardInfoDAO(_defaultCommandSenderFactory);
     }
 
     @Override
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory) {
         _log.debug("PoolsDAO commandSenderFactory set {}", commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
+    }
+
+    private void checkDefaultCommandSenderSet() {
+        if (_defaultCommandSenderFactory == null) {
+            throw new IllegalStateException("DefaultPoolCommandSender not set");
+        }
     }
 }

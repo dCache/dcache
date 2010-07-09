@@ -21,9 +21,11 @@ import org.dcache.webadmin.view.pages.login.LogIn;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
+import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.PoolQueuesService;
+import org.dcache.webadmin.view.pages.info.Info;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ public class WebAdminInterface extends WebApplication {
     private LogInService _logInService;
     private PoolQueuesService _poolQueuesService;
     private PoolGroupService _poolGroupService;
+    private InfoService _infoService;
     private int _httpPort;
     private int _httpsPort;
     private String _dcacheName;
@@ -46,6 +49,8 @@ public class WebAdminInterface extends WebApplication {
     protected void init() {
         super.init();
         setAuthorizationStrategies();
+        mountBookmarkablePage("login", LogIn.class);
+        mountBookmarkablePage("info", Info.class);
     }
 
     @Override
@@ -102,6 +107,14 @@ public class WebAdminInterface extends WebApplication {
 
     public void setPoolGroupService(PoolGroupService poolGroupService) {
         _poolGroupService = poolGroupService;
+    }
+
+    public InfoService getInfoService() {
+        return _infoService;
+    }
+
+    public void setInfoService(InfoService infoService) {
+        _infoService = infoService;
     }
 
     public void setDcacheName(String dCacheName) {
