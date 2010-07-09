@@ -1,10 +1,7 @@
 package org.dcache.srm.util;
 
-import java.util.Iterator;
-import java.util.Stack;
-import java.io.Serializable;
-import org.apache.log4j.MDC;
-import org.apache.log4j.NDC;
+import org.slf4j.MDC;
+import org.dcache.commons.util.NDC;
 
 /**
  * The SRM Job/request Diagnostic Context, a utility class for working
@@ -36,7 +33,7 @@ public class JDC
 
     private static long _last;
 
-    private final Stack _ndc;
+    private final NDC _ndc;
     private final String _session;
 
     /**
@@ -45,7 +42,7 @@ public class JDC
     public JDC()
     {
         _session = getSession();
-        _ndc = NDC.cloneStack();
+        _ndc = NDC.cloneNdc();
     }
 
     /**
@@ -53,7 +50,7 @@ public class JDC
      * <code>MDC.remove</code>. <code>value</code> is allowed to e
      * null.
      */
-    static private void setMdc(String key, Object value)
+    static private void setMdc(String key, String value)
     {
         if (value != null)
             MDC.put(key, value);
@@ -62,30 +59,20 @@ public class JDC
     }
 
     /**
-     * Applies the srm job diagnostic context to the calling thread.
-     * May only be called once. Equivalent to calling
-     * <code>apply(false)</code>.
-     */
-    public void apply()
-    {
-        apply(false);
-    }
-
-    /**
      * Applies the srm job diagnostic context to the calling thread.  If
      * <code>clone</code> is false, then the <code>apply</code> can
      * only be called once for this JDC. If <code>clone</code> is
      * true, then the JDC may be applied several times, however the
      * operation is more expensive.
-     *
-     * @param clone whether to apply a clone of the NDC stack
      */
-    public void apply(boolean clone)
+    public void apply()
     {
         setMdc(MDC_SESSION, _session);
-        NDC.clear();
-        if ( _ndc != null )
-            NDC.inherit(clone ? (Stack) _ndc.clone() : _ndc);
+        if (_ndc == null) {
+            NDC.clear();
+        } else {
+            NDC.set(_ndc);
+        }
     }
 
     /**

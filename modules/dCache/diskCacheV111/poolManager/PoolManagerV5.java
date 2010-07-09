@@ -15,7 +15,6 @@ import java.util.StringTokenizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.NDC;
 import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -742,7 +741,6 @@ public class PoolManagerV5
                     _log.warn("Link group selection handler was interrupted");
                 } finally {
                     CDC.clear();
-                    NDC.remove();
                 }
             }
         }

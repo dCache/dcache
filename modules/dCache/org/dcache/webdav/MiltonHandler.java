@@ -18,8 +18,7 @@ import org.dcache.cells.CellMessageSender;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellEndpoint;
-import org.apache.log4j.MDC;
-import org.apache.log4j.NDC;
+import org.dcache.commons.util.NDC;
 
 /**
  * A Jetty handler that wraps a Milton HttpManager. Makes it possible
@@ -49,8 +48,7 @@ public class MiltonHandler
                        HttpServletRequest request,HttpServletResponse response)
         throws IOException, ServletException
     {
-        MDC.put(CDC.MDC_CELL, _cellName);
-        MDC.put(CDC.MDC_DOMAIN, _domainName);
+        CDC.setCellsContext(_cellName, _domainName);
         CDC.createSession();
         NDC.push(CDC.getSession().toString());
         try {
@@ -69,10 +67,7 @@ public class MiltonHandler
             response.getOutputStream().flush();
             response.flushBuffer();
         } finally {
-            MDC.remove(CDC.MDC_DOMAIN);
-            MDC.remove(CDC.MDC_CELL);
-            MDC.remove(CDC.MDC_SESSION);
-            NDC.remove();
+            CDC.clear();
         }
     }
 }

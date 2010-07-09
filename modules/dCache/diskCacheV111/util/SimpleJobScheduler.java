@@ -14,7 +14,7 @@ import org.dcache.util.FireAndForgetTask;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.NDC;
+import org.dcache.commons.util.NDC;
 
 import dmg.cells.nucleus.CDC;
 

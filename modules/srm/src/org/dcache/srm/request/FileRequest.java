@@ -376,7 +376,7 @@ public abstract class FileRequest extends Job {
     @Override
     public void applyJdc()
     {
-        jdc.apply(true);
+        jdc.apply();
         JDC.push(String.valueOf(requestId));
         JDC.push(String.valueOf(id));
     }

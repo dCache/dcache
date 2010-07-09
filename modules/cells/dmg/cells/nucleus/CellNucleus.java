@@ -15,8 +15,8 @@ import java.net.Socket;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
-import org.apache.log4j.MDC;
-import org.apache.log4j.NDC;
+import org.slf4j.MDC;
+import org.dcache.commons.util.NDC;
 
 /**
  *
@@ -546,15 +546,15 @@ public class CellNucleus implements ThreadFactory
 
     private Runnable wrapLoggingContext(final Runnable runnable)
     {
-        final Stack stack = NDC.cloneStack();
+        final NDC ndc = NDC.cloneNdc();
         return new Runnable() {
             public void run() {
                 CDC.setCellsContext(CellNucleus.this);
-                NDC.inherit(stack);
+                NDC.set(ndc);
                 try {
                     runnable.run();
                 } finally {
-                    NDC.remove();
+                    NDC.clear();
                 }
             }
         };

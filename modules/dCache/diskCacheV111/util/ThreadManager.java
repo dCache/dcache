@@ -74,8 +74,6 @@ import java.util.concurrent.*;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.FireAndForgetTask;
 
-import org.apache.log4j.NDC;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,9 +203,6 @@ import org.slf4j.LoggerFactory;
                           runnable.run();
                       } finally {
                           CDC.clear();
-                          if( ThreadManager.getExecutor() == null ) {
-                            NDC.remove();
-                          }
                       }
                   }
               };

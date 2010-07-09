@@ -189,7 +189,7 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
 
-import org.apache.log4j.NDC;
+import org.dcache.commons.util.NDC;
 
 import javax.security.auth.Subject;
 
@@ -1200,7 +1200,7 @@ public abstract class AbstractFtpDoorV1
              */
             kill();
 
-            NDC.remove();
+            NDC.clear();
         }
     }
 
