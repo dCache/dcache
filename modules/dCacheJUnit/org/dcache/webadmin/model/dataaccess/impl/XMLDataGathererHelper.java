@@ -1,6 +1,7 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,6 +29,8 @@ public class XMLDataGathererHelper {
     public static final MoverQueue POOL1_STORES = new MoverQueue("store", 0, 100, 0);
     public static final MoverQueue POOL1_P2PSERVER = new MoverQueue("p2p-queue", 0, 100, 0);
     public static final MoverQueue POOL1_P2PCLIENT = new MoverQueue("p2p-clientqueue", 10, 10, 10);
+    public static final String POOL1_POOLGROUP1 = "default";
+    public static final List<String> POOL1_POOLGROUPS = Arrays.asList(POOL1_POOLGROUP1);
     public static final String POOL2_NAME = "mySecondPool";
     public static final String POOL2_DOMAIN = "mySecondPoolDomain";
     public static final boolean IS_POOL2_ENABLED = false;
@@ -78,7 +81,7 @@ public class XMLDataGathererHelper {
             "        <metric name=\"removable\" type=\"integer\">0</metric>" +
             "        <metric name=\"used\" type=\"integer\">" + POOL1_USED_SPACE + "</metric>" +
             "        <metric name=\"gap\" type=\"integer\">1048576</metric>" +
-            "      </space>      <poolgroups>        <poolgroupref name=\"default\"/>" +
+            "      </space>      <poolgroups>        <poolgroupref name=\"" + POOL1_POOLGROUP1 + "\"/>" +
             "      </poolgroups>    </pool>  </pools></dCache>";
     public static final String namedCellXmlcontent = "<?xml version=\"1.0\"?>" +
             "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\"> " +
@@ -187,6 +190,35 @@ public class XMLDataGathererHelper {
             "  </domain>" +
             " </domains>" +
             "</dCache>";
+    public static final String poolGroupXmlcontent = "<?xml version=\"1.0\"?>" +
+            "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\">" +
+            "<poolgroups>" +
+            " <poolgroup name=\"" + POOL1_POOLGROUP1 +"\">" +
+            "  <links>" +
+            "   <linkref name=\"default-link\"/>" +
+            "   </links>" +
+            "   <space>" +
+            "     <metric name=\"total\" type=\"integer\">3221225472</metric>" +
+            "        <metric name=\"free\" type=\"integer\">3221186835</metric>" +
+            "        <metric name=\"removable\" type=\"integer\">0</metric>" +
+            "        <metric name=\"precious\" type=\"integer\">38637</metric>" +
+            "        <metric name=\"used\" type=\"integer\">38637</metric>" +
+            "      </space>" +
+            "      <pools>" +
+            "        <poolref name=\"mySecondPool\"/>" +
+            "<poolref name=\"myFirstPool\"/>" +
+            "    </pools> </poolgroup>" +
+            "    <poolgroup name=\"ResilientPools\">" +
+            "      <space>" +
+            "        <metric name=\"total\" type=\"integer\">0</metric>" +
+            "        <metric name=\"free\" type=\"integer\">0</metric>" +
+            "        <metric name=\"precious\" type=\"integer\">0</metric>" +
+            "        <metric name=\"removable\" type=\"integer\">0</metric>" +
+            "        <metric name=\"used\" type=\"integer\">0</metric>" +
+            "      </space>" +
+            "    </poolgroup>" +
+            "  </poolgroups>" +
+            "</dCache>";
 
     public static Set<Pool> getExpectedPools() {
         Set<Pool> pools = new HashSet<Pool>(2);
@@ -223,7 +255,7 @@ public class XMLDataGathererHelper {
         pool1.addMoverQueue(POOL1_RESTORES);
         pool1.addMoverQueue(POOL1_P2PCLIENT);
         pool1.addMoverQueue(POOL1_P2PSERVER);
-
+        pool1.setPoolGroups(POOL1_POOLGROUPS);
         return pool1;
     }
 

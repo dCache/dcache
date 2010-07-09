@@ -11,5 +11,7 @@ public interface DAOFactory {
 
     public PoolsDAO getPoolsDAO();
 
+    public PoolGroupDAO getPoolGroupDAO();
+
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

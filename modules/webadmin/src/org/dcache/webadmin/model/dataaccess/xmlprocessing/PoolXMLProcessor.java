@@ -1,37 +1,22 @@
-package org.dcache.webadmin.model.dataaccess.impl;
+package org.dcache.webadmin.model.dataaccess.xmlprocessing;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Set;
 import java.util.HashSet;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.dcache.webadmin.model.businessobjects.Pool;
-import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This Object gets the information out of the delivered XML-Files and put it in
- * the appropriate businessobjects
- * @author jan schaefer
+ *
+ * @author jans
  */
-public class XMLProcessor {
+public class PoolXMLProcessor extends XMLProcessor {
 
-    public static final String EMPTY_DOCUMENT_CONTENT =
-            "<dCache xmlns='http://www.dcache.org/2008/01/Info'/>";
     private static final String CLOSING_FRAGMENT = "']";
     private static final String SPECIAL_CELL_FRAGMENT = "/dCache/domains/domain" +
             "[@name='dCacheDomain']/routing/named-cells/cell[@name='";
@@ -43,6 +28,7 @@ public class XMLProcessor {
             "[@name='dCacheDomain']/routing/named-cells/cell";
     private static final String ALL_QUEUES_OF_POOL = "/queues/queue";
     private static final String ALL_NAMEDQUEUES_OF_POOL = "/queues/named-queues/queue";
+    private static final String ALL_POOLGROUPS_OF_POOL = "/poolgroups/poolgroupref";
 //   the equivalent for each NamedCellmember in the InfoproviderXML
 //   to the NamedCell class
     private static final String NAMEDCELLMEMBER_DOMAIN = "/domainref/@name";
@@ -56,51 +42,7 @@ public class XMLProcessor {
     private static final String QUEUE_ACTIVE_FRAGMENT = "/metric[@name='active']/text()";
     private static final String QUEUE_MAX_FRAGMENT = "/metric[@name='max-active']/text()";
     private static final String QUEUE_QUEUED_FRAGMENT = "/metric[@name='queued']/text()";
-//  attributes
-    private static final String ATTRIBUTE_NAME = "name";
-    private static final String ATTRIBUTE_TYPE = "type";
-    private XPathFactory _factory = XPathFactory.newInstance();
-    private XPath _xpath = _factory.newXPath();
-    private DocumentBuilderFactory _dbFactory;
-    private DocumentBuilder _documentBuilder;
-    private Logger _log = LoggerFactory.getLogger(XMLProcessor.class);
-
-    public XMLProcessor() {
-        try {
-            _dbFactory = DocumentBuilderFactory.newInstance();
-            _documentBuilder = _dbFactory.newDocumentBuilder();
-        } catch (ParserConfigurationException ex) {
-            _log.error("Couldn't get a document builder -- can't parse XMLs ", ex);
-        }
-    }
-
-    /**
-     * for an empty String an empty Document is returned
-     * @param xmlcontent the xmlcontent in String Form
-     * @return returns a dom-readable, normalised Document
-     */
-    public Document createXMLDocument(String xmlContent)
-            throws ParsingException {
-        try {
-            if (_log.isDebugEnabled()) {
-                _log.debug("xml-String received: " + xmlContent);
-            }
-            String contentCopy = xmlContent;
-            if (contentCopy.isEmpty()) {
-                contentCopy = EMPTY_DOCUMENT_CONTENT;
-            }
-            InputSource inSource = new InputSource();
-            inSource.setCharacterStream(new StringReader(contentCopy));
-            Document dom = _documentBuilder.parse(inSource);
-            dom.normalize();
-            _log.debug("document created " + dom.getNodeType());
-            return dom;
-        } catch (SAXException ex) {
-            throw new ParsingException(ex);
-        } catch (IOException ex) {
-            throw new ParsingException(ex);
-        }
-    }
+    private static final Logger _log = LoggerFactory.getLogger(PoolXMLProcessor.class);
 
     /**
      * @param document document to parse
@@ -116,7 +58,7 @@ public class XMLProcessor {
                 Element currentCellNode = (Element) cellNodes.item(cellIndex);
                 NamedCell namedCellEntry = createNamedCell(document,
                         currentCellNode.getAttribute(ATTRIBUTE_NAME));
-                _log.debug("Named Cell parsed: " + namedCellEntry.getCellName());
+                _log.debug("Named Cell parsed: {}", namedCellEntry.getCellName());
                 namedCells.add(namedCellEntry);
             }
         }
@@ -126,14 +68,9 @@ public class XMLProcessor {
     private NamedCell createNamedCell(Document document, String cellName) {
         NamedCell namedCellEntry = new NamedCell();
         namedCellEntry.setCellName(cellName);
-        try {
-            String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + CLOSING_FRAGMENT +
-                    NAMEDCELLMEMBER_DOMAIN;
-            namedCellEntry.setDomainName((String) _xpath.evaluate(xpathExpression, document,
-                    XPathConstants.STRING));
-        } catch (XPathExpressionException ex) {
-            _log.error("parsing error cellname {}", cellName);
-        }
+        String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + CLOSING_FRAGMENT +
+                NAMEDCELLMEMBER_DOMAIN;
+        namedCellEntry.setDomainName(getStringFromXpath(xpathExpression, document));
         return namedCellEntry;
     }
 
@@ -152,7 +89,7 @@ public class XMLProcessor {
                 Pool poolEntry = createPool(document,
                         currentPoolNode.getAttribute(ATTRIBUTE_NAME));
 
-                _log.debug("Pool parsed: " + poolEntry.getName());
+                _log.debug("Pool parsed: {}", poolEntry.getName());
                 pools.add(poolEntry);
             }
         }
@@ -173,6 +110,7 @@ public class XMLProcessor {
         pool.setUsedSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
                 POOLMEMBER_USED_SPACE), document));
         getPoolMovers(document, pool);
+        getPoolGroups(document, pool);
         return pool;
     }
 
@@ -197,6 +135,21 @@ public class XMLProcessor {
 
     }
 
+    private void getPoolGroups(Document document, Pool pool) {
+        //get all poolgroupref nodes
+        NodeList poolGroupNodes = getNodesFromXpath(
+                buildPoolXpathExpression(pool.getName(), ALL_POOLGROUPS_OF_POOL),
+                document);
+        //add a poolgroup per node with name=name.value
+        if (poolGroupNodes != null) {
+            for (int i = 0; i < poolGroupNodes.getLength(); i++) {
+                Element currentGroupNode = (Element) poolGroupNodes.item(i);
+                String queue = currentGroupNode.getAttribute(ATTRIBUTE_NAME);
+                pool.addPoolGroup(queue);
+            }
+        }
+    }
+
     private void getPoolMovers(Document document, Pool pool) {
 //      get all queues
         getMoversForQueueType(ALL_QUEUES_OF_POOL, ATTRIBUTE_TYPE,
@@ -208,45 +161,6 @@ public class XMLProcessor {
 
     private String buildPoolXpathExpression(String poolName, String metric) {
         return SPECIAL_POOL_FRAGMENT + poolName + CLOSING_FRAGMENT + metric;
-    }
-
-    private Long getLongFromXpath(String xpathExpression, Document document) {
-        Long result = 0L;
-        try {
-            String xpathResult = (String) _xpath.evaluate(xpathExpression, document,
-                    XPathConstants.STRING);
-
-            result = Long.parseLong(xpathResult);
-        } catch (XPathExpressionException ex) {
-            _log.error("parsing error for xpath: {}", xpathExpression);
-        } catch (NumberFormatException ex) {
-            // ignore null return of xpath for numbers, most likely infoprovider
-            // is not completly up yet
-        }
-        return result;
-    }
-
-    private Boolean getBooleanFromXpath(String xpathExpression, Document document) {
-        Boolean result = new Boolean(false);
-        try {
-            result = (Boolean) _xpath.evaluate(xpathExpression, document,
-                    XPathConstants.BOOLEAN);
-        } catch (XPathExpressionException ex) {
-            _log.error("parsing error for xpath: {}", xpathExpression);
-        }
-        return result;
-    }
-
-    private NodeList getNodesFromXpath(String xpathExpression, Document document) {
-        NodeList result = null;
-        try {
-            result = (NodeList) _xpath.evaluate(xpathExpression, document,
-                    XPathConstants.NODESET);
-
-        } catch (XPathExpressionException e) {
-            _log.debug("couldn't retrieve nodelist for: {}", xpathExpression);
-        }
-        return result;
     }
 
     private MoverQueue getMoverQueue(String queue, Document document) {

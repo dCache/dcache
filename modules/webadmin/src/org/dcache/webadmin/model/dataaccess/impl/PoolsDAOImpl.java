@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.xmlprocessing.PoolXMLProcessor;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,8 +36,8 @@ public class PoolsDAOImpl implements PoolsDAO {
     public static final List<String> NAMEDCELLS_PATH = Arrays.asList("domains", "dCacheDomain",
             "routing", "named-cells");
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
-    private static Logger _log = LoggerFactory.getLogger(PoolsDAOImpl.class);
-    private XMLProcessor _xmlProcessor = new XMLProcessor();
+    private static final Logger _log = LoggerFactory.getLogger(PoolsDAOImpl.class);
+    private PoolXMLProcessor _xmlProcessor = new PoolXMLProcessor();
     private CommandSenderFactory _commandSenderFactory;
 
     public PoolsDAOImpl(CommandSenderFactory commandSenderFactory) {
@@ -56,26 +57,9 @@ public class PoolsDAOImpl implements PoolsDAO {
     }
 
     private Set<Pool> tryToGetPools() throws ParsingException, DataGatheringException {
-        String serialisedXML = this.getPoolListXML();
+        String serialisedXML = getXmlForStatePath(POOLS_PATH);
         Document xmlDocument = _xmlProcessor.createXMLDocument(serialisedXML);
         return _xmlProcessor.parsePoolsDocument(xmlDocument);
-    }
-
-    private String getPoolListXML() throws DataGatheringException {
-        try {
-            InfoGetSerialisedDataMessageGenerator messageGenerator =
-                    new InfoGetSerialisedDataMessageGenerator(POOLS_PATH);
-            CommandSender commandSender =
-                    _commandSenderFactory.createCommandSender(messageGenerator);
-            commandSender.sendAndWait();
-            if (commandSender.allSuccessful()) {
-                return messageGenerator.getXML();
-            } else {
-                throw new DataGatheringException("couldn't get data from info provider");
-            }
-        } catch (InterruptedException e) {
-            throw new DataGatheringException("Interrupted during data gathering", e);
-        }
     }
 
     @Override
@@ -91,15 +75,15 @@ public class PoolsDAOImpl implements PoolsDAO {
     }
 
     private Set<NamedCell> tryToGetNamedCells() throws ParsingException, DataGatheringException {
-        String serialisedXML = this.getNamedCellsXML();
+        String serialisedXML = getXmlForStatePath(NAMEDCELLS_PATH);
         Document xmlDocument = _xmlProcessor.createXMLDocument(serialisedXML);
         return _xmlProcessor.parseNamedCellsDocument(xmlDocument);
     }
 
-    private String getNamedCellsXML() throws DataGatheringException {
+    private String getXmlForStatePath(List<String> statePath) throws DataGatheringException {
         try {
             InfoGetSerialisedDataMessageGenerator messageGenerator =
-                    new InfoGetSerialisedDataMessageGenerator(NAMEDCELLS_PATH);
+                    new InfoGetSerialisedDataMessageGenerator(statePath);
             CommandSender commandSender =
                     _commandSenderFactory.createCommandSender(messageGenerator);
             commandSender.sendAndWait();

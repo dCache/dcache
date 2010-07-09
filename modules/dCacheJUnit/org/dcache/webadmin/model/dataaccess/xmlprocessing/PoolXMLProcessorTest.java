@@ -1,5 +1,6 @@
-package org.dcache.webadmin.model.dataaccess.impl;
+package org.dcache.webadmin.model.dataaccess.xmlprocessing;
 
+import org.dcache.webadmin.model.dataaccess.impl.*;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
@@ -14,13 +15,13 @@ import static org.junit.Assert.*;
  * the parsing on pre fabricated XMLs. Also exposes them to others for testusage
  * @author jan schaefer
  */
-public class XMLProcessorTest {
+public class PoolXMLProcessorTest {
 
-    public XMLProcessor _processor = null;
+    public PoolXMLProcessor _processor = null;
 
     @Before
     public void setUp() {
-        _processor = new XMLProcessor();
+        _processor = new PoolXMLProcessor();
     }
 
     @Test

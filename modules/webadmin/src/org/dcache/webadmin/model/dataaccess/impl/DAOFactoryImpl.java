@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
@@ -24,6 +25,15 @@ public class DAOFactoryImpl implements DAOFactory {
         }
 //      maybe better make it an singleton - they all end up using one cell anyway?
         return new PoolsDAOImpl(_defaultCommandSenderFactory);
+    }
+
+    @Override
+    public PoolGroupDAO getPoolGroupDAO() {
+        _log.debug("PoolGroupDAO requested");
+        if (_defaultCommandSenderFactory == null) {
+            throw new IllegalStateException("DefaultPoolCommandSender not set");
+        }
+        return new StandardPoolGroupDAO(_defaultCommandSenderFactory);
     }
 
     @Override

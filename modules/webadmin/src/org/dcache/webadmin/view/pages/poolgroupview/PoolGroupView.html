@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <title></title>
+    <wicket:head>
+        <wicket:link>
+            <link href="PoolGroupView.css" rel="stylesheet" type="text/css"  />
+        </wicket:link>
+    </wicket:head>
+</head>
+<body>
+<wicket:extend>
+    <form wicket:id="poolGroupsForm">
+        <h1><wicket:message key="header1"></wicket:message></h1>
+        <span wicket:id="feedback"/>
+        <table>
+            <tr>
+                <th><wicket:message key="PoolGroupView.poolGroup.header"></wicket:message></th>
+            <th><wicket:message key="PoolGroupView.enabled.header"></wicket:message></th>
+            <th><wicket:message key="PoolGroupView.total.header"></wicket:message></th>
+            <th><wicket:message key="PoolGroupView.free.header"></wicket:message></th>
+            <th><wicket:message key="PoolGroupView.precious.header"></wicket:message></th>
+            <th><span wicket:id="layoutHeaderPanel"></span></th>
+            </tr>
+            <tr wicket:id="poolGroupView">
+                <td><a wicket:id="nameLink"><span wicket:id="nameMessage"></span></a></td>
+                <td><span wicket:id="enabled"></span></td>
+                <td><span wicket:id="totalSpace"></span></td>
+                <td><span wicket:id="freeSpace"></span></td>
+                <td><span wicket:id="preciousSpace"></span></td>
+                <td><span wicket:id="layoutItemPanel"></span></td>
+            </tr>
+        </table>
+        <h1><span wicket:id="specialPoolGroupHeader"></span></h1>
+        <wicket:fragment wicket:id="navigationFragment">
+            <ul>
+                <li>
+                    <a href="#" wicket:id="cellViewLink">
+                        <span wicket:id="cellViewMessage"></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" wicket:id="spaceUsageLink">
+                        <span wicket:id="spaceUsageMessage"></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" wicket:id="moverViewLink">
+                        <span wicket:id="moverViewMessage"></span>
+                    </a>
+                </li>
+            </ul>
+        </wicket:fragment>
+        <span class="horizontalNav" wicket:id="miniNavigationFragment"></span>
+        <div id="main"><span wicket:id="specialPoolGroupPanel"></span></div>
+    </form>
+</wicket:extend>
+</body>
+</html>
+

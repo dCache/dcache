@@ -77,10 +77,17 @@
         </constructor-arg>
     </bean>
 
+    <bean id="PoolGroupService" class="org.dcache.webadmin.controller.impl.StandardPoolGroupService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="logInService" ref="LogInService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
+        <property name="poolGroupService" ref="PoolGroupService"/>
         <property name="httpPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
                 <property name="targetBeanName" value="InfoCellStub"/>

@@ -1,0 +1,101 @@
+@CHARSET "UTF-8";
+
+h1{
+    text-align: center;
+}
+
+table
+{
+    border-spacing: 0;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th
+{
+    padding: 4px;
+    border: 1px solid gray;
+}
+
+th
+{
+    text-align: center;
+    background: #115259;
+    color: white;
+}
+
+th > a
+{
+    color: white;
+    text-decoration: none;
+}
+
+td
+{
+    text-align: center;
+}
+
+tr
+{
+    background: #bebebe;
+}
+
+tr.odd
+{
+    background: #efefef;
+}
+
+.horizontalNav {
+    /* (en) containing floats in IE */
+    /* (de) Einfassen der Floats im IE */
+    width:100%;
+    overflow:hidden;
+    /* (en) containing floats in all other browsers */
+    /* (de) Einfassen der Floats in allen anderen Browsern */
+    float:left;
+    display:inline;
+    /* (en|de) Bugfix:IE - collapsing horizontal margins */
+    position:relative;
+}
+.horizontalNav ul li {
+    /* (en|de) Bugfix:IE - Doubled Float Margin Bug */
+    display:inline;
+    float:left; /* LTR */
+    font-size:1.0em;
+    line-height:1em;
+    list-style-type:none;
+    margin:0;
+    padding:0;
+    background:#c0c0c0 url("images/shiny_buttons/background.png") repeat-x center right;
+    border-top:1px #333 solid;
+    border-bottom:1px #333 solid;
+    border-left:1px #333 solid;
+    border-right:1px #333 solid;
+}
+
+.horizontalNav ul li a {
+    background:transparent;
+    color:#000;
+    display:block;
+    font-size:1em;
+    font-weight:bold;
+    margin:0;
+    padding:0.5em 0.8em 0.5em 0.8em;
+    text-decoration:none;
+    width:auto;
+}
+
+.horizontalNav ul li a:focus,
+.horizontalNav ul li a:hover,
+.horizontalNav ul li a:active  { background:#eee; color:#333; text-decoration:none; outline: 0 none; }
+
+.horizontalNav ul li a.active  {
+    /* (en) Repeat the main color from the image */
+    /* (de) Wiederholung der Hauptfarbe aus der Bilddatei */
+    background:#272727 url("images/shiny_buttons/background_active.png") repeat-x center right;
+}
+
+.horizontalNav ul li a.active,
+.horizontalNav ul li a.active:focus,
+.horizontalNav ul li a.active:hover,
+.horizontalNav ul li a.active:active {color:#fff; text-decoration:none; }
