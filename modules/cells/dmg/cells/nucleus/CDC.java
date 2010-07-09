@@ -156,8 +156,8 @@ public class CDC
      */
     static public void setCellsContext(String cellName, String domainName)
     {
-        MDC.put(MDC_CELL, cellName);
-        MDC.put(MDC_DOMAIN, domainName);
+        setMdc(MDC_CELL, cellName);
+        setMdc(MDC_DOMAIN, domainName);
     }
 
     /**

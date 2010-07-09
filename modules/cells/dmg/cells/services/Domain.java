@@ -5,7 +5,8 @@ import   dmg.cells.nucleus.* ;
 import   dmg.cells.network.* ;
 import   dmg.util.* ;
 
-import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.* ;
 import java.io.* ;
@@ -61,7 +62,7 @@ import java.io.* ;
   */
 public class Domain {
 
-  private static final Logger _log = Logger.getLogger(Domain.class);
+  private static final Logger _log = LoggerFactory.getLogger(Domain.class);
 
   private static final int IDLE      = 0 ;
   private static final int ASSEMBLE  = 1 ;
@@ -386,7 +387,7 @@ public class Domain {
 
          }
       }catch( Exception e ){
-          _log.error(e, e);
+          _log.error(e.toString(), e);
       }
   }
   private static String [] [] getParameter( String [] args ){

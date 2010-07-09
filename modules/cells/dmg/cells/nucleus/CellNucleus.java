@@ -2,7 +2,9 @@ package dmg.cells.nucleus;
 
 import dmg.util.Args;
 import dmg.util.PinboardAppender;
-import dmg.util.Log4jWriter;
+import dmg.util.BufferedLineWriter;
+import dmg.util.Slf4jErrorWriter;
+import dmg.util.Slf4jInfoWriter;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -13,8 +15,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.lang.reflect.*;
 import java.net.Socket;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.MDC;
 import org.dcache.commons.util.NDC;
 
@@ -41,9 +43,9 @@ public class CellNucleus implements ThreadFactory
     private        int       _printoutLevel  = 0;
 
     private final static Logger _logMessages =
-        Logger.getLogger("logger.org.dcache.cells.messages");
+        LoggerFactory.getLogger("logger.org.dcache.cells.messages");
     private final static Logger _logNucleus =
-        Logger.getLogger(CellNucleus.class);
+        LoggerFactory.getLogger(CellNucleus.class);
     private final Logger _logCell;
 
     //  have to be synchronized map
@@ -62,7 +64,7 @@ public class CellNucleus implements ThreadFactory
     }
     public CellNucleus(Cell cell, String name, String type) {
 
-        _logCell = Logger.getLogger(cell.getClass());
+        _logCell = LoggerFactory.getLogger(cell.getClass());
 
         if (__cellGlue == null) {
             //
@@ -812,12 +814,12 @@ public class CellNucleus implements ThreadFactory
 
     public Writer createErrorLogWriter()
     {
-        return new Log4jWriter(_logCell, Level.ERROR);
+        return new BufferedLineWriter(new Slf4jErrorWriter(_logCell));
     }
 
     public Writer createInfoLogWriter()
     {
-        return new Log4jWriter(_logCell, Level.INFO);
+        return new BufferedLineWriter(new Slf4jInfoWriter(_logCell));
     }
 
     public static final int  PRINT_CELL          =    1;
@@ -973,7 +975,7 @@ public class CellNucleus implements ThreadFactory
                     msg = new CellMessage(msgEvent.getMessage());
                 } catch (SerializationException e) {
                     CellMessage envelope = msgEvent.getMessage();
-                    _logCell.fatal(String.format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",
+                    _logCell.error(String.format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",
                                                  envelope.getSourcePath(),
                                                  envelope.getUOID(),
                                                  envelope.getSession(),

@@ -1,20 +1,19 @@
 package dmg.util;
 
 import java.io.Writer;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
 
-public class Log4jWriter
+/**
+ * Buffered LineWriter adaptor implementing the Writer interface.
+ */
+public class BufferedLineWriter
     extends Writer
 {
-    private final Logger _logger;
-    private final Level _level;
+    private final LineWriter _writer;
     private final StringBuilder _buffer;
 
-    public Log4jWriter(Logger logger, Level level)
+    public BufferedLineWriter(LineWriter writer)
     {
-        _logger = logger;
-        _level = level;
+        _writer = writer;
         _buffer = new StringBuilder();
     }
 
@@ -27,7 +26,7 @@ public class Log4jWriter
     {
         int i;
         while ((i = _buffer.indexOf("\n")) > -1) {
-            _logger.log(_level, _buffer.substring(0, i));
+            _writer.writeLine(_buffer.substring(0, i));
             _buffer.delete(0, i + 1);
         }
     }
@@ -36,7 +35,7 @@ public class Log4jWriter
     {
         flushCompletedLines();
         if (_buffer.length() > 0) {
-            _logger.log(_level, _buffer.toString());
+            _writer.writeLine(_buffer.toString());
             _buffer.delete(0, _buffer.length());
         }
     }
