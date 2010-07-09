@@ -3,31 +3,21 @@ package org.dcache.webadmin.view.pages.poollist;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.List;
 import java.util.ArrayList;
-import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.list.ListItem;
-import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.dcache.webadmin.controller.PoolBeanService;
 import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
-import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.beans.PoolBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
-import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
-import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
+import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -47,11 +37,10 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
         Form poolUsageForm = new PoolUsageForm("poolUsageForm");
         poolUsageForm.add(createPoolModeDropDown("mode"));
         poolUsageForm.add(new FeedbackPanel("feedback"));
-        poolUsageForm.add(new LayoutHeaderPanel("layoutHeaderPanel"));
         getPoolsAction();
-        ListView poolListView = new PoolBeanListView("listview",
-                new PropertyModel(this, "_poolBeans"));
-        poolUsageForm.add(poolListView);
+        PoolListPanel poolListPanel = new PoolListPanel("poolListPanel",
+                new PropertyModel(this, "_poolBeans"), true);
+        poolUsageForm.add(poolListPanel);
         add(poolUsageForm);
     }
 
@@ -98,7 +87,7 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
 
         public PoolUsageForm(String id) {
             super(id);
-            SubmitButton button = new SubmitButton("submit");
+            Button button = new Button("submit");
             MetaDataRoleAuthorizationStrategy.authorize(button, ENABLE, Role.ADMIN);
             _log.debug("submit isEnabled : {}", String.valueOf(button.isEnabled()));
             this.add(button);
@@ -119,34 +108,6 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
                     this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());
                 }
             }
-        }
-    }
-
-    private class SubmitButton extends Button {
-
-        public SubmitButton(String id) {
-            super(id);
-        }
-    }
-
-    private class PoolBeanListView extends EvenOddListView<PoolBean> {
-
-        PoolBeanListView(String id, IModel<? extends List<PoolBean>> model) {
-            super(id, model);
-        }
-
-        @Override
-        protected void populateItem(final ListItem<PoolBean> item) {
-            PoolBean poolBean = item.getModelObject();
-            item.add(new CheckBox("selected", new PropertyModel<Boolean>(poolBean, "selected")));
-            item.add(new Label("name", poolBean.getName()));
-            item.add(new Label("domainName", poolBean.getDomainName()));
-            item.add(new Label("enabled", new Boolean(poolBean.isEnabled()).toString()));
-            item.add(new Label("totalSpace", new Long(poolBean.getTotalSpace()).toString()));
-            item.add(new Label("freeSpace", new Long(poolBean.getFreeSpace()).toString()));
-            item.add(new Label("preciousSpace", new Long(poolBean.getPreciousSpace()).toString()));
-            item.add(new LayoutItemPanel("layoutItemPanel", poolBean.getPercentagePrecious(),
-                    poolBean.getPercentageUsed(), poolBean.getPercentageFree()));
         }
     }
 }

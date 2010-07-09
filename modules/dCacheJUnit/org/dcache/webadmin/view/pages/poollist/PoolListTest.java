@@ -26,8 +26,9 @@ public class PoolListTest {
     public static final String DROPDOWN_ID = "mode";
     public static final String POOLUSAGE_FORM_ID = "poolUsageForm";
     public static final String HOMELINK_ID = "navigationPanel:linkList:0:link";
-    public static final String LISTVIEW_ID = "listview";
-    public static final String LISTVIEW_ROW_CHECKBOX_ID = "selected";
+    public static final String LISTVIEW_ID = "poolListPanel:poolPanelListview";
+    public static final String LISTVIEW_ROW_CHECKBOX_ID =
+            "PoolPanel.checkboxRow:PoolPanel.selected";
     private PoolBeanServiceImpl _poolBeanService;
     private WicketTester _tester;
 

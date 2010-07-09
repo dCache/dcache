@@ -2,9 +2,6 @@
     <head>
         <title></title>
     <wicket:head>
-        <wicket:link>
-            <link href="PoolList.css" rel="stylesheet" type="text/css" />
-        </wicket:link>
     </wicket:head>
 </head>
 <body>
@@ -16,30 +13,7 @@
             <input type="submit" wicket:message="value:submitButton" wicket:id="submit" />
             <span wicket:id="feedback"/>
         </div>
-        <table>
-            <tr>
-                <th><wicket:message key="table1.selected.header"></wicket:message></th>
-            <th><wicket:message key="table1.name.header"></wicket:message></th>
-            <th><wicket:message key="table1.domainName.header"></wicket:message></th>
-            <th><wicket:message key="table1.enabled.header"></wicket:message></th>
-            <th><wicket:message key="table1.total.header"></wicket:message></th>
-            <th><wicket:message key="table1.free.header"></wicket:message></th>
-            <th><wicket:message key="table1.precious.header"></wicket:message></th>
-            <th><span wicket:id="layoutHeaderPanel"></span>
-            </th>
-            </tr>
-            <tr wicket:id="listview">
-                <td><input type="checkbox" wicket:id="selected"/></td>
-                <td><span wicket:id="name"></span></td>
-                <td><span wicket:id="domainName"></span></td>
-                <td><span wicket:id="enabled"></span></td>
-                <td><span wicket:id="totalSpace"></span></td>
-                <td><span wicket:id="freeSpace"></span></td>
-                <td><span wicket:id="preciousSpace"></span></td>
-                <td><span wicket:id="layoutItemPanel"></span>
-                </td>
-            </tr>
-        </table>
+        <span wicket:id="poolListPanel"></span>
     </form>
 </wicket:extend>
 </body>
