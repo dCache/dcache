@@ -5,8 +5,9 @@ import java.util.Set;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.dcache.auth.UserNamePrincipal;
 /**
- * This plugin adds a specified home and root to authorizedPrincipals
- * if is detects a specified user principal in authorizedPrincipals
+ * This plugin adds a specified home, root and readOnly attribute to
+ * authorizedPrincipals if is detects a specified user principal in
+ * authorizedPrincipals
  * @author timur
  */
 public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
@@ -15,14 +16,16 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
     private final UserNamePrincipal user;
     private final HomeDirectory home;
     private final RootDirectory root;
+    private final ReadOnly readOnly ;
 
     public AddHomeRootSessionPlugin(String[] args) {
-        if(args == null || args.length !=3) {
-            throw new IllegalArgumentException("I need 3 arguments: \"<user> <home> <root>\"");
+        if(args == null || args.length !=4) {
+            throw new IllegalArgumentException("I need 4 arguments: \"<user> <home> <root> <readOnly>\"");
         }
         user = new UserNamePrincipal(args[0]);
         home = new HomeDirectory(args[1]);
         root = new RootDirectory(args[2]);
+        readOnly = new ReadOnly(args[3]);
     }
 
     @Override
@@ -33,6 +36,7 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
             if(principal.equals(user)) {
                 attrib.add(home);
                 attrib.add(root);
+                attrib.add(readOnly);
                 return;
             }
         }

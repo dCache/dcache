@@ -19,7 +19,7 @@ public class RootDirectory implements SessionAttribute,Serializable {
 
     @Override
     public String getName() {
-        return directory;
+        return "RootDirectory";
     }
 
     @Override

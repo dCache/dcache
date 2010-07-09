@@ -96,7 +96,7 @@ public class AuthenticationStrategyTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory() {
         StrategyFactory factory =
-                StrategyFactory.getInstanse();
+                StrategyFactory.getInstance();
         assertNotNull(factory);
         AuthenticationStrategy authStrategy = factory.newAuthenticationStrategy();
         assertNotNull(authStrategy);
@@ -106,7 +106,7 @@ public class AuthenticationStrategyTests {
      *
      * @throws org.dcache.gplazma.AuthenticationException
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testEmptyConfig() throws AuthenticationException{
 
         AuthenticationStrategy strategy =
@@ -124,7 +124,7 @@ public class AuthenticationStrategyTests {
                 identifiedPrincipals);
     }
 
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testDoNothingOneElementConfig() throws AuthenticationException{
 
         AuthenticationStrategy strategy =
@@ -232,13 +232,10 @@ public class AuthenticationStrategyTests {
     }
 
     /**
-     * in this case the first sufficient plugin should suceed and the second plugin
+     * in this case the first sufficient plugin should succeed and the second plugin
      * that throws RuntimeException should be never called
-     * But because we do not know what the success condition is for Authentication plugins
-     * We always call all plugins, so the RuntimeException is expected here
-     * @throws org.dcache.gplazma.AuthenticationException
      */
-    @Test  (expected=RuntimeException.class)
+    @Test
     public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException{
 
         AuthenticationStrategy strategy =

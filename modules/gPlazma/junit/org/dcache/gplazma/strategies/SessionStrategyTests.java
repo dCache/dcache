@@ -99,19 +99,18 @@ public class SessionStrategyTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory() {
         StrategyFactory factory =
-                StrategyFactory.getInstanse();
+                StrategyFactory.getInstance();
         assertNotNull(factory);
         AccountStrategy authStrategy = factory.newAccountStrategy();
         assertNotNull(authStrategy);
     }
 
     /**
-     * This is expected to throw an AuthenticationException
-     * as there will be no Root or Home dir attributes in
-     * sessionAttributes set
-     * @throws org.dcache.gplazma.AuthenticationException
+     * This is expected to succeed as a configuration without
+     * any plugins imposes no constraints on a login account, so
+     * cannot fail.
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testEmptyConfig() throws AuthenticationException{
 
         SessionStrategy strategy =
@@ -127,12 +126,11 @@ public class SessionStrategyTests {
     }
 
     /**
-     * This is expected to throw an AuthenticationException
-     * as there will be no Root or Home dir attributes in
-     * sessionAttributes set
-     * @throws org.dcache.gplazma.AuthenticationException
+     * This is expected to succeed as a configuration without
+     * a single plugin that always succeeds imposes no
+     * constraints on a login account, so cannot fail.
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testDoNothingOneElementConfig() throws AuthenticationException{
 
         SessionStrategy strategy =

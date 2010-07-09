@@ -69,7 +69,7 @@ public class FromFileConfigurationLoadingStrategy
         configurationFileLastModified =  configurationFile.lastModified();
         configurationFileLastChecked = System.currentTimeMillis();
         ConfigurationParserFactory parserFactory =
-                ConfigurationParserFactory.getInstanse();
+                ConfigurationParserFactory.getInstance();
         ConfigurationParser parser = parserFactory.newConfigurationParser();
         return parser.parse(configurationFile);
     }

@@ -96,7 +96,7 @@ public class AccountStrategyTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory() {
         StrategyFactory factory =
-                StrategyFactory.getInstanse();
+                StrategyFactory.getInstance();
         assertNotNull(factory);
         AccountStrategy authStrategy = factory.newAccountStrategy();
         assertNotNull(authStrategy);
@@ -204,15 +204,11 @@ public class AccountStrategyTests {
     }
 
     /**
-     * in this case the first sufficient plugin should suceed and the second plugin
+     * in this case the first sufficient plugin should succeed and the second plugin
      * that throws RuntimeException should be never called
-     * But because we do not know what the success condition is for Account plugins
-     * We always call all plugins, so the RuntimeException is expected here
-     * @throws org.dcache.gplazma.AuthenticationException
      */
-    @Test  (expected=RuntimeException.class)
+    @Test
     public void testSufficientPluginFollowedByFailedConfig() throws AuthenticationException{
-
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);

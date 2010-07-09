@@ -37,8 +37,9 @@ public class GPlazmaTests {
     private static final String SESSION_NAME="homeRootSesson";
     private static final String FAIL_NAME = "fail_all";
     private static final String USER_NAME = "root";
-    private static final String HOME_PATH = "/root";
-    private static final String ROOT_PATH = "/";
+    private static final String HOME_PATH_ARG_VALUE = "/root";
+    private static final String ROOT_PATH_ARG_VALUE = "/";
+    private static final String READ_ONLY_ARG_VALUE = "true";
     private static final String ROOT_UID = "0";
     private static final String ROOT_GID = "0";
 
@@ -50,7 +51,7 @@ public class GPlazmaTests {
             new ConfigurationItem(ACCOUNT, REQUISITE, ACCOUNT_NAME, ROOT_UID);
     private static final ConfigurationItem SESSION_CONFIG_ITEM =
             new ConfigurationItem(SESSION, REQUIRED, SESSION_NAME,
-            USER_NAME + " " + HOME_PATH + " " + ROOT_PATH);
+            USER_NAME + " " + HOME_PATH_ARG_VALUE + " " + ROOT_PATH_ARG_VALUE+" "+READ_ONLY_ARG_VALUE);
     private static final ConfigurationItem FAIL_AUTH_CONFIG_ITEM =
             new ConfigurationItem(AUTHENTICATION, REQUIRED, FAIL_NAME, null);
     private static final ConfigurationItem FAIL_MAPPING_CONFIG_ITEM =
@@ -179,8 +180,9 @@ public class GPlazmaTests {
         assertEquals(resultPrincipals, expectedPrincipals);
 
         Set<SessionAttribute> expectedAttributes = new HashSet();
-        expectedAttributes.add(new HomeDirectory(HOME_PATH));
-        expectedAttributes.add(new RootDirectory(ROOT_PATH));
+        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
+        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
+        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
 
         Set<SessionAttribute> resulAttributes = result.getSessionAttributes();
 
@@ -221,8 +223,9 @@ public class GPlazmaTests {
         assertEquals(resultPrincipals, expectedPrincipals);
 
         Set<SessionAttribute> expectedAttributes = new HashSet();
-        expectedAttributes.add(new HomeDirectory(HOME_PATH));
-        expectedAttributes.add(new RootDirectory(ROOT_PATH));
+        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
+        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
+        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
         Set<SessionAttribute> resulAttributes = result.getSessionAttributes();
         assertEquals(resulAttributes, expectedAttributes);
    }

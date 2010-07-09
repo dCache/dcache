@@ -22,7 +22,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
 
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins) {
-        pamStyleAuthentiationStrategy = new PAMStyleStrategy(plugins);
+        pamStyleAuthentiationStrategy = new PAMStyleStrategy<GPlazmaAuthenticationPlugin>(plugins);
     }
 
     /**
@@ -52,36 +52,14 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy {
             final Set<Principal> identifiedPrincipals) throws AuthenticationException {
        pamStyleAuthentiationStrategy.callPlugins( new PluginCaller<GPlazmaAuthenticationPlugin>() {
            @Override
-           public boolean call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException {
+           public void call(GPlazmaAuthenticationPlugin plugin) throws AuthenticationException {
                 LOGGER.debug("calling authenticate of plugin {}",plugin);
                 plugin.authenticate(
                         sessionID,
                         publicCredential,
                         privateCredential,
                         identifiedPrincipals);
-                return  haveAllRequiredPrincipalsIdentified(identifiedPrincipals);
             }
         });
-
-        if(identifiedPrincipals.isEmpty()) {
-            LOGGER.debug("identified principals set is empty after all plugins ran");
-            throw new AuthenticationException("all authentication plugins ran, " +
-                    "no principals were identified");
-        }
     }
-
-    /**
-     *
-     * @param authorizedPrincipals
-     * @return false
-     */
-   private static boolean haveAllRequiredPrincipalsIdentified(
-           Set<Principal> authorizedPrincipals) {
-       //Timur: I have no idea how to tell if all the principals needed were identified,
-       // so I return false here, which means that even if there are sufficient
-       // authentication plugins
-       // we will iterate over all authentication plugins
-       return false;
-    }
-
 }

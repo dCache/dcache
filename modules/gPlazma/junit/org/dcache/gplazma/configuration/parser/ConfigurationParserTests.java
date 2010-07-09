@@ -107,7 +107,7 @@ public class ConfigurationParserTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory() {
         ConfigurationParserFactory factory =
-                ConfigurationParserFactory.getInstanse();
+                ConfigurationParserFactory.getInstance();
         assertNotNull(factory);
         ConfigurationParser parser = factory.newConfigurationParser();
         assertNotNull(parser);

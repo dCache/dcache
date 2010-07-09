@@ -77,19 +77,17 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin> {
      */
     public synchronized void callPlugins(PluginCaller<T> caller) throws AuthenticationException {
         AuthenticationException firstRequiredPluginException=null;
-        boolean success = false;
         for(GPlazmaPluginElement<T> pluginElement: pluginElements) {
             ConfigurationItemControl control = pluginElement.getControl();
             GPlazmaPlugin plugin = pluginElement.getPlugin();
             try {
-                success = caller.call(pluginElement.getPlugin());
+                caller.call(pluginElement.getPlugin());
 
                 logger.debug("{} Plugin " +
-                    "{} operaton completed, "+
-                    " have all required attributes: {}",
-                    new Object[]{control, plugin, success} );
+                    "{} operaton completed",
+                    control, plugin);
 
-                    if(control == SUFFICIENT && success) {
+                    if(control == SUFFICIENT) {
                         return;
                     }
             } catch (AuthenticationException currentPluginException) {

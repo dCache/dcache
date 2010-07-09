@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionAttribute;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.RootDirectory;
 import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.slf4j.Logger;
@@ -25,8 +23,9 @@ public class DefaultSessionStrategy  implements SessionStrategy{
      *
      * @param plugins
      */
+    @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaSessionPlugin>> plugins) {
-        pamStyleSessionStrategy = new PAMStyleStrategy(plugins);
+        pamStyleSessionStrategy = new PAMStyleStrategy<GPlazmaSessionPlugin>(plugins);
     }
 
     /**
@@ -47,43 +46,18 @@ public class DefaultSessionStrategy  implements SessionStrategy{
      * @see PAMStyleStrategy
      * @see PluginCaller
      */
+    @Override
     public synchronized void session(
             final SessionID sessionID,
             final Set<Principal> authorizedPrincipals,
             final Set<SessionAttribute> attrib) throws AuthenticationException {
-
+        logger.debug("call to session");
         pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>() {
-            public boolean call(GPlazmaSessionPlugin plugin) throws AuthenticationException {
+            @Override
+            public void call(GPlazmaSessionPlugin plugin) throws AuthenticationException {
                 plugin.session(sessionID, authorizedPrincipals, attrib);
-                return haveAllRequiredAttributes(attrib);
             }
         });
 
-        if(! haveAllRequiredAttributes(attrib) ) {
-            throw new AuthenticationException("all session plugins are executed, " +
-                    "not all required " +
-                    "attributes are present in attrib");
-        }
-
-    }
-
-    /**
-     *
-     * @param attributes
-     * @return true iff {@link attributes} has at least one HomeDirectory and
-     * one RootDirectory
-     */
-    private static boolean haveAllRequiredAttributes(Set<SessionAttribute> attributes) {
-        boolean homeDirectoryFound = false;
-        boolean rootDirectoryFound = false;
-        for(SessionAttribute attribute:attributes) {
-            if(attribute instanceof HomeDirectory) {
-                homeDirectoryFound = true;
-            }
-            if(attribute instanceof RootDirectory) {
-                rootDirectoryFound = true;
-            }
-        }
-        return homeDirectoryFound && rootDirectoryFound;
     }
 }

@@ -19,7 +19,7 @@ public class HomeDirectory implements SessionAttribute, Serializable {
 
     @Override
     public String getName() {
-        return directory;
+        return "HomeDirectory";
     }
 
     @Override

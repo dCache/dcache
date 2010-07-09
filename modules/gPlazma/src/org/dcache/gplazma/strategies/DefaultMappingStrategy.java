@@ -3,9 +3,6 @@ package org.dcache.gplazma.strategies;
 import java.security.Principal;
 import java.util.List;
 import java.util.Set;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
@@ -23,8 +20,9 @@ public class DefaultMappingStrategy implements MappingStrategy {
 
     private PAMStyleStrategy<GPlazmaMappingPlugin> pamStyleMappingStrategy;
 
+    @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaMappingPlugin>> plugins) {
-        pamStyleMappingStrategy = new PAMStyleStrategy(plugins);
+        pamStyleMappingStrategy = new PAMStyleStrategy<GPlazmaMappingPlugin>(plugins);
     }
 
     /**
@@ -44,24 +42,19 @@ public class DefaultMappingStrategy implements MappingStrategy {
      * @see PAMStyleStrategy
      * @see PluginCaller
      */
+    @Override
     public synchronized void map(
             final SessionID sessionID,
             final Set<Principal> principals,
             final Set<Principal> authorizedPrincipals)
             throws AuthenticationException {
-
+        logger.debug("call to map");
         pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>() {
-            public boolean call(GPlazmaMappingPlugin plugin) throws AuthenticationException {
+            @Override
+            public void call(GPlazmaMappingPlugin plugin) throws AuthenticationException {
                 plugin.map(sessionID, principals, authorizedPrincipals);
-                return haveAllRequiredAuthorizedPrincipals(authorizedPrincipals);
             }
         });
-
-        if(! haveAllRequiredAuthorizedPrincipals(authorizedPrincipals) ) {
-            throw new AuthenticationException("all mappingPlugins are executed, " +
-                    "not all required " +
-                    "principals are present in authorizedPrincipals");
-        }
     }
 
     /**
@@ -81,54 +74,18 @@ public class DefaultMappingStrategy implements MappingStrategy {
      * @see PAMStyleStrategy
      * @see PluginCaller
      */
+    @Override
     public synchronized void reverseMap(
             final SessionID sessionID,
             final Principal sourcePrincipal,
             final Set<Principal> principals)
             throws AuthenticationException {
+        logger.debug("call to reverse-map");
         pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>() {
-            public boolean call(GPlazmaMappingPlugin plugin) throws AuthenticationException {
+            @Override
+            public void call(GPlazmaMappingPlugin plugin) throws AuthenticationException {
                 plugin.reverseMap(sessionID, sourcePrincipal, principals);
-                return !principals.isEmpty();
             }
         });
-
-        if( principals.isEmpty() ) {
-            throw new AuthenticationException("all mappingPlugins are executed, " +
-                    "no reverseMaped principalas were found ");
-        }
-
     }
-
-    /**
-     * Check if the authorizedPrincipals has all required types of principals
-     * mapped by MappingPlugin
-     * @param authorizedPrincipals
-     * @return true if authorizedPrincipals set contain at least one instance of
-     *   each type of {@link UidPrincipal UidPrincipal},
-     * {@link GidPrincipal GidPrincipal} and
-     * {@link UserNamePrincipal UserNamePrincipal}
-     */
-    private static boolean haveAllRequiredAuthorizedPrincipals(Set<Principal> authorizedPrincipals) {
-        boolean userNamePrincipalFound = false;
-        boolean uidPrincipalFound = false;
-        boolean gidPrincipalFound = false;
-        for(Principal authorizedPrincipal:authorizedPrincipals) {
-            if(authorizedPrincipal instanceof UserNamePrincipal) {
-                userNamePrincipalFound = true;
-                continue;
-            }
-            if(authorizedPrincipal instanceof UidPrincipal) {
-                uidPrincipalFound = true;
-                continue;
-            }
-            if(authorizedPrincipal instanceof GidPrincipal) {
-                gidPrincipalFound = true;
-                continue;
-            }
-        }
-        return userNamePrincipalFound && uidPrincipalFound && gidPrincipalFound;
-    }
-
-
 }

@@ -24,7 +24,7 @@ public abstract class ConfigurationParserFactory {
      * but this behavior can be overridden with definition of the system property
      * "org.dcache.gplazma.configuration.parser.ConfigurationParserFactory"
      */
-    public static ConfigurationParserFactory getInstanse() {
+    public static ConfigurationParserFactory getInstance() {
         try {
             return (ConfigurationParserFactory) FactoryFinder.find(DEFAULT_PROPERTY_NAME, DEFAULT_FACTORY);
         } catch (ClassNotFoundException cnfe) {
@@ -43,7 +43,7 @@ public abstract class ConfigurationParserFactory {
      */
     public static ConfigurationParserFactory getInstance(String factoryClassName) {
         try {
-            return (ConfigurationParserFactory) FactoryFinder.find(DEFAULT_PROPERTY_NAME, DEFAULT_FACTORY);
+            return (ConfigurationParserFactory) FactoryFinder.newInstance(factoryClassName);
         } catch (ClassNotFoundException cnfe) {
             throw new FactoryConfigurationError("configuration error", cnfe);
         } catch (InstantiationException ie) {

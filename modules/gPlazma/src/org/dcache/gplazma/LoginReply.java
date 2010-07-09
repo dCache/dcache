@@ -57,4 +57,16 @@ public class LoginReply {
 
         return resultSet;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("LoginReply [");
+        sb.append(_subject).append(", [");
+        for(SessionAttribute sessionAttribute:_sessionAttributes ) {
+            sb.append(sessionAttribute).append(", ");
+        }
+        sb.append("]]");
+        return sb.toString();
+
+    }
 }

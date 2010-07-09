@@ -25,6 +25,9 @@ import org.dcache.gplazma.strategies.AccountStrategy;
 import org.dcache.gplazma.strategies.SessionStrategy;
 import org.dcache.gplazma.strategies.GPlazmaPluginElement;
 
+import org.dcache.gplazma.validation.ValidationStrategy;
+import org.dcache.gplazma.validation.ValidationStrategyFactory;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
@@ -61,6 +64,7 @@ public class GPlazma {
    private MappingStrategy mappingStrategy;
    private AccountStrategy accountStrategy;
    private SessionStrategy sessionStrategy;
+   private ValidationStrategy validationStrategy;
 
    public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy) {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
@@ -118,6 +122,9 @@ public class GPlazma {
                  subject.getPrivateCredentials());
          reply.setSubject(replySubject);
          reply.setSessionAttributes(attributes);
+
+         validationStrategy.validate(sessionId, reply);
+
          return reply;
     }
 
@@ -150,7 +157,7 @@ public class GPlazma {
 
     private void initStrategies() {
         StrategyFactory factory =
-                StrategyFactory.getInstanse();
+                StrategyFactory.getInstance();
         authenticationStrategy = factory.newAuthenticationStrategy();
         authenticationStrategy.setPlugins(authenticationPluginElements);
         mappingStrategy = factory.newMappingStrategy();
@@ -159,6 +166,10 @@ public class GPlazma {
         accountStrategy.setPlugins(accountPluginElements);
         sessionStrategy = factory.newSessionStrategy();
         sessionStrategy.setPlugins(sessionPluginElements);
+
+        ValidationStrategyFactory validationFactory =
+                ValidationStrategyFactory.getInstance();
+        validationStrategy = validationFactory.newValidationStrategy();
     }
 
     private void classifyPlugin(

@@ -100,19 +100,18 @@ public class MappingStrategyReverseMapTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory() {
         StrategyFactory factory =
-                StrategyFactory.getInstanse();
+                StrategyFactory.getInstance();
         assertNotNull(factory);
         AccountStrategy authStrategy = factory.newAccountStrategy();
         assertNotNull(authStrategy);
     }
 
     /**
-     * This is expected to throw an AuthenticationException
-     * as there will be no Root or Home dir attributes in
-     * sessionAttributes set
-     * @throws org.dcache.gplazma.AuthenticationException
+     * This is expected to succeed as it is valid for
+     * a reverse-mapping not to recover the original principal
+     * in all cases.
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testEmptyConfig() throws AuthenticationException{
 
         MappingStrategy strategy =
@@ -129,12 +128,11 @@ public class MappingStrategyReverseMapTests {
     }
 
     /**
-     * This is expected to throw an AuthenticationException
-     * as there will be no Root or Home dir attributes in
-     * sessionAttributes set
-     * @throws org.dcache.gplazma.AuthenticationException
+     * This is expected to succeed as it is valid for
+     * a reverse-mapping not to recover the original principal
+     * in all cases.
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testDoNothingOneElementConfig() throws AuthenticationException{
 
         MappingStrategy strategy =

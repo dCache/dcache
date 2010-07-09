@@ -1,29 +1,29 @@
-package org.dcache.gplazma.strategies;
+package org.dcache.gplazma.validation;
 
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationError;
 /**
  * getInstance of StrategyFactory
  * @author timur
  */
-public abstract class StrategyFactory {
+public abstract class ValidationStrategyFactory {
 
 
     private static final String DEFAULT_PROPERTY_NAME =
-            "org.dcache.gplazma.strategies.StrategyFactory";
+            "org.dcache.gplazma.validation.ValidationStrategyFactory";
     private static final String DEFAULT_FACTORY =
-            "org.dcache.gplazma.strategies.DefaultStrategyFactory";
+            "org.dcache.gplazma.validation.DoorValidationStrategyFactory";
     /**
      *
      * @return an instance of the
      * StrategyFactory,
      * by default it is
-     * org.dcache.gplazma.configuration.parser.DefaultConfigurationParserFactory
+     * org.dcache.gplazma.validation.DoorValidationStrategyFactory
      * but this behavior can be overridden with definition of the system property
-     * "org.dcache.gplazma.configuration.parser.StrategyFactory"
+     * "org.dcache.gplazma.validation.ValidationStrategyFactory"
      */
-    public static StrategyFactory getInstance() {
+    public static ValidationStrategyFactory getInstance() {
         try {
-            return (StrategyFactory) FactoryFinder.find(DEFAULT_PROPERTY_NAME, DEFAULT_FACTORY);
+            return (ValidationStrategyFactory) FactoryFinder.find(DEFAULT_PROPERTY_NAME, DEFAULT_FACTORY);
         } catch (ClassNotFoundException cnfe) {
             throw new FactoryConfigurationError("configuration error", cnfe);
         } catch (InstantiationException ie) {
@@ -35,12 +35,12 @@ public abstract class StrategyFactory {
     /**
      *
      * @param factoryClassName
-     * @return an instanc of the StrategyFactory specified by the
+     * @return an instanc of the ValidationStrategyFactory specified by the
      *  factoryClassName
      */
-    public static StrategyFactory getInstance(String factoryClassName) {
+    public static ValidationStrategyFactory getInstance(String factoryClassName) {
         try {
-            return (StrategyFactory) FactoryFinder.newInstance(factoryClassName);
+            return (ValidationStrategyFactory) FactoryFinder.newInstance(factoryClassName);
         } catch (ClassNotFoundException cnfe) {
             throw new FactoryConfigurationError("configuration error", cnfe);
         } catch (InstantiationException ie) {
@@ -50,12 +50,6 @@ public abstract class StrategyFactory {
         }
     }
 
-    public abstract AuthenticationStrategy newAuthenticationStrategy();
-
-    public abstract MappingStrategy newMappingStrategy();
-
-    public abstract AccountStrategy newAccountStrategy();
-
-    public abstract SessionStrategy newSessionStrategy();
+    public abstract ValidationStrategy newValidationStrategy();
 
 }

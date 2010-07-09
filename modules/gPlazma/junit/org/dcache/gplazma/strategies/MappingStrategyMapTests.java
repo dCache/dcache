@@ -99,19 +99,18 @@ public class MappingStrategyMapTests {
     @Test
     public void testDefaultFactoryGetInstanceReturnsAFactory() {
         StrategyFactory factory =
-                StrategyFactory.getInstanse();
+                StrategyFactory.getInstance();
         assertNotNull(factory);
         AccountStrategy authStrategy = factory.newAccountStrategy();
         assertNotNull(authStrategy);
     }
 
     /**
-     * This is expected to throw an AuthenticationException
-     * as there will be no Root or Home dir attributes in
-     * sessionAttributes set
-     * @throws org.dcache.gplazma.AuthenticationException
+     * This is expected to pass as we don't require
+     * gPlazma mapping to produce Root or Home directory
+     * attributes.
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testEmptyConfig() throws AuthenticationException{
 
         MappingStrategy strategy =
@@ -128,12 +127,11 @@ public class MappingStrategyMapTests {
     }
 
     /**
-     * This is expected to throw an AuthenticationException
-     * as there will be no Root or Home dir attributes in
-     * sessionAttributes set
-     * @throws org.dcache.gplazma.AuthenticationException
+     * This is expected to pass as we don't require
+     * gPlazma mapping to produce Root or Home directory
+     * attributes.
      */
-    @Test (expected=AuthenticationException.class)
+    @Test
     public void testDoNothingOneElementConfig() throws AuthenticationException{
 
         MappingStrategy strategy =
