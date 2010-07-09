@@ -123,12 +123,6 @@ public class PoolSpaceBeanTest {
         _poolBean.compareTo(null);
     }
 
-    @Test(expected = java.lang.ClassCastException.class)
-    public void testCompareToWithWrongType() {
-        Boolean otherPool = new Boolean(true);
-        _poolBean.compareTo(otherPool);
-    }
-
     @Test
     public void testCompareToWithEqual() {
         PoolSpaceBean otherPool = new PoolSpaceBean();

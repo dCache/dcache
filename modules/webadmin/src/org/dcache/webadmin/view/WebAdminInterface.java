@@ -15,7 +15,7 @@ import org.apache.wicket.request.IRequestCodingStrategy;
 import org.apache.wicket.request.IRequestCycleProcessor;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
-import org.dcache.webadmin.controller.PoolBeanService;
+import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 import org.dcache.webadmin.view.pages.login.LogIn;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WebAdminInterface extends WebApplication {
 
-    private PoolBeanService _poolBeanService;
+    private PoolSpaceService _poolSpaceService;
     private LogInService _logInService;
     private PoolQueuesService _poolQueuesService;
     private int _httpPort;
@@ -70,12 +70,12 @@ public class WebAdminInterface extends WebApplication {
         return DCacheServices.class;
     }
 
-    public void setPoolBeanService(PoolBeanService poolBeanService) {
-        _poolBeanService = poolBeanService;
+    public void setPoolSpaceService(PoolSpaceService poolSpaceService) {
+        _poolSpaceService = poolSpaceService;
     }
 
-    public PoolBeanService getPoolBeanService() {
-        return _poolBeanService;
+    public PoolSpaceService getPoolSpaceService() {
+        return _poolSpaceService;
     }
 
     public void setLogInService(LogInService logInService) {

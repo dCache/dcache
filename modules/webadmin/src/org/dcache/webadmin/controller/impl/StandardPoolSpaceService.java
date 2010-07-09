@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.webadmin.controller.PoolBeanService;
-import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
+import org.dcache.webadmin.controller.PoolSpaceService;
+import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
 import org.dcache.webadmin.controller.util.NamedCellUtil;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
@@ -25,17 +25,17 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
  * between modelobjects and viewobjects.
  * @author jans
  */
-public class PoolBeanServiceImpl implements PoolBeanService {
+public class StandardPoolSpaceService implements PoolSpaceService {
 
-    private static final Logger _log = LoggerFactory.getLogger(PoolBeanServiceImpl.class);
+    private static final Logger _log = LoggerFactory.getLogger(StandardPoolSpaceService.class);
     private DAOFactory _daoFactory;
 
-    public PoolBeanServiceImpl(DAOFactory DAOFactory) {
+    public StandardPoolSpaceService(DAOFactory DAOFactory) {
         _daoFactory = DAOFactory;
     }
 
     @Override
-    public List<PoolSpaceBean> getPoolBeans() throws PoolBeanServiceException {
+    public List<PoolSpaceBean> getPoolBeans() throws PoolSpaceServiceException {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
@@ -51,7 +51,7 @@ public class PoolBeanServiceImpl implements PoolBeanService {
             return poolBeans;
 
         } catch (DAOException e) {
-            throw new PoolBeanServiceException(e);
+            throw new PoolSpaceServiceException(e);
         }
     }
 
@@ -75,13 +75,13 @@ public class PoolBeanServiceImpl implements PoolBeanService {
 
     @Override
     public void changePoolMode(List<PoolSpaceBean> pools, PoolV2Mode poolMode,
-            String userName) throws PoolBeanServiceException {
+            String userName) throws PoolSpaceServiceException {
         _log.debug("Change Pool mode called: {}", poolMode);
         Set<String> poolIds = getSelectedIds(pools);
         try {
             getPoolsDAO().changePoolMode(poolIds, poolMode, userName);
         } catch (DAOException ex) {
-            throw new PoolBeanServiceException(ex);
+            throw new PoolSpaceServiceException(ex);
         }
     }
 

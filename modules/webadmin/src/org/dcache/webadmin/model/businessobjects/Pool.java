@@ -19,6 +19,7 @@ public class Pool implements Serializable {
     private long _preciousSpace = 0;
     private long _usedSpace = 0;
     private List<MoverQueue> _moverQueues = new ArrayList<MoverQueue>();
+    private List<String> _poolGroups = new ArrayList<String>();
 
     public Pool() {
     }
@@ -81,6 +82,22 @@ public class Pool implements Serializable {
 
     public void addMoverQueue(MoverQueue queue) {
         _moverQueues.add(queue);
+    }
+
+    public List<String> getPoolGroups() {
+        return _poolGroups;
+    }
+
+    public void setPoolGroups(List<String> poolGroups) {
+        _poolGroups = poolGroups;
+    }
+
+    public void addPoolGroup(String poolGroup) {
+        _poolGroups.add(poolGroup);
+    }
+
+    public boolean isInPoolGroup(String group) {
+        return _poolGroups.contains(group);
     }
 
     @Override

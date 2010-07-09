@@ -31,7 +31,7 @@
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
     </bean>
 
-    <bean id="PoolBeanService" class="org.dcache.webadmin.controller.impl.PoolBeanServiceImpl">
+    <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">
         <constructor-arg>
             <ref bean="DAOFactory"/>
         </constructor-arg>
@@ -78,7 +78,7 @@
     </bean>
 
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
-        <property name="poolBeanService" ref="PoolBeanService"/>
+        <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="logInService" ref="LogInService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
         <property name="httpPort">

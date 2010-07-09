@@ -11,8 +11,8 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
-import org.dcache.webadmin.controller.PoolBeanService;
-import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
+import org.dcache.webadmin.controller.PoolSpaceService;
+import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
@@ -68,15 +68,15 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
         return list;
     }
 
-    private PoolBeanService getPoolBeanService() {
-        return getWebadminApplication().getPoolBeanService();
+    private PoolSpaceService getPoolSpaceService() {
+        return getWebadminApplication().getPoolSpaceService();
     }
 
     private void getPoolsAction() {
         try {
             _log.debug("getPoolListAction called");
-            this._poolBeans = getPoolBeanService().getPoolBeans();
-        } catch (PoolBeanServiceException ex) {
+            this._poolBeans = getPoolSpaceService().getPoolBeans();
+        } catch (PoolSpaceServiceException ex) {
             this.error(getStringResource("error.getPoolsFailed") + ex.getMessage());
             _log.debug("getPoolListAction failed {}", ex.getMessage());
             this._poolBeans = null;
@@ -100,10 +100,10 @@ public class PoolList extends BasePage implements AuthenticatedWebPage {
                 try {
                     _log.debug("selected: {}", _selectedOption.getValue());
                     PoolV2Mode poolMode = new PoolV2Mode(_selectedOption.getKey());
-                    getPoolBeanService().changePoolMode(_poolBeans, poolMode,
+                    getPoolSpaceService().changePoolMode(_poolBeans, poolMode,
                             getWebadminSession().getUserName());
                     getPoolsAction();
-                } catch (PoolBeanServiceException ex) {
+                } catch (PoolSpaceServiceException ex) {
                     _log.error("something went wrong with enable/disable");
                     this.error(getStringResource("error.changePoolModeFailed") + ex.getMessage());
                 }

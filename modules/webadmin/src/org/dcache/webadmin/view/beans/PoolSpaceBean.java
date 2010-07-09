@@ -10,7 +10,7 @@ import org.dcache.webadmin.controller.util.DiskSpaceUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PoolSpaceBean implements Comparable, Serializable {
+public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
 
     private static final Float ROUNDING_FACTOR = 10F;
     private static final Logger _log = LoggerFactory.getLogger(PoolSpaceBean.class);
@@ -205,15 +205,12 @@ public class PoolSpaceBean implements Comparable, Serializable {
         _selected = selected;
     }
 
-    public int compareTo(Object other) {
-
+    @Override
+    public int compareTo(PoolSpaceBean other) {
         if (other == null) {
             throw new NullPointerException();
         }
-//      throws ClassCastException if wrong object is delivered, according to
-//      specification
-        PoolSpaceBean otherBean = (PoolSpaceBean) other;
-        return this.getName().compareTo(otherBean.getName());
+        return this.getName().compareTo(other.getName());
     }
 
     @Override

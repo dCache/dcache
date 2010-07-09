@@ -2,17 +2,17 @@ package org.dcache.webadmin.controller;
 
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.List;
-import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
+import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 
 /**
  * Services for the view to invoke
  * @author jans
  */
-public interface PoolBeanService {
+public interface PoolSpaceService {
 
-    public List<PoolSpaceBean> getPoolBeans() throws PoolBeanServiceException;
+    public List<PoolSpaceBean> getPoolBeans() throws PoolSpaceServiceException;
 
     public void changePoolMode(List<PoolSpaceBean> pools, PoolV2Mode poolMode,
-            String userName) throws PoolBeanServiceException;
+            String userName) throws PoolSpaceServiceException;
 }
