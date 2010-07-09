@@ -77,7 +77,15 @@ class CellGlue {
       sendToAll( new CellEvent( name , CellEvent.CELL_CREATED_EVENT ) ) ;
    }
 
-   void setSystemNucleus( CellNucleus nucleus ){ _systemNucleus = nucleus ; }
+    void setSystemNucleus(CellNucleus nucleus)
+    {
+        _systemNucleus = nucleus;
+    }
+
+    CellNucleus getSystemNucleus()
+    {
+        return _systemNucleus;
+    }
 
    String [] [] getClassProviders(){ return _classLoader.getProviders() ; }
 

@@ -2,7 +2,6 @@ package dmg.cells.nucleus;
 
 import dmg.util.Pinboard;
 import dmg.util.Args;
-import dmg.util.PinboardAppender;
 import dmg.util.BufferedLineWriter;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
@@ -139,6 +138,25 @@ public class CellNucleus implements ThreadFactory
         __cellGlue.addCell(_cellName, this);
 
     }
+
+    /**
+     * Returns the CellNucleus to which log messages tagged with a
+     * given cell are associated.
+     */
+    public static CellNucleus getLogTargetForCell(String cell)
+    {
+        CellNucleus nucleus = null;
+        if (__cellGlue != null) {
+            if (cell != null) {
+                nucleus = __cellGlue.getCell(cell);
+            }
+            if (nucleus == null) {
+                nucleus = __cellGlue.getSystemNucleus();
+            }
+        }
+        return nucleus;
+    }
+
     void setSystemNucleus(CellNucleus nucleus) {
         __cellGlue.setSystemNucleus(nucleus);
     }
@@ -243,7 +261,6 @@ public class CellNucleus implements ThreadFactory
     public void setPinboard(Pinboard pinboard)
     {
         _pinboard = pinboard;
-        PinboardAppender.addPinboard(getCellName(), _pinboard);
     }
 
     public Pinboard getPinboard()
@@ -897,8 +914,6 @@ public class CellNucleus implements ThreadFactory
             __cellGlue.destroy(CellNucleus.this);
             _state = DEAD;
             _logNucleus.info("killerThread : stopped");
-
-            PinboardAppender.removePinboard(_cellName);
         }
     }
 
