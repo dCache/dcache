@@ -4,6 +4,9 @@ import  dmg.cells.nucleus.* ;
 import  java.util.* ;
 import  java.io.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -11,6 +14,9 @@ import  java.io.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class ConfigCell implements Cell, Runnable  {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(ConfigCell.class);
 
    private CellNucleus _nucleus   = null ;
    private Thread      _worker    = null ;
@@ -68,7 +74,7 @@ public class ConfigCell implements Cell, Runnable  {
    private void setStatus( String st ){
      if( st.equals("\n") )return  ;
      _message = st ;
-     _nucleus.say( st ) ;
+     _log.info( st ) ;
      synchronized( _statusLock ){
        if( _status.size() > 40 ){
           _status.removeElementAt(0) ;
@@ -83,33 +89,33 @@ public class ConfigCell implements Cell, Runnable  {
    public void   messageArrived( MessageEvent me ){
 
      if( me instanceof LastMessageEvent ){
-        _nucleus.say( "Last message received; releasing lock" ) ;
+        _log.info( "Last message received; releasing lock" ) ;
         synchronized( _readyLock ){
             _ready = true ;
             _readyLock.notifyAll();
         }
      }else{
         CellMessage msg = me.getMessage() ;
-        _nucleus.say( " CellMessage From   : "+msg.getSourceAddress() ) ;
-        _nucleus.say( " CellMessage To     : "+msg.getDestinationAddress() ) ;
-        _nucleus.say( " CellMessage Object : "+msg.getMessageObject() ) ;
-        _nucleus.say( "" ) ;
+        _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+        _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
+        _log.info( "" ) ;
      }
 
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( "prepareRemoval received" ) ;
+     _log.info( "prepareRemoval received" ) ;
      synchronized( _readyLock ){
         if( ! _ready ){
-           _nucleus.say( "waiting for last message to be processed" ) ;
+           _log.info( "waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
         }
      }
-     _nucleus.say( "finished" ) ;
+     _log.info( "finished" ) ;
      // this will remove whatever was stored for us
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

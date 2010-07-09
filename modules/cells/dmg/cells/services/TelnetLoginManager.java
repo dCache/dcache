@@ -107,15 +107,15 @@ public class      TelnetLoginManager
             try{
                socket = _serverSocket.accept() ;
                _connectionRequestCounter ++ ;
-               _nucleus.say( "Connection request from "+socket.getInetAddress() ) ;
+               _log.info( "Connection request from "+socket.getInetAddress() ) ;
                Thread t = new Thread( this ) ;
                _connectionThreads.put( t , socket ) ;
                t.start() ;
             }catch( IOException ioe ){
-               _nucleus.esay( "Got an IO Exception ( closing server ) : "+ioe ) ;
+               _log.warn( "Got an IO Exception ( closing server ) : "+ioe ) ;
                break ;
             }catch( Exception ee ){
-               _nucleus.esay( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
+               _log.warn( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
                if(socket != null) try{ socket.close() ; }catch( IOException ioex ){}
                continue ;
             }
@@ -125,14 +125,14 @@ public class      TelnetLoginManager
   public void acceptConnection( Socket socket ){
     Thread t = Thread.currentThread() ;
     try{
-       _nucleus.say( "acceptThread ("+t+"): creating protocol engine" ) ;
+       _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
        StreamEngine engine   ;
        engine = _opt_raw ?
                 (StreamEngine)new DummyStreamEngine( socket ) :
                 (StreamEngine)new TelnetStreamEngine( socket , this ) ;
 
        String name = Subjects.getDisplayName(engine.getSubject());
-       _nucleus.say( "acceptThread ("+t+
+       _log.info( "acceptThread ("+t+
                      "): connection created for user "+name ) ;
        String cellName = "tn-"+name+"*" ;
 
@@ -143,11 +143,11 @@ public class      TelnetLoginManager
        createNewCell( _loginCellClass , cellName , paraNames , parameter ) ;
 
     }catch( Exception e ){
-       _nucleus.esay( "Exception in TelnetStreamEngine : "+e ) ;
+       _log.warn( "Exception in TelnetStreamEngine : "+e ) ;
        if( e instanceof InvocationTargetException ){
           Exception ie =
              (Exception)((InvocationTargetException)e).getTargetException() ;
-             _nucleus.esay( "TargetException in TelnetStreamEngine : "+ie ) ;
+             _log.warn( "TargetException in TelnetStreamEngine : "+ie ) ;
        }
        try{ socket.close(); }catch(Exception ee){}
     }
@@ -182,17 +182,17 @@ public class      TelnetLoginManager
   // ssh server authetication
   //
    public boolean isHostOk( InetAddress host ){
-      _nucleus.say( "Request for host "+host+" ("+host.getHostName()+")" ) ;
+      _log.info( "Request for host "+host+" ("+host.getHostName()+")" ) ;
       if( _opt_dummy )return true ;
       if( _opt_localhost && (  host.getHostName().equals("localhost") ))return true ;
       return false ;
    }
    public boolean isUserOk( InetAddress host , String user ){
-      _nucleus.say( "Request for host "+host+" user "+user ) ;
+      _log.info( "Request for host "+host+" user "+user ) ;
       return _opt_anyuser ;
    }
    public boolean isPasswordOk( InetAddress host , String user , String passwd ){
-      _nucleus.say( "Request for host "+host+" user "+user+" password "+passwd ) ;
+      _log.info( "Request for host "+host+" user "+user+" password "+passwd ) ;
       return passwd.equals("elch") ? true : false ;
    }
 }

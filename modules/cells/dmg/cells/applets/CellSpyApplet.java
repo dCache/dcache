@@ -10,12 +10,19 @@ import dmg.cells.examples.* ;
 import dmg.cells.nucleus.* ;
 import dmg.cells.network.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class      CellSpyApplet
        extends    Applet
        implements ActionListener,
                   Runnable ,
                   Cell ,
                   CellEventListener       {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(CellSpyApplet.class);
+
   //
   // Cell Environment Stuff
   //
@@ -155,7 +162,7 @@ public class      CellSpyApplet
         CellMessage msg  = me.getMessage() ;
         if( msg.isFinalDestination() ){
            Object      obj  = msg.getMessageObject() ;
-           _nucleus.say( "Msg arrived (f) : "+msg ) ;
+           _log.info( "Msg arrived (f) : "+msg ) ;
         }
      }
    }
@@ -164,7 +171,7 @@ public class      CellSpyApplet
    }
 
    public synchronized void  routeAdded( CellEvent ce ){
-      _nucleus.say( "routeAdded : "+ce );
+      _log.info( "routeAdded : "+ce );
       if( _defaultRoute == null  ){
 
          CellRoute route  = (CellRoute)ce.getSource() ;
@@ -173,20 +180,20 @@ public class      CellSpyApplet
          Args args = new Args( "-default *@"+route.getDomainName() ) ;
          _defaultRoute =  new CellRoute( args ) ;
 
-         _nucleus.say( "routeAdded : adding default : "+_defaultRoute ) ;
+         _log.info( "routeAdded : adding default : "+_defaultRoute ) ;
          _nucleus.routeAdd( _defaultRoute ) ;
 
       }
    }
    public synchronized void  routeDeleted( CellEvent ce ){
-     _nucleus.say( "routeDeleted : "+ce ) ;
+     _log.info( "routeDeleted : "+ce ) ;
       if( _defaultRoute != null  ){
 
          CellRoute route  = (CellRoute)ce.getSource() ;
          if( route.getRouteType() != CellRoute.DOMAIN )return ;
 
 
-         _nucleus.say( "routeDeleted : removing default : "+_defaultRoute ) ;
+         _log.info( "routeDeleted : removing default : "+_defaultRoute ) ;
          _nucleus.routeDelete( _defaultRoute ) ;
 
          _defaultRoute = null ;
@@ -194,19 +201,19 @@ public class      CellSpyApplet
       }
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-//     _nucleus.say( " exceptionArrived "+ce ) ;
+//     _log.info( " exceptionArrived "+ce ) ;
    }
    //
    // interface from CellEventListener
    //
    public void  cellCreated( CellEvent  ce ){
-//     _nucleus.say( " cellCreated "+ce ) ;
+//     _log.info( " cellCreated "+ce ) ;
    }
    public void  cellDied( CellEvent ce ){
-//     _nucleus.say( " cellDied "+ce ) ;
+//     _log.info( " cellDied "+ce ) ;
    }
    public void  cellExported( CellEvent ce ){
-//     _nucleus.say( " cellExported "+ce ) ;
+//     _log.info( " cellExported "+ce ) ;
    }
 
 }

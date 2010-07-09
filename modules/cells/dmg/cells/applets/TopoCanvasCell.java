@@ -10,12 +10,18 @@ import dmg.cells.network.* ;
 import dmg.cells.services.* ;
 import dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class      TopoCanvasCell
        extends    Canvas
        implements Cell,
                   Runnable ,
                   MouseListener
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(TopoCanvasCell.class);
+
      private CellNucleus _nucleus ;
      private CellShell   _shell ;
      private Gate        _finalGate     = new Gate( false ) ;
@@ -338,7 +344,7 @@ public class      TopoCanvasCell
                  Thread.sleep(5000) ;
 
               }catch(Exception e){
-                 _nucleus.esay( "Problem sending request : "+e) ;
+                 _log.warn( "Problem sending request : "+e) ;
                  try{Thread.sleep(5000) ;
                  }catch(Exception ex){}
               }
@@ -356,7 +362,7 @@ public class      TopoCanvasCell
                say( ee.toString() ) ;
                return ;
             }
-            _nucleus.say( "getcellinfos arrived "+msg ) ;
+            _log.info( "getcellinfos arrived "+msg ) ;
             if( msg == null ){
                say( "Timeout, Sorry" ) ;
                return ;
@@ -375,7 +381,7 @@ public class      TopoCanvasCell
 //                String [] s = new String[_displayCellInfo.length] ;
 //                for( int i= 0 ; i < s.length ; i++ ){
 //                   s[i] = _displayCellInfo[i].toString() ;
-//                   _nucleus.say( " -> "+s[i] ) ;
+//                   _log.info( " -> "+s[i] ) ;
 //                }
 //                say( s ) ;
             }
@@ -398,7 +404,7 @@ public class      TopoCanvasCell
    public void   messageArrived( MessageEvent me ){
 
      if( me instanceof LastMessageEvent ){
-        _nucleus.say( "Last message received; releasing lock" ) ;
+        _log.info( "Last message received; releasing lock" ) ;
         _finalGate.open();
      }else{
         CellMessage msg   = me.getMessage() ;
@@ -413,31 +419,31 @@ public class      TopoCanvasCell
               if( (_topology == null ) ||
                   ! topo.equals( _topology ) ){
                    _topology  = topo ;
-                   _nucleus.say( "Change in topogy registered" ) ;
+                   _log.info( "Change in topogy registered" ) ;
                    doRepaint  = true ;
               }
            }
            if( doRepaint ){
               repaint() ;
 //              _toolkit.sync() ;
-              _nucleus.say( "Repaint called" ) ;
+              _log.info( "Repaint called" ) ;
            }
         }
      }
 
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( "prepareRemoval : waiting to enter final gate" ) ;
+     _log.info( "prepareRemoval : waiting to enter final gate" ) ;
      _finalGate.check() ;
 
-     _nucleus.say( "finished" ) ;
+     _log.info( "finished" ) ;
      // returning from this routing
      // means that the system will stop
      // all thread connected to us
      //
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( "exceptionArrived : "+ce ) ;
+     _log.info( "exceptionArrived : "+ce ) ;
    }
    private void setDisplayMode( int mode ){
       synchronized( _displayLock ){
@@ -497,10 +503,10 @@ public class      TopoCanvasCell
 
                 }
                 if( domain == null ){
-                   _nucleus.say( "Nothing klicked" ) ;
+                   _log.info( "Nothing klicked" ) ;
                    return ;
                 }else{
-                   _nucleus.say( "Found : "+domain ) ;
+                   _log.info( "Found : "+domain ) ;
                 }
                 if( domain.equals( "Update" ) ){
                     _psThread = new Thread( this ) ;

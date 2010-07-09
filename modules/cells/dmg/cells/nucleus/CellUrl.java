@@ -6,7 +6,14 @@ import java.net.* ;
 import java.util.* ;
 import java.lang.reflect.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CellUrl {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(CellUrl.class);
+
    private                CellGlue  _glue   = null ;
    private URLStreamHandlerFactory _others  = null ;
 
@@ -36,23 +43,10 @@ public class CellUrl {
           super( url ) ;
           _protocol = protocol ;
        }
-       public void say(String s)
-       {
-           if(_nucleus != null)
-           {
-               _nucleus.say(s);
-           }
-       }
-       public void esay(String s)
-       {
-           if(_nucleus != null)
-           {
-               _nucleus.esay(s);
-           }
-       }
+
        public void connect(){
 
-           say( "DomainUrlConnection : Connect called" ) ;
+           _log.info( "DomainUrlConnection : Connect called" ) ;
            return ;
        }
        public void setNucleus( CellNucleus nucleus ){
@@ -171,7 +165,7 @@ public class CellUrl {
                throws IOException {
 
           Class cellClass = cell.getClass() ;
-          say("DomainUrlConnection : Cell Class is : "+cellClass ) ;
+          _log.info("DomainUrlConnection : Cell Class is : "+cellClass ) ;
           Class [] argsClasses = new Class[0] ;
           try{
              Method method = cellClass.getDeclaredMethod(

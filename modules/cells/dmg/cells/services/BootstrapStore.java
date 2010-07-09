@@ -8,6 +8,9 @@ import java.net.* ;
 import java.io.* ;
 import java.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -15,6 +18,9 @@ import java.util.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class BootstrapStore implements Cell {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(BootstrapStore.class);
 
    private Gate   _finalGate = new Gate( false ) ;
    private String _storeBase = null ;
@@ -55,7 +61,7 @@ public class BootstrapStore implements Cell {
         CellMessage msg  = me.getMessage() ;
         if( msg.isFinalDestination() ){
            Object      obj  = msg.getMessageObject() ;
-           _nucleus.say( "Got Object : "+obj.toString() ) ;
+           _log.info( "Got Object : "+obj.toString() ) ;
            _requests ++ ;
            if( obj instanceof String ){
               String command = (String)obj ;
@@ -69,7 +75,7 @@ public class BootstrapStore implements Cell {
                  _nucleus.sendMessage( msg ) ;
                  _answeredRequests ++ ;
               }catch(Exception mse ){
-                 _nucleus.say( "messageArrived : Problem with "+
+                 _log.info( "messageArrived : Problem with "+
                                args.argv(1)+" -> "+mse ) ;
               }
 
@@ -101,7 +107,7 @@ public class BootstrapStore implements Cell {
      // this will remove whatever was stored for us
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

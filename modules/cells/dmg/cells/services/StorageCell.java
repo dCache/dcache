@@ -5,6 +5,9 @@ import  java.util.Date ;
 import  java.io.* ;
 import  dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -12,6 +15,9 @@ import  dmg.util.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class StorageCell implements Cell  {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(StorageCell.class);
 
    private CellNucleus _nucleus   = null ;
    private Thread      _worker    = null ;
@@ -36,7 +42,7 @@ public class StorageCell implements Cell  {
    public void   messageArrived( MessageEvent me ){
 
      if( me instanceof LastMessageEvent ){
-        _nucleus.say( "Last message received; releasing lock" ) ;
+        _log.info( "Last message received; releasing lock" ) ;
         synchronized( _readyLock ){
             _ready = true ;
             _readyLock.notifyAll();
@@ -44,10 +50,10 @@ public class StorageCell implements Cell  {
      }else{
         CellMessage msg = me.getMessage() ;
         Object      obj = msg.getMessageObject() ;
-        _nucleus.say( " CellMessage From   : "+msg.getSourceAddress() ) ;
-        _nucleus.say( " CellMessage To     : "+msg.getDestinationAddress() ) ;
-        _nucleus.say( " CellMessage Object : "+obj ) ;
-        _nucleus.say( "" ) ;
+        _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+        _log.info( " CellMessage Object : "+obj ) ;
+        _log.info( "" ) ;
         if( obj instanceof String ){
            try{
              Args args = new Args( (String) obj ) ;
@@ -77,7 +83,7 @@ public class StorageCell implements Cell  {
              }
 
            }catch( Exception eeee ){
-              _nucleus.say( "Problem during message : "+eeee ) ;
+              _log.info( "Problem during message : "+eeee ) ;
               return ;
            }
 
@@ -90,7 +96,7 @@ public class StorageCell implements Cell  {
               msg.setMessageObject( request ) ;
               _nucleus.sendMessage( msg ) ;
            }catch( Exception e ){
-              _nucleus.say( "Problem during message : "+e ) ;
+              _log.info( "Problem during message : "+e ) ;
               return ;
            }
         }
@@ -112,7 +118,7 @@ public class StorageCell implements Cell  {
          if( inLen != len )
             return "Inconsistent length informations : "+filename ;
 
-         _nucleus.say( "File "+filename+" found and has "+len+" byte " ) ;
+         _log.info( "File "+filename+" found and has "+len+" byte " ) ;
 
          return b;
 
@@ -123,18 +129,18 @@ public class StorageCell implements Cell  {
 
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( "prepareRemoval received" ) ;
+     _log.info( "prepareRemoval received" ) ;
      synchronized( _readyLock ){
         if( ! _ready ){
-           _nucleus.say( "waiting for last message to be processed" ) ;
+           _log.info( "waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
         }
      }
-     _nucleus.say( "finished" ) ;
+     _log.info( "finished" ) ;
      // this will remove whatever was stored for us
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
    public static void main( String [] args ){

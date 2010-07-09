@@ -4,7 +4,13 @@ import java.util.* ;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class OptionShell {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(OptionShell.class);
 
     private Args        _args ;
     private CellNucleus _nucleus ;
@@ -15,8 +21,7 @@ public class OptionShell {
        _args    = args ;
 
     }
-    public void say( String s ){ _nucleus.say( "OptionShell:"+s ) ; }
-    public void esay( String s ){ _nucleus.esay( "OptionShell:"+s ) ; }
+
     public String ac_xxx( Args args )throws Exception {
        _nucleus.sendMessage( new CellMessage(
                              new CellPath( _nucleus.getCellName() ) ,

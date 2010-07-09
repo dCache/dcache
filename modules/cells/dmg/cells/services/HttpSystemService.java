@@ -10,7 +10,13 @@ import java.text.* ;
 import java.io.* ;
 import java.net.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpSystemService implements HttpResponseEngine {
+
+   private static final Logger _log =
+       LoggerFactory.getLogger(HttpSystemService.class);
 
    private static final String __pageBg   = "#dddddd" ;
    private static final String __headerBg = "blue" ;
@@ -62,7 +68,7 @@ public class HttpSystemService implements HttpResponseEngine {
             if( path == null )throw new Exception("domain not found : "+domainName);
             command = "getcellinfo "+cellName ;
          }
-         _nucleus.say( "Command : "+command+" !! "+path ) ;
+         _log.info( "Command : "+command+" !! "+path ) ;
          msg = _nucleus.sendAndWait(
                       new CellMessage(
                               new CellPath(path)  ,
@@ -77,7 +83,7 @@ public class HttpSystemService implements HttpResponseEngine {
             CellDomainNode [] nodes = (CellDomainNode[]) obj ;
             _domainHash.clear() ;
             for( int i = 0 ; i < nodes.length ; i++ ){
-                _nucleus.say( "assign : "+nodes[i].getName()+" -> "+nodes[i].getAddress());
+                _log.info( "assign : "+nodes[i].getName()+" -> "+nodes[i].getAddress());
                 _domainHash.put( nodes[i].getName() , nodes[i].getAddress() ) ;
             }
             printCellDomainNodeTable( nodes , pw ) ;

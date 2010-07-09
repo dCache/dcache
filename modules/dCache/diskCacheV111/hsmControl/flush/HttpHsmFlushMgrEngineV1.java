@@ -12,7 +12,13 @@ import java.text.*;
 import diskCacheV111.poolManager.PoolManagerCellInfo ;
 import diskCacheV111.pools.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
    private CellNucleus _nucleus          = null ;
    private long        _errorCounter     = 0L ;
@@ -30,7 +36,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        _nucleus = nucleus ;
 
        for( int i = 0 ; i < argsString.length ; i++ ){
-          _nucleus.say("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
+          _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
           if( argsString[i].startsWith("css=") ){
               decodeCss( argsString[i].substring(4) ) ;
           }else if( argsString[i].startsWith("mgr=") ){
@@ -45,8 +51,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
       if( _managerList.size() == 0 )_managerList.add("FlushManager");
 
-      _nucleus.say("Using Manager  : "+_managerList ) ;
-      _nucleus.say("Using CSS file : "+_cssFile ) ;
+      _log.info("Using Manager  : "+_managerList ) ;
+      _log.info("Using CSS file : "+_cssFile ) ;
 
    }
    private void decodeManager( String managers ){
@@ -92,7 +98,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              if( urlItems.length > 2 )flushManagerName = urlItems[2] ;
              if( urlItems.length > 3 )optionsMap = createMap( urlItems[3] ) ;
 
-             say("MAP -> "+optionsMap);
+             _log.info("MAP -> "+optionsMap);
 
              printFlushHeader( pw ,  "Flush Info");
              printDirectory( pw ) ;
@@ -341,7 +347,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
           output.append("Exception in command : ").append(command).append("\n") ;
           output.append("     ").append(ee.getClass().getName()).
              append(" -> ").append( ((Exception)ee).getMessage() ).append("\n") ;
-          esay(ee.toString());
+          _log.warn(ee.toString());
       }
    }
    private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map options , List list ){
@@ -626,12 +632,6 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       pw.println("a.big-link:visited  { text-decoration:none ; color:red ; }");
       pw.println("a.big-link:link  { text-decoration:none ; color:red ; }");
       pw.println("span.big-link { font-size:24 ; text-align:center }");
-   }
-   private void say( String message ){
-      _nucleus.say(message);
-   }
-   private void esay( String message ){
-      _nucleus.esay(message);
    }
    private void showTimeout( PrintWriter pw ){
       pw.println("<font color=red><h1>Sorry, the request timed out</h1></font>");

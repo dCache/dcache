@@ -10,6 +10,9 @@ import java.util.* ;
 import java.io.* ;
 import java.net.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -18,6 +21,9 @@ import java.net.* ;
   */
 public class    HyperModeUserShell
      extends    CommandInterpreter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(HyperModeUserShell.class);
 
     private CellNucleus _nucleus  = null ;
     private String      _user     = null ;
@@ -197,9 +203,6 @@ public class    HyperModeUserShell
        }
     }
     protected String getUser(){ return _user ; }
-    protected void say( String str ){ _nucleus.say( str ) ; }
-    protected void esay( String str ){ _nucleus.esay( str ) ; }
-    protected void esay( Exception e ){ _nucleus.esay(e) ; }
     public void checkPermission( String aclName )
            throws AclException {
 
@@ -419,7 +422,7 @@ public class    HyperModeUserShell
        }
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
-       say( "Local command "+args ) ;
+       _log.info( "Local command "+args ) ;
        try{
           return  command( args ) ;
        }catch( CommandThrowableException cte ){
@@ -435,7 +438,7 @@ public class    HyperModeUserShell
     public Object executeCommand( String destination , Object object )
            throws Exception {
 
-       say( "Object command (dest="+destination+";Class="+object.getClass().getName()+") "+object) ;
+       _log.info( "Object command (dest="+destination+";Class="+object.getClass().getName()+") "+object) ;
 
        checkCdPermission( destination ) ;
 
@@ -463,7 +466,7 @@ public class    HyperModeUserShell
       *
       */
     public Object executeCommand( String str )throws Exception {
-       say( "String command (super) "+str ) ;
+       _log.info( "String command (super) "+str ) ;
 
        if( str.trim().equals("") )return "" ;
 
@@ -508,7 +511,7 @@ public class    HyperModeUserShell
            else
               return r + "\n"  ;
        }catch(Exception ee ){
-           if( _debug )esay(ee) ;
+           _log.debug(ee.toString(), ee) ;
            throw ee ;
        }
 

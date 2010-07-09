@@ -4,6 +4,9 @@ import   dmg.cells.services.login.* ;
 import   dmg.cells.nucleus.* ;
 import   dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -12,6 +15,10 @@ import   dmg.util.* ;
   */
 public class   MinimalAdminShell
        extends CommandInterpreter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(MinimalAdminShell.class);
+
     private CellNucleus _nucleus ;
     private String      _user ;
     private CellPath    _cellPath  = null ;
@@ -22,16 +29,13 @@ public class   MinimalAdminShell
        _user    = user ;
 
        for( int i = 0 ; i < args.argc() ; i++ )
-          _nucleus.say( "arg["+i+"]="+args.argv(i) ) ;
+          _log.info( "arg["+i+"]="+args.argv(i) ) ;
 
        if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) )
           throw new IllegalArgumentException( "hallo du da" )  ;
 
     }
     protected String getUser(){ return _user ; }
-    protected void say( String str ){ _nucleus.say( str ) ; }
-    protected void esay( String str ){ _nucleus.esay( str ) ; }
-    protected void esay( Exception e ){ _nucleus.esay(e) ; }
     private void checkPrivileges( String user ,
                                      String className ,
                                      String instanceName ,
@@ -39,7 +43,7 @@ public class   MinimalAdminShell
             throws AclPermissionException  {
 
        String acl = className+"."+instanceName+"."+action ;
-       say("requesting acl {"+acl+"} for user "+user ) ;
+       _log.info("requesting acl {"+acl+"} for user "+user ) ;
 
        if( ! user.equals( "patrick" ) )
           throw new
@@ -48,7 +52,7 @@ public class   MinimalAdminShell
     }
     private String _prompt = " >> " ;
     public Object executeCommand( String str )throws Exception {
-       say( "String command "+str ) ;
+       _log.info( "String command "+str ) ;
           Object or = executeLocalCommand( new Args( str ) ) ;
           if( or == null )return _prompt ;
           String r = or.toString() ;
@@ -63,7 +67,7 @@ public class   MinimalAdminShell
     //
     public String getPrompt(){ return _prompt ; }
     public Object executeCommand( Object obj ) throws Exception {
-       say( "Object command "+obj ) ;
+       _log.info( "Object command "+obj ) ;
 
        String command = obj.toString() ;
        Args args = new Args( command ) ;
@@ -87,7 +91,7 @@ public class   MinimalAdminShell
 
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
-       say( "Loacal command "+args ) ;
+       _log.info( "Loacal command "+args ) ;
        try{
           return  command( args ) ;
        }catch( CommandThrowableException cte ){
@@ -103,7 +107,7 @@ public class   MinimalAdminShell
     public String hh_show_all = "exception|null|object|string|exit" ;
     public Object ac_show_all_$_1( Args args )throws Exception {
         String command = args.argv(0) ;
-        say( "show all : mode="+command+";user="+_user) ;
+        _log.info( "show all : mode="+command+";user="+_user) ;
         if( command.equals("exception") )
            throw new  Exception( "hallo otto" ) ;
         if( command.equals("null") )return null ;

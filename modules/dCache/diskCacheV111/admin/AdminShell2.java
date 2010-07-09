@@ -6,6 +6,9 @@ import dmg.cells.services.login.* ;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -14,6 +17,10 @@ import dmg.util.* ;
   */
 public class      AdminShell2
        extends    dmg.cells.services.login.user.MinimalAdminShell {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(AdminShell2.class);
+
     private String  _destination = null ;
     public AdminShell2( String user , CellNucleus nucleus , Args args ){
        super( user , nucleus , args ) ;
@@ -32,7 +39,7 @@ public class      AdminShell2
        return "" ;
     }
     public Object executeCommand( String str )throws Exception {
-       say( "String command (super) "+str ) ;
+       _log.info( "String command (super) "+str ) ;
 
        Object or = null ;
        Args args = new Args(str) ;
@@ -58,7 +65,7 @@ public class      AdminShell2
     public Object executeCommand( String destination , Object str )
            throws Exception {
 
-       say( "Object command ("+destination+") "+str) ;
+       _log.info( "Object command ("+destination+") "+str) ;
 
        return sendCommand( destination  , str.toString() ) ;
     }
@@ -66,7 +73,7 @@ public class      AdminShell2
     public Object executeCommand( String destination , String str )
            throws Exception {
 
-       say( "String command ("+destination+") "+str ) ;
+       _log.info( "String command ("+destination+") "+str ) ;
 
        Args args = new Args(str) ;
        Object or = sendCommand( destination  , str ) ;

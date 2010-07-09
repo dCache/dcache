@@ -124,7 +124,7 @@ public class CellNucleus implements ThreadFactory
         _callbackExecutor = Executors.newSingleThreadExecutor(this);
         _messageExecutor = Executors.newSingleThreadExecutor(this);
 
-        nsay("Created : "+name);
+        _logNucleus.info("Created : "+name);
         _state = ACTIVE;
 
         //
@@ -334,7 +334,7 @@ public class CellNucleus implements ThreadFactory
             synchronized (_waitHash) {
                 _waitHash.put(uoid, lock);
             }
-            nsay("sendAndWait : adding to hash : " + uoid);
+            _logNucleus.info("sendAndWait : adding to hash : " + uoid);
 
             __cellGlue.sendMessage(this, msg, local, remote);
 
@@ -538,7 +538,7 @@ public class CellNucleus implements ThreadFactory
     {
         for (Thread thread: threads) {
             if (thread.isAlive()) {
-                nsay("killerThread : interrupting " + thread.getName());
+                _logNucleus.info("killerThread : interrupting " + thread.getName());
                 thread.interrupt();
             }
         }
@@ -631,7 +631,7 @@ public class CellNucleus implements ThreadFactory
                 //
                 final CellMessage msg = ((MessageEvent) ce).getMessage();
                 if (msg != null) {
-                    nsay("addToEventQueue : message arrived : "+msg);
+                    _logNucleus.info("addToEventQueue : message arrived : "+msg);
                     CellLock lock;
 
                     synchronized (_waitHash) {
@@ -642,16 +642,16 @@ public class CellNucleus implements ThreadFactory
                         //
                         // we were waiting for you (sync or async)
                         //
-                        nsay("addToEventQueue : lock found for : "+msg);
+                        _logNucleus.info("addToEventQueue : lock found for : "+msg);
                         if (lock.isSync()) {
-                            nsay("addToEventQueue : is synchronous : "+msg);
+                            _logNucleus.info("addToEventQueue : is synchronous : "+msg);
                             synchronized (lock) {
                                 lock.setObject(msg);
                                 lock.notifyAll();
                             }
-                            nsay("addToEventQueue : dest. was triggered : "+msg);
+                            _logNucleus.info("addToEventQueue : dest. was triggered : "+msg);
                         } else {
-                            nsay("addToEventQueue : is asynchronous : "+msg);
+                            _logNucleus.info("addToEventQueue : is asynchronous : "+msg);
                             _callbackExecutor.execute(new CallbackTask(lock, msg));
                         }
                         return;
@@ -667,10 +667,10 @@ public class CellNucleus implements ThreadFactory
 
     void sendKillEvent(KillEvent ce)
     {
-        nsay("sendKillEvent : received "+ce);
+        _logNucleus.info("sendKillEvent : received "+ce);
         Thread thread = new KillerThread(ce);
         thread.start();
-        nsay("sendKillEvent : " + thread.getName()+" started on group "+
+        _logNucleus.info("sendKillEvent : " + thread.getName()+" started on group "+
              thread.getThreadGroup().getName());
     }
 
@@ -830,132 +830,6 @@ public class CellNucleus implements ThreadFactory
     public static final int  PRINT_EVERYTHING    =
         PRINT_CELL|PRINT_ERROR_CELL|PRINT_NUCLEUS|PRINT_ERROR_NUCLEUS|PRINT_FATAL;
 
-    /* Log a message to a logger. Calls the initLoggingContext method
-     * to ensure that the 'cell' and 'domain' MDCs are set. These
-     * should have been set for the calling thread already, but many
-     * cells don't create the thread in the proper context.
-     */
-    private void log(Logger logger, Level level, String message)
-    {
-        Object cell = MDC.get(CDC.MDC_CELL);
-        Object domain = MDC.get(CDC.MDC_DOMAIN);
-        CDC.setCellsContext(this);
-        try {
-            logger.log(level, message);
-        } finally {
-            if (cell == null) {
-                MDC.remove(CDC.MDC_CELL);
-            } else {
-                MDC.put(CDC.MDC_CELL, cell);
-            }
-            if (domain == null) {
-                MDC.remove(CDC.MDC_DOMAIN);
-            } else {
-                MDC.put(CDC.MDC_DOMAIN, domain);
-            }
-        }
-    }
-
-    /* Log exception to a logger. Calls the initLoggingContext method
-     * to ensure that the 'cell' and 'domain' MDCs are set. These
-     * should have been set for the calling thread already, but many
-     * cells don't create the thread in the proper context.
-     */
-    private void log(Logger logger, Level level, Throwable t)
-    {
-        Object cell = MDC.get(CDC.MDC_CELL);
-        Object domain = MDC.get(CDC.MDC_DOMAIN);
-        CDC.setCellsContext(this);
-        try {
-            logger.log(level, t, t);
-        } finally {
-            if (cell == null) {
-                MDC.remove(CDC.MDC_CELL);
-            } else {
-                MDC.put(CDC.MDC_CELL, cell);
-            }
-            if (domain == null) {
-                MDC.remove(CDC.MDC_DOMAIN);
-            } else {
-                MDC.put(CDC.MDC_DOMAIN, domain);
-            }
-        }
-    }
-
-    public void say(int level, String str)
-    {
-        if ((level & PRINT_FATAL) > 0) {
-            fsay(str);
-        } else if ((level & PRINT_ERROR_CELL) > 0) {
-            esay(str);
-        } else if ((level & PRINT_ERROR_NUCLEUS) > 0) {
-            nesay(str);
-        } else if ((level & PRINT_CELL) > 0 ) {
-            say(str);
-        } else if ((level & PRINT_NUCLEUS) > 0) {
-            nsay(str);
-        }
-    }
-
-    public void say(String str)
-    {
-        if ((_printoutLevel & PRINT_CELL) > 0) {
-            log(_logCell, Level.WARN, str);
-        } else {
-            log(_logCell, Level.INFO, str);
-        }
-    }
-
-    public void esay(String str)
-    {
-        if ((_printoutLevel & PRINT_ERROR_CELL) > 0) {
-            log(_logCell, Level.ERROR, str);
-        } else {
-            log(_logCell, Level.INFO, str);
-        }
-    }
-
-    public void fsay(String str)
-    {
-        log(_logCell, Level.FATAL, str);
-    }
-
-    private void nsay(String str)
-    {
-        if ((_printoutLevel & PRINT_NUCLEUS) > 0) {
-            log(_logNucleus, Level.WARN, str);
-        } else {
-            log(_logNucleus, Level.INFO, str);
-        }
-    }
-
-    private void nesay(String str)
-    {
-        if ((_printoutLevel & PRINT_ERROR_NUCLEUS) > 0) {
-            log(_logNucleus, Level.ERROR, str);
-        } else {
-            log(_logNucleus, Level.INFO, str);
-        }
-    }
-
-    public void esay(Throwable t)
-    {
-        if ((_printoutLevel & PRINT_ERROR_CELL) > 0) {
-            log(_logCell, Level.ERROR, t);
-        } else {
-            log(_logCell, Level.INFO, t);
-        }
-    }
-
-    private void nesay(Throwable t)
-    {
-        if ((_printoutLevel & PRINT_ERROR_NUCLEUS) > 0) {
-            log(_logNucleus, Level.ERROR, t);
-        } else {
-            log(_logNucleus, Level.INFO, t);
-        }
-    }
-
     private class KillerThread extends Thread
     {
         private final KillEvent _event;
@@ -968,7 +842,7 @@ public class CellNucleus implements ThreadFactory
 
         public void run()
         {
-            nsay("killerThread : started");
+            _logNucleus.info("killerThread : started");
             _state = REMOVING;
             addToEventQueue(new LastMessageEvent());
             try {
@@ -987,7 +861,7 @@ public class CellNucleus implements ThreadFactory
                 }
             }
 
-            nsay("killerThread : waiting for all threads in "+_threads+" to finish");
+            _logNucleus.info("killerThread : waiting for all threads in "+_threads+" to finish");
 
             try {
                 Collection<Thread> threads = getNonDaemonThreads(_threads);
@@ -1002,11 +876,11 @@ public class CellNucleus implements ThreadFactory
             } catch (IllegalThreadStateException e) {
                 _threads.setDaemon(true);
             } catch (InterruptedException e) {
-                nesay("killerThread : Interrupted while waiting for threads");
+                _logNucleus.warn("killerThread : Interrupted while waiting for threads");
             }
             __cellGlue.destroy(CellNucleus.this);
             _state = DEAD;
-            nsay("killerThread : stopped");
+            _logNucleus.info("killerThread : stopped");
 
             PinboardAppender.removePinboard(_cellName);
         }
@@ -1054,7 +928,7 @@ public class CellNucleus implements ThreadFactory
                 _lock.getCdc().apply();
                 obj = answer.getMessageObject();
             } catch (SerializationException e) {
-                nesay(e.getMessage());
+                _logNucleus.warn(e.getMessage());
                 obj = e;
                 answer = null;
             }
@@ -1067,7 +941,7 @@ public class CellNucleus implements ThreadFactory
                 callback.
                     answerArrived(_lock.getMessage(), answer);
             }
-            nsay("addToEventQueue : callback done for : " + _message);
+            _logNucleus.info("addToEventQueue : callback done for : " + _message);
         }
     }
 
@@ -1086,14 +960,14 @@ public class CellNucleus implements ThreadFactory
             EventLogger.queueEnd(_event);
 
             if (_event instanceof LastMessageEvent) {
-                nsay("messageThread : LastMessageEvent arrived");
+                _logNucleus.info("messageThread : LastMessageEvent arrived");
                 _cell.messageArrived((MessageEvent) _event);
             } else if (_event instanceof RoutedMessageEvent) {
-                nsay("messageThread : RoutedMessageEvent arrived");
+                _logNucleus.info("messageThread : RoutedMessageEvent arrived");
                 _cell.messageArrived((RoutedMessageEvent) _event);
             } else if (_event instanceof MessageEvent) {
                 MessageEvent msgEvent = (MessageEvent) _event;
-                nsay("messageThread : MessageEvent arrived");
+                _logNucleus.info("messageThread : MessageEvent arrived");
                 CellMessage msg;
                 try {
                     msg = new CellMessage(msgEvent.getMessage());
@@ -1120,9 +994,9 @@ public class CellNucleus implements ThreadFactory
                     //
                     // and deliver it
                     //
-                    nsay("messageThread : delivering message : "+msg);
+                    _logNucleus.info("messageThread : delivering message : "+msg);
                     _cell.messageArrived(new MessageEvent(msg));
-                    nsay("messageThread : delivering message done : "+msg);
+                    _logNucleus.info("messageThread : delivering message done : "+msg);
                 } catch (RuntimeException e) {
                     if (!msg.isReply()) {
                         try {
@@ -1130,7 +1004,7 @@ public class CellNucleus implements ThreadFactory
                             msg.setMessageObject(e);
                             sendMessage(msg);
                         } catch (NoRouteToCellException f) {
-                            esay("PANIC : Problem returning answer : " + f);
+                            _logCell.error("PANIC : Problem returning answer : " + f);
                         }
                     }
                     throw e;

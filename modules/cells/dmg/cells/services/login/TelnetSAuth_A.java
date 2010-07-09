@@ -8,6 +8,9 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.telnet.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
   *
@@ -18,6 +21,9 @@ import dmg.protocols.telnet.* ;
  */
 public class      TelnetSAuth_A
        implements TelnetServerAuthentication  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(TelnetSAuth_A.class);
 
   private CellNucleus  _nucleus ;
   private Args         _args ;
@@ -42,8 +48,6 @@ public class      TelnetSAuth_A
          }
       }
   }
-  public void say( String str ){ _nucleus.say( str ) ; }
-  public void esay( String str ){ _nucleus.esay( str ) ; }
   //
   // ssh server authetication
   //
@@ -128,7 +132,7 @@ public class      TelnetSAuth_A
                 throw new Exception( "Not authorized" ) ;
              return true ;
          }catch( Exception e ){
-            _nucleus.say( "Exception in TelnetSAuth_A : "+ e ) ;
+            _log.info( "Exception in TelnetSAuth_A : "+ e ) ;
             return false ;
          }
       }else if( __passwordFile !=  null ){

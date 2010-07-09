@@ -10,6 +10,10 @@ import java.util.* ;
 import java.text.* ;
 import java.io.* ;
 import java.net.* ;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /*
 public interface HttpRequest {
 
@@ -29,6 +33,9 @@ public interface HttpRequest {
 
 public class ContextPictureEngine implements HttpResponseEngine {
 
+   private final static Logger _log =
+       LoggerFactory.getLogger(ContextPictureEngine.class);
+
    private CellNucleus _nucleus    = null ;
    private Hashtable   _domainHash = new Hashtable() ;
    private String   [] _args       = null ;
@@ -45,9 +52,9 @@ public class ContextPictureEngine implements HttpResponseEngine {
       String [] tokens = request.getRequestTokens() ;
       int       offset = request.getRequestTokenOffset() ;
 
-      _nucleus.say("Offset : "+offset);
+      _log.info("Offset : "+offset);
       for( int i =0 ; i < tokens.length ;i++ ){
-         _nucleus.say(""+i+" -> "+tokens[i]);
+         _log.info(""+i+" -> "+tokens[i]);
       }
       if( tokens.length < 2 )
         throw new

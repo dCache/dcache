@@ -6,6 +6,9 @@ import dmg.cells.services.login.* ;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -13,6 +16,10 @@ import dmg.util.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class      AdminShell extends CommandInterpreter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(AdminShell.class);
+
     private CellNucleus _nucleus ;
     private String      _user ;
     private CellPath    _cellPath  = new CellPath( "AclCell" ) ;
@@ -23,12 +30,10 @@ public class      AdminShell extends CommandInterpreter {
        _user     = user ;
        _wasAdmin = _user.equals("admin");
        for( int i = 0 ; i < args.argc() ; i++ )
-          _nucleus.say( "arg["+i+"]="+args.argv(i) ) ;
+          _log.info( "arg["+i+"]="+args.argv(i) ) ;
 
     }
     public String getPrompt(){ return _cellPath.getCellName()+"("+_user+") >> " ; }
-    private void say( String str ){ _nucleus.say( str ) ; }
-    private void esay( String str ){ _nucleus.esay( str ) ; }
     public String getHello(){
       return "\n    Welcome to the dCache Admin Interface (user="+_user+")\n\n" ;
     }
@@ -55,11 +60,11 @@ public class      AdminShell extends CommandInterpreter {
        return _cellPath.toString() + "\n" ;
     }
     public Object executeCommand( String obj ) throws Exception {
-        say( "executeCommand : arriving as String : "+obj ) ;
+        _log.info( "executeCommand : arriving as String : "+obj ) ;
         return _executeCommand( obj , false ) ;
     }
     public Object executeCommand( Object obj ) throws Exception {
-        say( "executeCommand : arriving as Object : "+obj.toString() ) ;
+        _log.info( "executeCommand : arriving as Object : "+obj.toString() ) ;
         return _executeCommand( obj.toString() , true ) ;
     }
     public Object _executeCommand( String obj , boolean wasBinary ) throws Exception {
@@ -93,7 +98,7 @@ public class      AdminShell extends CommandInterpreter {
          ) ;
        if( res == null )throw new Exception("Request timed out" ) ;
        Object resObject = res.getMessageObject() ;
-       _nucleus.say( "result from domain : "+resObject.getClass().getName() ) ;
+       _log.info( "result from domain : "+resObject.getClass().getName() ) ;
        if( wasBinary ){
            return resObject ;
        }else{

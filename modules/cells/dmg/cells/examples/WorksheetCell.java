@@ -9,6 +9,9 @@ import  dmg.util.* ;
 import  dmg.cells.nucleus.* ;
 import  dmg.cells.network.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -18,6 +21,9 @@ import  dmg.cells.network.* ;
 public class      WorksheetCell
        extends    jWorksheet
        implements Cell, ActionListener, CellEventListener {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(WorksheetCell.class);
 
    private CellNucleus _nucleus   = null ;
    private CellShell   _shell     = null ;
@@ -58,7 +64,7 @@ public class      WorksheetCell
 
    }
    public void actionPerformed( ActionEvent event ){
-      _nucleus.say( "Action : "+event.getActionCommand() ) ;
+      _log.info( "Action : "+event.getActionCommand() ) ;
       Args args = new Args( event.getActionCommand() ) ;
       if( _shellMode ){
           if( ( args.argc() > 0 ) && args.argv(0).equals("exit") ){
@@ -135,7 +141,7 @@ public class      WorksheetCell
          out.writeUTF( getText() ) ;
          out.close() ;
       }catch( Exception ee ){
-         _nucleus.say( "Problem saving "+filename+" : "+ee ) ;
+         _log.info( "Problem saving "+filename+" : "+ee ) ;
       }
    }
    public void restoreWorksheet( String filename ){
@@ -146,7 +152,7 @@ public class      WorksheetCell
          setText( in.readUTF() );
          in.close();
       }catch( Exception ee ){
-         _nucleus.say( "Problem saving "+filename+" : "+ee ) ;
+         _log.info( "Problem saving "+filename+" : "+ee ) ;
       }
    }
    public void   messageArrived( MessageEvent me ){
@@ -220,33 +226,33 @@ public class      WorksheetCell
 
    }
    public void   prepareRemoval( KillEvent ce ){
-        _nucleus.say( " prepareRemoval "+ce ) ;
+        _log.info( " prepareRemoval "+ce ) ;
         try{ Thread.sleep(6000) ; }
         catch( InterruptedException ie ){}
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
    public void cellCreated( CellEvent ce ){
-     _nucleus.say( " cellCreated "+ce ) ;
+     _log.info( " cellCreated "+ce ) ;
      append( " cellCreated "+ce+"\n" ) ;
    }
 
    public void cellDied( CellEvent ce ){
-     _nucleus.say( " cellDied "+ce ) ;
+     _log.info( " cellDied "+ce ) ;
      append( " cellDied "+ce+"\n" ) ;
    }
 
    public void cellExported( CellEvent ce ){
-     _nucleus.say( " cellExported "+ce ) ;
+     _log.info( " cellExported "+ce ) ;
      append( " cellExported "+ce+"\n" ) ;
    }
    public void routeAdded( CellEvent ce ){
-     _nucleus.say( " routeAdded "+ce ) ;
+     _log.info( " routeAdded "+ce ) ;
      append( " routeAdded "+ce+"\n" ) ;
    }
    public void routeDeleted( CellEvent ce ){
-     _nucleus.say( " routeDeleted "+ce ) ;
+     _log.info( " routeDeleted "+ce ) ;
      append( " routeDeleted "+ce+"\n" ) ;
    }
 

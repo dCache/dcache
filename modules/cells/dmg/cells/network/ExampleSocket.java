@@ -5,6 +5,9 @@ import  java.util.Date ;
 import  java.io.* ;
 import  java.net.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -12,6 +15,9 @@ import  java.net.* ;
   * @version 0.1, 15 Feb 1998
   */
 public class ExampleSocket implements Cell, Runnable {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(ExampleSocket.class);
 
    private CellNucleus  _nucleus = null ;
    private Thread       _worker  = null ;
@@ -32,15 +38,15 @@ public class ExampleSocket implements Cell, Runnable {
          _input   = _socket.getInputStream() ;
          _output  = _socket.getOutputStream() ;
       }catch( Exception nse ){
-         _nucleus.say( " Problem in creating streams : "+nse ) ;
+         _log.info( " Problem in creating streams : "+nse ) ;
          _nucleus.kill() ;
       }
       if( _input == null ){
-         _nucleus.say( " Problem _input is null ") ;
+         _log.info( " Problem _input is null ") ;
          throw new IllegalArgumentException( " input is null" ) ;
       }
       if( _output == null ){
-         _nucleus.say( " Problem _input is null " ) ;
+         _log.info( " Problem _input is null " ) ;
          throw new IllegalArgumentException( " output is null" ) ;
       }
 
@@ -55,14 +61,14 @@ public class ExampleSocket implements Cell, Runnable {
                _output.write( b , 0 , i ) ;
 
          }catch( Exception nse ){
-               _nucleus.say( " Problem in i/o : "+nse ) ;
+               _log.info( " Problem in i/o : "+nse ) ;
          }
          try{
            _input.close();
            _output.close() ;
            _socket.close() ;
          }catch( Exception nsea ){
-               _nucleus.say( " Problem in i/o : "+nsea ) ;
+               _log.info( " Problem in i/o : "+nsea ) ;
          }
          _nucleus.kill();
 
@@ -76,25 +82,25 @@ public class ExampleSocket implements Cell, Runnable {
      if( me instanceof LastMessageEvent )return ;
 
      CellMessage msg = me.getMessage() ;
-     _nucleus.say( " CellMessage From   : "+msg.getSourceAddress() ) ;
-     _nucleus.say( " CellMessage To     : "+msg.getDestinationAddress() ) ;
-     _nucleus.say( " CellMessage Object : "+msg.getMessageObject() ) ;
-     _nucleus.say( "" ) ;
+     _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;
+     _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+     _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
+     _log.info( "" ) ;
 
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( " prepareRemoval "+ce ) ;
+     _log.info( " prepareRemoval "+ce ) ;
          try{
            _input.close();
            _output.close() ;
            _socket.close() ;
          }catch( Exception nsea ){
-               _nucleus.say( " Problem in i/o : "+nsea ) ;
+               _log.info( " Problem in i/o : "+nsea ) ;
          }
      _worker.interrupt() ;
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

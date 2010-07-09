@@ -6,6 +6,9 @@ import java.lang.reflect.* ;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *    The GNLCell is a general Network listener cell, waiting for
  *    connectionrequests and starting specific service cells on
@@ -18,6 +21,9 @@ import dmg.util.*;
   *
  */
 public class GNLCell implements Cell, Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(GNLCell.class);
 
   private String       _cellName ;
   private String       _cellClass ;
@@ -84,7 +90,7 @@ public class GNLCell implements Cell, Runnable  {
        while( true ){
           try{
            Socket socket = _serverSocket.accept() ;
-           _nucleus.say( "Cell Listen Socket created " ) ;
+           _log.info( "Cell Listen Socket created " ) ;
 
            Cell cell = _nucleus.createNewCell(
                                _cellClass  ,
@@ -93,10 +99,10 @@ public class GNLCell implements Cell, Runnable  {
                                true        ) ;
 
           }catch( IOException ioe ){
-             _nucleus.say( " ServerSocket Got Exc : " + ioe ) ;
+             _log.info( " ServerSocket Got Exc : " + ioe ) ;
              _nucleus.kill();
           }catch( Exception ae ){
-              _nucleus.say( " Problem creating "+_cellClass+" : "+ae);
+              _log.info( " Problem creating "+_cellClass+" : "+ae);
           }
        }
     }
@@ -109,14 +115,14 @@ public class GNLCell implements Cell, Runnable  {
      return toString()+"\n" ;
    }
    public void   messageArrived( MessageEvent me ){
-     _nucleus.say( " messageArrived "+me ) ;
+     _log.info( " messageArrived "+me ) ;
 
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( " prepareRemoval "+ce ) ;
+     _log.info( " prepareRemoval "+ce ) ;
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

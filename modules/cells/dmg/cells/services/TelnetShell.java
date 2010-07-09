@@ -8,6 +8,9 @@ import  dmg.util.* ;
 import  java.util.Date ;
 import  java.net.Socket ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *   The TelnetShell is a simple implementation of the
  *   telnet protocol. The Class seperates the control from
@@ -27,6 +30,9 @@ import  java.net.Socket ;
   *
  */
 public class TelnetShell implements Cell, Runnable   {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(TelnetShell.class);
 
    private CellNucleus _nucleus   = null ;
    private Thread      _worker    = null ;
@@ -117,7 +123,7 @@ public class TelnetShell implements Cell, Runnable   {
    //
    private void _lineReady( String str ){
 
-      _nucleus.say( "Line received : " + str ) ;
+      _log.info( "Line received : " + str ) ;
 
       switch( _telnetState ){
         case 0 :
@@ -130,7 +136,7 @@ public class TelnetShell implements Cell, Runnable   {
            _password = str ;
            _telnetOutput.setEcho( true ) ;
            _telnetState = 2 ;
-           _nucleus.say( " User : "+_user+" ; password : "+_password ) ;
+           _log.info( " User : "+_user+" ; password : "+_password ) ;
           print( "\n\n" ) ;
           if( ! checkAuthentication( _user , _password ) )finish() ;
           print( prompt() ) ;
@@ -188,7 +194,7 @@ public class TelnetShell implements Cell, Runnable   {
                  print( msg.toString()+"\n" ) ;
                  return 0;
              }
-             _nucleus.say( "execute : message object : "+obj.getClass() ) ;
+             _log.info( "execute : message object : "+obj.getClass() ) ;
              if( obj instanceof Object [] ){
                 Object [] ar = (Object []) obj ;
                 for( int i = 0 ; i < ar.length ; i++ ){
@@ -263,7 +269,7 @@ public class TelnetShell implements Cell, Runnable   {
          while( ( obj = _telnetInput.readNext() ) != null ){
            if( obj instanceof Character ){
               char c = ((Character)obj).charValue() ;
-              _nucleus.say( "Character arrived : "+c ) ;
+              _log.info( "Character arrived : "+c ) ;
               if( c == '\n' ){
                  _lineReady( sb.toString() ) ;
                  sb.setLength(0) ;
@@ -271,14 +277,14 @@ public class TelnetShell implements Cell, Runnable   {
               }
               sb.append( ((Character)obj).charValue() ) ;
            }else if( obj instanceof byte [] ){
-              _nucleus.say( "byte array arrived " ) ;
+              _log.info( "byte array arrived " ) ;
               telnetControl( (byte [])obj ) ;
            }
 
          }
-         _nucleus.say( "EOF encountered" ) ;
+         _log.info( "EOF encountered" ) ;
       }catch( Exception ioe ){
-        _nucleus.say("Exception in _runTelnetReceiver : "+ioe ) ;
+        _log.info("Exception in _runTelnetReceiver : "+ioe ) ;
       }
       finish();
    }
@@ -302,7 +308,7 @@ public class TelnetShell implements Cell, Runnable   {
    public void   messageArrived( MessageEvent me ){
 
      if( me instanceof LastMessageEvent ){
-        _nucleus.say( "Last message received; releasing lock" ) ;
+        _log.info( "Last message received; releasing lock" ) ;
         synchronized( _readyLock ){
             _ready = true ;
             _readyLock.notifyAll();
@@ -326,19 +332,19 @@ public class TelnetShell implements Cell, Runnable   {
 
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( "prepareRemoval received" ) ;
+     _log.info( "prepareRemoval received" ) ;
      synchronized( _readyLock ){
         if( ! _ready ){
-           _nucleus.say( "waiting for last message to be processed" ) ;
+           _log.info( "waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
         }
      }
      finish() ;
-     _nucleus.say( "finished" ) ;
+     _log.info( "finished" ) ;
      // this will remove whatever was stored for us
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
    public static void main( String [] args ){
       new SystemCell( "telnetDomain" ) ;

@@ -6,6 +6,9 @@ import dmg.util.* ;
 
 import java.net.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -14,6 +17,9 @@ import java.net.* ;
   */
 public class ClientBootstrap
        implements  Cell , CellEventListener , StateEngine {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(ClientBootstrap.class);
 
    private InetAddress _address ;
    private int         _port ;
@@ -73,7 +79,7 @@ public class ClientBootstrap
      return __rst_state_names[state] ;
    }
    public int runState( int state ){
-      _nucleus.say( "runState : in state <"+getRunState()+">" ) ;
+      _log.info( "runState : in state <"+getRunState()+">" ) ;
       switch( state ){
         case 0 :
         return RST_CREATE_TUNNEL ;
@@ -112,18 +118,18 @@ public class ClientBootstrap
              // retry after timeout ( in any case )
              //
              if( msg == null ){
-                _nucleus.say( "runState : sendAndWait timed out" ) ;
+                _log.info( "runState : sendAndWait timed out" ) ;
                 return RST_MSG_SENT_FAILED ;
              }
 
              Object answer = msg.getMessageObject() ;
              if( answer == null ){
-                 _nucleus.say( "runState : null object received" ) ;
+                 _log.info( "runState : null object received" ) ;
                  return RST_MSG_SENT_FAILED ;
              }
 
              if( ! ( answer instanceof String [] ) ){
-                 _nucleus.say( "runState : answer is "+answer ) ;
+                 _log.info( "runState : answer is "+answer ) ;
                  _engine.setState( RST_WAITING ) ;
                  try{ Thread.sleep(5000); }
                  catch( Exception ee){} ;
@@ -149,13 +155,13 @@ public class ClientBootstrap
            //
            CellShell shell = new CellShell( _nucleus ) ;
            for( int i = 0  ; i < _commands.length ; i++ ){
-              _nucleus.say( "runState : command : "+_commands[i] ) ;
+              _log.info( "runState : command : "+_commands[i] ) ;
               try{
                 String answer = shell.command( _commands[i] ) ;
-                _nucleus.say( "runState : answer  : "+answer ) ;
+                _log.info( "runState : answer  : "+answer ) ;
               }catch( Exception eee ){}
            }
-           _nucleus.say( "runState : Command execution finished" ) ;
+           _log.info( "runState : Command execution finished" ) ;
            return -1 ;
         }
 
@@ -185,7 +191,7 @@ public class ClientBootstrap
         CellMessage msg  = me.getMessage() ;
         if( msg.isFinalDestination() ){
            Object      obj  = msg.getMessageObject() ;
-           _nucleus.say( "Msg arrived (f) : "+msg ) ;
+           _log.info( "Msg arrived (f) : "+msg ) ;
            if( obj instanceof String ){
               String command = (String)obj ;
               if( command.length() < 1 )return ;
@@ -199,7 +205,7 @@ public class ClientBootstrap
      // this will remove whatever was stored for us
    }
    public synchronized void  routeAdded( CellEvent ce ){
-      _nucleus.say( "routeAdded : Got routing info" );
+      _log.info( "routeAdded : Got routing info" );
       if( ! _routeAdded  ){
          CellRoute route  = (CellRoute)ce.getSource() ;
          if( route.getRouteType() != CellRoute.DOMAIN )return ;
@@ -207,7 +213,7 @@ public class ClientBootstrap
          Args args = new Args( "-default *@"+route.getDomainName() ) ;
          CellRoute defRoute =
               new CellRoute( args ) ;
-         _nucleus.say( "routeAdded : adding default : "+defRoute ) ;
+         _log.info( "routeAdded : adding default : "+defRoute ) ;
          _nucleus.routeAdd( defRoute ) ;
 
          _routeAdded = true ;
@@ -216,22 +222,22 @@ public class ClientBootstrap
       }
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-//     _nucleus.say( " exceptionArrived "+ce ) ;
+//     _log.info( " exceptionArrived "+ce ) ;
    }
    //
    // interface from CellEventListener
    //
    public void  cellCreated( CellEvent  ce ){
-//     _nucleus.say( " cellCreated "+ce ) ;
+//     _log.info( " cellCreated "+ce ) ;
    }
    public void  cellDied( CellEvent ce ){
-//     _nucleus.say( " cellDied "+ce ) ;
+//     _log.info( " cellDied "+ce ) ;
    }
    public void  cellExported( CellEvent ce ){
-//     _nucleus.say( " cellExported "+ce ) ;
+//     _log.info( " cellExported "+ce ) ;
    }
    public void  routeDeleted( CellEvent ce ){
-//     _nucleus.say( " routeDeleted "+ce ) ;
+//     _log.info( " routeDeleted "+ce ) ;
    }
 
 }

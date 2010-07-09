@@ -198,7 +198,7 @@ class ClassDataProvider0 implements ClassDataProvider {
     private byte [] loadClassDataCell( String className )
         throws IOException {
 
-        _nucleus.say( "getClassData("+className+") send to classProvider" ) ;
+        _log.info( "getClassData("+className+") send to classProvider" ) ;
         CellMessage answer = null ;
         try{
             answer = _nucleus.sendAndWait(
@@ -208,14 +208,14 @@ class ClassDataProvider0 implements ClassDataProvider {
                                           4000
                                           ) ;
         }catch( InterruptedException e ){
-            _nucleus.say( "getClassData Exception : "+e ) ;
+            _log.info( "getClassData Exception : "+e ) ;
             throw new IOException( e.toString() ) ;
         }catch( NoRouteToCellException e ){
-            _nucleus.say( "getClassData Exception : "+e ) ;
+            _log.info( "getClassData Exception : "+e ) ;
             throw new IOException( e.toString() ) ;
         }
         if( answer == null ){
-            _nucleus.say( "getClassData sendAndWait timed out" ) ;
+            _log.info( "getClassData sendAndWait timed out" ) ;
             throw new IOException( "getClassData sendAndWait timed out" ) ;
         }
         Object answerObject = answer.getMessageObject() ;
@@ -223,7 +223,7 @@ class ClassDataProvider0 implements ClassDataProvider {
             throw new IOException( "PANIC Message didn't contain data" ) ;
 
         if( ! ( answerObject instanceof byte [] ) ){
-            _nucleus.say( "getClassData sendAndWait got : "+
+            _log.info( "getClassData sendAndWait got : "+
                           answerObject.toString() ) ;
             throw new IOException( "Unknown data arrived" ) ;
         }
