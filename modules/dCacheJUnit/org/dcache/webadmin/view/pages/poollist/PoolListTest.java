@@ -8,7 +8,7 @@ import org.dcache.webadmin.controller.impl.PoolBeanServiceImpl;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.WebAdminInterface;
-import org.dcache.webadmin.view.beans.PoolBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 import org.dcache.webadmin.view.pages.login.LogIn;
 import org.junit.Before;
@@ -54,8 +54,8 @@ public class PoolListTest {
         formTester.select(DROPDOWN_ID, DISABLED_RDONLY_CHOICE);
         selectAll(formTester);
         formTester.submit();
-        List<PoolBean> poolsAfterChange = _poolBeanService.getPoolBeans();
-        for (PoolBean pool : poolsAfterChange) {
+        List<PoolSpaceBean> poolsAfterChange = _poolBeanService.getPoolBeans();
+        for (PoolSpaceBean pool : poolsAfterChange) {
             assertFalse(pool.isEnabled());
         }
     }
@@ -66,8 +66,8 @@ public class PoolListTest {
         formTester.select(DROPDOWN_ID, ENABLED_CHOICE);
         selectAll(formTester);
         formTester.submit();
-        List<PoolBean> poolsAfterChange = _poolBeanService.getPoolBeans();
-        for (PoolBean pool : poolsAfterChange) {
+        List<PoolSpaceBean> poolsAfterChange = _poolBeanService.getPoolBeans();
+        for (PoolSpaceBean pool : poolsAfterChange) {
             assertTrue(pool.isEnabled());
         }
     }
@@ -75,13 +75,13 @@ public class PoolListTest {
     @Test
     public void testPoolModeChangeSingle() throws PoolBeanServiceException {
         int rowToChange = 1;
-        List<PoolBean> poolsBeforeChange = _poolBeanService.getPoolBeans();
+        List<PoolSpaceBean> poolsBeforeChange = _poolBeanService.getPoolBeans();
         FormTester formTester = _tester.newFormTester(POOLUSAGE_FORM_ID);
         formTester.select(DROPDOWN_ID, ENABLED_CHOICE);
         formTester.setValue(LISTVIEW_ID + ":" + rowToChange + ":" +
                 LISTVIEW_ROW_CHECKBOX_ID, true);
         formTester.submit();
-        List<PoolBean> poolsAfterChange = _poolBeanService.getPoolBeans();
+        List<PoolSpaceBean> poolsAfterChange = _poolBeanService.getPoolBeans();
         assertEquals(poolsBeforeChange.get(0).isEnabled(), poolsAfterChange.get(0).isEnabled());
         assertNotSame(poolsBeforeChange.get(rowToChange).isEnabled(),
                 poolsAfterChange.get(rowToChange).isEnabled());

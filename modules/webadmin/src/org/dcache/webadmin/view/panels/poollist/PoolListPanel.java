@@ -9,7 +9,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.dcache.webadmin.view.beans.PoolBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.StringResourceModel;
@@ -23,7 +23,7 @@ public class PoolListPanel extends Panel {
 
     private boolean _showCheckbox;
 
-    public PoolListPanel(String id, IModel<? extends List<PoolBean>> model,
+    public PoolListPanel(String id, IModel<? extends List<PoolSpaceBean>> model,
             boolean showCheckbox) {
         super(id);
         _showCheckbox = showCheckbox;
@@ -43,15 +43,15 @@ public class PoolListPanel extends Panel {
         return "missing message, please report/fix";
     }
 
-    private class PoolBeanListView extends EvenOddListView<PoolBean> {
+    private class PoolBeanListView extends EvenOddListView<PoolSpaceBean> {
 
-        PoolBeanListView(String id, IModel<? extends List<PoolBean>> model) {
+        PoolBeanListView(String id, IModel<? extends List<PoolSpaceBean>> model) {
             super(id, model);
         }
 
         @Override
-        protected void populateItem(final ListItem<PoolBean> item) {
-            PoolBean poolBean = item.getModelObject();
+        protected void populateItem(final ListItem<PoolSpaceBean> item) {
+            PoolSpaceBean poolBean = item.getModelObject();
             WebMarkupContainer checkboxRow = new WebMarkupContainer("PoolPanel.checkboxRow");
             checkboxRow.setVisibilityAllowed(_showCheckbox);
             CheckBox checkbox = new CheckBox("PoolPanel.selected",

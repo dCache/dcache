@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class PoolRequestQueue implements Serializable {
 
+    private String _name;
     private int _active;
     private int _max;
     private int _queued;
@@ -15,10 +16,19 @@ public class PoolRequestQueue implements Serializable {
     public PoolRequestQueue() {
     }
 
-    public PoolRequestQueue(int active, int max, int queued) {
+    public PoolRequestQueue(String name, int active, int max, int queued) {
+        _name = name;
         _active = active;
         _max = max;
         _queued = queued;
+    }
+
+    public String getName() {
+        return _name;
+    }
+
+    public void setName(String name) {
+        _name = name;
     }
 
     public int getActive() {
@@ -45,6 +55,9 @@ public class PoolRequestQueue implements Serializable {
         _queued = queued;
     }
 
+    /*
+     * conveniance method to be able to calculate a total out of multiple queues
+     */
     public void addQueue(PoolRequestQueue queueToAdd) {
         if (queueToAdd == null) {
             throw new IllegalArgumentException();

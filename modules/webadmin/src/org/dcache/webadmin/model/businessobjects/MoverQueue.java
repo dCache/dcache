@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class MoverQueue implements Serializable {
 
+    private String _name;
     private int _active;
     private int _max;
     private int _queued;
@@ -15,10 +16,19 @@ public class MoverQueue implements Serializable {
     public MoverQueue() {
     }
 
-    public MoverQueue(int active, int max, int queued) {
+    public MoverQueue(String name, int active, int max, int queued) {
+        _name = name;
         _active = active;
         _max = max;
         _queued = queued;
+    }
+
+    public String getName() {
+        return _name;
+    }
+
+    public void setName(String name) {
+        _name = name;
     }
 
     public int getActive() {
@@ -47,7 +57,7 @@ public class MoverQueue implements Serializable {
 
     @Override
     public int hashCode() {
-        return _active ^ _max ^ _queued;
+        return _active ^ _max ^ _queued ^ _name.hashCode();
     }
 
     @Override
@@ -61,6 +71,10 @@ public class MoverQueue implements Serializable {
         }
 
         MoverQueue otherQueue = (MoverQueue) testObject;
+
+        if (!(otherQueue._name.equals(_name))) {
+            return false;
+        }
 
         if (otherQueue._active != _active) {
             return false;

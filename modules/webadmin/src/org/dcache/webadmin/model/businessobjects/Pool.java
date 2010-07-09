@@ -1,6 +1,8 @@
 package org.dcache.webadmin.model.businessobjects;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This is a simple Data-Container Object for the relevant information
@@ -16,13 +18,7 @@ public class Pool implements Serializable {
     private long _freeSpace = 0;
     private long _preciousSpace = 0;
     private long _usedSpace = 0;
-    private MoverQueue _movers = new MoverQueue(0, 0, 0);
-    private MoverQueue _restores = new MoverQueue(0, 0, 0);
-    private MoverQueue _stores = new MoverQueue(0, 0, 0);
-    private MoverQueue _p2pserver = new MoverQueue(0, 0, 0);
-    private MoverQueue _p2pclient = new MoverQueue(0, 0, 0);
-    private MoverQueue _p2p = new MoverQueue(0, 0, 0);
-    private MoverQueue _regular = new MoverQueue(0, 0, 0);
+    private List<MoverQueue> _moverQueues = new ArrayList<MoverQueue>();
 
     public Pool() {
     }
@@ -75,60 +71,16 @@ public class Pool implements Serializable {
         _name = name;
     }
 
-    public MoverQueue getMovers() {
-        return _movers;
+    public List<MoverQueue> getMoverQueues() {
+        return _moverQueues;
     }
 
-    public void setMovers(MoverQueue movers) {
-        _movers = movers;
+    public void setMoverQueues(List<MoverQueue> moverQueues) {
+        _moverQueues = moverQueues;
     }
 
-    public MoverQueue getP2p() {
-        return _p2p;
-    }
-
-    public void setP2p(MoverQueue p2p) {
-        _p2p = p2p;
-    }
-
-    public MoverQueue getP2pclient() {
-        return _p2pclient;
-    }
-
-    public void setP2pclient(MoverQueue p2pclient) {
-        _p2pclient = p2pclient;
-    }
-
-    public MoverQueue getP2pserver() {
-        return _p2pserver;
-    }
-
-    public void setP2pserver(MoverQueue p2pserver) {
-        _p2pserver = p2pserver;
-    }
-
-    public MoverQueue getRegular() {
-        return _regular;
-    }
-
-    public void setRegular(MoverQueue regular) {
-        _regular = regular;
-    }
-
-    public MoverQueue getRestores() {
-        return _restores;
-    }
-
-    public void setRestores(MoverQueue restores) {
-        _restores = restores;
-    }
-
-    public MoverQueue getStores() {
-        return _stores;
-    }
-
-    public void setStores(MoverQueue stores) {
-        _stores = stores;
+    public void addMoverQueue(MoverQueue queue) {
+        _moverQueues.add(queue);
     }
 
     @Override
@@ -165,30 +117,10 @@ public class Pool implements Serializable {
         if (!(otherPool._usedSpace == _usedSpace)) {
             return false;
         }
-        if (!(otherPool._movers.equals(_movers))) {
+        if (!(otherPool._moverQueues.equals(_moverQueues))) {
             return false;
         }
-        if (!(otherPool._movers.equals(_movers))) {
-            return false;
-        }
-        if (!(otherPool._p2p.equals(_p2p))) {
-            return false;
-        }
-        if (!(otherPool._p2pclient.equals(_p2pclient))) {
-            return false;
-        }
-        if (!(otherPool._p2pserver.equals(_p2pserver))) {
-            return false;
-        }
-        if (!(otherPool._regular.equals(_regular))) {
-            return false;
-        }
-        if (!(otherPool._restores.equals(_restores))) {
-            return false;
-        }
-        if (!(otherPool._stores.equals(_stores))) {
-            return false;
-        }
+
         return true;
     }
 }

@@ -9,7 +9,7 @@ import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.dataaccess.impl.PoolsDAOImplHelper;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
-import org.dcache.webadmin.view.beans.PoolBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -18,7 +18,7 @@ public class PoolBeanServiceImplTest {
 
     private DAOFactory _daoFactory;
     private PoolBeanServiceImpl _poolBeanService;
-    private List<PoolBean> _expectedPoolBeans;
+    private List<PoolSpaceBean> _expectedPoolBeans;
 
     @Before
     public void setUp() {
@@ -29,7 +29,7 @@ public class PoolBeanServiceImplTest {
 
     @Test
     public void testGetPoolBeans() throws PoolBeanServiceException {
-        List<PoolBean> poolBeans = _poolBeanService.getPoolBeans();
+        List<PoolSpaceBean> poolBeans = _poolBeanService.getPoolBeans();
         assertEquals("pools not returned as expected", _expectedPoolBeans, poolBeans);
     }
 
@@ -66,7 +66,7 @@ public class PoolBeanServiceImplTest {
     }
 
     private void setSelectionOfAllPoolBeans(boolean selected) {
-        for (PoolBean poolBean : _expectedPoolBeans) {
+        for (PoolSpaceBean poolBean : _expectedPoolBeans) {
             poolBean.setSelected(selected);
         }
     }

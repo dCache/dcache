@@ -10,10 +10,10 @@ import org.dcache.webadmin.controller.util.DiskSpaceUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PoolBean implements Comparable, Serializable {
+public class PoolSpaceBean implements Comparable, Serializable {
 
     private static final Float ROUNDING_FACTOR = 10F;
-    private static final Logger _log = LoggerFactory.getLogger(PoolBean.class);
+    private static final Logger _log = LoggerFactory.getLogger(PoolSpaceBean.class);
     private String _name = "";
     private String _domainName = "";
     private boolean _enabled;
@@ -27,7 +27,7 @@ public class PoolBean implements Comparable, Serializable {
     private float _percentageFree = 0;
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
 
-    public PoolBean() {
+    public PoolSpaceBean() {
         calculatePercentages();
         _log.debug("poolBean created");
     }
@@ -60,14 +60,25 @@ public class PoolBean implements Comparable, Serializable {
         return Math.round((percentage * ROUNDING_FACTOR)) / ROUNDING_FACTOR;
     }
 
+    public void addPoolSpace(PoolSpaceBean poolToAdd) {
+        if (poolToAdd == null) {
+            throw new IllegalArgumentException();
+        }
+        _totalSpace += poolToAdd._totalSpace;
+        _freeSpace += poolToAdd._freeSpace;
+        _preciousSpace += poolToAdd._preciousSpace;
+        _usedSpace += poolToAdd._usedSpace;
+        calculatePercentages();
+    }
+
     public void setName(String name) {
 
-        this._name = name;
+        _name = name;
     }
 
     public String getName() {
 
-        return this._name;
+        return _name;
     }
 
     public void setEnabled(boolean enabled) {
@@ -109,7 +120,7 @@ public class PoolBean implements Comparable, Serializable {
      * @return the value of usedSpace
      */
     public long getUsedSpace() {
-        return _usedSpace;
+        return DiskSpaceUnit.BYTES.convert(_usedSpace, _displayUnit);
     }
 
     /**
@@ -117,7 +128,7 @@ public class PoolBean implements Comparable, Serializable {
      * @param usedSpace new value of usedSpace
      */
     public void setUsedSpace(long usedSpace) {
-        this._usedSpace = usedSpace;
+        _usedSpace = usedSpace;
         calculatePercentages();
     }
 
@@ -134,7 +145,7 @@ public class PoolBean implements Comparable, Serializable {
      * @param totalSpace new value of totalSpace
      */
     public void setTotalSpace(long totalSpace) {
-        this._totalSpace = totalSpace;
+        _totalSpace = totalSpace;
         calculatePercentages();
     }
 
@@ -149,7 +160,7 @@ public class PoolBean implements Comparable, Serializable {
      * @param preciousSpace new value of preciousSpace
      */
     public void setPreciousSpace(long preciousSpace) {
-        this._preciousSpace = preciousSpace;
+        _preciousSpace = preciousSpace;
         calculatePercentages();
     }
 
@@ -166,7 +177,7 @@ public class PoolBean implements Comparable, Serializable {
      * @param freeSpace new value of freeSpace
      */
     public void setFreeSpace(long freeSpace) {
-        this._freeSpace = freeSpace;
+        _freeSpace = freeSpace;
         calculatePercentages();
     }
 
@@ -183,7 +194,7 @@ public class PoolBean implements Comparable, Serializable {
      * @param domainName new value of domainName
      */
     public void setDomainName(String domainName) {
-        this._domainName = domainName;
+        _domainName = domainName;
     }
 
     public boolean isSelected() {
@@ -191,7 +202,7 @@ public class PoolBean implements Comparable, Serializable {
     }
 
     public void setSelected(boolean selected) {
-        this._selected = selected;
+        _selected = selected;
     }
 
     public int compareTo(Object other) {
@@ -201,7 +212,7 @@ public class PoolBean implements Comparable, Serializable {
         }
 //      throws ClassCastException if wrong object is delivered, according to
 //      specification
-        PoolBean otherBean = (PoolBean) other;
+        PoolSpaceBean otherBean = (PoolSpaceBean) other;
         return this.getName().compareTo(otherBean.getName());
     }
 
@@ -220,11 +231,11 @@ public class PoolBean implements Comparable, Serializable {
             return true;
         }
 
-        if (!(testObject instanceof PoolBean)) {
+        if (!(testObject instanceof PoolSpaceBean)) {
             return false;
         }
 
-        PoolBean otherPoolBean = (PoolBean) testObject;
+        PoolSpaceBean otherPoolBean = (PoolSpaceBean) testObject;
 
         if (!(otherPoolBean._name.equals(_name))) {
             return false;

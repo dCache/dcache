@@ -2,64 +2,12 @@
     <head>
         <title></title>
     <wicket:head>
-        <wicket:link>
-            <link href="PoolQueues.css" rel="stylesheet" type="text/css"  />
-        </wicket:link>
     </wicket:head>
 </head>
 <body>
 <wicket:extend>
     <h1><wicket:message key="header1"></wicket:message></h1>
-    <table>
-        <tr>
-            <th rowspan="2"><wicket:message key="name.header"></wicket:message></th>
-        <th rowspan="2"><wicket:message key="domainName.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="movers.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="restores.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="stores.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="p2pserver.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="p2pclient.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="p2p.header"></wicket:message></th>
-        <th colspan="3"><wicket:message key="regular.header"></wicket:message></th>
-        </tr>
-        <tr>
-        <wicket:fragment wicket:id="headerFragment">
-            <th><wicket:message key="active"></wicket:message></th>
-            <th><wicket:message key="max"></wicket:message></th>
-            <th><wicket:message key="queued"></wicket:message></th>
-        </wicket:fragment>
-        <span wicket:id="colheader1"></span>
-        <span wicket:id="colheader2"></span>
-        <span wicket:id="colheader3"></span>
-        <span wicket:id="colheader4"></span>
-        <span wicket:id="colheader5"></span>
-        <span wicket:id="colheader6"></span>
-        <span wicket:id="colheader7"></span>
-        </tr>
-        <tr wicket:id="listview">
-        <span wicket:id="pool"></span>
-        </tr>
-        <tr>
-        <span wicket:id="total"></span>
-        </tr>
-        <wicket:fragment wicket:id="queueFragment">
-            <td><span wicket:id="active"></span></td>
-            <td><span wicket:id="max"></span></td>
-            <td><span wicket:id="queued"></span></td>
-        </wicket:fragment>
-        <wicket:fragment wicket:id="poolFragment">
-            <td><span wicket:id="name"></span></td>
-            <td><span wicket:id="domainName"></span></td>
-            <span wicket:id="movers"></span>
-            <span wicket:id="restores"></span>
-            <span wicket:id="stores"></span>
-            <span wicket:id="p2pserver"></span>
-            <span wicket:id="p2pclient"></span>
-            <span wicket:id="p2p"></span>
-            <span wicket:id="regular"></span>
-        </wicket:fragment>
-    </table>
-
+    <span wicket:id="poolQueuesPanel"></span>
 </wicket:extend>
 </body>
 </html>

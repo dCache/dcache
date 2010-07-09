@@ -1,9 +1,10 @@
 package org.dcache.webadmin.controller.util;
 
+import java.util.List;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
-import org.dcache.webadmin.view.beans.PoolBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
 
@@ -13,16 +14,16 @@ import org.dcache.webadmin.view.beans.PoolRequestQueue;
  */
 public class BeanDataMapper {
 
-    public static PoolBean poolModelToView(Pool poolBusinessObject,
+    public static PoolSpaceBean poolModelToView(Pool poolBusinessObject,
             NamedCell namedCellBusinessObject) {
-        PoolBean returnPoolBean = poolModelToView(poolBusinessObject);
+        PoolSpaceBean returnPoolBean = poolModelToView(poolBusinessObject);
         returnPoolBean.setDomainName(namedCellBusinessObject.getDomainName());
 
         return returnPoolBean;
     }
 
-    public static PoolBean poolModelToView(Pool poolBusinessObject) {
-        PoolBean returnPoolBean = new PoolBean();
+    public static PoolSpaceBean poolModelToView(Pool poolBusinessObject) {
+        PoolSpaceBean returnPoolBean = new PoolSpaceBean();
         returnPoolBean.setEnabled(poolBusinessObject.isEnabled());
         returnPoolBean.setFreeSpace(poolBusinessObject.getFreeSpace());
         returnPoolBean.setFreeSpace(poolBusinessObject.getFreeSpace());
@@ -44,18 +45,15 @@ public class BeanDataMapper {
     public static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject) {
         PoolQueueBean returnPoolQueueBean = new PoolQueueBean();
         returnPoolQueueBean.setName(poolBusinessObject.getName());
-        returnPoolQueueBean.setMovers(queueModelToView(poolBusinessObject.getMovers()));
-        returnPoolQueueBean.setP2p(queueModelToView(poolBusinessObject.getP2p()));
-        returnPoolQueueBean.setP2pclient(queueModelToView(poolBusinessObject.getP2pclient()));
-        returnPoolQueueBean.setP2pserver(queueModelToView(poolBusinessObject.getP2pserver()));
-        returnPoolQueueBean.setRegular(queueModelToView(poolBusinessObject.getRegular()));
-        returnPoolQueueBean.setRestores(queueModelToView(poolBusinessObject.getRestores()));
-        returnPoolQueueBean.setStores(queueModelToView(poolBusinessObject.getStores()));
+        for (MoverQueue queue : poolBusinessObject.getMoverQueues()) {
+            returnPoolQueueBean.addRequestQueue(queueModelToView(queue));
+        }
         return returnPoolQueueBean;
     }
 
     private static PoolRequestQueue queueModelToView(MoverQueue moverQueue) {
         PoolRequestQueue queue = new PoolRequestQueue();
+        queue.setName(moverQueue.getName());
         queue.setActive(moverQueue.getActive());
         queue.setMax(moverQueue.getMax());
         queue.setQueued(moverQueue.getQueued());

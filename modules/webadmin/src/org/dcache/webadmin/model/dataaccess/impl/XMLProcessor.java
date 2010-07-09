@@ -33,12 +33,16 @@ public class XMLProcessor {
     public static final String EMPTY_DOCUMENT_CONTENT =
             "<dCache xmlns='http://www.dcache.org/2008/01/Info'/>";
     private static final String CLOSING_FRAGMENT = "']";
-    private static final String SPECIALCELL_FRAGMENT = "/dCache/domains/domain" +
+    private static final String SPECIAL_CELL_FRAGMENT = "/dCache/domains/domain" +
             "[@name='dCacheDomain']/routing/named-cells/cell[@name='";
-    private static final String SPECIALPOOL_FRAGMENT = "/dCache/pools/pool[@name='";
+    private static final String SPECIAL_POOL_FRAGMENT = "/dCache/pools/pool[@name='";
+    private static final String SPECIAL_QUEUE_FRAGMENT = "/queues/queue[@type='";
+    private static final String SPECIAL_NAMEDQUEUE_FRAGMENT = "/queues/named-queues/queue[@name='";
     private static final String ALL_POOLNODES = "/dCache/pools/pool";
     private static final String ALL_CELLNODES = "/dCache/domains/domain" +
             "[@name='dCacheDomain']/routing/named-cells/cell";
+    private static final String ALL_QUEUES_OF_POOL = "/queues/queue";
+    private static final String ALL_NAMEDQUEUES_OF_POOL = "/queues/named-queues/queue";
 //   the equivalent for each NamedCellmember in the InfoproviderXML
 //   to the NamedCell class
     private static final String NAMEDCELLMEMBER_DOMAIN = "/domainref/@name";
@@ -49,18 +53,12 @@ public class XMLProcessor {
     private static final String POOLMEMBER_TOTAL_SPACE = "/space/metric[@name='total']";
     private static final String POOLMEMBER_PRECIOUS_SPACE = "/space/metric[@name='precious']";
     private static final String POOLMEMBER_USED_SPACE = "/space/metric[@name='used']";
-    private static final String POOLMEMBER_STORE_QUEUE = "/queues/queue[@type='store']";
-    private static final String POOLMEMBER_MOVER_QUEUE = "/queues/queue[@type='mover']";
-    private static final String POOLMEMBER_RESTORE_QUEUE = "/queues/queue[@type='restore']";
-    private static final String POOLMEMBER_P2PCLIENT_QUEUE = "/queues/queue[@type='p2p-clientqueue']";
-    private static final String POOLMEMBER_REGULAR_QUEUE = "/queues/named-queues/queue[@name='regular']";
-    private static final String POOLMEMBER_P2P_QUEUE = "/queues/named-queues/queue[@name='p2p']";
-    private static final String POOLMEMBER_P2PSERVER_QUEUE = "/queues/queue[@type='p2p-queue']";
     private static final String QUEUE_ACTIVE_FRAGMENT = "/metric[@name='active']/text()";
     private static final String QUEUE_MAX_FRAGMENT = "/metric[@name='max-active']/text()";
     private static final String QUEUE_QUEUED_FRAGMENT = "/metric[@name='queued']/text()";
 //  attributes
     private static final String ATTRIBUTE_NAME = "name";
+    private static final String ATTRIBUTE_TYPE = "type";
     private XPathFactory _factory = XPathFactory.newInstance();
     private XPath _xpath = _factory.newXPath();
     private DocumentBuilderFactory _dbFactory;
@@ -129,7 +127,7 @@ public class XMLProcessor {
         NamedCell namedCellEntry = new NamedCell();
         namedCellEntry.setCellName(cellName);
         try {
-            String xpathExpression = SPECIALCELL_FRAGMENT + cellName + CLOSING_FRAGMENT +
+            String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + CLOSING_FRAGMENT +
                     NAMEDCELLMEMBER_DOMAIN;
             namedCellEntry.setDomainName((String) _xpath.evaluate(xpathExpression, document,
                     XPathConstants.STRING));
@@ -164,35 +162,52 @@ public class XMLProcessor {
     private Pool createPool(Document document, String poolName) {
         Pool pool = new Pool();
         pool.setName(poolName);
-        pool.setEnabled(getBooleanFromXpath(buildPoolXpathExpression(
-                POOLMEMBER_ENABLED, poolName), document));
-        pool.setTotalSpace(getLongFromXpath(buildPoolXpathExpression(
-                POOLMEMBER_TOTAL_SPACE, poolName), document));
-        pool.setFreeSpace(getLongFromXpath(buildPoolXpathExpression(
-                POOLMEMBER_FREE_SPACE, poolName), document));
-        pool.setPreciousSpace(getLongFromXpath(buildPoolXpathExpression(
-                POOLMEMBER_PRECIOUS_SPACE, poolName), document));
-        pool.setUsedSpace(getLongFromXpath(buildPoolXpathExpression(
-                POOLMEMBER_USED_SPACE, poolName), document));
-        pool.setStores(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_STORE_QUEUE, poolName), document));
-        pool.setMovers(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_MOVER_QUEUE, poolName), document));
-        pool.setRestores(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_RESTORE_QUEUE, poolName), document));
-        pool.setP2pclient(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_P2PCLIENT_QUEUE, poolName), document));
-        pool.setRegular(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_REGULAR_QUEUE, poolName), document));
-        pool.setP2p(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_P2P_QUEUE, poolName), document));
-        pool.setP2pserver(getMoverQueue(buildPoolXpathExpression(
-                POOLMEMBER_P2PSERVER_QUEUE, poolName), document));
+        pool.setEnabled(getBooleanFromXpath(buildPoolXpathExpression(poolName,
+                POOLMEMBER_ENABLED), document));
+        pool.setTotalSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
+                POOLMEMBER_TOTAL_SPACE), document));
+        pool.setFreeSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
+                POOLMEMBER_FREE_SPACE), document));
+        pool.setPreciousSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
+                POOLMEMBER_PRECIOUS_SPACE), document));
+        pool.setUsedSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
+                POOLMEMBER_USED_SPACE), document));
+        getPoolMovers(document, pool);
         return pool;
     }
 
-    private String buildPoolXpathExpression(String metric, String poolName) {
-        return SPECIALPOOL_FRAGMENT + poolName + CLOSING_FRAGMENT + metric;
+    private void getMoversForQueueType(String nodeFragment, String attribute,
+            String specialQueueFragment, Pool pool, Document document) {
+        //get all queue nodes
+        NodeList queueNodes = getNodesFromXpath(
+                buildPoolXpathExpression(pool.getName(), nodeFragment),
+                document);
+        //get all values into a moverqueue with name=attribute.value
+        if (queueNodes != null) {
+            for (int i = 0; i < queueNodes.getLength(); i++) {
+                Element currentQueueNode = (Element) queueNodes.item(i);
+                String queue = currentQueueNode.getAttribute(attribute);
+                String metric = specialQueueFragment + queue + CLOSING_FRAGMENT;
+                MoverQueue queueEntry = getMoverQueue(buildPoolXpathExpression(
+                        pool.getName(), metric), document);
+                queueEntry.setName(queue);
+                pool.addMoverQueue(queueEntry);
+            }
+        }
+
+    }
+
+    private void getPoolMovers(Document document, Pool pool) {
+//      get all queues
+        getMoversForQueueType(ALL_QUEUES_OF_POOL, ATTRIBUTE_TYPE,
+                SPECIAL_QUEUE_FRAGMENT, pool, document);
+//      get all named-queues
+        getMoversForQueueType(ALL_NAMEDQUEUES_OF_POOL, ATTRIBUTE_NAME,
+                SPECIAL_NAMEDQUEUE_FRAGMENT, pool, document);
+    }
+
+    private String buildPoolXpathExpression(String poolName, String metric) {
+        return SPECIAL_POOL_FRAGMENT + poolName + CLOSING_FRAGMENT + metric;
     }
 
     private Long getLongFromXpath(String xpathExpression, Document document) {

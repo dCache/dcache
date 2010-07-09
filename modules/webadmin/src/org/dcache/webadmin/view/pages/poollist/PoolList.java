@@ -13,7 +13,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.dcache.webadmin.controller.PoolBeanService;
 import org.dcache.webadmin.controller.exceptions.PoolBeanServiceException;
-import org.dcache.webadmin.view.beans.PoolBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 public class PoolList extends BasePage implements AuthenticatedWebPage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
-    private List<PoolBean> _poolBeans;
+    private List<PoolSpaceBean> _poolBeans;
     private SelectOption _selectedOption;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 

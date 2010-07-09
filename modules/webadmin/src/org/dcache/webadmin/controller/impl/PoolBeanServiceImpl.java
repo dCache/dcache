@@ -18,7 +18,7 @@ import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.dcache.webadmin.view.beans.PoolBean;
+import org.dcache.webadmin.view.beans.PoolSpaceBean;
 
 /**
  * Invokes the needed dataaccessmethods and does the mapping
@@ -35,15 +35,15 @@ public class PoolBeanServiceImpl implements PoolBeanService {
     }
 
     @Override
-    public List<PoolBean> getPoolBeans() throws PoolBeanServiceException {
+    public List<PoolSpaceBean> getPoolBeans() throws PoolBeanServiceException {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
-            List<PoolBean> poolBeans = new ArrayList<PoolBean>(pools.size());
+            List<PoolSpaceBean> poolBeans = new ArrayList<PoolSpaceBean>(pools.size());
             Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
                     getPoolsDAO().getNamedCells());
             for (Pool currentPool : pools) {
-                PoolBean newPoolBean = createPoolBean(currentPool, namedCells);
+                PoolSpaceBean newPoolBean = createPoolBean(currentPool, namedCells);
                 poolBeans.add(newPoolBean);
             }
             _log.debug("returned PoolBeans: " + poolBeans.size());
@@ -59,7 +59,7 @@ public class PoolBeanServiceImpl implements PoolBeanService {
         _daoFactory = daoFactory;
     }
 
-    private PoolBean createPoolBean(Pool pool, Map<String, NamedCell> namedCells) {
+    private PoolSpaceBean createPoolBean(Pool pool, Map<String, NamedCell> namedCells) {
         NamedCell currentNamedCell = namedCells.get(pool.getName());
         if (currentNamedCell != null) {
             return BeanDataMapper.poolModelToView(pool, currentNamedCell);
@@ -74,7 +74,7 @@ public class PoolBeanServiceImpl implements PoolBeanService {
     }
 
     @Override
-    public void changePoolMode(List<PoolBean> pools, PoolV2Mode poolMode,
+    public void changePoolMode(List<PoolSpaceBean> pools, PoolV2Mode poolMode,
             String userName) throws PoolBeanServiceException {
         _log.debug("Change Pool mode called: {}", poolMode);
         Set<String> poolIds = getSelectedIds(pools);
@@ -85,9 +85,9 @@ public class PoolBeanServiceImpl implements PoolBeanService {
         }
     }
 
-    private Set<String> getSelectedIds(List<PoolBean> pools) {
+    private Set<String> getSelectedIds(List<PoolSpaceBean> pools) {
         Set<String> poolIds = new HashSet<String>();
-        for (PoolBean pool : pools) {
+        for (PoolSpaceBean pool : pools) {
             if (pool.isSelected()) {
                 poolIds.add(pool.getName());
             }
