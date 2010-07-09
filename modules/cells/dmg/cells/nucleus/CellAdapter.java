@@ -56,8 +56,7 @@ public class   CellAdapter
     private CellMessage _currentMessage = null;
     private String      _autoSetup      = null;
     private String      _definedSetup   = null;
-    private Pinboard    _pinboard       = null;
-    private final Object      _pinBoardLock   = new Object();
+
     /**
      * Creates a Cell and the corresponding CellNucleus with the
      * specified name. An extra boolean argument 'startNow'
@@ -335,11 +334,9 @@ public class   CellAdapter
      * @param size maximum number of lines kept by the pinboard.
      *
      */
-    public void createPinboard(int size) {
-        synchronized (_pinBoardLock) {
-            _pinboard = new Pinboard(size <= 0 ? 200 : size);
-            PinboardAppender.addPinboard(getCellName(), _pinboard);
-        }
+    public void createPinboard(int size)
+    {
+        _nucleus.setPinboard(new Pinboard(size <= 0 ? 200 : size));
     }
 
     /**
@@ -780,37 +777,35 @@ public class   CellAdapter
     }
     public String hh_show_pinboard =
         "[<lines>] # dumps the last <lines> to the terminal";
-    public String ac_show_pinboard_$_0_1(Args args) {
-        synchronized (_pinBoardLock) {
-            if (_pinboard == null)return "No Pinboard defined";
-            StringBuffer sb = new StringBuffer();
-            if (args.argc() > 0)
-                _pinboard.dump(sb, Integer.parseInt(args.argv(0)));
-            else
-                _pinboard.dump(sb, 20);
-
-            return sb.toString();
+    public String ac_show_pinboard_$_0_1(Args args)
+    {
+        Pinboard pinboard = _nucleus.getPinboard();
+        if (pinboard == null) return "No Pinboard defined";
+        StringBuffer sb = new StringBuffer();
+        if (args.argc() > 0) {
+            pinboard.dump(sb, Integer.parseInt(args.argv(0)));
+        } else {
+            pinboard.dump(sb, 20);
         }
 
+        return sb.toString();
     }
+
     public String hh_dump_pinboard =
         "<filename> # dumps the full pinboard to <filename>";
-    public String ac_dump_pinboard_$_1(Args args) {
-        synchronized (_pinBoardLock) {
-            if (_pinboard == null)return "No Pinboard defined";
+    public String ac_dump_pinboard_$_1(Args args)
+    {
+        Pinboard pinboard = _nucleus.getPinboard();
+        if (pinboard == null) return "No Pinboard defined";
 
-            try {
-                _pinboard.dump(new File(args.argv(0)));
-            } catch (Exception e) {
-                return "Dump Failed : "+e;
-            }
-            return "Pinboard dumped to "+args.argv(0);
+        try {
+            pinboard.dump(new File(args.argv(0)));
+        } catch (Exception e) {
+            return "Dump Failed : "+e;
         }
+        return "Pinboard dumped to "+args.argv(0);
     }
-    public String hh_pin = "<comment> # obsolete";
-    public String ac_pin_$_1(Args args) {
-        return "The pin command is obsolete";
-    }
+
     /**
      *   belongs to the Cell Interface.
      *   If this method is overwritten, the 'cleanUp'
@@ -830,34 +825,34 @@ public class   CellAdapter
     //
     // package private (we need it in CellShell)
     //
-    void dumpPinboard() {
-        synchronized (_pinBoardLock) {
-            try {
-                Map<String,Object> context = getDomainContext();
-                String dumpDir = (String)context.get("dumpDirectory");
-                if (dumpDir == null) {
-                    _log.info("Pinboard not dumped (dumpDirectory not sp.)");
-                    return;
-                }
-                File dir = new File(dumpDir);
-                if (! dir.isDirectory()) {
-                    _log.info(
-                                 "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
-                    return;
-                }
-                if (_pinboard == null) {
-                    _log.info("Pinboard not dumped (no pinboard defined)");
-                    return;
-                }
-
-                File dump = new File(dir,
-                                     getCellDomainName()+"-"+
-                                     getCellName()+"-"+
-                                     Long.toHexString(System.currentTimeMillis()));
-                _pinboard.dump(dump);
-            } catch (Throwable t) {
-                _log.warn("Dumping pinboard failed : "+t);
+    void dumpPinboard()
+    {
+        Pinboard pinboard = _nucleus.getPinboard();
+        try {
+            Map<String,Object> context = getDomainContext();
+            String dumpDir = (String)context.get("dumpDirectory");
+            if (dumpDir == null) {
+                _log.info("Pinboard not dumped (dumpDirectory not sp.)");
+                return;
             }
+            File dir = new File(dumpDir);
+            if (! dir.isDirectory()) {
+                _log.info(
+                          "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
+                return;
+            }
+            if (pinboard == null) {
+                _log.info("Pinboard not dumped (no pinboard defined)");
+                return;
+            }
+
+            File dump = new File(dir,
+                                 getCellDomainName()+"-"+
+                                 getCellName()+"-"+
+                                 Long.toHexString(System.currentTimeMillis()));
+            pinboard.dump(dump);
+        } catch (Throwable t) {
+            _log.warn("Dumping pinboard failed : "+t);
         }
     }
     /**

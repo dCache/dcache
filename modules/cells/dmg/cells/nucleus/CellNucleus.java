@@ -1,5 +1,6 @@
 package dmg.cells.nucleus;
 
+import dmg.util.Pinboard;
 import dmg.util.Args;
 import dmg.util.PinboardAppender;
 import dmg.util.BufferedLineWriter;
@@ -57,6 +58,8 @@ public class CellNucleus implements ThreadFactory
 
     private boolean _isPrivateCallbackExecutor = true;
     private boolean _isPrivateMessageExecutor = true;
+
+    private Pinboard _pinboard;
 
     public CellNucleus(Cell cell, String name) {
 
@@ -235,6 +238,17 @@ public class CellNucleus implements ThreadFactory
     }
     public int    getPrintoutLevel(String cellName) {
         return __cellGlue.getPrintoutLevel(cellName);
+    }
+
+    public void setPinboard(Pinboard pinboard)
+    {
+        _pinboard = pinboard;
+        PinboardAppender.addPinboard(getCellName(), _pinboard);
+    }
+
+    public Pinboard getPinboard()
+    {
+        return _pinboard;
     }
 
     public synchronized void setAsyncCallback(boolean asyncCallback)
