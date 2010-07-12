@@ -69,8 +69,13 @@ public class UsernamePasswordAuthenticationPluginTest {
         doAuthentication(inputs, inputs.getPrincipals());
         Set<SessionAttribute> attributes = new HashSet<SessionAttribute>();
         _authPlugin.session(null, inputs.getPrincipals(), attributes);
+        if (attributes.isEmpty()) {
+            fail("couldn't find session attributes");
+        }
         for (SessionAttribute attribute : attributes) {
-            if (!((attribute.getName().equals("home")) || attribute.getName().equals("root"))) {
+            String value = (String) attribute.getValue();
+            if (!(value.equals(_authPlugin.EXAMPLE_HOMEDIRECTORY) ||
+                    value.equals(_authPlugin.EXAMPLE_ROOTDIRECTORY))) {
                 fail("couldn't find session attributes");
             }
         }

@@ -20,6 +20,8 @@ import org.dcache.gplazma.SessionID;
 public class SwitchableReplyUsernamePasswordAuthenticationPluginHelper
         extends UsernamePasswordAuthenticationPlugin {
 
+    public static final String EXAMPLE_HOMEDIRECTORY = "home";
+    public static final String EXAMPLE_ROOTDIRECTORY = "root";
     private AuthState _authState;
 
     public SwitchableReplyUsernamePasswordAuthenticationPluginHelper() {
@@ -54,8 +56,8 @@ public class SwitchableReplyUsernamePasswordAuthenticationPluginHelper
 
     @Override
     protected void session(String username, Set<SessionAttribute> attrib) throws AuthenticationException {
-        attrib.add(new HomeDirectory("home"));
-        attrib.add(new RootDirectory("root"));
+        attrib.add(new HomeDirectory(EXAMPLE_HOMEDIRECTORY));
+        attrib.add(new RootDirectory(EXAMPLE_ROOTDIRECTORY));
     }
 
     @Override

@@ -24,7 +24,7 @@ public class XmlResourcePluginRepositoryFactory implements
         LoggerFactory.getLogger( XmlResourcePluginRepositoryFactory.class);
 
     public static final String RESOURCE_PATH =
-        "/META-INF/gplazma-plugins.xml";
+        "META-INF/gplazma-plugins.xml";
 
 
     @Override
