@@ -2,6 +2,7 @@ package org.dcache.auth;
 
 public class UserPwdRecord extends UserAuthBase
 {
+    private static final long serialVersionUID = 1335892861480300575L;
     String Password = null;
 
 	public UserPwdRecord(String user,
@@ -11,15 +12,15 @@ public class UserPwdRecord extends UserAuthBase
 	{
         this(user,passwd,readOnly, uid, gid, home, root, fsroot,false);
 	}
-    
+
     public UserPwdRecord(String user,
-                         String passwd, boolean readOnly, 
+                         String passwd, boolean readOnly,
                          int uid,int gid,
                          String home,String root,String fsroot,
                          boolean isPlain)
     {
         super(user, readOnly, uid, gid, home, root, fsroot);
-        
+
         if(isPlain)
         {
             setPassword(passwd);
@@ -30,21 +31,22 @@ public class UserPwdRecord extends UserAuthBase
         }
     }
 
+    @Override
     public boolean isWeak() { return true; }
 
 
  	public String serialize()
  	{
-	    
+
  		String str = Username + " " +
  			Password + " " +
- 		    readOnlyStr() + " " + 
+ 		    readOnlyStr() + " " +
  			UID + " " +
  			GID + " " +
  			Home + " " +
  			Root;
  		if ( ! Root.equals(FsRoot) )
- 			str = str + " " + FsRoot;	
+ 			str = str + " " + FsRoot;
  		return str;
  	}
 
@@ -66,7 +68,8 @@ public class UserPwdRecord extends UserAuthBase
 // 			FsRoot = t.nextToken();
 // 	}
 
-   public String toString()
+   @Override
+public String toString()
     {
         return serialize();
     }
@@ -85,7 +88,7 @@ public class UserPwdRecord extends UserAuthBase
         return stringbuffer.toString();
     }
 
-	
+
 	public String hashPassword(String pwd)
 	{
 		String uandp = "1234567890" + Username + " " + pwd;
@@ -99,7 +102,7 @@ public class UserPwdRecord extends UserAuthBase
 		else
 			Password = hashPassword(pwd);
 	}
-	
+
 	public void disable()
 	{
 		Password = "#";
@@ -109,13 +112,14 @@ public class UserPwdRecord extends UserAuthBase
 	{
 		return Password.equals(hashPassword(clear_pwd));
 	}
-	
+
 	public boolean isDisabled()
 	{
 		return Password.equals("#");
 	}
-	
-	public boolean isAnonymous()
+
+	@Override
+    public boolean isAnonymous()
 	{
 		return Password.equals("-");
 	}

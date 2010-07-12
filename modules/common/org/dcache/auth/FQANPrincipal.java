@@ -1,9 +1,6 @@
 package org.dcache.auth;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.io.ObjectInputStream.GetField;
 import java.security.Principal;
 
 /**
