@@ -22,7 +22,7 @@ public class ConfigurationParserTests {
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationParserTests.class);
 
     private static final String PAMConfigParserFactory =
-            "org.dcache.gplazma.configuration.parser.DefaultConfigurationParserFactory";
+            "org.dcache.gplazma.configuration.parser.PAMStyleConfigurationParserFactory";
     // configurations to test with
     private static final String EMPTY_CONFIG_1 ="";
 
