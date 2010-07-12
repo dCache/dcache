@@ -18,7 +18,10 @@ public class XmlResourcePluginRepositoryFactoryTests {
 
     @Before
     public void setUp() throws ParserConfigurationException {
-        _classLoader = new Utf8DataClassLoader(XmlResourcePluginRepositoryFactory.RESOURCE_PATH);
+        ResourceBlockingClassLoader blockingLoader = new ResourceBlockingClassLoader();
+        blockingLoader.setIsBlocking( true);
+
+        _classLoader = new Utf8DataClassLoader(XmlResourcePluginRepositoryFactory.RESOURCE_PATH, blockingLoader);
         Thread currentThread = Thread.currentThread();
         currentThread.setContextClassLoader( _classLoader);
 

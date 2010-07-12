@@ -21,10 +21,6 @@ import java.util.Vector;
  * resources may be added by calling the {@link #addResource} method. The
  * resources are added as strings and made available as a UTF-8 encoded
  * byte-stream of the supplied String's data.
- * <p>
- * When Java code searches for a single match at the predefined location, the
- * first added resource is used. When searching for all resources at that
- * location then all resources will be listed in the order they were added.
  */
 public class Utf8DataClassLoader extends ClassLoader {
     private static final String URL_SCHEMA = "test";
@@ -36,7 +32,11 @@ public class Utf8DataClassLoader extends ClassLoader {
     private final String _path;
 
     public Utf8DataClassLoader( String path) {
-        super(Utf8DataClassLoader.class.getClassLoader());
+        this(path, getSystemClassLoader());
+    }
+
+    public Utf8DataClassLoader( String path, ClassLoader parent) {
+        super(parent);
         _path = path;
     }
 
