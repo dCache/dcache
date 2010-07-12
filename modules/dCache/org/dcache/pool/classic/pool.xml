@@ -76,7 +76,8 @@
               value="${allowCleaningPreciousFiles}"/>
     <property name="replicateOnArrival"
               value="${replicateOnArrival}"/>
-
+    <property name="tags"
+              value="${tags}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
