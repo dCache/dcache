@@ -68,7 +68,7 @@ package org.dcache.auth;
 import java.util.*;
 import java.io.*;
 
-// WARINING THIS CLASS IS NOT THREAD SAFE
+// WARNING THIS CLASS IS NOT THREAD SAFE
 // Format of : authentication file:
 //
 // username: uid gid home root <fsroot>
@@ -148,8 +148,6 @@ public class KAuthFile {
 
     private void read(BufferedReader reader)
     throws IOException {
-        boolean eof = false;
-
         String line;
 
         while((line = reader.readLine()) != null) {
@@ -302,16 +300,17 @@ public class KAuthFile {
         return null;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer(header);
         sb.append(mapping_section_header);
 
         sb.append("version " + VERSION_TO_GENERATE + "\n");
 
-        Iterator iter = (new TreeSet(mappings.keySet())).iterator();
-        while(iter.hasNext()) {
-            String secure_id= (String) iter.next();
-            String user = (String) mappings.get(secure_id);
+        List<String> secureIds = new ArrayList<String>( mappings.keySet());
+        Collections.sort( secureIds);
+        for( String secure_id : secureIds) {
+            String user = mappings.get(secure_id);
             sb.append(MAPPING_MARKER);
             sb.append('\"').append(secure_id).append("\" ");
             sb.append(user).append('\n');
@@ -319,9 +318,9 @@ public class KAuthFile {
         }
         sb.append('\n');
         sb.append("# the following are the user auth records\n");
-        iter =  (new TreeSet(auth_records.keySet())).iterator();
-        while(iter.hasNext()) {
-            String user= (String) iter.next();
+        List<String> authRecordUsers = new ArrayList<String>(auth_records.keySet());
+        Collections.sort( authRecordUsers);
+        for( String user : authRecordUsers) {
             if(user.indexOf('/') != -1) {
                 sb.append("# the following user record should probably be converted to mapping\n");
             }
@@ -332,9 +331,9 @@ public class KAuthFile {
 
         }
         sb.append("# the following are the user auth records\n");
-        iter = (new TreeSet(pwd_records.keySet())).iterator();
-        while(iter.hasNext()) {
-            String user= (String) iter.next();
+        List<String> pwdUsers = new ArrayList<String>(pwd_records.keySet());
+        Collections.sort( pwdUsers);
+        for( String user : pwdUsers) {
             if(user.indexOf('/') != -1) {
                 sb.append("# the following user record should probably be converted to mapping\n");
             }
@@ -348,7 +347,6 @@ public class KAuthFile {
 
     public UserAuthRecord getUserRecord(String username) {
         UserAuthRecord rec = auth_records.get(username);
-        //if (rec==null) throw new IllegalArgumentException("No mapping found in dcache kpwd file for " + username);
         if (rec!=null) rec.currentGIDindex = 0;
         return rec;
     }
@@ -574,7 +572,6 @@ public class KAuthFile {
             UserAuthRecord rec = readOldAuthRecord(line, reader);
             if ( rec != null && rec.isValid() ) {
                 auth_records.put(rec.Username, rec);
-                //	System.out.println("Added user <"+rec.Username+">: " + rec);
             }
         }
     }
@@ -603,7 +600,6 @@ public class KAuthFile {
         if( ntokens > 4 )
             FsRoot = t.nextToken();
         Username = username;		// Now it's valid
-        //System.out.println("User: <"+username+">");
 
         // Read principals
         HashSet<String> Principals = new  HashSet<String>();
@@ -616,18 +612,14 @@ public class KAuthFile {
                 line = reader.readLine();
                 continue;
             }
-            //System.out.println("Principal line: <"+line+">");
             StringTokenizer lst = new StringTokenizer(line);
             int np = lst.countTokens();
-            //System.out.println("Tokens: "+np);
             for( int i = 0; i < np; i++ ) {
                 String p = lst.nextToken();
                 Principals.add(p);
-                //System.out.println("Principal: <"+p+">");
             }
             line = reader.readLine();
         }
-        //System.out.println("UserRecord: " + this);
         UserAuthRecord record = new UserAuthRecord(Username,false, UID,GID,Home,Root,FsRoot,Principals);
         return record;
     }
@@ -684,10 +676,7 @@ public class KAuthFile {
 
             if(arguments.secureIds != null && !arguments.secureIds.isEmpty()) {
                 System.out.println("secureIds are:");
-                Iterator iter = arguments.secureIds.iterator();
-
-                while (iter.hasNext()) {
-                    String secureId = (String)iter.next();
+                for( String secureId : arguments.secureIds) {
                     System.out.println("\""+secureId+"\"");
                 }
 
@@ -840,10 +829,7 @@ public class KAuthFile {
 
             if(arguments.secureIds != null && !arguments.secureIds.isEmpty()) {
                 System.out.println("secureIds are:");
-                Iterator iter = arguments.secureIds.iterator();
-
-                while (iter.hasNext()) {
-                    String secureId = (String)iter.next();
+                for( String secureId : arguments.secureIds) {
                     System.out.println("\""+secureId+"\"");
                 }
 
@@ -899,8 +885,8 @@ public class KAuthFile {
     }
 
     public void dcuserlist(Arguments arguments) {
-        String user = arguments.arg1;
-        if(user != null) {
+        if(arguments.arg1 != null) {
+            String user = arguments.arg1;
             UserPwdRecord pwd_record =pwd_records.get(user);
             if(pwd_record != null) {
                 System.out.println(pwd_record.toDetailedString());
@@ -914,9 +900,8 @@ public class KAuthFile {
         HashSet<String> allusers = new HashSet<String>();
         allusers.addAll( pwd_records.keySet());
         allusers.addAll(auth_records.keySet());
-        Iterator iter = allusers.iterator();
-        while(iter.hasNext()) {
-            System.out.println(iter.next());
+        for( String user : allusers) {
+            System.out.println(user);
         }
     }
 
@@ -965,8 +950,8 @@ public class KAuthFile {
     }
 
     public void dcmaplist(Arguments arguments) {
-        String secureId=arguments.arg1;
-        if(secureId != null) {
+        if(arguments.arg1 != null) {
+            String secureId = arguments.arg1;
             if( !mappings.containsKey(secureId) ) {
                 throw new IllegalArgumentException("can not find mapping for secureId \""+
                 secureId+"\"");
@@ -975,9 +960,7 @@ public class KAuthFile {
             mappings.get(secureId)+"\n");
             return;
         }
-        Iterator iter = mappings.keySet().iterator();
-        while(iter.hasNext()) {
-            secureId = (String) iter.next();
+        for( String secureId : mappings.keySet()) {
             System.out.println(" SecureId \""+secureId+"\" is mapped to a user "+
             mappings.get(secureId)+"\n");
         }
@@ -988,9 +971,7 @@ public class KAuthFile {
         if(theuser == null) {
             throw new IllegalArgumentException("user is not specified");
         }
-        Iterator iter = mappings.keySet().iterator();
-        while(iter.hasNext()) {
-            String secureId = (String) iter.next();
+        for( String secureId : mappings.keySet()) {
             String user= mappings.get(secureId);
             if(theuser.equals(user)) {
                 System.out.println("\""+secureId+"\"");
@@ -1024,14 +1005,6 @@ public class KAuthFile {
         }
         int len = args.length;
 
-/*        {
-            System.out.println("parsing arguments:");
-            for ( int i = 1; i < len; ++i )
-            {
-                System.out.println("args["+i+"] ="+args[i]);
-            }
-        }
- */
         if(arguments == null) {
             arguments = new Arguments();
         }
@@ -1219,23 +1192,6 @@ public class KAuthFile {
     "         where secureId is either kerberos principaln"+
     "         or X509 certificate Destinguised Name (DN)\n"+
     "         all secureIds that are mapped to the given user are listed\n";
-
-    // it seams java does it automatically so unwrapping is not needed
-    /*
-    public static String unwrap(String s)
-    {
-        if(s.startsWith("\"") && s.endsWith("\""))
-        {
-            s = s.substring ( 1, s.length()-1 );
-        }
-        else if(s.startsWith("'") && s.endsWith("'"))
-        {
-            s = s.substring ( 1, s.length()-1 );
-        }
-        return s.trim();
-
-    }*/
-
 }
 
 
