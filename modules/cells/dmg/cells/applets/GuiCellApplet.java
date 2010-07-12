@@ -5,7 +5,6 @@ import java.awt.* ;
 import java.awt.event.* ;
 
 import dmg.util.* ;
-import dmg.cells.examples.* ;
 import dmg.cells.nucleus.* ;
 
 public class      GuiCellApplet 
