@@ -8,6 +8,8 @@ import org.dcache.auth.VerifiedUserPincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.SessionID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Does the authentication Part that is needed for an Authenticationmechanism
@@ -20,6 +22,9 @@ import org.dcache.gplazma.SessionID;
  */
 public abstract class UsernamePasswordAuthenticationPlugin implements
         GPlazmaAuthenticationPlugin, GPlazmaMappingPlugin, GPlazmaSessionPlugin {
+
+    private static final Logger _log = LoggerFactory.getLogger(
+            UsernamePasswordAuthenticationPlugin.class);
 
     public UsernamePasswordAuthenticationPlugin() {
     }
@@ -51,7 +56,10 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     @Override
     public void map(SessionID sID, Set<Principal> principals,
             Set<Principal> authorizedPrincipals) throws AuthenticationException {
-        authorizedPrincipals.add(new UserNamePrincipal(getVerifiedUser(principals).getName()));
+        _log.debug("map of username/pw is called");
+        UserNamePrincipal user = new UserNamePrincipal(getVerifiedUser(principals).getName());
+        authorizedPrincipals.add(user);
+        map(user.getName(), principals, authorizedPrincipals);
     }
 
     /*
@@ -71,6 +79,13 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
      */
     protected abstract void authenticate(String username, char[] password)
             throws AuthenticationException;
+
+    /*
+     * This method is responsible to add the GID and UID for the given user.
+     * If this is not possible it throws an AuthenticationException
+     */
+    protected abstract void map(String username, Set<Principal> principals,
+            Set<Principal> authorizedPrincipals) throws AuthenticationException;
 
     protected abstract void session(String username, Set<SessionAttribute> attrib)
             throws AuthenticationException;

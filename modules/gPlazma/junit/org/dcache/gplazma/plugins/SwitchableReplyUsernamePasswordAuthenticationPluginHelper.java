@@ -61,6 +61,12 @@ public class SwitchableReplyUsernamePasswordAuthenticationPluginHelper
     }
 
     @Override
+    protected void map(String username, Set<Principal> principals,
+            Set<Principal> authorizedPrincipals) throws AuthenticationException {
+//        do not do anything deliberatly
+    }
+
+    @Override
     public void reverseMap(SessionID sID, Principal sourcePrincipal, Set<Principal> principals) throws AuthenticationException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

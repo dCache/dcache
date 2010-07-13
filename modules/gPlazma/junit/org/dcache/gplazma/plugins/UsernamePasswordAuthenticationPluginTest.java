@@ -58,7 +58,8 @@ public class UsernamePasswordAuthenticationPluginTest {
         InputWrapper inputs = getProperInputs();
         doAuthentication(inputs, inputs.getPrincipals());
         Set<Principal> authorizedPrincipals = new HashSet<Principal>();
-        _authPlugin.map(null, inputs.getPrincipals(), authorizedPrincipals);
+        SessionID se = null;
+        _authPlugin.map(se, inputs.getPrincipals(), authorizedPrincipals);
         UserNamePrincipal user = ((UserNamePrincipal) authorizedPrincipals.toArray()[0]);
         assertEquals(USERNAME, user.getName());
     }
