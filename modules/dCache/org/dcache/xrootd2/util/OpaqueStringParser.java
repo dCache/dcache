@@ -22,12 +22,17 @@ public class OpaqueStringParser {
     public static Map<String,String> getOpaqueMap(String opaque)
                                                         throws ParseException
     {
-        if (opaque == null) {
+        if (opaque == null || opaque.isEmpty()) {
             return Collections.emptyMap();
         } else {
             Map<String,String> map = new HashMap<String,String>();
             int tokenStart;
             int tokenEnd = 0;
+
+            if (!opaque.startsWith(String.valueOf((OPAQUE_PREFIX)))) {
+                throw new ParseException("Opaque string must start " +
+                                         "with " + OPAQUE_PREFIX);
+            }
 
             while ((tokenStart = opaque.indexOf(OPAQUE_PREFIX, tokenEnd))
                     != -1) {
