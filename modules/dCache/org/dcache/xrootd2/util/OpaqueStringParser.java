@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class OpaqueStringParser {
+
+    public final static char OPAQUE_PREFIX = '&';
+    public final static char OPAQUE_SEPARATOR = '=';
+
     /**
      * The opaque information is included in the path in a format similar to
      * URL-encoding (&key1=val1&key2=val2...). This method translates that
@@ -25,14 +29,15 @@ public class OpaqueStringParser {
             int tokenStart;
             int tokenEnd = 0;
 
-            while ((tokenStart = opaque.indexOf('&', tokenEnd)) != -1) {
-                tokenEnd = opaque.indexOf('&',++tokenStart);
+            while ((tokenStart = opaque.indexOf(OPAQUE_PREFIX, tokenEnd))
+                    != -1) {
+                tokenEnd = opaque.indexOf(OPAQUE_PREFIX, ++tokenStart);
 
                 if (tokenEnd == -1) {
                     tokenEnd = opaque.length();
                 }
 
-                int delimiter = opaque.indexOf("=",tokenStart);
+                int delimiter = opaque.indexOf(OPAQUE_SEPARATOR,tokenStart);
                 if (delimiter == -1 || delimiter >= tokenEnd) {
                     String variable = opaque.substring(tokenStart, tokenEnd);
                     throw new ParseException("Opaque information is missing a"
