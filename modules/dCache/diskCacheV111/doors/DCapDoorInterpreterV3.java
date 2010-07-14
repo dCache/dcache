@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.*;
 
+import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
@@ -130,14 +131,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      * the owner of new name space entries. Never used for
      * authorization.
      */
-    private int _uid = -1;
+    private int _uid = NameSpaceProvider.DEFAULT;
 
     /**
      * The client GID set through the hello command. Used for setting
      * the group of new name space entries. Never used for
      * authorization.
      */
-    private int _gid = -1;
+    private int _gid = NameSpaceProvider.DEFAULT;
 
     private int     _majorVersion    = 0 ;
     private int     _minorVersion    = 0 ;
@@ -1635,7 +1636,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public boolean fileAttributesNotAvailable() throws CacheException
         {
             String path = _message.getPnfsPath();
-            _pnfs.createPnfsDirectory(path, getUid(), getGid(), getMode(0755));
+            _pnfs.createPnfsDirectory(path, getUid(), getGid(),
+                                      getMode(NameSpaceProvider.DEFAULT));
             sendReply("fileAttributesNotAvailable", 0, "");
             return false;
         }
@@ -1990,7 +1992,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             PnfsCreateEntryMessage pnfsEntry =
                 _pnfs.createPnfsEntry(_message.getPnfsPath(),
-                                      getUid(), getGid(), getMode(0644));
+                                      getUid(), getGid(),
+                                      getMode(NameSpaceProvider.DEFAULT));
 
             _log.debug("storageInfoNotAvailable : created pnfsid: {} path: {}",
                        pnfsEntry.getPnfsId(), pnfsEntry.getPnfsPath());
@@ -2056,7 +2059,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             String path = _message.getPnfsPath();
                             _log.debug("truncating path {}", path);
                             _pnfs.deletePnfsEntry( path );
-                            _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(0644));
+                            _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(NameSpaceProvider.DEFAULT));
                             _pnfsId = _message.getPnfsId() ;
                             _storageInfo = _message.getFileAttributes().getStorageInfo();
                         }else{

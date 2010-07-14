@@ -17,6 +17,7 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.util.RequestStatusTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Date;
 
 public final class LsRequest extends ContainerRequest {
     private final static Logger logger =
@@ -65,9 +66,7 @@ public final class LsRequest extends ContainerRequest {
                                                   lifetime,
                                                   max_number_of_retries);
                 }
-                if(getConfiguration().isAsynchronousLs()) {
-                    storeInSharedMemory();
-                }
+                storeInSharedMemory();
         }
 
         public  LsRequest(
@@ -189,14 +188,49 @@ public final class LsRequest extends ContainerRequest {
                 }
         }
 
+        /**
+         * Waits for up to timeout milliseconds for the request to
+         * reach a non-queued state and then returns the current
+         * SrmLsResponse for this LsRequest.
+         */
+        public final SrmLsResponse
+                getSrmLsResponse(long timeout)
+                throws SRMException, java.sql.SQLException, InterruptedException
+        {
+                /* To avoid a race condition between us querying the
+                 * current response and us waiting for a state change
+                 * notification, the notification scheme is counter
+                 * based. This guarantees that we do not loose any
+                 * notifications. A simple lock around the whole loop
+                 * would not have worked, as the call to
+                 * getSrmLsResponse may itself trigger a state change
+                 * and thus cause a deadlock when the state change is
+                 * signaled.
+                 */
+                Date deadline = getDateRelativeToNow(timeout);
+                int counter = _stateChangeCounter.get();
+                SrmLsResponse response = getSrmLsResponse();
+                while (response.getReturnStatus().getStatusCode().isProcessing() &&
+                       _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+                        counter = _stateChangeCounter.get();
+                        response = getSrmLsResponse();
+                }
+                return response;
+        }
+
         public final SrmLsResponse getSrmLsResponse()
                 throws SRMException ,java.sql.SQLException {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
                 response.setRequestToken(getTRequestToken());
-//                 ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
-//                 details.setPathDetailArray(getPathDetailArray());
-                response.setDetails(null);
+                if (!response.getReturnStatus().getStatusCode().isProcessing()) {
+                    ArrayOfTMetaDataPathDetail details =
+                        new ArrayOfTMetaDataPathDetail();
+                    details.setPathDetailArray(getPathDetailArray());
+                    response.setDetails(details);
+                } else {
+                    response.setDetails(null);
+                }
                 return response;
         }
 

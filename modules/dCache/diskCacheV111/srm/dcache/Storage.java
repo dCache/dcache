@@ -71,18 +71,21 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import org.dcache.cells.AbstractCell;
-import org.dcache.cells.Option;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellCommandListener;
 import dmg.util.Args;
 import dmg.cells.services.login.LoginBrokerInfo;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.Version;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import org.dcache.auth.LoginStrategy;
@@ -94,6 +97,7 @@ import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.security.SslGsiSocketFactory;
+import org.dcache.srm.scheduler.IllegalStateTransition;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.vehicles.transferManager.
@@ -207,21 +211,19 @@ import org.slf4j.LoggerFactory;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
- * SRMCell is the key class that performes communication
- * between SRM server and dcache
- * SRMCell can be run in a separate domain, on
- * a machine that has no knowledge about pnfs
+ * The Storage class bridges between the SRM server and dCache.
  *
  * @author Timur Perelmutov
  * @author FNAL,CD/ISD
- * @version 	0.9, 20 June 2002
  */
-
 public final class Storage
-        extends AbstractCell
-        implements AbstractStorageElement, Runnable
+    extends AbstractCellComponent
+    implements AbstractStorageElement, Runnable,
+               CellCommandListener, CellMessageReceiver
 {
     private final static Logger _log = LoggerFactory.getLogger(Storage.class);
+
+    private final static String INFINITY = "infinity";
 
     private static boolean kludgeDomainMainWasRun = false;
 
@@ -246,8 +248,6 @@ public final class Storage
     private CellStub _gridftpTransferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _loginBrokerStub;
-    private ScheduledExecutorService _executor =
-        Executors.newSingleThreadScheduledExecutor();
 
     private PnfsHandler _pnfs;
     private PermissionHandler permissionHandler;
@@ -263,19 +263,11 @@ public final class Storage
     private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
 
-    private final FsPath _xrootdRootPath;
-    private final FsPath _httpRootPath;
+    private FsPath _xrootdRootPath;
+    private FsPath _httpRootPath;
 
-    private final LoginBrokerHandler _loginBrokerHandler;
-
-
-    private final DirectoryListSource _listSource;
-
-    @Option(
-        name = "localSrmHosts",
-        description = "comma separated list of hosts"
-    )
-    protected String localSrmHosts;
+    private LoginBrokerHandler _loginBrokerHandler;
+    private DirectoryListSource _listSource;
 
     // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
@@ -283,7 +275,6 @@ public final class Storage
             throws InterruptedException,
             TimeoutException
     {
-
         _log.info("Here are the params/args to go to dCache: " + Arrays.toString(dCacheParams));
 
         _log.debug("entering Storage.getSRMInstance");
@@ -334,55 +325,45 @@ public final class Storage
         return srmInstance;
     }
 
+    public Storage(String args)
+    {
+        _args = new Args(args);
+    }
 
-
-    /**
-     * Creates the instance of the CRMCell
-     *
-     * @param  name
-     *         The Name of this cell
-     * @param  argString
-     *         arguments
-     */
-
-    public Storage(final String name, String argString) throws Exception {
-
-        super(name , argString );
-
-        _log.debug("In Storage constructor, back from super constructor.");
-        _log.info("Starting SRM cell named " + name);
-
-        _args      = getArgs() ;
+    public void start()
+        throws Exception
+    {
+        _log.info("Starting SRM");
 
         __poolManagerTimeout =
             getIntOption("pool-manager-timeout", __poolManagerTimeout);
         _poolManagerName = getOption("poolManager", "PoolManager" );
         _poolManagerStub = new CellStub();
         _poolManagerStub.setDestination(_poolManagerName);
-        _poolManagerStub.setCellEndpoint(this);
+        _poolManagerStub.setCellEndpoint(getCellEndpoint());
         _poolManagerStub.setTimeout(__poolManagerTimeout * 1000);
 
         _poolStub = new CellStub();
-        _poolStub.setCellEndpoint(this);
+        _poolStub.setCellEndpoint(getCellEndpoint());
         _poolStub.setTimeout(__poolManagerTimeout * 1000);
 
         _spaceManagerStub = new CellStub();
-        _spaceManagerStub.setCellEndpoint(this);
+        _spaceManagerStub.setCellEndpoint(getCellEndpoint());
         _spaceManagerStub.setDestination("SrmSpaceManager");
         _spaceManagerStub.setTimeout(3 * 60 * 1000);
 
         _gridftpTransferManagerStub = new CellStub();
-        _gridftpTransferManagerStub.setCellEndpoint(this);
+        _gridftpTransferManagerStub.setCellEndpoint(getCellEndpoint());
         _gridftpTransferManagerStub.setDestination(remoteGridftpTransferManagerName);
         _gridftpTransferManagerStub.setTimeout(24 * 60 * 60 * 1000);
 
         _copyManagerStub = new CellStub();
-        _copyManagerStub.setCellEndpoint(this);
+        _copyManagerStub.setCellEndpoint(getCellEndpoint());
         _copyManagerStub.setDestination("CopyManager");
         _copyManagerStub.setTimeout(24 * 60 * 60 * 1000);
 
         _pinManagerStub = new CellStub();
-        _pinManagerStub.setCellEndpoint(this);
+        _pinManagerStub.setCellEndpoint(getCellEndpoint());
         _pinManagerStub.setDestination("PinManager");
         _pinManagerStub.setTimeout(60 * 60 * 1000);
 
@@ -390,12 +371,12 @@ public final class Storage
         _pnfsManagerName = getOption("pnfsManager" , "PnfsManager") ;
         _pnfsStub = new CellStub();
         _pnfsStub.setDestination(_pnfsManagerName);
-        _pnfsStub.setCellEndpoint(this);
+        _pnfsStub.setCellEndpoint(getCellEndpoint());
         _pnfsStub.setTimeout(__pnfsTimeout * 1000);
         _pnfsStub.setRetryOnNoRouteToCell(true);
 
         _loginBrokerStub = new CellStub();
-        _loginBrokerStub.setCellEndpoint(this);
+        _loginBrokerStub.setCellEndpoint(getCellEndpoint());
         _loginBrokerStub.setDestination(loginBrokerName);
         _loginBrokerStub.setTimeout(__pnfsTimeout * 1000);
 
@@ -405,9 +386,6 @@ public final class Storage
 
         _httpRootPath = new FsPath(getOption("httpRootPath", "/"));
         _xrootdRootPath = new FsPath(getOption("xrootdRootPath", "/"));
-
-        _listSource = new ListDirectoryHandler(_pnfs);
-        addMessageListener(_listSource);
 
         String tmpstr = _args.getOpt("config");
         if(tmpstr != null) {
@@ -421,7 +399,6 @@ public final class Storage
 
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
-        config.setAsynchronousLs(isOptionSetToTrueOrYes("use-asynchronous-ls",config.isAsynchronousLs()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
 
         config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
@@ -471,11 +448,10 @@ public final class Storage
         config.setSrmHost(getOption("srmHost",
                 java.net.InetAddress.getLocalHost().getCanonicalHostName()));
 
-        if(localSrmHosts != null &&
-           localSrmHosts.trim().length() >0 ) {
-
-            for(String aHost:localSrmHosts.split(",")) {
-             config.addSrmHost(aHost);
+        String localSrmHosts = getOption("localSrmHosts", "");
+        if (localSrmHosts.trim().length() > 0) {
+            for (String aHost: localSrmHosts.split(",")) {
+                config.addSrmHost(aHost);
             }
         } else {
             config.addSrmHost(config.getSrmHost());
@@ -586,6 +562,7 @@ public final class Storage
         config.setGetMaxRunningBySameOwner(
             getIntOption("get-req-max-num-of-running-by-same-owner",
             config.getGetMaxRunningBySameOwner()));
+        config.setGetSwitchToAsynchronousModeDelay(getTimeOption("get-req-switch-to-asynchronous-mode-delay", config.getGetSwitchToAsynchronousModeDelay()));
 
         config.setBringOnlineReqTQueueSize( getIntOption("bring-online-req-thread-queue-size",
             config.getBringOnlineReqTQueueSize()));
@@ -604,6 +581,7 @@ public final class Storage
         config.setBringOnlineMaxRunningBySameOwner(
             getIntOption("bring-online-req-max-num-of-running-by-same-owner",
             config.getBringOnlineMaxRunningBySameOwner()));
+        config.setBringOnlineSwitchToAsynchronousModeDelay(getTimeOption("bring-online-req-switch-to-asynchronous-mode-delay", config.getBringOnlineSwitchToAsynchronousModeDelay()));
 
 
         config.setLsReqTQueueSize( getIntOption("ls-request-thread-queue-size",
@@ -623,7 +601,7 @@ public final class Storage
         config.setLsMaxRunningBySameOwner(
             getIntOption("ls-request-max-num-of-running-by-same-owner",
             config.getLsMaxRunningBySameOwner()));
-
+        config.setLsSwitchToAsynchronousModeDelay(getTimeOption("ls-request-switch-to-asynchronous-mode-delay", config.getLsSwitchToAsynchronousModeDelay()));
 
         config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
             config.getPutReqTQueueSize()));
@@ -642,6 +620,8 @@ public final class Storage
         config.setPutMaxRunningBySameOwner(
              getIntOption("put-req-max-num-of-running-by-same-owner",
             config.getPutMaxRunningBySameOwner()));
+        config.setPutSwitchToAsynchronousModeDelay(getTimeOption("put-req-switch-to-asynchronous-mode-delay", config.getPutSwitchToAsynchronousModeDelay()));
+
         config.setCopyReqTQueueSize(getIntOption("copy-req-thread-queue-size",
             config.getCopyReqTQueueSize()));
         config.setCopyThreadPoolSize(getIntOption("copy-req-thread-pool-size",
@@ -737,14 +717,7 @@ public final class Storage
 
 
         _log.info("scheduler parameter read, starting");
-        this.useInterpreter(true);
-        this.getNucleus().export();
 
-        this.start();
-        try {
-            Thread.sleep(5000);
-        } catch(InterruptedException ie) {
-        }
         AuthRecordPersistenceManager authRecordPersistenceManager =
             new AuthRecordPersistenceManager(
                 config.getJdbcUrl(),
@@ -763,7 +736,7 @@ public final class Storage
                 if (config.getUseGplazmaAuthzCellFlag() ||
                     config.getUseGplazmaAuthzModuleFlag()) {
                     loginStrategy =
-                        new RemoteLoginStrategy(new CellStub(this, new CellPath("gPlazma"), 30000));
+                        new RemoteLoginStrategy(new CellStub(getCellEndpoint(), new CellPath("gPlazma"), 30000));
                 } else {
                     loginStrategy =
                         new KauthFileLoginStrategy(new File(config.getKpwdfile()));
@@ -784,30 +757,16 @@ public final class Storage
 
         config.setStorage(this);
 
-        //getNucleus().newThread( new Runnable(){
-        //   public void run() {
-        try {
-            _log.debug("In constructor of Storage, about " +
-                       "to instantiate SRM...");
-
-            srm = SRM.getSRM(config,name);
-            _log.debug("In anonymous inner class, srm instantiated.");
-        } catch (Throwable t) {
-            _log.warn("Aborted anonymous inner class, error starting srm", t);
-            start();
-            kill();
-        }
-        //   }
-        //}
-        //).start();
-        _log.debug("starting storage info update  thread ...");
-
-        storageInfoUpdateThread = getNucleus().newThread(this);
+        _log.debug("Starting Storage, about to instantiate SRM...");
+        srm = SRM.getSRM(config, getCellName());
+        storageInfoUpdateThread = new Thread(this);
         storageInfoUpdateThread.start();
+    }
 
-        _loginBrokerHandler = createLoginBrokerHandler();
-
-        }
+    public void setDirectoryListSource(DirectoryListSource source)
+    {
+        _listSource = source;
+    }
 
     private String getOption(String value) {
         String tmpstr = _args.getOpt(value);
@@ -846,6 +805,27 @@ public final class Storage
        } else {
             return default_value;
        }
+    }
+
+    private long parseTime(String s)
+    {
+        return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
+    }
+
+    private long getTimeOption(String value) throws IllegalArgumentException {
+        String tmpstr = _args.getOpt(value);
+        if(tmpstr == null || tmpstr.length() == 0)  {
+            throw new IllegalArgumentException("option "+value+" is not set");
+        }
+        return parseTime(tmpstr);
+    }
+
+    private long getTimeOption(String value, long default_value) {
+        String tmpstr = _args.getOpt(value);
+        if(tmpstr == null || tmpstr.length() == 0)  {
+            return default_value;
+        }
+        return parseTime(tmpstr);
     }
 
     private double getDoubleOption(String value) throws IllegalArgumentException {
@@ -896,119 +876,97 @@ public final class Storage
        return Integer.parseInt(tmpstr);
     }
 
-    /**
-     * Creates a new LoginBrokerHandler based on the current cell
-     * options.
-     */
-    private LoginBrokerHandler createLoginBrokerHandler()
+    public void setLoginBrokerHandler(LoginBrokerHandler handler)
         throws UnknownHostException
     {
-        LoginBrokerHandler handler = new LoginBrokerHandler();
-
-        String broker = _args.getOpt("srmLoginBroker");
-        if (broker != null) {
-            handler.setLoginBroker(new CellPath(broker));
-        }
-        handler.setProtocolFamily(getOption("protocolFamily", "SRM"));
-        handler.setProtocolVersion(getOption("protocolVersion", "0.1"));
-        handler.setProtocolEngine(Storage.this.getClass().getName());
-        try {
-            handler.setUpdateTime(getLongOption("brokerUpdateTime", 5*60));
-        } catch (NumberFormatException e) {
-            _log.error("Failed to parse brokerUpdateTime: " +
-                       e.getMessage());
-        }
-        try {
-            handler.setUpdateThreshold(getDoubleOption("brokerUpdateOffset", 0.1));
-        } catch (NumberFormatException e) {
-            _log.error("Failed to parse brokerUpdateOffset: " +
-                       e.getMessage());
-        }
-
         handler.setAddresses(Arrays.asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
-        handler.setPort(config.getPort());
-
         handler.setLoad(new LoginBrokerHandler.LoadProvider() {
                 public double getLoad() {
-                    return srm.getLoad();
+                    return (srm == null) ? 0 : srm.getLoad();
                 }
             });
-        handler.setExecutor(_executor);
-        handler.setCellEndpoint(this);
-        handler.start();
-
-        addCommandListener(handler);
-
-        return handler;
+        _loginBrokerHandler = handler;
     }
 
     @Override
-    public void getInfo( java.io.PrintWriter printWriter ) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SRM Cell");
-        sb.append(" storage info : ");
+    public void getInfo(java.io.PrintWriter pw)
+    {
         StorageElementInfo info = getStorageElementInfo();
-
-        if(info != null) {
-            sb.append(info.toString());
-        } else {
-            sb.append("  info is not yet available !!!");
+        if (info != null) {
+            pw.println(info);
         }
 
-        sb.append('\n');
-        sb.append(config.toString()).append('\n');
+        pw.println(config);
+
         try {
+            StringBuilder sb = new StringBuilder();
             srm.printGetSchedulerInfo(sb);
             srm.printPutSchedulerInfo(sb);
             srm.printCopySchedulerInfo(sb);
             srm.printBringOnlineSchedulerInfo(sb);
             srm.printLsSchedulerInfo(sb);
-
-        } catch (java.sql.SQLException sqle) {
-            sqle.printStackTrace(printWriter);
+            pw.println(sb);
+        } catch (SQLException e) {
+            _log.error(e.toString());
         }
-        printWriter.println( sb.toString()) ;
-        printWriter.println( "  LoginBroker Info :" ) ;
-        _loginBrokerHandler.getInfo( printWriter ) ;
     }
 
     @Override
-    public CellVersion getCellVersion(){
-        return new CellVersion(
-        diskCacheV111.util.Version.getVersion(),"$Revision$" );
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        info.setCellVersion(new CellVersion(Version.getVersion(),
+                                            "$Revision$"));
+        return info;
     }
 
-    public String fh_set_async_ls= " Syntax : set async ls [on|off]  # turn on/off asynchronous srmls execution ";
-    public String hh_set_async_ls= " [on|off]  # turn on/off asynchronous srmls execution ";
-
-    public String ac_set_async_ls_$_0_1(Args args) {
-        boolean yes = false;
-        boolean no  = false;
-        for (String s : new String[] { "on", "true", "t", "yes"}) {
-            if (s.equalsIgnoreCase(args.argv(0))) {
-                yes = true;
-                break;
-            }
-        }
-        if (yes == false) {
-            for (String s : new String[] { "off", "false", "f", "no"}) {
-                if (s.equalsIgnoreCase(args.argv(0))) {
-                    no = true;
-                    break;
-                }
-            }
-        }
-        if (no==false && yes==false) {
-            if (args.argc()==0) {
-                yes = true;
-            }
-            else {
-                return "Syntax error : "+args.argv(0)+" is unsupported value";
-            }
-        }
-        config.setAsynchronousLs(yes);
-        return "asynchronous ls is "+(config.isAsynchronousLs()?"enabled":"disabled");
+    public final static String hh_set_switch_to_async_mode_delay_get =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_get =
+        "Sets the time after which get requests are processed asynchronously.\n" +
+        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
+        "always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_get_$_1(Args args)
+    {
+        config.setGetSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
     }
+
+    public final static String hh_set_switch_to_async_mode_delay_put =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_put =
+        "Sets the time after which put requests are processed asynchronously.\n" +
+        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
+        "always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_put_$_1(Args args)
+    {
+        config.setPutSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
+    }
+
+    public final static String hh_set_switch_to_async_mode_delay_ls =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_ls =
+        "Sets the time after which ls requests are processed asynchronously.\n" +
+        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
+        "always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_ls_$_1(Args args)
+    {
+        config.setLsSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
+    }
+
+    public final static String hh_set_switch_to_async_mode_delay_bring_online =
+        "<milliseconds>";
+    public final static String fh_set_switch_to_async_mode_delay_bring_online =
+        "Sets the time after which bring online requests are processed\n" +
+        "asynchronously. Use 'infinity' to always use synchronous replies\n" +
+        "and use 0 to always use asynchronous replies.";
+    public String ac_set_switch_to_async_mode_delay_bring_online_$_1(Args args)
+    {
+        config.setBringOnlineSwitchToAsynchronousModeDelay(parseTime(args.argv(0)));
+        return "";
+    }
+
     public String fh_db_history_log= " Syntax: db history log [on|off] "+
         "# show status or enable db history log ";
     public String hh_db_history_log= " [on|off] " +
@@ -1510,19 +1468,19 @@ public final class Storage
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             String pinId) {
-        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,this);
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,_pinManagerStub);
     }
 
 
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             long srmRequestId) {
-        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,this);
+        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,_pinManagerStub);
     }
 
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks) {
-        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, callbacks,this);
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, callbacks,_pinManagerStub);
     }
 
 
@@ -2392,7 +2350,7 @@ public final class Storage
                                        getFullPath(path),
                                        removeFileCallback,
                                        _pnfsStub,
-                                       this);
+                                       getCellEndpoint());
     }
 
     public void removeFile(final SRMUser user,
@@ -2405,7 +2363,7 @@ public final class Storage
                                        getFullPath(path),
                                        callbacks,
                                        _pnfsStub,
-                                       this);
+                                       getCellEndpoint());
     }
 
     public void removeDirectory(SRMUser user, Vector tree)
@@ -2437,26 +2395,11 @@ public final class Storage
     {
         _log.debug("Storage.createDirectory");
 
-        try {
-            /* We copy the mode (permissions) of the parent directory,
-             * so we start by querying it. REVISIT: It's a bit strange
-             * that PNFS doesn't provide an option to copy the parent
-             * mode.
-             */
-            String path = getFullPath(directory);
-            String parent = FsPath.getParent(path);
-            FileAttributes attr =
-                _pnfs.getFileAttributes(parent, EnumSet.of(MODE));
+        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        PnfsHandler handler = new PnfsHandler(_pnfs, subject);
 
-            /* Permission checks are performed by PnfsManager because
-             * we specify a Subject for the request.
-             */
-            AuthorizationRecord duser = (AuthorizationRecord) user;
-            PnfsHandler handler =
-                new PnfsHandler(_pnfs, Subjects.getSubject(duser));
-            handler.createPnfsDirectory(path,
-                                        duser.getUid(), duser.getGid(),
-                                        attr.getMode());
+        try {
+            handler.createPnfsDirectory(getFullPath(directory));
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
@@ -2874,11 +2817,11 @@ public final class Storage
             if(remoteCredential != null) {
                 final  GSSCredential gssRemoteCredential =
                     remoteCredential.getDelegatedCredential();
-                getNucleus().newThread(new Runnable() {public void run() {
+                new Thread(new Runnable() {public void run() {
                     delegate(gssRemoteCredential,host,port);
                 }}, "credentialDelegator" ).start() ;
             } else {
-                getNucleus().newThread(new Runnable() {public void run() {
+                new Thread(new Runnable() {public void run() {
                     delegate(null,host,port);
                 }}, "credentialDelegator" ).start() ;
             }

@@ -59,7 +59,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
-import org.jboss.netty.logging.Log4JLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
@@ -292,12 +292,12 @@ public class XrootdProtocol_3
     private volatile Channel _clientChannel;
 
     /**
-     * Switch Netty to log4j for logging. Should be moved somewhere
+     * Switch Netty to slf4j for logging. Should be moved somewhere
      * else.
      */
     static
     {
-        InternalLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
+        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
     }
 
     /* Initialises the shared resources like a thread pool and the

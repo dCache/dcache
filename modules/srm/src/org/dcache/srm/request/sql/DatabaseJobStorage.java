@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -81,7 +81,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.util.JDC;
 import org.dcache.commons.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +91,7 @@ import org.slf4j.LoggerFactory;
 public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     private final static Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorage.class);
-    
+
     protected static final String INDEX_SUFFIX="_idx";
 
     protected Configuration configuration;
@@ -111,23 +110,23 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     protected static final int intType_int=java.sql.Types.INTEGER;
     protected static final int dateTimeType_int= java.sql.Types.TIMESTAMP;
     protected static final int booleanType_int= java.sql.Types.INTEGER;
-    public DatabaseJobStorage(      Configuration configuration) 
+    public DatabaseJobStorage(      Configuration configuration)
     throws SQLException {
         this.configuration = configuration;
-        
+
         this.jdbcUrl = configuration.getJdbcUrl();
         this.jdbcClass = configuration.getJdbcClass();
         this.user = configuration.getJdbcUser();
         this.pass = configuration.getJdbcPass();
         this.logHistory = configuration.isJdbcLogRequestHistoryInDBEnabled();
-        
+
         dbInit(configuration.isCleanPendingRequestsOnRestart());
         //updatePendingJobs();
         new Thread(this,"update"+getTableName()).start();
     }
-    
- 
-   
+
+
+
     public static final String createFileRequestTablePrefix =
     "ID "+         longType+" NOT NULL PRIMARY KEY"+
     ","+
@@ -151,7 +150,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     ","+
     "LASTSTATETRANSITIONTIME"+ longType;
 
-    public static final String srmStateTableName = 
+    public static final String srmStateTableName =
     "SRMJOBSTATE";
     public static final String createStateTable =
     "CREATE TABLE "+srmStateTableName+" ( "+
@@ -159,7 +158,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     ","+
     "STATE "+           stringType+
      " )";
-    
+
     public static final String createHistroyTablePrefix =
     "ID "+         longType+" NOT NULL PRIMARY KEY"+
     ","+
@@ -170,25 +169,25 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     "TRANSITIONTIME "+        longType
     +","+
     "DESCRIPTION "+            stringType;
-    
-    //this should always reflect the number of field definde in the 
+
+    //this should always reflect the number of field definde in the
     // prefix above
     private static int COLLUMNS_NUM= 11;
     public abstract String getTableName();
-    
+
     public abstract String getCreateTableFields();
-    
+
     JdbcConnectionPool pool;
     /**
      * in case the subclass needs to create/initialize more tables
      */
     protected abstract void _dbInit() throws SQLException;
-    
+
     protected boolean reanamed_old_table = false;
     private String getHistoryTableName() {
         return getTableName().toLowerCase()+"history";
     }
-    
+
     private void dbInit(boolean clean)
     throws SQLException {
         createTable(srmStateTableName, createStateTable);
@@ -231,17 +230,17 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             createIndex(getTableName().toLowerCase()+"_expirationtime_idx",
                 "(CREATIONTIME+LIFETIME)".toLowerCase(),
                 getTableName().toLowerCase());
-	    
- 
+
+
 
 	    String history_columns[] = {
 		    "STATEID",
-		    "TRANSITIONTIME", 
+		    "TRANSITIONTIME",
 	            "JOBID"};
 	    createIndex(history_columns,getHistoryTableName().toLowerCase());
 	    _dbInit();
     }
-    
+
     private void insertStates() throws  SQLException{
        Connection _con =null;
         Statement sqlStatement = null;
@@ -291,7 +290,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             }
         }
     }
-    
+
     protected abstract Job getJob(
     Connection _con,
     Long ID,
@@ -307,14 +306,14 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     long LASTSTATETRANSITIONTIME,
     ResultSet set,
     int next_index) throws SQLException;
-    
+
     public Job getJob(Long jobId) throws SQLException {
-        
+
            if(jobId == null) {
 
                throw new NullPointerException ("jobId is null");
            }
-           
+
            Connection _con =null;
 
             try {
@@ -329,7 +328,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     pool.returnFailedConnection(_con);
                     _con = null;
                 }
-                
+
                 throw sqle;
             }
             finally {
@@ -386,7 +385,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             SqlHelper.tryToClose(statement);
         }
     }
-    
+
     public void saveJob(final Job job,boolean saveifmonitoringisdesabled) throws SQLException{
         // statements for the job itself
         if(!saveifmonitoringisdesabled && !logHistory) {
@@ -395,7 +394,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         final long jobId = job.getId().longValue();
         final String historyTableName =  getHistoryTableName();
         final Iterator historyIterator = job.getHistoryIterator();
-        JdbcConnectionPool.JdbcTask task = 
+        JdbcConnectionPool.JdbcTask task =
             new JdbcConnectionPool.JdbcTask() {
             @Override
              public String toString() {
@@ -527,16 +526,16 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     }
 
     protected PreparedStatement[] getAdditionalCreateStatements(Connection connection,
-                                                             Job job) throws SQLException { 
+                                                             Job job) throws SQLException {
         return null;
     }
-            
+
     public abstract PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException;
     public abstract PreparedStatement getUpdateStatement(Connection connection, Job job) throws SQLException;
-    
+
      //
     // this method should be run only once by the scheduler itself
-    // otherwise it is possible to create multiple inconsistant copies of the 
+    // otherwise it is possible to create multiple inconsistant copies of the
     // job
     private boolean getJobsRan=false;
     public java.util.Set getJobs(String schedulerId) throws SQLException{
@@ -545,10 +544,10 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             throw new SQLException("getJobs("+schedulerId+") has already run" );
         }
         getJobsRan = true;
-        
+
         Set jobs = new java.util.HashSet();
         Connection _con =null;
-        
+
         try {
             _con = pool.getConnection();
             Statement sqlStatement = _con.createStatement();
@@ -585,12 +584,12 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 LASTSTATETRANSITIONTIME,
                 set,
                 13 );
-                
+
                 logger.debug("==========> deserialization from database of job id"+job.getId());
                 logger.debug("==========> jobs submitter id is "+job.getSubmitterId());
                 jobs.add(job);
             }
-            
+
             set.close();
             sqlStatement.close();
             pool.returnConnection(_con);
@@ -609,9 +608,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 pool.returnConnection(_con);
             }
         }
-        
+
     }
-    
+
     protected Job.JobHistory[] getJobHistory(Long jobId,Connection _con) throws SQLException{
         java.util.List l = new java.util.ArrayList();
         String select = "SELECT * FROM " +getHistoryTableName()+
@@ -624,7 +623,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             statement.close();
             return null;
         }
-        
+
         do {
             long ID = set.getLong(1);
             long JOBID = set.getLong(2);
@@ -632,8 +631,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             long TRANSITIONTIME  = set.getLong(4);
             String DESCRIPTION  = set.getString(5);
             Job.JobHistory jh = new Job.JobHistory(ID,
-                        State.getState(STATEID), 
-                        DESCRIPTION, 
+                        State.getState(STATEID),
+                        DESCRIPTION,
                         TRANSITIONTIME);
             jh.setSaved();
             l.add(jh);
@@ -643,10 +642,10 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         statement.close();
         return (Job.JobHistory[])l.toArray(new Job.JobHistory[0]);
     }
-    
+
     private boolean updatePendingJobsRan=false;
-      
-    public void schedulePendingJobs(Scheduler scheduler) 
+
+    public void schedulePendingJobs(Scheduler scheduler)
             throws SQLException,
             InterruptedException,
             org.dcache.srm.scheduler.IllegalStateTransition {
@@ -659,20 +658,20 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
-            // so we return connections before trying to schedule the pending 
+            // so we return connections before trying to schedule the pending
             // requests
             java.util.Set idsSet = new java.util.HashSet();
             while(set.next()) {
                 idsSet.add(set.getLong(1));
             }
-            
+
             set.close();
             sqlStatement.close();
             pool.returnConnection(_con);
             _con = null;
-            
+
             for(java.util.Iterator i =idsSet.iterator(); i.hasNext();)
-            {   
+            {
                 Long ID = (Long)i.next();
                 try {
                     Job job = Job.getJob(ID,
@@ -713,19 +712,19 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             logger.debug("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
-            // so we return connections before trying to restore the pending 
+            // so we return connections before trying to restore the pending
             // requests
             java.util.Set idsSet = new java.util.HashSet();
             while(set.next()) {
                 idsSet.add(set.getLong(1));
             }
-            
+
             set.close();
             sqlStatement.close();
             pool.returnConnection(_con);
             _con = null;
             for(java.util.Iterator i =idsSet.iterator(); i.hasNext();)
-            {   
+            {
                 Long ID = (Long)i.next();
                 // we just restore the job, which will triger the experation of the job, if its lifetime
                 // is over
@@ -735,7 +734,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 } catch (SRMInvalidRequestException ire) {
                     logger.error(ire.toString());
                 }
-                
+
             }
         }
         catch(SQLException sqle1) {
@@ -766,7 +765,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 Long ID = set.getLong(1);
                 jobIds.add(ID);
             }
-            
+
             set.close();
             sqlStatement.close();
             pool.returnConnection(_con);
@@ -785,9 +784,9 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 pool.returnConnection(_con);
             }
         }
-        
+
     }
-    
+
     public java.util.Set getJobs(String schedulerId, org.dcache.srm.scheduler.State state) throws SQLException {
         Set jobs = new java.util.HashSet();
         Connection _con =null;
@@ -831,14 +830,14 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
                 MAXNUMOFRETR,
-                LASTSTATETRANSITIONTIME, 
+                LASTSTATETRANSITIONTIME,
                 set,
                 13 );
                 logger.debug("==========> deserialization from database of "+job);
                 logger.debug("==========> jobs creator is "+job.getSubmitterId());
                 jobs.add(job);
             }
-            
+
             pool.returnConnection(_con);
             _con = null;
             return jobs;
@@ -858,12 +857,12 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             }
         }
     }
-    
-    
+
+
          protected void createTable(String tableName, String createStatement) throws SQLException {
             createTable(tableName, createStatement,false,false);
          }
-   
+
         protected void createTable(String tableName, String createStatement,boolean verify,boolean clean) throws SQLException {
         Connection _con =null;
         try {
@@ -871,14 +870,14 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             //connect
             _con = pool.getConnection();
             _con.setAutoCommit(true);
-            
+
             //get database info
             DatabaseMetaData md = _con.getMetaData();
-            
-            
+
+
             ResultSet tableRs = md.getTables(null, null, tableName.toLowerCase() , null );
-            
-            
+
+
             //fields to be saved from the  Job object in the database:
                 /*
                     this.id = id;
@@ -888,7 +887,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     this.state = state;
                     this.errorMessage = errorMessage;
                     this.creator = creator;
-                 
+
                  */
             if(!tableRs.next()) {
                 logger.debug("DatabaseMetaData.getTables returned empty result set");
@@ -925,7 +924,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                             sqle);
                     renameTable(tableName,_con);
                     reanamed_old_table = true;
-                    
+
                     Statement s = _con.createStatement();
                     logger.error("executing statement: "+createStatement);
                     int result = s.executeUpdate(createStatement);
@@ -950,7 +949,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     result = s.executeUpdate(sqlStatementString);
                     s.close();
             }
-                
+
             tableRs.close();
             // to be fast
             _con.setAutoCommit(false);
@@ -972,14 +971,14 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             }
             throw new SQLException(ex.toString());
         }
-        finally 
+        finally
         {
             if(_con != null) {
                 _con.setAutoCommit(false);
                 pool.returnConnection(_con);
             }
         }
-        
+
     }
     protected int renameTable(String oldName) throws SQLException {
         Connection _con =null;
@@ -989,7 +988,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             _con = pool.getConnection();
             _con.setAutoCommit(true);
             return renameTable(oldName,_con);
-        
+
        }
         catch (SQLException sqe) {
             if(_con != null) {
@@ -1006,7 +1005,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             }
             throw new SQLException(ex.toString());
         }
-        finally 
+        finally
         {
             if(_con != null) {
                 _con.setAutoCommit(false);
@@ -1014,7 +1013,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             }
         }
     }
-    
+
     protected int renameTable(String oldName,Connection _con) throws SQLException {
         /*
             String alterStatement = "ALTER TABLE "+oldName+
@@ -1023,10 +1022,10 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             logger.error("executing statement: "+alterStatement);
             return s.executeUpdate(alterStatement);
          */
-        
-        //rename does not work because the implicit index created for the 
-        // original table remains connected to the renamed table 
-        /// and the new table creation fails because of imposibility of creation 
+
+        //rename does not work because the implicit index created for the
+        // original table remains connected to the renamed table
+        /// and the new table creation fails because of imposibility of creation
         // of the new index
             String dropStatement = "DROP TABLE "+oldName+ " CASCADE";
             Statement s = _con.createStatement();
@@ -1034,15 +1033,15 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             int result =  s.executeUpdate(dropStatement);
             s.close();
             return result;
-        
+
     }
     protected abstract int getAdditionalColumnsNum();
     private int getColumnNum() {
 	    return COLLUMNS_NUM + getAdditionalColumnsNum();
     }
-        
-	protected void createIndex(String[] columnNames, 
-				   String tableName) 
+
+	protected void createIndex(String[] columnNames,
+				   String tableName)
 		throws SQLException {
 		Connection _con =null;
 		try {
@@ -1050,23 +1049,23 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			_con = pool.getConnection();
 			_con.setAutoCommit(true);
 			DatabaseMetaData dbMetaData = _con.getMetaData();
-			ResultSet index_rset        = dbMetaData.getIndexInfo(null, 
-									      null, 
-									      tableName, 
-									      false, 
+			ResultSet index_rset        = dbMetaData.getIndexInfo(null,
+									      null,
+									      tableName,
+									      false,
 									      false);
-			
+
 			HashSet listOfColumnsToBeIndexed = new HashSet();
 			for(int i=0;i<columnNames.length;i++) {
 				listOfColumnsToBeIndexed.add(columnNames[i].toLowerCase());
 			}
 			while (index_rset.next()) {
 				String s = index_rset.getString("column_name").toLowerCase();
-				if (listOfColumnsToBeIndexed.contains(s)) { 
+				if (listOfColumnsToBeIndexed.contains(s)) {
 					listOfColumnsToBeIndexed.remove(s);
 				}
 			}
-			if (listOfColumnsToBeIndexed.size()==0) { 
+			if (listOfColumnsToBeIndexed.size()==0) {
 				logger.debug("all indexes were already made for table "+tableName);
                                 _con.setAutoCommit(false);
 				pool.returnConnection(_con);
@@ -1074,7 +1073,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 				return;
 			}
 			Iterator i = listOfColumnsToBeIndexed.iterator();
-			while(i.hasNext()) { 
+			while(i.hasNext()) {
 				String columnName=(String)i.next();
 				String indexName=tableName.toLowerCase()+"_"+columnName+INDEX_SUFFIX;
                                 createIndex(_con,indexName,  tableName,columnName);
@@ -1105,10 +1104,10 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			}
 		}
 	}
-        
-	protected void createIndex(String indexname, 
+
+	protected void createIndex(String indexname,
                                    String  expression,
-				   String tableName) 
+				   String tableName)
 		throws SQLException {
                 indexname=indexname.toLowerCase();
 		Connection _con =null;
@@ -1117,12 +1116,12 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			_con = pool.getConnection();
 			_con.setAutoCommit(true);
 			DatabaseMetaData dbMetaData = _con.getMetaData();
-			ResultSet index_rset        = dbMetaData.getIndexInfo(null, 
-									      null, 
-									      tableName, 
-									      false, 
+			ResultSet index_rset        = dbMetaData.getIndexInfo(null,
+									      null,
+									      tableName,
+									      false,
 									      false);
-			
+
 			while (index_rset.next()) {
 				String s = index_rset.getString("index_name").toLowerCase();
 				if (indexname.equals(s)){
@@ -1162,45 +1161,45 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 	}
 
 
-    protected void createIndex( final Connection _con, 
-        final String indexName,  
+    protected void createIndex( final Connection _con,
+        final String indexName,
         final String tableName,
         final String column_or_expression) throws SQLException {
         String createIndexStatementText = "CREATE INDEX "+indexName+
             " ON "+tableName+" ("+column_or_expression+")";
         Statement createIndexStatement = _con.createStatement();
         logger.debug("Executing "+createIndexStatementText);
-        try { 
+        try {
         	createIndexStatement.executeUpdate(createIndexStatementText);
         }
-        catch (Exception e) { 
+        catch (Exception e) {
         	logger.error("failed to execute : "+createIndexStatementText,e);
         }
         createIndexStatement.close();
     }
 
- 
 
-    protected abstract void _verify(int nextIndex, int columnIndex,String tableName,String columnName,int columnType) 
+
+    protected abstract void _verify(int nextIndex, int columnIndex,String tableName,String columnName,int columnType)
     throws SQLException;
-    
+
     protected String getTypeName(int type){
          java.lang.reflect.Field[] fields = java.sql.Types.class.getFields();
          for(int i = 0; i<fields.length; ++i) {
                 java.lang.reflect.Field field = fields[i];
                 try{
-                
+
                      Object val = field.get(null);
                       int value = ((Integer)val).intValue();
                       if (value == type ){
                          return field.getName();
                       }
                 }catch(Exception e) {/*ignore*/}
-                
+
             }
         return "UNKNOWN SQL TYPE:"+type;
     }
-    
+
     protected void verifyLongType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
     throws SQLException
     {
@@ -1217,7 +1216,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     "table named "+tableName+
                     " column #"+columnIndex+" has type \""+getTypeName(columnType)+
                     "\" should be \""+longType+"\"");
-                    
+
                 }
 
     }
@@ -1237,11 +1236,11 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     "table named "+tableName+
                     " column #"+columnIndex+" has type \""+getTypeName(columnType)+
                     "\" should be \""+intType+"\"");
-                    
+
                 }
 
     }
-    
+
     protected void verifyBooleanType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
     throws SQLException
     {
@@ -1258,11 +1257,11 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     "table named "+tableName+
                     " column #"+columnIndex+" has type \""+getTypeName(columnType)+
                     "\" should be \""+booleanType+"\"");
-                    
+
                 }
 
     }
-    
+
     protected void verifyStringType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
     throws SQLException
     {
@@ -1279,11 +1278,11 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                     "table named "+tableName+
                     " column #"+columnIndex+" named \""+columnName+"\" has type \""+getTypeName(columnType)+
                     "\" should be \""+stringType+"\"");
-                    
+
                 }
 
     }
-    
+
     public void verify(int columnIndex,String tableName, String columnName,int columnType) throws SQLException {
         switch (columnIndex) {
             /*    "ID "+         longType+" NOT NULL PRIMARY KEY"+
@@ -1338,23 +1337,22 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             case 10:
                 verifyLongType("MAXNUMOFRETR",columnIndex,tableName, columnName, columnType);
                 break;
-            case 11: 
+            case 11:
                 verifyLongType("LASTSTATETRANSITIONTIME",columnIndex,tableName, columnName, columnType);
                 break;
-                
+
             default:
                 _verify(12,columnIndex,tableName, columnName, columnType);
         }
     }
-    
+
     public void run(){
         long update_period = configuration.getOldRequestRemovePeriodSecs()*1000L;
         long history_lifetime = 1000L*24*3600*configuration.getNumDaysHistory();
-        JDC.setSchedulerContext(getClass().getName());
         while(true) {
             try {
                 Thread.sleep(update_period);
-            } 
+            }
             catch(InterruptedException ie) {
                 logger.error("database update thread interrupted");
                 return;
@@ -1390,7 +1388,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                         _con = null;
                     }
                 }
-                finally 
+                finally
                 {
                     if(_con != null) {
                         pool.returnConnection(_con);
@@ -1409,6 +1407,6 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 stmt.setObject(i + 1, args[i]);
         return stmt;
     }
- 
+
 }
 

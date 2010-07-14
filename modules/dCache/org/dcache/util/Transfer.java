@@ -62,9 +62,6 @@ public abstract class Transfer implements Comparable<Transfer>
 {
     private static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
-    private static final int FILE_UMASK_AUTHENTICATED = 0644;
-    private static final int FILE_UMASK_ANONYMOUS = 0666;
-
     private static final TimebasedCounter _sessionCounter =
         new TimebasedCounter();
 
@@ -418,38 +415,6 @@ public abstract class Transfer implements Comparable<Transfer>
      * Will fail if the subject of the transfer doesn't have
      * permission to create the file.
      *
-     * @throws CacheException if creating the entry failed
-     */
-    public void createNameSpaceEntry()
-        throws CacheException
-    {
-        String parent = _path.getParent().toString();
-        FileAttributes attributes;
-        try {
-            attributes =
-                _pnfs.getFileAttributes(parent,
-                                        EnumSet.of(TYPE,OWNER,OWNER_GROUP,MODE));
-        } catch (NotInTrashCacheException e) {
-            throw new DirNotExistsCacheException(e.getMessage());
-        } catch (FileNotFoundCacheException e) {
-            throw new DirNotExistsCacheException(e.getMessage());
-        }
-
-        FileType type = attributes.getFileType();
-        if (type == REGULAR || type == SPECIAL) {
-            throw new NotDirCacheException("No such directory: " + parent);
-        }
-        createNameSpaceEntry(attributes);
-    }
-
-    /**
-     * Creates a new name space entry for the file to transfer. This
-     * will fill in the PnfsId and StorageInfo of the file and mark
-     * the transfer as an upload.
-     *
-     * Will fail if the subject of the transfer doesn't have
-     * permission to create the file.
-     *
      * If the parent directories don't exist, then they will be
      * created.
      *
@@ -461,7 +426,8 @@ public abstract class Transfer implements Comparable<Transfer>
         try {
             createNameSpaceEntry();
         } catch (DirNotExistsCacheException e) {
-            createNameSpaceEntry(_pnfs.createDirectories(_path.getParent()));
+            _pnfs.createDirectories(_path.getParent());
+            createNameSpaceEntry();
         }
     }
 
@@ -473,25 +439,16 @@ public abstract class Transfer implements Comparable<Transfer>
      * Will fail if the subject of the transfer doesn't have
      * permission to create the file.
      *
-     * @param parent FileAttributes containing at least the owner,
-     *               group and mode of the parent directory
      * @throws CacheException if creating the entry failed
      */
-    public void createNameSpaceEntry(FileAttributes parent)
+    public void createNameSpaceEntry()
         throws CacheException
     {
         setStatus("PnfsManager: Creating name space entry");
         try {
-            long[] uids = Subjects.getUids(_subject);
-            long[] gids = Subjects.getGids(_subject);
-            int uid = (uids.length > 0) ? (int) uids[0] : parent.getOwner();
-            int gid = (gids.length > 0) ? (int) gids[0] : parent.getGroup();
-            int umask =
-                (uids.length > 0) ? FILE_UMASK_AUTHENTICATED : FILE_UMASK_ANONYMOUS;
             PnfsCreateEntryMessage msg;
             try {
-                msg = _pnfs.createPnfsEntry(_path.toString(), uid, gid,
-                                            umask & parent.getMode());
+                msg = _pnfs.createPnfsEntry(_path.toString());
             } catch (FileExistsCacheException e) {
                 /* REVISIT: This should be moved to PnfsManager with a
                  * flag in the PnfsCreateEntryMessage.
@@ -500,8 +457,7 @@ public abstract class Transfer implements Comparable<Transfer>
                     throw e;
                 }
                 _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
-                msg = _pnfs.createPnfsEntry(_path.toString(), uid, gid,
-                                            umask & parent.getMode());
+                msg = _pnfs.createPnfsEntry(_path.toString());
             }
 
             setPnfsId(msg.getPnfsId());

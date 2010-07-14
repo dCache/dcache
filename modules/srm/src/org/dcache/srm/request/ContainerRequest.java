@@ -81,6 +81,8 @@ import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.dcache.commons.util.AtomicCounter;
+import java.util.Date;
 
 /**
  * This abstract class represents an "SRM request"
@@ -103,6 +105,13 @@ public abstract class ContainerRequest extends Request {
     private String firstDcapTurl;
 
     protected FileRequest[] fileRequests;
+
+    /**
+     * Counter used for notification between file requests and the
+     * parent request. The counter is incremented whenever when one of
+     * the file requests changes to one of a set of predefined states.
+     */
+    protected final AtomicCounter _stateChangeCounter = new AtomicCounter();
 
 
     /*
@@ -406,9 +415,9 @@ public abstract class ContainerRequest extends Request {
 
         rs.type = getMethod();
         rs.retryDeltaTime = retryDeltaTime;
-        rs.submitTime = new java.util.Date(getCreationTime());
-        rs.finishTime = new java.util.Date(getCreationTime() +getLifetime() );
-        rs.startTime = new java.util.Date(System.currentTimeMillis()+retryDeltaTime*1000);
+        rs.submitTime = new Date(getCreationTime());
+        rs.finishTime = new Date(getCreationTime() +getLifetime() );
+        rs.startTime = new Date(System.currentTimeMillis()+retryDeltaTime*1000);
         return rs;
     }
 
@@ -598,7 +607,7 @@ public abstract class ContainerRequest extends Request {
             }
         }
     }
-	
+
 
     public TRequestSummary getRequestSummary() {
         TRequestSummary summary = new TRequestSummary();
@@ -694,9 +703,9 @@ public abstract class ContainerRequest extends Request {
                 sb.append("\ncredential: \"").append(getCredential()).
                         append("\"\n");
                 sb.append("\nsubmitted: ").
-                        append(new java.util.Date(getCreationTime()));
+                        append(new Date(getCreationTime()));
                 sb.append("\nexpires: ").
-                        append(new java.util.Date(
+                        append(new Date(
                         getCreationTime() +getLifetime()));
                 sb.append("\nstatus code: ").append(getStatusCode());
                 sb.append("\nerror message: ").append(getErrorMessage());
@@ -715,6 +724,17 @@ public abstract class ContainerRequest extends Request {
 
     }
 
+    public void fileRequestStateChanged(FileRequest request)
+    {
+        switch (request.getState()) {
+        case RQUEUED:
+        case READY:
+        case DONE:
+        case CANCELED:
+        case FAILED:
+            _stateChangeCounter.increment();
+        }
+    }
 
     public abstract FileRequest getFileRequestBySurl(String surl)  throws java.sql.SQLException, SRMException ;
     public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException;
@@ -723,5 +743,25 @@ public abstract class ContainerRequest extends Request {
 	return fileRequests;
     }
 
+    /**
+     * Constructs a Date object using the given milliseconds time
+     * value relative to the current point in time.
+     *
+     * Equivalent to 'new Date(System.currentTimeMillis() + delta)'
+     * except that underflows and overflows are taken into account.
+     *
+     * Used by subclasses.
+     *
+     * @param delta milliseconds relative to the current point in time
+     */
+    protected Date getDateRelativeToNow(long delta)
+    {
+        long now = System.currentTimeMillis();
+        if (delta >= 0 && now >= Long.MAX_VALUE - delta) {
+            return new Date(Long.MAX_VALUE);
+        } else {
+            return new Date(now + delta);
+        }
+    }
 }
 

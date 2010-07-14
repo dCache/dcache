@@ -102,18 +102,18 @@ public class TStatusCode implements java.io.Serializable {
     public java.lang.String toString() { return _value_;}
     public java.lang.Object readResolve() throws java.io.ObjectStreamException { return fromValue(_value_);}
     public static org.apache.axis.encoding.Serializer getSerializer(
-           java.lang.String mechType, 
-           java.lang.Class _javaType,  
+           java.lang.String mechType,
+           java.lang.Class _javaType,
            javax.xml.namespace.QName _xmlType) {
-        return 
+        return
           new org.apache.axis.encoding.ser.EnumSerializer(
             _javaType, _xmlType);
     }
     public static org.apache.axis.encoding.Deserializer getDeserializer(
-           java.lang.String mechType, 
-           java.lang.Class _javaType,  
+           java.lang.String mechType,
+           java.lang.Class _javaType,
            javax.xml.namespace.QName _xmlType) {
-        return 
+        return
           new org.apache.axis.encoding.ser.EnumDeserializer(
             _javaType, _xmlType);
     }
@@ -131,4 +131,8 @@ public class TStatusCode implements java.io.Serializable {
         return typeDesc;
     }
 
+    public boolean isProcessing()
+    {
+        return this == SRM_REQUEST_QUEUED || this == SRM_REQUEST_INPROGRESS;
+    }
 }

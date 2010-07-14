@@ -150,7 +150,7 @@ public abstract class Job  {
 
     private transient boolean savedInFinalState;
 
-    private transient JDC jdc;
+    protected transient JDC jdc;
 
     private final ReentrantReadWriteLock reentrantReadWriteLock =
             new ReentrantReadWriteLock();
@@ -195,6 +195,7 @@ public abstract class Job  {
         this.numberOfRetries = numberOfRetries;
         this.maxNumberOfRetries = maxNumberOfRetries;
         this.lastStateTransitionTime = lastStateTransitionTime;
+        this.jdc = new JDC();
         if(jobHistoryArray != null) {
             java.util.Arrays.sort(jobHistoryArray,new java.util.Comparator<JobHistory>(){
                  public int compare(JobHistory jobHistory1 , JobHistory jobHistory2) {
@@ -218,7 +219,7 @@ public abstract class Job  {
         wlock();
         try {
             if( ! state.isFinalState() ) {
-                long newLifetime = 
+                long newLifetime =
                         creationTime + lifetime - System.currentTimeMillis();
                 /* We schedule a timer even if the job has already
                  * expired.  This is to avoid a restore loop in which
@@ -241,6 +242,7 @@ public abstract class Job  {
         creationTime = System.currentTimeMillis();
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
+        this.jdc = new JDC();
 
         LifetimeExpiration.schedule(id, lifetime);
         synchronized (weakJobStorage) {
@@ -392,7 +394,7 @@ public abstract class Job  {
         setState(state,description,true);
 
     }
-    
+
     /**
      * Changes the state of this job to a new state
      * @param state
@@ -1177,14 +1179,11 @@ public abstract class Job  {
         this.retryTimer = retryTimer;
     }
 
-	public JDC getJdc() {
-        return this.jdc;
-	}
-
-	public void setJdc(JDC jdc) {
-        this.jdc = jdc;
-	}
-
+    public void applyJdc()
+    {
+        jdc.apply(true);
+        JDC.push(String.valueOf(id));
+    }
 
     /**
      * This is the initial call to schedule the job for execution
@@ -1281,6 +1280,6 @@ public abstract class Job  {
         toString(sb,longformat);
         return sb.toString();
     }
-    
+
     public abstract void toString(StringBuilder sb, boolean longformat);
 }

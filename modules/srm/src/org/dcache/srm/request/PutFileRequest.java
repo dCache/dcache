@@ -627,7 +627,7 @@ public final class PutFileRequest extends FileRequest {
             }
         }
     }
-	
+
 
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
@@ -667,6 +667,8 @@ public final class PutFileRequest extends FileRequest {
 
             }
         }
+
+        super.stateChanged(oldState);
     }
 
     /**

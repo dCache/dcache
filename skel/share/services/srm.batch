@@ -52,6 +52,7 @@ set context -c srmGetReqMaxReadyRequests             2000
 set context -c srmGetReqMaxNumberOfRetries             10
 set context -c srmGetReqRetryTimeout                60000
 set context -c srmGetReqMaxNumOfRunningBySameOwner    100
+set context -c srmGetReqSwitchToAsynchronousModeDelay   0
 
 set context -c srmBringOnlineReqThreadQueueSize             ${srmGetReqThreadQueueSize}
 set context -c srmBringOnlineReqThreadPoolSize              ${srmGetReqThreadPoolSize}
@@ -61,6 +62,7 @@ set context -c srmBringOnlineReqMaxReadyRequests            ${srmGetReqMaxReadyR
 set context -c srmBringOnlineReqMaxNumberOfRetries          ${srmGetReqMaxNumberOfRetries}
 set context -c srmBringOnlineReqRetryTimeout                ${srmGetReqRetryTimeout}
 set context -c srmBringOnlineReqMaxNumOfRunningBySameOwner  ${srmGetReqMaxNumOfRunningBySameOwner}
+set context -c srmBringOnlineReqSwitchToAsynchronousModeDelay ${srmGetReqSwitchToAsynchronousModeDelay}
 
 set context -c srmPutReqThreadQueueSize             10000
 set context -c srmPutReqThreadPoolSize                250
@@ -70,6 +72,7 @@ set context -c srmPutReqMaxReadyRequests             1000
 set context -c srmPutReqMaxNumberOfRetries             10
 set context -c srmPutReqRetryTimeout                60000
 set context -c srmPutReqMaxNumOfRunningBySameOwner    100
+set context -c srmPutReqSwitchToAsynchronousModeDelay   0
 
 set context -c srmCopyReqThreadQueueSize             10000
 set context -c srmCopyReqThreadPoolSize                250
@@ -80,9 +83,15 @@ set context -c srmCopyReqMaxNumOfRunningBySameOwner    100
 
 #
 # switches controlling srmls behavior
-# for explanation consult dCacheSetup file
 #
-set context -c srmAsynchronousLs                      false
+
+define env enableAsyncLs.exe endExe
+  set context -c srmLsRequestSwitchToAsynchronousModeDelay 0
+endExe
+
+eval ${srmAsynchronousLs} true ==
+exec env enableAsyncLs.exe -ifok
+
 set context -c srmLsMaxNumberOfEntries                1000
 set context -c srmLsMaxNumberOfLevels                 100
 set context -c srmLsRequestThreadQueueSize            1000
@@ -94,6 +103,8 @@ set context -c srmLsRequestMaxNumberOfRetries         10
 set context -c srmLsRequestRetryTimeout               60000
 set context -c srmLsRequestMaxNumberOfRunningBySameOwner 100
 set context -c srmLsRequestLifetime                   3600000
+
+set context -c srmLsRequestSwitchToAsynchronousModeDelay infinity
 
 set context -c srmGetLifeTime      14400000
 set context -c srmBringOnlineLifeTime      ${srmGetLifeTime}
@@ -247,9 +258,9 @@ onerror shutdown
 #
 exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
-create org.dcache.cells.UniversalSpringCell jsrm \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/jsrm.xml \
-        -srmCellName=${cell.name} \
+        -export \
         -srmPort=${port} \
         -srmVersion=${srmVersion}  \
         -srmTimeout=${srmTimeout} \
@@ -281,6 +292,7 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmGetReqMaxNumberOfRetries=${srmGetReqMaxNumberOfRetries} \
         -srmGetReqRetryTimeout=${srmGetReqRetryTimeout} \
         -srmGetReqMaxNumOfRunningBySameOwner=${srmGetReqMaxNumOfRunningBySameOwner} \
+        -srmGetReqSwitchToAsynchronousModeDelay=${srmGetReqSwitchToAsynchronousModeDelay} \
         -srmBringOnlineReqThreadQueueSize=${srmBringOnlineReqThreadQueueSize} \
         -srmBringOnlineReqThreadPoolSize=${srmBringOnlineReqThreadPoolSize} \
         -srmBringOnlineReqMaxWaitingRequests=${srmBringOnlineReqMaxWaitingRequests} \
@@ -289,6 +301,7 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmBringOnlineReqMaxNumberOfRetries=${srmBringOnlineReqMaxNumberOfRetries} \
         -srmBringOnlineReqRetryTimeout=${srmBringOnlineReqRetryTimeout} \
         -srmBringOnlineReqMaxNumOfRunningBySameOwner=${srmBringOnlineReqMaxNumOfRunningBySameOwner} \
+        -srmBringOnlineReqSwitchToAsynchronousModeDelay=${srmBringOnlineReqSwitchToAsynchronousModeDelay} \
         -srmPutReqThreadQueueSize=${srmPutReqThreadQueueSize} \
         -srmPutReqThreadPoolSize=${srmPutReqThreadPoolSize} \
         -srmPutReqMaxWaitingRequests=${srmPutReqMaxWaitingRequests} \
@@ -297,6 +310,7 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmPutReqMaxNumberOfRetries=${srmPutReqMaxNumberOfRetries} \
         -srmPutReqRetryTimeout=${srmPutReqRetryTimeout} \
         -srmPutReqMaxNumOfRunningBySameOwner=${srmPutReqMaxNumOfRunningBySameOwner} \
+        -srmPutReqSwitchToAsynchronousModeDelay=${srmPutReqSwitchToAsynchronousModeDelay} \
         -srmCopyReqThreadQueueSize=${srmCopyReqThreadQueueSize} \
         -srmCopyReqThreadPoolSize=${srmCopyReqThreadPoolSize} \
         -srmCopyReqMaxWaitingRequests=${srmCopyReqMaxWaitingRequests} \
@@ -329,7 +343,6 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmIgnoreClientProtocolOrder=${srmIgnoreClientProtocolOrder}\
         -srmSizeOfSingleRemoveBatch=${srmSizeOfSingleRemoveBatch}\
         -srmCleanPendingRequestsOnRestart=${srmCleanPendingRequestsOnRestart}\
-        -srmAsynchronousLs=${srmAsynchronousLs}\
         -srmLsMaxNumberOfEntries=${srmLsMaxNumberOfEntries}\
         -srmLsMaxNumberOfLevels=${srmLsMaxNumberOfLevels}\
         -srmLsRequestLifetime=${srmLsRequestLifetime}\
@@ -341,6 +354,7 @@ create org.dcache.cells.UniversalSpringCell jsrm \
         -srmLsRequestMaxNumberOfRetries=${srmLsRequestMaxNumberOfRetries}\
         -srmLsRequestRetryTimeout=${srmLsRequestRetryTimeout}\
         -srmLsRequestMaxNumberOfRunningBySameOwner=${srmLsRequestMaxNumberOfRunningBySameOwner}\
+        -srmLsRequestSwitchToAsynchronousModeDelay=${srmLsRequestSwitchToAsynchronousModeDelay}\
         -srmClientDNSLookup=${srmClientDNSLookup}\
         -srmJettyConnectorAcceptors=${srmJettyConnectorAcceptors}\
         -srmJettyConnectorMaxIdleTime=${srmJettyConnectorMaxIdleTime}\

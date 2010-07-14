@@ -214,6 +214,7 @@ public final class LsFileRequest extends FileRequest {
                                 logger.error(ire.toString());
                         }
                 }
+                super.stateChanged(oldState);
         }
 
         public TReturnStatus getReturnStatus() {

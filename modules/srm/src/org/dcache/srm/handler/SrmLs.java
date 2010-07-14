@@ -165,28 +165,9 @@ public class SrmLs {
                                                     numOfLevels,
                                                     longFormat,
                                                     max_results_num);
-                        if (configuration.isAsynchronousLs()) {
-                                r.schedule();
-                                return r.getSrmLsResponse();
-                        }
-                        else {
-                                for (FileRequest fr : r.getFileRequests()) {
-                                        fr.run();
-                                        try {
-                                            if (fr.getState()==State.PENDING) {
-                                                    fr.setState(State.DONE,State.DONE.toString());
-                                            }
-                                        } catch (IllegalStateTransition ist) {
-                                            logger.error("Illegal State Transition : " +ist.getMessage());
-                                        }
-                                }
-                                SrmLsResponse response = new SrmLsResponse();
-                                response.setReturnStatus(r.getTReturnStatus());
-                                ArrayOfTMetaDataPathDetail details = new ArrayOfTMetaDataPathDetail();
-                                details.setPathDetailArray(r.getPathDetailArray());
-                                response.setDetails(details);
-                                return response;
-                        }
+
+                        r.schedule();
+                        return r.getSrmLsResponse(configuration.getLsSwitchToAsynchronousModeDelay());
                 }
                 catch (Exception e) {
                         logger.error(e.toString());

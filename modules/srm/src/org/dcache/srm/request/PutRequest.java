@@ -75,6 +75,7 @@ package org.dcache.srm.request;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import java.util.HashSet;
+import java.util.Date;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
@@ -319,6 +320,35 @@ public final class PutRequest extends ContainerRequest{
         return this.protocols;
     }
 
+
+    /**
+     * Waits for up to timeout milliseconds for the request to reach a
+     * non-queued state and then returns the current
+     * SrmPrepareToPutResponse for this PutRequest.
+     */
+    public final SrmPrepareToPutResponse
+        getSrmPrepareToPutResponse(long timeout)
+        throws SRMException, java.sql.SQLException, InterruptedException
+    {
+        /* To avoid a race condition between us querying the current
+         * response and us waiting for a state change notification,
+         * the notification scheme is counter based. This guarantees
+         * that we do not loose any notifications. A simple lock
+         * around the whole loop would not have worked, as the call to
+         * getSrmPrepareToPutResponse may itself trigger a state
+         * change and thus cause a deadlock when the state change is
+         * signaled.
+         */
+        Date deadline = getDateRelativeToNow(timeout);
+        int counter = _stateChangeCounter.get();
+        SrmPrepareToPutResponse response = getSrmPrepareToPutResponse();
+        while (response.getReturnStatus().getStatusCode().isProcessing() &&
+               _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+            counter = _stateChangeCounter.get();
+            response = getSrmPrepareToPutResponse();
+        }
+        return response;
+    }
 
     public final SrmPrepareToPutResponse getSrmPrepareToPutResponse()
     throws SRMException ,java.sql.SQLException {

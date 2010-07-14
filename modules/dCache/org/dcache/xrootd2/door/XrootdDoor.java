@@ -619,14 +619,7 @@ public class XrootdDoor
         if (createParents) {
             _pnfs.createDirectories(fullPath);
         } else {
-            String parent = fullPath.getParent().toString();
-            FileAttributes attributes =
-                _pnfs.getFileAttributes(parent,
-                                        EnumSet.of(TYPE,OWNER,OWNER_GROUP,MODE));
-            _pnfs.createPnfsDirectory(fullPath.toString(),
-                                      attributes.getOwner(),
-                                      attributes.getGroup(),
-                                      attributes.getMode());
+            _pnfs.createPnfsDirectory(fullPath.toString());
         }
     }
 

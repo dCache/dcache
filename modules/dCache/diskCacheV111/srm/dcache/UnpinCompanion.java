@@ -31,28 +31,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -65,10 +65,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -78,10 +78,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -96,252 +96,154 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
+import org.dcache.cells.MessageCallback;
+import org.dcache.cells.ThreadManagerMessageCallback;
+import org.dcache.cells.CellStub;
 import diskCacheV111.util.PnfsId;
-//import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.Message;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.UnpinCallbacks;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static diskCacheV111.util.CacheException.*;
+
 /**
  *
  * @author  timur
  */
-/**
- * this class does all the dcache specific work needed for staging and pinning a
- * file represented by a path. It notifies the caller about each next stage
- * of the process via a StageAndPinCompanionCallbacks interface.
- * Boolean functions of the callback interface need to return true in order for
- * the process to continue
- */
-public class UnpinCompanion implements CellMessageAnswerable {
-    
-    private static final int INITIAL_STATE=0;
-    private static final int SENT_PIN_MGR_PIN_MSG = 5;
-    private static final int RECEIVED_PIN_MGR_PIN_MSG = 6;
-    private volatile int  state = INITIAL_STATE;
-    private dmg.cells.nucleus.CellAdapter cell;
+public class UnpinCompanion
+    implements MessageCallback<PinManagerUnpinMessage>
+{
+    private static final Logger _log =
+        LoggerFactory.getLogger(UnpinCompanion.class);
+
     private UnpinCallbacks callbacks;
-    private CellMessage request = null;
     private String fileId;
-    private AuthorizationRecord user;
-    
-    private void say(String words_of_wisdom) {
-        if(cell!=null) {
-            cell.say(" UnpinCompanion: "+words_of_wisdom);
-        }
-    }
-    
-    private void esay(String words_of_despare) {
-        if(cell!=null) {
-            cell.esay(" UnpinCompanion : "+words_of_despare);
-        }
-    }
+
     /** Creates a new instance of StageAndPinCompanion */
-    
-    private UnpinCompanion(AuthorizationRecord user, String fileId, UnpinCallbacks callbacks, CellAdapter cell) {
-        this.user = user;
+    private UnpinCompanion(String fileId, UnpinCallbacks callbacks)
+    {
         this.fileId = fileId;
-        this.cell = cell;
         this.callbacks = callbacks;
-        say(" constructor ");
     }
-    
-    public void answerArrived( final CellMessage req , final CellMessage answer ) {
-        say("answerArrived");
-        diskCacheV111.util.ThreadManager.execute(new Runnable() {
-            public void run() {
-                processMessage(req,answer);
-            }
-        });
+
+    public void success(PinManagerUnpinMessage message)
+    {
+        callbacks.Unpinned(message.getPinRequestId());
     }
-    
-    private void processMessage( CellMessage req , CellMessage answer ) {
-        say("answerArrived");
-        request = req;
-        Object o = answer.getMessageObject();
-        if(o instanceof Message) {
-            Message message = (Message)answer.getMessageObject() ;
-            if( message instanceof PinManagerUnpinMessage ) {
-                if(state != SENT_PIN_MGR_PIN_MSG) {
-                    esay("received PinManagerUnpinMessage, state ="+state);
-                    return;
-                }
-                state = RECEIVED_PIN_MGR_PIN_MSG;
-                PinManagerUnpinMessage unpinResponse =
-                        (PinManagerUnpinMessage)message;
-                pinManagerUnpinMessageArrived(unpinResponse);
-            } else {
-                esay(this.toString()+" got unknown message "+
-                        " : "+message.getErrorObject());
-                
-                callbacks.Error( this.toString()+" got unknown message "+
-                        " : "+message.getErrorObject()) ;
-            }
-        } else {
-            esay(this.toString()+" got unknown object "+
-                    " : "+o);
-            callbacks.Error(this.toString()+" got unknown object "+
-                    " : "+o) ;
+
+    public void failure(int rc, Object error)
+    {
+        switch (rc) {
+        case TIMEOUT:
+            _log.error(error.toString());
+            callbacks.Timeout();
+            break;
+
+        default:
+            _log.error("Pinning failed for {} [rc={},msg={}]",
+                       new Object[] { fileId, rc, error });
+
+            String reason =
+                String.format("Failed to pin file [rc=%d,msg=%s]",
+                              rc, error);
+            callbacks.UnpinningFailed(reason);
+            break;
         }
     }
-    
-    
-    private void pinManagerUnpinMessageArrived(PinManagerUnpinMessage unpinResponse) {
-        say(" message is PinManagerUnpinMessage");
-        if(unpinResponse.getReturnCode() != 0) {
-            esay("UnpinRequest Failed");
-            callbacks.UnpinningFailed(unpinResponse.getErrorObject().toString());
-            return ;
-        }
-        say("unpinned");
-        callbacks.Unpinned(unpinResponse.getPinRequestId());
+
+    public void noroute()
+    {
+        failure(TIMEOUT, "No route to PinManager");
     }
-    
-    public void exceptionArrived( CellMessage request , Exception exception ) {
-        esay("exceptionArrived "+exception+" for request "+request);
-        callbacks.Exception(exception);
+
+    public void timeout()
+    {
+        failure(TIMEOUT, "Pinning timed out");
     }
-    public void answerTimedOut( CellMessage request ) {
-        esay("answerTimedOut for request "+request);
-        callbacks.Timeout();
+
+    public String toString()
+    {
+        return getClass().getName() + " " + fileId;
     }
-    public String toString() {
-        
-        return this.getClass().getName()+" "+
-                fileId;
-    }
-    
-    public static void unpinFile(
-            AuthorizationRecord user,
-            String fileId,
-            String pinId,
-            UnpinCallbacks callbacks,
-            CellAdapter cell) {
-        cell.say("UnpinCompanion.unpinFile("+fileId+")");
-        PnfsId pnfsId = null;
+
+    public static void unpinFile(AuthorizationRecord user,
+                                 String fileId,
+                                 String pinId,
+                                 UnpinCallbacks callbacks,
+                                 CellStub pinManagerStub)
+    {
+        _log.info("UnpinCompanion.unpinFile({})", fileId);
+        PnfsId pnfsId;
         try {
             pnfsId = new PnfsId(fileId);
-        } catch(Exception e) {
+        } catch (IllegalArgumentException e) {
             //just quietly fail, if the fileId is not pnfs id
             // it must be created by a disk srm during testing
             //just allow the request to get expired
             callbacks.Unpinned(fileId);
             return;
         }
-        
-        UnpinCompanion companion = new UnpinCompanion(user,fileId,
-                callbacks,cell);
-        
-        PinManagerUnpinMessage unpinRequest =
-                new PinManagerUnpinMessage( pnfsId, pinId);
-        unpinRequest.setAuthorizationRecord(user);
-        
-        companion.state = SENT_PIN_MGR_PIN_MSG;
-        try {
-            cell.sendMessage(
-                    new CellMessage(
-                    new CellPath( "PinManager") ,
-                    unpinRequest ) ,
-                    true , true,
-                    companion,
-                    60*60*1000
-                    );
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        }catch(Exception ee ) {
-            cell.esay(ee);
-            callbacks.UnpinningFailed(ee.toString());
-            return ;
-        }
+
+        UnpinCompanion companion = new UnpinCompanion(fileId, callbacks);
+        PinManagerUnpinMessage request =
+                new PinManagerUnpinMessage(pnfsId, pinId);
+        request.setAuthorizationRecord(user);
+        pinManagerStub.send(request, PinManagerUnpinMessage.class,
+                            new ThreadManagerMessageCallback(companion));
     }
-    
-    public static void unpinFileBySrmRequestId(
-            AuthorizationRecord user,
-            String fileId,
-            long  srmRequestId,
-            UnpinCallbacks callbacks,
-            CellAdapter cell) {
-        cell.say("UnpinCompanion.unpinFile("+fileId+")");
-        PnfsId pnfsId = null;
+
+    public static void unpinFileBySrmRequestId(AuthorizationRecord user,
+                                               String fileId,
+                                               long  srmRequestId,
+                                               UnpinCallbacks callbacks,
+                                               CellStub pinManagerStub)
+    {
+        _log.info("UnpinCompanion.unpinFile({})", fileId);
+        PnfsId pnfsId;
         try {
             pnfsId = new PnfsId(fileId);
-        } catch(Exception e) {
+        } catch (IllegalArgumentException e) {
             //just ciletly fail, if the fileId is not pnfs id
             // it must be created by a disk srm during testing
             //just allow the request to get expired
             callbacks.Unpinned(fileId);
             return;
         }
-        
-        UnpinCompanion companion = new UnpinCompanion(user,fileId,
-                callbacks,cell);
-        
-        PinManagerUnpinMessage unpinRequest =
-                new PinManagerUnpinMessage( pnfsId, srmRequestId);
-        unpinRequest.setAuthorizationRecord(user);
-        companion.state = SENT_PIN_MGR_PIN_MSG;
-        try {
-            cell.sendMessage(
-                    new CellMessage(
-                    new CellPath( "PinManager") ,
-                    unpinRequest ) ,
-                    true , true,
-                    companion,
-                    60*60*1000
-                    );
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        }catch(Exception ee ) {
-            cell.esay(ee);
-            callbacks.UnpinningFailed(ee.toString());
-            return ;
-        }
+
+        UnpinCompanion companion = new UnpinCompanion(fileId, callbacks);
+        PinManagerUnpinMessage request =
+            new PinManagerUnpinMessage(pnfsId, srmRequestId);
+        request.setAuthorizationRecord(user);
+        pinManagerStub.send(request, PinManagerUnpinMessage.class,
+                            new ThreadManagerMessageCallback(companion));
     }
-    public static void unpinFile(
-            AuthorizationRecord user,
-            String fileId,
-            UnpinCallbacks callbacks,
-            CellAdapter cell) {
-        cell.say("UnpinCompanion.unpinFile("+fileId+")");
-        PnfsId pnfsId = null;
+
+    public static void unpinFile(AuthorizationRecord user,
+                                 String fileId,
+                                 UnpinCallbacks callbacks,
+                                 CellStub pinManagerStub)
+    {
+        _log.info("UnpinCompanion.unpinFile({}", fileId);
+        PnfsId pnfsId;
         try {
             pnfsId = new PnfsId(fileId);
-        } catch(Exception e) {
+        } catch (IllegalArgumentException e) {
             //just ciletly fail, if the fileId is not pnfs id
             // it must be created by a disk srm during testing
             //just allow the request to get expired
             callbacks.Unpinned(fileId);
             return;
         }
-        
-        UnpinCompanion companion = new UnpinCompanion(user,fileId,
-                callbacks,cell);
-        
-        PinManagerUnpinMessage unpinRequest =
-                new PinManagerUnpinMessage( pnfsId);
-        unpinRequest.setAuthorizationRecord(user);
-        companion.state = SENT_PIN_MGR_PIN_MSG;
-        try {
-            cell.sendMessage(
-                    new CellMessage(
-                    new CellPath( "PinManager") ,
-                    unpinRequest ) ,
-                    true , true,
-                    companion,
-                    60*60*1000
-                    );
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        }catch(Exception ee ) {
-            cell.esay(ee);
-            callbacks.UnpinningFailed(ee.toString());
-            return ;
-        }
+
+        UnpinCompanion companion = new UnpinCompanion(fileId, callbacks);
+        PinManagerUnpinMessage request = new PinManagerUnpinMessage(pnfsId);
+        request.setAuthorizationRecord(user);
+        pinManagerStub.send(request, PinManagerUnpinMessage.class,
+                            new ThreadManagerMessageCallback(companion));
     }
 }
 

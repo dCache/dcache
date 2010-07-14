@@ -1822,10 +1822,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            _pnfs.createPnfsDirectory(pnfsPath,
-                                      (int) Subjects.getUid(_subject),
-                                      (int) Subjects.getPrimaryGid(_subject),
-                                      0755);
+            _pnfs.createPnfsDirectory(pnfsPath);
             reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
@@ -2754,19 +2751,13 @@ public abstract class AbstractFtpDoorV1
              * behind, even though the transfer failed.
              */
             try {
-                pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                  (int) Subjects.getUid(_subject),
-                                                  (int) Subjects.getPrimaryGid(_subject),
-                                                  0644);
+                pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
             } catch (FileExistsCacheException fnfe) {
                 if(_overwrite) {
                     warn("FTP Door: Overwrite is enabled. File \"" +
                          _transfer.path + "\" exists, and will be overwritten");
                     _pnfs.deletePnfsEntry( _transfer.path);
-                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                      (int) Subjects.getUid(_subject),
-                                                      (int) Subjects.getPrimaryGid(_subject),
-                                                      0644);
+                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
                 } else {
                     throw new FTPCommandException(553,
                                                   _transfer.path
@@ -2781,10 +2772,7 @@ public abstract class AbstractFtpDoorV1
                     warn("FTP Door: Overwrite is enabled. File \"" +
                          _transfer.path + "\" exists, and will be overwritten");
                     _pnfs.deletePnfsEntry(_transfer.path);
-                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path,
-                                                      (int) Subjects.getUid(_subject),
-                                                      (int) Subjects.getPrimaryGid(_subject),
-                                                      0644);
+                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
                 } else {
                     throw new FTPCommandException(553,
                                                   _transfer.path
