@@ -30,7 +30,7 @@ public class FQAN implements java.io.Serializable {
      *
      * 1. The document states that the RE for RFC 1035 is:
      *
-     *    ˆ([a-z]([a-z0-9-]*[a-z0-9])*\.)*[a-z]{2,4}$
+     *    ^([a-z]([a-z0-9-]*[a-z0-9])*\.)*[a-z]{2,4}$
      *
      * However, this is at odds with RFC 1035 section 2.3.1, which describes
      * a simpler format.  Here we use:
