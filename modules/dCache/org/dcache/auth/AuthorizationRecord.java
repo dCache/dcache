@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -46,6 +48,9 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 @Table(name="authrecord")
 public class AuthorizationRecord implements Serializable, SRMUser{
     private static final long serialVersionUID = 7412538400840464074L;
+
+    private static final String PRIMARY_ATTRIBUTE_PREFIX_THAT_RETURN_IDENTITY_AS_VO_GROUP = "/Role=";
+
     /**
      *this is the id of the authorization record that is used as
      * a primary key in the database
@@ -342,9 +347,11 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     @Transient
     public String getVoRole() {
         String primaryAttribute = getPrimaryAttribute();
-        if(primaryAttribute != null && !primaryAttribute.isEmpty()) {
+        if( FQAN.isValid( primaryAttribute)) {
             FQAN fqan = new FQAN(primaryAttribute);
-            return fqan.hasRole() ? fqan.getRole() : null;
+            if( fqan.hasRole()) {
+                return fqan.getRole();
+            }
         }
         return null;
     }
@@ -353,8 +360,14 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public String getVoGroup() {
         String primaryAttribute = getPrimaryAttribute();
         if(primaryAttribute != null && !primaryAttribute.isEmpty()) {
-            String group = new FQAN(primaryAttribute).getGroup();
-            return (group==null || group.isEmpty()) ? identity : group;
+            if(FQAN.isValid(primaryAttribute)) {
+                return new FQAN(primaryAttribute).getGroup();
+            } else {
+                if( !primaryAttribute.startsWith(
+                        PRIMARY_ATTRIBUTE_PREFIX_THAT_RETURN_IDENTITY_AS_VO_GROUP)) {
+                    return primaryAttribute;
+                }
+            }
         }
         return identity;
     }
