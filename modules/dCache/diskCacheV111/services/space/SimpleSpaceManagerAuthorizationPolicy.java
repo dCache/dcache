@@ -31,10 +31,19 @@ public class SimpleSpaceManagerAuthorizationPolicy
         }
 
         for(GroupList groupList: authRecord.getGroupLists()) {
-            if (groupList.getAttribute()==null) continue;
-            FQAN voAttribute = new FQAN(groupList.getAttribute());
-            String userGroup = voAttribute.getGroup();
-            String userRole  = voAttribute.getRole();
+            String attribute = groupList.getAttribute();
+            if (attribute == null) continue;
+
+            String userGroup;
+            String userRole;
+            if( FQAN.isValid( attribute)) {
+                FQAN fqan = new FQAN(attribute);
+                userGroup = fqan.getGroup();
+                userRole  = fqan.getRole();
+            } else {
+                userGroup = attribute;
+                userRole = "";
+            }
             if((spaceGroup == null || spaceGroup.equals(userGroup)) &&
                 (spaceRole == null || spaceRole.equals(userRole))) {
                 if (logger.isDebugEnabled()) {
@@ -64,10 +73,16 @@ public class SimpleSpaceManagerAuthorizationPolicy
             }
 
             for(GroupList groupList: authRecord.getGroupLists()) {
-                if (groupList.getAttribute()==null) continue;
-                FQAN voAttribute = new FQAN(groupList.getAttribute());
-                userGroup = voAttribute.getGroup();
-                userRole = voAttribute.getRole();
+                String attribute = groupList.getAttribute();
+                if (attribute == null) continue;
+                if( FQAN.isValid( attribute)) {
+                    FQAN fqan = new FQAN(attribute);
+                    userGroup = fqan.getGroup();
+                    userRole = fqan.getRole();
+                } else {
+                    userGroup = attribute;
+                    userRole = "";
+                }
                 if (voInfo.match(userGroup,userRole)) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("userGroup : "+userGroup+", userRole : "+userRole+

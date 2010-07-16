@@ -2872,10 +2872,15 @@ public final class Manager
                         spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
 
                         for (GroupList groupList : authRecord.getGroupLists()) {
-                                FQAN voAttribute=new FQAN( groupList.getAttribute());
-                                voGroup=voAttribute.getGroup();
-                                voRole=voAttribute.getRole();
-                                spaces.addAll(findSpacesByVoGroupAndRole(voGroup,voRole));
+                            String attribute = groupList.getAttribute();
+                            Set foundSpaces;
+                            if( FQAN.isValid( attribute)) {
+                                FQAN fqan = new FQAN( attribute);
+                                foundSpaces = findSpacesByVoGroupAndRole( fqan.getGroup(), fqan.getRole());
+                            } else {
+                                foundSpaces = findSpacesByVoGroupAndRole( attribute, "");
+                            }
+                            spaces.addAll( foundSpaces);
                         }
                 }
                 else {
