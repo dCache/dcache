@@ -1,7 +1,6 @@
 package dmg.cells.nucleus;
 
 import dmg.util.Pinboard;
-import dmg.util.Args;
 import dmg.util.BufferedLineWriter;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
@@ -17,7 +16,6 @@ import java.net.Socket;
 
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.MDC;
 import org.dcache.commons.util.NDC;
 
 /**
@@ -528,7 +526,7 @@ public class CellNucleus implements ThreadFactory
     {
         Thread[] threads = new Thread[group.activeCount()];
         int count = group.enumerate(threads);
-        Collection<Thread> nonDaemonThreads = new ArrayList(count);
+        Collection<Thread> nonDaemonThreads = new ArrayList<Thread>(count);
         for (int i = 0; i < count; i++) {
             Thread thread = threads[i];
             if (!thread.isDaemon()) {
@@ -717,12 +715,14 @@ public class CellNucleus implements ThreadFactory
 
         return (CellVersion)m.invoke(obj, (Object [])null);
     }
+
     public static CellVersion getCellVersionByClass(Class<?> c) throws Exception {
 
         Method m = c.getMethod("getCellVersion", (Class [])null);
 
         return (CellVersion)m.invoke((Object)null, (Object [])null);
     }
+
     ////////////////////////////////////////////////////////////
     //
     //   create new cell by different arguments
@@ -764,27 +764,7 @@ public class CellNucleus implements ThreadFactory
     public Class<?> loadClass(String className) throws ClassNotFoundException {
         return __cellGlue.loadClass(className);
     }
-    /*
-      public Cell createNewCell(String cellClass,
-      String cellName,
-      String [] cellArgs)
-      throws ClassNotFoundException,
-      NoSuchMethodException,
-      SecurityException,
-      InstantiationException,
-      InvocationTargetException,
-      IllegalAccessException,
-      ClassCastException          {
 
-      Object [] args = new Object[1];
-      args[0] = cellArgs;
-
-      return (Cell)__cellGlue._newInstance(cellClass,
-      cellName,
-      args,
-      true);
-      }
-    */
     public Object  createNewCell(String className,
                                  String cellName,
                                  String [] argsClassNames,
@@ -803,6 +783,7 @@ public class CellNucleus implements ThreadFactory
             return __cellGlue._newInstance(
                                            className, cellName, argsClassNames, args, false);
     }
+
     public Cell createNewCell(String cellClass,
                               String cellName,
                               Socket socket,
@@ -873,6 +854,7 @@ public class CellNucleus implements ThreadFactory
             _event = event;
         }
 
+        @Override
         public void run()
         {
             _logNucleus.info("killerThread : started");
@@ -947,6 +929,7 @@ public class CellNucleus implements ThreadFactory
             _message = message;
         }
 
+        @Override
         public void innerRun()
         {
             CellMessageAnswerable callback =
@@ -986,6 +969,7 @@ public class CellNucleus implements ThreadFactory
             EventLogger.queueBegin(_event);
         }
 
+        @Override
         public void innerRun()
         {
             EventLogger.queueEnd(_event);
