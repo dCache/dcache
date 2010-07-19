@@ -550,13 +550,13 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         if (task != null && !task.isDone()) {
           if (task.getType().equals("Replication")) {
             MoverTask mt = (MoverTask) task;
-            if (mt.getPnfsId().equals(pnfsid.toString())) {
+            if (mt.getPnfsId().equals(pnfsid)) {
               mt.setPnfsIdDeleted(true);
             }
           }
           else if (task.getType().equals("Reduction")) {
             ReductionObserver ro = (ReductionObserver) task;
-            if (ro.getPnfsId().equals(pnfsid.toString())) {
+            if (ro.getPnfsId().equals(pnfsid)) {
               ro.setPnfsIdDeleted(true);
             }
           }
