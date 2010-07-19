@@ -84,10 +84,7 @@ public class StreamObjectCell
                 throw new
                     IllegalArgumentException("Usage : ... <commandClassName>");
 
-            String s = args.getOpt("history");
-            if (s != null && !s.isEmpty()) {
-                _historyFile = new File(s);
-            }
+            tryToSetHistoryFile( args.getOpt("history"));
 
             _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
@@ -104,6 +101,44 @@ public class StreamObjectCell
         start();
         _workerThread = _nucleus.newThread(this, "Worker");
         _workerThread.start();
+    }
+
+    private void tryToSetHistoryFile( String filename) {
+        if( filename == null || filename.isEmpty()) {
+            return;
+        }
+
+        try {
+            setHistoryFile(filename);
+        } catch( IllegalArgumentException e) {
+            _log.error( e.getMessage());
+        }
+    }
+
+    private void setHistoryFile( String filename) {
+        File file = new File(filename);
+        try {
+            if( file.createNewFile()) {
+                _log.info( "History file " + file + " has been created.");
+            } else {
+                guardFileIsFile(file);
+                guardFileIsWriteable(file);
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("History file " + file + " does not exist and cannot be created.");
+        }
+        _historyFile = file;
+    }
+
+    private void guardFileIsFile(File file) {
+        if( !file.isFile()) {
+            throw new IllegalArgumentException( "History file " + file + " is not a simple file.");
+        }
+    }
+    private void guardFileIsWriteable(File file) {
+        if( !file.canWrite()) {
+            throw new IllegalArgumentException( "History file " + file + " is not writeable.");
+        }
     }
 
     private void prepareClass(String className)
@@ -433,6 +468,7 @@ public class StreamObjectCell
         }
     }
 
+    @Override
     public void cleanUp()
     {
         try {
