@@ -1,8 +1,13 @@
 package org.dcache.admin.webadmin.jettycell;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import javax.naming.NamingException;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -12,7 +17,6 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-
 import org.dcache.cells.AbstractCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import javax.naming.InitialContext;
 import org.dcache.cells.Option;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 
 /**
@@ -164,7 +169,8 @@ public class JettyCell extends AbstractCell {
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         HandlerCollection handlers = new HandlerCollection();
         handlers.setHandlers(new Handler[]{(Handler) createWebappContext(),
-                    new DefaultHandler(), requestLogHandler});
+                    new InfoForwardHandler(), new DefaultHandler(),
+                    requestLogHandler});
         _server.setHandler(handlers);
     }
 
@@ -196,5 +202,27 @@ public class JettyCell extends AbstractCell {
 
     public int getHttpsPort() {
         return _httpsPort;
+    }
+
+    private class InfoForwardHandler extends AbstractHandler {
+
+        private String INFO_CONTEXT = "/info";
+        private String WEBADMIN_INFOURL = "/webadmin/info?statepath=";
+        private int INFO_CONTEXT_LENGTH = 5;
+
+        @Override
+        public void handle(String target, Request baseRequest,
+                HttpServletRequest request, HttpServletResponse response) throws
+                IOException, ServletException {
+            if (target.startsWith(INFO_CONTEXT)) {
+                _log.debug("target: {}", target);
+                StringBuffer targetUrl = new StringBuffer(target);
+                int i = targetUrl.indexOf(INFO_CONTEXT);
+                String newUrl = targetUrl.replace(
+                        i, i + INFO_CONTEXT_LENGTH, WEBADMIN_INFOURL).toString();
+                _log.debug("redirected to: {}", newUrl);
+                response.sendRedirect(newUrl);
+            }
+        }
     }
 }
