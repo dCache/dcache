@@ -4,11 +4,22 @@ package diskCacheV111.util;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Immutable representation of a pnfsId
  */
 public class PnfsId implements Serializable, Comparable<PnfsId> {
+
+    private static final String SIMPLE_PNFS_ID_REGEX = "\\p{XDigit}{1,24}";
+    // FIXME STAR_PNFS_ID_REGEX is too permissive; overall length should be 24 or less.
+    private static final String STAR_PNFS_ID_REGEX = "\\p{XDigit}{1,22}\\*\\p{XDigit}{1,22}";
+    private static final String PNFS_ID_REGEX = "("+SIMPLE_PNFS_ID_REGEX+"|"+STAR_PNFS_ID_REGEX+")";
+    private static final String PNFS_STRING_REGEX = "("+PNFS_ID_REGEX+"(\\..*)?)";
+    private static final String CHIMERA_ID_REGEX = "\\p{XDigit}{36}";
+    private static final String VALID_ID_REGEX = "^("+PNFS_STRING_REGEX+"|"+CHIMERA_ID_REGEX+")$";
+    private static final Pattern VALID_ID_PATTERN = Pattern.compile( VALID_ID_REGEX);
 
     private final static int OLD_ID_SIZE = 12; // original pnfs
     private final static int NEW_ID_SIZE = 18; // chimera
@@ -21,6 +32,11 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private final String _toString;
 
     private static final long serialVersionUID = -112220393521303857L;
+
+    public static boolean isValid( String id) {
+        Matcher m = VALID_ID_PATTERN.matcher( id);
+        return m.matches();
+    }
 
     public PnfsId(String id, String domain) {
         this(_stringToBytes(id), domain);
@@ -52,6 +68,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -67,6 +84,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
                 || (_domain != null && _domain.equals(other._domain)));
     }
 
+    @Override
     public int hashCode() {
         return Arrays.hashCode(_a) ^ ((_domain == null) ? 0 : _domain.hashCode());
     }
@@ -97,6 +115,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         return bytesToHexString(_a);
     }
 
+    @Override
     public String toString() {
         return getId() + ((_domain != null) ? "." + _domain : "");
     }

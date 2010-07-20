@@ -3,6 +3,7 @@ package diskCacheV111.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static diskCacheV111.util.SerializableUtils.assertSerialisationExpected;
 import static diskCacheV111.util.SerializableUtils.assertDeserialisationExpected;
 
@@ -27,6 +28,8 @@ import org.junit.Test;
 public class PnfsIdTests {
 
     private static final String SERIALISED_DATA_STRING_PREFIX = "EXPECTED_ENCODED_SERIALISED_PNFSID_";
+
+    private static final String VALID_PATH = "/pnfs/example.org/data/dteam/test-file-001";
 
     private static final String CHIMERA_ID =
             "80D1B8B90CED30430608C58002811B3285FC";
@@ -177,6 +180,60 @@ public class PnfsIdTests {
         PnfsId shortPnfs = new PnfsId( PNFS_SIMPLE_ID.substring( 2));
         assertEquals( "short PNFS", shortPnfs, _simplePnfsId);
     }
+
+    /*
+     * Test the PnfsId.isValid static method
+     */
+
+    @Test
+    public void testIsValidForSimplePnfsId() {
+        assertTrue( PnfsId.isValid(PNFS_SIMPLE_ID));
+    }
+
+    @Test
+    public void testIsValidForSimplePnfsIdShort() {
+        assertTrue( PnfsId.isValid(PNFS_SIMPLE_ID_SHORT));
+    }
+
+    @Test
+    public void testIsValidForPnfsDomainId() {
+        assertTrue( PnfsId.isValid(PNFS_DOMAIN_ID));
+    }
+
+    @Test
+    public void testIsValidForChimeraId() {
+        assertTrue( PnfsId.isValid(CHIMERA_ID));
+    }
+
+    @Test
+    public void testIsValidForIllegalInitialStarPnfsId() {
+        assertFalse( PnfsId.isValid("*000"));
+    }
+
+    @Test
+    public void testIsValidForIllegalFinalStarPnfsId() {
+        assertFalse( PnfsId.isValid("000*"));
+    }
+
+    @Test
+    public void testIsValidForZeroLengthPnfsId() {
+        assertFalse(PnfsId.isValid(""));
+    }
+
+
+    @Test
+    public void testIsValidForTooLongPnfsId() {
+        assertFalse(PnfsId.isValid( PNFS_SIMPLE_ID + "0"));
+    }
+
+    @Test
+    public void testIsValidForPath() {
+        assertFalse(PnfsId.isValid( VALID_PATH));
+    }
+
+    /*
+     * Test equality
+     */
 
     @Test
     public void testDomainPnfsIdEqualsReflexive() {
