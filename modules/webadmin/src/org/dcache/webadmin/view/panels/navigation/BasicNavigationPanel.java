@@ -14,6 +14,7 @@ import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
+import org.dcache.webadmin.view.pages.infoxml.InfoXml;
 import org.dcache.webadmin.view.util.CustomLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,8 @@ public class BasicNavigationPanel extends Panel {
 
     private Class _currentPage;
     private static List<Class> _linkList = new ArrayList<Class>(Arrays.asList(
-            DCacheServices.class, PoolList.class, PoolQueues.class, PoolGroupView.class));
+            DCacheServices.class, PoolList.class, PoolQueues.class,
+            PoolGroupView.class, InfoXml.class));
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {

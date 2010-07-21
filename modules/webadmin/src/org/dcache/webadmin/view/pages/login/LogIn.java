@@ -21,6 +21,7 @@ import org.dcache.webadmin.view.beans.LogInBean;
 import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
 
 @RequireHttps
 public class LogIn extends BasePage {
@@ -64,7 +65,9 @@ public class LogIn extends BasePage {
             add(_rememberMeRow);
             _rememberMe = new CheckBox("remembering");
             _rememberMeRow.add(_rememberMe);
-            add(new CertSignInButton("certsignin"));
+            Button certButton = new CertSignInButton("certsignin");
+            certButton.add(new DefaultFocusBehaviour());
+            add(certButton);
             setCookiePersistence(true);
         }
 
@@ -144,11 +147,13 @@ public class LogIn extends BasePage {
                     error(getStringResource("loginError"));
                     _log.debug("no certificate provided");
                 } catch (LogInServiceException ex) {
-                    error(getStringResource("loginError"));
                     String cause = "unknown";
                     if (ex.getCause() != null) {
                         cause = ex.getCause().getMessage();
                     }
+                    error(getStringResource("loginError") + " " + cause);
+//                    reenable checking of formdata
+                    this.setDefaultFormProcessing(true);
                     _log.debug("cert sign in error - cause {}", cause);
                 }
             }
