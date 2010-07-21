@@ -21,6 +21,7 @@ import org.dcache.webadmin.view.pages.login.LogIn;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
+import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.PoolGroupService;
@@ -39,6 +40,7 @@ public class WebAdminInterface extends WebApplication {
     private LogInService _logInService;
     private PoolQueuesService _poolQueuesService;
     private PoolGroupService _poolGroupService;
+    private CellsService _cellsService;
     private InfoService _infoService;
     private int _httpPort;
     private int _httpsPort;
@@ -115,6 +117,14 @@ public class WebAdminInterface extends WebApplication {
 
     public void setInfoService(InfoService infoService) {
         _infoService = infoService;
+    }
+
+    public CellsService getCellsService() {
+        return _cellsService;
+    }
+
+    public void setCellsService(CellsService cellsService) {
+        _cellsService = cellsService;
     }
 
     public void setDcacheName(String dCacheName) {

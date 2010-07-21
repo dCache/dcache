@@ -1,9 +1,11 @@
 package org.dcache.webadmin.controller.util;
 
 import java.util.List;
+import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
+import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
@@ -58,5 +60,17 @@ public class BeanDataMapper {
         queue.setMax(moverQueue.getMax());
         queue.setQueued(moverQueue.getQueued());
         return queue;
+    }
+
+    public static CellServicesBean cellModelToView(CellStatus cellBusinessObject) {
+        CellServicesBean cellService = new CellServicesBean();
+        cellService.setCreatedDateTime(cellBusinessObject.getCreatedDateTime());
+        cellService.setDomainName(cellBusinessObject.getDomainName());
+        cellService.setEventQueueSize(cellBusinessObject.getEventQueueSize());
+        cellService.setName(cellBusinessObject.getName());
+        cellService.setPing(cellBusinessObject.getPing());
+        cellService.setThreadCount(cellBusinessObject.getThreadCount());
+        cellService.setVersion(cellBusinessObject.getVersion());
+        return cellService;
     }
 }

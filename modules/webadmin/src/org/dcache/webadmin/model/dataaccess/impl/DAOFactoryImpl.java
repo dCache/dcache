@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
@@ -37,6 +38,12 @@ public class DAOFactoryImpl implements DAOFactory {
     public InfoDAO getInfoDAO() {
         checkDefaultCommandSenderSet();
         return new StandardInfoDAO(_defaultCommandSenderFactory);
+    }
+
+    @Override
+    public DomainsDAO getDomainsDAO() {
+        checkDefaultCommandSenderSet();
+        return new StandardDomainsDAO(_defaultCommandSenderFactory);
     }
 
     @Override

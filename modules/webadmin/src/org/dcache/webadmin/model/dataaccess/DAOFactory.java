@@ -9,6 +9,8 @@ import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
  */
 public interface DAOFactory {
 
+    public DomainsDAO getDomainsDAO();
+
     public PoolsDAO getPoolsDAO();
 
     public PoolGroupDAO getPoolGroupDAO();

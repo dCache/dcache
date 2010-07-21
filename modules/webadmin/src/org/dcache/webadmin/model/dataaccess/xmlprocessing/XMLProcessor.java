@@ -26,6 +26,7 @@ public abstract class XMLProcessor {
 
     public static final String EMPTY_DOCUMENT_CONTENT =
             "<dCache xmlns='http://www.dcache.org/2008/01/Info'/>";
+    protected static final String XPATH_PREDICATE_CLOSING_FRAGMENT = "']";
 //  attributes
     protected static final String ATTRIBUTE_NAME = "name";
     protected static final String ATTRIBUTE_TYPE = "type";
@@ -78,7 +79,7 @@ public abstract class XMLProcessor {
             result = (String) _xpath.evaluate(xpathExpression, document,
                     XPathConstants.STRING);
         } catch (XPathExpressionException ex) {
-            _log.error("parsing error for xpath: {}", xpathExpression);
+            _log.error("parsing error for xpath: {} - info provider up?", xpathExpression);
         }
         return result;
     }
@@ -91,7 +92,7 @@ public abstract class XMLProcessor {
 
             result = Long.parseLong(xpathResult);
         } catch (XPathExpressionException ex) {
-            _log.error("parsing error for xpath: {}", xpathExpression);
+            _log.error("parsing error for xpath: {} - info provider up?", xpathExpression);
         } catch (NumberFormatException ex) {
             // ignore null return of xpath for numbers, most likely infoprovider
             // is not completly up yet
@@ -105,7 +106,7 @@ public abstract class XMLProcessor {
             result = (Boolean) _xpath.evaluate(xpathExpression, document,
                     XPathConstants.BOOLEAN);
         } catch (XPathExpressionException ex) {
-            _log.error("parsing error for xpath: {}", xpathExpression);
+            _log.error("parsing error for xpath: {} - info provider up?", xpathExpression);
         }
         return result;
     }

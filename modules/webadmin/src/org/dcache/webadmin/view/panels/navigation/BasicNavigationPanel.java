@@ -10,6 +10,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.StringResourceModel;
+import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
@@ -29,8 +30,8 @@ public class BasicNavigationPanel extends Panel {
 
     private Class _currentPage;
     private static List<Class> _linkList = new ArrayList<Class>(Arrays.asList(
-            DCacheServices.class, PoolList.class, PoolQueues.class,
-            PoolGroupView.class, InfoXml.class));
+            DCacheServices.class, CellServices.class, PoolList.class,
+            PoolQueues.class, PoolGroupView.class, InfoXml.class));
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {

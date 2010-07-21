@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
@@ -14,6 +15,7 @@ public class DAOFactoryImplHelper implements DAOFactory {
 
     PoolsDAOImplHelper _poolsDao = new PoolsDAOImplHelper();
     PoolGroupDAOHelper _poolGroupDao = new PoolGroupDAOHelper();
+    DomainsDAOHelper _domainsDao = new DomainsDAOHelper();
 
     @Override
     public PoolsDAO getPoolsDAO() {
@@ -25,11 +27,18 @@ public class DAOFactoryImplHelper implements DAOFactory {
 //  meant not to do anything -- feel free to implement later when needed
     }
 
+    @Override
     public PoolGroupDAO getPoolGroupDAO() {
         return _poolGroupDao;
     }
 
+    @Override
     public InfoDAO getInfoDAO() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public DomainsDAO getDomainsDAO() {
+        return _domainsDao;
     }
 }

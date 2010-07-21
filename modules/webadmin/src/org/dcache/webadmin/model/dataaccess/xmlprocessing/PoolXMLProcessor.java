@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolXMLProcessor extends XMLProcessor {
 
-    private static final String CLOSING_FRAGMENT = "']";
     private static final String SPECIAL_CELL_FRAGMENT = "/dCache/domains/domain" +
             "[@name='dCacheDomain']/routing/named-cells/cell[@name='";
     private static final String SPECIAL_POOL_FRAGMENT = "/dCache/pools/pool[@name='";
@@ -68,7 +67,7 @@ public class PoolXMLProcessor extends XMLProcessor {
     private NamedCell createNamedCell(Document document, String cellName) {
         NamedCell namedCellEntry = new NamedCell();
         namedCellEntry.setCellName(cellName);
-        String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + CLOSING_FRAGMENT +
+        String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + XPATH_PREDICATE_CLOSING_FRAGMENT +
                 NAMEDCELLMEMBER_DOMAIN;
         namedCellEntry.setDomainName(getStringFromXpath(xpathExpression, document));
         return namedCellEntry;
@@ -125,7 +124,7 @@ public class PoolXMLProcessor extends XMLProcessor {
             for (int i = 0; i < queueNodes.getLength(); i++) {
                 Element currentQueueNode = (Element) queueNodes.item(i);
                 String queue = currentQueueNode.getAttribute(attribute);
-                String metric = specialQueueFragment + queue + CLOSING_FRAGMENT;
+                String metric = specialQueueFragment + queue + XPATH_PREDICATE_CLOSING_FRAGMENT;
                 MoverQueue queueEntry = getMoverQueue(buildPoolXpathExpression(
                         pool.getName(), metric), document);
                 queueEntry.setName(queue);
@@ -160,7 +159,7 @@ public class PoolXMLProcessor extends XMLProcessor {
     }
 
     private String buildPoolXpathExpression(String poolName, String metric) {
-        return SPECIAL_POOL_FRAGMENT + poolName + CLOSING_FRAGMENT + metric;
+        return SPECIAL_POOL_FRAGMENT + poolName + XPATH_PREDICATE_CLOSING_FRAGMENT + metric;
     }
 
     private MoverQueue getMoverQueue(String queue, Document document) {
