@@ -22,6 +22,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
@@ -195,8 +196,8 @@ public class Task
     private Collection<String> getPools()
     {
         Collection<String> pools = new HashSet<String>();
-        for (PoolCostPair pair: _definition.poolList.getPools()) {
-            pools.add(pair.path.getCellName());
+        for (PoolManagerPoolInformation pool: _definition.poolList.getPools()) {
+            pools.add(pool.getName());
         }
         return pools;
     }
@@ -208,10 +209,11 @@ public class Task
     private CellPath selectPool()
         throws NoSuchElementException
     {
-        List<PoolCostPair> pools = _definition.poolList.getPools();
+        List<PoolManagerPoolInformation> pools =
+            _definition.poolList.getPools();
         if (pools.isEmpty())
             throw new NoSuchElementException("No pools available");
-        return _definition.selectionStrategy.select(pools).path;
+        return new CellPath(_definition.selectionStrategy.select(pools).getName());
     }
 
 

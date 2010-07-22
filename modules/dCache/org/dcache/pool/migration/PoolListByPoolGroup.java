@@ -19,12 +19,9 @@ class PoolListByPoolGroup
                                Expression excludeWhen,
                                Collection<Pattern> include,
                                Expression includeWhen,
-                               double spaceFactor,
-                               double cpuFactor,
                                String poolGroup)
     {
-        super(exclude, excludeWhen, include, includeWhen,
-              spaceFactor, cpuFactor);
+        super(exclude, excludeWhen, include, includeWhen);
         _poolManager = poolManager;
         _poolGroup = poolGroup;
     }

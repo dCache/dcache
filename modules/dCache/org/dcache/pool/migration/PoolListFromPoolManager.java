@@ -26,35 +26,29 @@ public abstract class PoolListFromPoolManager
     private static final Logger _log =
         LoggerFactory.getLogger(PoolListFromPoolManager.class);
 
-    private final double _spaceFactor;
-    private final double _cpuFactor;
     protected final Collection<Pattern> _exclude;
     protected final Expression _excludeWhen;
     protected final Collection<Pattern> _include;
     protected final Expression _includeWhen;
-    protected List<PoolCostPair> _pools = Collections.emptyList();
+    protected List<PoolManagerPoolInformation> _pools = Collections.emptyList();
 
     public PoolListFromPoolManager(Collection<Pattern> exclude,
                                    Expression excludeWhen,
                                    Collection<Pattern> include,
-                                   Expression includeWhen,
-                                   double spaceFactor,
-                                   double cpuFactor)
+                                   Expression includeWhen)
     {
         _exclude = exclude;
         _excludeWhen = excludeWhen;
         _include = include;
         _includeWhen = includeWhen;
-        _spaceFactor = spaceFactor;
-        _cpuFactor = cpuFactor;
     }
 
-    synchronized public List<PoolCostPair> getPools()
+    synchronized public List<PoolManagerPoolInformation> getPools()
     {
         return _pools;
     }
 
-    synchronized protected void setPools(List<PoolCostPair> pools)
+    synchronized protected void setPools(List<PoolManagerPoolInformation> pools)
     {
         _pools = Collections.unmodifiableList(pools);
     }
@@ -87,16 +81,11 @@ public abstract class PoolListFromPoolManager
 
     public void success(PoolManagerGetPoolsMessage msg)
     {
-        List<PoolCostPair> pools =
-            new ArrayList<PoolCostPair>(msg.getPools().size());
+        List<PoolManagerPoolInformation> pools =
+            new ArrayList<PoolManagerPoolInformation>(msg.getPools().size());
         for (PoolManagerPoolInformation pool: msg.getPools()) {
             if (!isExcluded(pool) && isIncluded(pool)) {
-                double space =
-                    (_spaceFactor > 0 ? pool.getSpaceCost() * _spaceFactor : 0);
-                double cpu =
-                    (_cpuFactor > 0 ? pool.getCpuCost() * _cpuFactor : 0);
-                pools.add(new PoolCostPair(new CellPath(pool.getName()),
-                                           space + cpu));
+                pools.add(pool);
             }
         }
         setPools(pools);

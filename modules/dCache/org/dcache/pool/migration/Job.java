@@ -11,6 +11,7 @@ import org.dcache.pool.repository.StickyRecord;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.CellPath;
 

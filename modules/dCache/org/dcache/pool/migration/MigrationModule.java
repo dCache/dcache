@@ -248,9 +248,7 @@ public class MigrationModule
     }
 
     private RefreshablePoolList
-        createPoolList(double spaceCost,
-                       double cpuCost,
-                       String type,
+        createPoolList(String type,
                        List<String> targets,
                        Collection<Pattern> exclude,
                        Expression excludeWhen,
@@ -265,8 +263,6 @@ public class MigrationModule
                                        excludeWhen,
                                        include,
                                        includeWhen,
-                                       spaceCost,
-                                       cpuCost,
                                        targets);
         } else if (type.equals("pgroup")) {
             if (targets.size() != 1) {
@@ -278,8 +274,6 @@ public class MigrationModule
                                            excludeWhen,
                                            include,
                                            includeWhen,
-                                           spaceCost,
-                                           cpuCost,
                                            targets.get(0));
         } else if (type.equals("link")) {
             if (targets.size() != 1) {
@@ -291,8 +285,6 @@ public class MigrationModule
                                       excludeWhen,
                                       include,
                                       includeWhen,
-                                      spaceCost,
-                                      cpuCost,
                                       targets.get(0));
         } else {
             throw new IllegalArgumentException(type + ": Invalid value");
@@ -300,12 +292,14 @@ public class MigrationModule
     }
 
     private PoolSelectionStrategy
-        createPoolSelectionStrategy(String type)
+        createPoolSelectionStrategy(double spaceCost,
+                                    double cpuCost,
+                                    String type)
     {
         if (type.equals("proportional")) {
-            return new ProportionalPoolSelectionStrategy();
+            return new ProportionalPoolSelectionStrategy(spaceCost, cpuCost);
         } else if (type.equals("best")) {
-            return new BestPoolSelectionStrategy();
+            return new BestPoolSelectionStrategy(spaceCost, cpuCost);
         } else if (type.equals("random")) {
             return new RandomPoolSelectionStrategy();
         } else {
@@ -504,9 +498,9 @@ public class MigrationModule
             new JobDefinition(createFilters(args),
                               createCacheEntryMode(sourceMode),
                               createCacheEntryMode(targetMode),
-                              createPoolSelectionStrategy(select),
+                              createPoolSelectionStrategy(1.0, 0.0, select),
                               createComparator(order),
-                              createPoolList(1.0, 0.0, target, targets,
+                              createPoolList(target, targets,
                                              excluded,
                                              createPoolExpression(excludeWhen, FALSE_EXPRESSION),
                                              included,

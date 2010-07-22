@@ -4,7 +4,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.dcache.pool.migration.PoolListFromPoolManager;
-import org.dcache.pool.migration.PoolCostPair;
 import org.dcache.util.Glob;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
@@ -32,41 +31,14 @@ public class PoolListFromPoolManagerTest
         createPool("pool3", Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
     @Test
-    public void testInfinityWithZeroFactor()
-    {
-        PoolListFromPoolManager list = new PoolList(0, 0);
-
-        list.success(createMessage(POOL1, POOL3, POOL2));
-        List<PoolCostPair> result = list.getPools();
-
-        assertEquals(3, result.size());
-        for (PoolCostPair pair: result) {
-            assertEquals(0, pair.cost);
-        }
-    }
-
-    @Test
-    public void testInfinityWithNonZeroFactor()
-    {
-        PoolListFromPoolManager list = new PoolList(0.5, 0.5);
-
-        list.success(createMessage(POOL3));
-        List<PoolCostPair> result = list.getPools();
-
-        assertEquals(1, result.size());
-        assertEquals(Double.POSITIVE_INFINITY, result.get(0).cost);
-    }
-
-    @Test
     public void testExclude()
     {
         PoolListFromPoolManager list =
             new PoolList("*1", "false",
-                         null, "true",
-                         0.5, 0.5);
+                         null, "true");
 
         list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolCostPair> result = list.getPools();
+        List<PoolManagerPoolInformation> result = list.getPools();
 
         assertEquals(2, result.size());
         assertDoesNotContainPool(POOL1, result);
@@ -79,11 +51,10 @@ public class PoolListFromPoolManagerTest
     {
         PoolListFromPoolManager list =
             new PoolList(null, "target.name=~'pool[12]'",
-                         null, "true",
-                         0.5, 0.5);
+                         null, "true");
 
         list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolCostPair> result = list.getPools();
+        List<PoolManagerPoolInformation> result = list.getPools();
 
         assertEquals(1, result.size());
         assertDoesNotContainPool(POOL1, result);
@@ -96,11 +67,10 @@ public class PoolListFromPoolManagerTest
     {
         PoolListFromPoolManager list =
             new PoolList(null, "false",
-                         "*1", "true",
-                         0.5, 0.5);
+                         "*1", "true");
 
         list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolCostPair> result = list.getPools();
+        List<PoolManagerPoolInformation> result = list.getPools();
 
         assertEquals(1, result.size());
         assertContainsPool(POOL1, result);
@@ -113,11 +83,10 @@ public class PoolListFromPoolManagerTest
     {
         PoolListFromPoolManager list =
             new PoolList(null, "false",
-                         null, "target.name=~'pool[12]'",
-                         0.5, 0.5);
+                         null, "target.name=~'pool[12]'");
 
         list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolCostPair> result = list.getPools();
+        List<PoolManagerPoolInformation> result = list.getPools();
 
         assertEquals(2, result.size());
         assertContainsPool(POOL1, result);
@@ -130,11 +99,10 @@ public class PoolListFromPoolManagerTest
     {
         PoolListFromPoolManager list =
             new PoolList("*1", "false",
-                         "*1", "true",
-                         0.5, 0.5);
+                         "*1", "true");
 
         list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolCostPair> result = list.getPools();
+        List<PoolManagerPoolInformation> result = list.getPools();
 
         assertEquals(0, result.size());
     }
@@ -144,11 +112,10 @@ public class PoolListFromPoolManagerTest
     {
         PoolListFromPoolManager list =
             new PoolList(null, "target.name=='pool1'",
-                         null, "target.name=='pool1'",
-                         0.5, 0.5);
+                         null, "target.name=='pool1'");
 
         list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolCostPair> result = list.getPools();
+        List<PoolManagerPoolInformation> result = list.getPools();
 
         assertEquals(0, result.size());
     }
@@ -186,10 +153,10 @@ public class PoolListFromPoolManagerTest
         return patterns;
     }
 
-    private static boolean containsPool(String name, List<PoolCostPair> list)
+    private static boolean containsPool(String name, List<PoolManagerPoolInformation> list)
     {
-        for (PoolCostPair pool: list) {
-            if (pool.path.getCellName().equals(name)) {
+        for (PoolManagerPoolInformation pool: list) {
+            if (pool.getName().equals(name)) {
                 return true;
             }
         }
@@ -197,7 +164,7 @@ public class PoolListFromPoolManagerTest
     }
 
     private static void assertContainsPool(PoolManagerPoolInformation pool,
-                                           List<PoolCostPair> list)
+                                           List<PoolManagerPoolInformation> list)
     {
         String name = pool.getName();
         if (!containsPool(name, list)) {
@@ -206,7 +173,7 @@ public class PoolListFromPoolManagerTest
     }
 
     private static void assertDoesNotContainPool(PoolManagerPoolInformation pool,
-                                                 List<PoolCostPair> list)
+                                                 List<PoolManagerPoolInformation> list)
     {
         String name = pool.getName();
         if (containsPool(name, list)) {
@@ -221,20 +188,11 @@ public class PoolListFromPoolManagerTest
      */
     static class PoolList extends PoolListFromPoolManager
     {
-        public PoolList(double spaceFactor,
-                        double cpuFactor)
-        {
-            this(null, "false", null, "true", spaceFactor, cpuFactor);
-        }
-
         public PoolList(String exclude, String excludeWhen,
-                        String include, String includeWhen,
-                        double spaceFactor,
-                        double cpuFactor)
+                        String include, String includeWhen)
         {
             super(createPatterns(exclude), createExpression(excludeWhen),
-                  createPatterns(include), createExpression(includeWhen),
-                  spaceFactor, cpuFactor);
+                  createPatterns(include), createExpression(includeWhen));
         }
 
         public void refresh()

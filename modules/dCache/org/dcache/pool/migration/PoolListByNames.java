@@ -19,12 +19,9 @@ public class PoolListByNames
                            Expression excludeWhen,
                            Collection<Pattern> include,
                            Expression includeWhen,
-                           double spaceFactor,
-                           double cpuFactor,
                            Collection<String> pools)
     {
-        super(exclude, excludeWhen, include, includeWhen,
-              spaceFactor, cpuFactor);
+        super(exclude, excludeWhen, include, includeWhen);
         _poolManager = poolManager;
         _names = pools;
     }
@@ -44,9 +41,9 @@ public class PoolListByNames
             return "";
 
         StringBuilder s = new StringBuilder();
-        s.append(_pools.get(0).path.getCellName());
+        s.append(_pools.get(0).getName());
         for (int i = 1; i < _pools.size(); i++) {
-            s.append(',').append(_pools.get(i).path.getCellName());
+            s.append(',').append(_pools.get(i).getName());
         }
         return s.toString();
     }
