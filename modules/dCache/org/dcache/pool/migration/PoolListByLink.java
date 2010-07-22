@@ -6,6 +6,8 @@ import org.dcache.cells.CellStub;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 
+import org.apache.commons.jexl2.Expression;
+
 class PoolListByLink
     extends PoolListFromPoolManager
 {
@@ -14,11 +16,15 @@ class PoolListByLink
 
     public PoolListByLink(CellStub poolManager,
                           Collection<Pattern> exclude,
+                          Expression excludeWhen,
+                          Collection<Pattern> include,
+                          Expression includeWhen,
                           double spaceFactor,
                           double cpuFactor,
                           String link)
     {
-        super(exclude, spaceFactor, cpuFactor);
+        super(exclude, excludeWhen, include, includeWhen,
+              spaceFactor, cpuFactor);
         _poolManager = poolManager;
         _link = link;
     }

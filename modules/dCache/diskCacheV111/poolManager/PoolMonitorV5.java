@@ -783,6 +783,7 @@ public class PoolMonitorV5
                 info.setSpaceCost(cost.getSpaceCost());
                 info.setCpuCost(cost.getPerformanceCost());
             }
+            info.setPoolCostInfo(_costModule.getPoolCostInfo(name));
             result.add(info);
         }
         return result;

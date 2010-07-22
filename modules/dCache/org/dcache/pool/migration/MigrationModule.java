@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
@@ -22,6 +23,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
@@ -36,6 +38,11 @@ import org.dcache.util.Glob;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
+
+import org.apache.commons.jexl2.Expression;
+import org.apache.commons.jexl2.JexlContext;
+import org.apache.commons.jexl2.JexlEngine;
+import org.apache.commons.jexl2.JexlException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,11 +104,27 @@ public class MigrationModule
     private final static Logger _log =
         LoggerFactory.getLogger(MigrationModule.class);
 
+    private final static PoolManagerPoolInformation DUMMY_POOL =
+        new PoolManagerPoolInformation("pool", 0.0, 0.0);
+
     private final List<Job> _alive = new ArrayList();
     private final Map<Integer,Job> _jobs = new HashMap();
     private final Map<Job,String> _commands = new HashMap();
     private final ModuleConfiguration _configuration =
         new ModuleConfiguration();
+    private final JexlEngine _jexl = new JexlEngine() {
+            @Override
+            protected Object doCreateInstance(Object clazz, Object...args)
+            {
+                throw new JexlException(debugInfo(),
+                                        "Object creation is not supported");
+            }
+        };
+
+    private final Expression TRUE_EXPRESSION =
+        _jexl.createExpression("true");
+    private final Expression FALSE_EXPRESSION =
+        _jexl.createExpression("false");
 
     private int _counter = 1;
 
@@ -230,7 +253,10 @@ public class MigrationModule
                        double cpuCost,
                        String type,
                        List<String> targets,
-                       Collection<Pattern> exclude)
+                       Collection<Pattern> exclude,
+                       Expression excludeWhen,
+                       Collection<Pattern> include,
+                       Expression includeWhen)
     {
         CellStub poolManager = _configuration.getPoolManagerStub();
 
@@ -243,6 +269,9 @@ public class MigrationModule
             }
             return new PoolListByPoolGroup(poolManager,
                                            exclude,
+                                           excludeWhen,
+                                           include,
+                                           includeWhen,
                                            spaceCost,
                                            cpuCost,
                                            targets.get(0));
@@ -253,6 +282,9 @@ public class MigrationModule
             }
             return new PoolListByLink(poolManager,
                                       exclude,
+                                      excludeWhen,
+                                      include,
+                                      includeWhen,
                                       spaceCost,
                                       cpuCost,
                                       targets.get(0));
@@ -342,6 +374,56 @@ public class MigrationModule
         }
     }
 
+    /**
+     * Checks that a JEXL expression evaluates to a boolean within a
+     * given context. If the expression has side effects, then the
+     * context will be updated.
+     *
+     * @throw JexlException if the expression cannot be evaluated
+     * @throw IllegalArgumentException if the expression does not
+     *                                 evaluate to a boolean
+     */
+    private void assertExpressionEvaluatesToBoolean(Expression expression,
+                                                    JexlContext context)
+        throws JexlException
+    {
+        Object result = expression.evaluate(context);
+        if (!(result instanceof Boolean)) {
+            throw new IllegalArgumentException(expression.getExpression() +
+                                               ": The expression does not evaluate to a boolean");
+        }
+    }
+
+    private Expression createPoolExpression(String s, Expression ifNull)
+    {
+        try {
+            if (s == null) {
+                return ifNull;
+            }
+
+            Expression expression = _jexl.createExpression(s);
+
+            MapContextWithConstants context = new MapContextWithConstants();
+            context.addConstant("target", new PoolValues(DUMMY_POOL));
+            assertExpressionEvaluatesToBoolean(expression, context);
+
+            return expression;
+        } catch (JexlException e) {
+            throw new IllegalArgumentException(s + ": " + e.getMessage(), e);
+        }
+    }
+
+    private Set<Pattern> createPatterns(String globs)
+    {
+        Set<Pattern> patterns = new HashSet<Pattern>();
+        if (globs != null) {
+            for (String s: globs.split(",")) {
+                patterns.add(Glob.parseGlobToPattern(s));
+            }
+        }
+        return patterns;
+    }
+
     private synchronized int copy(Args args,
                                   String defaultSelect,
                                   String defaultTarget,
@@ -353,6 +435,9 @@ public class MigrationModule
         throws IllegalArgumentException, NumberFormatException
     {
         String exclude = args.getOpt("exclude");
+        String excludeWhen = args.getOpt("exclude-when");
+        String include = args.getOpt("include");
+        String includeWhen = args.getOpt("include-when");
         boolean permanent = (args.getOpt("permanent") != null);
         boolean eager = (args.getOpt("eager") != null);
         boolean verify = (args.getOpt("verify") != null) || defaultVerify;
@@ -396,14 +481,9 @@ public class MigrationModule
             targets.add(args.argv(i));
         }
 
-        Collection<Pattern> excluded = new HashSet();
+        Collection<Pattern> excluded = createPatterns(exclude);
         excluded.add(Pattern.compile(Pattern.quote(_configuration.getPoolName())));
-        if (exclude != null) {
-            for (String s: exclude.split(",")) {
-                Glob glob = new Glob(s);
-                excluded.add(glob.toPattern());
-            }
-        }
+        Collection<Pattern> included = createPatterns(include);
 
         boolean mustMovePins;
         if (pins.equals("keep")) {
@@ -421,7 +501,10 @@ public class MigrationModule
                               createPoolSelectionStrategy(select),
                               createComparator(order),
                               createPoolList(1.0, 0.0, target, targets,
-                                             excluded),
+                                             excluded,
+                                             createPoolExpression(excludeWhen, FALSE_EXPRESSION),
+                                             included,
+                                             createPoolExpression(includeWhen, TRUE_EXPRESSION)),
                               Integer.valueOf(refresh) * 1000,
                               permanent,
                               eager,
@@ -500,6 +583,13 @@ public class MigrationModule
         "job was created. Notice that any state change will cause a replica\n" +
         "to be reconsidered and enqueued if it matches the selection\n" +
         "criteria - also replicas that have been copied before.\n\n" +
+
+        "Several options allow an expression to be specified. The following\n" +
+        "operators are recognized: <, <=, ==, !=, >=, >, lt, le, eq, ne, ge,\n" +
+        "gt, ~=, !~, +, -, *, /, %, div, mod, |, &, ^, ~, &&, ||, !, and, or,\n" +
+        "not, ?:, =. Literals may be integer literals, floating point literals,\n" +
+        "single or double quoted string literals, and boolean true and false.\n" +
+        "Depending on the context, the expression may refer to constants.\n\n" +
 
         "Syntax:\n" +
         "  copy [options] <target> ...\n\n" +
@@ -587,9 +677,35 @@ public class MigrationModule
         "  -exclude=<pattern>[,<pattern>...]\n" +
         "          Exclude target pools matching any of the patterns. Single\n" +
         "          character (?) and multi character (*) wildcards may be used.\n" +
+        "  -exclude-when=<expr>\n" +
+        "          Exclude target pools for which the expression evaluates to\n" +
+        "          true. The expression may refer to the following constants:\n" +
+        "          target.name:\n" +
+        "              pool name\n" +
+        "          target.spaceCost:\n" +
+        "              space cost\n" +
+        "          target.cpuCost:\n" +
+        "              cpu cost\n" +
+        "          target.free:\n" +
+        "              free space in bytes\n" +
+        "          target.total:\n" +
+        "              total space in bytes\n" +
+        "          target.removable:\n" +
+        "              removable space in bytes\n" +
+        "          target.used:\n" +
+        "              used space in bytes\n" +
+        "  -include=<pattern>[,<pattern>...]\n" +
+        "          Only include target pools matching any of the patterns. Single\n" +
+        "          character (?) and multi character (*) wildcards may be used.\n" +
+        "  -include-when=<expr>\n" +
+        "          Only include target pools for which the expression evaluates\n" +
+        "          to true. See the description of -exclude-when for the list\n" +
+        "          of allowed constants.\n" +
         "  -refresh=<time>\n" +
-        "          Specifies the period in seconds of when target pool information\n" +
-        "          is queried from the pool manager. The default is 300 seconds.\n" +
+        "          Sets the period in seconds of when target pool information\n" +
+        "          is queried from the pool manager. Inclusion and exclusion\n" +
+        "          expressions are evaluated whenever the information is\n" +
+        "          refreshed. The default is 300 seconds.\n" +
         "  -select=proportional|best|random\n" +
         "          Determines how a pool is selected from the set of target pools:\n" +
         "          proportional:\n" +

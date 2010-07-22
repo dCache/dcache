@@ -95,6 +95,7 @@
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/jetty/" includes="*.jar" />
+        <fileset dir="${libDir}/jexl/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
@@ -494,6 +495,14 @@
         <mkdir dir="${server.bin.dir}/classes/jetty/" />
         <copy todir="${server.bin.dir}/classes/jetty">
             <fileset dir="${libDir}/jetty/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- JEXL -->
+        <mkdir dir="${server.bin.dir}/classes/jexl/" />
+        <copy todir="${server.bin.dir}/classes/jexl">
+            <fileset dir="${libDir}/jexl/">
                 <include name="*.jar" />
             </fileset>
         </copy>
