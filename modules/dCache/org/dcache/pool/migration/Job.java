@@ -85,18 +85,17 @@ public class Job
     private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
 
     private final JobStatistics _statistics = new JobStatistics();
-    private final ModuleConfiguration _configuration;
+    private final MigrationContext _context;
     private final JobDefinition _definition;
     private State _state;
     private int _concurrency;
 
-    public Job(ModuleConfiguration configuration,
-               JobDefinition definition)
+    public Job(MigrationContext context, JobDefinition definition)
     {
-        ScheduledExecutorService executor = configuration.getExecutor();
+        ScheduledExecutorService executor = context.getExecutor();
         long refreshPeriod = definition.refreshPeriod;
 
-        _configuration = configuration;
+        _context = context;
         _definition = definition;
         _concurrency = 1;
         _state = State.INITIALIZING;
@@ -114,7 +113,7 @@ public class Job
                 {
                     State state = State.FAILED;
                     try {
-                        _configuration.getRepository().addListener(Job.this);
+                        _context.getRepository().addListener(Job.this);
                         populate();
                         state = State.RUNNING;
                     } finally {
@@ -217,7 +216,7 @@ public class Job
     private void populate()
     {
         try {
-            Repository repository = _configuration.getRepository();
+            Repository repository = _context.getRepository();
             Iterable<PnfsId> files = repository;
 
             if (_definition.comparator != null) {
@@ -317,7 +316,7 @@ public class Job
                 break;
 
             case SLEEPING:
-                _configuration.getExecutor().schedule(new LoggingTask(new Runnable() {
+                _context.getExecutor().schedule(new LoggingTask(new Runnable() {
                         public void run()
                         {
                             synchronized (Job.this) {
@@ -334,7 +333,7 @@ public class Job
             case FAILED:
                 _queued.clear();
                 _sizes.clear();
-                _configuration.getRepository().removeListener(this);
+                _context.getRepository().removeListener(this);
                 _refreshTask.cancel(false);
                 break;
             }
@@ -362,14 +361,14 @@ public class Job
                 try {
                     PnfsId pnfsId = i.next();
                     i.remove();
-                    Repository repository = _configuration.getRepository();
+                    Repository repository = _context.getRepository();
                     CacheEntry entry = repository.getEntry(pnfsId);
                     Task task = new Task(this,
-                                         _configuration.getPoolStub(),
-                                         _configuration.getPnfsStub(),
-                                         _configuration.getPinManagerStub(),
-                                         _configuration.getExecutor(),
-                                         _configuration.getPoolName(),
+                                         _context.getPoolStub(),
+                                         _context.getPnfsStub(),
+                                         _context.getPinManagerStub(),
+                                         _context.getExecutor(),
+                                         _context.getPoolName(),
                                          entry,
                                          _definition);
                     _running.put(pnfsId, task);
@@ -432,7 +431,7 @@ public class Job
     @Override
     public void stateChanged(StateChangeEvent event)
     {
-        Repository repository = _configuration.getRepository();
+        Repository repository = _context.getRepository();
         PnfsId pnfsId = event.getPnfsId();
         if (event.getNewState() == EntryState.REMOVED) {
             remove(pnfsId);
@@ -525,7 +524,7 @@ public class Job
         throws FileNotInCacheException
     {
         for (StickyRecord record: records) {
-            _configuration.getRepository().setSticky(pnfsId,
+            _context.getRepository().setSticky(pnfsId,
                                                      record.owner(),
                                                      record.expire(),
                                                      true);
@@ -552,7 +551,7 @@ public class Job
      */
     private synchronized boolean isPin(StickyRecord record)
     {
-        String prefix = _configuration.getPinManagerStub()
+        String prefix = _context.getPinManagerStub()
             .getDestinationPath().getDestinationAddress().getCellName();
         return record.owner().startsWith(prefix);
     }
@@ -576,7 +575,7 @@ public class Job
     {
         try {
             CacheEntryMode mode = _definition.sourceMode;
-            Repository repository = _configuration.getRepository();
+            Repository repository = _context.getRepository();
             CacheEntry entry = repository.getEntry(pnfsId);
             switch (mode.state) {
             case SAME:

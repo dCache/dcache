@@ -110,8 +110,7 @@ public class MigrationModule
     private final List<Job> _alive = new ArrayList();
     private final Map<Integer,Job> _jobs = new HashMap();
     private final Map<Job,String> _commands = new HashMap();
-    private final ModuleConfiguration _configuration =
-        new ModuleConfiguration();
+    private final MigrationContext _context = new MigrationContext();
     private final JexlEngine _jexl = new JexlEngine() {
             @Override
             protected Object doCreateInstance(Object clazz, Object...args)
@@ -131,37 +130,37 @@ public class MigrationModule
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         super.setCellEndpoint(endpoint);
-        _configuration.setPoolName(getCellName());
+        _context.setPoolName(getCellName());
     }
 
     public void setRepository(Repository repository)
     {
-        _configuration.setRepository(repository);
+        _context.setRepository(repository);
     }
 
     public void setExecutor(ScheduledExecutorService executor)
     {
-        _configuration.setExecutor(executor);
+        _context.setExecutor(executor);
     }
 
     public void setPnfsStub(CellStub stub)
     {
-        _configuration.setPnfsStub(stub);
+        _context.setPnfsStub(stub);
     }
 
     public void setPoolManagerStub(CellStub stub)
     {
-        _configuration.setPoolManagerStub(stub);
+        _context.setPoolManagerStub(stub);
     }
 
     public void setPoolStub(CellStub stub)
     {
-        _configuration.setPoolStub(stub);
+        _context.setPoolStub(stub);
     }
 
     public void setPinManagerStub(CellStub stub)
     {
-        _configuration.setPinManagerStub(stub);
+        _context.setPinManagerStub(stub);
     }
 
     /** Returns the job with the given id. */
@@ -258,7 +257,7 @@ public class MigrationModule
                        Collection<Pattern> include,
                        Expression includeWhen)
     {
-        CellStub poolManager = _configuration.getPoolManagerStub();
+        CellStub poolManager = _context.getPoolManagerStub();
 
         if (type.equals("pool")) {
             return new FixedPoolList(targets);
@@ -482,7 +481,7 @@ public class MigrationModule
         }
 
         Collection<Pattern> excluded = createPatterns(exclude);
-        excluded.add(Pattern.compile(Pattern.quote(_configuration.getPoolName())));
+        excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
         Collection<Pattern> included = createPatterns(include);
 
         boolean mustMovePins;
@@ -518,7 +517,7 @@ public class MigrationModule
 
         int n = Integer.valueOf(concurrency);
         int id = _counter++;
-        Job job = new Job(_configuration, definition);
+        Job job = new Job(_context, definition);
         job.setConcurrency(n);
         _jobs.put(id, job);
         _alive.add(job);
@@ -880,7 +879,7 @@ public class MigrationModule
     public synchronized
         void messageArrived(PoolMigrationCopyFinishedMessage message)
     {
-        if (!message.getPool().equals(_configuration.getPoolName())) {
+        if (!message.getPool().equals(_context.getPoolName())) {
             return;
         }
 

@@ -8,9 +8,9 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 
 /**
- * Configuration shared by all jobs.
+ * Describes the context of migration jobs.
  */
-public class ModuleConfiguration
+public class MigrationContext
 {
     private String _poolName;
     private ScheduledExecutorService _executor;
