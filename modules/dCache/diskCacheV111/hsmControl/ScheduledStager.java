@@ -12,7 +12,14 @@ import dmg.cells.nucleus.* ;
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ScheduledStager extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(ScheduledStager.class);
+
     private CellNucleus _nucleus ;
     private Args        _args ;
     private int         _requests  = 0 ;
@@ -22,19 +29,19 @@ public class ScheduledStager extends CellAdapter {
 	private StagerDB    _db = null;
     private SimpleDateFormat formatter
          = new SimpleDateFormat ("MM.dd hh:mm:ss");
-         
+
     public ScheduledStager( String name , String  args ) throws Exception {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
        try{
-		  _db = new StagerDB();	 
+		  _db = new StagerDB();
        }catch(Exception e){
           start() ;
           kill() ;
           throw e ;
        }
-       useInterpreter( true ); 
+       useInterpreter( true );
        _nucleus.newThread( new QueueWatch() , "queueWatch").start() ;
 	   _nucleus.newThread( new StageEngine(_db) , "StageEngine").start() ;
        start();
@@ -42,7 +49,7 @@ public class ScheduledStager extends CellAdapter {
     }
     private class QueueWatch implements Runnable {
        public void run(){
-          say("QueueWatch started" ) ;
+          _log.info("QueueWatch started" ) ;
           while( ! Thread.currentThread().interrupted() ){
              try{
                 Thread.currentThread().sleep(60000);
@@ -51,7 +58,7 @@ public class ScheduledStager extends CellAdapter {
              }
              _nucleus.updateWaitQueue() ;
           }
-          say( "QueueWatch stopped" ) ;
+          _log.info( "QueueWatch stopped" ) ;
        }
     }
     public String toString(){
@@ -67,17 +74,17 @@ public class ScheduledStager extends CellAdapter {
        Object obj = msg.getMessageObject() ;
        _requests ++ ;
        if( obj instanceof StagerMessage ){
-          StagerMessage stager = (StagerMessage)obj ; 
-          say( stager.toString() ) ;
+          StagerMessage stager = (StagerMessage)obj ;
+          _log.info( stager.toString() ) ;
           _db.insert(stager);
           msg.revertDirection() ;
           try{
              sendMessage( msg ) ;
           }catch(Exception ee ){
-             esay("Problem replying : "+ee ) ;
+             _log.warn("Problem replying : "+ee ) ;
           }
        }else{
-          esay("Unknown message arrived ("+msg.getSourcePath()+") : "+
+          _log.warn("Unknown message arrived ("+msg.getSourcePath()+") : "+
                msg.getMessageObject() ) ;
          _failed ++ ;
        }
@@ -88,27 +95,27 @@ public class ScheduledStager extends CellAdapter {
          _stager = stager ;
        }
        public void answerArrived( CellMessage request , CellMessage answer ){
-          say( "Answer for : "+answer.getMessageObject() ) ;
+          _log.info( "Answer for : "+answer.getMessageObject() ) ;
           _outstandingRequests -- ;
        }
-       public void exceptionArrived( CellMessage request , Exception exception ){      
-          esay( "Exception for : "+_stager+" : "+exception  ) ;
+       public void exceptionArrived( CellMessage request , Exception exception ){
+          _log.warn( "Exception for : "+_stager+" : "+exception  ) ;
           _outstandingRequests -- ;
        }
        public void answerTimedOut( CellMessage request ){
-          esay( "Timeout for : "+_stager  ) ;
+          _log.warn( "Timeout for : "+_stager  ) ;
           _outstandingRequests -- ;
        }
     }
     private void sendStageRequest( StagerMessage stager ){
-        PoolMgrSelectReadPoolMsg request = 
+        PoolMgrSelectReadPoolMsg request =
           new PoolMgrSelectReadPoolMsg(
                stager.getPnfsId(),
                stager.getStorageInfo(),
-               stager.getProtocolInfo(), 0); 
+               stager.getProtocolInfo(), 0);
         try{
-            sendMessage( 
-               new CellMessage( 
+            sendMessage(
+               new CellMessage(
                         new CellPath("PoolManager") ,
                         request ) ,
                true , true ,
@@ -117,37 +124,37 @@ public class ScheduledStager extends CellAdapter {
                        ) ;
              _outstandingRequests ++ ;
         }catch(Exception ee ){
-           esay("Failed to send request to PM : "+ee) ;
+           _log.warn("Failed to send request to PM : "+ee) ;
         }
     }
-	
+
     private class StageEngine implements Runnable {
-	
+
 	   private StagerDB _db = null;
 	   StagerMessage[] msg = null;
-	
+
 	   public StageEngine( StagerDB db) {
 	      _db = db;
 	   }
-	
+
        public void run(){
-	      
+
 		  long idle;
-          say("StageEngine started" ) ;
+          _log.info("StageEngine started" ) ;
           while( ! Thread.currentThread().interrupted() ){
              try{
 				msg = _db.nextSet((long)15);
 				for(int i = 0; i < msg.length; i++) {
 					sendStageRequest(msg[i]);
-				}				
+				}
              }catch(Exception e ){
                 break ;
              }
 
           }
 
-          say( "StageEngine stopped" ) ;
+          _log.info( "StageEngine stopped" ) ;
        }
     }
-	
+
 }

@@ -16,8 +16,6 @@ import gplazma.authz.AuthorizationController;
 import gplazma.authz.util.NameRolePair;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 
-import diskCacheV111.vehicles.AuthenticationMessage;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 

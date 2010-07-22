@@ -30,26 +30,4 @@ public class CellAdapterHelper extends CellAdapter {
         if (!getNucleus().join(getCellName(), 1000))
             throw new RuntimeException("Failed to kill cell within 1 second");
     }
-
-    @Override
-    public void esay(String str) {
-
-        System.out.println(str);
-    }
-
-
-    @Override
-    public void esay(Throwable t) {
-        t.printStackTrace();
-    }
-
-
-    @Override
-    public void say(String str) {
-        System.out.println(str);
-    }
-
-
-
-
 }

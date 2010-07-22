@@ -357,26 +357,26 @@ public class XrootdProtocol_3
             _acceptExecutor = Executors.newCachedThreadPool();
         }
 
-        /* The socket executor handles socket IO. As netty performs
-         * all socket IO asynchronously, a small thread pool ought to
-         * be enough.
+        /* The socket executor handles socket IO. Netty submits a
+         * number of workers to this executor and each worker is
+         * assigned a share of the connections.
          */
         if (_socketExecutor == null) {
-            int threads;
-            String s = endpoint.getArgs().getOpt("xrootd-mover-socket-threads");
-            if (s != null && !s.isEmpty()) {
-                threads = Integer.parseInt(s);
-            } else {
-                threads = DEFAULT_SOCKET_THREAD_POOL_SIZE;
-            }
-
-            _socketExecutor = Executors.newFixedThreadPool(threads);
+            _socketExecutor = Executors.newCachedThreadPool();
         }
 
         if (_channelFactory == null) {
-            _channelFactory =
-                new NioServerSocketChannelFactory(_acceptExecutor,
-                                                  _socketExecutor);
+            String s = endpoint.getArgs().getOpt("xrootd-mover-socket-threads");
+            if (s != null && !s.isEmpty()) {
+                _channelFactory =
+                    new NioServerSocketChannelFactory(_acceptExecutor,
+                                                      _socketExecutor,
+                                                      Integer.parseInt(s));
+            } else {
+                _channelFactory =
+                    new NioServerSocketChannelFactory(_acceptExecutor,
+                                                      _socketExecutor);
+            }
         }
     }
 

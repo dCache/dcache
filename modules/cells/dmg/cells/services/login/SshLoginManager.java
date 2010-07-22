@@ -8,6 +8,9 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.ssh.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
   *
@@ -19,6 +22,9 @@ import dmg.protocols.ssh.* ;
 public class       SshLoginManager
        extends     CellAdapter
        implements  Runnable, SshServerAuthentication  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(SshLoginManager.class);
 
   private String       _cellName ;
   private CellNucleus  _nucleus ;
@@ -62,7 +68,7 @@ public class       SshLoginManager
          args.shift() ;
          if( args.argc() > 0 ){
             _loginClass       = Class.forName( args.argv(0) ) ;
-            say( "Using login class : "+_loginClass.getName() ) ;
+            _log.info( "Using login class : "+_loginClass.getName() ) ;
             args.shift() ;
          }
          try{
@@ -72,7 +78,7 @@ public class       SshLoginManager
             _loginConstructor = _loginClass.getConstructor( _loginConSignature0 ) ;
             _loginConType     = 0 ;
          }
-         say( "Using constructor : "+_loginConstructor ) ;
+         _log.info( "Using constructor : "+_loginConstructor ) ;
          try{
 
             _loginPrintMethod = _loginClass.getMethod(
@@ -80,7 +86,7 @@ public class       SshLoginManager
                                    _loginPntSignature ) ;
 
          }catch( Exception pr ){
-            say( "No setPrintoutLevel(int) found in "+_loginClass.getName() ) ;
+            _log.info( "No setPrintoutLevel(int) found in "+_loginClass.getName() ) ;
             _loginPrintMethod = null ;
          }
          _serverSocket  = new ServerSocket( _listenPort ) ;
@@ -93,7 +99,7 @@ public class       SshLoginManager
          setPrintoutLevel( 0xf ) ;
 
       }catch( Exception e ){
-         esay( "SshLoginManger >"+getCellName()+"< got exception : "+e ) ;
+         _log.warn( "SshLoginManger >"+getCellName()+"< got exception : "+e ) ;
          start() ;
          kill() ;
          throw e ;
@@ -116,10 +122,10 @@ public class       SshLoginManager
    }
 
   public void cleanUp(){
-     say( "cleanUp requested by nucleus, closing listen socket" ) ;
+     _log.info( "cleanUp requested by nucleus, closing listen socket" ) ;
      if( _serverSocket != null )
        try{ _serverSocket.close() ; }catch(Exception eee){}
-     say( "Bye Bye" ) ;
+     _log.info( "Bye Bye" ) ;
   }
   private void acceptConnections(){
       //
@@ -130,15 +136,15 @@ public class       SshLoginManager
          try{
             socket = _serverSocket.accept() ;
             _connectionRequestCounter ++ ;
-            say( "Connection request from "+socket.getInetAddress() ) ;
+            _log.info( "Connection request from "+socket.getInetAddress() ) ;
             Thread t = new Thread( this ) ;
             _connectionThreads.put( t , socket ) ;
             t.start() ;
          }catch( IOException ioe ){
-            esay( "Got an IO Exception ( closing server ) : "+ioe ) ;
+            _log.warn( "Got an IO Exception ( closing server ) : "+ioe ) ;
             break ;
          }catch( Exception ee ){
-            esay( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
+            _log.warn( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
             if(socket != null) try{ socket.close() ; }catch( IOException ioex ){}
             continue ;
          }
@@ -148,11 +154,11 @@ public class       SshLoginManager
   public void acceptConnection( Socket socket ){
     Thread t = Thread.currentThread() ;
     try{
-       say( "acceptThread ("+t+"): creating protocol engine" ) ;
+       _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
        SshStreamEngine engine = new SshStreamEngine( socket , this ) ;
 
        String userPrincipal = Subjects.getUserName(engine.getSubject());
-       say( "acceptThread ("+t+"): connection created for user "+userPrincipal ) ;
+       _log.info( "acceptThread ("+t+"): connection created for user "+userPrincipal ) ;
        Object [] args ;
        if( _loginConType == 0 ){
           args =  new Object[2] ;
@@ -172,18 +178,18 @@ public class       SshLoginManager
                   a[0] = Integer.valueOf( _nucleus.getPrintoutLevel() ) ;
                   _loginPrintMethod.invoke( cell , a ) ;
                }catch( Exception eee ){
-                  esay( "Can't setPritoutLevel of " +args[0] ) ;
+                  _log.warn( "Can't setPritoutLevel of " +args[0] ) ;
                }
             }
             _loginCounter ++ ;
        }catch( Exception ie ){
-          esay( "Can't create new instance of "+_loginClass.getName()+" "+ie ) ;
+          _log.warn( "Can't create new instance of "+_loginClass.getName()+" "+ie ) ;
           engine.close() ;
           _loginFailures ++ ;
        }
 
     }catch( Exception e ){
-       esay( "Exception in secure protocol : "+e ) ;
+       _log.warn( "Exception in secure protocol : "+e ) ;
        _loginFailures ++ ;
     }
 
@@ -214,43 +220,43 @@ public class       SshLoginManager
          (Map<String,Object>) _nucleus.getDomainContext().get("Ssh");
 
      if( sshContext == null ){
-        esay( "Auth ("+keyName+") : Ssh Context unavailable" ) ;
+        _log.warn( "Auth ("+keyName+") : Ssh Context unavailable" ) ;
         return null ;
      }
 
      SshRsaKey   key =  (SshRsaKey)sshContext.get( keyName ) ;
 
-     say( "Auth : Request for "+keyName+(key==null?" Failed":" o.k.") ) ;
+     _log.info( "Auth : Request for "+keyName+(key==null?" Failed":" o.k.") ) ;
      return key ;
   }
   public SshRsaKey  getHostRsaKey(){ return getIdentity("hostIdentity" ) ; }
   public SshRsaKey  getServerRsaKey(){return getIdentity("serverIdentity" ) ; }
   public SshSharedKey  getSharedKey( InetAddress host , String keyName ){
-     say( "Auth : Request for Shared Key denied" ) ;
+     _log.info( "Auth : Request for Shared Key denied" ) ;
      return null ;
   }
 
   public boolean   authUser( InetAddress addr, String user ){
-     say( "Auth : User Request for user "+user+" host "+addr+" denied" ) ;
+     _log.info( "Auth : User Request for user "+user+" host "+addr+" denied" ) ;
      return false ;
   }
   public boolean   authRhosts( InetAddress addr, String user ){
-     say( "Auth : Rhost Request for user "+user+" host "+addr+" denied" ) ;
+     _log.info( "Auth : Rhost Request for user "+user+" host "+addr+" denied" ) ;
      return false ;
   }
 
   public boolean   authPassword(  InetAddress addr, String user, String password ) {
-     say( "Auth : Password Request for user "+user+" host "+addr ) ;
+     _log.info( "Auth : Password Request for user "+user+" host "+addr ) ;
      Map<String,Object> sshContext =
          (Map<String,Object>) _nucleus.getDomainContext().get("Ssh");
      if( sshContext == null ){
-        esay( "Auth authPassword : Ssh Context unavailable for request from User "+
+        _log.warn( "Auth authPassword : Ssh Context unavailable for request from User "+
                        user+" Host "+addr ) ;
         return false ;
      }
      Object userObject = sshContext.get( "userPasswords" ) ;
      if( userObject == null ){
-        esay( "Auth authPassword : userPasswords not available" ) ;
+        _log.warn( "Auth authPassword : userPasswords not available" ) ;
         return false ;
      }
      if( userObject instanceof Hashtable ){
@@ -260,15 +266,15 @@ public class       SshLoginManager
            if( password.equals( realPassword ) ){
               return true ;
            }else{
-              esay( "Auth authPassword : user "+user+" password mismatch " ) ;
+              _log.warn( "Auth authPassword : user "+user+" password mismatch " ) ;
               return false ;
            }
         }
-        esay( "Auth authPassword : user "+user+" not found " ) ;
+        _log.warn( "Auth authPassword : user "+user+" not found " ) ;
         return false ;
      }else if( userObject instanceof String ){
         CellPath path = new CellPath( (String) userObject ) ;
-        say( "Auth passwd : using : "+path ) ;
+        _log.info( "Auth passwd : using : "+path ) ;
         Object [] request = new Object[5] ;
         request[0] = "request" ;
         request[1] = "unknown" ;
@@ -279,34 +285,34 @@ public class       SshLoginManager
         try{
             msg = sendAndWait( msg , 4000 ) ;
             if( msg == null ){
-               esay( "request for user >"+user+"< timed out" ) ;
+               _log.warn( "request for user >"+user+"< timed out" ) ;
                return false ;
             }
         }catch(Exception e ){
-            esay( "Problem for user >"+user+"< : "+e ) ;
+            _log.warn( "Problem for user >"+user+"< : "+e ) ;
             return false ;
         }
         Object obj = null ;
         if( ( obj = msg.getMessageObject() ) == null ){
-           esay( "Request response is null" ) ;
+           _log.warn( "Request response is null" ) ;
            return false ;
         }
         if( ! ( obj instanceof Object [] ) ){
-           esay( "Response not Object[] : "+obj.getClass() ) ;
+           _log.warn( "Response not Object[] : "+obj.getClass() ) ;
            return false ;
         }else{
            request = (Object[])obj ;
            if( request.length < 6 ){
-              esay( "Response length < 6") ;
+              _log.warn( "Response length < 6") ;
               return false ;
            }
            if( ( ! ( request[0] instanceof String )        ) ||
                ( ! ((String)request[0]).equals("response") ) ||
                ( ! ( request[5] instanceof Boolean )       )    ){
-               esay( "Not a response" ) ;
+               _log.warn( "Not a response" ) ;
                return false ;
            }
-           say( "Response for >"+user+"< : "+request[5] ) ;
+           _log.info( "Response for >"+user+"< : "+request[5] ) ;
            return ((Boolean)request[5]).booleanValue() ;
         }
 
@@ -318,28 +324,28 @@ public class       SshLoginManager
                                   InetAddress addr, String user){
      Map<String,Object> sshContext =
          (Map<String,Object>)_nucleus.getDomainContext().get("Ssh");
-     say( "Serching Key in "+domain ) ;
-     say( ""+modulusKey ) ;
+     _log.info( "Serching Key in "+domain ) ;
+     _log.info( ""+modulusKey ) ;
      if( sshContext == null ){
-        esay( "Auth ("+domain+") : Ssh Context unavailable for request from User "+
+        _log.warn( "Auth ("+domain+") : Ssh Context unavailable for request from User "+
                        user+" Host "+addr ) ;
         return null ;
      }
      SshRsaKeyContainer container = (SshRsaKeyContainer)sshContext.get( domain ) ;
      if( container == null ){
-        esay( "Auth ("+domain+") : Ssh "+domain+" unavailable for request from User "+
+        _log.warn( "Auth ("+domain+") : Ssh "+domain+" unavailable for request from User "+
                        user+" Host "+addr ) ;
         return null ;
      }else{
 //       Enumeration e = container.elements() ;
 //       for( ; e.hasMoreElements() ; ){
 //           SshRsaKey key = (SshRsaKey)e.nextElement() ;
-//           say( key.toString() ) ;
+//           _log.info( key.toString() ) ;
 //       }
      }
      SshRsaKey key = container.findByModulus( modulusKey ) ;
      if( key == null ){
-        esay( "Auth ("+domain+") : Ssh key not found from User "+
+        _log.warn( "Auth ("+domain+") : Ssh key not found from User "+
                        user+" Host "+addr ) ;
         return null ;
      }
@@ -355,23 +361,23 @@ public class       SshLoginManager
      StringTokenizer st = new StringTokenizer( keyUser , "@" ) ;
      keyUser = st.nextToken() ;
      if( keyUser.equals(user) ){
-        say( "Auth ("+domain+
+        _log.info( "Auth ("+domain+
                       ") : Ssh key ("+key.getComment()+
                       ") found for user "+user+
                       " Host "+addr ) ;
         return key ;
      }else{
-        say( "Auth ("+domain+
+        _log.info( "Auth ("+domain+
                       ") : Ssh key mismatch "+keyUser+" <> "+user ) ;
         return null ;
      }
   }
   public SshRsaKey authRhostsRsa( InetAddress addr, String user ,
                                   String reqUser , SshRsaKey hostKey ){
-     say( "Auth (authRhostsRsa) : host="+addr+
+     _log.info( "Auth (authRhostsRsa) : host="+addr+
                    " user="+user+" reqUser="+reqUser ) ;
      if( ! user.equals( reqUser ) ){
-        say( "Auth : user mismatch , proxy user not allowed" ) ;
+        _log.info( "Auth : user mismatch , proxy user not allowed" ) ;
         return null ;
      }
      return getPublicKey( "knownHosts"  , hostKey , addr , user ) ;

@@ -1,22 +1,32 @@
 package org.dcache.auth;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.io.ObjectInputStream.GetField;
 import java.security.Principal;
 
 /**
  * This class represents a fully qualified attribute
- * name. FQANPrincipal is similar in purpose to
+ * name (FQAN). FQANPrincipal is similar in purpose to
  * org.glite.security.voms.FQAN, except that the latter does not
  * implement the Principal and Serializable interfaces.
  */
 public class FQANPrincipal implements Principal, Serializable
 {
-    private final String _fqan;
-    private final boolean _primary;
+    private static final long serialVersionUID = -4242349585261079835L;
+
+    private FQAN _fqan;
+    private boolean _primary;
 
     public FQANPrincipal(String fqan, boolean primary)
     {
-        if (fqan == null) {
+        this(new FQAN(fqan), primary);
+    }
+
+    public FQANPrincipal(FQAN fqan, boolean primary)
+    {
+        if( fqan == null) {
             throw new IllegalArgumentException("null value not allowed");
         }
         _fqan = fqan;
@@ -28,6 +38,7 @@ public class FQANPrincipal implements Principal, Serializable
         return _primary;
     }
 
+    @Override
     public boolean equals(Object another)
     {
         if (another == this) {
@@ -44,14 +55,21 @@ public class FQANPrincipal implements Principal, Serializable
     /** Returns the FQAN in string form. */
     public String getName()
     {
+        return _fqan.toString();
+    }
+
+    public FQAN getFqan()
+    {
         return _fqan;
     }
 
+    @Override
     public int hashCode()
     {
         return _fqan.hashCode();
     }
 
+    @Override
     public String toString()
     {
         return FQANPrincipal.class.getSimpleName() + "[" + _fqan + "]";

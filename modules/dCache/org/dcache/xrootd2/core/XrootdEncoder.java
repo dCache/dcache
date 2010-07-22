@@ -1,7 +1,6 @@
 package org.dcache.xrootd2.core;
 
 import static org.jboss.netty.channel.Channels.*;
-import static org.jboss.netty.buffer.ChannelBuffers.*;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -28,6 +27,6 @@ public class XrootdEncoder extends SimpleChannelHandler
             buffer.setInt(4, buffer.readableBytes() - 8);
             msg = buffer;
         }
-        write(ctx, e.getChannel(), e.getFuture(), msg);
+        write(ctx, e.getFuture(), msg);
     }
 }

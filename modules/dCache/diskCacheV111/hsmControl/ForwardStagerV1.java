@@ -12,6 +12,9 @@ import dmg.cells.nucleus.* ;
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *  Simple Version of a prestager. It receives stage requests from the
   *  Prestaging doors (dCap, SRM), converts those requests to a
@@ -20,6 +23,9 @@ import diskCacheV111.util.* ;
   *  original request.
   */
 public class ForwardStagerV1 extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(ForwardStagerV1.class);
 
     private final CellNucleus      _nucleus ;
     private final Args             _args    ;
@@ -136,7 +142,7 @@ public class ForwardStagerV1 extends CellAdapter {
           if( ( poolManagerName != null ) && ( ! poolManagerName.equals("") ) ){
                _poolManagerPath = new CellPath( poolManagerName ) ;
           }
-          say("Using PoolManger : "+_poolManagerPath ) ;
+          _log.info("Using PoolManger : "+_poolManagerPath ) ;
 
        }catch(Exception e){
           start() ;
@@ -211,7 +217,7 @@ public class ForwardStagerV1 extends CellAdapter {
 
           StagerMessage stager = (StagerMessage)obj ;
 
-          say( stager.toString() ) ;
+          _log.info( stager.toString() ) ;
           try{
 
              sendStageRequest( stager ) ;
@@ -221,7 +227,7 @@ public class ForwardStagerV1 extends CellAdapter {
           }catch(Exception iiee ){
 
              stager.setFailed( 33 , iiee ) ;
-             esay("Problem in sendStageRequest: "+iiee);
+             _log.warn("Problem in sendStageRequest: "+iiee);
              _statistics.sendingToPoolManager(iiee) ;
 
           }
@@ -233,7 +239,7 @@ public class ForwardStagerV1 extends CellAdapter {
 
           }catch(Exception ee ){
 
-             esay("Problem replying : "+ee ) ;
+             _log.warn("Problem replying : "+ee ) ;
              _statistics.replyToSender(ee) ;
 
           }
@@ -245,11 +251,11 @@ public class ForwardStagerV1 extends CellAdapter {
           //
           PoolMgrSelectReadPoolMsg reply = (PoolMgrSelectReadPoolMsg)obj ;
           _statistics.poolManagerReply( reply.getReturnCode() , reply.getErrorObject() ) ;
-          say("PoolManagerReply : "+reply);
+          _log.info("PoolManagerReply : "+reply);
 
        }else{
 
-          esay("Unknown message arrived ("+msg.getSourcePath()+") : "+msg.getMessageObject() ) ;
+          _log.warn("Unknown message arrived ("+msg.getSourcePath()+") : "+msg.getMessageObject() ) ;
           _statistics.unknownMessage( msg ) ;
 
        }
@@ -301,16 +307,16 @@ public class ForwardStagerV1 extends CellAdapter {
        }
        public void setStatus(String message ){_status = message ;}
        public void answerArrived( CellMessage req , CellMessage answer ){
-          say( "Answer for : "+answer.getMessageObject() ) ;
+          _log.info( "Answer for : "+answer.getMessageObject() ) ;
           Message message = (Message)answer.getMessageObject() ;
           if( message.getReturnCode() != 0 ){
 
-             esay( _status = "Manual stage : "+_pnfsId+" "+message.getErrorObject() ) ;
+             _log.warn( _status = "Manual stage : "+_pnfsId+" "+message.getErrorObject() ) ;
              return ;
           }
           if( message instanceof PnfsGetStorageInfoMessage ){
              _storageInfo = ((PnfsGetStorageInfoMessage)message).getStorageInfo() ;
-             say( "Manual Stager : storageInfoArrived : "+_storageInfo ) ;
+             _log.info( "Manual Stager : storageInfoArrived : "+_storageInfo ) ;
 
              DCapProtocolInfo pinfo = new DCapProtocolInfo( "DCap",3,0,_host,0) ;
              PoolMgrSelectReadPoolMsg request =
@@ -329,12 +335,12 @@ public class ForwardStagerV1 extends CellAdapter {
                            ) ;
                 _status = "<WaitingForStage>" ;
              }catch(Exception ee ){
-                esay(_status = "Manual Stage : exception in sending stage req. : "+ee ) ;
+                _log.warn(_status = "Manual Stage : exception in sending stage req. : "+ee ) ;
                 return ;
              }
           }else if( message instanceof PoolMgrSelectReadPoolMsg ){
              PoolMgrSelectReadPoolMsg select = (PoolMgrSelectReadPoolMsg)message;
-             say( "Manual Stager : PoolMgrSelectReadPoolMsg : "+select ) ;
+             _log.info( "Manual Stager : PoolMgrSelectReadPoolMsg : "+select ) ;
              _poolName = select.getPoolName() ;
              if( _pin ){
                 PoolSetStickyMessage sticky =
@@ -350,7 +356,7 @@ public class ForwardStagerV1 extends CellAdapter {
                               ) ;
                    _status = " (sticky) assumed O.K." ;
                 }catch(Exception ee ){
-                   esay(_status = "Manual Stage : exception in sending sticky req. : "+ee ) ;
+                   _log.warn(_status = "Manual Stage : exception in sending sticky req. : "+ee ) ;
                    return ;
                 }
              }else{
@@ -364,10 +370,10 @@ public class ForwardStagerV1 extends CellAdapter {
           }
        }
        public void exceptionArrived( CellMessage request , Exception exception ){
-          esay( _status = "Exception for : "+_pnfsId+" : "+exception  ) ;
+          _log.warn( _status = "Exception for : "+_pnfsId+" : "+exception  ) ;
        }
        public void answerTimedOut( CellMessage request ){
-          esay( _status = "Timeout for : "+_pnfsId  ) ;
+          _log.warn( _status = "Timeout for : "+_pnfsId  ) ;
        }
        public String toString(){
           if( _poolName != null ){
@@ -414,7 +420,7 @@ public class ForwardStagerV1 extends CellAdapter {
                        3600 * 1000 ) ;
        }catch(Exception ee ){
            companion.setStatus("Problem sending 'getStorageInfo' : "+ee );
-           esay( "Problem sending 'getStorageInfo' : "+ee ) ;
+           _log.warn( "Problem sending 'getStorageInfo' : "+ee ) ;
           throw ee ;
        }
        return "" ;

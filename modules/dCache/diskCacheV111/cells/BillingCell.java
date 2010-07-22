@@ -13,7 +13,13 @@ import dmg.cells.nucleus.* ;
 import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BillingCell extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(BillingCell.class);
 
     private final CellNucleus _nucleus ;
     private final Args        _args ;
@@ -58,7 +64,7 @@ public class BillingCell extends CellAdapter {
              try{
                 _sqlLog = new BillingDB(_args);
              }catch( SQLException sqe) {
-                 esay("Can't Connect to SQL database : "+sqe.getMessage() ) ;
+                 _log.warn("Can't Connect to SQL database : "+sqe.getMessage() ) ;
              }
           }
           String printModeString = _args.getOpt("printMode") ;
@@ -66,20 +72,20 @@ public class BillingCell extends CellAdapter {
              try{
                  _printMode = Integer.parseInt( printModeString ) ;
              }catch(NumberFormatException eee ){
-                 esay("PrintMode : Illegal printMode values : "+printModeString);
+                 _log.warn("PrintMode : Illegal printMode values : "+printModeString);
              }
           }
-          say("Property PrintMode="+_printMode);
+          _log.info("Property PrintMode="+_printMode);
 
           String timeoutString = _args.getOpt("timeout") ;
           if( timeoutString != null ){
              try{
                  _communicationTimeout = Long.parseLong( timeoutString ) * 1000L ;
              }catch(NumberFormatException eee ){
-                 esay("PrintMode : Illegal communication timeout value : "+timeoutString);
+                 _log.warn("PrintMode : Illegal communication timeout value : "+timeoutString);
              }
           }
-          say("Property timeout ="+_communicationTimeout);
+          _log.info("Property timeout ="+_communicationTimeout);
 
        }catch(Exception e){
           start() ;
@@ -155,7 +161,7 @@ public class BillingCell extends CellAdapter {
            }
         }
        }catch(Exception ee ){
-           esay( "Exception in dumpPoolStatistics : "+ee ) ;
+           _log.warn( "Exception in dumpPoolStatistics : "+ee ) ;
            report.delete() ;
            throw ee ;
        }finally{
@@ -270,21 +276,21 @@ public class BillingCell extends CellAdapter {
           thisDate = new Date() ;
           output   = formatter.format(new Date())+" "+obj.toString() ;
        }
-       say( output ) ;
+       _log.info( output ) ;
        if( _sqlLog != null ) {
           try {
              _sqlLog.log(info);
           }catch (SQLException sqe) {
-             esay("Can't log billing into SQL database : "+sqe.getMessage() ) ;
+             _log.warn("Can't log billing into SQL database : "+sqe.getMessage() ) ;
              sqe.printStackTrace();
-             say("Trying to reconnect");
+             _log.info("Trying to reconnect");
              try{
                  _sqlLog = new BillingDB(_args);
              }catch( SQLException sqe2) {
-                 esay("Can't Connect to SQL database : "+sqe2.getMessage() ) ;
+                 _log.warn("Can't Connect to SQL database : "+sqe2.getMessage() ) ;
              }
           } catch (Exception ex) {
-             esay("Billing into SQL database failed: "+ex.getMessage() ) ;
+             _log.warn("Billing into SQL database failed: "+ex.getMessage() ) ;
              ex.printStackTrace();
           }
        }
@@ -310,7 +316,7 @@ public class BillingCell extends CellAdapter {
           pw = new PrintWriter( new FileWriter( outputFile , true ));
           pw.println(output);
        }catch(IOException ee){
-          esay("Can't write billing ["+outputFile+"] : "+ee.toString() ) ;
+          _log.warn("Can't write billing ["+outputFile+"] : "+ee.toString() ) ;
        } finally{
            if( pw != null ) pw.close() ;
        }
@@ -326,7 +332,7 @@ public class BillingCell extends CellAdapter {
              pw = new PrintWriter( new FileWriter( errorFile , true ));
              pw.println(output);
           }catch(IOException ee){
-             esay("Can't write billing-error : "+ee.toString() ) ;
+             _log.warn("Can't write billing-error : "+ee.toString() ) ;
           }finally{
               if( pw != null ) pw.close() ;
           }
@@ -359,7 +365,7 @@ public class BillingCell extends CellAdapter {
                                  new FileWriter(_report) ) );
 
            }catch(IOException ioe ){
-              esay("Problem opening "+_report+" : "+ioe.getMessage() ) ;
+              _log.warn("Problem opening "+_report+" : "+ioe.getMessage() ) ;
               return ;
            }
            try{
@@ -384,7 +390,7 @@ public class BillingCell extends CellAdapter {
                  try{
                     m = _nucleus.sendAndWait(m,_communicationTimeout) ;
                     if( m == null ){
-                        esay("CollectPoolStatus : pool status (rep ls -s) of "+poolList[i]+" didn't arrive in time (skipped)");
+                        _log.warn("CollectPoolStatus : pool status (rep ls -s) of "+poolList[i]+" didn't arrive in time (skipped)");
                         continue ;
                     }
                     BufferedReader br = new BufferedReader(
@@ -395,12 +401,12 @@ public class BillingCell extends CellAdapter {
                     }
 
                  }catch(Exception eee ){
-                    esay("CollectPoolStatus : "+poolList[i]+" : "+eee ) ;
+                    _log.warn("CollectPoolStatus : "+poolList[i]+" : "+eee ) ;
                     continue ;
                  }
               }
            }catch(Exception ee ){
-              esay( "Exception in CollectPools status : "+ee ) ;
+              _log.warn( "Exception in CollectPools status : "+ee ) ;
               _report.delete() ;
               return ;
            }finally{

@@ -40,11 +40,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  timur
  */
 public class CopyManager extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(CopyManager.class);
+
     private HashMap longIdToMessageMap = new HashMap();
     private HashSet activeTransfersIDs = new HashSet();
     private HashMap activeTransfersIDsToHandlerMap = new HashMap();
@@ -107,7 +115,7 @@ public class CopyManager extends CellAdapter {
          _poolMgrPath     = new CellPath ( poolManager ) ;
 
          poolProxy = _args.getOpt("poolProxy");
-            say("Pool Proxy "+( poolProxy == null ? "not set" : ( "set to "+poolProxy ) ) );
+            _log.info("Pool Proxy "+( poolProxy == null ? "not set" : ( "set to "+poolProxy ) ) );
 
          useInterpreter (true);
         getNucleus ().export ();
@@ -290,7 +298,7 @@ public class CopyManager extends CellAdapter {
 
     public void notifyHandler(long handlerId,Object message)
     {
-        say("CopyManager.notifyHandler()");
+        _log.info("CopyManager.notifyHandler()");
 
         synchronized(activeTransfersIDsToHandlerMap)
         {
@@ -303,7 +311,7 @@ public class CopyManager extends CellAdapter {
             }
             else
             {
-                esay("message arived for unknown handler id ="+handlerId+
+                _log.warn("message arived for unknown handler id ="+handlerId+
                 " message = "+message);
             }
         }
@@ -311,8 +319,8 @@ public class CopyManager extends CellAdapter {
     public void messageArrived( CellMessage cellMessage )
     {
         Object object = cellMessage.getMessageObject();
-        say("Message messageArrived ["+object.getClass()+"]="+object.toString());
-        say("Message messageArrived source = "+cellMessage.getSourceAddress());
+        _log.info("Message messageArrived ["+object.getClass()+"]="+object.toString());
+        _log.info("Message messageArrived source = "+cellMessage.getSourceAddress());
         if (object instanceof DoorTransferFinishedMessage)
         {
 
@@ -360,7 +368,7 @@ public class CopyManager extends CellAdapter {
         }
         catch(Exception e)
         {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
     }
 
@@ -397,7 +405,7 @@ public class CopyManager extends CellAdapter {
         private Object sync = new Object();
         public void messageNotify(Object message)
         {
-            say("CopyHandler.messageNotify("+message+")");
+            _log.info("CopyHandler.messageNotify("+message+")");
             synchronized(sync)
             {
                 incommingMessage = message;
@@ -423,7 +431,7 @@ public class CopyManager extends CellAdapter {
                 catch(InterruptedException ie)
                 {
                 }
-                say("CopyHandler.messageWait returns "+incommingMessage);
+                _log.info("CopyHandler.messageWait returns "+incommingMessage);
                 notified = false;
                 return incommingMessage;
             }
@@ -556,7 +564,7 @@ public class CopyManager extends CellAdapter {
 
                        this.transfer_request=(CopyManagerMessage)
                             cellMessage.getMessageObject();
-                            say("starting  processing transfer message with id "+transfer_request.getId());
+                            _log.info("starting  processing transfer message with id "+transfer_request.getId());
                             state ="Pending";
                             srcPnfsId = null;
                             dstPnfsId = null;
@@ -602,7 +610,7 @@ public class CopyManager extends CellAdapter {
                     transfer_request.increaseNumberOfPerformedRetries();
                     if(requeue)
                     {
-                        say("putting on queue for retry:"+cellMessage);
+                        _log.info("putting on queue for retry:"+cellMessage);
                         putOnQueue(cellMessage);
                     }
                     else
@@ -614,7 +622,7 @@ public class CopyManager extends CellAdapter {
                         }
                         catch(Exception e)
                         {
-                            esay(e);
+                            _log.warn(e.toString(), e);
                         }
                     }
                 }
@@ -691,13 +699,13 @@ public class CopyManager extends CellAdapter {
                         dst_protocol_info,
                         true,id);
 
-                    say("copy is calling messageWait");
+                    _log.info("copy is calling messageWait");
                     Object o = messageWait(moverTimeout*1000);
-                    say("messageWait returned "+ o);
+                    _log.info("messageWait returned "+ o);
 
                     if(o == null )
                     {
-                        esay("copy: wait expired ");
+                        _log.warn("copy: wait expired ");
                         //cleanup, interrupt trunsfer and return error
                         throw new java.io.IOException(
                             "copy failed: wait for port from write mover expired");
@@ -705,7 +713,7 @@ public class CopyManager extends CellAdapter {
 
                     if(!(o instanceof DCapClientPortAvailableMessage))
                     {
-                        esay("copy: unexpected message arrived " +o);
+                        _log.warn("copy: unexpected message arrived " +o);
                         throw new java.io.IOException(
                             "copy failed: received unexpected message while waiting "+
                             "for port from write mover " + o);
@@ -750,10 +758,10 @@ public class CopyManager extends CellAdapter {
                     while(true)
                     {
                         o = messageWait(moverTimeout*1000);
-                        say("messageWait returned "+ o);
+                        _log.info("messageWait returned "+ o);
                         if(o == null )
                         {
-                            esay("copy: wait for DoorTransferFinishedMessage expired ");
+                            _log.warn("copy: wait for DoorTransferFinishedMessage expired ");
                             //cleanup, interrupt trunsfer and return error
                             throw new java.io.IOException(
                                 "copy: wait for DoorTransferFinishedMessage expired");
@@ -767,13 +775,13 @@ public class CopyManager extends CellAdapter {
                             {
                                 if(finished.getPnfsId().equals(srcPnfsId))
                                 {
-                                    say("src mover reported success ");
+                                    _log.info("src mover reported success ");
                                     srcDone = true;
                                 }
 
                                 if(finished.getPnfsId().equals(dstPnfsId))
                                 {
-                                    say("dst mover reported success ");
+                                    _log.info("dst mover reported success ");
                                     dstDone = true;
                                 }
 
@@ -781,7 +789,7 @@ public class CopyManager extends CellAdapter {
                                 {
                                     setState("success");
                                     //success
-                                    say("transfer finished successfully");
+                                    _log.info("transfer finished successfully");
                                     return;
                                 }
                             }
@@ -797,7 +805,7 @@ public class CopyManager extends CellAdapter {
                         }
                         else
                         {
-                            esay("copy: unexpected message arrived " +o);
+                            _log.warn("copy: unexpected message arrived " +o);
                             throw new java.io.IOException(
                                 "copy failed: received unexpected message while waiting "+
                                 "for DoorTransferFinishedMessage from write  and read movers " + o);
@@ -808,7 +816,7 @@ public class CopyManager extends CellAdapter {
                 {
                     if(dstPnfsEntry != null)
                     {
-                        say("pnfsEntry != null, trying to delete created pnfs entry");
+                        _log.info("pnfsEntry != null, trying to delete created pnfs entry");
                         try
                         {
                             pnfs_handler = getPnfsHandler();
@@ -816,12 +824,12 @@ public class CopyManager extends CellAdapter {
                         }
                         catch(Exception e1)
                         {
-                            esay(e1);
+                            _log.warn(e1.toString(), e1);
                         }
                     }
 
                     setState("error :" +e.toString());
-                    esay(e);
+                    _log.warn(e.toString(), e);
                     throw new java.io.IOException(e.toString());
                 }
                 finally
@@ -937,7 +945,7 @@ public class CopyManager extends CellAdapter {
             0L                 );
         request.setPnfsPath(pnfsPath);
 
-            say("PoolMgrSelectPoolMsg: " + request.toString() );
+            _log.info("PoolMgrSelectPoolMsg: " + request.toString() );
             CellMessage reply;
             try
             {
@@ -949,11 +957,11 @@ public class CopyManager extends CellAdapter {
             }
             catch(Exception e)
             {
-                esay(e);
+                _log.warn(e.toString(), e);
                 throw new CacheException(e.toString());
             }
 
-            say("CellMessage (reply): " + reply);
+            _log.info("CellMessage (reply): " + reply);
             if( reply == null )
                 throw new
                 CacheException("PoolMgrSelectReadPoolMsg timed out") ;
@@ -967,7 +975,7 @@ public class CopyManager extends CellAdapter {
 
             request =  (PoolMgrSelectPoolMsg)replyObject;
 
-            say("poolManagerReply = "+request);
+            _log.info("poolManagerReply = "+request);
 
             if( request.getReturnCode() != 0 )
                 throw new
@@ -975,7 +983,7 @@ public class CopyManager extends CellAdapter {
                 request.getErrorObject() ) ;
 
             String pool = request.getPoolName();
-            say("Positive reply from pool "+pool);
+            _log.info("Positive reply from pool "+pool);
 
             return pool ;
 
@@ -988,7 +996,7 @@ public class CopyManager extends CellAdapter {
     boolean      isWrite,
     long id) throws CacheException {
 
-        say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
+        _log.info("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
 
         PoolIoFileMessage poolMessage ;
         if( isWrite )
@@ -1028,7 +1036,7 @@ public class CopyManager extends CellAdapter {
             }
             catch(Exception e)
             {
-                esay(e);
+                _log.warn(e.toString(), e);
                 throw new CacheException(e.toString());
             }
 
@@ -1049,7 +1057,7 @@ public class CopyManager extends CellAdapter {
                 throw new
                 CacheException( "Pool error: "+poolReply.getErrorObject() ) ;
 
-            say("Pool "+pool+" will deliver file "+pnfsId);
+            _log.info("Pool "+pool+" will deliver file "+pnfsId);
 
     }
 
@@ -1100,14 +1108,14 @@ public class CopyManager extends CellAdapter {
 
     private synchronized boolean new_transfer()
     {
-        say("new_transfer() num_transfers = "+num_transfers+
+        _log.info("new_transfer() num_transfers = "+num_transfers+
         " max_transfers="+max_transfers);
         if(num_transfers == max_transfers)
         {
-            say("new_transfer() returns false");
+            _log.info("new_transfer() returns false");
              return false;
         }
-        say("new_transfer() INCREMENT and return true");
+        _log.info("new_transfer() INCREMENT and return true");
         num_transfers++;
         return true;
     }
@@ -1118,7 +1126,7 @@ public class CopyManager extends CellAdapter {
     }
     private synchronized void finish_transfer()
     {
-        say("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
+        _log.info("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
         num_transfers--;
     }
 

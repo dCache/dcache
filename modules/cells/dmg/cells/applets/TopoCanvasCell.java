@@ -10,29 +10,35 @@ import dmg.cells.network.* ;
 import dmg.cells.services.* ;
 import dmg.util.* ;
 
-public class      TopoCanvasCell 
-       extends    Canvas  
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class      TopoCanvasCell
+       extends    Canvas
        implements Cell,
                   Runnable ,
-                  MouseListener  
+                  MouseListener
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(TopoCanvasCell.class);
+
      private CellNucleus _nucleus ;
      private CellShell   _shell ;
      private Gate        _finalGate     = new Gate( false ) ;
      private Thread      _requestThread = new Thread( this ) ;
      private Thread      _psThread      = null ;
      private String      _psAddress     = null ;
-     
+
      private CellDomainNode [] _domainNode = null ;
-     
+
      private CanonTopo         _topology          = null ,
                                _displayedTopology = null ;
-     private Hashtable         _domainPositions   = new Hashtable() ;                          
+     private Hashtable         _domainPositions   = new Hashtable() ;
      private Date              _updateDate = new Date() ;
      private Object            _recvLock   = new Object() ;
-     
+
      private Font       _font   , _smallFont  ;
-     
+
      private String [] _stayTuned   = { "Stay" , "Tuned" } ;
      private String [] _displayInfo        = null ;
      private Font      _displayFont        = null ;
@@ -40,31 +46,31 @@ public class      TopoCanvasCell
      private Color     _displayBackground  = null ;
      private Object    _displayLock        = new Object() ;
      private CellInfo [] _displayCellInfo    = null ;
-     
+
      private final static int DISPLAY_TOPOLOGY = 1 ;
      private final static int DISPLAY_INFO     = 2 ;
      private final static int DISPLAY_CELLS    = 3 ;
-    
+
      private int   _displayMode     = DISPLAY_TOPOLOGY ;
      private int   _displayLastMode = DISPLAY_TOPOLOGY ;
-     private static final String [] _control = { 
+     private static final String [] _control = {
         "Update" , "Up" , "Next" , "Previous" } ;
-     
+
      public TopoCanvasCell( String name ){
-     
+
         _nucleus = new CellNucleus( this , name+"*" ) ;
         _nucleus.setPrintoutLevel(15) ;
-     
+
         _requestThread.start() ;
 
         setBackground( Color.blue ) ;
         addMouseListener( this ) ;
- 
+
         _font      = new Font( "TimesRoman" , Font.BOLD , 20 ) ;
         _smallFont = new Font( "TimesRoman" , Font.ITALIC , 15 ) ;
-     
+
      }
-     
+
      public void paint( Graphics g ){
       synchronized( _displayLock ){
         switch( _displayMode ){
@@ -81,7 +87,7 @@ public class      TopoCanvasCell
         }
       }
      }
-        
+
      private void drawCells( Graphics g ){
         Dimension   d    = getSize() ;
         synchronized( _displayLock ){
@@ -99,7 +105,7 @@ public class      TopoCanvasCell
            total += fm.getMaxAscent() ;
            int base2 = total ;
            total += fm.getMaxDescent()  ;
-           total += 5 ;         
+           total += 5 ;
            //
            int nameLength = 0 ;
            int typeLength = 0 ;
@@ -109,7 +115,7 @@ public class      TopoCanvasCell
               nameLength = Math.max( nameLength ,
                                      fm.stringWidth( ci[i].getCellName() ) ) ;
               typeLength = Math.max( typeLength ,
-                                     fm.stringWidth( 
+                                     fm.stringWidth(
                                        CellInfo.cutClass(
                                          ci[i].getCellClass() ) ) ) ;
            }
@@ -119,8 +125,8 @@ public class      TopoCanvasCell
            int countPosition = d.width - 50 ;
            //
            // now draw
-           // 
-           int y = 0 ; 
+           //
+           int y = 0 ;
            _domainPositions.clear() ;
            //
            // some controll buttons
@@ -130,26 +136,26 @@ public class      TopoCanvasCell
            y += 5 ;
            for( int i = 0 ; i < _control.length ; i++ ){
               x += xDiff ;
-              _domainPositions.put( 
+              _domainPositions.put(
                  new Rectangle( x - fm.stringWidth(_control[i])/2 ,
                                 y , fm.stringWidth(_control[i]) , total ) ,
                  _control[i] ) ;
               g.drawString( _control[i] ,
                             x - fm.stringWidth(_control[i])/2 ,
-                            y + fm.getMaxAscent() ) ; 
+                            y + fm.getMaxAscent() ) ;
            }
            y += total ;
            for( int i = 0 ; i < ci.length ; i++ ){
               y += 5 ;
               g.setColor( Color.yellow ) ;
-              _domainPositions.put( 
+              _domainPositions.put(
                  new Rectangle( 3 , y , d.width-6 , total ) ,
                  ci[i].getCellName() ) ;
               g.fillRect( 3 , y , d.width-6 , total ) ;
               g.setColor( Color.red ) ;
               g.setFont( _font ) ;
               g.drawString( ci[i].getCellName() , namePosition ,  y+base1 ) ;
-              if( typePosition > -1 ) 
+              if( typePosition > -1 )
               g.drawString( CellInfo.cutClass( ci[i].getCellClass() ),
                             typePosition, y+base1  ) ;
               g.drawString( ""+ci[i].getEventQueueSize() ,
@@ -164,7 +170,7 @@ public class      TopoCanvasCell
      private void drawInfo( Graphics g ){
         Dimension   d    = getSize() ;
         synchronized( _displayLock ){
-        
+
         if( ( _displayInfo == null ) || ( _displayInfo.length == 0 ) ){
            g.setColor( Color.red ) ;
            String str     = "EuroStore" ;
@@ -196,7 +202,7 @@ public class      TopoCanvasCell
         }
      }
      private void say( String str ){
-        
+
         StringTokenizer st = new StringTokenizer( str , "\n" ) ;
         int c = st.countTokens() ;
         String [] x = new String[c] ;
@@ -214,14 +220,14 @@ public class      TopoCanvasCell
            _displayColor      = Color.red ;
            _displayBackground = Color.blue ;
            setDisplayMode ( DISPLAY_INFO ) ;
-        
+
         }
         repaint() ;
      }
      private void drawTopology( Graphics g ){
-     
+
         Dimension   d    = getSize() ;
-        
+
         CanonTopo   topo ;
         Date        update ;
 
@@ -240,7 +246,7 @@ public class      TopoCanvasCell
            say(  "No Topology Informations available" ) ;
            return ;
         }
-        
+
         g.setColor( Color.red ) ;
         long diff = new Date().getTime() - update.getTime() ;
         if( diff > 10000 ){
@@ -250,7 +256,7 @@ public class      TopoCanvasCell
            repaint() ;
            return ;
         }
-        
+
         int domains = topo.domains() ;
         if( domains <= 0 )return ;
         FontMetrics fm ;
@@ -305,11 +311,11 @@ public class      TopoCanvasCell
 
            Color col = Color.green ;
            g.setColor( col ) ;
-           
-           _domainPositions.put( 
+
+           _domainPositions.put(
                  new Rectangle( x-2 , y-2 , l+4 , h+4 ) ,
                  domainNames[i] ) ;
-                 
+
            g.fillRect( x-2 , y-2 , l+4 , h+4 ) ;
            g.setColor( col = col.darker() ) ;
            g.drawRect( x-3 , y-3 , l+5 , h+5 ) ;
@@ -318,7 +324,7 @@ public class      TopoCanvasCell
            g.setColor( Color.red ) ;
            g.drawString( domainNames[i] , x , dY[i] ) ;
         }
-        
+
      }
      /*
      public void update( Graphics g ){
@@ -335,11 +341,11 @@ public class      TopoCanvasCell
                  _nucleus.sendMessage(
                     new CellMessage(
                       new CellPath( "topo" ) ,"gettopomap" ) ) ;
-                 Thread.sleep(5000) ; 
+                 Thread.sleep(5000) ;
 
               }catch(Exception e){
-                 _nucleus.esay( "Problem sending request : "+e) ;   
-                 try{Thread.sleep(5000) ; 
+                 _log.warn( "Problem sending request : "+e) ;
+                 try{Thread.sleep(5000) ;
                  }catch(Exception ex){}
               }
           }
@@ -347,8 +353,8 @@ public class      TopoCanvasCell
             say( "Please Wait" ) ;
             CellMessage msg  = null ;
             try{
-                msg = _nucleus.sendAndWait( 
-                          new CellMessage( 
+                msg = _nucleus.sendAndWait(
+                          new CellMessage(
                                new CellPath( _psAddress ) ,
                                "getcellinfos" ) ,
                           5000 ) ;
@@ -356,16 +362,16 @@ public class      TopoCanvasCell
                say( ee.toString() ) ;
                return ;
             }
-            _nucleus.say( "getcellinfos arrived "+msg ) ;
+            _log.info( "getcellinfos arrived "+msg ) ;
             if( msg == null ){
                say( "Timeout, Sorry" ) ;
                return ;
             }
             Object obj = msg.getMessageObject() ;
-            
-            if( ( obj == null ) || 
+
+            if( ( obj == null ) ||
               ! ( obj instanceof CellInfo [] ) ){
-              
+
                say( "Something very weird arrived" ) ;
                return ;
             }
@@ -375,35 +381,35 @@ public class      TopoCanvasCell
 //                String [] s = new String[_displayCellInfo.length] ;
 //                for( int i= 0 ; i < s.length ; i++ ){
 //                   s[i] = _displayCellInfo[i].toString() ;
-//                   _nucleus.say( " -> "+s[i] ) ;
+//                   _log.info( " -> "+s[i] ) ;
 //                }
 //                say( s ) ;
             }
-           
+
         }
      }
-	
+
    //
    // and the cell interface
    //
-   public String toString(){ 
-       return "Servlet Cell : " +_nucleus.getCellName(); 
+   public String toString(){
+       return "Servlet Cell : " +_nucleus.getCellName();
    }
-   
+
    public String getInfo(){
      StringBuffer sb = new StringBuffer() ;
      sb.append( toString()+"\n" ) ;
      return sb.toString()  ;
    }
    public void   messageArrived( MessageEvent me ){
-   
+
      if( me instanceof LastMessageEvent ){
-        _nucleus.say( "Last message received; releasing lock" ) ;
+        _log.info( "Last message received; releasing lock" ) ;
         _finalGate.open();
      }else{
         CellMessage msg   = me.getMessage() ;
         Object      obj   = msg.getMessageObject() ;
-        
+
         if( obj instanceof CellDomainNode [] ){
            boolean doRepaint = false ;
            synchronized( _recvLock ){
@@ -413,31 +419,31 @@ public class      TopoCanvasCell
               if( (_topology == null ) ||
                   ! topo.equals( _topology ) ){
                    _topology  = topo ;
-                   _nucleus.say( "Change in topogy registered" ) ;
+                   _log.info( "Change in topogy registered" ) ;
                    doRepaint  = true ;
               }
            }
            if( doRepaint ){
               repaint() ;
 //              _toolkit.sync() ;
-              _nucleus.say( "Repaint called" ) ;
+              _log.info( "Repaint called" ) ;
            }
         }
      }
-     
+
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( "prepareRemoval : waiting to enter final gate" ) ;
+     _log.info( "prepareRemoval : waiting to enter final gate" ) ;
      _finalGate.check() ;
-     
-     _nucleus.say( "finished" ) ;
-     // returning from this routing 
+
+     _log.info( "finished" ) ;
+     // returning from this routing
      // means that the system will stop
      // all thread connected to us
      //
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( "exceptionArrived : "+ce ) ;
+     _log.info( "exceptionArrived : "+ce ) ;
    }
    private void setDisplayMode( int mode ){
       synchronized( _displayLock ){
@@ -459,14 +465,14 @@ public class      TopoCanvasCell
                   domain = (String)_domainPositions.get( r ) ;
                   break ;
                }
-            
+
             }
             if( domain == null )return ;
             CellDomainNode [] dn ;
             synchronized( _recvLock ){ dn = _domainNode ; }
             if( dn == null )return ;
             int i = 0 ;
-            for( i = 0 ; ( i < dn.length ) && 
+            for( i = 0 ; ( i < dn.length ) &&
                          ( ! ( dn[i].getName().equals( domain ) ) ) ; i++ );
             if( i == dn.length ){
                say( "Nothing found\nAbout\n"+domain ) ;
@@ -497,10 +503,10 @@ public class      TopoCanvasCell
 
                 }
                 if( domain == null ){
-                   _nucleus.say( "Nothing klicked" ) ;
+                   _log.info( "Nothing klicked" ) ;
                    return ;
                 }else{
-                   _nucleus.say( "Found : "+domain ) ;
+                   _log.info( "Found : "+domain ) ;
                 }
                 if( domain.equals( "Update" ) ){
                     _psThread = new Thread( this ) ;
@@ -510,7 +516,7 @@ public class      TopoCanvasCell
                     setDisplayMode( DISPLAY_TOPOLOGY );
                 }
                 int i = 0 ;
-                for( i = 0 ; 
+                for( i = 0 ;
                      ( i < _displayCellInfo.length ) &&
                      ! _displayCellInfo[i].getCellName().equals( domain ) ;
                      i++ );
@@ -522,8 +528,8 @@ public class      TopoCanvasCell
             synchronized( _displayLock ){
                 setDisplayMode ( DISPLAY_TOPOLOGY ) ;
             }
-          
-        
+
+
         }
         repaint();
    }
@@ -534,6 +540,6 @@ public class      TopoCanvasCell
    public void mousePressed( MouseEvent e ){
    }
    public void mouseReleased( MouseEvent e ){
-   
+
    }
 }

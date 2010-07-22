@@ -30,12 +30,6 @@ import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GSSConstants;
 
 import org.dcache.cells.Option;
-import gplazma.authz.AuthorizationController;
-import gplazma.authz.AuthorizationException;
-import org.dcache.vehicles.AuthorizationMessage;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.AuthzQueryHelper;
-import org.dcache.auth.RecordConvert;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UserNamePrincipal;
 

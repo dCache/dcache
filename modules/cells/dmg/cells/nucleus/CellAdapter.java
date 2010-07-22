@@ -5,6 +5,9 @@ import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  *
@@ -35,6 +38,9 @@ public class   CellAdapter
     extends CommandInterpreter
     implements Cell, CellEventListener, CellEndpoint
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(CellAdapter.class);
+
     /**
      * Retry period for cell communication failures.
      */
@@ -50,8 +56,7 @@ public class   CellAdapter
     private CellMessage _currentMessage = null;
     private String      _autoSetup      = null;
     private String      _definedSetup   = null;
-    private Pinboard    _pinboard       = null;
-    private final Object      _pinBoardLock   = new Object();
+
     /**
      * Creates a Cell and the corresponding CellNucleus with the
      * specified name. An extra boolean argument 'startNow'
@@ -115,11 +120,11 @@ public class   CellAdapter
         if (async != null) {
             if (async.equals("async")) {
                 setAsyncCallback(true);
-                say("Callback set to async");
+                _log.info("Callback set to async");
             } else if (async.equals("sync")) {
                 setAsyncCallback(false);
-                say("Callback set to sync");
-            } else esay("Illegal value for 'callback' option : "+async);
+                _log.info("Callback set to sync");
+            } else _log.warn("Illegal value for 'callback' option : "+async);
         }
         if (_args.getOpt("replyObject") != null)setCommandExceptionEnabled(true);
         if (startNow)start();
@@ -171,9 +176,9 @@ public class   CellAdapter
             } catch (FileNotFoundException e) {
                 // Ignored: Context variable is not defined
             } catch (CommandExitException e) {
-                esay(e.getMessage());
+                _log.warn(e.getMessage());
             } catch (IOException e) {
-                esay(e.getMessage());
+                _log.warn(e.getMessage());
             }
         }
     }
@@ -287,31 +292,6 @@ public class   CellAdapter
      * @return a handle to the CellNucleus connected to this cell.
      */
     public CellNucleus getNucleus() { return _nucleus; }
-    /**
-     *  prints out the specified string to <code>stdout</code>
-     *  if the option was enabled by <code>setPrintoutLevel</code>.
-     * @param str String to be printed to <code>stdout</code>.
-     */
-    public void say(String str) { _nucleus.say(str);}
-    /**
-     *  prints out the specified string to <code>stderr</code>
-     *  if the option was enabled by <code>setPrintoutLevel</code>.
-     * @param str String to be printed to <code>stderr</code>.
-     */
-    public void esay(String str) { _nucleus.esay(str);}
-    /**
-     *  prints out the specified string to <code>stderr</code>
-     *  or to the loaded print driver. The printout can't be
-     *  disabled by the setPrintoutLevel.
-     * @param str String to be printed.
-     */
-    public void fsay(String str) { _nucleus.fsay(str);}
-    /**
-     *  prints out the specified Throwable to <code>stderr</code>
-     *  if the option was enabled by <code>setPrintoutLevel</code>.
-     * @param Throwable to be printed to <code>stderr</code>.
-     */
-    public void esay(Throwable t) {  _nucleus.esay(t);  }
 
     /**
      * Setup the logging context of the calling thread. Threads
@@ -354,11 +334,9 @@ public class   CellAdapter
      * @param size maximum number of lines kept by the pinboard.
      *
      */
-    public void createPinboard(int size) {
-        synchronized (_pinBoardLock) {
-            _pinboard = new Pinboard(size <= 0 ? 200 : size);
-            PinboardAppender.addPinboard(getCellName(), _pinboard);
-        }
+    public void createPinboard(int size)
+    {
+        _nucleus.setPinboard(new Pinboard(size <= 0 ? 200 : size));
     }
 
     /**
@@ -562,7 +540,7 @@ public class   CellAdapter
             try {
                 return sendAndWait(envelope, timeUntil(deadline));
             } catch (NoRouteToCellException e) {
-                esay(e);
+                _log.warn(e.toString(), e);
                 Thread.sleep(Math.min(timeUntil(deadline), RETRY_PERIOD));
             }
         }
@@ -650,10 +628,9 @@ public class   CellAdapter
      *
      */
     public void messageArrived(CellMessage msg) {
-        _nucleus.say(" CellMessage From   : "+msg.getSourceAddress());
-        _nucleus.say(" CellMessage To     : "+msg.getDestinationAddress());
-        _nucleus.say(" CellMessage Object : "+msg.getMessageObject());
-        _nucleus.say("");
+        _log.info(" CellMessage From   : "+msg.getSourceAddress());
+        _log.info(" CellMessage To     : "+msg.getDestinationAddress());
+        _log.info(" CellMessage Object : "+msg.getMessageObject());
 
     }
     /**
@@ -669,11 +646,9 @@ public class   CellAdapter
         try {
             _nucleus.sendMessage(msg);
         } catch (NoRouteToCellException nrtc) {
-            _nucleus.esay(
-                          "CellAdapter : NoRouteToCell in messageToForward : "+nrtc);
+            _log.warn("CellAdapter : NoRouteToCell in messageToForward : "+nrtc);
         } catch (Exception eee) {
-            _nucleus.esay(
-                          "CellAdapter : Exception in messageToForward : "+eee);
+            _log.warn("CellAdapter : Exception in messageToForward : "+eee);
         }
     }
     public Class loadClass(String className) throws ClassNotFoundException {
@@ -761,7 +736,7 @@ public class   CellAdapter
     }
 
     public String ac_say_$_1(Args args) {
-        say(args.argv(0));
+        _log.info(args.argv(0));
         return "";
     }
     public Object ac_xgetcellinfo(Args args) {
@@ -802,85 +777,82 @@ public class   CellAdapter
     }
     public String hh_show_pinboard =
         "[<lines>] # dumps the last <lines> to the terminal";
-    public String ac_show_pinboard_$_0_1(Args args) {
-        synchronized (_pinBoardLock) {
-            if (_pinboard == null)return "No Pinboard defined";
-            StringBuffer sb = new StringBuffer();
-            if (args.argc() > 0)
-                _pinboard.dump(sb, Integer.parseInt(args.argv(0)));
-            else
-                _pinboard.dump(sb, 20);
-
-            return sb.toString();
+    public String ac_show_pinboard_$_0_1(Args args)
+    {
+        Pinboard pinboard = _nucleus.getPinboard();
+        if (pinboard == null) return "No Pinboard defined";
+        StringBuffer sb = new StringBuffer();
+        if (args.argc() > 0) {
+            pinboard.dump(sb, Integer.parseInt(args.argv(0)));
+        } else {
+            pinboard.dump(sb, 20);
         }
 
+        return sb.toString();
     }
+
     public String hh_dump_pinboard =
         "<filename> # dumps the full pinboard to <filename>";
-    public String ac_dump_pinboard_$_1(Args args) {
-        synchronized (_pinBoardLock) {
-            if (_pinboard == null)return "No Pinboard defined";
+    public String ac_dump_pinboard_$_1(Args args)
+    {
+        Pinboard pinboard = _nucleus.getPinboard();
+        if (pinboard == null) return "No Pinboard defined";
 
-            try {
-                _pinboard.dump(new File(args.argv(0)));
-            } catch (Exception e) {
-                return "Dump Failed : "+e;
-            }
-            return "Pinboard dumped to "+args.argv(0);
+        try {
+            pinboard.dump(new File(args.argv(0)));
+        } catch (Exception e) {
+            return "Dump Failed : "+e;
         }
+        return "Pinboard dumped to "+args.argv(0);
     }
-    public String hh_pin = "<comment> # obsolete";
-    public String ac_pin_$_1(Args args) {
-        return "The pin command is obsolete";
-    }
+
     /**
      *   belongs to the Cell Interface.
      *   If this method is overwritten, the 'cleanUp'
      *   method won't becalled.
      */
     public void prepareRemoval(KillEvent ce) {
-        _nucleus.say("CellAdapter : prepareRemoval : waiting for gate to open");
+        _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
         _readyGate.check();
         try {
             cleanUp();
         } catch (Throwable t) {
-            _nucleus.esay("CellAdapter : prepareRemoval : got "+t);
-            _nucleus.esay(t);
+            _log.warn("CellAdapter : prepareRemoval : got "+t, t);
         }
         dumpPinboard();
-        _nucleus.say("CellAdapter : prepareRemoval : done");
+        _log.info("CellAdapter : prepareRemoval : done");
     }
     //
     // package private (we need it in CellShell)
     //
-    void dumpPinboard() {
-        synchronized (_pinBoardLock) {
-            try {
-                Map<String,Object> context = getDomainContext();
-                String dumpDir = (String)context.get("dumpDirectory");
-                if (dumpDir == null) {
-                    _nucleus.say("Pinboard not dumped (dumpDirectory not sp.)");
-                    return;
-                }
-                File dir = new File(dumpDir);
-                if (! dir.isDirectory()) {
-                    _nucleus.say(
-                                 "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
-                    return;
-                }
-                if (_pinboard == null) {
-                    _nucleus.say("Pinboard not dumped (no pinboard defined)");
-                    return;
-                }
-
-                File dump = new File(dir,
-                                     getCellDomainName()+"-"+
-                                     getCellName()+"-"+
-                                     Long.toHexString(System.currentTimeMillis()));
-                _pinboard.dump(dump);
-            } catch (Throwable t) {
-                _nucleus.esay("Dumping pinboard failed : "+t);
+    void dumpPinboard()
+    {
+        Pinboard pinboard = _nucleus.getPinboard();
+        try {
+            Map<String,Object> context = getDomainContext();
+            String dumpDir = (String)context.get("dumpDirectory");
+            if (dumpDir == null) {
+                _log.info("Pinboard not dumped (dumpDirectory not sp.)");
+                return;
             }
+            File dir = new File(dumpDir);
+            if (! dir.isDirectory()) {
+                _log.info(
+                          "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
+                return;
+            }
+            if (pinboard == null) {
+                _log.info("Pinboard not dumped (no pinboard defined)");
+                return;
+            }
+
+            File dump = new File(dir,
+                                 getCellDomainName()+"-"+
+                                 getCellName()+"-"+
+                                 Long.toHexString(System.currentTimeMillis()));
+            pinboard.dump(dump);
+        } catch (Throwable t) {
+            _log.warn("Dumping pinboard failed : "+t);
         }
     }
     /**
@@ -888,7 +860,7 @@ public class   CellAdapter
      *   Is never called.
      */
     public void   exceptionArrived(ExceptionEvent ce) {
-        _nucleus.say(" exceptionArrived "+ce);
+        _log.info(" exceptionArrived "+ce);
     }
     /**
      *   belongs to the Cell Interface.
@@ -912,12 +884,12 @@ public class   CellAdapter
     public void   messageArrived(MessageEvent me) {
         _startGate.check();
         if (me instanceof LastMessageEvent) {
-            _nucleus.say("messageArrived : LastMessageEvent (opening gate)");
+            _log.info("messageArrived : LastMessageEvent (opening gate)");
             _readyGate.open();
         } else {
             CellMessage msg = me.getMessage();
             Object      obj = msg.getMessageObject();
-            //        say("messageArrived Object : [final="+
+            //        _log.info("messageArrived Object : [final="+
             //               msg.isFinalDestination()+";i="+_useInterpreter+"] "+obj.getClass());
             if (msg.isFinalDestination()) {
                 if (_useInterpreter && (! msg.isReply()) &&
@@ -952,7 +924,7 @@ public class   CellAdapter
                             _nucleus.sendMessage(msg);
                         }
                     } catch (Exception e) {
-                        _nucleus.esay("PANIC : Problem returning answer : " + e);
+                        _log.warn("PANIC : Problem returning answer : " + e);
                     }
                 } else if ((obj instanceof PingMessage) && _answerPing) {
                     PingMessage ping = (PingMessage)obj;
@@ -965,7 +937,7 @@ public class   CellAdapter
                     try {
                         _nucleus.sendMessage(msg);
                     } catch (Exception ee) {
-                        _nucleus.esay("Couldn't revert PingMessage : "+ee);
+                        _log.warn("Couldn't revert PingMessage : "+ee);
                     }
                 } else {
                     UOID uoid = msg.getUOID();
@@ -987,7 +959,7 @@ public class   CellAdapter
                   try {
                   _nucleus.sendMessage(msg);
                   } catch (Exception ee) {
-                  _nucleus.esay("Couldn't forward PingMessage : "+ee);
+                  _log.warn("Couldn't forward PingMessage : "+ee);
                   }
                   } else {
                   messageToForward(msg);
@@ -998,7 +970,7 @@ public class   CellAdapter
                     try {
                         _nucleus.sendMessage(msg);
                     } catch (Exception ee) {
-                        _nucleus.esay("Couldn't forward PingMessage : "+ee);
+                        _log.warn("Couldn't forward PingMessage : "+ee);
                     }
                 } else {
                     UOID uoid = msg.getUOID();
@@ -1015,7 +987,7 @@ public class   CellAdapter
     }
     private Object executeLocalCommand(Object command)
         throws CommandException  {
-        //      say("executeLocalCommand() : "+command.getClass().getName()+" [_returnCommandException="+_returnCommandException);
+        //      _log.info("executeLocalCommand() : "+command.getClass().getName()+" [_returnCommandException="+_returnCommandException);
         if (command instanceof Authorizable) {
 
             if (_returnCommandException) {

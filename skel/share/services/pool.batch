@@ -17,7 +17,7 @@ check -strong pnfsmanager
 check -strong flushMessageTarget
 check -strong sweeper
 check -strong xrootdMoverDiskThreads
-check -strong xrootdMoverSocketThreads
+check xrootdMoverSocketThreads
 check -strong xrootdMoverMaxMemoryPerConnection
 check -strong xrootdMoverMaxMemory
 check -strong xrootdMoverMaxFrameSize

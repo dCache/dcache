@@ -1,5 +1,5 @@
 /*
-COPYRIGHT STATUS: 
+COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
   software are sponsored by the U.S. Department of Energy under Contract No.
   DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -71,10 +71,16 @@ import java.util.*;
 import java.io.*;
 import diskCacheV111.util.Base64;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 //import java.net.*;
 
 public class GSIHelper
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(GSIHelper.class);
+
 	private Process Helper;
 	private InputStream StdErr, StdOut;
 	private OutputStream StdIn;
@@ -83,7 +89,7 @@ public class GSIHelper
 	private String DataToSend = null;
 	private String Error = null;
     private CellAdapter adapter = null;
-    
+
 	public GSIHelper(String executable,CellAdapter adapter)
 		throws IOException
     {
@@ -107,19 +113,19 @@ public class GSIHelper
 		StdIn.write(msg.getBytes());
 		StdIn.write('\n');
 		StdIn.flush();
-		say("Sent: <" + msg + ">");
+		_log.debug("Sent: <" + msg + ">");
 		String answer = OutReader.readLine();
 		if( answer == null )
 			answer = "";
 		answer = answer.trim();
-		say("Rcvd: <" + answer + ">");
+		_log.debug("Rcvd: <" + answer + ">");
 		return answer;
 	}
-	
-	
+
+
 	public int handleAuthData(String data)
 	{
-		say("handleAuthData(" + data + ")");
+		_log.debug("handleAuthData(" + data + ")");
 		try
 		{
 			DataToSend = null;
@@ -156,12 +162,12 @@ public class GSIHelper
 			return -1;
 		}
 	}
-	
+
 	public String makeMIC(String msg)
 		throws IOException
 	{
 		// returns base64 encoded MIC string
-		String answer = sendRecv("MIC " + 
+		String answer = sendRecv("MIC " +
 			Base64.byteArrayToBase64(msg.getBytes()));
 		// cut out OK
 		int inx = answer.indexOf(" ");
@@ -172,7 +178,7 @@ public class GSIHelper
 		throws IOException
 	{
 		// returns base64 encoded MIC string
-		String answer = sendRecv("ENC " + 
+		String answer = sendRecv("ENC " +
 			Base64.byteArrayToBase64(msg.getBytes()));
 		// cut out OK
 		int inx = answer.indexOf(" ");
@@ -201,51 +207,21 @@ public class GSIHelper
 		catch ( Exception e )
 		{	/* ignore */ ;	}
 		Helper.destroy();
-	}		
+	}
 
 	public String dataToSend()
 	{
 		return DataToSend;
 	}
-	
+
 	public String clientName()
 	{
 		return ClientName;
 	}
-	
+
 	public String error()
 	{
 		return Error;
 	}
-    
-    public void say(String s)
-    {
-        if(adapter != null)
-        {
-            // comment saying for now
-            // can be uncommented if debugging is needed
-            //adapter.say("GSIHelper : "+s);
-        }
-    }
-    
-    public void esay(String e)
-    {
-        if(adapter !=null)
-        {
-            adapter.esay("GSIHelper : "+e);
-        }
-    }
-    
-    public void esay(Throwable t)
-    {
-        if(adapter !=null)
-        {
-            adapter.esay("GSIHelper throwable: ");
-            adapter.esay(t);
-        }
-    }
-    
-    
-
 }
 

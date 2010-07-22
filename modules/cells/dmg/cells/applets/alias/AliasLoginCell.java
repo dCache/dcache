@@ -9,16 +9,21 @@ import java.io.* ;
 import java.net.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      AliasLoginCell 
+public class      AliasLoginCell
        extends    CellAdapter
        implements Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(AliasLoginCell.class);
 
   private StreamEngine          _engine ;
   private ObjectInputStream     _in ;
@@ -30,15 +35,15 @@ public class      AliasLoginCell
   private Hashtable      _hash = new Hashtable() ;
   private Hashtable      _routes = new Hashtable() ;
   private CellNucleus    _nucleus ;
-  
+
   public AliasLoginCell( String name , StreamEngine engine ){
      super( name , "" , false ) ;
-     
+
      _engine  = engine ;
      _nucleus = getNucleus() ;
      _readyGate.open();
      try{
-     
+
         _out  = new ObjectOutputStream( _engine.getOutputStream() ) ;
         _in   = new ObjectInputStream(  _engine.getInputStream() ) ;
         _subject = _engine.getSubject();
@@ -47,7 +52,7 @@ public class      AliasLoginCell
         start() ;
         kill() ;
         throw new IllegalArgumentException( "Problem : "+e.toString() ) ;
-     } 
+     }
      _workerThread = new Thread( this ) ;
      _workerThread.start() ;
       useInterpreter( false ) ;
@@ -63,63 +68,63 @@ public class      AliasLoginCell
            try{
                if( ( commandObject = _in.readObject() ) == null )break ;
                if( execute( commandObject ) < 0 ){
-                  try{ _out.close() ; }catch(Exception ee){} 
-               }       
+                  try{ _out.close() ; }catch(Exception ee){}
+               }
            }catch( IOException e ){
-              esay("EOF Exception in read line : "+e ) ;
+              _log.warn("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              esay("I/O Error in read line : "+e ) ;
+              _log.warn("I/O Error in read line : "+e ) ;
               break ;
            }
-        
+
         }
-        say( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
-    
+
     }
   }
    public void   cleanUp(){
-   
-     say( "Clean up called" ) ;
-     try{ _out.close() ; }catch(Exception ee){} 
-     say( "Removing routes" ) ;
+
+     _log.info( "Clean up called" ) ;
+     try{ _out.close() ; }catch(Exception ee){}
+     _log.info( "Removing routes" ) ;
      Enumeration e = _routes.elements() ;
      while( e.hasMoreElements() ){
         CellRoute route  = (CellRoute)e.nextElement() ;
         try{
            _nucleus.routeDelete( route ) ;
         }catch(Exception ee ){
-           say( "Removing route failed : "+route ) ;
+           _log.info( "Removing route failed : "+route ) ;
         }
-     
+
      }
      _readyGate.check() ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
    public int execute( Object command ){
       CellMessage msg = null ;
-      
+
       if( command instanceof AliasCommand ){
          AliasCommand ac  = (AliasCommand) command ;
-         say( "Creating route : "+ac ) ;
+         _log.info( "Creating route : "+ac ) ;
          String action = ac.getAction() ;
          if( action.equals( "set-route" ) ){
-            CellRoute route = 
+            CellRoute route =
                new CellRoute( ac.getName() , getCellName() , CellRoute.EXACT ) ;
             try{
-               say( "Trying to remove : "+route ) ;
+               _log.info( "Trying to remove : "+route ) ;
                _nucleus.routeDelete( route ) ;
             }catch( Exception e1 ){
-               say( "Removing route failed : " + e1 ) ;
-            } 
+               _log.info( "Removing route failed : " + e1 ) ;
+            }
             try{
-               say( "Trying to add : "+route ) ;
+               _log.info( "Trying to add : "+route ) ;
                _nucleus.routeAdd( route ) ;
             }catch( Exception e2 ){
-               say( "Adding route failed : " + e2 ) ;
+               _log.info( "Adding route failed : " + e2 ) ;
                return 0 ;
             }
             _routes.put( ac.getName() , route ) ;
@@ -143,18 +148,18 @@ public class      AliasLoginCell
          try{
             sendMessage( (CellMessage)command ) ;
          }catch( Exception ee ){
-            esay( "Problem forwarding message : "+ee ) ;
+            _log.warn( "Problem forwarding message : "+ee ) ;
          }
       }
       return 0 ;
    }
    public void messageArrived( CellMessage msg ){
-       say( "Message arrived : "+msg ) ;
+       _log.info( "Message arrived : "+msg ) ;
        sendObject( msg ) ;
        return ;
    }
    public void messageToForward( CellMessage msg ){
-       say( "Message arrived : "+msg ) ;
+       _log.info( "Message arrived : "+msg ) ;
        sendObject( msg ) ;
        return ;
    }
@@ -165,7 +170,7 @@ public class      AliasLoginCell
       }catch(Exception e ){
            kill() ;
       }
-   }  
+   }
 
 
-} 
+}

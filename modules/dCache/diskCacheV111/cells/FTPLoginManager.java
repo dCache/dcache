@@ -8,23 +8,29 @@ import java.net.* ;
 import java.io.* ;
 import java.util.*;
 
-import dmg.cells.nucleus.*; 
+import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.telnet.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  **
-  *  
+  *
   *
   * @author Charles G Waldman
   * @version 0.0, Sep 15 1999
   * Modified from TelnetLoginManager.java
-  * 
+  *
  */
-public class      FTPLoginManager 
+public class      FTPLoginManager
        extends    CellAdapter
        implements Cell, Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(FTPLoginManager.class);
 
   private String       _cellName ;
   private CellNucleus  _nucleus ;
@@ -40,25 +46,25 @@ public class      FTPLoginManager
   private boolean      _opt_elch , _opt_anyuser , _opt_raw  ;
 
 
-  private static final String __usage = 
+  private static final String __usage =
      "<port> [loginCell] [-dummy] [-localhost] [-anyuser] [-elch]" ;
   /**
    */
   public FTPLoginManager( String name , String args ) throws Exception {
     super( name , args , false ) ;
     _nucleus       = getNucleus() ;
-    _args          = getArgs() ;      
+    _args          = getArgs() ;
     _cellName      = name ;
-    
+
     try{
       if( _args.argc() < 1 )
              throw new IllegalArgumentException( "USAGE : ... "+__usage ) ;
-      
+
       _listenPort = new Integer( _args.argv(0) ).intValue() ;
-      
+
       if( _args.argc() > 1 )
 	_loginCellClass = _args.argv(1) ;
-      
+
       _opt_dummy     = false ;
       _opt_localhost = false ;
       _opt_anyuser   = false ;
@@ -67,9 +73,9 @@ public class      FTPLoginManager
       for( int i = 0 ; i < _args.optc() ; i++ ){
 	if( _args.optv(i).equals( "-dummy" ) )_opt_dummy = true ;
 	else if( _args.optv(i).equals( "-localhost" ) )_opt_localhost = true ;
-	else if( _args.optv(i).equals( "-elch" ) )_opt_elch = true ;          
-	else if( _args.optv(i).equals( "-anyuser" ) )_opt_anyuser = true ;          
-	else if( _args.optv(i).equals( "-raw" ) )_opt_raw = true ;          
+	else if( _args.optv(i).equals( "-elch" ) )_opt_elch = true ;
+	else if( _args.optv(i).equals( "-anyuser" ) )_opt_anyuser = true ;
+	else if( _args.optv(i).equals( "-raw" ) )_opt_raw = true ;
       }
       _serverSocket  = new ServerSocket( _listenPort ) ;
     }catch( Exception e ){
@@ -77,28 +83,28 @@ public class      FTPLoginManager
       kill() ;
       if( e instanceof IllegalArgumentException )
 	throw (IllegalArgumentException)e ;
-      
+
       throw new IllegalArgumentException( e.toString() ) ;
     }
 
-    
-       
-    _listenThread  = new Thread( this , "listenThread" ) ;       
+
+
+    _listenThread  = new Thread( this , "listenThread" ) ;
     _listenThread.start() ;
-    
+
     //       _nucleus.setPrintoutLevel( 0xf ) ;
-       
+
     start() ;
   }
   public String prompt(){
     return "FTP";
   }
-  
-  public void cleanUp(){ 
+
+  public void cleanUp(){
     try{
-      say( "Trying to close serverSocket" ) ;
+      _log.info( "Trying to close serverSocket" ) ;
       _serverSocket.close() ;
-      say( "Trying serverSocket close" ) ;
+      _log.info( "Trying serverSocket close" ) ;
     }catch( Exception ee ){}
   }
   private void acceptConnections(){
@@ -110,71 +116,71 @@ public class      FTPLoginManager
       try{
 	socket = _serverSocket.accept() ;
 	_connectionRequestCounter ++ ;
-	_nucleus.say( "Connection request from "+socket.getInetAddress() ) ;
+	_log.info( "Connection request from "+socket.getInetAddress() ) ;
 	Thread t = new Thread( this ) ;
 	_connectionThreads.put( t , socket ) ;
 	t.start() ;
       }catch( IOException ioe ){
-	_nucleus.esay( "Got an IO Exception ( closing server ) : "+ioe ) ;
+	_log.warn( "Got an IO Exception ( closing server ) : "+ioe ) ;
 	break ;
       }catch( Exception ee ){
-	_nucleus.esay( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
+	_log.warn( "Got an Exception in getting keys ( closing connection ) : "+ee ) ;
 	try{ socket.close() ; }catch( IOException ioex ){}
 	continue ;
       }
     }
-    
+
   }
   public void acceptConnection( Socket socket ){
     Thread t = Thread.currentThread() ;
     try{
-      _nucleus.say( "acceptThread ("+t+"): creating protocol engine" ) ;
+      _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
       StreamEngine engine   ;
       engine = _opt_raw ?
 	(StreamEngine)new DummyStreamEngine( socket ) :
 	(StreamEngine)new TelnetStreamEngine( socket, null) ;
 
       String name = Subjects.getDisplayName(engine.getSubject());
-      _nucleus.say( "acceptThread ("+t+
+      _log.info( "acceptThread ("+t+
         "): connection created for user "+name ) ;
       String cellName = "tn-"+name+"*" ;
-      
+
       String [] paraNames = new String[1] ;
       Object [] parameter = new Object[1] ;
       paraNames[0] = "dmg.util.StreamEngine" ;
       parameter[0] = engine ;
       createNewCell( _loginCellClass , cellName , paraNames , parameter ) ;
-      
+
     }catch( Exception e ){
-      _nucleus.esay( "Exception in TelnetStreamEngine : "+e ) ;
+      _log.warn( "Exception in TelnetStreamEngine : "+e ) ;
       if( e instanceof InvocationTargetException ){
-	Exception ie = 
+	Exception ie =
 	  (Exception)((InvocationTargetException)e).getTargetException() ;
-	_nucleus.esay( "TargetException in TelnetStreamEngine : "+ie ) ;
+	_log.warn( "TargetException in TelnetStreamEngine : "+ie ) ;
       }
       try{ socket.close(); }catch(Exception ee){}
     }
-    
-    
+
+
   }
   public void run(){
     Socket currentSocket = null ;
-    
+
     if( Thread.currentThread() == _listenThread ){
-      
+
       acceptConnections() ;
-      
+
     }else if( ( currentSocket = (Socket)
 		_connectionThreads.remove( Thread.currentThread() )
                 ) != null ){
-      
-      acceptConnection( currentSocket ) ;      
-      
-    } 
-    
+
+      acceptConnection( currentSocket ) ;
+
+    }
+
   }
   public String toString(){
-    return "P="+_listenPort+";C="+_loginCellClass; 
+    return "P="+_listenPort+";C="+_loginCellClass;
   }
   public void getInfo( PrintWriter pw){
     pw.println( " ListenPort     : "+_listenPort ) ;
@@ -184,17 +190,17 @@ public class      FTPLoginManager
   //
   //
   public boolean isHostOk( InetAddress host ){
-    _nucleus.say( "Request for host "+host+" ("+host.getHostName()+")" ) ;
+    _log.info( "Request for host "+host+" ("+host.getHostName()+")" ) ;
     if( _opt_dummy )return true ;
-    if( _opt_localhost && (  host.getHostName().equals("localhost") ))return true ; 
+    if( _opt_localhost && (  host.getHostName().equals("localhost") ))return true ;
     return false ;
   }
   public boolean isUserOk( InetAddress host , String user ){
-    _nucleus.say( "Request for host "+host+" user "+user ) ;
+    _log.info( "Request for host "+host+" user "+user ) ;
     return _opt_anyuser ;
   }
   public boolean isPasswordOk( InetAddress host , String user , String passwd ){
-    _nucleus.say( "Request for host "+host+" user "+user+" password "+passwd ) ;
+    _log.info( "Request for host "+host+" user "+user+" password "+passwd ) ;
     return passwd.equals("elch") ? true : false ;
   }
 }

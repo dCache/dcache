@@ -6,7 +6,14 @@ import dmg.util.* ;
 import java.util.* ;
 import java.io.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MulticastCell extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(MulticastCell.class);
+
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
    private Hashtable   _classHash = new Hashtable() ;
@@ -40,8 +47,8 @@ public class MulticastCell extends CellAdapter {
       private Client getClient( CellPath path ){
          return (Client)_clients.get( path ) ;
       }
-      private Enumeration clients(){ 
-         return ((Hashtable)_clients.clone()).elements() ; 
+      private Enumeration clients(){
+         return ((Hashtable)_clients.clone()).elements() ;
       }
       private void setSourcePath( CellPath path ){
          _path = path ;
@@ -85,17 +92,17 @@ public class MulticastCell extends CellAdapter {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
-       
+
        start() ;
    }
    public synchronized void messageArrived( CellMessage message ){
        Object   obj  = message.getMessageObject() ;
        CellPath path = (CellPath)(message.getSourcePath().clone()) ;
-       
+
        if( obj instanceof NoRouteToCellException ){
           synchronized( _ioLock ){
              NoRouteToCellException nrtc = (NoRouteToCellException)obj ;
-             say( "NRTCE arrived : "+nrtc ) ; 
+             _log.info( "NRTCE arrived : "+nrtc ) ;
              removeByUOID( nrtc.getUOID() ) ;
              return ;
           }
@@ -103,7 +110,7 @@ public class MulticastCell extends CellAdapter {
        if( ! ( obj instanceof MulticastEvent ) )return ;
        MulticastEvent mce = (MulticastEvent)obj ;
        try{
-          if( mce instanceof MulticastOpen ){            
+          if( mce instanceof MulticastOpen ){
               MulticastOpen mco = (MulticastOpen)mce ;
 //              path.revert() ;
               openArrived( mco , path ) ;
@@ -124,7 +131,7 @@ public class MulticastCell extends CellAdapter {
               return ;
           }else if( mce instanceof MulticastMessage ){
               MulticastMessage mcm = (MulticastMessage)mce ;
-              registerMessageArrived( mcm , 
+              registerMessageArrived( mcm ,
                                       path ,
                                       message ) ;
               return ;
@@ -133,7 +140,7 @@ public class MulticastCell extends CellAdapter {
               IllegalArgumentException("Illegal Command : "+mce ) ;
           }
        }catch(Exception ee ){
-          esay(ee) ;
+          _log.warn(ee.toString(), ee) ;
           mce.isOk(false);
           mce.setReplyObject(ee) ;
        }
@@ -141,7 +148,7 @@ public class MulticastCell extends CellAdapter {
        try{
           sendMessage(message);
        }catch( Exception e ){
-          esay( "Failed to reply : "+e) ;
+          _log.warn( "Failed to reply : "+e) ;
        }
    }
    private Entry getEntry( String eventClass , String eventName ){
@@ -157,24 +164,24 @@ public class MulticastCell extends CellAdapter {
          Hashtable names = (Hashtable)_classHash.get( eventClass ) ;
          if( names == null )
             throw new
-            NoSuchElementException("Class not found : "+eventClass ) ;       
+            NoSuchElementException("Class not found : "+eventClass ) ;
          Object obj = names.get( eventName ) ;
          if( obj == null )
             throw new
-            NoSuchElementException("Not found : "+eventClass+":"+eventName) ;       
+            NoSuchElementException("Not found : "+eventClass+":"+eventName) ;
          names.remove( eventName ) ;
       }
    }
-   private Entry newEntry( String eventClass , 
+   private Entry newEntry( String eventClass ,
                            String eventName ,
                            boolean overwrite    ){
       synchronized( _classHash ){
          Entry entry = getEntry( eventClass , eventName ) ;
-         
+
          if( ( entry != null ) && ! overwrite )
-           throw new 
+           throw new
            IllegalArgumentException( "Duplicate entry" );
-           
+
          entry = new Entry( eventClass , eventName ) ;
          Hashtable hash = (Hashtable)_classHash.get( eventClass ) ;
          if( hash == null )_classHash.put( eventClass , hash = new Hashtable() ) ;
@@ -182,7 +189,7 @@ public class MulticastCell extends CellAdapter {
          return entry ;
       }
    }
-   private void registerArrived( MulticastRegister register , CellPath path ) 
+   private void registerArrived( MulticastRegister register , CellPath path )
            throws Exception {
        String eventClass = register.getEventClass() ;
        String eventName  = register.getEventName() ;
@@ -192,21 +199,21 @@ public class MulticastCell extends CellAdapter {
           NoSuchElementException("Not found : "+eventClass+":"+eventName) ;
        path.revert() ;
        entry.addClient(new Client(path)) ;
-       register.setServerInfo( entry.getServerDetail() , entry.getServerState() ) ;     
+       register.setServerInfo( entry.getServerDetail() , entry.getServerState() ) ;
    }
-   private void unregisterArrived( MulticastUnregister register , CellPath path ) 
+   private void unregisterArrived( MulticastUnregister register , CellPath path )
            throws Exception {
        String eventClass = register.getEventClass() ;
        String eventName  = register.getEventName() ;
        Entry entry = getEntry( eventClass , eventName  ) ;
        if( entry == null )return ;
        path.revert() ;
-       entry.removeClient(path) ;      
+       entry.removeClient(path) ;
    }
-   private void registerMessageArrived( 
-                  MulticastMessage message , 
+   private void registerMessageArrived(
+                  MulticastMessage message ,
                   CellPath path ,
-                  CellMessage  originalMessage ) 
+                  CellMessage  originalMessage )
            throws Exception {
        String eventClass = message.getEventClass() ;
        String eventName  = message.getEventName() ;
@@ -216,31 +223,31 @@ public class MulticastCell extends CellAdapter {
           throw new
           NoSuchElementException("Not found : "+eventClass+":"+eventName) ;
        entry.setServerState(info);
-       
+
        CellPath serverPath = entry.getSourcePath() ;
-       say( "message Path : "+path+"; serverPath : "+serverPath ) ;
+       _log.info( "message Path : "+path+"; serverPath : "+serverPath ) ;
        if( path.equals( serverPath ) ){
-          Enumeration clients = entry.clients() ;  
+          Enumeration clients = entry.clients() ;
           for( ; clients.hasMoreElements() ; ){
              Client  client = (Client)clients.nextElement() ;
              CellPath outPath  = client.getPath() ;
              try{
-                say( "Distributing to "+outPath ) ;
+                _log.info( "Distributing to "+outPath ) ;
                 synchronized( _ioLock ){
                     CellMessage msg = new CellMessage( outPath , message ) ;
                     sendMessage( msg ) ;
                     client.setUOID( msg.getUOID() ) ;
                 }
              }catch(NoRouteToCellException nrtce ){
-                esay( "remove enforced for client "+path ) ;
+                _log.warn( "remove enforced for client "+path ) ;
                 entry.removeClient( path ) ;
              }catch(Throwable t ){
-                esay(t) ;
+                _log.warn(t.toString(), t) ;
              }
 
           }
        }else{
-          say( "Message from client "+path ) ;
+          _log.info( "Message from client "+path ) ;
           serverPath = (CellPath)serverPath.clone() ;
           serverPath.revert() ;
           originalMessage.getDestinationPath().add( serverPath ) ;
@@ -248,13 +255,13 @@ public class MulticastCell extends CellAdapter {
           try{
              sendMessage( originalMessage ) ;
           }catch( NoRouteToCellException ee ){
-             esay(ee) ;
+             _log.warn(ee.toString(), ee) ;
           }catch( Exception eee ){
-             esay(eee);
+             _log.warn(eee.toString(), eee);
           }
-       }    
+       }
    }
-   private void openArrived( MulticastOpen open , CellPath path ) 
+   private void openArrived( MulticastOpen open , CellPath path )
            throws Exception {
        Entry entry = newEntry( open.getEventClass() ,
                                open.getEventName() ,
@@ -267,23 +274,23 @@ public class MulticastCell extends CellAdapter {
        Entry entry = getEntry( close.getEventClass() , close.getEventName()  ) ;
        if( entry == null )return ;
        removeEntry( close.getEventClass() , close.getEventName()  ) ;
-       Enumeration clients = entry.clients() ;  
+       Enumeration clients = entry.clients() ;
        for( ; clients.hasMoreElements() ; ){
           Client  client = (Client)clients.nextElement() ;
           CellPath path  = client.getPath() ;
           try{
-             say( "Close Distributing to "+path ) ;
+             _log.info( "Close Distributing to "+path ) ;
              sendMessage( new CellMessage( path , close ) ) ;
           }catch(Throwable t ){
-             esay(t) ;
-          }      
-       }    
+             _log.warn(t.toString(), t) ;
+          }
+       }
    }
    //
    private void removeByUOID( UOID uoid ){
        Enumeration classes = _classHash.elements() ;
        for( ; classes.hasMoreElements() ; ){
-           Enumeration instances = 
+           Enumeration instances =
                ((Hashtable)classes.nextElement()).elements() ;
            for( ; instances.hasMoreElements() ; ){
               Entry entry = (Entry)instances.nextElement() ;
@@ -294,7 +301,7 @@ public class MulticastCell extends CellAdapter {
                  if( u == null )continue ;
                  if( u.equals( uoid ) ){
                    entry.removeClient( client.getPath() ) ;
-                   say( "Removed : "+client ) ;
+                   _log.info( "Removed : "+client ) ;
                    return ;
                  }
               }
@@ -303,10 +310,10 @@ public class MulticastCell extends CellAdapter {
    }
    //
    public void getInfo( PrintWriter pw ){
-   
+
        Enumeration classes = _classHash.elements() ;
        for( ; classes.hasMoreElements() ; ){
-           Enumeration instances = 
+           Enumeration instances =
                ((Hashtable)classes.nextElement()).elements() ;
            for( ; instances.hasMoreElements() ; ){
               Entry entry = (Entry)instances.nextElement() ;

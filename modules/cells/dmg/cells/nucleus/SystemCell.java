@@ -33,11 +33,11 @@ public class      SystemCell
 
    private class TheKiller extends Thread {
       public void run(){
-         say("Running shutdown sequence");
+         _log.info("Running shutdown sequence");
          kill() ;
-         say("Kill done, waiting for shutdown lock");
+         _log.info("Kill done, waiting for shutdown lock");
          _shutdownLock.check() ;
-         say("Killer done");
+         _log.info("Killer done");
       }
    }
    public SystemCell( String cellDomainName  ){
@@ -72,14 +72,14 @@ public class      SystemCell
       try{
           handlerClass = Class.forName( handlerName ) ;
       }catch( ClassNotFoundException cnfe ){
-          esay( "Couldn't install interrupt handler ("+
+          _log.warn( "Couldn't install interrupt handler ("+
                 handlerName+") : "+cnfe ) ;
          return -1 ;
       }
       try{
           _interruptHandler = (DomainInterruptHandler)handlerClass.newInstance() ;
       }catch( Exception ee ){
-          esay( "Couldn't install interrupt handler ("+
+          _log.warn( "Couldn't install interrupt handler ("+
                 handlerName+") : "+ee ) ;
           return -2 ;
       }
@@ -93,11 +93,11 @@ public class      SystemCell
              Thread.sleep( _interruptTimer ) ;
              if( _interruptHandler.interruptPending() )break ;
           }catch( InterruptedException ie ){
-             say( "Interrupt loop was interrupted" ) ;
+             _log.info( "Interrupt loop was interrupted" ) ;
              break ;
           }
        }
-       say( "Interrupt loop stopped (shutting down system now)" ) ;
+       _log.info( "Interrupt loop stopped (shutting down system now)" ) ;
        kill() ;
    }
     private void shutdownSystem()
@@ -119,10 +119,10 @@ public class      SystemCell
             }
         }
 
-        say("Will try to shutdown non-system cells " + nonSystem);
+        _log.info("Will try to shutdown non-system cells " + nonSystem);
         shutdownCells(nonSystem, 3000);
 
-        say("Will try to shutdown remaining cells " + system);
+        _log.info("Will try to shutdown remaining cells " + system);
         shutdownCells(system, 5000);
     }
 
@@ -139,20 +139,20 @@ public class      SystemCell
            try {
                _nucleus.kill(cellName);
            } catch (IllegalArgumentException e) {
-               say("Problem killing : " + cellName + " -> " + e.getMessage());
+               _log.info("Problem killing : " + cellName + " -> " + e.getMessage());
            }
        }
 
        for (String cellName : cells) {
            try {
                if (_nucleus.join(cellName, timeout)) {
-                   say("Killed " + cellName);
+                   _log.info("Killed " + cellName);
                } else {
-                   esay("Timeout waiting for " + cellName);
+                   _log.warn("Timeout waiting for " + cellName);
                    break;
                }
            } catch (InterruptedException e) {
-               esay("Problem killing : " + cellName + " -> " + e.getMessage());
+               _log.warn("Problem killing : " + cellName + " -> " + e.getMessage());
                break;
            }
        }
@@ -160,7 +160,7 @@ public class      SystemCell
 
    public void cleanUp(){
        shutdownSystem() ;
-       say("Opening shutdown lock") ;
+       _log.info("Opening shutdown lock") ;
        _shutdownLock.open();
        System.exit(0) ;
    }
@@ -200,10 +200,10 @@ public class      SystemCell
         }
    }
    public void messageArrived( CellMessage msg ){
-        say( "Message arrived : "+msg ) ;
+        _log.info( "Message arrived : "+msg ) ;
         _packetsReceived ++ ;
         if( msg.isReply() ){
-            esay("Seems to a bounce : "+msg);
+            _log.warn("Seems to a bounce : "+msg);
             return ;
          }
         Object obj  = msg.getMessageObject() ;
@@ -211,9 +211,9 @@ public class      SystemCell
            String command = (String)obj ;
            if( command.length() < 1 )return ;
            Object reply = null ;
-           say( "Command : "+command ) ;
+           _log.info( "Command : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
-           say( "Reply : "+reply ) ;
+           _log.info( "Reply : "+reply ) ;
            msg.setMessageObject( reply ) ;
            _packetsAnswered ++ ;
         }else if( obj instanceof AuthorizedString ){
@@ -221,28 +221,28 @@ public class      SystemCell
            String command = as.toString() ;
            if( command.length() < 1 )return ;
            Object reply = null ;
-           say( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
+           _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
-           say( "Reply : "+reply ) ;
+           _log.info( "Reply : "+reply ) ;
            msg.setMessageObject( reply ) ;
            _packetsAnswered ++ ;
         }else if( obj instanceof CommandRequestable ){
            CommandRequestable request = (CommandRequestable)obj ;
            Object reply = null ;
            try{
-              say( "Command : "+request.getRequestCommand() ) ;
+              _log.info( "Command : "+request.getRequestCommand() ) ;
               reply = _cellShell.command( request ) ;
            }catch( CommandException cee ){
               reply = cee ;
            }
-           say( "Reply : "+reply ) ;
+           _log.info( "Reply : "+reply ) ;
            msg.setMessageObject( reply ) ;
            _packetsAnswered ++ ;
         }
         try{
            msg.revertDirection() ;
            sendMessage( msg ) ;
-           say( "Sending : "+msg ) ;
+           _log.info( "Sending : "+msg ) ;
            _packetsReplayed ++ ;
         }catch( Exception e ){
            _exceptionCounter ++ ;

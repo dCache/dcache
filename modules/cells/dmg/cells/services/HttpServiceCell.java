@@ -9,9 +9,15 @@ import java.net.* ;
 import java.text.*;
 import java.lang.reflect.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class      HttpServiceCell
        extends    CellAdapter
        implements Runnable      {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(HttpServiceCell.class);
 
    private ServerSocket _listener ;
    private CellNucleus  _nucleus ;
@@ -64,7 +70,7 @@ public class      HttpServiceCell
             try {
                 _listener.close();
             } catch (IOException e) {
-                esay(e.getMessage());
+                _log.warn(e.getMessage());
             }
         }
         super.cleanUp();
@@ -294,29 +300,19 @@ public class      HttpServiceCell
           _serial ++ ;
           try{
              socket = _listener.accept() ;
-             say( "Connection ("+_serial+") from : "+socket ) ;
+             _log.info( "Connection ("+_serial+") from : "+socket ) ;
 
              new Thread(
                      new HtmlService( _serial , socket ) ,
                      socket.getInetAddress().toString()
                  ).start() ;
           }catch( Exception ee ){
-             esay( "Problem in connection from "+socket+" : "+ee ) ;
+             _log.warn( "Problem in connection from "+socket+" : "+ee ) ;
              break  ;
           }
 
        }
-       say("Listener Done" );
-   }
-
-   @Override
-   public void say( String msg ){
-      super.say("(" + _serial + ") " + msg);
-   }
-
-   @Override
-   public void esay( String msg ){
-      super.esay("(" + _serial + ") " + msg);
+       _log.info("Listener Done" );
    }
 
    private class HtmlService
@@ -355,7 +351,7 @@ public class      HttpServiceCell
           if( st.countTokens() < 2 )return ;
           if( ! st.nextToken().equals("Basic") )return ;
           auth = new String( Base64.decode( st.nextToken() ) ) ;
-          say( "Authentication : >"+auth+"<" ) ;
+          _log.info( "Authentication : >"+auth+"<" ) ;
           st = new StringTokenizer(auth,":") ;
           if( st.countTokens() < 2 )return ;
           _userName = st.nextToken() ;
@@ -396,16 +392,16 @@ public class      HttpServiceCell
           try{
              String request = _br.readLine() ;
              if( request == null ){
-                esay( "No request line found" ) ;
+                _log.warn( "No request line found" ) ;
                 throw new Exception( "Nothing requested" ) ;
              }
-             say( "Request line  : "+request ) ;
+             _log.info( "Request line  : "+request ) ;
              //
              // split the request attributes
              //
              String x = null ;
              while( ( x = _br.readLine() ) != null ){
-                say( "Request line(x) : "+x ) ;
+                _log.info( "Request line(x) : "+x ) ;
                 if( x.length() == 0 )break ;
                 int n = x.indexOf(':') ;
                 if( n < 0 )continue ;
@@ -448,14 +444,14 @@ public class      HttpServiceCell
              _pw.flush() ;
           }catch( HttpException e ){
              printHttpException( e ) ;
-             esay( "Problem in HtmlService : "+e ) ;
+             _log.warn( "Problem in HtmlService : "+e ) ;
           }catch( Exception ee ){
              printHttpException( new HttpException( HttpStatus.BAD_REQUEST , "Bad Request : "+ee ) ) ;
-             esay( "Problem in HtmlService : "+ee ) ;
+             _log.warn( "Problem in HtmlService : "+ee ) ;
           }finally{
             try{ _out.close() ; }catch( IOException eeee ){}
           }
-          say( "Finished" ) ;
+          _log.info( "Finished" ) ;
 
        }
        private void switchHttpType( AliasEntry entry ) throws Exception {
@@ -633,7 +629,7 @@ public class      HttpServiceCell
           _pw.flush() ;
        }
        public void printHttpException( HttpException exception ){
-          say( "Starting printHttpException");
+          _log.info( "Starting printHttpException");
           String dateString = _dateFormat.format(new Date());
           _pw.println( "HTTP/1.0 "+exception.getErrorCode()+" "+exception.getMessage() );
           _pw.println( "MIME-Version: 1.0" ) ;
@@ -659,7 +655,7 @@ public class      HttpServiceCell
           _pw.println( "</pre>" ) ;
           _pw.println( "</body></html>");
           _pw.flush() ;
-          say("printHttpException done");
+          _log.info("printHttpException done");
        }
       private final static int S_IDLE = 0 ;
       private final static int S_COPY = 1 ;

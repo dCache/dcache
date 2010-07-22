@@ -22,6 +22,9 @@ import dmg.util.Args;
 import dmg.util.CommandExitException;
 import diskCacheV111.pools.PoolCellInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class PoolInfoObserverException extends Exception
 {
     PoolInfoObserverException(String message)
@@ -32,10 +35,12 @@ class PoolInfoObserverException extends Exception
 
 public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(PoolInfoObserverV2.class);
+
     private File    _configFile;
     private long    _interval       = 60000;
     private long    _counter        = 0;
-    private boolean _debug          = false;
     private String  _dCacheInstance = "?";
     private long    _poolManagerTimeout     = 30000L;
     private boolean _poolManagerUpdating    = false;
@@ -117,13 +122,13 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
         _nucleus.newThread(new Runnable() {
                                public void run() {
-                                   say("Starting pool manager (" +poolManagerName+ ") scan");
+                                   _log.info("Starting pool manager (" +poolManagerName+ ") scan");
                                    try {
                                        collectPoolManagerPoolGroups(poolManagerName);
                                    } catch (Exception e) {
-                                       esay("Problem in collectPoolManagerPoolGroups : " + e);
+                                       _log.warn("Problem in collectPoolManagerPoolGroups : " + e);
                                    } finally {
-                                       say("collectPoolManagerPoolGroups done");
+                                       _log.info("collectPoolManagerPoolGroups done");
                                    }
                                }
                            }).start();
@@ -175,7 +180,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
     {
         synchronized (_poolManagerUpdateLock) {
             if (_poolManagerUpdating) {
-                say("PoolManager update already in progress");
+                _log.info("PoolManager update already in progress");
                 return;
             }
             _poolManagerUpdating = true;
@@ -218,12 +223,12 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             message = new CellMessage(path, request);
             message = sendAndWait(message, _poolManagerTimeout);
             if (message == null) {
-                esay("Request to " +poolManager+ " timed out");
+                _log.warn("Request to " +poolManager+ " timed out");
                 continue;
             }
             result = message.getMessageObject();
             if (! (result instanceof Object[])) {
-                esay("Illegal reply (1) on " + request + " "
+                _log.warn("Illegal reply (1) on " + request + " "
                      + result.getClass().getName());
                 continue;
             }
@@ -231,7 +236,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             if ((props.length < 3) ||
                 (! (props[0] instanceof String)) ||
                 (! (props[1] instanceof Object []))) {
-                esay("Illegal reply (2) on " +request);
+                _log.warn("Illegal reply (2) on " +request);
                 continue;
             }
             synchronized(_container) {
@@ -319,7 +324,6 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         super(name,PoolInfoObserverV1.class.getName(), args, false);
         _args    = getArgs();
         _nucleus = getNucleus();
-        _debug = _args.getOpt("debug") != null;
 
         String instance = _args.getOpt("dCacheInstance");
 
@@ -351,9 +355,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         _senderThread  = _nucleus.newThread(this, "sender");
         _senderThread.start();
 
-        say("Sender started");
+        _log.info("Sender started");
 
-        say("Collector will be started a bit delayed");
+        _log.info("Collector will be started a bit delayed");
 
         _nucleus.newThread(new DoDelayedOnStartup(), "init").start();
 
@@ -366,7 +370,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             /*
              * wait for awhile before starting startup processes
              */
-            say("Collector will be delayed by " +_interval/2000L+ " Seconds");
+            _log.info("Collector will be delayed by " +_interval/2000L+ " Seconds");
 
             try {
                 Thread.currentThread().sleep(_interval/2);
@@ -379,15 +383,15 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                 _nucleus.newThread(PoolInfoObserverV2.this, "collector");
             _collectThread.start();
 
-            say("Collector now started as well");
-            say("Getting pool groups from PoolManager");
+            _log.info("Collector now started as well");
+            _log.info("Getting pool groups from PoolManager");
 
             try {
                 collectPoolManagerPoolGroups("PoolManager");
             } catch (Exception e) {
-                esay("Problem in collectPoolManagerPoolGroups : "  + e);
+                _log.warn("Problem in collectPoolManagerPoolGroups : "  + e);
             }
-            say("collectPoolManagerPoolGroups done");
+            _log.info("collectPoolManagerPoolGroups done");
         }
     }
 
@@ -416,11 +420,11 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             try {
                 String line;
                 while ((line = br.readLine()) != null) {
-                    say(line);
+                    _log.info(line);
                     command(line);
                 }
             } catch (IOException e) {
-                esay(e);
+                _log.warn(e.toString(), e);
             } finally {
                 try {
                     br.close();
@@ -429,11 +433,11 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             }
             _configFileLastModified = accessTime;
         } catch (FileNotFoundException e) {
-            esay("Could not open " + _configFile + " due to "  + e);
+            _log.warn("Could not open " + _configFile + " due to "  + e);
             _container = c;
             return false;
         } catch (CommandExitException e) {
-            esay("Could not execute " + _configFile + " due to "  + e);
+            _log.warn("Could not execute " + _configFile + " due to "  + e);
             _container = c;
             return false;
         }
@@ -441,23 +445,17 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         return true;
     }
 
-    public void dsay(String message)
-    {
-        if (_debug)
-            say(message);
-    }
-
     private synchronized void addQuery(String destination)
     {
         if (_infoMap.get(destination) == null) {
-            say("Adding " + destination);
+            _log.info("Adding " + destination);
             _infoMap.put(destination, new CellQueryInfo(destination));
         }
     }
 
     private synchronized void removeQuery(String destination)
     {
-        say("Removing " + destination);
+        _log.info("Removing " + destination);
         _infoMap.remove(destination);
     }
 
@@ -475,14 +473,14 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
     {
         while (!Thread.currentThread().interrupted()) {
             synchronized (_infoLock) {
-                dsay("Updating info in context poolgroup-map.ser");
+                _log.debug("Updating info in context poolgroup-map.ser");
                 flushTopologyMap("poolgroup-map.ser");
-                dsay("Updating info in context Done");
+                _log.debug("Updating info in context Done");
             }
             try {
                 Thread.currentThread().sleep(_interval);
             } catch (InterruptedException iie) {
-                say("Collector Thread interrupted");
+                _log.info("Collector Thread interrupted");
                 break;
             }
         }
@@ -501,10 +499,10 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                 for (CellQueryInfo info : _infoMap.values()) {
                     try {
                         CellMessage cellMessage = info.getCellMessage();
-                        dsay("Sending message to " +cellMessage.getDestinationPath());
+                        _log.debug("Sending message to " +cellMessage.getDestinationPath());
                         sendMessage(info.getCellMessage());
                     } catch (NoRouteToCellException e) {
-                        esay("Problem in sending message : " + e);
+                        _log.warn("Problem in sending message : " + e);
                     }
                 }
             }
@@ -516,19 +514,19 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
             long now = System.currentTimeMillis();
             if (loadConfigFile() || (_poolManagerNextQuery < now)) {
                 try {
-                    dsay("collectPoolManagerPoolGroups started on "
+                    _log.debug("collectPoolManagerPoolGroups started on "
                          + _poolManagerName);
                     collectPoolManagerPoolGroups(_poolManagerName);
                     _poolManagerNextQuery = now + _poolManagerUpdate;
                 } catch (Exception e) {
-                    esay("Problems reported by 'collectPoolManagerPoolGroups' : " + e);
+                    _log.warn("Problems reported by 'collectPoolManagerPoolGroups' : " + e);
                 }
             }
             try {
                 Thread.currentThread().sleep(_interval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                say("Sender Thread interrupted");
+                _log.info("Sender Thread interrupted");
                 break;
             }
         }
@@ -552,12 +550,12 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         CellPath path = message.getSourcePath();
         Object  reply = message.getMessageObject();
 
-        say("Message arrived : " + reply.getClass().getName()
+        _log.info("Message arrived : " + reply.getClass().getName()
             + " from " + path);
         String destination = (String)path.getCellName();
         CellQueryInfo info = (CellQueryInfo)_infoMap.get(destination);
         if (info == null) {
-            dsay("Unexpected reply arrived from : " +path);
+            _log.debug("Unexpected reply arrived from : " +path);
             return;
         }
         //
@@ -585,15 +583,15 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
     public void cleanUp()
     {
-        say("Clean Up sequence started");
+        _log.info("Clean Up sequence started");
         //
         // wait for the worker to be done
         //
-        say("Waiting for collector thread to be finished");
+        _log.info("Waiting for collector thread to be finished");
         _collectThread.interrupt();
         _senderThread.interrupt();
 
-        say("Clean Up sequence done");
+        _log.info("Clean Up sequence done");
     }
 
     public void getInfo(PrintWriter pw)
@@ -603,7 +601,6 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         pw.println("PoolManager Update Interval : " +_poolManagerUpdate+ " [msec]");
         pw.println(" Update Counter : " +_counter);
         pw.println("       Watching : " +_infoMap.size()+ " cells");
-        pw.println("     Debug Mode : " +(_debug?"ON":"OFF"));
     }
 
     private Map scanTopologyMap(String topoMapString)

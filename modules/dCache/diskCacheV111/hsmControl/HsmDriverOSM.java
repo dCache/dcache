@@ -19,20 +19,24 @@ import diskCacheV111.vehicles.StorageInfo ;
 import diskCacheV111.vehicles.OSMStorageInfo ;
 import diskCacheV111.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  patrick
  */
     public class HsmDriverOSM implements HsmControllable  {
+
+        private Logger _log = LoggerFactory.getLogger(HsmDriverOSM.class);
+
         private Args _global = null ;
         private Args _local  = null ;
         private String _command = null ;
-        private Logable _log    = null ;
 
-        public HsmDriverOSM( Args global , Args local , Logable log ) throws Exception {
+        public HsmDriverOSM( Args global , Args local ) throws Exception {
             _global = global ;
             _local  = local ;
-            _log    = log ;
             _command = local.getOpt("command");
 
             if( ( _command == null ) || ( _command.equals("") ))
@@ -45,7 +49,7 @@ import diskCacheV111.util.* ;
             try{
                 setVolumeDetails( storageInfo );
             }catch(Exception ee){
-                _log.elog("Can't get volume details "+ee);
+                _log.error("Can't get volume details "+ee);
             }
 
         }
@@ -83,7 +87,7 @@ import diskCacheV111.util.* ;
                                            "Unknow error in responds to >"+command+"<":
                                            error);
 
-             _log.log("Output : "+output);
+             _log.info("Output : "+output);
 
              String volNbf   = null ;
              String volStat  = null ;
@@ -137,7 +141,7 @@ import diskCacheV111.util.* ;
                                            "Unknow error in responds to >"+command+"<":
                                            error);
 
-             _log.log("Output : "+output);
+             _log.info("Output : "+output);
 
              String tape   = null ;
              String status = null ;

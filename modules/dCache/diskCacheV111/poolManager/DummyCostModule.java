@@ -12,11 +12,16 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.util.Args;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DummyCostModule
     extends AbstractCellComponent
     implements CostModule,
                CellCommandListener
 {
+   private final static Logger _log =
+       LoggerFactory.getLogger(DummyCostModule.class);
 
    private CellAdapter _cell = null ;
 
@@ -25,7 +30,7 @@ public class DummyCostModule
    }
    public void messageArrived( CellMessage cellMessage ){
       Object message = cellMessage.getMessageObject() ;
-      _cell.say( "DummyCostModule : messageArrived : "+message.getClass().getName() ) ;
+      _log.info( "DummyCostModule : messageArrived : "+message.getClass().getName() ) ;
 
    }
    public  PoolCostCheckable getPoolCost( String poolName , long filesize ){

@@ -15,7 +15,6 @@ import java.util.StringTokenizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.NDC;
 import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -30,6 +29,7 @@ import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
@@ -485,6 +485,29 @@ public class PoolManagerV5
         return msg;
     }
 
+    public PoolManagerGetPoolsByNameMessage
+        messageArrived(PoolManagerGetPoolsByNameMessage msg)
+        throws CacheException
+    {
+        try {
+            List<PoolManagerPoolInformation> pools = new ArrayList();
+            for (String name: msg.getPoolNames()) {
+                try {
+                    pools.add(_poolMonitor.getPoolInformation(name));
+                } catch (NoSuchElementException e) {
+                    /* Don't include a pool that doesn't exist.
+                     */
+                }
+            }
+            msg.setPools(pools);
+            msg.setSucceeded();
+        } catch (InterruptedException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Pool manager is shutting down");
+        }
+        return msg;
+    }
+
     public PoolManagerGetPoolsByLinkMessage
         messageArrived(PoolManagerGetPoolsByLinkMessage msg)
         throws CacheException
@@ -742,7 +765,6 @@ public class PoolManagerV5
                     _log.warn("Link group selection handler was interrupted");
                 } finally {
                     CDC.clear();
-                    NDC.remove();
                 }
             }
         }

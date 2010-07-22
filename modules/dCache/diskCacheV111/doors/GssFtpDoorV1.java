@@ -51,9 +51,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // GSS GSI context and others
     protected GSSContext _serviceContext;
 
-    // For multiple attribute support
-    //protected AuthenticationMessage authmessage;
-
     /** Creates a new instance of GsiFtpDoorV1 */
     public GssFtpDoorV1(String name, StreamEngine engine, Args args)
         throws InterruptedException, ExecutionException

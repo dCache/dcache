@@ -9,17 +9,25 @@ import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 import  java.util.* ;
 import  java.io.* ;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author  patrick
  */
 public class BroadcastCell extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(BroadcastCell.class);
+
    private class Entry {
-        
+
       private static final int STATIC             =  1 ;
       private static final int CANCEL_ON_FAILURE  =  2 ;
       private static final int EXPIRES            =  4 ;
-      
+
       private CellPath _destination = null ;
       private String   _trigger     = null ;
       private int      _mode        = STATIC ;
@@ -32,7 +40,7 @@ public class BroadcastCell extends CellAdapter {
           _destination = destination ;
           _trigger     = trigger ;
       }
-      private void setCancelOnFailure( boolean cancel ){ 
+      private void setCancelOnFailure( boolean cancel ){
           if(cancel){
               _mode |= CANCEL_ON_FAILURE ;
               _mode &= ~ STATIC ;
@@ -42,13 +50,13 @@ public class BroadcastCell extends CellAdapter {
               if( ( _mode & EXPIRES ) == 0 )_mode |= STATIC ;
           }
       }
-      private void setExpires( long expires ){ 
+      private void setExpires( long expires ){
           if( expires <= 0L ){
              _expires = 0L ;
              _mode &= ~ EXPIRES ;
              if( ( _mode & CANCEL_ON_FAILURE ) == 0 )_mode |= STATIC ;
           }else{
-             _expires = expires ; 
+             _expires = expires ;
              _mode |= EXPIRES ;
              _mode &= ~ STATIC ;
           }
@@ -66,7 +74,7 @@ public class BroadcastCell extends CellAdapter {
           if( ( _mode & CANCEL_ON_FAILURE ) != 0 )sb.append("C");
           if( ( _mode & EXPIRES ) != 0 ){
                 long rest = _expires - System.currentTimeMillis() ;
-                rest = ( rest <= 0L ) ? 0L : ( rest / 1000L ) ; 
+                rest = ( rest <= 0L ) ? 0L : ( rest / 1000L ) ;
                 sb.append("E;ex=").append(rest) ;
           }else{
                 sb.append(";");
@@ -82,7 +90,7 @@ public class BroadcastCell extends CellAdapter {
       }
       public boolean isCancelOnFailure(){ return ( _mode & CANCEL_ON_FAILURE) != 0 ; }
       public boolean equals( Object obj ){
-    	  
+
     	  if( ! (obj instanceof Entry) ) return false;
           Entry other = (Entry)obj ;
           return other._destination.equals(this._destination) &&
@@ -94,7 +102,7 @@ public class BroadcastCell extends CellAdapter {
     }
     private CellNucleus      _nucleus   = null ;
     private Args             _args      = null ;
-    
+
     private HashMap _eventClassMap  = new HashMap() ;
     private HashMap _destinationMap = new HashMap() ;
     private boolean _debug          = false ;
@@ -103,14 +111,14 @@ public class BroadcastCell extends CellAdapter {
     private long    _forwarded      = 0L ;
     private long    _sent           = 0L ;
     private Debugging _debugging    = new Debugging() ;
-    
-    
+
+
     /** Creates a new instance of BroadcastCell */
     public BroadcastCell(String name , String args ) {
         super( name , args , false ) ;
         _args    = getArgs() ;
         _nucleus = getNucleus() ;
-    
+
         _debugMode = _args.getOpt("debug") ;
         if( _debugMode != null ){
             _debug = true ;
@@ -125,7 +133,7 @@ public class BroadcastCell extends CellAdapter {
             StringBuffer sb = new StringBuffer() ;
             Iterator i = _eventClassMap.entrySet().iterator() ;
             while( i.hasNext() ){
-                
+
                 Map.Entry entry = (Map.Entry) i.next() ;
                 String key = (String)entry.getKey() ;
                 sb.append( key ).append("\n");
@@ -143,17 +151,17 @@ public class BroadcastCell extends CellAdapter {
         }
     }
      private class OptionClass {
-         
+
        private long     expires     = -1 ;
        private boolean  failures    = false ;
        private  String  eventClass  = null ;
        private  String  destination = null ;
-       
+
        private OptionClass( Args args ){
-           
+
             eventClass  = args.argv(0);
             destination = args.argc() > 1 ? args.argv(1) : null ;
-            
+
             String tmp = args.getOpt("expires") ;
             if( tmp != null )expires = Long.parseLong(tmp)*1000L + System.currentTimeMillis() ;
 
@@ -169,33 +177,33 @@ public class BroadcastCell extends CellAdapter {
                      throw new
                      IllegalArgumentException("-cancelonfailure=[on|off]");
                  }
-            }                  
+            }
        }
-      
+
     }
-    public String hh_register = 
+    public String hh_register =
       "<classEvent> <cellPath> [-send] [-expires=<seconds>] [-cancelonfailure=[on|off]]" ;
     public String ac_register_$_2( Args args ) throws Exception {
         try{
         OptionClass options = new OptionClass( args ) ;
-        
+
         synchronized( this ){
             Entry entry = register( new CellPath( options.destination ) , options.eventClass ) ;
             entry.setCancelOnFailure(options.failures) ;
             if( options.expires  > 0L )entry.setExpires(options.expires);
         }
         }catch(Exception ee ){
-            esay(ee);
+            _log.warn(ee.toString(), ee);
             throw ee ;
         }
         return "" ;
     }
-    public String hh_modify = 
+    public String hh_modify =
       "<classEvent> <cellPath> [-expires=<seconds>] [-cancelonfailure=[on|off]]" ;
     public String ac_modify_$_2( Args args ){
-        
+
         OptionClass options = new OptionClass( args ) ;
-        
+
         Entry entry = null ;
         synchronized( this ){
             entry = get( new CellPath( options.destination ) , options.eventClass ) ;
@@ -209,13 +217,13 @@ public class BroadcastCell extends CellAdapter {
     }
     public String hh_unregister = "<classEvent> <cellPath> [-send]" ;
     public String ac_unregister_$_2( Args args ) throws Exception {
-        
+
         OptionClass options = new OptionClass( args ) ;
         Entry e = unregister( new CellPath(options.destination) , options.eventClass ) ;
         return "" ;
     }
     private synchronized Entry get( CellPath destination , String eventClass ){
-        
+
         CellAddressCore core = destination.getDestinationAddress() ;
 
         Map map = (Map)_eventClassMap.get( eventClass ) ;
@@ -223,11 +231,11 @@ public class BroadcastCell extends CellAdapter {
         return (Entry) map.get( core ) ;
     }
     private synchronized Entry register( CellPath destination , String eventClass ){
-        
+
         CellAddressCore core = destination.getDestinationAddress() ;
-        
+
         Entry e = new Entry( destination , eventClass ) ;
-    
+
         Map map = (Map)_eventClassMap.get( eventClass ) ;
         if(  map == null ){
            _eventClassMap.put( eventClass , map = new HashMap() ) ;
@@ -237,38 +245,38 @@ public class BroadcastCell extends CellAdapter {
                IllegalArgumentException("Duplicated entry : "+e) ;
         }
         map.put( core , e ) ;
-        
+
         map = (Map)_destinationMap.get( core ) ;
         if( map == null )_destinationMap.put( core , map = new HashMap() ) ;
         map.put( eventClass , e ) ;
-        
+
         return e ;
     }
     private synchronized Entry unregister( CellPath destination , String eventClass ){
 
         CellAddressCore core = destination.getDestinationAddress() ;
-        
+
         Map map = (Map)_eventClassMap.get( eventClass ) ;
         if(  map == null )
             throw new
             NoSuchElementException("Not an entry "+core+"/"+eventClass);
-          
-        Entry e = (Entry) map.remove( core ) ;  
+
+        Entry e = (Entry) map.remove( core ) ;
         if( e == null )
             throw new
             NoSuchElementException("Not an entry "+core+"/"+eventClass);
 
         if( map.size() == 0 )_eventClassMap.remove( eventClass ) ;
-        
-        
+
+
         map = (Map)_destinationMap.get( core ) ;
         if( map == null )
             throw new
             NoSuchElementException("PANIC : inconsitent db : "+core+"/"+eventClass);
-        
+
         e = (Entry)map.remove( eventClass ) ;
         if( map.size() == 0 )_destinationMap.remove( core ) ;
-        
+
         return e ;
 
     }
@@ -281,8 +289,8 @@ public class BroadcastCell extends CellAdapter {
             Class c = Class.forName( args.argv(0) ) ;
             obj = c.newInstance() ;
         }
-        CellMessage msg = new CellMessage( 
-                            new CellPath("broadcast"), 
+        CellMessage msg = new CellMessage(
+                            new CellPath("broadcast"),
                             obj   );
         sendMessage(msg);
         return "" ;
@@ -300,7 +308,7 @@ public class BroadcastCell extends CellAdapter {
             }
             if( event instanceof BroadcastRegisterMessage ){
                 BroadcastRegisterMessage reg = (BroadcastRegisterMessage)event ;
-                say("Message register : "+reg);
+                _log.info("Message register : "+reg);
                 synchronized( this ){
                     Entry entry = get( target , eventClass ) ;
                     if( entry == null )entry = register( target , eventClass ) ;
@@ -311,24 +319,23 @@ public class BroadcastCell extends CellAdapter {
                 }
             }else if( event instanceof BroadcastUnregisterMessage ){
                 BroadcastUnregisterMessage unreg = (BroadcastUnregisterMessage)event ;
-                say("Message unregister : "+unreg);
+                _log.info("Message unregister : "+unreg);
 
                 unregister( target , eventClass ) ;
-                
+
             }else{
                 throw new
                 IllegalArgumentException("Not a valid Broadcast command " +event.getClass());
             }
         }catch(Exception ee ){
-            esay("Problem with {"+command+"}"+ee);
-            esay(ee);
+            _log.warn("Problem with {"+command+"}"+ee, ee);
             event.setReturnValues(1,ee);
         }
         msg.revertDirection() ;
         try{
             sendMessage(msg);
         }catch(Exception ee ){
-            esay("Couldn't reply : "+ee);
+            _log.warn("Couldn't reply : "+ee);
         }
     }
     public void getInfo(  PrintWriter pw ){
@@ -340,20 +347,20 @@ public class BroadcastCell extends CellAdapter {
         pw.println(" Packets received : "+_received);
         pw.println("     Packets sent : "+ _sent ) ;
         pw.println("Packets forwarded : "+_forwarded ) ;
-        
+
     }
     public void messageArrived( CellMessage message ){
-        say("messageArrived : "+message);
+        _log.info("messageArrived : "+message);
         _received ++ ;
         if( _debug ){
             _debugging.messageArrived( message ) ;
             return ;
         }
-        
+
         Object obj = message.getMessageObject() ;
         if( obj instanceof BroadcastCommandMessage ){
             handleBroadcastCommandMessage( message , (BroadcastCommandMessage)obj ) ;
-            return ;    
+            return ;
         }else if( obj instanceof NoRouteToCellException ){
             NoRouteToCellException nrtc = (NoRouteToCellException)obj ;
             handleNoRouteException( nrtc ) ;
@@ -371,16 +378,16 @@ public class BroadcastCell extends CellAdapter {
             }
             o = o.getSuperclass() ;
         }
-        say("Message arrived "+obj.getClass().getName());
+        _log.info("Message arrived "+obj.getClass().getName());
         Iterator i = classList.iterator() ;
         while( i.hasNext() ){
             String eventClass = i.next().toString() ;
-            //say("Checking :  "+eventClass);
+            //_log.info("Checking :  "+eventClass);
             forwardMessage( message , eventClass )  ;
         }
     }
     public void messageToForward( CellMessage message ){
-        say("FORWARD: "+message);
+        _log.info("FORWARD: "+message);
         _forwarded ++ ;
         Object obj = message.getMessageObject() ;
         if( ( obj != null ) && ( obj instanceof NoRouteToCellException ) ){
@@ -393,13 +400,13 @@ public class BroadcastCell extends CellAdapter {
     private synchronized void forwardMessage( CellMessage message , String classEvent ){
         Map map = (Map)_eventClassMap.get(classEvent);
         if( map == null ){
-//            say("forwardMessage : Not found in eventClassMap : "+classEvent);
+//            _log.info("forwardMessage : Not found in eventClassMap : "+classEvent);
             return ;
         }
         ArrayList list = new ArrayList() ;
         CellPath  dest = message.getDestinationPath() ;
         for( Iterator i = map.entrySet().iterator() ; i.hasNext() ; ){
-            
+
             Map.Entry mapentry   = (Map.Entry)i.next() ;
             CellPath origin      = (CellPath)dest.clone() ;
             Entry    entry       = (Entry)mapentry.getValue() ;
@@ -409,12 +416,12 @@ public class BroadcastCell extends CellAdapter {
             }
             entry._used++ ;
             //
-            // add the (entry) path to our destination and 
+            // add the (entry) path to our destination and
             // skip ourself.
             //
             origin.add(entry.getPath());
             origin.next();
-            
+
             CellMessage msg = new CellMessage( origin , message.getMessageObject() ) ;
             msg.setUOID( message.getUOID() ) ;
             //
@@ -422,21 +429,21 @@ public class BroadcastCell extends CellAdapter {
             //
             msg.getSourcePath().add( message.getSourcePath() );
             try{
-                say("forwardMessage : "+classEvent+" forwarding to "+origin);
+                _log.info("forwardMessage : "+classEvent+" forwarding to "+origin);
                 sendMessage(msg);
                 _sent++ ;
             }catch(Exception ee ){
-                esay("forwardMessage : FAILED "+classEvent+" forwarding to "+origin+" "+ee);
+                _log.warn("forwardMessage : FAILED "+classEvent+" forwarding to "+origin+" "+ee);
                 if( entry.isCancelOnFailure() )list.add( entry ) ;
                 entry._failed ++ ;
             }
         }
         unregister(list);
-        
+
     }
     private void handleNoRouteException( NoRouteToCellException nrtc ){
         CellPath destination = nrtc.getDestinationPath() ;
-        esay("NoRouteToCell : "+nrtc);
+        _log.warn("NoRouteToCell : "+nrtc);
         //
         // find matching destinations
         //
@@ -444,13 +451,13 @@ public class BroadcastCell extends CellAdapter {
         synchronized( this ){
             Map map = (Map)_destinationMap.get(destination.getDestinationAddress());
             if( map == null ){
-                esay("Exception path not found in map : "+destination);
+                _log.warn("Exception path not found in map : "+destination);
                 return ;
             }
             for( Iterator i = map.values().iterator() ; i.hasNext() ; ){
                 Entry e = (Entry)i.next() ;
                 if( e.isCancelOnFailure() ){
-                    say("Scheduling for cancelation : "+e);
+                    _log.info("Scheduling for cancelation : "+e);
                     list.add(e);
                 }
             }
@@ -458,7 +465,7 @@ public class BroadcastCell extends CellAdapter {
 
         }
         return ;
-        
+
     }
     private void unregister( List list ){
         for( Iterator i = list.iterator() ; i.hasNext() ; ){
@@ -466,12 +473,12 @@ public class BroadcastCell extends CellAdapter {
             try{
                 unregister( e.getPath() , e.getTrigger() ) ;
             }catch(NoSuchElementException nse){
-                esay("PANIC : Couldn't unregister "+e);
+                _log.warn("PANIC : Couldn't unregister "+e);
             }
         }
         return ;
     }
-  
+
     /*
      *
      **     DEBUG PART
@@ -479,71 +486,71 @@ public class BroadcastCell extends CellAdapter {
     private class Debugging {
         private void messageArrived( CellMessage message ){
             Object obj = message.getMessageObject() ;
-            if( _debugMode.equals("source") ){       
-                say("MessageObject : "+obj ) ;
+            if( _debugMode.equals("source") ){
+                _log.info("MessageObject : "+obj ) ;
             }else if( _debugMode.equals("destination" ) ){
                 if( obj instanceof BroadcastCommandMessage ){
-                    say("Broadcast Message answer : "+obj ) ;
+                    _log.info("Broadcast Message answer : "+obj ) ;
                     return ;
                 }
-                say("Replying MessageObject : "+obj ) ;
+                _log.info("Replying MessageObject : "+obj ) ;
                 message.revertDirection() ;
                 try{
                     sendMessage(message);
                 }catch(Exception ee){
-                    esay("Problems sending : "+message+"("+ee+")");
+                    _log.warn("Problems sending : "+message+"("+ee+")");
                 }
             }
-            return ;   
+            return ;
         }
     }
         public String hh_d_reg   = "<eventClass> [<destination>] [-cancelonfailure] [-expires=<time>]" ;
         public String hh_d_unreg = "<eventClass> [<destination>]" ;
         public String hh_d_send  = "<javaClass> [-destination=<cellName>] [-wait]";
-        
+
         public String ac_d_reg_$_1_2( Args args ) throws Exception {
-            
+
             OptionClass options = new OptionClass(args) ;
-        
+
             CellPath path = options.destination == null ? null : new CellPath(options.destination);
             BroadcastRegisterMessage cmd = new BroadcastRegisterMessage(options.eventClass,path);
             cmd.setCancelOnFailure(options.failures);
             cmd.setExpires(options.expires);
-            
+
             CellMessage msg = new CellMessage( new CellPath("broadcast"), cmd ) ;
-            
+
             sendMessage(msg);
- 
+
             return "" ;
         }
         public String ac_d_unreg_$_1_2( Args args ) throws Exception {
-            
+
             OptionClass options = new OptionClass(args) ;
-        
+
             CellPath path = options.destination == null ? null : new CellPath(options.destination);
             BroadcastUnregisterMessage cmd = new BroadcastUnregisterMessage(options.eventClass,path);
-            
+
             CellMessage msg = new CellMessage( new CellPath("broadcast"), cmd ) ;
-            
+
             sendMessage(msg);
- 
+
             return "" ;
         }
         public String ac_d_send_$_0_1( Args args ) throws Exception {
-           
+
              Object obj = args.argc() == 0 ?
                           new ArrayList()  :
                           Class.forName( args.argv(0) ).newInstance() ;
-      
+
              String dest = args.getOpt("destination") ;
-             
-             CellMessage msg = new CellMessage( 
-                               new CellPath(dest==null?"broadcast":dest), 
+
+             CellMessage msg = new CellMessage(
+                               new CellPath(dest==null?"broadcast":dest),
                                obj   );
               sendMessage(msg);
               return "" ;
-             
+
         }
-   
-    
-} 
+
+
+}

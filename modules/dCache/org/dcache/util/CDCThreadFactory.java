@@ -3,13 +3,11 @@ package org.dcache.util;
 import java.util.concurrent.ThreadFactory;
 
 import dmg.cells.nucleus.CDC;
-import org.apache.log4j.NDC;
 
 /**
  * CDCThreadFactory decorates another ThreadFactory and makes all
  * threads CDC aware. Each thread inherits the CDC of the thread
- * calling the newThread method. Before termination, a thread calls
- * NDC.remove to unregister the Log4j NDC.
+ * calling the newThread method.
  */
 public class CDCThreadFactory implements ThreadFactory
 {
@@ -30,7 +28,7 @@ public class CDCThreadFactory implements ThreadFactory
                     try {
                         r.run();
                     } finally {
-                        NDC.remove();
+                        CDC.clear();
                     }
                 }
             });

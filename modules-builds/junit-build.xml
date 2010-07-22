@@ -26,6 +26,7 @@
         <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/netty/netty-3.1.2.GA.jar" />
+        <fileset dir="${libDir}/jexl" includes="**/*.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
         <pathelement location="${unittest.build.dir}" />
         <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />

@@ -32,22 +32,27 @@ import java.io.*;
 import java.net.InetAddress;
 import dmg.cells.nucleus.CellAdapter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class	FTPTransactionLog
 {
+        private final static Logger _log =
+            LoggerFactory.getLogger(FTPTransactionLog.class);
+
 	private FileWriter LWriter = null;
 	private File LogFilePath = null;
-	private String root; 
+	private String root;
 	private String tid;
 	private boolean GotMiddle;
         CellAdapter cell;
-	
+
 	public FTPTransactionLog(String root, String tid, CellAdapter cell)
 	{
 		this(root,cell);
 		this.tid = tid;
 	}
-	
+
 	public FTPTransactionLog(String root,CellAdapter cell)
 	{
 		long time = System.currentTimeMillis();
@@ -57,19 +62,12 @@ public class	FTPTransactionLog
 		GotMiddle = false;
                 this.cell = cell;
 	}
-        
-        private void esay(Throwable t)
-        {
-            if(cell != null){
-                cell.esay(t);
-            }
-        }
 
 	public void finalize()
 	{
 		error("Transaction abandoned");
 	}
-	
+
 	private void addLine(String line)
 	{
 		if( LWriter == null )
@@ -81,10 +79,10 @@ public class	FTPTransactionLog
 			LWriter.flush();
 		}
 		catch(IOException e)
-		{	
-                    esay(e);
+		{
+                    _log.warn(e.toString(), e);
                 }
-	}	
+	}
 
 	public void begin(String user, String ftp_type, String rw,
 		String path, InetAddress addr)
@@ -102,12 +100,12 @@ public class	FTPTransactionLog
 			}
 			String dirname = user;
 			dirname = dirname.replaceAll("/", ":");
-			
+
 			File userDir = new File(rootDir, dirname);
 			if ( !userDir.exists() )
 				userDir.mkdir();
 
-			LogFilePath = new File(userDir, tid + ".tlog");			
+			LogFilePath = new File(userDir, tid + ".tlog");
 			LWriter = new FileWriter(LogFilePath);
 			File userNameFile = new File(userDir, "username");
 			FileWriter userNameFileWriter = new FileWriter(userNameFile);
@@ -121,32 +119,32 @@ public class	FTPTransactionLog
 				path + " " +
 				addr.getCanonicalHostName();
 			addLine(line);
-			
+
 			}
 			catch( Exception ex) {
-                            esay(ex);
+                            _log.warn(ex.toString(), ex);
 			    addLine("Unable to process IP for transfer");
 			}
 		}
 		catch( IOException e )
-		{	
-                    esay(e);
+		{
+                    _log.warn(e.toString(), e);
                 }
 	}
-	
+
 	public void middle(long size)
 	{
 		addLine(""+size);
 		GotMiddle = true;
 	}
-	
+
 	public void error(String status)
 	{
 		if( !GotMiddle )	middle(0);
 		addLine("ERROR " + status);
 		close();
 	}
-	
+
 	public void success()
 	{
 		if( !GotMiddle )	middle(0);
@@ -160,9 +158,9 @@ public class	FTPTransactionLog
                 {
                         return;
                 }
-		try{	
+		try{
 			LWriter.close();	}
-		catch(Exception e)	{	esay(e);/* ignore */	}
+		catch(Exception e)	{	_log.warn(e.toString(), e);/* ignore */	}
 		LWriter = null;
 	}
 }

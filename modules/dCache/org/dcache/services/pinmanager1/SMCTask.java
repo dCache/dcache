@@ -15,8 +15,14 @@ import org.dcache.util.ReflectionUtils;
 
 import statemap.FSMContext;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class SMCTask implements CellMessageAnswerable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(SMCTask.class);
+
     private FSMContext _fsm;
     protected CellAdapter _cell;
 
@@ -32,30 +38,27 @@ class SMCTask implements CellMessageAnswerable
 
     private synchronized void transition(String name, Object ...arguments)
     {
-        _cell.esay("transition("+ name+", "+java.util.Arrays.deepToString(arguments)+")");
+        _log.warn("transition("+ name+", "+java.util.Arrays.deepToString(arguments)+")");
         try {
             Class[] parameterTypes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++)
                 parameterTypes[i] = arguments[i].getClass();
             Method m =
                 ReflectionUtils.resolve(_fsm.getClass(), name, parameterTypes);
-             _cell.esay("transition() invoking method "+m);
+            _log.warn("transition() invoking method "+m);
             if (m != null)
                 m.invoke(_fsm, arguments);
         } catch (IllegalAccessException e) {
             // We are not allowed to call this method. Better escalate it.
-            _cell.esay(e);
+            _log.warn(e.toString(), e);
             throw new RuntimeException("Bug detected", e);
         } catch (InvocationTargetException e) {
             // The context is not supposed to throw exceptions, so
             // smells like a bug.
-            _cell.esay(e);
-            if(e.getTargetException() != null) {
-                _cell.esay(e.getTargetException());
-            }
+            _log.warn(e.toString(), e);
             throw new RuntimeException("Bug detected", e);
         } catch (statemap.TransitionUndefinedException e) {
-            _cell.esay(e);
+            _log.warn(e.toString(), e);
             throw new RuntimeException("State machine is incomplete", e);
         }
     }
@@ -67,13 +70,13 @@ class SMCTask implements CellMessageAnswerable
 
     public void answerTimedOut(CellMessage request)
     {
-        _cell.esay("Message timed out: " + request);
+        _log.warn("Message timed out: " + request);
         transition("timeout");
     }
 
     public void exceptionArrived(CellMessage request, Exception exception)
     {
-        _cell.esay("Error: " + exception);
+        _log.warn("Error: " + exception);
         transition("exceptionArrived", exception);
     }
 

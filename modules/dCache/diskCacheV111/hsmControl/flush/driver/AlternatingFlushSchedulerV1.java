@@ -8,12 +8,18 @@ import  dmg.util.CommandInterpreter ;
 import  java.util.*;
 import  java.io.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Patrick Fuhrmann patrick.fuhrmann@desy.de
  * @version 0.0, Dec 03, 2005
  *
  */
  public class AlternatingFlushSchedulerV1 implements HsmFlushSchedulable {
+
+     private final static Logger _log =
+         LoggerFactory.getLogger(AlternatingFlushSchedulerV1.class);
 
      private HsmFlushControlCore _core            = null;
      private CommandInterpreter  _interpreter     = null ;
@@ -186,12 +192,12 @@ import  java.io.*;
 
          public void poolIoModeUpdated( Pool ip , boolean newIsReadOnly ){
 
-            if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode "+newIsReadOnly);
+            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode "+newIsReadOnly);
             //
             // new pool mode arrived, in wrong state
             //
             if( _progressState != PS_WAITING_FOR_STATE_CHANGE ){
-              esay("PROGRESS-H("+_name+"/"+ip._name+
+              _log.warn("PROGRESS-H("+_name+"/"+ip._name+
                    ") Warning : new pool i/o mode arrived unexpectedly in state "+_progressState);
               return ;
             }
@@ -199,7 +205,7 @@ import  java.io.*;
             // wrong pool mode arrived
             //
             if( ip._expectedReadOnly != newIsReadOnly ){
-              esay("PROGRESS-H("+_name+"/"+ip._name+") Warning : got I/O mode rdonly="+newIsReadOnly+" expected rdOnly="+_expectedReadOnly);
+              _log.warn("PROGRESS-H("+_name+"/"+ip._name+") Warning : got I/O mode rdonly="+newIsReadOnly+" expected rdOnly="+_expectedReadOnly);
               return ;
             }
             //
@@ -213,7 +219,7 @@ import  java.io.*;
                total++ ;
                if( ! ( ipool._pool.isReadOnly() ^ ipool._expectedReadOnly ) )modeOk++ ;
             }
-            if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode total="+total+";rdOnly="+modeOk);
+            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode total="+total+";rdOnly="+modeOk);
             //
             // not yet
             //
@@ -224,7 +230,7 @@ import  java.io.*;
                //
                // all pools are readyOnly; flush them all.
                //
-               if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Flushing all");
+               if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Flushing all");
                int flushed = 0 ;
                for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
                   Pool ipool = (Pool)nn.next() ;
@@ -233,21 +239,21 @@ import  java.io.*;
                   if( ipool._flushCounter > 0 )flushed++ ;
                }
                if( flushed > 0 ){
-                  if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; flushed "+flushed+" pools");
+                  if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; flushed "+flushed+" pools");
                   newState( PS_WAITING_FOR_FLUSH_DONE ) ;
                }else{
-                  if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; nothing to flush; switching back to read/write");
+                  if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; nothing to flush; switching back to read/write");
                   switchToNewPoolMode(false);
                }
             }else{
-               if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Switching back to IDLE");
+               if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Switching back to IDLE");
 
                newState( PS_IDLE ) ;
             }
          }
          public boolean inProgress(){ return _progressState != 0 ; }
          public void flushingDone( Pool ip  , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
-            if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") flushingDone");
+            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") flushingDone");
             //
             // check if all are done
             //
@@ -259,12 +265,12 @@ import  java.io.*;
                total++ ;
                if( ipool._flushCounter == 0 )flushDone++ ;
             }
-            if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") flushing done : total="+total+";flushDone="+flushDone);
+            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+"/"+ip._name+") flushing done : total="+total+";flushDone="+flushDone);
             if( flushDone < total )return ;
             switchToNewPoolMode(false);
          }
          private void flushAll(){
-            if(_parameter._p_poolset)say("PROGRESS-H("+_name+") flush all; switching to readOnly");
+            if(_parameter._p_poolset)_log.info("PROGRESS-H("+_name+") flush all; switching to readOnly");
             switchToNewPoolMode(true);
          }
          private void newState( int state ){
@@ -303,7 +309,7 @@ import  java.io.*;
 
          Pool ip = (Pool)pool.getDriverHandle() ;
          if( ip == null ){
-            esay("getInternalPool : Yet unconfigured pool arrived "+pool.getName()+"; configuring");
+            _log.warn("getInternalPool : Yet unconfigured pool arrived "+pool.getName()+"; configuring");
             pool.setDriverHandle( ip = new Pool( pool.getName() , pool ) ) ;
          }
          return ip ;
@@ -312,7 +318,7 @@ import  java.io.*;
 
 
      public AlternatingFlushSchedulerV1( CellAdapter cell , HsmFlushControlCore core ){
-         core.say("AlternateFlush started");
+         _log.info("AlternateFlush started");
          _core        = core ;
          _interpreter = new CommandInterpreter( this ) ;
      }
@@ -321,20 +327,20 @@ import  java.io.*;
      //   call backs from the flush manager.
      //
      public void init(){
-         if(_parameter._p_events)say("EVENT : Initiating ...");
+         if(_parameter._p_events)_log.info("EVENT : Initiating ...");
 
          Args args = _core.getDriverArgs() ;
          //
          // printout what we got from our master
          //
          for( int i = 0 ; i < args.argc() ; i++ ){
-             say("    args "+i+" : "+args.argv(i)) ;
+             _log.info("    args "+i+" : "+args.argv(i)) ;
          }
          for( int i = 0 ; i < args.optc() ; i++ ){
-             say("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
+             _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
          for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-             say("    configured pool : "+(i.next()).toString() ) ;
+             _log.info("    configured pool : "+(i.next()).toString() ) ;
          }
          //
          //  Walk through the already known pools, create our internal presentation
@@ -344,7 +350,7 @@ import  java.io.*;
 
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
              Pool ip = getInternalPool( pool ) ;
-             say("init : "+pool.getName() +" "+ip) ;
+             _log.info("init : "+pool.getName() +" "+ip) ;
          }
          String tmp = args.getOpt("driver-config-file") ;
          if( tmp != null )_parameter = new AltParameter( new File(tmp) ) ;
@@ -355,7 +361,7 @@ import  java.io.*;
      //    properties got updated.
      //
      public void propertiesUpdated( Map properties ){
-         if(_parameter._p_events)say("EVENT : propertiesUpdated : "+properties);
+         if(_parameter._p_events)_log.info("EVENT : propertiesUpdated : "+properties);
         _parameter.propertiesUpdated( properties ) ;
      }
      //--------------------------------------------------------------------------------------
@@ -364,10 +370,10 @@ import  java.io.*;
      //
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
-         if(_parameter._p_events)say("EVENT : poolIoModeUpdated : "+pool);
+         if(_parameter._p_events)_log.info("EVENT : poolIoModeUpdated : "+pool);
 
          if( ! pool.isActive() ){
-            esay("poolIoModeUpdated : Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("poolIoModeUpdated : Pool "+poolName+" not yet active (ignoring)");
             return ;
          }
 
@@ -382,15 +388,15 @@ import  java.io.*;
      }
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
-         if(_parameter._p_events)say("EVENT : flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
+         if(_parameter._p_events)_log.info("EVENT : flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
-            esay("flushingDone : for a non configured pool : "+poolName);
+            _log.warn("flushingDone : for a non configured pool : "+poolName);
             return ;
          }
          if( ! pool.isActive() ){
-            esay("flushingDone : Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("flushingDone : Pool "+poolName+" not yet active (ignoring)");
             return ;
          }
 
@@ -406,10 +412,10 @@ import  java.io.*;
      }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
-         if(_parameter._p_events)say("EVENT : poolFlushInfoUpdated : "+pool.getName());
+         if(_parameter._p_events)_log.info("EVENT : poolFlushInfoUpdated : "+pool.getName());
          //
          if( ! pool.isActive() ){
-            esay("poolFlushInfoUpdated : Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("poolFlushInfoUpdated : Pool "+poolName+" not yet active (ignoring)");
             return ;
          }
          Pool ip = getInternalPool( pool ) ;
@@ -418,10 +424,10 @@ import  java.io.*;
 
      }
      public void reset(){
-         if(_parameter._p_events)say("EVENT : reset");
+         if(_parameter._p_events)_log.info("EVENT : reset");
      }
      public void timer(){
-         if(_parameter._p_events)say("EVENT : timer");
+         if(_parameter._p_events)_log.info("EVENT : timer");
            //
            // check if the property file has been changed.
            //
@@ -447,41 +453,41 @@ import  java.io.*;
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
      public void command( Args args  ){
-         if(_parameter._p_events)say("EVENT : command : "+args);
+         if(_parameter._p_events)_log.info("EVENT : command : "+args);
          try{
              Object reply = _interpreter.command( args ) ;
              if( reply == null )
                throw new
                Exception("Null pointer from command call");
-             say("Command returns : "+reply.toString() );
+             _log.info("Command returns : "+reply.toString() );
          }catch(Exception ee ){
-             esay("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
+             _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
          }
      }
      public void prepareUnload(){
-         if(_parameter._p_events)say("EVENT : Preparing unload (ignoring)");
+         if(_parameter._p_events)_log.info("EVENT : Preparing unload (ignoring)");
      }
      public void configuredPoolAdded( String poolName ){
 
-         if(_parameter._p_events)say("EVENT : Configured pool added : "+poolName);
+         if(_parameter._p_events)_log.info("EVENT : Configured pool added : "+poolName);
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
-            esay("Pool not found in _core database : "+poolName);
+            _log.warn("Pool not found in _core database : "+poolName);
             return ;
          }
          if( ! pool.isActive() ){
-            esay("Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("Pool "+poolName+" not yet active (ignoring)");
             return ;
          }
          Pool ip = getInternalPool( pool ) ;
 
      }
      public void poolSetupUpdated(){
-         if(_parameter._p_events)say("EVENT : Pool Setup updated (ignoring)");
+         if(_parameter._p_events)_log.info("EVENT : Pool Setup updated (ignoring)");
      }
      public void configuredPoolRemoved( String poolName ){
-         if(_parameter._p_events)say("EVENT : Configured pool removed : "+poolName+ "  (ignoring)");
+         if(_parameter._p_events)_log.info("EVENT : Configured pool removed : "+poolName+ "  (ignoring)");
      }
      //-----------------------------------------------------------------------------------------
      //
@@ -489,7 +495,7 @@ import  java.io.*;
      //
      private void processPoolsetRules(){
 
-         if(_parameter._p_rules)say("RULES : Processing PoolSet Rules...");
+         if(_parameter._p_rules)_log.info("RULES : Processing PoolSet Rules...");
          int totalAvailable = 0 ;
          int totalReadOnly  = 0 ;
          int totalFlushing  = 0 ;
@@ -519,7 +525,7 @@ import  java.io.*;
              if( isCandidate( ip ) )candidates.add( ip ) ;
 
          }
-         if(_parameter._p_rules)say("RULES : statistics : "+
+         if(_parameter._p_rules)_log.info("RULES : statistics : "+
              "total="+totalAvailable+
              ";readOnly="+totalReadOnly+
              ";flushing="+totalFlushing+
@@ -527,24 +533,24 @@ import  java.io.*;
              ";candidates="+candidates.size() ) ;
 
          if( candidates.size() == 0 ){
-            if(_parameter._p_rules)say("RULES : no candidates found");
+            if(_parameter._p_rules)_log.info("RULES : no candidates found");
             return ;
          }
          //if( totalReadOnly > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
-         //   if(_parameter._p_rules)say("RULES : too many pools ReadOnly ("+totalReadOnly+" out of "+totalAvailable+")") ;
+         //   if(_parameter._p_rules)_log.info("RULES : too many pools ReadOnly ("+totalReadOnly+" out of "+totalAvailable+")") ;
          //   return ;
          //}
          // DEBUG
          if(_parameter._p_rules){
            for( Iterator x = candidates.iterator() ; x.hasNext() ; ){
               Pool pp = (Pool)x.next() ;
-              say("RULES : weight of "+pp._name+" "+getPoolMetric(pp));
+              _log.info("RULES : weight of "+pp._name+" "+getPoolMetric(pp));
            }
          }
          Collections.sort( candidates , _poolComparator );
          //
          Pool ip = (Pool)candidates.get(0);
-         if(_parameter._p_rules)say("RULES : weight of top "+ip._name+" "+getPoolMetric(ip));
+         if(_parameter._p_rules)_log.info("RULES : weight of top "+ip._name+" "+getPoolMetric(ip));
          //
          // step through all candidates and check if they would overbook the max number
          // of rdOnly pools.
@@ -555,17 +561,17 @@ import  java.io.*;
              Pool    pp = (Pool)pools.next() ;
              PoolSet ps = pp.getParentPoolSet() ;
 
-             if(_parameter._p_rules)say("RULES : checking "+pp._name+"/"+ps._name+" "+getPoolMetric(pp));
+             if(_parameter._p_rules)_log.info("RULES : checking "+pp._name+"/"+ps._name+" "+getPoolMetric(pp));
 
              HashSet potentialRdOnlyPools = new HashSet( rdOnlyHash ) ;
              for( Iterator ppp = ps.keySet().iterator() ;  ppp.hasNext() ; ){
                  potentialRdOnlyPools.add( ppp.next().toString() ) ;
              }
-             if(_parameter._p_rules)say("RULES : potential rdOnlyPools : "+potentialRdOnlyPools);
+             if(_parameter._p_rules)_log.info("RULES : potential rdOnlyPools : "+potentialRdOnlyPools);
              int total = potentialRdOnlyPools.size() ;
 
              if( total  > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
-                if(_parameter._p_rules)say("RULES : "+ps._name+" would be too many pools ReadOnly ("+total+" out of "+totalAvailable+")") ;
+                if(_parameter._p_rules)_log.info("RULES : "+ps._name+" would be too many pools ReadOnly ("+total+" out of "+totalAvailable+")") ;
                 continue ;
              }
 
@@ -573,11 +579,11 @@ import  java.io.*;
              break ;
          }
          if( best == null){
-            if(_parameter._p_rules)say("RULES : no candidates found after all");
+            if(_parameter._p_rules)_log.info("RULES : no candidates found after all");
             return ;
          }
 
-         if(_parameter._p_rules)say("RULES : flushing poolset : "+best._name+" with pools "+best.keySet() ) ;
+         if(_parameter._p_rules)_log.info("RULES : flushing poolset : "+best._name+" with pools "+best.keySet() ) ;
 
          best.flushAll() ;
 
@@ -640,17 +646,17 @@ import  java.io.*;
              Map.Entry hostEntry = (Map.Entry)hosts.next() ;
              String hostName = (String)hostEntry.getKey() ;
              Map    hostMap  = (Map)hostEntry.getValue() ;
-             say(" >>"+hostName+"<<");
+             _log.info(" >>"+hostName+"<<");
              for( Iterator pools = hostMap.entrySet().iterator() ; pools.hasNext() ; ){
                 Map.Entry e = (Map.Entry)pools.next() ;
                 String name = (String)e.getKey() ;
-                say("     "+name+ ( extended ? e.getValue().toString() : "" ) );
+                _log.info("     "+name+ ( extended ? e.getValue().toString() : "" ) );
              }
           }
        }else if( configuredView ){
          for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
-             say(""+pool);
+             _log.info(""+pool);
 
          }
 
@@ -692,18 +698,18 @@ import  java.io.*;
 
              long size   = flush.getTotalPendingFileSize() ;
 
-             say("flushPool : class = "+info.getName()+" size = "+size+" flushing = "+info.isFlushing() ) ;
+             _log.info("flushPool : class = "+info.getName()+" size = "+size+" flushing = "+info.isFlushing() ) ;
              //
              // is precious size > 0 and are we not yet flushing ?
              //
              try{
                 if( ( size > 0L ) && ! info.isFlushing() ){
-                   say("flushPool : !!! flushing "+_parameter._flushAtOnce+" of "+pool.getName()+" "+info.getName()  );
+                   _log.info("flushPool : !!! flushing "+_parameter._flushAtOnce+" of "+pool.getName()+" "+info.getName()  );
                    info.flush(_parameter._flushAtOnce);
                    flushing++ ;
                 }
              }catch(Exception ee ){
-                esay("flushPool : Problem flushing "+pool.getName()+" "+info.getName()+" "+ee);
+                _log.warn("flushPool : Problem flushing "+pool.getName()+" "+info.getName()+" "+ee);
              }
 
          }
@@ -772,14 +778,7 @@ import  java.io.*;
          }
          return flushing ;
      }
-     /**
-       * convenient say routine. Calls the core.say method.
-       */
-     private void say( String message ){ _core.say(message) ; }
-     /**
-       * convenient esay routine. Calls the core.esay method.
-       */
-     private void esay( String message ){ _core.esay(message) ; }
+
      ////////////////////////////////////////////////////////////////////////////
      //
      //             Parameter handling
@@ -861,7 +860,7 @@ import  java.io.*;
                     properties.remove( key ) ;
                  }
               }catch(Exception ee ){
-                 esay("Exception while seting "+key+" "+ee);
+                 _log.warn("Exception while seting "+key+" "+ee);
               }
            }
            //

@@ -3,21 +3,27 @@ package  dmg.cells.network ;
 import java.net.* ;
 import java.io.* ;
 import java.lang.reflect.* ;
-import dmg.cells.nucleus.*; 
+import dmg.cells.nucleus.*;
 import dmg.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *    The GNLCell is a general Network listener cell, waiting for
- *    connectionrequests and starting specific service cells on 
+ *    connectionrequests and starting specific service cells on
  *    that event.
  **
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
  */
 public class GNLCell implements Cell, Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(GNLCell.class);
 
   private String       _cellName ;
   private String       _cellClass ;
@@ -25,7 +31,7 @@ public class GNLCell implements Cell, Runnable  {
   private int          _listenPort ;
   private ServerSocket _serverSocket ;
   private Thread       _listenThread ;
-  
+
   /**
   *  Creates a GNLCell with the name <em>name</em> listening on
   *  TCP port <em>port</em>. Thenever a connection is received on
@@ -46,12 +52,12 @@ public class GNLCell implements Cell, Runnable  {
   public GNLCell( String name , String [] args ){
      if( args.length < 2 )
         throw new IllegalArgumentException("Not enought arguments") ;
-        
+
      _GNLCell( name , args[0] , new Integer(args[1]).intValue() );
   }
   /**
   *     Same as GNLCell( String name , String cellClass , int port ), but
-  *     args has to be a string containing the cellClass which is has 
+  *     args has to be a string containing the cellClass which is has
   *     to be started and the listen port number seperated by at least
   *     one blank.
   */
@@ -59,44 +65,44 @@ public class GNLCell implements Cell, Runnable  {
      Args args = new Args( arg ) ;
      if( args.argc() < 2 )
         throw new IllegalArgumentException("Not enought arguments") ;
-        
-     _GNLCell( name , args.argv(0) , 
+
+     _GNLCell( name , args.argv(0) ,
                       new Integer(args.argv(1)).intValue() );
   }
   private void _GNLCell( String name , String cellClass , int port ){
-  
+
        _nucleus    = new CellNucleus( this , name ) ;
        _cellName   = name ;
        _cellClass  = cellClass ;
        _listenPort = port ;
-       
+
        try{
           _serverSocket  = new ServerSocket( _listenPort ) ;
        }catch( Exception e ){
          throw new IllegalArgumentException( "Server Socket : "+e.toString());
-       } 
+       }
        _listenThread  = _nucleus.newThread( this , "Listener" ) ;
        _listenThread.start() ;
-       
+
   }
   public void run(){
     if( Thread.currentThread() == _listenThread ){
        while( true ){
           try{
            Socket socket = _serverSocket.accept() ;
-           _nucleus.say( "Cell Listen Socket created " ) ;
-           
-           Cell cell = _nucleus.createNewCell(   
+           _log.info( "Cell Listen Socket created " ) ;
+
+           Cell cell = _nucleus.createNewCell(
                                _cellClass  ,
                                _cellName+"*" ,
                                socket ,
                                true        ) ;
-                               
+
           }catch( IOException ioe ){
-             _nucleus.say( " ServerSocket Got Exc : " + ioe ) ;
+             _log.info( " ServerSocket Got Exc : " + ioe ) ;
              _nucleus.kill();
           }catch( Exception ae ){
-              _nucleus.say( " Problem creating "+_cellClass+" : "+ae);            
+              _log.info( " Problem creating "+_cellClass+" : "+ae);
           }
        }
     }
@@ -109,14 +115,14 @@ public class GNLCell implements Cell, Runnable  {
      return toString()+"\n" ;
    }
    public void   messageArrived( MessageEvent me ){
-     _nucleus.say( " messageArrived "+me ) ;
-     
+     _log.info( " messageArrived "+me ) ;
+
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( " prepareRemoval "+ce ) ;
+     _log.info( " prepareRemoval "+ce ) ;
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

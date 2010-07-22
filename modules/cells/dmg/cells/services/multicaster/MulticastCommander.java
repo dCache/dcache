@@ -6,7 +6,14 @@ import dmg.util.* ;
 import java.util.* ;
 import java.io.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MulticastCommander extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(MulticastCommander.class);
+
    private CellNucleus _nucleus = null ;
    private Args        _args    = null ;
    private CellPath    _path    = new CellPath("mc") ;
@@ -14,27 +21,27 @@ public class MulticastCommander extends CellAdapter {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
-       
+
        start() ;
    }
    public void messageToForward( CellMessage msg ){
         CellPath source = msg.getSourcePath() ;
-        
+
         msg.nextDestination() ;
-        
+
         try{
            sendMessage( msg ) ;
         }catch( NoRouteToCellException nrtc ){
-           esay( "NoRouteToCell in messageToForward : "+nrtc ) ;
-           esay( "Sending NoRouteToCellt to : "+source ) ;
+           _log.warn( "NoRouteToCell in messageToForward : "+nrtc ) ;
+           _log.warn( "Sending NoRouteToCellt to : "+source ) ;
            source.revert() ;
            try{
               sendMessage( new CellMessage( source , nrtc ) ) ;
            }catch(Exception ee ){
-              esay( "can't return NoRouteToCell to : "+source ) ;
+              _log.warn( "can't return NoRouteToCell to : "+source ) ;
            }
         }catch( Exception eee ){
-           esay( "Exception in messageToForward : "+eee ) ;
+           _log.warn( "Exception in messageToForward : "+eee ) ;
         }
    }
    public String hh_set_path = "<MulticastCell>" ;
@@ -46,9 +53,9 @@ public class MulticastCommander extends CellAdapter {
    public String ac_register_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
-      MulticastRegister register = 
+      MulticastRegister register =
          new MulticastRegister(  className , instanceName  ) ;
-         
+
       CellMessage thisMsg = getThisMessage() ;
       thisMsg.getDestinationPath().add( _path ) ;
       thisMsg.nextDestination() ;
@@ -61,9 +68,9 @@ public class MulticastCommander extends CellAdapter {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
       String info         = args.argv(2) ;
-      MulticastMessage message = 
+      MulticastMessage message =
          new MulticastMessage(  className , instanceName , info ) ;
-         
+
       CellMessage thisMsg = getThisMessage() ;
       thisMsg.getDestinationPath().add( _path ) ;
       thisMsg.nextDestination() ;
@@ -75,9 +82,9 @@ public class MulticastCommander extends CellAdapter {
    public String ac_close_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
-      MulticastClose close = 
+      MulticastClose close =
          new MulticastClose(  className , instanceName ) ;
-         
+
       sendMessage( new CellMessage( _path , close )  ) ;
       return ""  ;
    }
@@ -85,23 +92,23 @@ public class MulticastCommander extends CellAdapter {
    public String ac_unregister_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
-      MulticastUnregister unreg = 
+      MulticastUnregister unreg =
          new MulticastUnregister(  className , instanceName ) ;
-         
+
       sendMessage( new CellMessage( _path , unreg )  ) ;
       return ""  ;
    }
-   public String hh_open = 
+   public String hh_open =
      "<className> <instanceName> [<detail>] [-overwrite]" ;
    public String ac_open_$_2_3( Args args )throws Exception {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
       String detail       = args.argc() == 2 ? null : args.argv(2) ;
       boolean overwrite   = args.getOpt("overwrite") != null ;
-      MulticastOpen open = new MulticastOpen( 
+      MulticastOpen open = new MulticastOpen(
              className , instanceName , detail ) ;
       open.setOverwrite(overwrite);
-      
+
       CellMessage thisMsg = getThisMessage() ;
       thisMsg.getDestinationPath().add( _path ) ;
       thisMsg.nextDestination() ;
@@ -110,8 +117,8 @@ public class MulticastCommander extends CellAdapter {
       if( reply == null ){
           return "Reply timed out" ;
       }else{
-          return reply.getMessageObject().toString() ;     
+          return reply.getMessageObject().toString() ;
       }
- 
+
    }
 }

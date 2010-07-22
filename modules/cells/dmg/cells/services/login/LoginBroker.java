@@ -6,25 +6,30 @@ import java.util.* ;
 import dmg.cells.nucleus.*;
 import dmg.util.* ;
 
-public class LoginBroker 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class LoginBroker
        extends  CellAdapter
-       implements Runnable  
+       implements Runnable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(LoginBroker.class);
 
     private int _delay = 3;
 
     /**
      * Map from identifiers to entries.
      */
-    private Map<String, LoginEntry> _hash = 
+    private Map<String, LoginEntry> _hash =
         new HashMap<String,LoginEntry>();
 
     /**
      * Set of identifiers of disabled entries.
      */
-    private Set<String> _disabled = 
+    private Set<String> _disabled =
         new HashSet<String>();
-  
+
   private class LoginEntry {
      private long _time ;
      private LoginBrokerInfo _info ;
@@ -32,7 +37,7 @@ public class LoginBroker
         _time = System.currentTimeMillis() ;
         _info = info ;
      }
-     private boolean isValid(){ 
+     private boolean isValid(){
         return System.currentTimeMillis() <
                ( _time + (long)_delay * _info.getUpdateTime() ) ;
      }
@@ -49,16 +54,16 @@ public class LoginBroker
      }
      public String getIdentifier(){ return _info.getIdentifier() ; }
   }
-    public LoginBroker(String name, String argString) throws Exception 
-    {  
+    public LoginBroker(String name, String argString) throws Exception
+    {
         super(name, argString, false);
-        
+
         getNucleus().newThread(this,"Cleaner").start();
         start();
     }
 
-  public CellVersion getCellVersion(){ 
-      return new CellVersion(super.getCellVersion().getRelease(),"$Revision: 1.6 $" ); 
+  public CellVersion getCellVersion(){
+      return new CellVersion(super.getCellVersion().getRelease(),"$Revision: 1.6 $" );
   }
     public String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time]";
     public Object ac_ls(Args args)
@@ -79,11 +84,11 @@ public class LoginBroker
         synchronized (this) {
             for (LoginEntry entry : _hash.values()) {
                 LoginBrokerInfo info = entry.getInfo();
-                boolean disabled = 
+                boolean disabled =
                     _disabled.contains(info.getIdentifier())
                     || _disabled.contains(info.getCellName());
 
-                if (protocols != null && 
+                if (protocols != null &&
                     !protocolSet.contains(info.getProtocolFamily())) {
                     continue;
                 }
@@ -105,7 +110,7 @@ public class LoginBroker
             return list.toArray(new LoginBrokerInfo[list.size()]);
         } else {
             return sb.toString();
-        } 
+        }
     }
 
     public String hh_disable = "<door> ...";
@@ -131,7 +136,7 @@ public class LoginBroker
         while( ! Thread.interrupted() ){
           synchronized(this){
              HashMap set = new HashMap() ;
-             
+
              Iterator i = _hash.values().iterator() ;
              while( i.hasNext() ){
                 LoginEntry entry = (LoginEntry)i.next() ;
@@ -142,12 +147,12 @@ public class LoginBroker
           Thread.sleep(60000);
         }
      }catch(Exception ee ){
-        say("Worker interrupted due to : "+ee ) ;
+        _log.info("Worker interrupted due to : "+ee ) ;
      }
-  }  
+  }
   public void messageArrived( CellMessage msg ){
      Object obj = msg.getMessageObject() ;
-     
+
      if( obj instanceof LoginBrokerInfo ){
         synchronized(this){
            LoginEntry entry = new LoginEntry((LoginBrokerInfo)obj) ;
@@ -155,6 +160,6 @@ public class LoginBroker
         }
      }
   }
-  
+
 
 }

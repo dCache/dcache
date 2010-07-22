@@ -6,6 +6,9 @@ import  java.util.Date ;
 import  java.io.* ;
 import  java.net.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -17,6 +20,9 @@ public class      RetryTunnel2
        implements Cell,
                   Runnable,
                   CellTunnel   {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(RetryTunnel2.class);
 
    private String       _host             = null ;
    private Args         _args             = null ;
@@ -55,7 +61,7 @@ public class      RetryTunnel2
       _ioThread = _nucleus.newThread( this , "IoThread" ) ;
       _ioThread.start() ;
 
-      say( "Constructor : acceptor started" ) ;
+      _log.info( "Constructor : acceptor started" ) ;
 
       _status = "<connected>" ;
    }
@@ -63,7 +69,7 @@ public class      RetryTunnel2
           throws Exception {
 
       super( cellName , "System" , argString , false ) ;
-      say( "CellName : "+cellName+ " ; args : "+argString ) ;
+      _log.info( "CellName : "+cellName+ " ; args : "+argString ) ;
 
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
@@ -108,7 +114,7 @@ public class      RetryTunnel2
       long    start = 0 ;
       Socket  socket = null ;
       while( ! Thread.interrupted() ){
-         say( "Trying to connect "+_host+"("+_port+")" ) ;
+         _log.info( "Trying to connect "+_host+"("+_port+")" ) ;
          _status = "<connecting-"+_connectionRetries+">" ;
          try{
             _connectionRetries ++ ;
@@ -123,13 +129,13 @@ public class      RetryTunnel2
             runIo() ;
 
          }catch(InterruptedIOException iioe ){
-            esay(iioe) ;
+            _log.warn(iioe.toString(), iioe);
             break ;
          }catch(InterruptedException ie ){
-            esay(ie);
+            _log.warn(ie.toString(), ie);
             break ;
          }catch(Exception ee ){
-            esay(""+ee) ;
+            _log.warn(ee.toString());
             removeRoute() ;
             synchronized(_tunnelOkLock){
                 _tunnelOk = false ;
@@ -139,11 +145,11 @@ public class      RetryTunnel2
             long diff = 30000 - ( System.currentTimeMillis() - start ) ;
             diff = diff < 4000 ? 4000 : diff ;
             try{
-               say("runConnection : Going to sleep for "+(diff/1000)+" seconds" ) ;
+               _log.info("runConnection : Going to sleep for "+(diff/1000)+" seconds" ) ;
                _status = "<waiting-"+_connectionRetries+">" ;
                Thread.sleep(diff) ;
             }catch(InterruptedException ieie){
-               esay( "runConnection : Sleep interrupted" ) ;
+               _log.warn( "runConnection : Sleep interrupted" ) ;
                break ;
             }
          }
@@ -152,34 +158,33 @@ public class      RetryTunnel2
    }
    private void runIoThread(){
       try{
-         say("runIoThread : creating streams" ) ;
+         _log.info("runIoThread : creating streams" ) ;
          _status = "<protocol>" ;
          _makeStreams( _engine.getInputStream() ,
                        _engine.getOutputStream()   ) ;
-         say("runIoThread : enabling tunnel" ) ;
+         _log.info("runIoThread : enabling tunnel" ) ;
          synchronized( _tunnelOkLock ){
               _tunnelOk = true ;
          }
-         say("runIoThread : starting IO" ) ;
+         _log.info("runIoThread : starting IO" ) ;
          runIo() ;
          _status = "<io-fin>" ;
-         esay( "runIoThread : unknown state 2 " ) ;
+         _log.warn( "runIoThread : unknown state 2 " ) ;
 
       }catch(Exception ioe ){
-         esay( "runIoThread : "+ioe ) ;
+         _log.warn( "runIoThread : "+ioe, ioe ) ;
          _status = "<io-shut>" ;
-         esay(ioe) ;
-         esay("Disabling tunnel" ) ;
+         _log.warn("Disabling tunnel" ) ;
          synchronized( _tunnelOkLock ){
               _tunnelOk = false ;
          }
-         esay( "Closing streams" ) ;
+         _log.warn( "Closing streams" ) ;
          try{_output.close();}catch(IOException ii){}
          try{_input.close();}catch(IOException ii){}
-         esay( "Killing myself" ) ;
+         _log.warn( "Killing myself" ) ;
          kill() ;
       }finally{
-         say( "runIoThread : finished" ) ;
+         _log.info( "runIoThread : finished" ) ;
       }
 
    }
@@ -193,13 +198,13 @@ public class      RetryTunnel2
 
             CellMessage msg = (CellMessage) obj ;
 
-            say( "receiverThread : Message from tunnel : "+msg ) ;
+            _log.info( "receiverThread : Message from tunnel : "+msg ) ;
 
             try{
                sendMessage( msg ) ;
                _messagesToSystem ++ ;
             }catch( NoRouteToCellException nrtce ){
-               esay( nrtce ) ;
+                _log.warn( nrtce.toString(), nrtce ) ;
             }
          }
       }finally{
@@ -214,27 +219,26 @@ public class      RetryTunnel2
         synchronized( _tunnelOkLock ){
            CellMessage msg = me.getMessage() ;
            if( _tunnelOk ){
-               say( "messageArrived : "+msg ) ;
+               _log.info( "messageArrived : "+msg ) ;
                try{
                    _output.writeObject( msg ) ;
                    _output.reset() ;
                    _messagesToTunnel ++ ;
                }catch(IOException ioe ){
-                   esay("messageArrived : "+ioe ) ;
-                   esay(ioe) ;
+                   _log.warn("messageArrived : "+ioe, ioe ) ;
                    _tunnelOk = false ;
                    try{_output.close();}catch(IOException ii){}
                    try{_input.close();}catch(IOException ii){}
                }
            }else{
-               esay( "Tunnel down : dumping : "+msg ) ;
+               _log.warn( "Tunnel down : dumping : "+msg ) ;
            }
         }
      }else if( me instanceof LastMessageEvent ){
-         say( "messageArrived : opening final gate" ) ;
+         _log.info( "messageArrived : opening final gate" ) ;
         _finalGate.open() ;
      }else{
-        esay( "messageArrived : dumping junk message "+me ) ;
+        _log.warn( "messageArrived : dumping junk message "+me ) ;
      }
 
    }
@@ -285,7 +289,7 @@ public class      RetryTunnel2
                       _remoteDomainInfo.getCellDomainName() ,
                       _nucleus.getCellName() ,
                       CellRoute.DOMAIN ) ;
-         say( "addingRoute : "+_route) ;
+         _log.info( "addingRoute : "+_route) ;
          _nucleus.routeAdd( _route ) ;
       }
    }
@@ -317,7 +321,7 @@ public class      RetryTunnel2
    private void removeRoute(){
      synchronized( _routeLock ){
          if( _route != null ){
-            say( "removeRoute : removing route "+_route ) ;
+            _log.info( "removeRoute : removing route "+_route ) ;
             _nucleus.routeDelete( _route ) ;
             _route = null ;
          }
@@ -325,18 +329,18 @@ public class      RetryTunnel2
    }
    public synchronized void   prepareRemoval( KillEvent ce ){
      removeRoute() ;
-     say("Setting tunnel down" ) ;
+     _log.info("Setting tunnel down" ) ;
      synchronized( _tunnelOkLock ){ _tunnelOk = false ; }
      try{_input.close();}catch(IOException ee){}
      try{_output.close();}catch(IOException ee){}
-     say( "Streams  closed" ) ;
+     _log.info( "Streams  closed" ) ;
      _finalGate.check() ;
-     say( "Gate Opened. Bye Bye" ) ;
+     _log.info( "Gate Opened. Bye Bye" ) ;
 
 
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( "exceptionArrived : "+ce ) ;
+     _log.warn( "exceptionArrived : "+ce ) ;
    }
 
 }

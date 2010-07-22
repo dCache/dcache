@@ -10,16 +10,21 @@ import java.io.* ;
 import java.net.* ;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      StreamLoginCell 
+public class      StreamLoginCell
        extends    CellAdapter
        implements Runnable  {
+
+  private final static Logger _log =
+      LoggerFactory.getLogger(StreamLoginCell.class);
 
   private StreamEngine   _engine ;
   private ControlBufferedReader _in ;
@@ -27,7 +32,7 @@ public class      StreamLoginCell
   private InetAddress    _host ;
   private Subject         _subject ;
   private Thread         _workerThread ;
-  private CellShell      _shell ; 
+  private CellShell      _shell ;
   private String         _destination = null ;
   private boolean        _syncMode    = true ;
   private Gate           _readyGate   = new Gate(false) ;
@@ -38,7 +43,7 @@ public class      StreamLoginCell
   private CellNucleus    _nucleus = null ;
   public StreamLoginCell( String name , StreamEngine engine ){
      super( name ) ;
-     
+
      _engine  = engine ;
      _nucleus = getNucleus() ;
      _reader  = engine.getReader() ;
@@ -46,12 +51,12 @@ public class      StreamLoginCell
      _out     = new PrintWriter( engine.getWriter() ) ;
      _subject    = engine.getSubject();
      _host    = engine.getInetAddress() ;
-      
+
      _shell        = new CellShell( _nucleus ) ;
      _destination  = getCellName() ;
-     _workerThread = _nucleus.newThread( this , "worker" ) ;              
+     _workerThread = _nucleus.newThread( this , "worker" ) ;
      _workerThread.start() ;
-     
+
      useInterpreter(false) ;
   }
   public void run(){
@@ -68,42 +73,42 @@ public class      StreamLoginCell
                   // have to go back to readLine to
                   // finish the ssh protocol gracefully.
                   //
-                  try{ _out.close() ; }catch(Exception ee){} 
+                  try{ _out.close() ; }catch(Exception ee){}
                }else{
                   print( prompt() ) ;
-               }       
+               }
            }catch( IOException e ){
-              say("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : "+e ) ;
               break ;
            }catch( Exception e ){
-              say("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : "+e ) ;
               break ;
            }
-        
+
         }
-        say( "EOS encountered" ) ;
+        _log.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
-    
+
     }
   }
    public void   cleanUp(){
-   
-     say( "Clean up called" ) ;
+
+     _log.info( "Clean up called" ) ;
      println("");
-     try{ _out.close() ; }catch(Exception ee){} 
+     try{ _out.close() ; }catch(Exception ee){}
      _workerThread.interrupt() ;
-     try { 
+     try {
          if (!_engine.getSocket().isClosed()) {
-             say("Close socket");
+             _log.info("Close socket");
              _engine.getSocket().close();
          }
-     } catch (Exception ee) { ; } 
+     } catch (Exception ee) { ; }
 //     _readyGate.check() ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
 
    }
-  public void println( String str ){ 
+  public void println( String str ){
      _out.println( str ) ;
      _out.flush() ;
   }
@@ -111,8 +116,8 @@ public class      StreamLoginCell
      _out.print( str ) ;
      _out.flush() ;
   }
-   public String prompt(){ 
-      return _destination == null ? " .. > " : (_destination+" > ")  ; 
+   public String prompt(){
+      return _destination == null ? " .. > " : (_destination+" > ")  ;
    }
    public int execute( String command ) throws Exception {
       if( command.equals("") )return 0 ;
@@ -139,7 +144,7 @@ public class      StreamLoginCell
             return 0 ;
          }
          try{
-             CellMessage msg = new CellMessage( 
+             CellMessage msg = new CellMessage(
                                      new CellPath( _destination ) ,
                                      command ) ;
              if( _syncMode ){
@@ -156,25 +161,25 @@ public class      StreamLoginCell
              print( "Problem : "+ex+"\n" )  ;
              ex.printStackTrace() ;
          }
-      
+
       }
       return 0 ;
-   
+
    }
    private void printObject( Object obj ){
       if( obj == null ){
          println( "Received 'null' Object" ) ;
          return ;
-      }  
-      String output = null ;    
+      }
+      String output = null ;
       if( obj instanceof Object [] ){
          Object [] ar = (Object []) obj ;
          for( int i = 0 ; i < ar.length ; i++ ){
             if( ar[i] == null )continue ;
-             
+
             print( output = ar[i].toString() ) ;
             if(  ( output.length() > 0 ) &&
-                 ( output.charAt(output.length()-1) != '\n' ) 
+                 ( output.charAt(output.length()-1) != '\n' )
 
                )print("\n") ;
          }
@@ -183,10 +188,10 @@ public class      StreamLoginCell
          if( ( output.length() > 0 ) &&
              ( output.charAt(output.length()-1) != '\n' ) )print("\n") ;
       }
-   
+
    }
   //
-  // the cell implemetation 
+  // the cell implemetation
   //
    public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
    public void getInfo( PrintWriter pw ){
@@ -197,26 +202,26 @@ public class      StreamLoginCell
      pw.println( " Command Count : "+_commandCounter ) ;
    }
    public void   messageArrived( CellMessage msg ){
-   
+
         Object obj = msg.getMessageObject() ;
         println("");
-        println( " CellMessage From   : "+msg.getSourceAddress() ) ; 
-        println( " CellMessage To     : "+msg.getDestinationAddress() ) ; 
+        println( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        println( " CellMessage To     : "+msg.getDestinationAddress() ) ;
         println( " CellMessage Object : "+obj.getClass().getName() ) ;
         printObject( obj ) ;
-     
+
    }
    ///////////////////////////////////////////////////////////////////////////
    //                                                                       //
    // the interpreter stuff                                                 //
    //                                                                       //
-   public String fh_set_sync = 
+   public String fh_set_sync =
                  " Syntax : set sync on|off \n" +
                  "          sets the message send mode to synchronized or\n"+
                  "          asynchronized mode. The default timeout for the\n"+
                  "          sync mode is 10 seconds. Use the 'set timeout'\n"+
                  "          commmand to change this value\n" ;
-                 
+
    public String hh_set_dest    = "local|<destinationCell>" ;
    public String hh_set_sync    = "on|off" ;
    public String hh_set_timeout = "<seconds>" ;
@@ -225,10 +230,10 @@ public class      StreamLoginCell
       String s = args.argv(0) ;
       if( ! ( _reader instanceof SshInputStreamReader ) )
          return "Change of echo not supported by this terminal\n" ;
-      
-      SshInputStreamReader r = (SshInputStreamReader)_reader ; 
+
+      SshInputStreamReader r = (SshInputStreamReader)_reader ;
       if( s.equals("off") ){
-         r.setEcho(false) ; 
+         r.setEcho(false) ;
          r.setEchoChar( (char)0 ) ;
       }else if( s.equals("on") ){
          r.setEcho(true) ;
@@ -238,7 +243,7 @@ public class      StreamLoginCell
       }
       return "Done\n" ;
    }
-   
+
    public String ac_show_timeout( Args args ){
       return "Sync timeout = "+_syncTimeout+" seconds \n" ;
    }
@@ -254,7 +259,7 @@ public class      StreamLoginCell
       _syncMode = false ;
       return "" ;
    }
-   
+
    public String ac_set_dest_$_1( Args args ){
       if( args.argv(0).equals("local") ){
          _destination = getCellName() ;
@@ -266,7 +271,7 @@ public class      StreamLoginCell
    public String ac_exit( Args args ) throws CommandExitException {
       throw new CommandExitException( "" , 0 ) ;
    }
-      
+
 
 
 }

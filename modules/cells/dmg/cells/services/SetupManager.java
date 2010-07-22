@@ -5,45 +5,52 @@ import  dmg.util.* ;
 import  java.io.* ;
 import  java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SetupManager extends CellAdapter {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(SetupManager.class);
+
    private String      _cellName = null ;
    private Args        _args     = null ;
    private CellNucleus _nucleus  = null ;
-   
+
    private String _defaultClass    = null ;
    private String _configDirectory = null ;
-   
+
    private File   _config = null ;
-   
+
    //
-   //   create dmg.cells.services.SetupManager setupManager 
+   //   create dmg.cells.services.SetupManager setupManager
    //              "<configDirectory> [-defaultClass=<defaultClass>]"
    //
    public SetupManager( String cellName , String args ) throws Exception {
-   
+
       super( cellName , args , false ) ;
-      
+
       _cellName = cellName ;
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
-      
+
       try{
-      
-         if( _args.argc() == 0 )         
+
+         if( _args.argc() == 0 )
            throw new
            IllegalArgumentException("Config directory not specified");
-           
+
          _config = new File( _configDirectory = _args.argv(0) ) ;
          if( ! _config.isDirectory() )
            throw new
            IllegalArgumentException("Config directory not found : "+_config);
-         
+
          _defaultClass = _args.getOpt("defaultClass") ;
          _defaultClass = _defaultClass == null ? "default" : _defaultClass ;
-        
-         say("defaultClass set to '"+_defaultClass+"'");
-      
-         
+
+         _log.info("defaultClass set to '"+_defaultClass+"'");
+
+
       }catch(Exception ee ){
          start() ;
          kill() ;
@@ -52,19 +59,19 @@ public class SetupManager extends CellAdapter {
       useInterpreter( true ) ;
       start() ;
 
-   } 
+   }
    private void getSetup( SetupInfoMessage info ) throws Exception {
       String className = info.getSetupClass() ;
       String name      = info.getSetupName() ;
       if( name == null )
         throw new
         IllegalArgumentException("No Setup name specified");
-      
-      
+
+
       className = className == null ? "default" : className ;
       File classDir = new File( _config , className ) ;
       if( ! classDir.isDirectory() )
-         throw new 
+         throw new
          NoSuchElementException("class:"+className) ;
 
       File setupFile = new File(classDir,name);
@@ -72,10 +79,10 @@ public class SetupManager extends CellAdapter {
          setupFile = new File(classDir,"default");
          if( ! setupFile.exists() )
            throw new
-           NoSuchElementException(classDir.getName()+":"+name) ;      
+           NoSuchElementException(classDir.getName()+":"+name) ;
       }
-      BufferedReader br = 
-            new BufferedReader( 
+      BufferedReader br =
+            new BufferedReader(
                   new FileReader( setupFile ) ) ;
       StringBuffer sb = new StringBuffer() ;
       try{
@@ -92,22 +99,22 @@ public class SetupManager extends CellAdapter {
       String className = info.getSetupClass() ;
       String name      = info.getSetupName() ;
       Object payload   = info.getPayload() ;
-      
+
       if( name == null )
         throw new
         IllegalArgumentException("No Setup name specified");
       if( payload == null )
         throw new
         IllegalArgumentException("No payload");
-      
-      
+
+
       className = className == null ? "default" : className ;
-      
+
       File classDir = new File( _config , className ) ;
       if( ! classDir.isDirectory() ){
          classDir.mkdir() ;
-         if( ! classDir.isDirectory() )      
-            throw new 
+         if( ! classDir.isDirectory() )
+            throw new
             IOException("can't create class:"+className) ;
       }
       File setupFile = new File(classDir,name);
@@ -124,18 +131,18 @@ public class SetupManager extends CellAdapter {
    public String ac_test_$_2( Args args )throws Exception {
       String className = args.argv(0) ;
       String name      = args.argv(1) ;
-      SetupInfoMessage info = 
+      SetupInfoMessage info =
             new SetupInfoMessage( name , className ) ;
-      
-      CellMessage reply = sendAndWait( 
+
+      CellMessage reply = sendAndWait(
                   new CellMessage( new CellPath("setupManager") ,
                                    info ) ,
                   10000 ) ;
-                  
+
       if( reply == null )
          throw new
          Exception ("Request timed out") ;
-         
+
       info = (SetupInfoMessage)reply.getMessageObject() ;
       Object obj = info.getPayload() ;
       if( obj == null )throw new Exception("No payload") ;
@@ -146,20 +153,20 @@ public class SetupManager extends CellAdapter {
    public String ac_ls_setup_$_2( Args args ) throws Exception {
       String className = args.argv(0) ;
       String name      = args.argv(1) ;
-      
+
       File   classDir  = new File( _config , className );
       if( ! classDir.isDirectory() )
         throw new
         IllegalArgumentException("Class not found : "+className);
-   
+
       File setupFile = new File( classDir , name ) ;
       if( ! setupFile.exists() )
         throw new
         IllegalArgumentException("Setup not found in class >"+className+"< : "+name);
-        
+
       StringBuffer sb = new StringBuffer() ;
-      BufferedReader br = 
-            new BufferedReader( 
+      BufferedReader br =
+            new BufferedReader(
                   new FileReader( setupFile ) ) ;
       try{
          String buffer ;
@@ -187,7 +194,7 @@ public class SetupManager extends CellAdapter {
          }
          return sb.toString();
       }else{
-      
+
          String className = args.argv(0) ;
          File classDir = new File( _config , className );
          if( ! classDir.isDirectory() )
@@ -205,12 +212,12 @@ public class SetupManager extends CellAdapter {
             sb.append(fileList[i].getName()).append("\n");
          }
          return sb.toString();
-         
+
       }
-      
+
    }
    private void removeSetup( SetupInfoMessage info ){
-   
+
    }
    public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
@@ -228,11 +235,11 @@ public class SetupManager extends CellAdapter {
             }else if( info.getAction().equals("remove") ){
                removeSetup( info ) ;
             }else{
-               throw new 
+               throw new
                IllegalArgumentException(
                   "Action not defined : "+info.getAction()
                                        ) ;
-                              
+
             }
          }
       }catch( Exception ee ){
@@ -242,8 +249,8 @@ public class SetupManager extends CellAdapter {
          message.revertDirection() ;
          sendMessage(message);
       }catch(Exception ee ){
-         esay("Problems sending reply to "+message);
+         _log.warn("Problems sending reply to "+message);
       }
    }
-   
+
 }

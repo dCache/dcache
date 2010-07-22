@@ -10,12 +10,19 @@ import dmg.util.* ;
 import diskCacheV111.util.*;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.UserAuthRecord;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov
  * Based on the UserMetaDataProviderExample
  *
  */
 public class UserMetaDataProviderFnal implements UserMetaDataProvider {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(UserMetaDataProviderFnal.class);
 
     private final CellAdapter _cell    ;
     private final Map<String,Object>  _context;
@@ -122,28 +129,28 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
             authf = new KAuthFile(_kpwdFilePath);
         }
         catch ( Exception e ) {
-            _cell.esay("User authentication file not found: " + e);
+            _log.warn("User authentication file not found: " + e);
             return answer;
         }
         if (userRole.startsWith("UNSPECIFIED")) {
 
             userRole = authf.getIdMapping(userPrincipal);
-            _cell.esay("userRole="+userRole);
+            _log.warn("userRole="+userRole);
 
             if(userRole == null) {
-                _cell.esay("User " + userPrincipal + " not found.");
+                _log.warn("User " + userPrincipal + " not found.");
                 return answer;
             }
         }
         pwdRecord = authf.getUserRecord(userRole);
         if( pwdRecord == null ) {
-            _cell.esay("User " + userRole + " not found.");
+            _log.warn("User " + userRole + " not found.");
             return answer;
         }
 
         if( !((UserAuthRecord)pwdRecord).hasSecureIdentity(userPrincipal) ) {
             pwdRecord = null;
-            _cell.esay(userPrincipal+": Permission denied");
+            _log.warn(userPrincipal+": Permission denied");
             return answer;
         }
         uid  = pwdRecord.UID;
@@ -154,7 +161,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         answer.put("gid", String.valueOf(gid));
         answer.put("home", home);
 
-        _cell.say("User "+userRole+" logged in");
+        _log.info("User "+userRole+" logged in");
         return answer;
     }
 

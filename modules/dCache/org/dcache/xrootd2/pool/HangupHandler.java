@@ -1,10 +1,12 @@
 package org.dcache.xrootd2.pool;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.Channel;
 
 /**
  * A SimpleChannelHandler which closes the parent channel upon the
@@ -16,7 +18,8 @@ public class HangupHandler extends SimpleChannelHandler
 {
     private final CountDownLatch _latch;
 
-    private boolean _connected = false;
+    private final AtomicReference<Channel> _channel =
+        new AtomicReference<Channel>();
 
     public HangupHandler(CountDownLatch latch)
     {
@@ -28,16 +31,18 @@ public class HangupHandler extends SimpleChannelHandler
                             ChannelStateEvent event)
         throws Exception
     {
+        Channel channel = ctx.getChannel();
+
         /* Refuse all but the first connect.
          */
-        if (_connected) {
-            ctx.getChannel().close();
+        if (!_channel.compareAndSet(null, channel)) {
+            channel.close();
             return;
         }
 
         /* Close parent channel as soon as we got the connection.
          */
-        _connected = false;
+        channel.getParent().unbind();
 
         super.channelOpen(ctx, event);
     }
@@ -47,8 +52,10 @@ public class HangupHandler extends SimpleChannelHandler
                               ChannelStateEvent event)
         throws Exception
     {
-        _latch.countDown();
-        super.channelClosed(ctx, event);
+        if (ctx.getChannel() == _channel.get()) {
+            super.channelClosed(ctx, event);
+            _latch.countDown();
+        }
     }
 
 }

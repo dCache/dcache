@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 
 import dmg.cells.nucleus.CellPath;
 
+import org.apache.commons.jexl2.Expression;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +29,22 @@ public abstract class PoolListFromPoolManager
     private final double _spaceFactor;
     private final double _cpuFactor;
     protected final Collection<Pattern> _exclude;
+    protected final Expression _excludeWhen;
+    protected final Collection<Pattern> _include;
+    protected final Expression _includeWhen;
     protected List<PoolCostPair> _pools = Collections.emptyList();
 
     public PoolListFromPoolManager(Collection<Pattern> exclude,
+                                   Expression excludeWhen,
+                                   Collection<Pattern> include,
+                                   Expression includeWhen,
                                    double spaceFactor,
                                    double cpuFactor)
     {
         _exclude = exclude;
+        _excludeWhen = excludeWhen;
+        _include = include;
+        _includeWhen = includeWhen;
         _spaceFactor = spaceFactor;
         _cpuFactor = cpuFactor;
     }
@@ -48,14 +59,30 @@ public abstract class PoolListFromPoolManager
         _pools = Collections.unmodifiableList(pools);
     }
 
-    private boolean isExcluded(String pool)
+    private boolean matchesAny(Collection<Pattern> patterns, String s)
     {
-        for (Pattern pattern: _exclude) {
-            if (pattern.matcher(pool).matches()) {
+        for (Pattern pattern: patterns) {
+            if (pattern.matcher(s).matches()) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean isExcluded(PoolManagerPoolInformation pool)
+    {
+        if (matchesAny(_exclude, pool.getName())) {
+            return true;
+        }
+        return evaluate(_excludeWhen, pool);
+    }
+
+    private boolean isIncluded(PoolManagerPoolInformation pool)
+    {
+        if (!_include.isEmpty()) {
+            return matchesAny(_include, pool.getName());
+        }
+        return evaluate(_includeWhen, pool);
     }
 
     public void success(PoolManagerGetPoolsMessage msg)
@@ -63,8 +90,7 @@ public abstract class PoolListFromPoolManager
         List<PoolCostPair> pools =
             new ArrayList<PoolCostPair>(msg.getPools().size());
         for (PoolManagerPoolInformation pool: msg.getPools()) {
-            String name = pool.getName();
-            if (!isExcluded(name)) {
+            if (!isExcluded(pool) && isIncluded(pool)) {
                 double space =
                     (_spaceFactor > 0 ? pool.getSpaceCost() * _spaceFactor : 0);
                 double cpu =
@@ -90,5 +116,23 @@ public abstract class PoolListFromPoolManager
     public void timeout()
     {
         _log.error("Pool manager timeout");
+    }
+
+    private boolean evaluate(Expression expression,
+                             PoolManagerPoolInformation pool)
+    {
+        MapContextWithConstants context = new MapContextWithConstants();
+        context.addConstant("target", new PoolValues(pool));
+
+        Object result = expression.evaluate(context);
+        if (!(result instanceof Boolean)) {
+            _log.error(expression.getExpression() +
+                       ": The expression does not evaluate to a boolean");
+        }
+
+        /* Notice that the following round-about code also happens to
+         * work if result is not a Boolean.
+         */
+        return Boolean.TRUE.equals(result);
     }
 }

@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   * @author Patrick Fuhrmann
   * @version 1.0, Aug 04 2001
@@ -34,6 +37,9 @@ import javax.security.auth.Subject;
 public class      DCapDoor
        extends    CellAdapter
        implements Runnable, KeepAliveListener           {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(DCapDoor.class);
 
     private StreamEngine   _engine;
     private BufferedReader _in;
@@ -123,7 +129,7 @@ public class      DCapDoor
             //
             // check for lock
             //
-            say( "Checking DCap lock" ) ;
+            _log.info( "Checking DCap lock" ) ;
             try{
                while( true ){
                    String lock = (String)_nucleus.getDomainContext().get("dcapLock") ;
@@ -132,12 +138,12 @@ public class      DCapDoor
                }
 
             }catch(InterruptedException iee){
-               say("Interrupted the 'dcap' lock" ) ;
-               say( "ComThread : Client communication Thread finished" );
+               _log.info("Interrupted the 'dcap' lock" ) ;
+               _log.info( "ComThread : Client communication Thread finished" );
                _stateChanged( __connectionLostEvent ) ;
                return ;
             }
-            say("DCapLock released");
+            _log.info("DCapLock released");
             _dcapLock = false ;
 
             try {
@@ -149,42 +155,41 @@ public class      DCapDoor
                     if(_lastCommand.length() == 0) continue;
 
                     _commandCounter++;
-                    say("Executing command: " + _lastCommand);
+                    _log.info("Executing command: " + _lastCommand);
                     VspArgs args;
                     try {
                         args = new VspArgs(_lastCommand);
                     }catch(IllegalArgumentException e) {
                         println("protocol violation: " + e.getMessage());
-                        esay("protocol violation ["+e.getMessage()+"]from " + _engine.getInetAddress());
+                        _log.warn("protocol violation ["+e.getMessage()+"]from " + _engine.getInetAddress());
                         break;
                     }
 
                     if (execute(args) > 0) {
                         println("0 0 server byebye");
-                        say("ComThread : protocol ended");
+                        _log.info("ComThread : protocol ended");
                         break;
                     }
                 }
             } catch (IOException e) {
-                esay("Got IO exception " +e.toString() + " from: " + _engine.getInetAddress());
+                _log.warn("Got IO exception " +e.toString() + " from: " + _engine.getInetAddress());
             } catch (Exception e) {
-                 esay("ComThread : got " + e);
-                 esay(e);
+                _log.warn("ComThread : got " + e, e);
             }finally{
                 _out.close();
             }
 
-	    say( "ComThread : Client communication Thread finished" );
+	    _log.info( "ComThread : Client communication Thread finished" );
             _stateChanged( __connectionLostEvent ) ;
 	}else if( Thread.currentThread() == _anyThread  ){
             try{
-                 say( "AnyThread : started" ) ;
+                 _log.info( "AnyThread : started" ) ;
                  Thread.sleep( 60 * 60 * 1000 )  ;
-                 say( "AnyThread : woke up" ) ;
+                 _log.info( "AnyThread : woke up" ) ;
             }catch(InterruptedException ie ){
-                say( "AnyThread : was interrupted" ) ;
+                _log.info( "AnyThread : was interrupted" ) ;
             }
-            say( "AnyThread : finished" ) ;
+            _log.info( "AnyThread : finished" ) ;
         }
     }
     private static final int __connectionLostEvent = 1 ;
@@ -200,17 +205,17 @@ public class      DCapDoor
     private int _state = __NormalOperation  ;
     private void abortCacheProtocol(){
 
-       say( "abortCacheProtocol : starting" ) ;
+       _log.info( "abortCacheProtocol : starting" ) ;
        try{
             TimeUnit.SECONDS.sleep(10) ;
        }catch(InterruptedException ie ){
-          say( "abortCacheProtocol : interrupted " ) ;
+          _log.info( "abortCacheProtocol : interrupted " ) ;
        }
-       say( "abortCacheProtocol : finished" ) ;
+       _log.info( "abortCacheProtocol : finished" ) ;
 
     }
     private synchronized void _stateChanged( int event ){
-       say( "_stateChanged : state = "+_state+" ; event = "+event ) ;
+       _log.info( "_stateChanged : state = "+_state+" ; event = "+event ) ;
        switch( _state ){
 
           case __NormalOperation :
@@ -226,10 +231,10 @@ public class      DCapDoor
                          //Warning : this code is no longer synchronized
                          //
                          public void run(){
-                            say( "Starting abortCacheProtocol" ) ;
+                            _log.info( "Starting abortCacheProtocol" ) ;
                             abortCacheProtocol() ;
                             _stateChanged( __abortCacheFinishedEvent ) ;
-                            say( "Finished abortCacheProtocol" ) ;
+                            _log.info( "Finished abortCacheProtocol" ) ;
                          }
                       } , "finishCacheProtocol" ).start() ;
                 break ;
@@ -243,9 +248,9 @@ public class      DCapDoor
                          //Warning : this code is no longer synchronized
                          //
                          public void run(){
-                            say( "Starting abortCacheProtocol" ) ;
+                            _log.info( "Starting abortCacheProtocol" ) ;
                             abortCacheProtocol() ;
-                            say( "Finished abortCacheProtocol" ) ;
+                            _log.info( "Finished abortCacheProtocol" ) ;
                             _stateChanged( __abortCacheFinishedEvent ) ;
                          }
                       } , "finishCacheProtocol" ).start() ;
@@ -283,12 +288,12 @@ public class      DCapDoor
           case __WeAreFinished :
              switch( event ){
                 case __weWereKilledEvent :
-                   say( "Done" ) ;
+                   _log.info( "Done" ) ;
                 break ;
              }
           break ;
        }
-       say( "_stateChanged :  new state = "+_state ) ;
+       _log.info( "_stateChanged :  new state = "+_state ) ;
        notifyAll() ;
     }
     private synchronized void waitForFinish( long timeout )
@@ -296,7 +301,7 @@ public class      DCapDoor
        long end = System.currentTimeMillis() + timeout ;
        while( _state != __WeAreFinished ){
            long rest = end - System.currentTimeMillis() ;
-           say( "waitForFinish : waiting for "+rest+" seconds" ) ;
+           _log.info( "waitForFinish : waiting for "+rest+" seconds" ) ;
            if( rest <=0  )break ;
            wait( rest ) ;
        }
@@ -304,33 +309,33 @@ public class      DCapDoor
     @Override
     public void   cleanUp(){
 
-	say( "CleanUp : starting" );
+	_log.info( "CleanUp : starting" );
         _stateChanged( __weWereKilledEvent ) ;
         try{
-           say("CleanUp : waiting for final gate" ) ;
+           _log.info("CleanUp : waiting for final gate" ) ;
            waitForFinish( 2000 ) ;
         }catch(InterruptedException ie ){
-           say("CleanUp : PANIC : interrupted (system left in an undefined state)" ) ;
+           _log.info("CleanUp : PANIC : interrupted (system left in an undefined state)" ) ;
         }
         if( _state != __WeAreFinished )
-            say("CleanUp : PANIC : timeout (system left in an undefined state)" ) ;
-	say( "CleanUp : finished" );
+            _log.info("CleanUp : PANIC : timeout (system left in an undefined state)" ) ;
+	_log.info( "CleanUp : finished" );
 
         _interpreter.close();
         _out.close();
 	try {
 	    if (!_engine.getSocket().isClosed()) {
-		say("Close socket");
+		_log.info("Close socket");
 		_engine.getSocket().close();
 	    }
         } catch (IOException e) {
-            esay("DcapDoor: got I/O exception closing socket:" + e.getMessage());
+            _log.warn("DcapDoor: got I/O exception closing socket:" + e.getMessage());
         }
 
     }
 
     private synchronized void println( String str ){
-        say( "toclient(println) : "+str ) ;
+        _log.info( "toclient(println) : "+str ) ;
 	_out.println( str );
 	_out.flush();
     }
@@ -341,7 +346,7 @@ public class      DCapDoor
 
            String answer = _interpreter.execute(args);
            if( answer != null ){
-              say( "Our answer : "+answer ) ;
+              _log.info( "Our answer : "+answer ) ;
               println( answer ) ;
            }
 

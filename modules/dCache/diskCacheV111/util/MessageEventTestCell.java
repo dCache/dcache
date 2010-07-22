@@ -4,7 +4,14 @@ import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 import  java.io.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MessageEventTestCell extends CellAdapter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(MessageEventTestCell.class);
+
    private String  _cellName = null ;
    private Args    _args     = null ;
    private CellNucleus _nucleus = null ;
@@ -19,50 +26,50 @@ public class MessageEventTestCell extends CellAdapter {
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
       _timer    = new MessageEventTimer( _nucleus ) ;
-      
+
       _echoOnly = _args.getOpt("echo") != null ;
-      
+
       useInterpreter( true ) ;
-      
-         _nucleus.newThread( 
+
+         _nucleus.newThread(
              new Runnable(){
                  public void run(){
                     try{
                        _timer.loop() ;
                     }catch(InterruptedException ie ){
-                       esay("Loop interrupted .. ") ;
+                       _log.warn("Loop interrupted .. ") ;
                     }
-                 }   
+                 }
              } ,
-             "loop" 
+             "loop"
          ).start() ;
 
       start() ;
-   } 
+   }
    private class InternalEvent implements MessageTimerEvent {
       public void event( MessageEventTimer timer ,
-                         Object eventObject , 
+                         Object eventObject ,
 		         int eventType ){
-                         
-          say( "Event : type : "+eventType ) ;
+
+          _log.info( "Event : type : "+eventType ) ;
           if( eventObject instanceof CellMessage [] ){
              CellMessage [] cellMessage = (CellMessage [])eventObject ;
              for( int i = 0 ; i < cellMessage.length ; i++ ){
-                say( "   "+i+" -> "+cellMessage[i].getMessageObject() ) ;
-             }  
+                _log.info( "   "+i+" -> "+cellMessage[i].getMessageObject() ) ;
+             }
              if( _expectmore )
              try{
                 timer.reschedule( 20000 ) ;
              }catch(IllegalMonitorStateException ime ){
-                esay("Reschedule failed : "+ime ) ;
-             } 
+                _log.warn("Reschedule failed : "+ime ) ;
+             }
           }else if( eventObject instanceof Long ){
-             say("Timer expired "+eventObject ) ;
+             _log.info("Timer expired "+eventObject ) ;
              timer.addTimer(null,eventObject,this,((Long)eventObject).longValue());
           }else{
-             say( "Timer expired   Object : "+eventObject ) ;
-            
-          }         
+             _log.info( "Timer expired   Object : "+eventObject ) ;
+
+          }
       }
    }
    public String hh_send = "<string> <timeout> [<destination>]" ;
@@ -76,7 +83,7 @@ public class MessageEventTestCell extends CellAdapter {
          }catch(Exception ee){}
       }
       for( int i = 0 ; i < count ; i++ ){
-         CellMessage msg = new CellMessage( 
+         CellMessage msg = new CellMessage(
                  path ,
                  new IllegalArgumentException(args.argv(0)+"-"+i) ) ;
          _timer.send( msg , Long.parseLong(args.argv(1)) , new InternalEvent() ) ;
@@ -87,20 +94,20 @@ public class MessageEventTestCell extends CellAdapter {
       pw.println( " timer : "+_timer ) ;
    }
    public String hh_reset = "  # resets the counters" ;
-   
+
    public String ac_reset( Args args ){
       return "Done" ;
    }
    public String hh_add_timer = "<timeout> [-key=<key>] [-periodic]" ;
    public String ac_add_timer_$_1( Args args )throws Exception {
       long timerTimeout = Long.parseLong( args.argv(0) ) ;
-      
-      _timer.addTimer( args.getOpt("key") , 
+
+      _timer.addTimer( args.getOpt("key") ,
                        args.getOpt("periodic")!= null ? new Long(timerTimeout) : null ,
-                       new InternalEvent() , 
+                       new InternalEvent() ,
                        timerTimeout ) ;
-      
-      return "Scheduled now + " + timerTimeout+ " msec's" ; 
+
+      return "Scheduled now + " + timerTimeout+ " msec's" ;
    }
    public String hh_remove_timer = "<timerPrivateKey>" ;
    public String ac_remove_timer_$_1( Args args )throws Exception {
@@ -115,36 +122,36 @@ public class MessageEventTestCell extends CellAdapter {
       return "Expectmore set to : "+_expectmore ;
    }
    public String ac_replies_$_1( Args args )throws Exception {
-   
+
      _replies = Integer.parseInt( args.argv(0) ) ;
      return "Set number of replies to : "+_replies  ;
    }
    public void messageToForward( CellMessage msg ){
-      say("Got message to forward : "+msg ) ;
+      _log.info("Got message to forward : "+msg ) ;
    }
    public void messageArrived( CellMessage msg ){
      if( _echoOnly ){
         if( ! _silent ){
            msg.revertDirection() ;
            try{
-           
-              Object messageObject = 
+
+              Object messageObject =
                   new IllegalArgumentException("Reply "+msg.getMessageObject());
               for( int i = 0 ; i < _replies ; i++ ){
                  msg.setMessageObject(messageObject );
                  sendMessage(msg) ;
-                 say("Message replied "+i ) ;
+                 _log.info("Message replied "+i ) ;
               }
            }catch(Exception ee ){
-              esay("PANIC : can't return message to sender" ) ;
+              _log.warn("PANIC : can't return message to sender" ) ;
            }
         }else{
-           say("Reply suppressed");
+           _log.info("Reply suppressed");
         }
      }else{
-        say( "Message send to timer : "+msg.getMessageObject() ) ;
+        _log.info( "Message send to timer : "+msg.getMessageObject() ) ;
         _timer.messageArrived(msg) ;
      }
    }
 
-} 
+}

@@ -4,13 +4,19 @@ import  dmg.cells.nucleus.* ;
 import  java.util.* ;
 import  java.io.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
 public class ConfigCell implements Cell, Runnable  {
+
+   private final static Logger _log =
+       LoggerFactory.getLogger(ConfigCell.class);
 
    private CellNucleus _nucleus   = null ;
    private Thread      _worker    = null ;
@@ -21,28 +27,28 @@ public class ConfigCell implements Cell, Runnable  {
    private CellShell   _shell ;
    private Vector      _status       = new Vector() ;
    private Object      _statusLock   = new Object() ;
-   
+
    public ConfigCell( String cellName , String cellArgs ){
-   
+
       _configBase = cellArgs ;
       _nucleus = new CellNucleus( this , cellName ) ;
-      
+
       _shell   = new CellShell( _nucleus ) ;
-      
+
       _worker  = new Thread( this ) ;
       _worker.start() ;
    }
    public void run(){
      if( Thread.currentThread() == _worker ){
-         String filename = _configBase + "/" + 
+         String filename = _configBase + "/" +
                            _nucleus.getCellDomainName() + ".conf" ;
          String line , answer ;
          setStatus( "Starting on "+filename ) ;
          try{
-            BufferedReader in = new BufferedReader( 
+            BufferedReader in = new BufferedReader(
                                 new FileReader( filename ) ) ;
             while( ( line = in.readLine() ) != null ){
-            
+
                setStatus( line ) ;
                answer = _shell.command( line ) ;
                setStatus( answer ) ;
@@ -52,7 +58,7 @@ public class ConfigCell implements Cell, Runnable  {
             setStatus( " Exc :  " + e.toString() ) ;
          }
          setStatus( "Ready" ) ;
-     
+
      }
    }
    public String toString(){ return _message ; }
@@ -68,7 +74,7 @@ public class ConfigCell implements Cell, Runnable  {
    private void setStatus( String st ){
      if( st.equals("\n") )return  ;
      _message = st ;
-     _nucleus.say( st ) ;
+     _log.info( st ) ;
      synchronized( _statusLock ){
        if( _status.size() > 40 ){
           _status.removeElementAt(0) ;
@@ -76,40 +82,40 @@ public class ConfigCell implements Cell, Runnable  {
        _status.addElement( st ) ;
      }
    }
-   
+
    public String getInfo(){
      return getStatus() ;
    }
    public void   messageArrived( MessageEvent me ){
-   
+
      if( me instanceof LastMessageEvent ){
-        _nucleus.say( "Last message received; releasing lock" ) ;
+        _log.info( "Last message received; releasing lock" ) ;
         synchronized( _readyLock ){
             _ready = true ;
             _readyLock.notifyAll();
         }
      }else{
         CellMessage msg = me.getMessage() ;
-        _nucleus.say( " CellMessage From   : "+msg.getSourceAddress() ) ; 
-        _nucleus.say( " CellMessage To     : "+msg.getDestinationAddress() ) ; 
-        _nucleus.say( " CellMessage Object : "+msg.getMessageObject() ) ;
-        _nucleus.say( "" ) ;
+        _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;
+        _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+        _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
+        _log.info( "" ) ;
      }
-     
+
    }
    public void   prepareRemoval( KillEvent ce ){
-     _nucleus.say( "prepareRemoval received" ) ;
+     _log.info( "prepareRemoval received" ) ;
      synchronized( _readyLock ){
         if( ! _ready ){
-           _nucleus.say( "waiting for last message to be processed" ) ;
+           _log.info( "waiting for last message to be processed" ) ;
            try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
-        } 
+        }
      }
-     _nucleus.say( "finished" ) ;
+     _log.info( "finished" ) ;
      // this will remove whatever was stored for us
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

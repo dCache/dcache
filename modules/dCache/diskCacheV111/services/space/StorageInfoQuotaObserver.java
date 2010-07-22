@@ -14,20 +14,25 @@ import diskCacheV111.pools.* ;
 import diskCacheV111.poolManager.* ;
 import diskCacheV111.vehicles.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Patrick Fuhrmann patrick.fuhrmann@desy.de
  * @version 0.1, Aug 08, 2006
  *
- *  Collects space information from all pools as well as link information 
+ *  Collects space information from all pools as well as link information
  *  from the PoolManager. Merges those data which finally results in
  *  information about links, like space and storage classes for each link.
  */
 
 public class StorageInfoQuotaObserver extends CellAdapter {
 
+   private final static Logger _log =
+       LoggerFactory.getLogger(StorageInfoQuotaObserver.class);
+
    private CellNucleus   _nucleus         = null ;
    private Args          _args            = null ;
-   private boolean       _debug           = false ;
    private java.io.File  _configFile      = null ;
    private Map           _poolHash        = new HashMap() ;
    private Object        _linkMapLock     = new Object() ;
@@ -50,7 +55,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      *
      */
    private class SpaceInfo {
-   
+
       private String _name = null ;
       private long   _space = 0L ;
       private long   _files = 0L ;
@@ -62,7 +67,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       private long   _removableFiles = 0L ;
       private long   _poolTotalUsed  = 0L ;
       private long   _poolTotalFree  = 0L ;
-      
+
       private SpaceInfo( String name ){
          _name = name ;
       }
@@ -70,14 +75,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          _name  = name ;
          _space = space ;
          _files = files ;
-      }   
+      }
       public String toString(){
          return _name+
                 "={space="+_space+";files="+_files+
                 ";pSpace="+_preciousSpace+";pFiles="+_preciousFiles+
-                ";sSpace="+_stickySpace+";sFiles="+_stickyFiles+                
-                ";rSpace="+_removableSpace+";rFiles="+_removableFiles+                
-                ";used="+_poolTotalUsed+";free="+_poolTotalFree+                
+                ";sSpace="+_stickySpace+";sFiles="+_stickyFiles+
+                ";rSpace="+_removableSpace+";rFiles="+_removableFiles+
+                ";used="+_poolTotalUsed+";free="+_poolTotalFree+
                 "}" ;
       }
       public void add( SpaceInfo sci ){
@@ -92,14 +97,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          _removableFiles += sci._removableFiles ;
          _poolTotalUsed  += sci._poolTotalUsed ;
          _poolTotalFree  += sci._poolTotalFree ;
-      }  
+      }
    }
    /**
      * Helper pool class, holding total space as well as individual storage class
      * spaces. Declares itself invalid is it hasn't been updated recently.
      */
    private class PoolSpaceInfo {
-   
+
       private String _name     = null ;
       private long   _time     = 0L ;
       private long   _poolSize = 0L ;
@@ -107,12 +112,12 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       private long   _poolRemovableSpace      = 0L ;
       private SpaceInfo []  _storageClassInfo = null ;
       private SpaceInfo     _totalSpace       = null ;
-      
+
       private PoolSpaceInfo( String name ){
          _name = name ;
       }
       public String toString(){
-      
+
         StringBuffer sb = new StringBuffer() ;
         sb.append(_name).append("={time=");
         if( ! isValid() )sb.append("Invalid") ;
@@ -125,7 +130,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
         }
         sb.append("}");
         return sb.toString();
-        
+
       }
       public boolean isValid(){ return wasValidAt( System.currentTimeMillis() ) ; }
       public boolean wasValidAt( long atThatTime ){
@@ -133,11 +138,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       }
    }
    /**
-     * Helper for link info. Mainly storage class and total space for 
+     * Helper for link info. Mainly storage class and total space for
      * SRM space manager.
      */
    private class LinkInfo {
-   
+
        private String    _name           = null ;
        private List      _pools          = null ;
        private List      _storageClasses = null ;
@@ -145,7 +150,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        private long      _linkTotalSize  = 0L ;
        private long      _linkFreeSpace  = 0L ;
        private long      _linkRemovableSpace = 0L ;
-       
+
        private LinkInfo( String name ){
          _name = name ;
        }
@@ -159,56 +164,53 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      *  The actual Cell. (as usual)
      */
    public StorageInfoQuotaObserver( String name , String args )throws Exception {
-   
+
       super( name ,StorageInfoQuotaObserver.class.getName(), args , false ) ;
-      
+
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
-      
+
       try{
-          _debug = _args.getOpt("debug") != null ;
-           
           String configName = _args.getOpt("config") ;
           if( ( configName != null ) && ( ! configName.equals("") ) )_configFile = new java.io.File(configName) ;
-          
-          say("Query Engine will be started a bit delayed" ) ;
-          
+
+          _log.info("Query Engine will be started a bit delayed" ) ;
+
           _nucleus.newThread( new DoDelayedOnStartup() , "init" ).start() ;
-                    
+
       }catch(Exception ee ){
-          esay( "<init> of WebCollector reports : "+ee.getMessage());
-          esay(ee);
+          _log.warn( "<init> of WebCollector reports : "+ee.getMessage(), ee);
           start() ;
           kill() ;
           throw ee ;
-      }  
+      }
       start() ;
    }
    /**
      *   main message switchboard.
      */
    public void messageArrived( CellMessage message ){
-   
+
       CellPath source      = message.getSourcePath() ;
       String sourceCell    = source.getCellName() ;
       Object messageObject = message.getMessageObject() ;
-      
+
       if( messageObject instanceof QuotaMgrCheckQuotaMessage ){
-      
+
           queryQuotas( message , (QuotaMgrCheckQuotaMessage)messageObject ) ;
-           
+
       }else if( messageObject instanceof PoolMgrGetPoolLinks ){
-      
+
           queryPoolLinks( message , (PoolMgrGetPoolLinks)messageObject ) ;
-           
+
       }else if( sourceCell.equals( _poolManagerName ) ){
-      
+
           messageFromPoolManager( message ) ;
-          
+
       }else{
-      
+
           messageFromPool( sourceCell , message ) ;
-          
+
       }
    }
    /**
@@ -223,7 +225,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        pw.println("       Pool Validity Timeout/sec : "+(_poolValidityTimeout/1000L));
        pw.println(" Pool Manager Query Interval/sec : "+(_poolManagerQueryInterval/1000L));
        int pools = 0 ;
-       synchronized( _linkMapLock ){ 
+       synchronized( _linkMapLock ){
            pw.println(" Number of Links : "+( _linkMap == null ? "Not yet known" : ""+_linkMap.size()));
        }
        synchronized( _poolHash ){ pools = _poolHash.size() ; }
@@ -240,58 +242,58 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           /*
            * wait for awhile before starting startup processes
            */
-          say("Collector will be delayed");
-          
+          _log.info("Collector will be delayed");
+
           try{ Thread.currentThread().sleep(10000L) ;}
           catch(Exception ee){ return ; }
-          
-          say("QueryPoolManager now starting");
-          
+
+          _log.info("QueryPoolManager now starting");
+
           _nucleus.newThread( new QueryPoolManager() , "QueryPoolManager" ).start() ;
-          
+
           try{ Thread.currentThread().sleep(10000L) ;}
           catch(Exception ee){ return ; }
-          
-          say("QueryPools now starting");
-          
+
+          _log.info("QueryPools now starting");
+
           _nucleus.newThread( new QueryPools() , "QueryPools" ).start() ;
        }
-   } 
+   }
    private class QueryPoolManager implements Runnable {
       public void run(){
-          say("Query Pool Manager worker started");
+          _log.info("Query Pool Manager worker started");
           while( true ){
 
              queryLinks() ;
              queryPoolManager() ;
              try{ Thread.currentThread().sleep(_poolManagerQueryInterval) ;}
-             catch(Exception ee){ 
-                 esay("Query Pool Manager worker interrupted");
-                 break ; 
+             catch(Exception ee){
+                 _log.warn("Query Pool Manager worker interrupted");
+                 break ;
              }
-          
+
           }
-          say("Query Pool Manager worker finished");
+          _log.info("Query Pool Manager worker finished");
       }
    }
    private class QueryPools implements Runnable {
-   
+
       public void run(){
-          say("Query Pools worker started");
+          _log.info("Query Pools worker started");
           while( true ){
 
              queryPools() ;
-             
+
              try{ Thread.currentThread().sleep(_poolQueryInterval) ;}
-             catch(Exception ee){ 
-                 esay("Query Pools worker interrupted");
-                 break ; 
+             catch(Exception ee){
+                 _log.warn("Query Pools worker interrupted");
+                 break ;
              }
-          
+
           }
-          say("Query Pools worker finished");
+          _log.info("Query Pools worker finished");
       }
-   
+
    }
    //////////////////////////////////////////////////////////////////////////
    //
@@ -304,9 +306,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      *
      */
    private void messageFromPoolManager( CellMessage message ){
-   
+
       Object obj = message.getMessageObject() ;
-      
+
       if( obj instanceof List ){
          //
          // link infos
@@ -314,54 +316,52 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          try{
             scanLinkInfo( (List)obj ) ;
          }catch(Exception ee ){
-            esay("Problem scanning link info : "+ee ) ;
-            esay(ee);
+            _log.warn("Problem scanning link info : "+ee, ee ) ;
          }
-         
+
       }else if( obj instanceof PoolManagerCellInfo ){
-      
+
          String [] poolList = ((PoolManagerCellInfo)obj).getPoolList() ;
-         
+
          synchronized( _poolHash ){
-         
+
             for( int i = 0 , n = poolList.length ; i < n ; i++ ){
 
-               String poolName = poolList[i] ; 
+               String poolName = poolList[i] ;
                if( poolName == null )continue ;
-               
+
                PoolSpaceInfo info = (PoolSpaceInfo)_poolHash.get(poolName) ;
                if( info == null )_poolHash.put( poolName , info = new PoolSpaceInfo(poolName) ) ;
             }
-               
+
          }
-        
+
       }else if( obj instanceof NoRouteToCellException ){
-         esay("NoRouteToCell from PoolManager");
+         _log.warn("NoRouteToCell from PoolManager");
       }else{
-         esay("Unknow message arrived from PoolManager : "+obj.getClass().getName() ) ;
+         _log.warn("Unknow message arrived from PoolManager : "+obj.getClass().getName() ) ;
       }
    }
    /**
      * Sub switchboard for messages from the pools.
-     * 
+     *
      */
    private void messageFromPool( String poolName , CellMessage message ){
-   
+
       Object obj = message.getMessageObject() ;
-      
+
       if( obj instanceof Object [] ){
-      
+
           try{
              scanSpaceInfo( poolName , (Object [])obj ) ;
           }catch(Exception e){
-             esay("Problem scanning space info : "+e);
-             esay(e);
-          }          
-          
+             _log.warn("Problem scanning space info : "+e, e);
+          }
+
       }else if( obj instanceof NoRouteToCellException ){
-          esay("messageFromPool got NoRouteToCellException : "+obj);
+          _log.warn("messageFromPool got NoRouteToCellException : "+obj);
       }else{
-          esay("messageFromPool got Unknown object : "+obj);
+          _log.warn("messageFromPool got Unknown object : "+obj);
       }
    }
    /**
@@ -369,9 +369,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      *
      */
    private void queryQuotas( CellMessage message , QuotaMgrCheckQuotaMessage quota ){
-   
+
        try{
-       
+
           String storageClass = quota.getStorageClass() ;
           if( storageClass == null )
              throw new
@@ -381,7 +381,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           // TODO : we don't need to call this every time. We could cache it.
           //
           Map sci = createStorageInfoHash() ;
-          
+
           SpaceInfo space = (SpaceInfo) sci.get( storageClass ) ;
           if( space == null )
              throw new
@@ -393,29 +393,29 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           quota.setFailed( 55 , e.getMessage() ) ;
        }
        message.revertDirection() ;
-       
+
        try{
            sendMessage( message ) ;
        }catch(Exception ee ){
-           esay("Problem replying PoolMgrGetPoolLinks message");
+           _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
-   
+
    }
    /**
      *  Query PoolLinks handler
      *
      */
    private void queryPoolLinks( CellMessage message , PoolMgrGetPoolLinks query ){
-   
+
        resolveAllLinkInfos();
-       
+
        try{
           List linkList = null ;
           synchronized( _linkMapLock ){
              if( _linkMap == null )
                 throw new
                 Exception("Quota service not yet available (please wait)");
-                
+
              linkList = new ArrayList( _linkMap.values() ) ;
           }
           List result = new ArrayList() ;
@@ -425,7 +425,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
              LinkInfo info = (LinkInfo)it.next() ;
 
              String [] storageGroups = info._storageClasses == null ?
-                                       new String[0] : 
+                                       new String[0] :
                                        (String [])info._storageClasses.toArray( new String[0] );
 
              long available = info._linkFreeSpace + info._linkRemovableSpace ;
@@ -435,20 +435,20 @@ public class StorageInfoQuotaObserver extends CellAdapter {
              result.add( poolInfo ) ;
           }
           query.setPoolLinkInfos( (PoolLinkInfo []) result.toArray( new PoolLinkInfo[0] ) ) ;
-          
+
        }catch(Exception ee ){
-          esay(ee);
+          _log.warn(ee.toString(), ee);
           query.setFailed( 23 , ee ) ;
        }
-       
+
        message.revertDirection() ;
-       
+
        try{
            sendMessage( message ) ;
        }catch(Exception ee ){
-           esay("Problem replying PoolMgrGetPoolLinks message");
+           _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
-       
+
        return ;
    }
    /**
@@ -460,7 +460,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      * Spaces are NOT updated here.
      */
    private void scanLinkInfo( List linkList ){
-   
+
       Map    linkMap  = new HashMap() ;
 
       for( Iterator links = linkList.iterator() ; links.hasNext() ; ){
@@ -468,13 +468,13 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          Object [] link = (Object [])links.next() ;
 
          String linkName = link[0].toString() ;
-         
+
          LinkInfo linkInfo = null ;
          synchronized( _linkMapLock ){
              linkInfo = _linkMap == null ? null : (LinkInfo)_linkMap.get(linkName) ;
          }
          if( linkInfo == null )linkInfo = new LinkInfo( linkName ) ;
-        
+
          synchronized( linkInfo ){
             linkInfo._pools          = Arrays.asList( (Object [])link[5] ) ;
             linkInfo._storageClasses = Arrays.asList( (Object [])link[9] ) ;
@@ -486,27 +486,27 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       }
       _linksUpdated = true ;
    }
-   /** 
+   /**
      * The space info from the 'rep ls -s -sum -binary' command
      * is converted to our structure and inserted into the pool
      * infos, NOT yet into the link infos.
      */
    private void scanSpaceInfo( String poolName , Object [] result ){
-   
+
       List      sciList = new ArrayList() ;
       SpaceInfo sciSum  = new SpaceInfo("total");
-      SpaceInfo sci     = null; 
-      
+      SpaceInfo sci     = null;
+
       long totalSpace     = 0L ;
       long freeSpace      = 0L ;
       long removableSpace = 0L ;
-      
+
       for( int i = 0 ; i < result.length ; i++ ){
 
          Object [] x = (Object [])result[i] ;
 
          String sciName  = (String)x[0] ;
-         
+
          long [] counter = (long [])x[1] ;
 
          if( sciName.equals("total") ){
@@ -539,11 +539,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          info._poolSize           = totalSpace ;
          info._poolFreeSpace      = freeSpace ;
          info._poolRemovableSpace = removableSpace ;
-      }  
+      }
       _poolsUpdated = true ;
    }
    /////////////////////////////////////////////////////////////////////////////////
-   // 
+   //
    //   query function to the various other dCache services.
    //
    /////////////////////////////////////////////////////////////////////////////////
@@ -552,17 +552,17 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      *
      */
    private void queryPoolManager(){
-   
+
       try{
-         if(_debug)say("Sending xgetcellinfo to "+_poolManagerName);
+         _log.debug("Sending xgetcellinfo to "+_poolManagerName);
          CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , "xgetcellinfo" );
          sendMessage( msg );
       }catch(NoRouteToCellException cee ){
-         esay("NoPath to cell : "+_poolManagerName);
+         _log.warn("NoPath to cell : "+_poolManagerName);
       }catch(Exception ee){
-         esay("Exception in sending query to pool "+_poolManagerName);
+         _log.warn("Exception in sending query to pool "+_poolManagerName);
       }
-   
+
    }
    /**
      * Sends link info query to PoolManager.
@@ -570,27 +570,27 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryLinks(){
        try{
           String command = "psux ls link -x -resolve" ;
-          if(_debug)say("Sending poolManager query "+command+" to "+_poolManagerName);
+          _log.debug("Sending poolManager query "+command+" to "+_poolManagerName);
           CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , command );
           sendMessage( msg );
        }catch(NoRouteToCellException cee ){
-          esay("NoPath to cell : "+_poolManagerName);
+          _log.warn("NoPath to cell : "+_poolManagerName);
        }catch(Exception ee){
-          esay("Exception in sending query to pool : "+_poolManagerName);
-       } 
+          _log.warn("Exception in sending query to pool : "+_poolManagerName);
+       }
    }
    /**
      * Sends space query to all currently known pools.
      */
    private void queryPools(){
-   
+
        List list = null ;
        synchronized( _poolHash ){
            list = new ArrayList( _poolHash.values() ) ;
        }
        int counter = 1 ;
        for( Iterator i = list.iterator() ; i.hasNext() ; counter ++ ){
-       
+
           PoolSpaceInfo info = (PoolSpaceInfo)i.next() ;
           String    poolName = info._name ;
           //
@@ -601,21 +601,21 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           // }
           //
           try{
-             if(_debug)say("Sending pool query 'rep ls -s binary' to "+poolName);
+             _log.debug("Sending pool query 'rep ls -s binary' to "+poolName);
              CellMessage msg = new CellMessage( new CellPath(poolName) , "rep ls -s -sum -binary" );
              sendMessage( msg );
           }catch(NoRouteToCellException cee ){
-             esay("NoPath to cell : "+poolName);
+             _log.warn("NoPath to cell : "+poolName);
           }catch(Exception ee){
-             esay("Exception in sending query to pool : "+poolName);
+             _log.warn("Exception in sending query to pool : "+poolName);
           }
 
           if( ( _poolQuerySteps > 0 ) && (  ( counter % _poolQuerySteps ) == 0 ) ){
-             say("Waiting a while ("+_poolQueryBreak+") millis");
+             _log.info("Waiting a while ("+_poolQueryBreak+") millis");
              try{
                 if( _poolQueryBreak > 0L )Thread.sleep(_poolQueryBreak) ;
              }catch(InterruptedException ee){
-                esay("Query pool lock interrupted");
+                _log.warn("Query pool lock interrupted");
                 break ;
              }
           }
@@ -626,10 +626,10 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      * First attempt to have quotas.
      */
    public Map createStorageInfoHash(){
-   
+
        List list   = null ;
        Map  sciMap = new HashMap();
-       
+
        synchronized( _poolHash ){
            list = new ArrayList( _poolHash.values() ) ;
        }
@@ -648,9 +648,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
                  }
                  sumSci.add( sci ) ;
              }
-          }             
+          }
        }
-       
+
        return sciMap ;
    }
    /**
@@ -658,14 +658,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      * in the link map.
      */
    private LinkInfo resolveLinkInfoByName( String linkName ){
-   
+
        LinkInfo info = null ;
-        
+
        synchronized( _linkMapLock ){
-        
-           if( _linkMap == null )return null ; 
+
+           if( _linkMap == null )return null ;
            if( ( info = (LinkInfo)_linkMap.get( linkName ) ) == null )return null ;
-       
+
        }
 
        Map poolMap = null ;
@@ -678,11 +678,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    //
    private void resolveAllLinkInfos(){
        //
-       // make a copy of link and pool hash map to avoid 
+       // make a copy of link and pool hash map to avoid
        // permanent synchronization.
        //
        if( ! ( _poolsUpdated || _linksUpdated ) )return ;
-       
+
        Map  poolMap  = null ;
        List linkList = null ;
        synchronized( _linkMapLock ){
@@ -699,30 +699,30 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        _poolsUpdated = _linksUpdated = false ;
    }
    /**
-     *  Does the space calculations per link. 
+     *  Does the space calculations per link.
      *  Does correct syncs on LinkInfo and pool info but not on the
      *  poolMap.
      */
    private LinkInfo resolveLinkInfoByLink( LinkInfo info , Map poolMap ){
-   
-       List poolListOfLink = null ; 
+
+       List poolListOfLink = null ;
        synchronized( info ){
           poolListOfLink = info._pools == null ? new ArrayList() : info._pools ;
        }
-       
+
        long      now = System.currentTimeMillis() ;
        SpaceInfo sum = new SpaceInfo( info._name ) ;
        long linkTotalSize = 0L ;
        long linkFreeSpace = 0L ;
        long linkRemovableSpace = 0L ;
-       
+
        for( Iterator pools = poolListOfLink.iterator() ; pools.hasNext() ; ){
-       
+
           String        poolName = pools.next().toString() ;
           PoolSpaceInfo poolInfo = (PoolSpaceInfo)poolMap.get( poolName );
-          
+
           if( poolInfo == null )continue ;
-          
+
           synchronized( poolInfo ){
              //
              // we can't count this because the pool seems to be down.
@@ -748,38 +748,26 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    //
    //   THE COMMANDER
    //
-   public String hh_set_debug = "on|off" ;
-   public String ac_set_debug_$_1( Args args ){
-      String mode = args.argv(0);
-      if( mode.equals("on") ){
-         _debug = true ;
-      }else if( mode.equals("off") ){
-         _debug = false ;
-      }else 
-         throw new
-           IllegalArgumentException("set debug on|off");
-      return "";
-   }
    public String hh_show_link = "-a" ;
    public String ac_show_link_$_0( Args args ) throws Exception {
    try{
        boolean all = args.getOpt("a") != null ;
-       
+
        StringBuffer sb = new StringBuffer() ;
-       
+
        List linkList = null ;
-       
+
        synchronized( _linkMapLock ){
           if( _linkMap == null )
             throw new
             Exception("Link Map Not yet received") ;
           linkList = new ArrayList( _linkMap.values() ) ;
        }
-          
+
        resolveAllLinkInfos();
-       
+
        for( Iterator i = linkList.iterator() ; i.hasNext() ; ){
-       
+
            LinkInfo info = (LinkInfo)i.next() ;
            synchronized( info ){
               sb.append(info._name) ;
@@ -805,7 +793,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        }
        return sb.toString() ;
     }catch(Exception eeee ){
-       esay(eeee);
+       _log.warn(eeee.toString(), eeee);
        return "Failed";
     }
    }
@@ -815,14 +803,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
        StringBuffer sb = new StringBuffer() ;
        Map  sciHash = createStorageInfoHash() ;
        for( Iterator i = sciHash.values().iterator() ; i.hasNext() ; ){
-       
+
            SpaceInfo info = (SpaceInfo)i.next() ;
-           
+
            sb.append(info.toString()).append("\n");
        }
        return sb.toString();
      }catch(Exception ee){
-        esay(ee);
+         _log.warn(ee.toString(), ee);
         return "Failed";
      }
    }
@@ -842,19 +830,19 @@ public class StorageInfoQuotaObserver extends CellAdapter {
              synchronized(info){
                  sb.append(info.toString()).append("\n");
              }
-             
+
           }
           return sb.toString();
       }else{
           poolName = args.argv(0);
           PoolSpaceInfo info = null ;
           synchronized( _poolHash ){
-          
+
               info = (PoolSpaceInfo)_poolHash.get(poolName) ;
               if( info == null )
                 throw new
                 IllegalArgumentException("Pool not found : "+poolName);
-              
+
               String          general = null ;
               SpaceInfo [] sci = null ;
               synchronized( info ){
@@ -870,7 +858,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           }
       }
       }catch(Exception ee ){
-         esay(ee);
+        _log.warn(ee.toString(), ee);
          return "Failed";
       }
    }
@@ -888,7 +876,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String ac_query_pools_$_0(Args args ){
       new Thread( new Runnable(){
           public void run(){
-             queryPools() ; 
+             queryPools() ;
           }
       } ).start() ;
       return "" ;

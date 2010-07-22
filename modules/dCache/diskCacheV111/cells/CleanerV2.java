@@ -13,11 +13,17 @@ import  java.util.*;
 import  java.text.*;
 import  java.util.zip.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   */
 
 
 public class CleanerV2 extends CellAdapter implements Runnable {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(CleanerV2.class);
 
     private final String _cellName     ;
     private final CellNucleus _nucleus ;
@@ -134,7 +140,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                    // bad values ignored
                }
             }
-            say("Refresh Interval set to "+_refreshInterval+" milli seconds");
+            _log.info("Refresh Interval set to "+_refreshInterval+" milli seconds");
 
             refreshString = _args.getOpt("recover") ;
             if( refreshString != null ){
@@ -144,7 +150,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                    // bad values ignored
                }
             }
-            say("Recover Interval set to "+(_recoverTimer/60000L)+" minutes");
+            _log.info("Recover Interval set to "+(_recoverTimer/60000L)+" minutes");
 
             refreshString = _args.getOpt("poolTimeout") ;
             if( refreshString != null ){
@@ -154,20 +160,20 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                    // bad values ignored
                }
             }
-            say("Pool Timeout set to "+(_replyTimeout/1000L)+" seconds");
+            _log.info("Pool Timeout set to "+(_replyTimeout/1000L)+" seconds");
 
             String dirName = null;
             if( ( ( dirName = _args.getOpt("trash") ) == null ) ||
                 ( dirName.equals("")                          )    ){
-               say("'trash' not defined. Starting autodetect" ) ;
+               _log.info("'trash' not defined. Starting autodetect" ) ;
                dirName = autodetectTrash() ;
             }
             _dirName = dirName;
-            say("'trash' set to "+_dirName) ;
+            _log.info("'trash' set to "+_dirName) ;
 	    _trashLocation = new File(_dirName);
 
 	    if( ! _trashLocation.isDirectory() ){
-                say("'trash' not a directory : "+_dirName ) ;
+                _log.info("'trash' not a directory : "+_dirName ) ;
 		throw new
                 IllegalArgumentException("'trash' not a directory : "+_dirName ) ;
             }
@@ -182,24 +188,24 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                throw new
                 IllegalArgumentException("Not a directory : "+db ) ;
 
-            say("Database directory : "+_dbDirectory);
+            _log.info("Database directory : "+_dbDirectory);
 
             String moveAway = _args.getOpt("moveAwayLocation") ;
             if( ( moveAway != null ) &&  ! moveAway.equals("") ){
                _moveAwayLocation = new File( moveAway ) ;
                if( ! _moveAwayLocation.isDirectory()  ){
-                   esay("moveAwayLocation is not a directory, switching to remove mode");
+                   _log.warn("moveAwayLocation is not a directory, switching to remove mode");
                    _moveAwayLocation = null ;
                }
             }
-            say("moveAwayLocation : "+( _moveAwayLocation == null  ? "VOID" : _moveAwayLocation.toString() ) ) ;
+            _log.info("moveAwayLocation : "+( _moveAwayLocation == null  ? "VOID" : _moveAwayLocation.toString() ) ) ;
 
             _broadcastCellName = ( ( _broadcastCellName = _args.getOpt("reportRemove" ) ) == null ) ||
                                  _broadcastCellName.equals("") ||
                                  _broadcastCellName.equals("none") ?
                                  null : _broadcastCellName ;
 
-            say(_broadcastCellName == null ?
+            _log.info(_broadcastCellName == null ?
                 "Remove report disabled" :
                 "Remove report sent to : "+ _broadcastCellName ) ;
 
@@ -234,18 +240,18 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                try{
                   _pnfsManagerTimeout = Long.parseLong(tmp) * 1000L ;
                }catch(Exception ee ){
-                  esay("Problem with argument of pnfsManagerTimeout : "+tmp );
+                  _log.warn("Problem with argument of pnfsManagerTimeout : "+tmp );
                }
             }
-            say("Using PnfsManager for cacheInfo : "+_usePnfsManager ) ;
+            _log.info("Using PnfsManager for cacheInfo : "+_usePnfsManager ) ;
             if( _usePnfsManager ){
-               say( "Using PnfsManager Name    : "+_pnfsManagerName ) ;
-               say( "Using PnfsManager Timeout : "+_pnfsManagerTimeout);
+               _log.info( "Using PnfsManager Name    : "+_pnfsManagerName ) ;
+               _log.info( "Using PnfsManager Timeout : "+_pnfsManagerTimeout);
             }
 	    tmp = _args.getOpt("processFilesPerRun");
             if( tmp != null )try{ _processInOnce = Integer.parseInt(tmp) ; }catch(Exception ee ){}
 
-            say("Processing "+_processInOnce+" files per run");
+            _log.info("Processing "+_processInOnce+" files per run");
 
             if( ( tmp = _args.getOpt("archive") ) != null ){
 
@@ -254,13 +260,12 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                 else { _useLog = false ; _useZip = false ; }
 
             }
-            say("Archive method : "+( _useZip ? "zip" : _useLog ? "log" : "none" ) );
+            _log.info("Archive method : "+( _useZip ? "zip" : _useLog ? "log" : "none" ) );
 
             ( _workerThread = _nucleus.newThread( this , "Worker" ) ).start() ;
 
 	} catch (Exception e){
-	    esay ("Exception occurred while running cleaner constructor : "+e);
-            esay(e);
+	    _log.warn ("Exception occurred while running cleaner constructor : "+e, e);
 	    start();
 	    kill();
 	    throw e;
@@ -346,7 +351,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
              try{
                  if( ( line = br.readLine() ) == null )break ;
              }catch( IOException ioe ){
-                 esay("Io Exception at : "+line+" : "+ioe);
+                 _log.warn("Io Exception at : "+line+" : "+ioe);
                  break ;
              }
              try{
@@ -355,10 +360,10 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
                 if( _moveAwayLocation != null ){
                     boolean success = new File( _trashLocation , pnfsId ).renameTo( new File( _moveAwayLocation , pnfsId ) ) ;
-                    say("Moving : "+pnfsId +" "+ success );
+                    _log.info("Moving : "+pnfsId +" "+ success );
                 }else{
                     boolean success = new File( _trashLocation , pnfsId ).delete() ;
-                    say("Removing : "+pnfsId +" "+ success );
+                    _log.info("Removing : "+pnfsId +" "+ success );
                 }
 
                 //
@@ -366,7 +371,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                 //
                 if( _usePnfsManager && _cleanUpAfterwards)clearAllCacheLocations( new PnfsId(pnfsId) ) ;
              }catch(Exception ee){
-                esay("clearTrash : Problem "+line+" : "+ee );
+                _log.warn("clearTrash : Problem "+line+" : "+ee );
              }
           }
        }finally{
@@ -391,14 +396,14 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                  try{
                      if( ( line = br.readLine() ) == null )break ;
                  }catch( IOException ioe ){
-                     esay("Io Exception at : "+line+" : "+ioe);
+                     _log.warn("Io Exception at : "+line+" : "+ioe);
                      break ;
                  }
                  try{
                     StringTokenizer st = new StringTokenizer( line ) ;
                     list.add( st.nextToken() ) ;
                  }catch(Exception ee){
-                    esay("clearTrash : Problem "+line+" : "+ee );
+                    _log.warn("clearTrash : Problem "+line+" : "+ee );
                  }
               }
            }finally{
@@ -406,7 +411,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
            }
 
        }catch(IOException ioe ){
-           esay("I/O problems with "+_currentRemoveList+" : "+ioe ) ;
+           _log.warn("I/O problems with "+_currentRemoveList+" : "+ioe ) ;
            return ;
        }
        if( list.size() == 0 )return ;
@@ -424,8 +429,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        try{
            sendMessage( new CellMessage( new CellPath(broadcast) , msg )  ) ;
        }catch(Exception ee ){
-           esay("Problems sending 'remove files' message to "+broadcast+" : "+ee.getMessage());
-           esay(ee);
+           _log.warn("Problems sending 'remove files' message to "+broadcast+" : "+ee.getMessage(), ee);
        }
     }
     public String hh_set_moveawaylocation = "<directory to move processed pnfsid files> | void " ;
@@ -572,7 +576,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
     @Override
     public void cleanUp(){
 
-        esay("Clean up called") ;
+        _log.warn("Clean up called") ;
         if( _workerThread != null )_workerThread.interrupt() ;
 
     }
@@ -592,14 +596,14 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                  }
 
               }catch( InterruptedException ie ){
-                  esay("Worker thread interrupted");
+                  _log.warn("Worker thread interrupted");
                   break ;
               }
           }
           try{
              getGlobalLock() ;
           }catch(Exception ee ){
-             esay("Problem in getting global lock : "+ee.getMessage() ) ;
+             _log.warn("Problem in getting global lock : "+ee.getMessage() ) ;
              continue ;
           }
           try{
@@ -616,7 +620,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
              moreFilesToProcess = runNextCheck( true ) ;
 
           }catch(Exception ee ){
-             esay("runNextCheck : "+ee ) ;
+             _log.warn("runNextCheck : "+ee ) ;
              ee.printStackTrace();
           }finally{
              releaseGlobalLock() ;
@@ -648,7 +652,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
           String thisFile = poolFileList[i] ;
 
-          say("runDelete : processing : "+thisFile);
+          _log.info("runDelete : processing : "+thisFile);
 
           String thisPool = getPoolName( thisFile ) ;
           if( thisPool == null )continue ;
@@ -659,7 +663,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
           try{
              br = new BufferedReader(new FileReader(poolFile));
           }catch(FileNotFoundException ee ){
-             esay("Can't open : "+thisFile ) ;
+             _log.warn("Can't open : "+thisFile ) ;
              continue ;
           }
           try{
@@ -667,7 +671,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                 try{
                     if( ( line = br.readLine() ) == null )break ;
                 }catch(Exception ee ){
-                    esay("Problem in reading : "+thisFile+" : "+ee ) ;
+                    _log.warn("Problem in reading : "+thisFile+" : "+ee ) ;
                     break ;
                 }
                 list.add(line.trim());
@@ -675,12 +679,12 @@ public class CleanerV2 extends CellAdapter implements Runnable {
           }finally{
              if (br != null) try{ br.close() ; }catch(IOException eee ){}
           }
-          say("runDelete : list for "+thisPool+" : "+list );
+          _log.info("runDelete : list for "+thisPool+" : "+list );
           _removeCounter += list.size() ;
           String [] notRemoved = sendRemoveToPool( thisPool , list ) ;
           if( ( notRemoved != null ) && ( notRemoved.length > 0 ) ){
              _unremoveCounter += notRemoved.length ;
-             say("runDelete : sendRemoveToPool returned "+thisPool+" : "+notRemoved.length );
+             _log.info("runDelete : sendRemoveToPool returned "+thisPool+" : "+notRemoved.length );
              File removeFile = new File( _currentDir , "failed."+thisPool);
              PrintWriter rpw = null ;
              try{
@@ -695,7 +699,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                    if(rpw != null) rpw.close() ;
                 }
              }catch(Exception eee ){
-                esay("Can't create removefile : "+removeFile+" : "+eee);
+                _log.warn("Can't create removefile : "+removeFile+" : "+eee);
              }
           }
           poolFile.delete();
@@ -710,7 +714,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
     private boolean runNextCheck( boolean init ) throws Exception {
 
-       // say("runNextCheck with "+init);
+       // _log.info("runNextCheck with "+init);
 
        int state = CREATE_SUMMARY ;
 
@@ -724,17 +728,17 @@ public class CleanerV2 extends CellAdapter implements Runnable {
              // check if there are remainding pool files.
              //
              state = RUN_DELETE ;
-             say("runNextCheck : found pool files (->RUN_DELETE)") ;
+             _log.info("runNextCheck : found pool files (->RUN_DELETE)") ;
 
           }else if( _currentRemoveList.exists() ){
              //
              // check if the removeList is still there
              //
              state = CLEAR_TRASH ;
-             say("runNextCheck : found remove list (->CLEAR_TRASH)") ;
+             _log.info("runNextCheck : found remove list (->CLEAR_TRASH)") ;
           }else{
              state = CREATE_SUMMARY ;
-             //say("runNextCheck : clean system found (->CREATE_SUMMARY)") ;
+             //_log.info("runNextCheck : clean system found (->CREATE_SUMMARY)") ;
           }
        }
        switch( state ){
@@ -742,28 +746,28 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
              int count = createSummary() ;
              if( count > 0 ){
-                 say("runNextCheck: createSummary collected "+count+" files");
+                 _log.info("runNextCheck: createSummary collected "+count+" files");
              }else{
                  return false ;
              }
 
-             say("runNextCheck: informing Broadcaster");
+             _log.info("runNextCheck: informing Broadcaster");
              informBroadcaster() ;
 
           case CLEAR_TRASH :
 
-             say("runNextCheck: clearing Trash");
+             _log.info("runNextCheck: clearing Trash");
              clearTrash() ;
 
           case SPLIT :
 
-             say("runNextCheck: splitting summary");
+             _log.info("runNextCheck: splitting summary");
              split() ;
              poolFileList = getPoolFiles() ;
-             say("runNextCheck: got poollist : "+(poolFileList==null?"NULL":(""+poolFileList.length ) ) );
+             _log.info("runNextCheck: got poollist : "+(poolFileList==null?"NULL":(""+poolFileList.length ) ) );
           case RUN_DELETE :
 
-             say("runNextCheck: runningDelete");
+             _log.info("runNextCheck: runningDelete");
              runDelete( poolFileList ) ;
 
        }
@@ -799,10 +803,10 @@ public class CleanerV2 extends CellAdapter implements Runnable {
         String [] failedFiles = getFailedFiles() ;
         for( int i = 0 ; i < failedFiles.length ; i++ ){
             try{
-                say("Reactivating : "+failedFiles[i]);
+                _log.info("Reactivating : "+failedFiles[i]);
                 reactivate( new File( _currentDir , failedFiles[i] ) ) ;
             }catch(Exception e ){
-                esay("Problem reactivating : "+failedFiles[i]+" : "+e) ;
+                _log.warn("Problem reactivating : "+failedFiles[i]+" : "+e) ;
             }
         }
 
@@ -874,9 +878,9 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        String [] pnfsList = removeList.toArray(new String[removeList.size()]);
        if( _nullBug ){
            for( Iterator i = removeList.iterator()  ; i.hasNext() ; )
-               if( i.next() == null )esay("sendRemoveToPool : nullBug : null in original list" ) ;
+               if( i.next() == null )_log.warn("sendRemoveToPool : nullBug : null in original list" ) ;
            for( int j = 0 , n = pnfsList.length ; j < n ; j++ )
-               if( pnfsList[j] == null )esay("sendRemoveToPool : nullBug : null in copied list" ) ;
+               if( pnfsList[j] == null )_log.warn("sendRemoveToPool : nullBug : null in copied list" ) ;
 
        }
        msg.setFiles( pnfsList );
@@ -889,19 +893,19 @@ public class CleanerV2 extends CellAdapter implements Runnable {
           return pnfsList ;
        }
        if(  cellMessage == null ){
-           esay("sendRemoveToPool : remove message to "+poolName+" timed out");
+           _log.warn("sendRemoveToPool : remove message to "+poolName+" timed out");
            return pnfsList ;
        }
 
        Object reply = cellMessage.getMessageObject() ;
 
        if(  reply == null ){
-           esay("sendRemoveToPool : reply message from "+poolName+" didn't contain messageObject");
+           _log.warn("sendRemoveToPool : reply message from "+poolName+" didn't contain messageObject");
            return pnfsList ;
        }
 
        if( ! ( reply instanceof PoolRemoveFilesMessage ) ){
-          esay("sendRemoveToPool : got unexpected reply class : "+reply.getClass().getName());
+          _log.warn("sendRemoveToPool : got unexpected reply class : "+reply.getClass().getName());
           return pnfsList ;
        }
        //
@@ -910,7 +914,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        //
        PoolRemoveFilesMessage prfm = (PoolRemoveFilesMessage)reply ;
        if( prfm.getReturnCode() == 0 ){
-           say("sendRemoveToPool : all files removed from "+poolName);
+           _log.info("sendRemoveToPool : all files removed from "+poolName);
            return null ;
        }
        Object o = prfm.getErrorObject() ;
@@ -922,13 +926,13 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        //
        if( o instanceof String [] ){
           String [] notRemoved = (String [])o;
-          esay("sendRemoveToPool : "+notRemoved.length+" files couldn't be removed from "+poolName);
+          _log.warn("sendRemoveToPool : "+notRemoved.length+" files couldn't be removed from "+poolName);
           return notRemoved ;
        }else if( o == null ){
-          esay("sendRemoveToPool : reply from "+poolName+" [null]");
+          _log.warn("sendRemoveToPool : reply from "+poolName+" [null]");
           return pnfsList ;
        }else{
-          esay("sendRemoveToPool : reply from "+poolName+" ["+o.getClass().getName()+"]="+o.toString());
+          _log.warn("sendRemoveToPool : reply from "+poolName+" ["+o.getClass().getName()+"]="+o.toString());
           return pnfsList ;
        }
 
@@ -965,7 +969,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                 try{
                    pw = new PrintWriter( new FileWriter(f.getAbsolutePath(),true) ) ;
                 }catch(IOException ioe ){
-                   esay("Couldn't write to : "+f.getAbsolutePath()+" : "+ioe);
+                   _log.warn("Couldn't write to : "+f.getAbsolutePath()+" : "+ioe);
                    continue ;
                 }
                 pw.println(pnfsId);
@@ -1074,14 +1078,13 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        for( int i = 0; i <  fileList.length; i++) {
 
 
-           say( "Processing "+fileList[i]);
+           _log.info( "Processing "+fileList[i]);
 
            PnfsId pnfsId     = null ;
            try{
               pnfsId = new PnfsId(fileList[i]) ;
            }catch(Exception pnfse){
-              esay( "Error in syntax of pnfsId name "+fileList[i]) ;
-              esay(pnfse);
+               _log.warn( "Error in syntax of pnfsId name "+fileList[i], pnfse) ;
               continue ;
            }
            try{
@@ -1100,7 +1103,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
               validCounter ++ ;
 
            }catch(Exception ee ){
-              esay("Not removed : "+pnfsId+" couldn't get cacheinfo due to "+ee.getMessage());
+              _log.warn("Not removed : "+pnfsId+" couldn't get cacheinfo due to "+ee.getMessage());
               errorCounter ++ ;
            }
 
@@ -1117,7 +1120,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        try{
            sendMessage( message ) ;
        }catch(Exception ee ){
-           esay( "Ignoring error in sending clearCacheLocation : "+ee ) ;
+           _log.warn( "Ignoring error in sending clearCacheLocation : "+ee ) ;
        }
 
    }
@@ -1153,7 +1156,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
         if( pnfs.getReturnCode() != 0 ){
           Object error = pnfs.getErrorObject() ;
-          esay("Got error from PnfsManager for "+pnfsId+" ["+pnfs.getReturnCode()+"] "+
+          _log.warn("Got error from PnfsManager for "+pnfsId+" ["+pnfs.getReturnCode()+"] "+
                (error==null?"":error.toString()));
           //
           // this could be 'file no longer in pnfs from pnfsManagerV2 which
@@ -1163,10 +1166,10 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        }
        List<String> locations = pnfs.getCacheLocations() ;
        if( locations == null ){
-           esay("getCacheInfoFromPnfsManager : PnfsManager replied with 'null' getCacheInfo answer for "+pnfsId);
+           _log.warn("getCacheInfoFromPnfsManager : PnfsManager replied with 'null' getCacheInfo answer for "+pnfsId);
            return ;
        }
-       say("getCacheInfoFromPnfsManager : adding cacheinfo for "+pnfsId+" "+locations);
+       _log.info("getCacheInfoFromPnfsManager : adding cacheinfo for "+pnfsId+" "+locations);
 
        externalList.addAll( locations ) ;
 
@@ -1238,7 +1241,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
    @Override
 public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
-      esay("Unexpected message arrived from : "+message.getSourcePath()+" "+obj.getClass().getName()+" "+obj.toString());
+      _log.warn("Unexpected message arrived from : "+message.getSourcePath()+" "+obj.getClass().getName()+" "+obj.toString());
    }
 
 }

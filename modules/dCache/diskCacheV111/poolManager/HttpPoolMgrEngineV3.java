@@ -32,8 +32,14 @@ import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
+
     private final static long TIMEOUT = 20000;
 
     private CellNucleus _nucleus         = null;
@@ -58,22 +64,22 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         _nucleus = nucleus;
 
         for (int i = 0; i < argsString.length; i++) {
-            _nucleus.say("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
+            _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
                 _addStorageInfo = true;
-                _nucleus.say("Option accepted : addStorageInfo");
+                _log.info("Option accepted : addStorageInfo");
             } else if (argsString[i].equals("addHsmInfo")) {
                 _addHsmInfo = true;
-                _nucleus.say("Option accepted : addHsmInfo");
+                _log.info("Option accepted : addHsmInfo");
             } else if (argsString[i].startsWith("details=")) {
-                _nucleus.say("Details for lazy restore : "+argsString[i]);
+                _log.info("Details for lazy restore : "+argsString[i]);
                 decodeDetails(argsString[i]);
             } else if (argsString[i].startsWith("css=")) {
                 decodeCss(argsString[i].substring(4));
             }
         }
         nucleus.newThread(this, "restore-collector").start();
-        _nucleus.say("Using CSS file : "+_cssFile);
+        _log.info("Using CSS file : "+_cssFile);
 
     }
 
@@ -94,7 +100,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     public void run()
     {
-        _nucleus.say("Restore Collector Thread started");
+        _log.info("Restore Collector Thread started");
         while (!Thread.interrupted()) {
             try {
                 synchronized (_updateLock) {
@@ -102,11 +108,10 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 }
                 runRestoreCollector();
             } catch (InterruptedException e) {
-                _nucleus.esay("Restore Collector interrupted");
+                _log.warn("Restore Collector interrupted");
                 break;
             } catch (Exception e) {
-                _nucleus.esay("Restore Collector got : " + e);
-                _nucleus.esay(e);
+                _log.warn("Restore Collector got : " + e, e);
             }
         }
     }
@@ -150,13 +155,13 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                                  TIMEOUT);
 
         if (reply == null) {
-            _nucleus.esay("runRestoreCollector : no reply from PoolManager");
+            _log.warn("runRestoreCollector : no reply from PoolManager");
             return;
         }
 
         Object o = reply.getMessageObject();
         if (!(o instanceof RestoreHandlerInfo[])) {
-            _nucleus.esay("runRestoreCollector : illegal reply from PoolManager : "+o.getClass());
+            _log.warn("runRestoreCollector : illegal reply from PoolManager : "+o.getClass());
             return;
         }
         List<Object[]> agedList = new ArrayList<Object[]>();
@@ -204,7 +209,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
                     agedList.add(a);
                 } catch (Exception e) {
-                    _nucleus.esay(e);
+                    _log.warn(e.toString(), e);
                 }
             }
         }
@@ -222,14 +227,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             if (msg == null)return null;
             Object reply = msg.getMessageObject();
             if ((reply == null) || !(reply instanceof HsmControlGetBfDetailsMsg)) {
-                _nucleus.say("Invalid or missing reply from "+_hsmController);
+                _log.info("Invalid or missing reply from "+_hsmController);
                 return null;
             }
             hsmMsg = (HsmControlGetBfDetailsMsg)msg.getMessageObject();
             return hsmMsg.getStorageInfo();
 
         } catch (Exception e) {
-            _nucleus.esay(e);
+            _log.warn(e.toString(), e);
             return null;
         }
     }
@@ -245,7 +250,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return pnfsMsg.getGlobalPath();
 
         } catch (Exception e) {
-            _nucleus.esay(e);
+            _log.warn(e.toString(), e);
             return null;
         }
 
@@ -262,7 +267,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return pnfsMsg.getStorageInfo();
 
         } catch (Exception e) {
-            _nucleus.esay(e);
+            _log.warn(e.toString(), e);
             return null;
         }
 

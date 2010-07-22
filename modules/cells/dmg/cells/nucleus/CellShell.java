@@ -6,6 +6,9 @@ import  java.io.* ;
 import  java.net.* ;
 import  java.lang.reflect. * ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -16,6 +19,11 @@ public class      CellShell
        extends    CommandInterpreter
        implements Replaceable, ClassDataProvider
 {
+    private final static Logger _log =
+        LoggerFactory.getLogger(CellShell.class);
+    private final static Logger _logNucleus =
+        LoggerFactory.getLogger(CellNucleus.class);
+
    private final CellNucleus  _nucleus ;
    private StringBuilder _contextString  = null ;
    private String       _contextName    = null ;
@@ -417,9 +425,9 @@ public class      CellShell
          try{
             noRoute = false ;
             answer = null ;
-            _nucleus.esay( "waitForCell : Sending request" ) ;
+            _log.warn( "waitForCell : Sending request" ) ;
             answer = _nucleus.sendAndWait( request , ((long)check)*1000 ) ;
-            _nucleus.esay( "waitForCell : got "+answer ) ;
+            _log.warn( "waitForCell : got "+answer ) ;
          }catch( NoRouteToCellException nrtce ){
             noRoute = true ;
          }catch( InterruptedException e ){
@@ -835,7 +843,7 @@ public class      CellShell
       return " !!! Your are now in a new Shell !!! " ;
    }
    public byte [] getClassData( String className ) throws IOException {
-       _nucleus.say( "getClassData("+className+") send to classProvider" ) ;
+       _log.info( "getClassData("+className+") send to classProvider" ) ;
        CellMessage answer = null ;
        try{
            answer = _nucleus.sendAndWait(
@@ -846,21 +854,21 @@ public class      CellShell
                            4000
                        ) ;
       }catch( InterruptedException e ){
-         _nucleus.say( "getClassData Exception : "+e ) ;
+         _log.info( "getClassData Exception : "+e ) ;
          return null ;
       }catch( NoRouteToCellException e ){
-         _nucleus.say( "getClassData Exception : "+e ) ;
+         _log.info( "getClassData Exception : "+e ) ;
          return null ;
       }
       if( answer == null ){
-         _nucleus.say( "getClassData sendAndWait timed out" ) ;
+         _log.info( "getClassData sendAndWait timed out" ) ;
          return null ;
       }
       Object answerObject = answer.getMessageObject() ;
       if( answerObject == null )return null ;
 
       if( ! ( answerObject instanceof byte [] ) ){
-          _nucleus.say( "getClassData sendAndWait got : "+answerObject.toString() ) ;
+          _log.info( "getClassData sendAndWait got : "+answerObject.toString() ) ;
           return null ;
       }
 
@@ -908,14 +916,29 @@ public class      CellShell
 
       if( ( levelString != null ) && ( levelString.length() > 0 ) ){
           if( levelString.equals("say") ){
-             _nucleus.say(msg) ;
-          }else if( levelString.equals("esay") ){
-             _nucleus.esay(msg) ;
-          }else if( levelString.equals("fsay") ){
-             _nucleus.fsay(msg) ;
+             _log.info(msg) ;
+          } else if( levelString.equals("esay") ){
+             _log.warn(msg) ;
+          } else if( levelString.equals("fsay") ){
+             _log.error(msg) ;
           }else{
              try {
-                _nucleus.say(Integer.parseInt(levelString), msg);
+                 int level = Integer.parseInt(levelString);
+                 if ((level & CellNucleus.PRINT_CELL) != 0 ) {
+                     _log.info(msg);
+                 }
+                 if ((level & CellNucleus.PRINT_ERROR_CELL) != 0 ) {
+                     _log.warn(msg);
+                 }
+                 if ((level & CellNucleus.PRINT_FATAL) != 0 ) {
+                     _log.error(msg);
+                 }
+                 if ((level & CellNucleus.PRINT_NUCLEUS) != 0 ) {
+                     _logNucleus.info(msg);
+                 }
+                 if ((level & CellNucleus.PRINT_ERROR_NUCLEUS) != 0 ) {
+                     _logNucleus.warn(msg);
+                 }
              } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Illegal Level string: " + levelString);
              }
@@ -1491,7 +1514,7 @@ public class      CellShell
                                           source, no, error.getMessage());
                         println(err, msg);
                     } else if (error instanceof RuntimeException) {
-                        _nucleus.esay(error);
+                        _log.warn(error.toString(), error);
                     } else if (!(error instanceof CommandEvaluationException)) {
                         String msg =
                             Exceptions.getMessageWithCauses(error);

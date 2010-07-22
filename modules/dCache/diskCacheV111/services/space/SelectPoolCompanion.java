@@ -20,11 +20,19 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
 import diskCacheV111.vehicles.EnstoreStorageInfo;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author timur
  */
 public class SelectPoolCompanion implements CellMessageAnswerable{
+
+    private static final Logger _log =
+        LoggerFactory.getLogger(SelectPoolCompanion.class);
+
     private static final int ASKING_FOR_POOL = 2;
     private static final int RECEIVED_POOL = 3;
     private Manager manager;
@@ -41,16 +49,7 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
         this.poolManager = manager.getPoolManager();
         this.linkName = linkName;
     }
-     public void say(String s){
-        manager.say("SelectPoolCompanion: "+s);
-    }
-   
-    public void esay(String s){
-        manager.esay("SelectPoolCompanion: "+s);
-    }
-    public void esay(Throwable t){
-        manager.esay(t);
-    }
+
     public static final String getStateString(int state) {
         switch(state) {
             case ASKING_FOR_POOL:
@@ -61,15 +60,15 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
                 return "UNKNOWN";
         }
     }
-    
+
     private void returnFailure(Object errorObject) {
-        esay("retirning failure: ");
+        _log.warn("retirning failure: ");
         if(errorObject != null) {
             if(errorObject instanceof Throwable  ) {
-                esay((Throwable) errorObject);
+                _log.warn(errorObject.toString(), (Throwable) errorObject);
             }
             else {
-                esay(errorObject.toString());
+                _log.warn(errorObject.toString());
             }
         }
         selectPool.setReply(1,errorObject);
@@ -78,20 +77,20 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
             manager.sendMessage(selectPoolMsg);
         }
         catch(Exception e) {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
     }
-    
+
     private void returnFailure(String error) {
-        esay("returning failure: "+error);
-        
+        _log.warn("returning failure: "+error);
+
         selectPool.setReply(1,error);
         selectPoolMsg.revertDirection();
         try{
             manager.sendMessage(selectPoolMsg);
         }
         catch(Exception e) {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
     }
 
@@ -106,13 +105,13 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
             manager.sendMessage(selectPoolMsg);
         }
         catch(Exception e) {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
     }
 
     public void answerArrived(CellMessage request, CellMessage answer) {
          int current_state = state;
-        say("answerArrived, state="+getStateString(current_state));
+        _log.info("answerArrived, state="+getStateString(current_state));
         Object o = answer.getMessageObject();
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
@@ -124,24 +123,24 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
                 poolArrived(get_pool_bylink_msg);
                 return;
             } else {
-                esay("ignoring unexpected message : "+message);
+                _log.warn("ignoring unexpected message : "+message);
                 //callbacks.ReserveSpaceFailed("unexpected message arrived:"+message);
                 return ;
             }
         }
         else {
-            esay(" got unknown object. ignoring "+
+            _log.warn(" got unknown object. ignoring "+
             " : "+o);
         }
-     
+
     }
-    
+
     private void poolArrived(PoolMgrGetPoolByLink get_pool_bylink_msg) {
-        if(get_pool_bylink_msg.getPoolName() == null || 
+        if(get_pool_bylink_msg.getPoolName() == null ||
                 get_pool_bylink_msg.getReturnCode() != 0) {
-            esay("pool manager could not get pool name");
+            _log.warn("pool manager could not get pool name");
             if(get_pool_bylink_msg.getErrorObject() != null  ) {
-               esay(get_pool_bylink_msg.getErrorObject().toString());
+               _log.warn(get_pool_bylink_msg.getErrorObject().toString());
                 returnFailure(get_pool_bylink_msg.getErrorObject() );
             } else {
                 returnFailure("pool manager could not get pool name, no more info available" );
@@ -155,32 +154,32 @@ public class SelectPoolCompanion implements CellMessageAnswerable{
             manager.sendMessage(selectPoolMsg);
         }
         catch(Exception e) {
-            esay(e);
+            _log.warn(e.toString(), e);
         }
 
     }
-    
+
     private void askForPoolByLink() {
-        say("askForPoolByLink, linkName="+linkName);
+        _log.info("askForPoolByLink, linkName="+linkName);
         try {
-            PoolMgrGetPoolByLink getPoolByLink = new 
+            PoolMgrGetPoolByLink getPoolByLink = new
                     PoolMgrGetPoolByLink(linkName);
             getPoolByLink.setFileSize(selectPool.getFileSize());
             state = ASKING_FOR_POOL;
             manager.sendMessage(new CellMessage(new CellPath(poolManager),getPoolByLink),
                 this,1000*60*3);
-            
+
         } catch ( Exception e) {
             returnFailure(e);
         }
         //String space = manager.getSpace(spaceId);
-        
+
     }
-    
+
     public static final void selectPool(Manager manager,String linkName,CellMessage selectPoolMsg) throws Exception {
         SelectPoolCompanion companion = new SelectPoolCompanion(manager,linkName,selectPoolMsg);
         companion.askForPoolByLink();
-        
+
     }
-    
+
 }

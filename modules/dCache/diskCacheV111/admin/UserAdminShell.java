@@ -47,6 +47,9 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
   *
   *
@@ -56,6 +59,10 @@ import dmg.util.CommandThrowableException;
 public class      UserAdminShell
 //       extends    dmg.cells.services.login.user.MinimalAdminShell {
        extends    CommandInterpreter {
+
+    private static final Logger _log =
+        LoggerFactory.getLogger(UserAdminShell.class);
+
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
 
@@ -242,9 +249,6 @@ public class      UserAdminShell
        }
     }
     protected String getUser(){ return _user ; }
-    protected void say( String str ){ _nucleus.say( str ) ; }
-    protected void esay( String str ){ _nucleus.esay( str ) ; }
-    protected void esay( Exception e ){ _nucleus.esay(e) ; }
     public void checkPermission( String aclName )
            throws AclException {
 
@@ -1120,7 +1124,7 @@ public class      UserAdminShell
         }
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
-       say( "Local command "+args ) ;
+       _log.info( "Local command "+args ) ;
        try{
           return  command( args ) ;
        }catch( CommandThrowableException cte ){
@@ -1130,7 +1134,7 @@ public class      UserAdminShell
        }
     }
     public Object executeCommand( String str )throws Exception {
-       say( "String command (super) "+str ) ;
+       _log.info( "String command (super) "+str ) ;
 
        if( str.trim().equals("") )return "" ;
 
@@ -1175,7 +1179,7 @@ public class      UserAdminShell
            else
               return r + "\n"  ;
        }catch(Exception ee ){
-           if( _debug )esay(ee) ;
+           _log.debug(ee.toString(), ee) ;
            throw ee ;
        }
 
@@ -1228,7 +1232,7 @@ public class      UserAdminShell
     public Object executeCommand( String destination , Object str )
            throws Exception {
 
-       say( "Object command ("+destination+") "+str) ;
+       _log.info( "Object command ("+destination+") "+str) ;
 
        return sendCommand( destination  , str.toString() ) ;
     }

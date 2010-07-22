@@ -18,9 +18,13 @@ import java.util.*;
 import java.io.*;
 import javax.security.auth.Subject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
 
-
+    private final static Logger _log =
+        LoggerFactory.getLogger(FilesystemNameSpaceProvider.class);
 
     private File   _db       = null ;
     private CellNucleus _nucleus = null ;
@@ -40,7 +44,7 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
             throw new
             IllegalArgumentException("dbURL not a directory");
         }catch(Exception e){
-            nucleus.say("Problem in FilesystemNameSpaceProvider : "+e);
+            _log.info("Problem in FilesystemNameSpaceProvider : "+e);
         }
 
     }
@@ -72,7 +76,7 @@ public class FilesystemNameSpaceProvider extends BasicNameSpaceProvider {
             for( String name:  set ){
 
                 pw.println(name);
-                _nucleus.say("Adding "+name+" to "+pnfs.toString());
+                _log.info("Adding "+name+" to "+pnfs.toString());
             }
 
 

@@ -8,6 +8,9 @@
  */
 
 package diskCacheV111.util;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.dcache.util.Glob;
 
 
@@ -18,8 +21,31 @@ import org.dcache.util.Glob;
 public class VOInfo implements java.io.Serializable{
     static final long serialVersionUID = -8014669884189610627L;
 
+    private static Pattern p1 = Pattern.compile( "(.*)/Role=(.*)");
+    private static Pattern p2 = Pattern.compile( "(.*)()");
+
     private String voGroup;
     private String voRole;
+
+    public VOInfo(String pattern) {
+        Matcher m = getMatcher(pattern);
+        voGroup = m.group(1);
+        voRole = m.group(2);
+    }
+
+    private Matcher getMatcher( String pattern) {
+        Matcher m = p1.matcher( pattern);
+        if( m.matches()) {
+            return m;
+        }
+
+        m = p2.matcher( pattern);
+        if( m.matches()) {
+            return m;
+        }
+
+        throw new RuntimeException("Failed to find a matcher for FQAN pattern: " + pattern);
+    }
 
     /** Creates a new instance of VOInfo */
     public VOInfo(String voGroup,String voRole) {
@@ -30,6 +56,7 @@ public class VOInfo implements java.io.Serializable{
         this.voRole = voRole;
     }
 
+    @Override
     public String toString(){
         return voGroup+":"+voRole;
     }
@@ -42,10 +69,12 @@ public class VOInfo implements java.io.Serializable{
         return voRole;
     }
 
+    @Override
     public int hashCode(){
         return voGroup.hashCode() ^ voRole.hashCode();
     }
 
+    @Override
     public boolean equals(Object o) {
         if(o == null || !(o instanceof VOInfo )){
             return false;
@@ -56,55 +85,16 @@ public class VOInfo implements java.io.Serializable{
 
     public boolean match(final String group,
                          final String role) {
-        Glob groupPattern = new Glob(voGroup);
-        if (voRole!=null) {
+        boolean roleMatches;
+
+        if( voRole != null) {
             Glob rolePattern  = new Glob(voRole);
-            return (groupPattern.matches((group!=null ? group : "null"))&&
-                    rolePattern.matches((role!=null  ? role  : "null")));
+            roleMatches = rolePattern.matches(role==null ? "null" : role);
+        } else {
+            roleMatches = true;
         }
-        else {
-            return groupPattern.matches((group!=null ? group : "null"));
-        }
+
+        Glob groupPattern = new Glob(voGroup);
+        return groupPattern.matches(group==null ? "null" : group) && roleMatches;
     }
-
-    public static boolean  match(final VOInfo info,
-                                 final String group,
-                                 final String role)  {
-        return info.match(group,role);
-    }
-
-    public static void main(String argv[]) {
-
-        String g="*";
-        String r="*";
-        VOInfo i1 = new VOInfo(g,r);
-        String ug="group";
-        String ur="role";
-        System.out.println("matching ("+ug+","+ur+") to ("+g+","+r+") :" + i1.match(ug,ur));
-
-        g="gr*";
-        r="r*le";
-        i1 = new VOInfo(g,r);
-        ug="group";
-        ur="role";
-        System.out.println("matching ("+ug+","+ur+") to ("+g+","+r+") :" + i1.match(ug,ur));
-
-        g="*";
-        r="r*ule";
-        i1 = new VOInfo(g,r);
-        ug=null;
-        ur=null;
-        System.out.println("matching ("+ug+","+ur+") to ("+g+","+r+") :" + i1.match(ug,ur));
-
-
-        g="cmsatlas";
-        r=null;
-        i1 = new VOInfo(g,r);
-        ug="cmsatlas";
-        ur=null;
-        System.out.println("matching ("+ug+","+ur+") to ("+g+","+r+") :" + i1.match(ug,ur));
-
-
-    }
-
 }

@@ -3,13 +3,20 @@ package dmg.cells.services.login ;
 import   dmg.cells.nucleus.* ;
 import   dmg.util.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
 public class      CommandExecutor extends CommandInterpreter {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(CommandExecutor.class);
+
     private CellNucleus _nucleus ;
     private String      _user ;
     private CellPath    _cellPath  = null ;
@@ -17,32 +24,31 @@ public class      CommandExecutor extends CommandInterpreter {
     public CommandExecutor( String user , CellNucleus nucleus , Args args ){
        _nucleus = nucleus ;
        _user    = user ;
-       
+
        for( int i = 0 ; i < args.argc() ; i++ )
-          _nucleus.say( "arg["+i+"]="+args.argv(i) ) ;
-          
+          _log.info( "arg["+i+"]="+args.argv(i) ) ;
+
        if( ( args.argc() > 0 ) && ( args.argv(0).equals("kill" ) ) )
           throw new IllegalArgumentException( "hallo du da" )  ;
-          
+
        //
        // check if the CellShell is allowed for us.
        //
        if( checkPrivileges( user , "exec-shell" , "system" , "*" ) ){
-       
+
           _cellShell = new CellShell( _nucleus ) ;
           addCommandListener( _cellShell ) ;
-          say( "Shell installed" ) ;
+          _log.info( "Shell installed" ) ;
        }else{
-          say( "Installation of Shell not permitted" ) ;
+          _log.info( "Installation of Shell not permitted" ) ;
        }
     }
-    private void say( String str ){ _nucleus.say( str ) ; }
-    private void esay( String str ){ _nucleus.esay( str ) ; }
-    private boolean checkPrivileges( String user , 
+
+    private boolean checkPrivileges( String user ,
                                      String action ,
                                      String className ,
                                      String instanceName ){
-    
+
        Object [] request = new Object[7] ;
        request[0] = "request" ;
        request[1] = _user ;
@@ -69,9 +75,9 @@ public class      CommandExecutor extends CommandInterpreter {
        try{
           String r = command( str ) ;
           if( r.length() < 1 )return _prompt ;
-          if( r.substring(r.length()-1).equals("\n" ) )            
+          if( r.substring(r.length()-1).equals("\n" ) )
              return command( str )+ _prompt  ;
-          else 
+          else
              return command( str ) + "\n" + _prompt  ;
        }catch( CommandExitException cee ){
           return null ;
@@ -84,7 +90,7 @@ public class      CommandExecutor extends CommandInterpreter {
        if( obj instanceof Object [] ){
           Object [] array  = (Object [] )obj ;
           if( array.length < 2 )
-              throw new 
+              throw new
               IllegalArgumentException( "not enough arguments" ) ;
           try{
              obj =  runCommand( (String) array[0] , array ) ;
@@ -95,29 +101,29 @@ public class      CommandExecutor extends CommandInterpreter {
        return obj ;
     }
     private Object runCommand( String command , Object [] args )
-       throws Exception 
+       throws Exception
    {
-    
+
        if( command.equals( "set-dest" ) ){
            _cellPath = new CellPath( (String)args[1] ) ;
            return args ;
        }else if( command.equals( "request" ) ){
           if( args.length < 3 )
-              throw new 
+              throw new
               IllegalArgumentException( "not enough arguments" ) ;
           if( _cellPath == null )
-             throw new 
+             throw new
              IllegalArgumentException( "CellPath not set .. " ) ;
-       
+
           args[1] = _user ;
-          CellMessage res = _nucleus.sendAndWait( 
-                   new CellMessage( _cellPath , args ) , 
+          CellMessage res = _nucleus.sendAndWait(
+                   new CellMessage( _cellPath , args ) ,
                    10000 ) ;
           if( res == null )throw new Exception("Request timed out" ) ;
           return res.getMessageObject() ;
-       }else 
-          throw new 
+       }else
+          throw new
           IllegalArgumentException( "Command not found : "+command ) ;
-    
+
     }
 }

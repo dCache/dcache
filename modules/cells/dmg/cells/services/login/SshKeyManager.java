@@ -8,6 +8,9 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.ssh.* ;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *  The SshKeyManager reads and manages all relevant keys
  *  to support ssh login and ssh tunnels.
@@ -21,6 +24,9 @@ import dmg.protocols.ssh.* ;
 public class      SshKeyManager
        extends    CellAdapter
        implements Runnable  {
+
+    private final static Logger _log =
+        LoggerFactory.getLogger(SshKeyManager.class);
 
    private CellNucleus  _nucleus ;
 
@@ -121,7 +127,7 @@ public class      SshKeyManager
                   _knownHostsKeysDate   = new Date() ;
                   _knownHostsKeysUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  say( "updateKeys : knownHosts updated" ) ;
+                  _log.info( "updateKeys : knownHosts updated" ) ;
                 }
             }catch(Exception e ){
 
@@ -140,7 +146,7 @@ public class      SshKeyManager
                   _knownUsersKeysDate   = new Date() ;
                   _knownUsersKeysUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  say( "updateKeys : knownUsers updated" ) ;
+                  _log.info( "updateKeys : knownUsers updated" ) ;
                 }
             }catch(Exception e ){ }
           }
@@ -155,10 +161,10 @@ public class      SshKeyManager
                   _hostIdentityDate   = new Date() ;
                   _hostIdentityUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  say( "updateKeys : hostIdentity updated" ) ;
+                  _log.info( "updateKeys : hostIdentity updated" ) ;
                 }
             }catch(Exception e ){
-                esay( "updateKeys : hostIdentity failed : "+e ) ;
+                _log.warn( "updateKeys : hostIdentity failed : "+e ) ;
             }
           }
        }
@@ -172,10 +178,10 @@ public class      SshKeyManager
                   _serverIdentityDate   = new Date() ;
                   _serverIdentityUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  say( "updateKeys : serverIdentity updated" ) ;
+                  _log.info( "updateKeys : serverIdentity updated" ) ;
                 }
             }catch(Exception e ){
-                esay( "updateKeys : serverIdentity failed : "+e ) ;
+                _log.warn( "updateKeys : serverIdentity failed : "+e ) ;
             }
           }
        }
@@ -196,7 +202,7 @@ public class      SshKeyManager
                   _userPasswordsDate   = new Date() ;
                   _userPasswordsUpdate = f.lastModified() ;
                   wasUpdated = true ;
-                  say( "updateKeys : userPasswords updated" ) ;
+                  _log.info( "updateKeys : userPasswords updated" ) ;
                 }
             }catch(Exception e ){ }
           }
@@ -210,7 +216,7 @@ public class      SshKeyManager
             updateKeys() ;
             try{ Thread.sleep(_updateTime*1000) ; }
             catch( InterruptedException ie ){
-               say( "UpdateThreadInterrupted" ) ;
+               _log.info( "UpdateThreadInterrupted" ) ;
                break ;
             }
 
@@ -238,17 +244,16 @@ public class      SshKeyManager
      return ;
    }
    public void messageArrived( CellMessage msg ){
-     say( " CellMessage From   : "+msg.getSourceAddress() ) ;
-     say( " CellMessage To     : "+msg.getDestinationAddress() ) ;
-     say( " CellMessage Object : "+msg.getMessageObject() ) ;
-     say( "" ) ;
+     _log.info( " CellMessage From   : "+msg.getSourceAddress() ) ;
+     _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
+     _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
    }
    public void ceanUp(){
      _cellContext.remove( "Ssh" ) ;
-     say( "finished" ) ;
+     _log.info( "finished" ) ;
    }
    public void   exceptionArrived( ExceptionEvent ce ){
-     say( " exceptionArrived "+ce ) ;
+     _log.info( " exceptionArrived "+ce ) ;
    }
 
 }

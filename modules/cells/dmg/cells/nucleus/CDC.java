@@ -1,10 +1,9 @@
 package dmg.cells.nucleus;
 
-import java.util.Stack;
 import java.io.Serializable;
 
-import org.apache.log4j.MDC;
-import org.apache.log4j.NDC;
+import org.slf4j.MDC;
+import org.dcache.commons.util.NDC;
 
 import dmg.util.TimebasedCounter;
 
@@ -39,10 +38,10 @@ public class CDC
     private final static TimebasedCounter _sessionCounter =
         new TimebasedCounter();
 
-    private final Stack _ndc;
-    private final Object _session;
-    private final Object _cell;
-    private final Object _domain;
+    private final NDC _ndc;
+    private final String _session;
+    private final String _cell;
+    private final String _domain;
 
     /**
      * Captures the cells diagnostic context of the calling thread.
@@ -52,7 +51,7 @@ public class CDC
         _session = MDC.get(MDC_SESSION);
         _cell = MDC.get(MDC_CELL);
         _domain = MDC.get(MDC_DOMAIN);
-        _ndc = NDC.cloneStack();
+        _ndc = NDC.cloneNdc();
     }
 
     /**
@@ -60,22 +59,13 @@ public class CDC
      * <code>MDC.remove</code>. <code>value</code> is allowed to e
      * null.
      */
-    static private void setMdc(String key, Object value)
+    static private void setMdc(String key, String value)
     {
-        if (value != null)
+        if (value != null) {
             MDC.put(key, value);
-        else
+        } else {
             MDC.remove(key);
-    }
-
-    /**
-     * Applies the cells diagnostic context to the calling thread.
-     * May only be called once. Equivalent to calling
-     * <code>apply(false)</code>.
-     */
-    public void apply()
-    {
-        apply(false);
+        }
     }
 
     /**
@@ -84,23 +74,24 @@ public class CDC
      * only be called once for this CDC. If <code>clone</code> is
      * true, then the CDC may be applied several times, however the
      * operation is more expensive.
-     *
-     * @param clone whether to apply a clone of the NDC stack
      */
-    public void apply(boolean clone)
+    public void apply()
     {
         setMdc(MDC_DOMAIN, _domain);
         setMdc(MDC_CELL, _cell);
         setMdc(MDC_SESSION, _session);
-        NDC.clear();
-        NDC.inherit((clone && _ndc != null) ? (Stack) _ndc.clone() : _ndc);
+        if (_ndc == null) {
+            NDC.clear();
+        } else {
+            NDC.set(_ndc);
+        }
     }
 
     /**
      * Returns the session identifier stored in the MDC of the calling
      * thread.
      */
-    static public Object getSession()
+    static public String getSession()
     {
         return MDC.get(MDC_SESSION);
     }
@@ -108,16 +99,10 @@ public class CDC
     /**
      * Sets the session in the MDC for the calling thread.
      *
-     * @param session Session identifier. Must implement Serializable
-     * if not null.
-     * @throws SerializationException if session is not Serializable
+     * @param session Session identifier.
      */
-    static public void setSession(Object session)
+    static public void setSession(String session)
     {
-        if (session != null && !(session instanceof Serializable)) {
-            throw new SerializationException("Session identifier is not serializable");
-        }
-
         setMdc(MDC_SESSION, session);
     }
 
@@ -161,8 +146,18 @@ public class CDC
      */
     static public void setCellsContext(CellNucleus cell)
     {
-        MDC.put(MDC_CELL, cell.getCellName());
-        MDC.put(MDC_DOMAIN, cell.getCellDomainName());
+        setCellsContext(cell.getCellName(), cell.getCellDomainName());
+    }
+
+    /**
+     * Setup the cell diagnostic context of the calling
+     * thread. Threads created from the calling thread automatically
+     * inherit this information.
+     */
+    static public void setCellsContext(String cellName, String domainName)
+    {
+        setMdc(MDC_CELL, cellName);
+        setMdc(MDC_DOMAIN, domainName);
     }
 
     /**
@@ -198,8 +193,9 @@ public class CDC
      */
     static public void setMessageContext(CellMessage envelope)
     {
+        Object session = envelope.getSession();
         NDC.push(getMessageContext(envelope));
-        setMdc(MDC_SESSION, envelope.getSession());
+        setMdc(MDC_SESSION, (session == null) ? null : session.toString());
     }
 
     /**

@@ -1,9 +1,6 @@
 package dmg.util;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CDC;
 
 import org.apache.log4j.spi.LoggingEvent;
@@ -15,32 +12,20 @@ import org.apache.log4j.AppenderSkeleton;
  * name. The cell name is used to identify the correct pinboard to
  * which to log the message.
  *
- * CellAdapters register a pinboard through a call to the addPinboard
- * method.
- *
  * @see Pinboard
  */
 public class PinboardAppender extends AppenderSkeleton
 {
-    static private Map<String,Pinboard> _pinboards = new ConcurrentHashMap();
-
-    public static void addPinboard(String cellName, Pinboard pinboard)
-    {
-        _pinboards.put(cellName, pinboard);
-    }
-
-    public static void removePinboard(String cellName)
-    {
-        _pinboards.remove(cellName);
-    }
-
     protected void append(LoggingEvent event)
     {
-        Object cell = event.getMDC(CDC.MDC_CELL);
+        String cell = (String) event.getMDC(CDC.MDC_CELL);
         if (cell != null) {
-            Pinboard pinboard = _pinboards.get(cell);
-            if (pinboard != null) {
-                pinboard.pin(layout.format(event));
+            CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
+            if (nucleus != null) {
+                Pinboard pinboard = nucleus.getPinboard();
+                if (pinboard != null) {
+                    pinboard.pin(layout.format(event));
+                }
             }
         }
     }
