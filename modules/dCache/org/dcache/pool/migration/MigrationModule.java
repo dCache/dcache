@@ -260,7 +260,14 @@ public class MigrationModule
         CellStub poolManager = _context.getPoolManagerStub();
 
         if (type.equals("pool")) {
-            return new FixedPoolList(targets);
+            return new PoolListByNames(poolManager,
+                                       exclude,
+                                       excludeWhen,
+                                       include,
+                                       includeWhen,
+                                       spaceCost,
+                                       cpuCost,
+                                       targets);
         } else if (type.equals("pgroup")) {
             if (targets.size() != 1) {
                 throw new IllegalArgumentException(targets.toString() +

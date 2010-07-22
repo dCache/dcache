@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -765,33 +766,47 @@ public class PoolMonitorV5
         return list ;
     }
 
+    private PoolManagerPoolInformation getPoolInformation(PoolSelectionUnit.SelectionPool pool)
+        throws InterruptedException
+    {
+        String name = pool.getName();
+        PoolManagerPoolInformation info = new PoolManagerPoolInformation(name);
+        PoolCostCheckable cost = _costModule.getPoolCost(name, 0);
+        if (!pool.isActive() || cost == null) {
+            info.setSpaceCost(Double.POSITIVE_INFINITY);
+            info.setCpuCost(Double.POSITIVE_INFINITY);
+        } else {
+            info.setSpaceCost(cost.getSpaceCost());
+            info.setCpuCost(cost.getPerformanceCost());
+        }
+        info.setPoolCostInfo(_costModule.getPoolCostInfo(name));
+        return info;
+    }
+
     private Collection<PoolManagerPoolInformation>
         getPoolInformation(Iterator<PoolSelectionUnit.SelectionPool> pools)
         throws InterruptedException
     {
         List<PoolManagerPoolInformation> result = new ArrayList();
         while (pools.hasNext()) {
-            PoolSelectionUnit.SelectionPool pool = pools.next();
-            String name = pool.getName();
-            PoolCostCheckable cost = _costModule.getPoolCost(name, 0);
-            PoolManagerPoolInformation info =
-                new PoolManagerPoolInformation(name);
-            if (!pool.isActive() || cost == null) {
-                info.setSpaceCost(Double.POSITIVE_INFINITY);
-                info.setCpuCost(Double.POSITIVE_INFINITY);
-            } else {
-                info.setSpaceCost(cost.getSpaceCost());
-                info.setCpuCost(cost.getPerformanceCost());
-            }
-            info.setPoolCostInfo(_costModule.getPoolCostInfo(name));
-            result.add(info);
+            result.add(getPoolInformation(pools.next()));
         }
         return result;
     }
 
+    public PoolManagerPoolInformation getPoolInformation(String name)
+        throws InterruptedException, NoSuchElementException
+    {
+        PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
+        if (pool == null) {
+            throw new NoSuchElementException("No such pool: " + name);
+        }
+        return getPoolInformation(pool);
+    }
+
     public Collection<PoolManagerPoolInformation>
         getPoolsByLink(String linkName)
-        throws InterruptedException
+        throws InterruptedException, NoSuchElementException
     {
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
@@ -800,7 +815,7 @@ public class PoolMonitorV5
 
     public Collection<PoolManagerPoolInformation>
         getPoolsByPoolGroup(String poolGroup)
-        throws InterruptedException
+        throws InterruptedException, NoSuchElementException
     {
         Collection<PoolSelectionUnit.SelectionPool> pools =
             _selectionUnit.getPoolsByPoolGroup(poolGroup);
