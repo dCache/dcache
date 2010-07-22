@@ -33,6 +33,7 @@ import diskCacheV111.util.FsPath;
 public class NettyXrootdServer
 {
     private int _port;
+    private int _backlog;
     private Executor _requestExecutor;
     private XrootdDoor _door;
     private ChannelFactory _channelFactory;
@@ -46,6 +47,11 @@ public class NettyXrootdServer
     public void setPort(int port)
     {
         _port = port;
+    }
+
+    public void setBacklog(int backlog)
+    {
+        _backlog = backlog;
     }
 
     public void setRequestExecutor(Executor executor)
@@ -71,6 +77,7 @@ public class NettyXrootdServer
     public void init()
     {
         ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
+        bootstrap.setOption("backlog", _backlog);
         bootstrap.setOption("child.tcpNoDelay", true);
         bootstrap.setOption("child.keepAlive", true);
 

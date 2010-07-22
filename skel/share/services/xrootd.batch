@@ -8,6 +8,7 @@ check -strong cell.name
 check -strong port
 check -strong xrootdPoolTimeout
 check -strong xrootdThreads
+check -strong xrootdBacklog
 check -strong xrootdMaxChannelMemorySize
 check -strong xrootdRootPath
 check -strong xrootdPoolManagerTimeout
@@ -34,6 +35,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -xrootdPort=${port} \
        -xrootdPoolTimeout=${xrootdPoolTimeout} \
        -xrootdThreads=${xrootdThreads} \
+       -xrootdBacklog=${xrootdBacklog} \
        -xrootdMaxChannelMemorySize=${xrootdMaxChannelMemorySize} \
        -xrootdMaxTotalMemorySize=${xrootdMaxTotalMemorySize} \
        -xrootdRootPath=${xrootdRootPath} \
