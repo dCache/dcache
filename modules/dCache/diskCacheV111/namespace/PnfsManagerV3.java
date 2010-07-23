@@ -1533,7 +1533,7 @@ public class PnfsManagerV3 extends CellAdapter
 
         protected void fold(PnfsMessage message)
         {
-            if (_canFold) {
+            if (_canFold && message.getReturnCode() == 0) {
                 Iterator<CellMessage> i = _fifo.iterator();
                 while (i.hasNext()) {
                     CellMessage envelope = (CellMessage) i.next();
