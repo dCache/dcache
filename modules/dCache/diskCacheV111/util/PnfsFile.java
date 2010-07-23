@@ -647,7 +647,7 @@ public class PnfsFile extends File
            throws FileNotFoundException {
 
       BufferedReader  in = null;
-      String          line , raw , mp , type ;
+      String          line , mp , type ;
       StringTokenizer st ;
       List<String>          mountpoints = new Vector<String>() ;
       //
@@ -659,7 +659,7 @@ public class PnfsFile extends File
             try{
                st = new StringTokenizer( line ) ;
                if(  st.countTokens() < 4 )continue ;
-               raw  = st.nextToken() ;
+               st.nextToken() ;
                mp   = st.nextToken() ;
                type = st.nextToken() ;
             }catch(Exception ae ){
@@ -1358,7 +1358,7 @@ public class PnfsFile extends File
                   System.out.println(ee.getMessage());
                }
                System.out.print( "  Server Roots: ") ;
-               Map map = null ;
+               Map<PnfsId, String> map = null ;
                try{
                   map = getServerRoots(mp) ;
                   System.out.println("");
@@ -1366,11 +1366,11 @@ public class PnfsFile extends File
                   System.out.println(ee.getMessage());
                }
                String serverMountPath = pathfinder( mp , mountId.toString() ) ;
-               Iterator entries = map.entrySet().iterator() ;
+               Iterator<Map.Entry<PnfsId, String>> entries = map.entrySet().iterator() ;
                while( entries.hasNext() ){
-                  Map.Entry entry = (Map.Entry)entries.next() ;
+                  Map.Entry<PnfsId, String> entry = entries.next() ;
                   System.out.println("    "+entry.getKey()+"  "+entry.getValue() ) ;
-                  PnfsId virtualMountId = (PnfsId)entry.getKey() ;
+                  PnfsId virtualMountId = entry.getKey() ;
                   if( mountId.compareTo(virtualMountId) > 0 ){
                      System.out.println( "    -> invalid (serverId<mountId)");
                      continue ;
