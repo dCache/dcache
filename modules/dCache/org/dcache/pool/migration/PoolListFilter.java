@@ -57,7 +57,7 @@ public class PoolListFilter implements RefreshablePoolList
         ImmutableList<PoolManagerPoolInformation> getPools()
     {
         ImmutableList<PoolManagerPoolInformation> list = _poolList.getPools();
-        if (!_cachedList.equals(list)) {
+        if (!list.equals(_cachedList)) {
             ArrayList<PoolManagerPoolInformation> filteredList =
                 new ArrayList<PoolManagerPoolInformation>(list.size());
             for (PoolManagerPoolInformation pool: list) {
