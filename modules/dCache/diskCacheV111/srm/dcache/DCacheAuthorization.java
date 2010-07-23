@@ -239,7 +239,25 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
         if(user_rec  == null){
             user_rec = authorize(secureId, gsscontext, name);
-            user_rec = authRecordPersistenceManager.persist(user_rec);
+
+            /* Persist the authorization record. This is the place
+             * in which we resolve conflicts in id generation.
+             */
+            AuthorizationRecord persistent = null;
+            long id = user_rec.getId();
+            do {
+                user_rec.setId(id++); // Effectively, a delayed incrementation.
+                persistent =
+                    authRecordPersistenceManager.find(user_rec.getId());
+            } while (persistent != null && !persistent.equals(user_rec));
+
+            if (persistent == null) {
+                _logAuth.debug("auth object not found in database, persisting ");
+                persistent = authRecordPersistenceManager.persist(user_rec);
+                if (!persistent.equals(user_rec)) {
+                    _logAuth.error("Persisted authorization record is different from the original");
+                }
+            }
 
             if(cache_lifetime>0) {
                 putUsernameMapping(requestCredentialId, new TimedAuthorizationRecord(user_rec, name));
