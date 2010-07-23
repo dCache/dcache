@@ -742,6 +742,8 @@ public class PoolSelectionUnitV2
             pw.append("#\n# Printed by ").append(getClass().getName())
                     .append(" at ").append(new Date().toString()).append(
                             "\n#\n#\n");
+            pw.append("psu set regex ").append(_useRegex?"on":"off").append("\n");
+            pw.append("psu set allpoolsactive ").append(_allPoolsActive?"on":"off").append("\n");
             pw.append("#\n# The units ...\n#\n");
             for (Unit unit : _units.values()) {
                 int type = unit._type;
