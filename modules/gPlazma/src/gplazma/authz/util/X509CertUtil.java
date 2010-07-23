@@ -145,77 +145,16 @@ public class X509CertUtil {
         String subjectDN;
 
         TBSCertificateStructure tbsCert = getUserTBSCertFromX509Chain(chain);
-        //subjectDN = clientcert.getSubjectX500Principal().toString();
-        //subjectDN = clientcert.getSubjectDN().toString();
-        //subjectDN = X509NameHelper.toString((X509Name)clientcert.getSubjectDN());
-        //subjectDN = toGlobusDN(subjectDN);
         subjectDN = X509NameHelper.toString(tbsCert.getSubject());
-
-
-        //ASN1Sequence seq = (ASN1Sequence)BouncyCastleUtil.duplicate(tbsCert.getSubject().getDERObject());
         subjectDN = toGlobusString((ASN1Sequence)tbsCert.getSubject().getDERObject(), omitEmail);
-
-        // Find End-Entity Certificate, e.g. user certificate
-
-        //byte[] encoded = chain[clientcertindex].getEncoded();
-        //X509Cert cert = new X509Cert(encoded);
-        //TBSCertificateStructure issuerTbsCert  = BouncyCastleUtil.getTBSCertificateStructure(chain[clientcertindex]);
-        //X509Certificate	testcert = chain[1];
-        //TBSCertificateStructure tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-        //int certType = BouncyCastleUtil.getCertificateType(tbsCert, trustedCerts);
-        //BouncyCastleUtil.getIdentity(this.identityCert);
-
-        //if (org.globus.gsi.X509CertUtil.isImpersonationProxy(certType)) {
-        // throw exception
-        //}
-        //String identity = X509NameHelper.toString((X509Name)chain[clientcertindex].getSubjectDN());
-        //String identity = BouncyCastleUtil.getIdentity(chain[clientcertindex]);
-
-        //GlobusGSSContextImpl.GSSProxyPathValidator validator = new GSSProxyPathValidator();
-        //ProxyPathValidator validator = new ProxyPathValidator();
-
-        //try {
-        //  validator.validate(chain, null, null);
-        //} catch (Exception e) {throw e;}
-        //subjectDN = new GlobusGSSName(identity).toString();
-        //subjectDN = validator.getIdentity();
-
-        //Vector userCerts = PureTLSUtil.certificateChainToVector(chain);
-    /*
-    X509Cert cert = new X509Cert(clientcert.getEncoded());
-                ByteArrayInputStream in = new ByteArrayInputStream(cert.getDER());
-                X509Certificate clientX509cert = org.globus.gsi.X509CertUtil.loadCertificate(in);
-    subjectDN = BouncyCastleUtil.getIdentity(clientX509cert);
-     */
-
-    /*
-    if( subjectDN.startsWith("CN=") ||
-        subjectDN.startsWith("E=")  ||
-        subjectDN.substring(0,6).toLowerCase().startsWith("email="))
-      subjectDN = toGlobusDN(subjectDN);
-    else
-      subjectDN = "/" + subjectDN.replace(',', '/');
-     */
-
-    /*Matcher m1 = pattern1.matcher(subjectDN);
-    subjectDN = m1.replaceAll("");
-    //Matcher m2 = pattern2.matcher(subjectDN);
-    //subjectDN = m2.replaceAll("");
-    Matcher m3 = pattern3.matcher(subjectDN);
-    subjectDN = m3.replaceAll("");
-     */
-
         return subjectDN;
     }
 
     public static TBSCertificateStructure getUserTBSCertFromX509Chain(X509Certificate[] chain) throws Exception {
         TBSCertificateStructure tbsCert=null;
         X509Certificate	clientcert=null;
-        //int clientcertindex = X509CertUtil.findClientCert(chain);
         for (int i=0; i<chain.length; i++) {
             X509Certificate	testcert = chain[i];
-    //DERObject obj = BouncyCastleUtil.toDERObject(testcert.getTBSCertificate());
-	//tbsCert  =  TBSCertificateStructure.getInstance(obj);
             tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
             int certType = BouncyCastleUtil.getCertificateType(tbsCert);
             if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
@@ -234,11 +173,8 @@ public class X509CertUtil {
     public static X509Certificate getUserCertFromX509Chain(X509Certificate[] chain) throws Exception {
         TBSCertificateStructure tbsCert=null;
         X509Certificate	clientcert=null;
-        //int clientcertindex = X509CertUtil.findClientCert(chain);
         for (int i=0; i<chain.length; i++) {
             X509Certificate	testcert = chain[i];
-    //DERObject obj = BouncyCastleUtil.toDERObject(testcert.getTBSCertificate());
-	//tbsCert  =  TBSCertificateStructure.getInstance(obj);
             tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
             int certType = BouncyCastleUtil.getCertificateType(tbsCert);
             if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
@@ -370,12 +306,6 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
                     attrtmp = attrtmp.substring(0, attrtmp.length() - AuthorizationController.capnulllen);
                 if(attrtmp.endsWith(AuthorizationController.rolenull))
                     attrtmp = attrtmp.substring(0, attrtmp.length() - AuthorizationController.rolenulllen);
-                //Iterator k = fqans.iterator();
-                //boolean issubrole=false;
-                //while (k.hasNext()) {
-                  //String fqanattr=(String) k.next();
-                  //if (fqanattr.startsWith(attrtmp)) {issubrole=true; break;}
-                //}
                 if(attrtmp.equals(fqan)) return vomsAttribute;
             }
         }
