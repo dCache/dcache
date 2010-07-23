@@ -3,14 +3,16 @@ package org.dcache.tests.pool.migration;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import org.dcache.pool.migration.PoolListFromPoolManager;
+import org.dcache.pool.migration.PoolListFilter;
+import org.dcache.pool.migration.RefreshablePoolList;
 import org.dcache.util.Glob;
-import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
+import org.dcache.util.ImmutableList;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
@@ -19,7 +21,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.Expression;
 
-public class PoolListFromPoolManagerTest
+public class PoolListFilterTest
 {
     private final static JexlEngine jexl = new JexlEngine();
 
@@ -33,12 +35,11 @@ public class PoolListFromPoolManagerTest
     @Test
     public void testExclude()
     {
-        PoolListFromPoolManager list =
-            new PoolList("*1", "false",
-                         null, "true");
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list, "*1", "false", null, "true");
 
-        list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolManagerPoolInformation> result = list.getPools();
+        List<PoolManagerPoolInformation> result = filter.getPools();
 
         assertEquals(2, result.size());
         assertDoesNotContainPool(POOL1, result);
@@ -49,12 +50,11 @@ public class PoolListFromPoolManagerTest
     @Test
     public void testExcludeWhen()
     {
-        PoolListFromPoolManager list =
-            new PoolList(null, "target.name=~'pool[12]'",
-                         null, "true");
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list, null, "target.name=~'pool[12]'", null, "true");
 
-        list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolManagerPoolInformation> result = list.getPools();
+        List<PoolManagerPoolInformation> result = filter.getPools();
 
         assertEquals(1, result.size());
         assertDoesNotContainPool(POOL1, result);
@@ -65,12 +65,11 @@ public class PoolListFromPoolManagerTest
     @Test
     public void testInclude()
     {
-        PoolListFromPoolManager list =
-            new PoolList(null, "false",
-                         "*1", "true");
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list, null, "false", "*1", "true");
 
-        list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolManagerPoolInformation> result = list.getPools();
+        List<PoolManagerPoolInformation> result = filter.getPools();
 
         assertEquals(1, result.size());
         assertContainsPool(POOL1, result);
@@ -81,12 +80,11 @@ public class PoolListFromPoolManagerTest
     @Test
     public void testIncludeWhen()
     {
-        PoolListFromPoolManager list =
-            new PoolList(null, "false",
-                         null, "target.name=~'pool[12]'");
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list, null, "false", null, "target.name=~'pool[12]'");
 
-        list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolManagerPoolInformation> result = list.getPools();
+        List<PoolManagerPoolInformation> result = filter.getPools();
 
         assertEquals(2, result.size());
         assertContainsPool(POOL1, result);
@@ -97,12 +95,11 @@ public class PoolListFromPoolManagerTest
     @Test
     public void testBothIncludedAndExcluded()
     {
-        PoolListFromPoolManager list =
-            new PoolList("*1", "false",
-                         "*1", "true");
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list, "*1", "false", "*1", "true");
 
-        list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolManagerPoolInformation> result = list.getPools();
+        List<PoolManagerPoolInformation> result = filter.getPools();
 
         assertEquals(0, result.size());
     }
@@ -110,28 +107,43 @@ public class PoolListFromPoolManagerTest
     @Test
     public void testBothIncludedWhenAndExcludedWhen()
     {
-        PoolListFromPoolManager list =
-            new PoolList(null, "target.name=='pool1'",
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list,
+                         null, "target.name=='pool1'",
                          null, "target.name=='pool1'");
 
-        list.success(createMessage(POOL1, POOL2, POOL3));
-        List<PoolManagerPoolInformation> result = list.getPools();
+        List<PoolManagerPoolInformation> result = filter.getPools();
 
         assertEquals(0, result.size());
+    }
+
+    @Test
+    public void testCacheInvalidation()
+    {
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list, null, "false", null, "target.name=~'pool[12]'");
+
+        List<PoolManagerPoolInformation> result = filter.getPools();
+
+        assertEquals(2, result.size());
+        assertContainsPool(POOL1, result);
+        assertContainsPool(POOL2, result);
+        assertDoesNotContainPool(POOL3, result);
+
+        list.setPools(POOL2, POOL3);
+        result = filter.getPools();
+
+        assertEquals(1, result.size());
+        assertDoesNotContainPool(POOL1, result);
+        assertContainsPool(POOL2, result);
+        assertDoesNotContainPool(POOL3, result);
     }
 
     private static Expression createExpression(String s)
     {
         return (s == null) ? null : jexl.createExpression(s);
-    }
-
-    private static PoolManagerGetPoolsMessage
-        createMessage(PoolManagerPoolInformation... pools)
-    {
-        PoolManagerGetPoolsMessage msg =
-            new PoolManagerGetPoolsMessage();
-        msg.setPools(Arrays.asList(pools));
-        return msg;
     }
 
     private static PoolManagerPoolInformation
@@ -151,6 +163,18 @@ public class PoolListFromPoolManagerTest
             patterns.add(Glob.parseGlobToPattern(glob));
         }
         return patterns;
+    }
+
+    private static PoolListFilter
+        createFilter(RefreshablePoolList list,
+                     String exclude, String excludeWhen,
+                     String include, String includeWhen)
+    {
+        return new PoolListFilter(list,
+                                  createPatterns(exclude),
+                                  createExpression(excludeWhen),
+                                  createPatterns(include),
+                                  createExpression(includeWhen));
     }
 
     private static boolean containsPool(String name, List<PoolManagerPoolInformation> list)
@@ -181,22 +205,33 @@ public class PoolListFromPoolManagerTest
         }
     }
 
-
     /**
      * The object we want to test is abstract, hence we need to
      * subclass to test it.
      */
-    static class PoolList extends PoolListFromPoolManager
+    static class PoolList implements RefreshablePoolList
     {
-        public PoolList(String exclude, String excludeWhen,
-                        String include, String includeWhen)
+        private ImmutableList<PoolManagerPoolInformation> _list;
+
+        public PoolList(PoolManagerPoolInformation... pools)
         {
-            super(createPatterns(exclude), createExpression(excludeWhen),
-                  createPatterns(include), createExpression(includeWhen));
+            setPools(pools);
         }
 
+        public void setPools(PoolManagerPoolInformation... pools)
+        {
+            _list = new ImmutableList(new ArrayList(Arrays.asList(pools)));
+        }
+
+        @Override
         public void refresh()
         {
+        }
+
+        @Override
+        public ImmutableList<PoolManagerPoolInformation> getPools()
+        {
+            return _list;
         }
     }
 }

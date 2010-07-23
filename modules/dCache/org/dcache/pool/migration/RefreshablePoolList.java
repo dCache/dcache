@@ -1,6 +1,6 @@
 package org.dcache.pool.migration;
 
-import java.util.List;
+import org.dcache.util.ImmutableList;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 /**
@@ -15,7 +15,7 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
  */
 public interface RefreshablePoolList
 {
-    List<PoolManagerPoolInformation> getPools();
+    ImmutableList<PoolManagerPoolInformation> getPools();
     void refresh();
 }
 
