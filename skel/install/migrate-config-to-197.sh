@@ -234,7 +234,7 @@ printp "Converting ${DCACHE_HOME}/etc/node_config
                     tags=
                     for param in $params; do
                         case "$param" in
-                            lfs=*)
+                            lfs=*|poolIoQueue=*|checkRepository=*|gsiftpAllowMmap=*|metaDataRepository=*|metaDataRepositoryImport=*|gsiftpReadAhead=*|allowCleaningPreciousFiles=*|poolupDestination=*|pnfsmanager=*|flushMessageTarget=*|sweeper=*)
                                 echo $param
                                 ;;
                             recover*|sticky=*)
