@@ -72,7 +72,10 @@ import org.slf4j.LoggerFactory;
  * effect. This is achieved by querying the set of target pools for
  * existing copies of the replica. If found, the transfer may be
  * skipped. Care is taken to check the state of the replica on the
- * target pool - and updating it if necessary.
+ * target pool - and updating it if necessary. Idempotence may however
+ * be affected by exclude and include expressions: If those rely on
+ * values that change during the runtime of the job, then the job will
+ * no longer be idempotent.
  *
  * Jobs monitor the local repository for changes. If a replica changes
  * state before it is transfered, and the replica no longer passes the
@@ -476,12 +479,22 @@ public class MigrationModule
             throw new IllegalArgumentException(pins + ": Invalid value for option -pins");
         }
 
+        /* The source list is used to fetch pool information about this pool.
+         */
+        RefreshablePoolList sourceList =
+            new PoolListByNames(_context.getPoolManagerStub(),
+                                Collections.singletonList(_context.getPoolName()));
+
+        Expression excludeExpression =
+            createPoolExpression(excludeWhen, FALSE_EXPRESSION);
+        Expression includeExpression =
+            createPoolExpression(includeWhen, TRUE_EXPRESSION);
+
         RefreshablePoolList poolList =
             new PoolListFilter(createPoolList(target, targets),
-                               excluded,
-                               createPoolExpression(excludeWhen, FALSE_EXPRESSION),
-                               included,
-                               createPoolExpression(includeWhen, TRUE_EXPRESSION));
+                               excluded, excludeExpression,
+                               included, includeExpression,
+                               sourceList);
 
         JobDefinition definition =
             new JobDefinition(createFilters(args),
@@ -489,6 +502,7 @@ public class MigrationModule
                               createCacheEntryMode(targetMode),
                               createPoolSelectionStrategy(1.0, 0.0, select),
                               createComparator(order),
+                              sourceList,
                               poolList,
                               Integer.valueOf(refresh) * 1000,
                               permanent,
@@ -549,6 +563,11 @@ public class MigrationModule
         "target pool with the existing replica fails to respond, then the\n" +
         "operation is retried indefinitely, unless the job is marked as\n" +
         "eager.\n\n" +
+
+        "Please notice that a job is only idempotent as long as the set of\n" +
+        "target pools do not change. If pools go offline or are excluded as\n" +
+        "a result of a an exclude or include expression, then the idempotent\n" +
+        "nature of a job may be lost.\n\n" +
 
         "Both the state of the local replica and that of the target replica\n" +
         "can be specified. If the target replica already exists, the state\n" +
@@ -665,19 +684,19 @@ public class MigrationModule
         "  -exclude-when=<expr>\n" +
         "          Exclude target pools for which the expression evaluates to\n" +
         "          true. The expression may refer to the following constants:\n" +
-        "          target.name:\n" +
+        "          source.name/target.name:\n" +
         "              pool name\n" +
-        "          target.spaceCost:\n" +
+        "          source.spaceCost/target.spaceCost:\n" +
         "              space cost\n" +
-        "          target.cpuCost:\n" +
+        "          source.cpuCost/target.cpuCost:\n" +
         "              cpu cost\n" +
-        "          target.free:\n" +
+        "          source.free/target.free:\n" +
         "              free space in bytes\n" +
-        "          target.total:\n" +
+        "          source.total/target.total:\n" +
         "              total space in bytes\n" +
-        "          target.removable:\n" +
+        "          source.removable/target.removable:\n" +
         "              removable space in bytes\n" +
-        "          target.used:\n" +
+        "          source.used/target.used:\n" +
         "              used space in bytes\n" +
         "  -include=<pattern>[,<pattern>...]\n" +
         "          Only include target pools matching any of the patterns. Single\n" +

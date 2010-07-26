@@ -16,6 +16,7 @@ class PoolListByLink
         _link = link;
     }
 
+    @Override
     public void refresh()
     {
         _poolManager.send(new PoolManagerGetPoolsByLinkMessage(_link),
@@ -23,6 +24,7 @@ class PoolListByLink
                           this);
     }
 
+    @Override
     public String toString()
     {
         return String.format("link %s, %d pools", _link, _pools.size());

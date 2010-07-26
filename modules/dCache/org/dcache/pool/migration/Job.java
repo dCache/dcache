@@ -105,6 +105,7 @@ public class Job
             executor.scheduleWithFixedDelay(new LoggingTask(new Runnable() {
                     public void run()
                     {
+                        _definition.sourceList.refresh();
                         _definition.poolList.refresh();
                     }
                 }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
@@ -356,6 +357,10 @@ public class Job
         } else if (_state != State.INITIALIZING && !_definition.isPermanent
                    && _queued.isEmpty() && _running.isEmpty()) {
             setState(State.FINISHED);
+        } else if (_state == State.RUNNING &&
+                   (!_definition.sourceList.isValid() ||
+                    !_definition.poolList.isValid())) {
+            setState(State.SLEEPING);
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
             while ((_running.size() < _concurrency) && i.hasNext()) {

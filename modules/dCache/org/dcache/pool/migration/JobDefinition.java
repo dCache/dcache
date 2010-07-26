@@ -15,6 +15,7 @@ public class JobDefinition
     public final CacheEntryMode targetMode;
     public final PoolSelectionStrategy selectionStrategy;
     public final Comparator<CacheEntry> comparator;
+    public final RefreshablePoolList sourceList;
     public final RefreshablePoolList poolList;
     public final long refreshPeriod;
     public final boolean isPermanent;
@@ -27,6 +28,7 @@ public class JobDefinition
                          CacheEntryMode targetMode,
                          PoolSelectionStrategy selectionStrategy,
                          Comparator<CacheEntry> comparator,
+                         RefreshablePoolList sourceList,
                          RefreshablePoolList poolList,
                          long refreshPeriod,
                          boolean isPermanent,
@@ -39,6 +41,7 @@ public class JobDefinition
         this.targetMode = targetMode;
         this.selectionStrategy = selectionStrategy;
         this.comparator = comparator;
+        this.sourceList = sourceList;
         this.poolList = poolList;
         this.refreshPeriod = refreshPeriod;
         this.isPermanent = isPermanent;

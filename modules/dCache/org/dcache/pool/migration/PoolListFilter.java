@@ -3,7 +3,6 @@ package org.dcache.pool.migration;
 import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.regex.Pattern;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
@@ -23,11 +22,16 @@ public class PoolListFilter implements RefreshablePoolList
         LoggerFactory.getLogger(PoolListFilter.class);
 
     private static final String CONSTANT_TARGET = "target";
+    private static final String CONSTANT_SOURCE = "source";
+
+    private static final ImmutableList<PoolManagerPoolInformation> EMPTY_LIST =
+        new ImmutableList(new ArrayList<PoolManagerPoolInformation>());
 
     private final Collection<Pattern> _exclude;
     private final Expression _excludeWhen;
     private final Collection<Pattern> _include;
     private final Expression _includeWhen;
+    private final RefreshablePoolList _sourceList;
     private final RefreshablePoolList _poolList;
 
     private ImmutableList<PoolManagerPoolInformation> _cachedList;
@@ -37,13 +41,21 @@ public class PoolListFilter implements RefreshablePoolList
                           Collection<Pattern> exclude,
                           Expression excludeWhen,
                           Collection<Pattern> include,
-                          Expression includeWhen)
+                          Expression includeWhen,
+                          RefreshablePoolList sourceList)
     {
         _poolList = poolList;
         _exclude = exclude;
         _excludeWhen = excludeWhen;
         _include = include;
         _includeWhen = includeWhen;
+        _sourceList = sourceList;
+    }
+
+    @Override
+    public boolean isValid()
+    {
+        return _sourceList.isValid() && _poolList.isValid();
     }
 
     @Override
@@ -56,6 +68,10 @@ public class PoolListFilter implements RefreshablePoolList
     synchronized public
         ImmutableList<PoolManagerPoolInformation> getPools()
     {
+        if (!isValid()) {
+            return EMPTY_LIST;
+        }
+
         ImmutableList<PoolManagerPoolInformation> list = _poolList.getPools();
         if (!list.equals(_cachedList)) {
             ArrayList<PoolManagerPoolInformation> filteredList =
@@ -97,11 +113,21 @@ public class PoolListFilter implements RefreshablePoolList
         return evaluate(_includeWhen, pool);
     }
 
+    private PoolManagerPoolInformation getSource()
+    {
+        List<PoolManagerPoolInformation> list = _sourceList.getPools();
+        if (list.size() != 1) {
+            throw new IllegalStateException("Unexpected source pool list: Exactly one item was expected, but it contained " + list.size());
+        }
+        return list.get(0);
+    }
+
     private boolean evaluate(Expression expression,
                              PoolManagerPoolInformation pool)
     {
         MapContextWithConstants context = new MapContextWithConstants();
         context.addConstant(CONSTANT_TARGET, new PoolValues(pool));
+        context.addConstant(CONSTANT_SOURCE, new PoolValues(getSource()));
 
         Object result = expression.evaluate(context);
         if (!(result instanceof Boolean)) {

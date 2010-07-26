@@ -22,27 +22,40 @@ public abstract class PoolListFromPoolManager
     protected ImmutableList<PoolManagerPoolInformation> _pools =
         new ImmutableList(new ArrayList<PoolManagerPoolInformation>());
 
+    protected boolean _isValid = false;
+
+    @Override
+    synchronized public boolean isValid()
+    {
+        return _isValid;
+    }
+
+    @Override
     synchronized public ImmutableList<PoolManagerPoolInformation> getPools()
     {
         return _pools;
     }
 
-    public void success(PoolManagerGetPoolsMessage msg)
+    @Override
+    synchronized public void success(PoolManagerGetPoolsMessage msg)
     {
         _pools = new ImmutableList(new ArrayList(msg.getPools()));
+        _isValid = true;
     }
 
+    @Override
     public void failure(int rc, Object error)
     {
-        _log.error("Failed to query pool manager "
-                   + error + ")");
+        _log.error("Failed to query pool manager " + error + ")");
     }
 
+    @Override
     public void noroute()
     {
         _log.error("No route to pool manager");
     }
 
+    @Override
     public void timeout()
     {
         _log.error("Pool manager timeout");
