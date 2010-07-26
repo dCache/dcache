@@ -137,16 +137,11 @@ public class FileMetaData implements Serializable {
         _uid = uid;
         _gid = gid;
         _isDirectory = isDirectory;
-        _user = new Permissions((permission >> 6) & 0x7);
-        _group = new Permissions((permission >> 3) & 0x7);
-        _world = new Permissions(permission & 0x7);
 
         _isUidSet = true;
         _isGidSet = true;
-        _isUserPermissionSet = true;
-        _isGroupPermissionSet = true;
-        _isWorldPermissionSet = true;
 
+        setMode(permission);
     }
 
     public FileMetaData(FileAttributes attributes)
@@ -162,10 +157,7 @@ public class FileMetaData implements Serializable {
                 break;
 
             case MODE:
-                int mode = attributes.getMode();
-                setUserPermissions(new Permissions((mode >> 6) & 0x7));
-                setGroupPermissions(new Permissions((mode >> 3) & 0x7));
-                setWorldPermissions(new Permissions(mode & 0x7));
+                setMode(attributes.getMode());
                 break;
 
             case TYPE:
@@ -327,6 +319,13 @@ public class FileMetaData implements Serializable {
         return FileType.SPECIAL;
     }
 
+    public void setMode(int mode)
+    {
+        setUserPermissions(new Permissions((mode >> 6) & 0x7));
+        setGroupPermissions(new Permissions((mode >> 3) & 0x7));
+        setWorldPermissions(new Permissions(mode & 0x7));
+    }
+
     /** Returns POSIX.1 file mode. */
     public int getMode()
     {
@@ -337,7 +336,7 @@ public class FileMetaData implements Serializable {
         return _user;
     }
 
-    public void setUserPermissions(Permissions userPermissions) {
+    private void setUserPermissions(Permissions userPermissions) {
         _user = userPermissions;
         _isUserPermissionSet = true;
     }
@@ -350,7 +349,7 @@ public class FileMetaData implements Serializable {
         return _group;
     }
 
-    public void setGroupPermissions(Permissions groupPermissions) {
+    private void setGroupPermissions(Permissions groupPermissions) {
         _group = groupPermissions;
         _isGroupPermissionSet = true;
     }
@@ -363,7 +362,7 @@ public class FileMetaData implements Serializable {
         return _world;
     }
 
-    public void setWorldPermissions(Permissions worldPermissions) {
+    private void setWorldPermissions(Permissions worldPermissions) {
         _world = worldPermissions;
         _isWorldPermissionSet = true;
     }
@@ -477,6 +476,42 @@ public class FileMetaData implements Serializable {
         return 17; // to force collections to check with equals()
     }
 
+    public FileAttributes toFileAttributes()
+    {
+        FileAttributes attributes = new FileAttributes();
+
+        if (_isUidSet) {
+            attributes.setOwner(_uid);
+        }
+
+        if (_isGidSet) {
+            attributes.setGroup(_gid);
+        }
+
+        if (_isSizeSet) {
+            attributes.setSize(_size);
+        }
+
+        if (_created > 0) {
+            attributes.setCreationTime(_created);
+        }
+
+        if (_isATimeSet) {
+            attributes.setAccessTime(_lastAccessed);
+        }
+
+        if (_isMTimeSet) {
+            attributes.setModificationTime(_lastModified);
+        }
+
+        if (_isUserPermissionSet || _isGroupPermissionSet || _isWorldPermissionSet) {
+            attributes.setMode(getMode());
+        }
+
+        attributes.setFileType(getFileType());
+
+        return attributes;
+    }
 
     /**
      * Returns the set of FileAttributes that FileMetaData can

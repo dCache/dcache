@@ -156,31 +156,6 @@ public class ChimeraNameSpaceProvider
 		return stat;
 	}
 
-    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) {
-
-        _log.debug ("setFileMetaData: {} {}", pnfsId, metaData);
-
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
-
-        try {
-
-        	Stat metadataStat = fileMetadata2Stat(metaData, inode.isDirectory() );
-
-            Stat inodeStat = inode.statCache();
-            inodeStat.setMode(metadataStat.getMode());
-            inodeStat.setUid(metadataStat.getUid());
-            inodeStat.setGid(metadataStat.getGid());
-            inodeStat.setSize(metadataStat.getSize() );
-
-            inode.setStat(inodeStat);
-
-        }catch(ChimeraFsException hfe) {
-            _log.error("setFileMetadata failed: {}", hfe.getMessage());
-        }
-
-        return ;
-    }
-
     public PnfsId createEntry(Subject subject, String path,  int uid, int gid, int mode, boolean isDir ) throws CacheException {
 
 

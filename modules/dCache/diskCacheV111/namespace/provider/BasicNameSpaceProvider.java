@@ -35,7 +35,6 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PathMap;
 import diskCacheV111.util.PnfsFile;
@@ -398,9 +397,11 @@ public class BasicNameSpaceProvider
 
         pnfsId = pf.getPnfsId();
         try {
-            FileMetaData metaData =
-                new FileMetaData(isDirectory, uid, gid, mode);
-            this.setFileMetaData(subject, pnfsId, metaData);
+            FileAttributes attributes = new FileAttributes();
+            attributes.setOwner(uid);
+            attributes.setGroup(gid);
+            attributes.setMode(mode);
+            setFileAttributes(ROOT, pnfsId, attributes);
         } catch (RuntimeException e) {
             pf.delete();
             throw e;
@@ -472,26 +473,6 @@ public class BasicNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
-    }
-
-    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException {
-
-        if (metaData.isUserPermissionsSet()) {
-
-            File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
-            int uid = metaData.getUid();
-            int gid = metaData.getGid();
-            int mode = toUnixMode(metaData);
-            for (int level = 0; level < 2; level++) {
-                this.setAccessRights(mountPoint, pnfsId, level, uid, gid, mode);
-            }
-
-        }
-
-        if (!metaData.isDirectory() && metaData.isSizeSet()) {
-            setFileSize(pnfsId, metaData.getFileSize());
-        }
-
     }
 
     public String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException {
@@ -1012,54 +993,6 @@ public class BasicNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      "Failed to set permissions: Operation was interrupted");
         }
-    }
-
-    /*
-     * TODO: shell we move this method into FileMetaData class?
-     */
-    private static int toUnixMode(FileMetaData metaData) {
-
-        int mode = 0;
-
-        // TODO: to be done more elegant
-
-        // user
-        if (metaData.getUserPermissions().canRead()) {
-            mode |= 0400;
-        }
-
-        if (metaData.getUserPermissions().canWrite()) {
-            mode |= 0200;
-        }
-        if (metaData.getUserPermissions().canExecute()) {
-            mode |= 0100;
-        }
-
-        // group
-        if (metaData.getGroupPermissions().canRead()) {
-            mode |= 0040;
-        }
-
-        if (metaData.getGroupPermissions().canWrite()) {
-            mode |= 0020;
-        }
-        if (metaData.getGroupPermissions().canExecute()) {
-            mode |= 0010;
-        }
-
-        // world
-        if (metaData.getWorldPermissions().canRead()) {
-            mode |= 0004;
-        }
-
-        if (metaData.getWorldPermissions().canWrite()) {
-            mode |= 0002;
-        }
-        if (metaData.getWorldPermissions().canExecute()) {
-            mode |= 0001;
-        }
-
-        return mode;
     }
 
     private void setFileSize( PnfsId pnfsId , long length )throws CacheException {

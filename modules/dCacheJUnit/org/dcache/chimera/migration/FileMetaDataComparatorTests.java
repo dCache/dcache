@@ -33,8 +33,8 @@ public class FileMetaDataComparatorTests {
         FileMetaData fmd1 = new FileMetaData( 3000, 1000, 0644);
         FileMetaData fmd2 = new FileMetaData( 3000, 1000, 0644);
 
-        _nsp1.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd1);
-        _nsp2.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd2);
+        _nsp1.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd1.toFileAttributes());
+        _nsp2.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd2.toFileAttributes());
 
         assertTrue( "checking same file metadata", _comparator.isOK( PNFS_ID));
     }
@@ -44,8 +44,8 @@ public class FileMetaDataComparatorTests {
         FileMetaData fmd1 = new FileMetaData( 3000, 1000, 0644);
         FileMetaData fmd2 = new FileMetaData( 9999, 1000, 0644);
 
-        _nsp1.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd1);
-        _nsp2.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd2);
+        _nsp1.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd1.toFileAttributes());
+        _nsp2.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd2.toFileAttributes());
 
         assertFalse( "checking file metadata that differs by UID", _comparator
                 .isOK( PNFS_ID));
@@ -56,8 +56,8 @@ public class FileMetaDataComparatorTests {
         FileMetaData fmd1 = new FileMetaData( 3000, 1000, 0644);
         FileMetaData fmd2 = new FileMetaData( 3000, 9999, 0644);
 
-        _nsp1.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd1);
-        _nsp2.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd2);
+        _nsp1.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd1.toFileAttributes());
+        _nsp2.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd2.toFileAttributes());
 
         assertFalse( "checking file metadata that differs by GID", _comparator
                 .isOK( PNFS_ID));
@@ -68,8 +68,8 @@ public class FileMetaDataComparatorTests {
         FileMetaData fmd1 = new FileMetaData( 3000, 1000, 0644);
         FileMetaData fmd2 = new FileMetaData( 3000, 1000, 0755);
 
-        _nsp1.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd1);
-        _nsp2.setFileMetaData( Subjects.ROOT, PNFS_ID, fmd2);
+        _nsp1.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd1.toFileAttributes());
+        _nsp2.setFileAttributes(Subjects.ROOT, PNFS_ID, fmd2.toFileAttributes());
 
         assertFalse( "checking file metadata that differs by permissions",
                 _comparator.isOK( PNFS_ID));

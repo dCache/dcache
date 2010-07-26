@@ -436,35 +436,29 @@ public class PnfsManagerV3 extends CellAdapter
         return "" ;
     }
 
-    public String hh_set_meta = "<pnfsid>|<globalPath> <uid> <gid> <perm> <level1> ..." ;
-    public String ac_set_meta_$_5_20( Args args )throws Exception {
-        PnfsId    pnfsId   = null ;
-        String reply = null;
+    public final static String hh_set_meta =
+        "<pnfsid>|<globalPath> <uid> <gid> <perm>";
+    public String ac_set_meta_$_4(Args args)
+    {
         try {
-            try{
-
-                pnfsId   = new PnfsId( args.argv(0) ) ;
-
-            }catch(Exception ee ){
+            PnfsId pnfsId;
+            if (PnfsId.isValid(args.argv(0))) {
+                pnfsId = new PnfsId(args.argv(0));
+            } else {
                 pnfsId = pathToPnfsid(ROOT, args.argv(0), true);
             }
 
-            FileMetaData metaData =
-                new FileMetaData(_nameSpaceProvider.getFileAttributes(ROOT, pnfsId, FileMetaData.getKnownFileAttributes()));
+            FileAttributes attributes = new FileAttributes();
+            attributes.setOwner(Integer.parseInt(args.argv(1)));
+            attributes.setGroup(Integer.parseInt(args.argv(2)));
+            attributes.setMode(Integer.parseInt(args.argv(3), 8));
 
-            int uid = Integer.parseInt(args.argv(1));
-            int gid = Integer.parseInt(args.argv(2));
-            int mode = Integer.parseInt(args.argv(3),8);
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
-            FileMetaData newMetaData = new FileMetaData(metaData.isDirectory(), uid, gid, mode);
-
-            _nameSpaceProvider.setFileMetaData(ROOT, pnfsId , newMetaData );
-            reply = "Ok";
+            return "Ok";
         }catch(Exception e) {
-            reply = "set metadata failed: + " + e.getMessage();
+            return "set metadata failed: + " + e.getMessage();
         }
-
-        return reply ;
     }
 
     public String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
@@ -654,18 +648,16 @@ public class PnfsManagerV3 extends CellAdapter
         return "dumped";
     }
 
-    public String hh_set_file_size = " <pnfsid> <new size> # DANGER";
-    public String ac_set_file_size_$_2(Args args) throws Exception {
+    public final static String hh_set_file_size =
+        "<pnfsid> <new size> # DANGER";
+    public String ac_set_file_size_$_2(Args args) throws Exception
+    {
+    	PnfsId pnfsId = new PnfsId(args.argv(0));
 
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-    	long size = Long.valueOf( args.argv(1));
+        FileAttributes attributes = new FileAttributes();
+        attributes.setSize(Long.valueOf(args.argv(1)));
 
-
-    	FileMetaData dummyMetaData = new FileMetaData();
-
-    	dummyMetaData.setSize(size);
-
-    	_nameSpaceProvider.setFileMetaData(ROOT, pnfsId, dummyMetaData);
+    	_nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
     	return "";
     }
@@ -1133,20 +1125,23 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    public void setFileMetaData( PnfsSetFileMetaDataMessage pnfsMessage ) {
+    public void setFileMetaData(PnfsSetFileMetaDataMessage message)
+    {
         try {
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            FileMetaData meta = pnfsMessage.getMetaData();
+            PnfsId pnfsId = populatePnfsId(message);
+            FileMetaData meta = message.getMetaData();
             _log.info("setFileMetaData=" + meta + " for " + pnfsId);
 
-            checkMask(pnfsMessage);
-            _nameSpaceProvider.setFileMetaData(pnfsMessage.getSubject(), pnfsId, meta);
+            checkMask(message);
+
+            _nameSpaceProvider.setFileAttributes(message.getSubject(), pnfsId,
+                                                 meta.toFileAttributes());
         } catch (CacheException e) {
             _log.warn("Failed to set meta data: " + e);
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
             _log.warn("Failed to set meta data", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
 
@@ -1775,53 +1770,6 @@ public class PnfsManagerV3 extends CellAdapter
             _log.warn("Failed to process flush notification", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
-    }
-
-    public static int fileMetaDataToUnixMode( FileMetaData meta){
-
-        int mode = 0;
-
-
-        //FIXME: to be done more elegant
-
-        // user
-        if( meta.getUserPermissions().canRead() ) {
-            mode |= 0400;
-        }
-
-        if( meta.getUserPermissions().canWrite() ) {
-            mode |= 0200;
-        }
-        if( meta.getUserPermissions().canExecute() ) {
-            mode |= 0100;
-        }
-
-
-        // group
-        if( meta.getGroupPermissions().canRead() ) {
-            mode |= 0040;
-        }
-
-        if( meta.getGroupPermissions().canWrite() ) {
-            mode |= 0020;
-        }
-        if( meta.getGroupPermissions().canExecute() ) {
-            mode |= 0010;
-        }
-
-        // world
-        if( meta.getWorldPermissions().canRead() ) {
-            mode |= 0004;
-        }
-
-        if( meta.getWorldPermissions().canWrite() ) {
-            mode |= 0002;
-        }
-        if( meta.getWorldPermissions().canExecute() ) {
-            mode |= 0001;
-        }
-
-        return mode;
     }
 
     /**

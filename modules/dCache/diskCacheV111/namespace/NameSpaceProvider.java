@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.List;
 import java.io.File;
 import java.io.FileFilter;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
@@ -51,15 +50,6 @@ public interface NameSpaceProvider
      * append new value to the old one
      */
     public static final int SI_APPEND = 2;
-
-    /**
-     * set file metadata - size, permissions, Owner and group
-     * @param subject Subject of user who invoked this method.
-     * @param pnfsId
-     * @param metaData
-     * @throws CacheException
-     */
-    void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException;
 
     /**
      * Create file or directory for given path.

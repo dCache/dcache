@@ -18,17 +18,17 @@ import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
 /**
- * The DummyNameSpaceProvider allows storing of StorageInfo and FileMetaData
- * against arbitrary PnfsId values. These values may be retrieved later.
+ * The DummyNameSpaceProvider allows storing of StorageInfo and
+ * FileAttributes against arbitrary PnfsId values. These values may be
+ * retrieved later.
  */
 public class DummyNameSpaceProvider implements NameSpaceProvider {
     Map<PnfsId, StorageInfo> _storageInfo = new HashMap<PnfsId, StorageInfo>();
-    Map<PnfsId, FileMetaData> _metaData = new HashMap<PnfsId, FileMetaData>();
+    Map<PnfsId, FileAttributes> _fileAttributes = new HashMap<PnfsId, FileAttributes>();
 
     @Override
     public void addCacheLocation( Subject s, PnfsId p, String c)
@@ -108,8 +108,7 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     public FileAttributes getFileAttributes( Subject subject, PnfsId pnfsId,
                                              Set<FileAttribute> attr)
             throws CacheException {
-        fail( "not implemented");
-        return null;
+        return _fileAttributes.get(pnfsId);
     }
 
     @Override
@@ -181,13 +180,7 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     @Override
     public void setFileAttributes( Subject subject, PnfsId pnfsId,
                                    FileAttributes attr) throws CacheException {
-        fail( "not implemented");
-    }
-
-    @Override
-    public void setFileMetaData( Subject subject, PnfsId pnfsId,
-                                 FileMetaData metaData) throws CacheException {
-        _metaData.put( pnfsId, metaData);
+        _fileAttributes.put(pnfsId, attr);
     }
 
     @Override

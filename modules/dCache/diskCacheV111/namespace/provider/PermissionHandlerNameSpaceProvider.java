@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileFilter;
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
@@ -321,37 +320,6 @@ public class PermissionHandlerNameSpaceProvider
         }
 
         return super.getFileAttributes(subject, pnfsId, attr);
-    }
-
-    @Override
-    public void setFileMetaData(Subject subject, PnfsId pnfsId,
-                                FileMetaData metaData)
-        throws CacheException
-    {
-        if (!Subjects.isRoot(subject)) {
-            PnfsId parentId = super.getParentOf(subject, pnfsId);
-            FileAttributes parentAttributes =
-                getFileAttributesForPermissionHandler(parentId);
-            FileAttributes attributes =
-                getFileAttributesForPermissionHandler(pnfsId);
-            Set<FileAttribute> toChange = EnumSet.noneOf(FileAttribute.class);
-            if (metaData.isUserPermissionsSet()) {
-                toChange.add(MODE);
-                toChange.add(OWNER);
-                toChange.add(OWNER_GROUP);
-            }
-            if (!metaData.isDirectory() && metaData.isSizeSet()) {
-                toChange.add(SIZE);
-            }
-
-            if (_handler.canSetAttributes(subject, parentAttributes, attributes,
-                                          toChange) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " +
-                                                         pnfsId.toString());
-            }
-        }
-
-        super.setFileMetaData(subject, pnfsId, metaData);
     }
 
     @Override
