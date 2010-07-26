@@ -3,8 +3,8 @@ package org.dcache.tests.xrootd;
 import java.security.GeneralSecurityException;
 import java.util.Iterator;
 
-import org.dcache.xrootd.security.plugins.tokenauthz.CorruptedEnvelopeException;
-import org.dcache.xrootd.security.plugins.tokenauthz.Envelope;
+import org.dcache.xrootd2.security.plugins.tokenauthz.CorruptedEnvelopeException;
+import org.dcache.xrootd2.security.plugins.tokenauthz.Envelope;
 import org.junit.Before;
 import org.junit.Test;
 
