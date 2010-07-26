@@ -474,13 +474,6 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        Set<FileAttribute> attributes = FileMetaData.getKnownFileAttributes();
-        return new FileMetaData(getFileAttributes(subject, pnfsId, attributes));
-    }
-
     public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException {
 
         if (metaData.isUserPermissionsSet()) {
@@ -1381,32 +1374,39 @@ public class BasicNameSpaceProvider
 
             /* MODE, GID and UID are updated together.
              */
-            if (definedAttributes.contains(FileAttribute.MODE) ||
-                definedAttributes.contains(FileAttribute.OWNER) ||
-                definedAttributes.contains(FileAttribute.OWNER_GROUP)) {
+            if (definedAttributes.contains(MODE) ||
+                definedAttributes.contains(OWNER) ||
+                definedAttributes.contains(OWNER_GROUP)) {
 
-                int mode, uid, gid;
-                FileMetaData meta = null;
+                Set<FileAttribute> missingAttributes =
+                    EnumSet.of(MODE, OWNER, OWNER_GROUP);
+                missingAttributes.removeAll(definedAttributes);
 
+                FileAttributes current = null;
+                if (!missingAttributes.isEmpty()) {
+                    current =
+                        getFileAttributes(subject, pnfsId, missingAttributes);
+                }
+
+                int mode;
                 if (definedAttributes.contains(FileAttribute.MODE)) {
                     mode = attr.getMode();
                 } else {
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    mode = meta.getMode();
+                    mode = current.getMode();
                 }
 
+                int uid;
                 if (definedAttributes.contains(FileAttribute.OWNER)) {
                     uid = attr.getOwner();
                 } else {
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    uid = meta.getUid();
+                    uid = current.getOwner();
                 }
 
+                int gid;
                 if (definedAttributes.contains(FileAttribute.OWNER_GROUP)) {
                     gid = attr.getGroup();
                 } else {
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    gid = meta.getGid();
+                    gid = current.getGroup();
                 }
 
                 for (int level = 0; level < 2; level++) {
@@ -1630,20 +1630,5 @@ public class BasicNameSpaceProvider
         if (id == null)
             throw new CacheException(36, "Couldn't determine parent ID");
         return PnfsFile.getFileByPnfsId(mountpoint, id);
-    }
-
-    /**
-     * Returns the meta data of a file.
-     *
-     * @param subject The subject who performs the operation
-     * @param pnfsId The PNFS ID of the file
-     * @param meta The meta data of the file; if non-null this value
-     *             is returned.
-     */
-    private FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId,
-                                         FileMetaData meta)
-        throws CacheException
-    {
-        return (meta != null) ? meta : getFileMetaData(subject, pnfsId);
     }
 }

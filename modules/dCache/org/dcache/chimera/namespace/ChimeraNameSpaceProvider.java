@@ -181,27 +181,6 @@ public class ChimeraNameSpaceProvider
         return ;
     }
 
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId) throws CacheException {
-
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
-        Stat stat = null;
-        try {
-            stat = inode.stat();
-        }catch(FileNotFoundHimeraFsException fnf) {
-            throw new FileNotFoundCacheException("No such file or directory: " + inode);
-        }catch(ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        }
-
-        FileMetaData fileMetaData = new FileMetaData(inode.isDirectory(), stat.getUid(), stat.getGid(), stat.getMode() );
-        fileMetaData.setFileType(!inode.isDirectory(), inode.isDirectory(), inode.isLink());
-        fileMetaData.setSize( stat.getSize() );
-        fileMetaData.setTimes(stat.getATime(), stat.getMTime(), stat.getCTime());
-
-        return fileMetaData;
-    }
-
     public PnfsId createEntry(Subject subject, String path,  int uid, int gid, int mode, boolean isDir ) throws CacheException {
 
 
@@ -616,6 +595,10 @@ public class ChimeraNameSpaceProvider
                                              Set<FileAttribute> attr)
         throws IOException, ChimeraFsException, ACLException, CacheException
     {
+        if (!inode.exists()) {
+            throw new FileNotFoundHimeraFsException();
+        }
+
         FileAttributes attributes = new FileAttributes();
         Stat stat;
 

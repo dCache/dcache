@@ -195,7 +195,8 @@ public class PerformanceTest extends Thread
                     getPnfsid(path);
                     break;
                 case FILE_META_DATA:
-                    provider.getFileMetaData(Subjects.ROOT, getPnfsid(path));
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                                               FileMetaData.getKnownFileAttributes());
                     break;
                 case DELETE_ENTRY:
                     provider.deleteEntry(Subjects.ROOT, getPnfsid(path));

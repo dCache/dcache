@@ -28,13 +28,6 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory)
         throws CacheException
     {

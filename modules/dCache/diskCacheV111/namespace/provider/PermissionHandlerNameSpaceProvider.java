@@ -36,18 +36,13 @@ import static org.dcache.namespace.FileAttribute.*;
  *
  * Only a subset of the methods of NameSpaceProvider are protected:
  *
- *    createEntry    maps to   canCreateSubDir/canCreateFile
- *    deleteEntry    maps to   canDeleteDir/canDeleteFile
- *    renameEntry    maps to   canRename
- *    pathToPnfsid   maps to   canLookup
- *    getStorageInfo maps to   canReadFile
- *    list           maps to   canListDir
- *
- * REVISIT: Notice that there is no read operation in the
- * NameSpaceProvider interface. To read a file from dCache, we assume
- * that a door needs to get the storge info of the file and hence we
- * map getStorageInfo to read. Once getStorageInfo is replaced by
- * getFileAttributes, this needs to be redesigned.
+ *    createEntry       maps to canCreateSubDir/canCreateFile
+ *    deleteEntry       maps to canDeleteDir/canDeleteFile
+ *    renameEntry       maps to canRename
+ *    pathToPnfsid      maps to canLookup
+ *    getStorageInfo    maps to canGetAttributes
+ *    getFileAttributes maps to canGetAttributes
+ *    list              maps to canListDir
  */
 public class PermissionHandlerNameSpaceProvider
     extends AbstractNameSpaceProviderDecorator

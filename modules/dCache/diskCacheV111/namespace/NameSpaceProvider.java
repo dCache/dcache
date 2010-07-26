@@ -62,16 +62,6 @@ public interface NameSpaceProvider
     void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException;
 
     /**
-     * get file metadata - size, permissions, Owner and group
-     * @param subject Subject of user who invoked this method.
-     * @param pnfsId
-     * @return
-     * @throws CacheException
-     */
-    FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId) throws CacheException;
-
-
-    /**
      * Create file or directory for given path.
      *
      * @param subject Subject of user who invoked this method.

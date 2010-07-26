@@ -113,12 +113,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public FileMetaData getFileMetaData( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        return _metaData.get( pnfsId);
-    }
-
-    @Override
     public PnfsId getParentOf( Subject subject, PnfsId pnfsId)
             throws CacheException {
         fail( "not implemented");

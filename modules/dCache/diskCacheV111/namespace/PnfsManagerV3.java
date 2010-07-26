@@ -449,7 +449,8 @@ public class PnfsManagerV3 extends CellAdapter
                 pnfsId = pathToPnfsid(ROOT, args.argv(0), true);
             }
 
-            FileMetaData metaData = _nameSpaceProvider.getFileMetaData(ROOT, pnfsId);
+            FileMetaData metaData =
+                new FileMetaData(_nameSpaceProvider.getFileAttributes(ROOT, pnfsId, FileMetaData.getKnownFileAttributes()));
 
             int uid = Integer.parseInt(args.argv(1));
             int gid = Integer.parseInt(args.argv(2));
@@ -578,7 +579,8 @@ public class PnfsManagerV3 extends CellAdapter
                 if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
             }
 
-            FileMetaData info = _nameSpaceProvider.getFileMetaData(ROOT,  pnfsId ) ;
+            FileMetaData info =
+                new FileMetaData(_nameSpaceProvider.getFileAttributes(ROOT,  pnfsId, FileMetaData.getKnownFileAttributes()));
             if(v){
                 sb.append("    Meta Data : ").append(info ).append("\n") ;
             }else{
@@ -1162,9 +1164,10 @@ public class PnfsManagerV3 extends CellAdapter
             return true;
         }
 
-        FileMetaData meta =
-            _nameSpaceProvider.getFileMetaData(Subjects.ROOT, pnfsid);
-        return types.contains(meta.getFileType());
+        FileAttributes attributes =
+            _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsid,
+                                                 EnumSet.of(FileAttribute.TYPE));
+        return types.contains(attributes.getFileType());
     }
 
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
@@ -1968,44 +1971,34 @@ public class PnfsManagerV3 extends CellAdapter
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             Set<FileAttribute> requested = message.getRequestedAttributes();
-            if (requested.isEmpty()) {
-                /* The semantics of the message requires us to check
-                 * for existence of the file when the attribute set is
-                 * empty. For now we do this here, but maybe this
-                 * requirement should be pushed into the name space
-                 * providers.
+            if(requested.contains(FileAttribute.STORAGEINFO)) {
+                /*
+                 * TODO: The 'classic' result of getStorageInfo was a
+                 * cobination of fileMetadata + storageInfo. This was
+                 * used add the owner and group information into
+                 * sorageInfo's internal Map. Uid and Gid used by the
+                 * HSM flush scripts.
+                 *
+                 * This atavism will have to be cut out when HSM
+                 * interface will undestand Subject or FileAttributes
+                 * will be passed to HSM interface.
                  */
-                _nameSpaceProvider.getFileMetaData(subject, pnfsId);
-            } else {
-                if(requested.contains(FileAttribute.STORAGEINFO)) {
-                    /*
-                     * TODO:
-                     * The 'classic' result of getStorageInfo was a cobination of
-                     * fileMetadata + storageInfo. This was used add the owner and group
-                     * information into sorageInfo's internal Map. Uid and Gid
-                     * used by the HSM flush scripts.
-                     *
-                     * This atavism will have to be cut out when HSM interface will
-                     * undestand Subject or FileAttributes will be passed to
-                     * HSM interface.
-                     */
-                    requested = EnumSet.copyOf(requested);
-                    requested.add(FileAttribute.OWNER);
-                    requested.add(FileAttribute.OWNER_GROUP);
-                }
-                FileAttributes attrs =
-                    _nameSpaceProvider.getFileAttributes(subject,
-                                                         pnfsId,
-                                                         requested);
-
-                if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
-                    attrs.getStorageInfo().setKey("path", message.getPnfsPath());
-                    attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
-                    attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
-                }
-
-                message.setFileAttributes(attrs);
+                requested = EnumSet.copyOf(requested);
+                requested.add(FileAttribute.OWNER);
+                requested.add(FileAttribute.OWNER_GROUP);
             }
+            FileAttributes attrs =
+                _nameSpaceProvider.getFileAttributes(subject,
+                                                     pnfsId,
+                                                     requested);
+
+            if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
+                attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
+                attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
+            }
+
+            message.setFileAttributes(attrs);
             message.setSucceeded();
         } catch (FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);
