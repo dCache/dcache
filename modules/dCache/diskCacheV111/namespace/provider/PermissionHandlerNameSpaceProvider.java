@@ -39,7 +39,6 @@ import static org.dcache.namespace.FileAttribute.*;
  *    deleteEntry       maps to canDeleteDir/canDeleteFile
  *    renameEntry       maps to canRename
  *    pathToPnfsid      maps to canLookup
- *    getStorageInfo    maps to canGetAttributes
  *    getFileAttributes maps to canGetAttributes
  *    list              maps to canListDir
  */
@@ -273,15 +272,6 @@ public class PermissionHandlerNameSpaceProvider
         }
 
         return super.pathToPnfsid(subject, path, followLinks);
-    }
-
-    @Override
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        FileAttributes result =
-            getFileAttributes(subject, pnfsId, EnumSet.of(STORAGEINFO));
-        return result.getStorageInfo();
     }
 
     @Override

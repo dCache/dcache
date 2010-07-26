@@ -388,14 +388,6 @@ public class ChimeraNameSpaceProvider
         return new PnfsId( inode.toString() );
     }
 
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException {
-
-        _log.debug ("getStorageInfo for {}", pnfsId);
-
-        FsInode inode = new FsInode(_fs, pnfsId.toString());
-        return _extractor.getStorageInfo(inode);
-    }
-
     public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
 
         _log.debug ("setStorageInfo for {}", pnfsId);

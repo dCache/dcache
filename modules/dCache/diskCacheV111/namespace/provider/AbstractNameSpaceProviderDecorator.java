@@ -145,13 +145,6 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getStorageInfo(subject, pnfsId);
-    }
-
-    @Override
     public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode)
         throws CacheException
     {

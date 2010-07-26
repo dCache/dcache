@@ -2,8 +2,10 @@ package org.dcache.chimera.migration;
 
 import java.io.PrintStream;
 import java.util.Map;
+import java.util.EnumSet;
 
 import org.dcache.auth.Subjects;
+import org.dcache.namespace.FileAttribute;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -58,7 +60,7 @@ public class StorageInfoComparator implements PnfsIdValidator {
         StorageInfo si1, si2;
 
         try {
-            si1 = _nsp1.getStorageInfo( Subjects.ROOT, pnfsId);
+            si1 = _nsp1.getFileAttributes(Subjects.ROOT, pnfsId, EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
         } catch (IllegalArgumentException e) {
             if( _pw != null)
                 _pw.println( "Failed to obtain StorageInfo from " + _nsp1Name +
@@ -72,7 +74,7 @@ public class StorageInfoComparator implements PnfsIdValidator {
         }
 
         try {
-            si2 = _nsp2.getStorageInfo( Subjects.ROOT, pnfsId);
+            si2 = _nsp2.getFileAttributes(Subjects.ROOT, pnfsId, EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
         } catch (IllegalArgumentException e) {
             if( _pw != null)
                 _pw.println( "Failed to obtain StorageInfo from " + _nsp2Name +

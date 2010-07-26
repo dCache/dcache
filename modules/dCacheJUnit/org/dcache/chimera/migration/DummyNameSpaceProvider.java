@@ -108,7 +108,14 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     public FileAttributes getFileAttributes( Subject subject, PnfsId pnfsId,
                                              Set<FileAttribute> attr)
             throws CacheException {
-        return _fileAttributes.get(pnfsId);
+        FileAttributes attributes =  _fileAttributes.get(pnfsId);
+        if (_storageInfo.containsKey(pnfsId)) {
+            if (attributes == null) {
+                attributes = new FileAttributes();
+            }
+            attributes.setStorageInfo(_storageInfo.get(pnfsId));
+        }
+        return attributes;
     }
 
     @Override
@@ -116,12 +123,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
             throws CacheException {
         fail( "not implemented");
         return null;
-    }
-
-    @Override
-    public StorageInfo getStorageInfo( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        return _storageInfo.get( pnfsId);
     }
 
     @Override

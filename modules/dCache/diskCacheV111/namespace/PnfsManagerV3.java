@@ -477,7 +477,11 @@ public class PnfsManagerV3 extends CellAdapter
                 pnfsId = pathToPnfsid(ROOT,args.argv(0), true);
             }
 
-            StorageInfo storageInfo = _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                                                     EnumSet.of(FileAttribute.STORAGEINFO));
+
+            StorageInfo storageInfo = attributes.getStorageInfo();
 
             String accessLatency = args.getOpt("accessLatency");
             if( accessLatency != null ) {
@@ -536,7 +540,11 @@ public class PnfsManagerV3 extends CellAdapter
                 if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
             }
 
-            StorageInfo info = _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                                                     EnumSet.of(FileAttribute.STORAGEINFO));
+
+            StorageInfo info = attributes.getStorageInfo();
             if(v) {
                 sb.append(" Storage Info : "+info ).append("\n") ;
             }else{

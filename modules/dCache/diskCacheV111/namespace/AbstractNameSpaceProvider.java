@@ -133,13 +133,6 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode)
         throws CacheException
     {

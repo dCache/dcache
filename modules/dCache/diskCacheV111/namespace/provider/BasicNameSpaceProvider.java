@@ -615,7 +615,7 @@ public class BasicNameSpaceProvider
         return _defaultRetentionPolicy;
     }
 
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
+    private StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         _logNameSpace.debug("getStorageInfo : " + pnfsId);

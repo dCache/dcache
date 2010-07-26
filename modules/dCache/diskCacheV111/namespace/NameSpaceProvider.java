@@ -127,7 +127,6 @@ public interface NameSpaceProvider
 
     Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException;
     void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException;
 
 
