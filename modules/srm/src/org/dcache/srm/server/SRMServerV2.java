@@ -157,7 +157,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.xml.DOMConfigurator;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import org.dcache.srm.SRMAuthorizationException;
@@ -172,7 +171,6 @@ import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
 
-    // log4j Logger
     public Logger log;
     private SrmDCacheConnector srmConn;
     private SrmAuthorizer srmAuth = null;
@@ -207,11 +205,6 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             if (srmConn == null) {
                 throw new java.rmi.RemoteException("Failed to get instance of srm." );
             }
-            String logConfigFile = srmConn.getLogFile();
-            if (logConfigFile != null && !logConfigFile.equals("")) {
-                DOMConfigurator.configure(logConfigFile);
-            }
-            log.info("srmConfigFile: " + srmConfigFile);
             log.info(" initialize() got connector ="+srmConn);
             // Set up the authorization service
             srmAuth = new SrmAuthorizer(srmConn);

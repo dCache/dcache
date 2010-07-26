@@ -11,7 +11,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.log4j.xml.DOMConfigurator;
 import java.util.*;
 
 import org.dcache.srm.SRMAuthorizationException;
@@ -61,12 +60,6 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
                  throw new java.rmi.RemoteException("Failed to get instance of srm." );
              }
 
-             String logConfigFile = srmConn.getLogFile();
-             if (logConfigFile != null && !logConfigFile.equals("")) {
-                 System.out.println("ISRMImpl: reading log4j configuration from "+logConfigFile);
-                 DOMConfigurator.configure(logConfigFile);
-             }
-             log.info("srmConfigFile: " + srmConfigFile);
              log.info(" initialize() got connector ="+srmConn);
              // Set up the authorization service
              srmAuth = new SrmAuthorizer(srmConn);
