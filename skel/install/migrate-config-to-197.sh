@@ -89,10 +89,19 @@ do
 done
 
 if [ ! -d "$DCACHE_HOME" ]; then
-    fail 2 "No such directory: $DCACHE_HOME"
+    echo "No such directory: $DCACHE_HOME"
+    exit 2
 fi
 ourHomeDir="$DCACHE_HOME"
 
+# Load libraries
+. ${DCACHE_HOME}/share/lib/paths.sh
+. ${DCACHE_LIB}/utils.sh
+. ${DCACHE_LIB}/config.sh
+. ${DCACHE_LIB}/services.sh
+. ${DCACHE_LIB}/pool.sh
+
+# Check preconditions
 if [ ! -f "${DCACHE_HOME}/etc/node_config" -a ! -f "${DCACHE_HOME}/etc/door_config" ]; then
     fail 1 "Cannot proceed because ${DCACHE_HOME}/etc/node_config does not exist."
 fi
@@ -113,12 +122,6 @@ if [ -z "$force" ]; then
 fi
 
 # Load old configuration
-. ${DCACHE_HOME}/share/lib/paths.sh
-. ${DCACHE_LIB}/utils.sh
-. ${DCACHE_LIB}/config.sh
-. ${DCACHE_LIB}/services.sh
-. ${DCACHE_LIB}/pool.sh
-
 readconf ${DCACHE_HOME}/etc/node_config NODE_CONFIG_ ||
 readconf ${DCACHE_HOME}/etc/door_config NODE_CONFIG_ ||
 fail 1 "Failed to read ${DCACHE_HOME}/etc/node_config"
