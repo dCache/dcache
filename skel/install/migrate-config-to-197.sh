@@ -31,6 +31,23 @@ addServiceIfNotInOwnDomain() # $1 domain $2 service
   fi
 }
 
+renameToPreMigration() # $1 = file name
+{
+  if [ -f "$1" ]; then
+    printp "Renaming $1 to $1.pre-197"
+    mv "$1" "$1.pre-197"
+  fi
+}
+
+copyIfNew() # $1 = src, $2 = dst
+{
+  if [ -f "$1" ] && [ ! -f "$2" ]; then
+    printp "Copying $1 to $2"
+    cp -p "$1" "$2"
+    renameToPreMigration "$1"
+  fi
+}
+
 fileNotPrecious() # $1 filename
 {
   if [ ! -e "$1" ]; then
@@ -72,31 +89,26 @@ do
 done
 
 if [ ! -d "$DCACHE_HOME" ]; then
-    echo "No such directory: $DCACHE_HOME"
-    exit 2
+    fail 2 "No such directory: $DCACHE_HOME"
 fi
 ourHomeDir="$DCACHE_HOME"
 
 if [ ! -f "${DCACHE_HOME}/etc/node_config" -a ! -f "${DCACHE_HOME}/etc/door_config" ]; then
-    echo "Cannot proceed because ${DCACHE_HOME}/etc/node_config does not exist."
-    exit 1
+    fail 1 "Cannot proceed because ${DCACHE_HOME}/etc/node_config does not exist."
 fi
 
 if [ ! -f "${DCACHE_HOME}/config/dCacheSetup" ]; then
-    echo "Cannot proceed because ${DCACHE_HOME}/config/dCacheSetup does not exist."
-    exit 1
+    fail 1 "Cannot proceed because ${DCACHE_HOME}/config/dCacheSetup does not exist."
 fi
 
 
 if [ -z "$force" ]; then
     if ! fileNotPrecious "${DCACHE_HOME}/etc/dcache.conf"; then
-        echo "Cannot proceed because ${DCACHE_HOME}/etc/dcache.conf already exists."
-        exit 1
+        fail 1 "Cannot proceed because ${DCACHE_HOME}/etc/dcache.conf already exists."
     fi
 
     if [ -e "${DCACHE_HOME}/etc/layouts/imported.conf" ]; then
-        echo "Cannot proceed because ${DCACHE_HOME}/etc/layouts/imported.conf already exists."
-        exit 1
+        fail 1 "Cannot proceed because ${DCACHE_HOME}/etc/layouts/imported.conf already exists."
     fi
 fi
 
@@ -118,9 +130,8 @@ loadConfigurationFile pool pool || loadConfigurationFile dCache pool
 determineHostName
 
 # Create configuration file
-echo "Converting ${DCACHE_HOME}/etc/dCacheSetup"
-echo "to ${DCACHE_HOME}/etc/dcache.conf."
-
+printp "Converting ${DCACHE_HOME}/etc/dCacheSetup
+        to ${DCACHE_HOME}/etc/dcache.conf."
 (
     echo "# Auto generated configuration file."
     echo "#"
@@ -149,11 +160,12 @@ echo "to ${DCACHE_HOME}/etc/dcache.conf."
 
     cat "${DCACHE_HOME}/config/dCacheSetup"
 ) > "${DCACHE_HOME}/etc/dcache.conf"
+renameToPreMigration "${DCACHE_HOME}/config/dCacheSetup"
+echo
 
 # Create layout file
-echo
-echo "Converting ${DCACHE_HOME}/etc/node_config"
-echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
+printp "Converting ${DCACHE_HOME}/etc/node_config
+        to ${DCACHE_HOME}/etc/layouts/imported.conf."
 (
     echo "# Auto generated layout file."
     echo "#"
@@ -315,6 +327,12 @@ echo "to ${DCACHE_HOME}/etc/layouts/imported.conf."
         esac
     done
 ) > "${DCACHE_HOME}/etc/layouts/imported.conf"
+renameToPreMigration "${DCACHE_HOME}/etc/node_config"
+renameToPreMigration "${DCACHE_HOME}/etc/door_config"
+echo
+
+copyIfNew "${DCACHE_JOBS}/dcache.local.sh" "${DCACHE_BIN}/dcache.local.sh"
+copyIfNew "${DCACHE_JOBS}/dcache.local.run.sh" "${DCACHE_BIN}/dcache.local.run.sh"
 
 echo
 disclaimer
