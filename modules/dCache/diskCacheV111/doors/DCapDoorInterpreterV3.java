@@ -724,7 +724,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         throws CommandException
     {
         _lastCommandTS = new Date() ;
-        SessionHandler handler = (SessionHandler) _sessions.get(sessionId);
+        SessionHandler handler = _sessions.get(sessionId);
         if (handler == null) {
             throw new
                 CommandException(5, "Session ID " + sessionId + " not found.");
@@ -1096,13 +1096,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             setTimer(60 * 1000);
 
-            try {
-                _pnfsId = new PnfsId(_vargs.argv(0));
+            String fileIdentifier = _vargs.argv(0);
+
+            if( PnfsId.isValid(fileIdentifier)) {
+                _pnfsId = new PnfsId(fileIdentifier);
                 _message = new PnfsGetFileAttributes(_pnfsId, _attributes);
-            } catch (IllegalArgumentException e) {
-                /* Seems not to be a pnfsId, might be a url.
-                 */
-                DCapUrl url = new DCapUrl(_vargs.argv(0));
+            } else {
+                DCapUrl url = new DCapUrl(fileIdentifier);
                 String fileName = url.getFilePart();
                 _message = new PnfsGetFileAttributes(fileName, _attributes);
                 _path = fileName;

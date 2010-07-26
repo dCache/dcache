@@ -1,12 +1,9 @@
 package org.dcache.pool.migration;
 
 import java.util.Collection;
-import java.util.regex.Pattern;
 import org.dcache.cells.CellStub;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
-
-import org.apache.commons.jexl2.Expression;
 
 public class PoolListByNames
     extends PoolListFromPoolManager
@@ -14,17 +11,8 @@ public class PoolListByNames
     private final CellStub _poolManager;
     private final Collection<String> _names;
 
-    public PoolListByNames(CellStub poolManager,
-                           Collection<Pattern> exclude,
-                           Expression excludeWhen,
-                           Collection<Pattern> include,
-                           Expression includeWhen,
-                           double spaceFactor,
-                           double cpuFactor,
-                           Collection<String> pools)
+    public PoolListByNames(CellStub poolManager, Collection<String> pools)
     {
-        super(exclude, excludeWhen, include, includeWhen,
-              spaceFactor, cpuFactor);
         _poolManager = poolManager;
         _names = pools;
     }
@@ -44,9 +32,9 @@ public class PoolListByNames
             return "";
 
         StringBuilder s = new StringBuilder();
-        s.append(_pools.get(0).path.getCellName());
+        s.append(_pools.get(0).getName());
         for (int i = 1; i < _pools.size(); i++) {
-            s.append(',').append(_pools.get(i).path.getCellName());
+            s.append(',').append(_pools.get(i).getName());
         }
         return s.toString();
     }

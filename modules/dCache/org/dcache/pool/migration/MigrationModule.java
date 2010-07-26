@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -248,64 +249,39 @@ public class MigrationModule
     }
 
     private RefreshablePoolList
-        createPoolList(double spaceCost,
-                       double cpuCost,
-                       String type,
-                       List<String> targets,
-                       Collection<Pattern> exclude,
-                       Expression excludeWhen,
-                       Collection<Pattern> include,
-                       Expression includeWhen)
+        createPoolList(String type,
+                       List<String> targets)
     {
         CellStub poolManager = _context.getPoolManagerStub();
 
         if (type.equals("pool")) {
-            return new PoolListByNames(poolManager,
-                                       exclude,
-                                       excludeWhen,
-                                       include,
-                                       includeWhen,
-                                       spaceCost,
-                                       cpuCost,
-                                       targets);
+            return new PoolListByNames(poolManager, targets);
         } else if (type.equals("pgroup")) {
             if (targets.size() != 1) {
                 throw new IllegalArgumentException(targets.toString() +
                                                    ": Only one target supported for -type=pgroup");
             }
-            return new PoolListByPoolGroup(poolManager,
-                                           exclude,
-                                           excludeWhen,
-                                           include,
-                                           includeWhen,
-                                           spaceCost,
-                                           cpuCost,
-                                           targets.get(0));
+            return new PoolListByPoolGroup(poolManager, targets.get(0));
         } else if (type.equals("link")) {
             if (targets.size() != 1) {
                 throw new IllegalArgumentException(targets.toString() +
                                                    ": Only one target supported for -type=link");
             }
-            return new PoolListByLink(poolManager,
-                                      exclude,
-                                      excludeWhen,
-                                      include,
-                                      includeWhen,
-                                      spaceCost,
-                                      cpuCost,
-                                      targets.get(0));
+            return new PoolListByLink(poolManager, targets.get(0));
         } else {
             throw new IllegalArgumentException(type + ": Invalid value");
         }
     }
 
     private PoolSelectionStrategy
-        createPoolSelectionStrategy(String type)
+        createPoolSelectionStrategy(double spaceCost,
+                                    double cpuCost,
+                                    String type)
     {
         if (type.equals("proportional")) {
-            return new ProportionalPoolSelectionStrategy();
+            return new ProportionalPoolSelectionStrategy(spaceCost, cpuCost);
         } else if (type.equals("best")) {
-            return new BestPoolSelectionStrategy();
+            return new BestPoolSelectionStrategy(spaceCost, cpuCost);
         } else if (type.equals("random")) {
             return new RandomPoolSelectionStrategy();
         } else {
@@ -500,17 +476,20 @@ public class MigrationModule
             throw new IllegalArgumentException(pins + ": Invalid value for option -pins");
         }
 
+        RefreshablePoolList poolList =
+            new PoolListFilter(createPoolList(target, targets),
+                               excluded,
+                               createPoolExpression(excludeWhen, FALSE_EXPRESSION),
+                               included,
+                               createPoolExpression(includeWhen, TRUE_EXPRESSION));
+
         JobDefinition definition =
             new JobDefinition(createFilters(args),
                               createCacheEntryMode(sourceMode),
                               createCacheEntryMode(targetMode),
-                              createPoolSelectionStrategy(select),
+                              createPoolSelectionStrategy(1.0, 0.0, select),
                               createComparator(order),
-                              createPoolList(1.0, 0.0, target, targets,
-                                             excluded,
-                                             createPoolExpression(excludeWhen, FALSE_EXPRESSION),
-                                             included,
-                                             createPoolExpression(includeWhen, TRUE_EXPRESSION)),
+                              poolList,
                               Integer.valueOf(refresh) * 1000,
                               permanent,
                               eager,

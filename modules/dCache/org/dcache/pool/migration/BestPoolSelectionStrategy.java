@@ -4,22 +4,33 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.Collections;
 
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
 /**
  * Pool selection strategy selecting the pool with the lowest cost.
  */
 public class BestPoolSelectionStrategy
-    implements PoolSelectionStrategy
+    extends CostFactorPoolSelectionStrategy
 {
-    private final static Comparator<PoolCostPair> comparator =
-        new Comparator<PoolCostPair>()
+    public BestPoolSelectionStrategy(double spaceCostFactor,
+                                     double cpuCostFactor)
+    {
+        super(spaceCostFactor, cpuCostFactor);
+    }
+
+    private final Comparator<PoolManagerPoolInformation> comparator =
+        new Comparator<PoolManagerPoolInformation>()
         {
-            public int compare(PoolCostPair o1, PoolCostPair o2)
+            public int compare(PoolManagerPoolInformation p1,
+                               PoolManagerPoolInformation p2)
             {
-                return (int)Math.signum(o1.cost - o2.cost);
+                return (int) Math.signum(cost(p1) - cost(p2));
             }
         };
 
-    synchronized public PoolCostPair select(List<PoolCostPair> pools)
+    @Override
+    public PoolManagerPoolInformation
+        select(List<PoolManagerPoolInformation> pools)
     {
         return Collections.min(pools, comparator);
     }
