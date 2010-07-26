@@ -2,8 +2,8 @@
  * @(#)Checksum.java	1.2 03/11/10
  *
  * Copyright 1996-2003 dcache.org All Rights Reserved.
- * 
- * This software is the proprietary information of dCache.org  
+ *
+ * This software is the proprietary information of dCache.org
  * Use is subject to license terms.
  */
 
@@ -20,51 +20,51 @@ import java.util.zip.* ;
  * @since   1.4
  */
 
-public class Adler32 
+public class Adler32
        extends java.security.MessageDigest
        implements dmg.security.digest.MsgDigest {
 
    private static int BASE = 65521 ; /* largest prime smaller than 65536 */
    private java.util.zip.Adler32 _zipAdler = null ;
    private long _adler = 1L ;
-   public Adler32(){ 
-      
-       super("ADLER32") ; 
+   public Adler32(){
+
+       super("ADLER32") ;
       _zipAdler = new java.util.zip.Adler32() ;
    }
-   public void resetAdler32(){ 
-       _zipAdler.reset() ; 
-       _adler = 1L ; 
+   public void resetAdler32(){
+       _zipAdler.reset() ;
+       _adler = 1L ;
    }
 //   public long updateAdler32(long adler, byte [] buf, int len){
 //      return updateAdler32( adler , buf , 0 , len ) ;
 //   }
    public long updateAdler32(long adler, byte [] buf, int off , int len){
-   
+
 	if( buf == null ) return 1L;
-	
+
 	int s1 = (int) ( adler & 0xffffL );
 	int s2 = (int) ( ( adler >> 16) & 0xffffL );
 
 
 	for( int n = 0 ; n < len; n++ ){
-        
+
            s1 = (s1 + ( buf[off+n] & 0xFF ) ) % BASE;
            s2 = (s2 + s1)     % BASE;
-           
+
 	}
 	return (s2 << 16) + s1;
    }
-   public long getAdler32(){ 
-       return _adler ; 
+   public long getAdler32(){
+       return _adler ;
    }
-   
-   public byte [] engineDigest(){ 
-//      return digestAdler32() ; 
-      return digestAdlerZip() ; 
+
+   public byte [] engineDigest(){
+//      return digestAdler32() ;
+      return digestAdlerZip() ;
    }
-   
-   public void engineReset(){ 
+
+   public void engineReset(){
 //      resetAdler32() ;
       _zipAdler.reset() ;
    }
@@ -78,7 +78,7 @@ public class Adler32
        _zipAdler.update( data, offset , size ) ;
    }
    public int engineGetDigestLength(){ return 4 ; }
-   
+
    public byte [] digestAdler32(){
       byte [] _value = new byte[4] ;
       _value[0] = (byte) ((_adler>>24)&0xff) ;
@@ -97,19 +97,19 @@ public class Adler32
       return _value ;
    }
    public static void main( String [] args )throws Exception {
-   
+
        if( args.length < 1 ){
            System.err.println("Usage : ... <filename>") ;
            System.exit(4);
        }
        java.security.MessageDigest adler = new Adler32() ;
-       
+
        FileInputStream in = new FileInputStream( args[0] ) ;
        byte [] buffer = new byte[1024] ;
        long sum = 0L ;
        long started = System.currentTimeMillis() ;
        while(true){
-          
+
            int rc = in.read( buffer , 0 , buffer.length ) ;
            if( rc <=0 )break ;
            sum += rc ;
@@ -121,6 +121,6 @@ public class Adler32
        System.out.println("Adler : ("+sum+") "+Checksum.toHexString(digest) ) ;
        System.out.println("Done in "+started+" milli seconds" ) ;
        System.exit(0);
-   }  
+   }
 }
 
