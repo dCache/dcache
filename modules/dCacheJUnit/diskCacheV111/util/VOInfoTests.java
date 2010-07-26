@@ -31,7 +31,10 @@ public class VOInfoTests {
         VOInfo test = new VOInfo(FQAN_NO_ROLE);
 
         assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertFalse( test.match( FQAN_NO_ROLE, ROLE_NAME));
+
+        // NB we currently require an empty role to be treat as a wildcard.
+        // This is to work-around a bug elsewhere.
+        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
 
         assertFalse( test.match( OTHER_FQAN_NO_ROLE, ""));
     }
@@ -63,8 +66,10 @@ public class VOInfoTests {
         VOInfo test = new VOInfo(FQAN_WITH_WILDCARD_VO_AND_NO_ROLE);
 
         assertTrue( test.match( FQAN_NO_ROLE, ""));
-        assertFalse( test.match( FQAN_NO_ROLE, ROLE_NAME));
-        assertFalse( test.match( FQAN_NO_ROLE, OTHER_ROLE_NAME));
+
+        // NB we currently require an empty role to be treat as a wildcard.
+        // This is to work-around a bug elsewhere.
+        assertTrue( test.match( FQAN_NO_ROLE, ROLE_NAME));
 
         assertTrue( test.match( OTHER_FQAN_NO_ROLE, ""));
     }
