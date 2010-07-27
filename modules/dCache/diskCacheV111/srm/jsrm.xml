@@ -20,7 +20,7 @@
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PnfsManager communication stub</description>
     <property name="destination" value="${srmPnfsManager}"/>
-    <property name="timeout" value="${srmPnfsTimeout}"/>
+    <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
   </bean>
 
   <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
