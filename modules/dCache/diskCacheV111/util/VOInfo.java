@@ -30,7 +30,29 @@ public class VOInfo implements java.io.Serializable{
     public VOInfo(String pattern) {
         Matcher m = getMatcher(pattern);
         voGroup = m.group(1);
-        voRole = m.group(2);
+        voRole = mapRoleToGlob( m.group(2));
+    }
+
+
+    /**
+     * Map a role-part of a user-supplied pattern to a Glob.
+     * <p>
+     * If the user supplied a pattern without a role part (e.g., <tt>/ops</tt>)
+     * then we treat this as if the user supplied a pattern with a wildcard
+     * role (e.g., <tt>/ops/Role=*</tt>)
+     * <p>
+     * This should not be needed as <tt>voms-proxy-init</tt> will always
+     * returns all subgroups a user is a member of.
+     * <p>
+     * In an ideal world, this method would be an identity transform, as it is
+     * with the group-part of the user-supplied pattern.
+     * <p>
+     * In fact, this method is needed to hide a bug in gPlazma's
+     * getFQANSfromVOMSAttributes method in X509Utils.  This method is to
+     * be reviewed (and removed) once this bug is fixed.
+     */
+    private String mapRoleToGlob( String roleInFqan) {
+        return roleInFqan.isEmpty() ? "*" : roleInFqan;
     }
 
     private Matcher getMatcher( String pattern) {
