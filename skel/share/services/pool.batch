@@ -20,7 +20,7 @@ onerror continue
   set context -c sweeper                org.dcache.pool.classic.SpaceSweeper2
   set context -c poolupDestination      broadcast
   set context -c xrootdMoverDiskThreads 20
-  set context -c xrootdMoverSocketThreads 5
+  set context -c xrootdMoverSocketThreads ""
   set context -c xrootdMoverMaxMemoryPerConnection 16777216
   set context -c xrootdMoverMaxMemory 67108864
   set context -c xrootdMoverMaxFrameSize 2097152
