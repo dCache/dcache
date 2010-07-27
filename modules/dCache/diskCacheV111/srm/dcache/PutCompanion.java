@@ -468,7 +468,6 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                     permissionHandler.getRequiredAttributes()) ;
         }
         metadataMsg.setPnfsPath( directory ) ;
-        metadataMsg.setSubject(userSubject);
         state = WAITING_FOR_DIRECTORY_INFO_MESSAGE;
         pnfsStub.send(metadataMsg, PnfsMessage.class,
                 new ThreadManagerMessageCallback(this) );
