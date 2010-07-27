@@ -35,7 +35,7 @@ Entry
                 {
                         fail("PnfsManager failed (no route to cell)");
                 }
-        query_failure(rc: int, cause: Object)
+        query_failure(rc: Integer, cause: Object)
                 Failed
                 {
                         fail("PnfsManager failed (" + cause + ")");
@@ -92,19 +92,19 @@ UpdatingExistingFile
                 {
                         fail("Remote pool failed (no route to cell)");
                 }
-        copy_failure(rc: int, cause: Object)
+        copy_failure(rc: Integer, cause: Object)
                 [ rc == LOCKED ]
                 Failed
                 {
                         fail("Replica is locked on target pool");
                 }
-        copy_failure(rc: int, cause: Object)
+        copy_failure(rc: Integer, cause: Object)
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        copy_failure(rc: int, cause: Object)
+        copy_failure(rc: Integer, cause: Object)
                 InitiatingCopy
                 {
                 }
@@ -166,7 +166,7 @@ Entry
                         fail(String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
-        copy_failure(rc: int, cause: Object)
+        copy_failure(rc: Integer, cause: Object)
                 Failed
                 {
                         fail(String.format("Pool %s failed (%s)",
@@ -271,7 +271,7 @@ Entry
                 {
                         // Task is alive
                 }
-        ping_failure(rc: int, cause: Object)
+        ping_failure(rc: Integer, cause: Object)
                 Waiting
                 {
                         // Task is gone
@@ -340,7 +340,7 @@ Exit
                 {
                         // Task is alive
                 }
-        ping_failure(rc: int, cause: Object)
+        ping_failure(rc: Integer, cause: Object)
                 Waiting
                 {
                         // Task is gone
@@ -447,7 +447,7 @@ Entry
                 Done
                 {
                 }
-        move_failure(rc: int, cause: Object)
+        move_failure(rc: Integer, cause: Object)
                 Failed
                 {
                         fail("Pin manager failed (" + cause + ")");
@@ -509,7 +509,7 @@ Exit
                 nil
                 {
                 }
-        cancel_failure(rc: int, cause: Object)
+        cancel_failure(rc: Integer, cause: Object)
                 nil
                 {
                 }
