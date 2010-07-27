@@ -133,6 +133,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
             } else if (principal instanceof GidPrincipal) {
                 GidPrincipal gidPrincipal = (GidPrincipal) principal;
                 Group group = new Group();
+                group.setGroupList(primaryGroupList);
                 group.setGid((int) gidPrincipal.getGid());
                 if (gidPrincipal.isPrimaryGroup()) {
                     primaryGroupList.getGroups().add(0, group);

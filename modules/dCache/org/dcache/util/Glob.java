@@ -31,18 +31,23 @@ public class Glob implements Serializable
 
     public Pattern toPattern()
     {
+        return parseGlobToPattern(_pattern);
+    }
+
+    public static Pattern parseGlobToPattern(String glob)
+    {
         StringBuffer s = new StringBuffer();
         int j = 0;
-        for (int i = 0; i < _pattern.length(); i++) {
-            switch (_pattern.charAt(i)) {
+        for (int i = 0; i < glob.length(); i++) {
+            switch (glob.charAt(i)) {
             case '?':
-                s.append(Pattern.quote(_pattern.substring(j, i)));
+                s.append(Pattern.quote(glob.substring(j, i)));
                 s.append(".");
                 j = i + 1;
                 break;
 
             case '*':
-                s.append(Pattern.quote(_pattern.substring(j, i)));
+                s.append(Pattern.quote(glob.substring(j, i)));
                 s.append(".*");
                 j = i + 1;
                 break;
@@ -51,7 +56,7 @@ public class Glob implements Serializable
                 break;
             }
         }
-        s.append(Pattern.quote(_pattern.substring(j)));
+        s.append(Pattern.quote(glob.substring(j)));
         return Pattern.compile(s.toString());
     }
 }

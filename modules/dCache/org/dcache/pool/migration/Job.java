@@ -11,6 +11,7 @@ import org.dcache.pool.repository.StickyRecord;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.CellPath;
 
@@ -32,6 +33,8 @@ import java.util.NoSuchElementException;
 import java.util.Comparator;
 import java.util.Collections;
 import java.io.PrintWriter;
+
+import org.apache.commons.jexl2.Expression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +67,10 @@ import org.slf4j.LoggerFactory;
  * INITIALIZING   Initial scan of repository
  * RUNNING        Job runs (schedules new tasks)
  * SLEEPING       A task failed; no tasks are scheduled for 10 seconds
+ * PAUSED         Pause expression evaluates to true; no tasks are
+ *                scheduled for 10 seconds
+ * STOPPING       Stop expression evaluate to true; waiting or tasks
+ *                to stop
  * SUSPENDED      Job suspended by user; no tasks are scheduled
  * CANCELLING     Job cancelled by user; waiting for tasks to stop
  * CANCELLED      Job cancelled by user; no tasks are running
@@ -73,8 +80,8 @@ import org.slf4j.LoggerFactory;
 public class Job
     extends AbstractStateChangeListener
 {
-    enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED,
-            CANCELLING, CANCELLED, FINISHED, FAILED }
+    enum State { INITIALIZING, RUNNING, SLEEPING, PAUSED, SUSPENDED,
+            STOPPING, CANCELLING, CANCELLED, FINISHED, FAILED }
 
     private final static Logger _log = LoggerFactory.getLogger(Job.class);
 
@@ -85,18 +92,17 @@ public class Job
     private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
 
     private final JobStatistics _statistics = new JobStatistics();
-    private final ModuleConfiguration _configuration;
+    private final MigrationContext _context;
     private final JobDefinition _definition;
     private State _state;
     private int _concurrency;
 
-    public Job(ModuleConfiguration configuration,
-               JobDefinition definition)
+    public Job(MigrationContext context, JobDefinition definition)
     {
-        ScheduledExecutorService executor = configuration.getExecutor();
+        ScheduledExecutorService executor = context.getExecutor();
         long refreshPeriod = definition.refreshPeriod;
 
-        _configuration = configuration;
+        _context = context;
         _definition = definition;
         _concurrency = 1;
         _state = State.INITIALIZING;
@@ -105,6 +111,7 @@ public class Job
             executor.scheduleWithFixedDelay(new LoggingTask(new Runnable() {
                     public void run()
                     {
+                        _definition.sourceList.refresh();
                         _definition.poolList.refresh();
                     }
                 }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
@@ -114,7 +121,7 @@ public class Job
                 {
                     State state = State.FAILED;
                     try {
-                        _configuration.getRepository().addListener(Job.this);
+                        _context.getRepository().addListener(Job.this);
                         populate();
                         state = State.RUNNING;
                     } finally {
@@ -140,20 +147,10 @@ public class Job
         schedule();
     }
 
-    /** Returns the total amount of data covered by this job. */
-    public synchronized long getTotal()
-    {
-        long total = _statistics.getTransferred();
-        for (long size: _sizes.values()) {
-            total += size;
-        }
-        return total;
-    }
-
     /** Adds status information about the job to <code>pw</code>. */
     public synchronized void getInfo(PrintWriter pw)
     {
-        long total = getTotal();
+        long total = _statistics.getTotal();
         long completed = _statistics.getTransferred();
         pw.println("State      : " + _state);
         pw.println("Queued     : " + _queued.size());
@@ -165,6 +162,9 @@ public class Job
             case RUNNING:
             case SUSPENDED:
             case CANCELLING:
+            case STOPPING:
+            case SLEEPING:
+            case PAUSED:
                 pw.println("Completed  : "
                            + _statistics.getCompleted() + " files; "
                            + _statistics.getTransferred() + " bytes; "
@@ -217,7 +217,7 @@ public class Job
     private void populate()
     {
         try {
-            Repository repository = _configuration.getRepository();
+            Repository repository = _context.getRepository();
             Iterable<PnfsId> files = repository;
 
             if (_definition.comparator != null) {
@@ -256,11 +256,12 @@ public class Job
      */
     public synchronized void cancel(boolean force)
     {
-        if (_state != State.RUNNING && _state != State.SUSPENDED
-            && _state != State.CANCELLING && _state != State.SLEEPING) {
+        if (_state != State.RUNNING && _state != State.SUSPENDED &&
+            _state != State.CANCELLING && _state != State.STOPPING &&
+            _state != State.SLEEPING && _state != State.PAUSED) {
             throw new IllegalStateException("The job cannot be cancelled in its present state");
         }
-        if (_running.size() == 0) {
+        if (_running.isEmpty()) {
             setState(State.CANCELLED);
         } else {
             setState(State.CANCELLING);
@@ -273,11 +274,44 @@ public class Job
     }
 
     /**
+     * Similar to cancel(false), but the job will eventually end up in
+     * FINISHED rather than CANCELLED.
+     */
+    private synchronized void stop()
+    {
+        if (_state != State.RUNNING && _state != State.SUSPENDED &&
+            _state != State.STOPPING && _state != State.SLEEPING &&
+            _state != State.PAUSED) {
+            throw new IllegalStateException("The job cannot be stopped in its present state");
+        }
+        if (_running.isEmpty()) {
+            setState(State.FINISHED);
+        } else {
+            setState(State.STOPPING);
+        }
+    }
+
+    /**
+     * Pauses a job. Pause is similar to suspend, but it will
+     * periodically reevaluate the pause predicate and automatically
+     * resume the job when the predicate evaluates to false.
+     */
+    private synchronized void pause()
+    {
+        if (_state != State.RUNNING && _state != State.SUSPENDED &&
+            _state != State.SLEEPING && _state != State.PAUSED) {
+            throw new IllegalStateException("The job cannot be stopped in its present state");
+        }
+        setState(State.PAUSED);
+    }
+
+    /**
      * Suspends a job. No new tasks are scheduled.
      */
     public synchronized void suspend()
     {
-        if (_state != State.RUNNING && _state != State.SLEEPING) {
+        if (_state != State.RUNNING && _state != State.SUSPENDED &&
+            _state != State.SLEEPING && _state != State.PAUSED) {
             throw new IllegalStateException("Cannot suspend a job that does not run");
         }
         setState(State.SUSPENDED);
@@ -317,7 +351,7 @@ public class Job
                 break;
 
             case SLEEPING:
-                _configuration.getExecutor().schedule(new LoggingTask(new Runnable() {
+                _context.getExecutor().schedule(new LoggingTask(new Runnable() {
                         public void run()
                         {
                             synchronized (Job.this) {
@@ -329,12 +363,32 @@ public class Job
                     }), 10, TimeUnit.SECONDS);
                 break;
 
+            case PAUSED:
+                _context.getExecutor().schedule(new LoggingTask(new Runnable() {
+                        public void run()
+                        {
+                            synchronized (Job.this) {
+                                if (getState() == State.PAUSED) {
+                                    Expression stopWhen = _definition.stopWhen;
+                                    if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
+                                        stop();
+                                    }
+                                    Expression pauseWhen = _definition.pauseWhen;
+                                    if (!evaluateLifetimePredicate(pauseWhen)) {
+                                        setState(State.RUNNING);
+                                    }
+                                }
+                            }
+                        }
+                    }), 10, TimeUnit.SECONDS);
+                break;
+
             case FINISHED:
             case CANCELLED:
             case FAILED:
                 _queued.clear();
                 _sizes.clear();
-                _configuration.getRepository().removeListener(this);
+                _context.getRepository().removeListener(this);
                 _refreshTask.cancel(false);
                 break;
             }
@@ -356,20 +410,37 @@ public class Job
         } else if (_state != State.INITIALIZING && !_definition.isPermanent
                    && _queued.isEmpty() && _running.isEmpty()) {
             setState(State.FINISHED);
+        } else if (_state == State.STOPPING && _running.isEmpty()) {
+            setState(State.FINISHED);
+        } else if (_state == State.RUNNING &&
+                   (!_definition.sourceList.isValid() ||
+                    !_definition.poolList.isValid())) {
+            setState(State.SLEEPING);
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
             while ((_running.size() < _concurrency) && i.hasNext()) {
+                Expression stopWhen = _definition.stopWhen;
+                if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
+                    stop();
+                    break;
+                }
+                Expression pauseWhen = _definition.pauseWhen;
+                if (pauseWhen != null && evaluateLifetimePredicate(pauseWhen)) {
+                    pause();
+                    break;
+                }
+
                 try {
                     PnfsId pnfsId = i.next();
                     i.remove();
-                    Repository repository = _configuration.getRepository();
+                    Repository repository = _context.getRepository();
                     CacheEntry entry = repository.getEntry(pnfsId);
                     Task task = new Task(this,
-                                         _configuration.getPoolStub(),
-                                         _configuration.getPnfsStub(),
-                                         _configuration.getPinManagerStub(),
-                                         _configuration.getExecutor(),
-                                         _configuration.getPoolName(),
+                                         _context.getPoolStub(),
+                                         _context.getPnfsStub(),
+                                         _context.getPinManagerStub(),
+                                         _context.getExecutor(),
+                                         _context.getPoolName(),
                                          entry,
                                          _definition);
                     _running.put(pnfsId, task);
@@ -413,6 +484,7 @@ public class Job
             long size = entry.getReplicaSize();
             _queued.add(pnfsId);
             _sizes.put(pnfsId, size);
+            _statistics.addToTotal(size);
             schedule();
         }
     }
@@ -432,7 +504,7 @@ public class Job
     @Override
     public void stateChanged(StateChangeEvent event)
     {
-        Repository repository = _configuration.getRepository();
+        Repository repository = _context.getRepository();
         PnfsId pnfsId = event.getPnfsId();
         if (event.getNewState() == EntryState.REMOVED) {
             remove(pnfsId);
@@ -525,7 +597,7 @@ public class Job
         throws FileNotInCacheException
     {
         for (StickyRecord record: records) {
-            _configuration.getRepository().setSticky(pnfsId,
+            _context.getRepository().setSticky(pnfsId,
                                                      record.owner(),
                                                      record.expire(),
                                                      true);
@@ -552,7 +624,7 @@ public class Job
      */
     private synchronized boolean isPin(StickyRecord record)
     {
-        String prefix = _configuration.getPinManagerStub()
+        String prefix = _context.getPinManagerStub()
             .getDestinationPath().getDestinationAddress().getCellName();
         return record.owner().startsWith(prefix);
     }
@@ -576,7 +648,7 @@ public class Job
     {
         try {
             CacheEntryMode mode = _definition.sourceMode;
-            Repository repository = _configuration.getRepository();
+            Repository repository = _context.getRepository();
             CacheEntry entry = repository.getEntry(pnfsId);
             switch (mode.state) {
             case SAME:
@@ -613,6 +685,36 @@ public class Job
         } catch (IllegalTransitionException e) {
             // File is likely about to be removed. TODO: log it
         }
+    }
+
+    public boolean evaluateLifetimePredicate(Expression expression)
+    {
+        List<PoolManagerPoolInformation> sourceInformation =
+            _definition.sourceList.getPools();
+        if (sourceInformation.size() == 0) {
+            throw new RuntimeException("Bug detected: Source pool information was unavailable");
+        }
+
+        MapContextWithConstants context = new MapContextWithConstants();
+        context.addConstant(MigrationModule.CONSTANT_SOURCE,
+                            new PoolValues(sourceInformation.get(0)));
+        context.addConstant(MigrationModule.CONSTANT_QUEUE_FILES,
+                            _queued.size());
+        context.addConstant(MigrationModule.CONSTANT_QUEUE_BYTES,
+                            _statistics.getTotal() - _statistics.getCompleted());
+        context.addConstant(MigrationModule.CONSTANT_TARGETS,
+                            _definition.poolList.getPools().size());
+
+        Object result = expression.evaluate(context);
+        if (result == null || !result.getClass().equals(Boolean.class)) {
+            /* We ought to fail the job, but that's not so easy within
+             * the current structure. REVISIT
+             */
+            _log.error(expression.getExpression() +
+                       ": The expression does not evaluate to a boolean");
+        }
+
+        return !Boolean.FALSE.equals(result);
     }
 
     protected class LoggingTask implements Runnable

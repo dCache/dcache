@@ -3,6 +3,8 @@ package org.dcache.pool.migration;
 import java.util.List;
 import java.util.Random;
 
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
 /**
  * Implements cost inversely proportionate selection.
  *
@@ -13,24 +15,32 @@ import java.util.Random;
  * "roulette-wheel selection".
  */
 public class ProportionalPoolSelectionStrategy
-    implements PoolSelectionStrategy
+    extends CostFactorPoolSelectionStrategy
 {
     private final static Random random = new Random();
 
-    synchronized public PoolCostPair select(List<PoolCostPair> pools)
+    public ProportionalPoolSelectionStrategy(double spaceCostFactor,
+                                             double cpuCostFactor)
+    {
+        super(spaceCostFactor, cpuCostFactor);
+    }
+
+    @Override
+    public PoolManagerPoolInformation
+        select(List<PoolManagerPoolInformation> pools)
     {
         double sum = 0;
-        for (PoolCostPair pair: pools) {
-            sum += 1.0 / pair.cost;
+        for (PoolManagerPoolInformation pool: pools) {
+            sum += 1.0 / cost(pool);
         }
 
         double threshold = random.nextDouble() * sum;
 
         sum = 0;
-        for (PoolCostPair pair: pools) {
-            sum += 1.0 / pair.cost;
+        for (PoolManagerPoolInformation pool: pools) {
+            sum += 1.0 / cost(pool);
             if (sum >= threshold) {
-                return pair;
+                return pool;
             }
         }
 
