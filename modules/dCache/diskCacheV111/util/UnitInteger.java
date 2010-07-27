@@ -3,10 +3,10 @@ package diskCacheV111.util ;
 public class UnitInteger {
 
     private final static String INFINITY = "Infinity";
-    private final static long TEBI = (1 << 40);
-    private final static long GIBI = (1 << 30);
-    private final static long MEBI = (1 << 20);
-    private final static long KIBI = (1 << 10);
+    private final static long TEBI = (1L << 40);
+    private final static long GIBI = (1L << 30);
+    private final static long MEBI = (1L << 20);
+    private final static long KIBI = (1L << 10);
 
     private long _value = 0 ;
     public UnitInteger( long value ){
