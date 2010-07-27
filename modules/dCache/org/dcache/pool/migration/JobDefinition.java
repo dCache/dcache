@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 import org.dcache.pool.repository.CacheEntry;
+import org.apache.commons.jexl2.Expression;
 
 /**
  * Immutable record class holding the parameters that define a job.
@@ -22,6 +23,8 @@ public class JobDefinition
     public final boolean isEager;
     public final boolean mustMovePins;
     public final boolean computeChecksumOnUpdate;
+    public final Expression pauseWhen;
+    public final Expression stopWhen;
 
     public JobDefinition(List<CacheEntryFilter> filters,
                          CacheEntryMode sourceMode,
@@ -34,7 +37,9 @@ public class JobDefinition
                          boolean isPermanent,
                          boolean isEager,
                          boolean mustMovePins,
-                         boolean computeChecksumOnUpdate)
+                         boolean computeChecksumOnUpdate,
+                         Expression pauseWhen,
+                         Expression stopWhen)
     {
         this.filters = Collections.unmodifiableList(filters);
         this.sourceMode = sourceMode;
@@ -48,5 +53,7 @@ public class JobDefinition
         this.isEager = isEager;
         this.mustMovePins = mustMovePins;
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;
+        this.pauseWhen = pauseWhen;
+        this.stopWhen = stopWhen;
     }
 }

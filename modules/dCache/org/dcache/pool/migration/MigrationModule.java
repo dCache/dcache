@@ -44,6 +44,7 @@ import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.JexlException;
+import org.apache.commons.jexl2.JexlContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +111,15 @@ public class MigrationModule
 
     private final static PoolManagerPoolInformation DUMMY_POOL =
         new PoolManagerPoolInformation("pool", 0.0, 0.0);
+
+    public final static String CONSTANT_TARGET = "target";
+    public final static String CONSTANT_SOURCE = "source";
+    public final static String CONSTANT_TARGETS = "targets";
+    public final static String CONSTANT_QUEUE_FILES = "queue.files";
+    public final static String CONSTANT_QUEUE_BYTES = "queue.bytes";
+
+    public final static int NON_EMPTY_QUEUE = 1;
+    public final static int NO_TARGETS = 0;
 
     private final List<Job> _alive = new ArrayList();
     private final Map<Integer,Job> _jobs = new HashMap();
@@ -379,7 +389,7 @@ public class MigrationModule
         }
     }
 
-    private Expression createPoolExpression(String s, Expression ifNull)
+    private Expression createPredicate(String s, Expression ifNull, JexlContext context)
     {
         try {
             if (s == null) {
@@ -388,14 +398,30 @@ public class MigrationModule
 
             Expression expression = _jexl.createExpression(s);
 
-            MapContextWithConstants context = new MapContextWithConstants();
-            context.addConstant("target", new PoolValues(DUMMY_POOL));
             assertExpressionEvaluatesToBoolean(expression, context);
 
             return expression;
         } catch (JexlException e) {
             throw new IllegalArgumentException(s + ": " + e.getMessage(), e);
         }
+    }
+
+    private Expression createPoolPredicate(String s, Expression ifNull)
+    {
+        MapContextWithConstants context = new MapContextWithConstants();
+        context.addConstant(CONSTANT_SOURCE, new PoolValues(DUMMY_POOL));
+        context.addConstant(CONSTANT_TARGET, new PoolValues(DUMMY_POOL));
+        return createPredicate(s, ifNull, context);
+    }
+
+    private Expression createLifetimePredicate(String s)
+    {
+        MapContextWithConstants context = new MapContextWithConstants();
+        context.addConstant(CONSTANT_SOURCE, new PoolValues(DUMMY_POOL));
+        context.addConstant(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
+        context.addConstant(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
+        context.addConstant(CONSTANT_TARGETS, NO_TARGETS);
+        return createPredicate(s, null, context);
     }
 
     private Set<Pattern> createPatterns(String globs)
@@ -434,9 +460,16 @@ public class MigrationModule
         String concurrency = args.getOpt("concurrency");
         String pins = args.getOpt("pins");
         String order = args.getOpt("order");
+        String pauseWhen = args.getOpt("pause-when");
+        String stopWhen = args.getOpt("stop-when");
 
-        if (permanent && order != null) {
-            throw new IllegalArgumentException("Permanent jobs cannot be ordered");
+        if (permanent) {
+            if (order != null) {
+                throw new IllegalArgumentException("Permanent jobs cannot be ordered");
+            }
+            if (stopWhen != null) {
+                throw new IllegalArgumentException("Permanent jobs cannot have a stop condition.");
+            }
         }
 
         if (select == null) {
@@ -486,9 +519,9 @@ public class MigrationModule
                                 Collections.singletonList(_context.getPoolName()));
 
         Expression excludeExpression =
-            createPoolExpression(excludeWhen, FALSE_EXPRESSION);
+            createPoolPredicate(excludeWhen, FALSE_EXPRESSION);
         Expression includeExpression =
-            createPoolExpression(includeWhen, TRUE_EXPRESSION);
+            createPoolPredicate(includeWhen, TRUE_EXPRESSION);
 
         RefreshablePoolList poolList =
             new PoolListFilter(createPoolList(target, targets),
@@ -508,7 +541,9 @@ public class MigrationModule
                               permanent,
                               eager,
                               mustMovePins,
-                              verify);
+                              verify,
+                              createLifetimePredicate(pauseWhen),
+                              createLifetimePredicate(stopWhen));
 
         if (definition.targetMode.state == CacheEntryMode.State.DELETE
             || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {
@@ -724,8 +759,36 @@ public class MigrationModule
         "          Determines the interpretation of the target names. The\n" +
         "          default is 'pool'.\n\n" +
         "Lifetime options:\n" +
+        "  -pause-when=<expr>\n" +
+        "          Pauses the job when the expression becomes true. The job\n" +
+        "          continues when the expression once again evaluates to false.\n" +
+        "          The following constants are defined for this pool:\n" +
+        "          queue.files:\n" +
+        "              the number of files remaining to be transferred.\n" +
+        "          queue.bytes:\n" +
+        "              the number of bytes remaining to be transferred.\n" +
+        "          source.name:\n" +
+        "              pool name\n" +
+        "          source.spaceCost:\n" +
+        "              space cost\n" +
+        "          source.cpuCost:\n" +
+        "              cpu cost\n" +
+        "          source.free:\n" +
+        "              free space in bytes\n" +
+        "          source.total:\n" +
+        "              total space in bytes\n" +
+        "          source.removable:\n" +
+        "              removable space in bytes\n" +
+        "          source.used:\n" +
+        "              used space in bytes\n" +
+        "          targets:\n" +
+        "              the number of target pools.\n" +
         "  -permanent\n" +
-        "          Mark job as permanent.\n";
+        "          Mark job as permanent.\n" +
+        "  -stop-when=<expr>\n" +
+        "          Terminates the job when the expression becomes true. This option\n" +
+        "          cannot be used for permanent jobs. See the description of\n" +
+        "          -pause-when for the list of constants allowed in the expression.\n";
 //         "  -dry-run\n" +
 //         "          Perform all the steps without actually copying anything\n" +
 //         "          or updating the state.";
@@ -848,6 +911,8 @@ public class MigrationModule
         "   INITIALIZING   Initial scan of repository\n" +
         "   RUNNING        Job runs (schedules new tasks)\n" +
         "   SLEEPING       A task failed; no tasks are scheduled for 10 seconds\n" +
+        "   PAUSED         Pause expression evaluates to true; no tasks for 10 seconds\n" +
+        "   STOPPING       Stop expression evaluated to true; waiting for tasks to stop\n" +
         "   SUSPENDED      Job suspended by user; no tasks are scheduled\n" +
         "   CANCELLING     Job cancelled by user; waiting for tasks to stop\n" +
         "   CANCELLED      Job cancelled by user; no tasks are running\n" +

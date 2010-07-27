@@ -21,9 +21,6 @@ public class PoolListFilter implements RefreshablePoolList
     private static final Logger _log =
         LoggerFactory.getLogger(PoolListFilter.class);
 
-    private static final String CONSTANT_TARGET = "target";
-    private static final String CONSTANT_SOURCE = "source";
-
     private static final ImmutableList<PoolManagerPoolInformation> EMPTY_LIST =
         new ImmutableList(new ArrayList<PoolManagerPoolInformation>());
 
@@ -126,8 +123,10 @@ public class PoolListFilter implements RefreshablePoolList
                              PoolManagerPoolInformation pool)
     {
         MapContextWithConstants context = new MapContextWithConstants();
-        context.addConstant(CONSTANT_TARGET, new PoolValues(pool));
-        context.addConstant(CONSTANT_SOURCE, new PoolValues(getSource()));
+        context.addConstant(MigrationModule.CONSTANT_TARGET,
+                            new PoolValues(pool));
+        context.addConstant(MigrationModule.CONSTANT_SOURCE,
+                            new PoolValues(getSource()));
 
         Object result = expression.evaluate(context);
         if (!(result instanceof Boolean)) {
