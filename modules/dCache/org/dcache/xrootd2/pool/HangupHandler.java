@@ -40,6 +40,10 @@ public class HangupHandler extends SimpleChannelHandler
             return;
         }
 
+        /* Close parent channel as soon as we got the connection.
+         */
+        channel.getParent().unbind();
+
         super.channelOpen(ctx, event);
     }
 
