@@ -29,7 +29,6 @@
         <fileset dir="${libDir}/jexl" includes="**/*.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
         <pathelement location="${unittest.build.dir}" />
-        <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
         <pathelement location="${webappBuildDir}/webadmin.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
@@ -60,6 +59,7 @@
 
         <junit fork="true">
             <classpath refid="junit.classpath" />
+            <sysproperty key="logback.configurationFile" value="${unittest.log}"/>
             <formatter type="xml" usefile="true" />
             <formatter type="brief" usefile="false" />
             <test name="${testcase}" if="testcase" todir="${tests.report.home}" />
