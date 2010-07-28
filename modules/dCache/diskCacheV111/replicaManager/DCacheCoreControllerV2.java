@@ -534,36 +534,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       }
    }
 
-   /**
-    * Scan reduce and replicate tasks and set flag 'pnfsid' is deleted
-    */
-   protected void  tagTaskPnfsIdDeleted( PnfsId pnfsid ){
-      HashSet allTasks;
-
-      // best effort - not strict locking
-      synchronized (_taskHash) {
-        allTasks = new HashSet(_taskHash.values());
-      }
-
-      for (Iterator i = allTasks.iterator(); i.hasNext(); ) {
-        TaskObserver task = (TaskObserver) i.next();
-        if (task != null && !task.isDone()) {
-          if (task.getType().equals("Replication")) {
-            MoverTask mt = (MoverTask) task;
-            if (mt.getPnfsId().equals(pnfsid)) {
-              mt.setPnfsIdDeleted(true);
-            }
-          }
-          else if (task.getType().equals("Reduction")) {
-            ReductionObserver ro = (ReductionObserver) task;
-            if (ro.getPnfsId().equals(pnfsid)) {
-              ro.setPnfsIdDeleted(true);
-            }
-          }
-        }
-      }
-    }
-
    //
    //  remove a copy of this file
    //
