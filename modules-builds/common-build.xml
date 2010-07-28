@@ -46,7 +46,7 @@
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
         <fileset dir="${libDir}/dcache-common" includes="**/*.jar" /> -->
-        <fileset dir="${libDir}/log4j" includes="*.jar" />
+        <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar"/>
         <fileset dir="${libDir}/rrd4j" includes="**/*.jar" />
     </path>

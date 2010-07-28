@@ -5,7 +5,7 @@ bootLoader()
 {
     local quietFlag
     shouldBootLoaderBeQuiet && quietFlag="-q"
-    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/log4j/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" $quietFlag "$@"
+    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" $quietFlag "$@"
 }
 
 shouldBootLoaderBeQuiet()

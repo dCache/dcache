@@ -75,8 +75,7 @@ This package contains the clinet components.
 %attr(0755,root,root) /opt/d-cache/srm/sbin/srm
 %attr(0755,root,root) /opt/d-cache/srm/sbin/url-copy.sh
 %attr(0755,root,root) /opt/d-cache/srm/sbin/timeout.sh
-%attr(0644,root,root) /opt/d-cache/srm/conf/SRMServerV1.map
-%attr(0644,root,root) /opt/d-cache/srm/conf/JHRM.map
+%attr(0644,root,root) /opt/d-cache/srm/conf/*
 /opt/d-cache/srm/lib
 %changelog
 

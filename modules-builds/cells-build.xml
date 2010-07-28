@@ -50,6 +50,7 @@
             <filename name="dmg/util/*" />
             <filename name="dmg/util/cdb/*" />
             <filename name="dmg/util/edb/*" />
+            <filename name="dmg/util/logback/*" />
             <filename name="dmg/cells/network/*" />
             <filename name="dmg/cells/nucleus/*" />
             <filename name="dmg/cells/nucleus/protocols/env/*" />
@@ -101,8 +102,8 @@
     <!-- Classpath for cells.jar -->
 
     <path id="cells.classpath">
-        <pathelement location="${libDir}/log4j/log4j-1.2.15.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
+        <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <fileset dir="${libDir}/jline" includes="jline*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />

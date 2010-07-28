@@ -1,5 +1,6 @@
 package dmg.cells.nucleus ;
 import dmg.util.*;
+import dmg.util.logback.FilterShell;
 import java.io.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -45,7 +46,8 @@ public class      SystemCell
 
        _nucleus   = getNucleus() ;
        _cellShell = new CellShell( getNucleus() ) ;
-       _cellShell.addCommandListener(new Log4jShell());
+       _cellShell.addCommandListener(new LogbackShell());
+       _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
        useInterpreter( false ) ;
 
        _runtime.addShutdownHook( new TheKiller() ) ;

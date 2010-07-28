@@ -33,7 +33,7 @@ then
 fi
 mkdir $SRM_PATH/ups_release
 mkdir $SRM_PATH/ups_release/bin
-cp $SRM_PATH/bin/log4j.properties.all $SRM_PATH/bin/srmcp  $SRM_PATH/ups_release/bin
+cp $SRM_PATH/bin/logback-all.xml $SRM_PATH/bin/srmcp  $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/srm-advisory-delete  $SRM_PATH/bin/srm-storage-element-info $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/srm-get-metadata  $SRM_PATH/bin/srm-get-request-status $SRM_PATH/ups_release/bin
 cp $SRM_PATH/bin/gridftpcopy $SRM_PATH/bin/adler32  $SRM_PATH/bin/gridftplist $SRM_PATH/ups_release/bin
@@ -60,7 +60,7 @@ cp  $SRM_PATH/lib/axis/* $SRM_PATH/ups_release/lib/axis
 mkdir $SRM_PATH/ups_release/lib/xml
 cp  $SRM_PATH/lib/xml/*.jar $SRM_PATH/ups_release/lib/xml
 mkdir $SRM_PATH/ups_release/conf
-cp $SRM_PATH/conf/SRMServerV1.map $SRM_PATH/conf/log4j.properties.all $SRM_PATH/ups_release/conf
+cp $SRM_PATH/conf/SRMServerV1.map $SRM_PATH/conf/logback-all.xml $SRM_PATH/ups_release/conf
 cp $SRM_PATH/README $SRM_PATH/ups_release
 cp $SRM_PATH/README.SECURITY $SRM_PATH/ups_release
 cp $SRM_PATH/FNAL.LICENSE $SRM_PATH/ups_release

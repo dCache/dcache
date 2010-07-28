@@ -20,7 +20,7 @@
         <pathelement location="${libDir}/Chimera/hsqldb.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
-        <pathelement location="${libDir}/log4j/log4j-1.2.15.jar" />
+        <fileset dir="${libDir}/logback/" includes="*.jar" />
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />

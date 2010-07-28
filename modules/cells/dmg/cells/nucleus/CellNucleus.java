@@ -4,6 +4,7 @@ import dmg.util.Pinboard;
 import dmg.util.BufferedLineWriter;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
+import dmg.util.logback.FilterThresholds;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,9 @@ import java.net.Socket;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import org.dcache.commons.util.NDC;
+
+import ch.qos.logback.classic.Level;
+
 
 /**
  *
@@ -57,6 +61,7 @@ public class CellNucleus implements ThreadFactory
     private boolean _isPrivateMessageExecutor = true;
 
     private Pinboard _pinboard;
+    private FilterThresholds _loggingThresholds;
 
     public CellNucleus(Cell cell, String name) {
 
@@ -159,6 +164,10 @@ public class CellNucleus implements ThreadFactory
         __cellGlue.setSystemNucleus(nucleus);
     }
 
+    boolean isSystemNucleus() {
+        return this == __cellGlue.getSystemNucleus();
+    }
+
     public String getCellName() { return _cellName; }
     public String getCellType() { return _cellType; }
 
@@ -254,6 +263,16 @@ public class CellNucleus implements ThreadFactory
     }
     public int    getPrintoutLevel(String cellName) {
         return __cellGlue.getPrintoutLevel(cellName);
+    }
+
+    public void setLoggingThresholds(FilterThresholds thresholds)
+    {
+        _loggingThresholds = thresholds;
+    }
+
+    public FilterThresholds getLoggingThresholds()
+    {
+        return _loggingThresholds;
     }
 
     public void setPinboard(Pinboard pinboard)

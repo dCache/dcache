@@ -7,10 +7,14 @@ import java.io.FileReader;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
+
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -27,6 +31,8 @@ public class Comparator {
 
     private static final String FILENAME_CHIMERA_CONFIG_DEFAULT =
             "/opt/d-cache/config/chimera-config.xml";
+
+    private static final String LOG_PATTERN = "%-5level - %msg%n";
 
     private static int _errorCount = 0;
 
@@ -164,11 +170,27 @@ public class Comparator {
      * @param level the minimum priority level for output to be emitted to
      *            the console.
      */
-    private static void switchLogging( String name, Level level) {
-        Logger log = Logger.getLogger( name);
-        log.removeAllAppenders();
-        log.addAppender( new ConsoleAppender( new PatternLayout()));
-        log.setLevel( level);
+    private static void switchLogging( String name, Level level)
+    {
+        LoggerContext loggerContext =
+            (LoggerContext) LoggerFactory.getILoggerFactory();
+
+        ConsoleAppender<ILoggingEvent> ca =
+            new ConsoleAppender<ILoggingEvent>();
+        ca.setContext(loggerContext);
+        ca.setName(name);
+        PatternLayoutEncoder pl = new PatternLayoutEncoder();
+        pl.setContext(loggerContext);
+        pl.setPattern(LOG_PATTERN);
+        pl.start();
+
+        ca.setEncoder(pl);
+        ca.start();
+
+        Logger logger = loggerContext.getLogger(name);
+        logger.detachAndStopAllAppenders();
+        logger.addAppender(ca);
+        logger.setLevel(level);
     }
 
     /**

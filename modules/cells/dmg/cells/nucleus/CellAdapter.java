@@ -1,10 +1,14 @@
 package dmg.cells.nucleus;
 import dmg.cells.network.*;
 import dmg.util.*;
+import dmg.util.logback.FilterShell;
+import dmg.util.logback.FilterThresholds;
+import dmg.util.logback.RootFilterThresholds;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
 
+import org.slf4j.MDC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,9 +131,21 @@ public class   CellAdapter
             } else _log.warn("Illegal value for 'callback' option : "+async);
         }
         if (_args.getOpt("replyObject") != null)setCommandExceptionEnabled(true);
-        if (startNow)start();
 
-        addCommandListener(new Log4jShell());
+        /* Instantiate management component for log filtering.
+         */
+        CellNucleus parentNucleus =
+            CellNucleus.getLogTargetForCell(MDC.get(CDC.MDC_CELL));
+        FilterThresholds parentThresholds =
+            (parentNucleus.isSystemNucleus() || parentNucleus == _nucleus)
+            ? RootFilterThresholds.getInstance()
+            : parentNucleus.getLoggingThresholds();
+
+        FilterThresholds thresholds = new FilterThresholds(parentThresholds);
+        _nucleus.setLoggingThresholds(thresholds);
+        addCommandListener(new FilterShell(thresholds));
+
+        if (startNow)start();
     }
 
     /**

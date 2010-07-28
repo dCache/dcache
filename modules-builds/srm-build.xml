@@ -42,7 +42,7 @@
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
-        <fileset dir="${libDir}/log4j" includes="*.jar" />
+        <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
