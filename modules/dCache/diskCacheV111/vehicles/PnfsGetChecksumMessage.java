@@ -3,9 +3,7 @@
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.PnfsId ;
 
-//Base class for flag messages to PnfsManager
-
-
+@Deprecated
 public class PnfsGetChecksumMessage extends PnfsMessage {
    private String _value     = null ;
    private int    _type      = 0;

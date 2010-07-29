@@ -29,6 +29,7 @@ import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
+import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -41,6 +42,7 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.namespace.FileType;
 import org.dcache.acl.enums.AccessMask;
+import org.dcache.util.Checksum;
 
 import javax.security.auth.Subject;
 
@@ -546,14 +548,26 @@ public class PnfsHandler
     }
 
     /**
-     * Set file attributes. If <code>attr</code> is an empty array, file existence
-     * if checked.
+     * Set file attributes. If <code>attr</code> is an empty array,
+     * file existence if checked.
      *
      * @param pnfsid
      * @param attr array of requested attributes.
      * @return requested attributes
      */
-    public void setFileAttributes(PnfsId pnfsid, FileAttributes attr) throws CacheException {
+    public void setFileAttributes(PnfsId pnfsid, FileAttributes attr)
+        throws CacheException
+    {
         pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr));
+    }
+
+    public void setChecksum(PnfsId pnfsId, Checksum checksum)
+        throws CacheException
+    {
+        PnfsSetChecksumMessage message =
+            new PnfsSetChecksumMessage(pnfsId,
+                                       checksum.getType().getType(),
+                                       checksum.getValue());
+        pnfsRequest(message);
     }
 }

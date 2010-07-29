@@ -10,6 +10,7 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.namespace.FileAttribute;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -97,7 +98,7 @@ public class ChecksumModuleV1
 
         Checksum pnfsChecksum =
             (clientChecksum == null)
-            ? factory.createFromPersistentState(getCellEndpoint(), id)
+            ? factory.find(_pnfs.getFileAttributes(id, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums())
             : null;
         Checksum fileChecksum =
             (_onWrite || (_onTransfer && transferChecksum == null))
@@ -161,25 +162,14 @@ public class ChecksumModuleV1
         throws CacheException, NoRouteToCellException, InterruptedException
     {
         _log.info("Storing checksum " + checksum + " for " + pnfsId);
-       try {
-            ChecksumPersistence.getPersistenceMgr().store(getCellEndpoint(), pnfsId, checksum);
-        } catch (CacheException e) {
-            throw e;
-        } catch (NoRouteToCellException e) {
-            throw e;
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                    "Failed to set checksum: " + e.getMessage());
-        }
+        _pnfs.setChecksum(pnfsId, checksum);
     }
 
     public Checksum getChecksumFromPnfs(PnfsId pnfsId)
         throws CacheException
     {
         try {
-            return _defaultChecksumFactory.createFromPersistentState(getCellEndpoint(),pnfsId);
+            return _defaultChecksumFactory.find(_pnfs.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums());
         } catch (Exception e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                     "Failed to get checksum: " + e.getMessage());

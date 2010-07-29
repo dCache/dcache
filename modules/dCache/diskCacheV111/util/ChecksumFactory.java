@@ -17,44 +17,18 @@ import org.slf4j.LoggerFactory;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
-public abstract class ChecksumFactory {
-
-    private final static Logger _log = LoggerFactory.getLogger(ChecksumFactory.class);
-
+public abstract class ChecksumFactory
+{
     public abstract ChecksumType getType();
     public abstract MessageDigest create();
     public abstract Checksum  create(byte [] digest);
     public abstract Checksum  create(String stringDigest);
+    public abstract Checksum find(Set<Checksum> checksums);
 
-    // these 2 methods should be p_impled for the storeChecksum
-    public abstract Checksum  createFromPersistentState( CellEndpoint endpoint, PnfsId pnfsId );
-
-    public static ChecksumFactory getFactory(ChecksumType type)  throws NoSuchAlgorithmException {
+    public static ChecksumFactory getFactory(ChecksumType type)
+        throws NoSuchAlgorithmException
+    {
 	return new GenericIdChecksumFactory(type);
-    }
-
-    public static final String [] getTypes( CellEndpoint endpoint,PnfsId pnfsId ){
-       try {
-           int []intTypes = ChecksumPersistence.getPersistenceMgr().listChecksumTypes(endpoint,pnfsId);
-
-           if ( intTypes == null )
-              return null;
-
-           Vector<String> stringTypes = new Vector<String>(1);
-           for ( int i = 0; i < intTypes.length; ++i){
-               try {
-                   stringTypes.add(ChecksumType.getChecksumType(intTypes[i]).getName());
-               } catch (IllegalArgumentException e) {
-                   _log.warn("Unknown checksum type: " + intTypes[i]);
-               }
-           }
-           if ( stringTypes.size() > 0 ){
-              return stringTypes.toArray(new String[0]);
-           }
-
-       } catch ( Exception ex){ _log.error(ex.toString()); }
-
-       return null;
     }
 
     public static void main( String [] args ) throws Exception {
@@ -110,16 +84,13 @@ class GenericIdChecksumFactory extends ChecksumFactory
         return new Checksum(_type, digest);
     }
 
-    public Checksum createFromPersistentState(CellEndpoint endpoint, PnfsId pnfsId)
+    public Checksum find(Set<Checksum> checksums)
     {
-        try {
-           String checksumValue =
-               ChecksumPersistence.getPersistenceMgr().retrieve(endpoint,pnfsId,_type);
-           if ( checksumValue != null )
-              return create(checksumValue);
-        } catch ( Exception e){
-          _log.error(e.toString());
+        for (Checksum checksum: checksums) {
+            if (checksum.getType() == _type) {
+                return checksum;
+            }
         }
-	return null ;
+        return null;
     }
 }

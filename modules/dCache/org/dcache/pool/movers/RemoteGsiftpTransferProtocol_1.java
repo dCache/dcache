@@ -72,8 +72,11 @@ import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.CacheException;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
@@ -87,6 +90,10 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
@@ -112,6 +119,10 @@ public class RemoteGsiftpTransferProtocol_1
         org.slf4j.LoggerFactory.getLogger(RemoteGsiftpTransferProtocol_1.class);
     //timeout after 5 minutes if credentials not delegated
     private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
+
+    private final static CellPath PNFS_MANAGER =
+        new CellPath("PnfsManager");
+
     private final CellEndpoint _cell;
     private long _starttime;
     private long _timeout_time;
@@ -360,10 +371,15 @@ public class RemoteGsiftpTransferProtocol_1
         _log.debug("gridFTPWrite started");
 
         try {
-            String checksumTypes [] = ChecksumFactory.getTypes(_cell,_pnfsId);
-            if ( checksumTypes != null ){
-                _log.debug("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
-                _client.setChecksum(checksumTypes[0],null);
+            PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
+            FileAttributes attributes =
+                pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
+            Set<Checksum> checksums = attributes.getChecksums();
+
+            if (!checksums.isEmpty()){
+                Checksum checksum = checksums.iterator().next();
+                _log.debug("Will use " + checksum + " for transfer verification of "+_pnfsId);
+                _client.setChecksum(checksum.getType().getName(), null);
             } else {
                 _log.debug("PnfsId "+_pnfsId+" does not have checksums");
             }
@@ -572,7 +588,11 @@ public class RemoteGsiftpTransferProtocol_1
             throws IOException,NoSuchAlgorithmException
         {
             try {
-                Checksum pnfsChecksum = ChecksumFactory.getFactory(ChecksumType.getChecksumType(type)).createFromPersistentState(_cell, _pnfsId);
+                PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
+                FileAttributes attributes =
+                    pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
+                Checksum pnfsChecksum =
+                    ChecksumFactory.getFactory(ChecksumType.getChecksumType(type)).find(attributes.getChecksums());
                 if ( pnfsChecksum != null ){
                     String hexValue = pnfsChecksum.getValue();
                     _log.debug(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);

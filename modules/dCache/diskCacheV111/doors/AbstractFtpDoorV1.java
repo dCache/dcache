@@ -156,7 +156,6 @@ import diskCacheV111.util.VOInfo;
 import diskCacheV111.util.ProxyAdapter;
 import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.ActiveAdapter;
-import diskCacheV111.util.ChecksumPersistence;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsHandler;
 
@@ -2067,20 +2066,16 @@ public abstract class AbstractFtpDoorV1
         try {
             ChecksumFactory cf =
                 ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
-
-            try {
-                PnfsId pnfsId = _pnfs.getPnfsIdByPath(absolutePath(path));
-                Checksum checksum = cf.createFromPersistentState(this, pnfsId);
-                if (checksum == null) {
-                    throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
-                } else {
-                    reply("213 " + checksum.getValue());
-                }
-
-            } catch (CacheException ce) {
-                throw new FTPCommandException(550, "Error retrieving " + path
-                                              + ": " + ce.getMessage());
+            FileAttributes attributes =
+                _pnfs.getFileAttributes(absolutePath(path), EnumSet.of(CHECKSUM));
+            Checksum checksum = cf.find(attributes.getChecksums());
+            if (checksum == null) {
+                throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
             }
+            reply("213 " + checksum.getValue());
+        } catch (CacheException ce) {
+            throw new FTPCommandException(550, "Error retrieving " + path
+                                          + ": " + ce.getMessage());
         } catch (IllegalArgumentException e) {
             throw new FTPCommandException(504, "Unsupported checksum type:" + e);
         } catch (NoSuchAlgorithmException e) {
@@ -2817,14 +2812,7 @@ public abstract class AbstractFtpDoorV1
              */
             if (_checkSum != null) {
                 _transfer.state = "setting checksum in pnfs";
-
-                try{
-                    ChecksumPersistence.getPersistenceMgr().store(this, _transfer.pnfsId, _checkSum);
-                } catch (Exception e) {
-                    throw new FTPCommandException(451,
-                                                  "Failed to store checksum: "
-                                                  + e.getMessage());
-                }
+                _pnfs.setChecksum(_transfer.pnfsId, _checkSum);
             }
 
             _commandQueue.enableInterrupt();
