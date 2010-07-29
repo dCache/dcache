@@ -243,6 +243,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
         else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
             state = RECEIVED_DIRECTORY_INFO_MESSAGE;
             if(error instanceof PermissionDeniedCacheException) {
+                unregisterAndFailCreator(error.toString());
                 callbacks.AuthorizationError(error.toString());
                 return;
             }
