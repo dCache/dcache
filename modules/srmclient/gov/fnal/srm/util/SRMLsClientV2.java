@@ -170,7 +170,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                         if (RequestStatusTool.isFailedRequestStatus(rs)) {
                                 sb.append(statusText+'\n');
                         }
-                        if (requestToken==null) {
+                        if (!RequestStatusTool.isTransientStateStatus(rs)) {
                                 if(response.getDetails() == null){
                                         throw new IOException(sb.toString()+"srm ls response path details array is null!");
                                 }
@@ -182,13 +182,16 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                 }
                                 if (RequestStatusTool.isFailedRequestStatus(rs)){
                                         throw new IOException(sb.toString());
-                                }                                
+                                }
                                 System.out.println(sb.toString());
                         }
                         else {
+                                if (requestToken==null) {
+                                        throw new IOException("Request is queued on the server, however the server did not provide a request token.");
+                                }
                                 if (RequestStatusTool.isFailedRequestStatus(rs)){
                                         throw new IOException(sb.toString());
-                                }                                
+                                }
                                 // we assume this is asynchronous call
                                 SrmStatusOfLsRequestRequest statusRequest = new SrmStatusOfLsRequestRequest();
                                 statusRequest.setRequestToken(requestToken);
@@ -227,7 +230,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                 statusText="Return status:\n" +
                                                         " - Status code:  " +
                                                         status.getStatusCode().getValue() + '\n' +
-                                                        " - Explanation:  " + status.getExplanation() + '\n' + 
+                                                        " - Explanation:  " + status.getExplanation() + '\n' +
                                                         " - request token: " +requestToken;
                                                 logger.log(statusText);
                                                 if (RequestStatusTool.isFailedRequestStatus(status)){
@@ -352,7 +355,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                                 sb.append("none found");
                                                         }
                                                         sb.append('\n');
-                                                        TFileStorageType stortype= metaDataPathDetail.getFileStorageType();			
+                                                        TFileStorageType stortype= metaDataPathDetail.getFileStorageType();
                                                         if(stortype != null) {
                                                                 sb.append(depthPrefix);
                                                                 sb.append(" storage type:").append(stortype.getValue());
