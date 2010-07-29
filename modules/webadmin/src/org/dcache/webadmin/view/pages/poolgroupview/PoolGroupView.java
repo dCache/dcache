@@ -1,8 +1,6 @@
 package org.dcache.webadmin.view.pages.poolgroupview;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -17,11 +15,12 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
+import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
-import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
 import org.dcache.webadmin.view.panels.poolQueuesPanel.PoolQueuesPanel;
@@ -47,6 +46,9 @@ public class PoolGroupView extends BasePage implements AuthenticatedWebPage {
     private PoolQueuesPanel _poolQueuesPanel = new PoolQueuesPanel(
             "specialPoolGroupPanel", new PropertyModel<PoolGroupBean>(
             this, "_currentPoolGroup"));
+    private CellServicesPanel _cellServicesPanel = new CellServicesPanel(
+            "specialPoolGroupPanel", new PropertyModel<List<CellServicesBean>>(
+            this, "_currentPoolGroup._cellStatuses"));
     private static final Logger _log = LoggerFactory.getLogger(PoolGroupView.class);
 
     public PoolGroupView() {
@@ -131,7 +133,7 @@ public class PoolGroupView extends BasePage implements AuthenticatedWebPage {
 
         public NavigationFragment(String id) {
             super(id, "navigationFragment", PoolGroupView.this);
-            _link1 = addLink("cellViewLink", "cellViewMessage", EMPTY_PANEL);
+            _link1 = addLink("cellViewLink", "cellViewMessage", _cellServicesPanel);
             _link2 = addLink("spaceUsageLink", "spaceUsageMessage", _poolListPanel);
             _link3 = addLink("moverViewLink", "moverViewMessage", _poolQueuesPanel);
         }

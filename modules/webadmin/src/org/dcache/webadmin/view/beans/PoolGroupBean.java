@@ -15,6 +15,7 @@ public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
      */
     private PoolSpaceBean _poolGroupSpace = new PoolSpaceBean();
     private PoolQueueBean _totalMovers = new PoolQueueBean();
+    private List<CellServicesBean> _cellStatuses;
     private List<PoolSpaceBean> _poolSpaces;
     private List<PoolQueueBean> _poolQueues;
     private List<String> _allPoolQueueNames = new ArrayList<String>();
@@ -108,6 +109,14 @@ public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
 
     public float getPercentageUsed() {
         return _poolGroupSpace.getPercentageUsed();
+    }
+
+    public List<CellServicesBean> getCellStatuses() {
+        return _cellStatuses;
+    }
+
+    public void setCellStatuses(List<CellServicesBean> cellStatuses) {
+        _cellStatuses = cellStatuses;
     }
 
     public List<PoolSpaceBean> getPoolSpaces() {
