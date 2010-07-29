@@ -79,6 +79,8 @@ public class BasicNameSpaceProvider
     private final AccessLatency _defaultAccessLatency;
     private final RetentionPolicy _defaultRetentionPolicy;
 
+    private final boolean _inheritFileOwnership;
+
     private final static long FILE_SIZE_2GB = 0x7FFFFFFFL;
 
     private final static String ACCESS_LATENCY_FLAG = "al";
@@ -119,6 +121,9 @@ public class BasicNameSpaceProvider
         }else{
             _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
         }
+
+        _inheritFileOwnership =
+            Boolean.valueOf(args.getOpt("inheritFileOwnership"));
 
         //
         // get the extractor
@@ -361,7 +366,7 @@ public class BasicNameSpaceProvider
             throw new IllegalArgumentException( "Not a pnfs file system");
         }
 
-        if (!Subjects.isNobody(subject)) {
+        if (!Subjects.isNobody(subject) && !_inheritFileOwnership) {
             if (uid == DEFAULT) {
                 uid = (int) Subjects.getUid(subject);
             }

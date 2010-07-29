@@ -70,6 +70,8 @@ public class ChimeraNameSpaceProvider
     private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
     private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
 
+    private final boolean _inheritFileOwnership;
+
     public ChimeraNameSpaceProvider( Args args, CellNucleus nucleus) throws Exception {
 
 	    XMLconfig config = new XMLconfig( new File( args.getOpt("chimeraConfig") ) );
@@ -95,6 +97,9 @@ public class ChimeraNameSpaceProvider
             }else{
                 _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
             }
+
+            _inheritFileOwnership =
+                Boolean.valueOf(args.getOpt("inheritFileOwnership"));
 
         Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         Constructor<ChimeraStorageInfoExtractable>  extractorInit =
@@ -167,7 +172,7 @@ public class ChimeraNameSpaceProvider
             FsInode parent = _fs.path2inode(newEntryFile.getParent());
 
             if (uid == DEFAULT) {
-                if (Subjects.isNobody(subject)) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
                     uid = parent.statCache().getUid();
                 } else {
                     uid = (int) Subjects.getUid(subject);
@@ -175,7 +180,7 @@ public class ChimeraNameSpaceProvider
             }
 
             if (gid == DEFAULT) {
-                if (Subjects.isNobody(subject)) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
                     gid = parent.statCache().getGid();
                 } else {
                     gid = (int) Subjects.getPrimaryGid(subject);
