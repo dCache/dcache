@@ -37,6 +37,7 @@ set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
 set context -c pnfsFolding       false
+set context -c pnfsInheritFileOwnership false
 
 set env -c locationThreads 0
 
@@ -96,4 +97,5 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -delete-registration-jdbcDrv=org.postgresql.Driver \
         -delete-registration-dbUser=${pnfsDeleteRegistrationDbUser} \
         -delete-registration-dbPass=${pnfsDeleteRegistrationDbPass} \
+        -inheritFileOwnership=${pnfsInheritFileOwnership} \
        "
