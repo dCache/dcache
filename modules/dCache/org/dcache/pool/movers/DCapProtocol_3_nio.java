@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
+import java.security.MessageDigest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,8 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import diskCacheV111.util.ChecksumFactory;
 import java.util.UUID;
 import org.dcache.util.NetworkUtils;
@@ -62,7 +64,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     private boolean _wasChanged      = false;
 
     private  Checksum  _clientChecksum        = null;
-    private  Checksum  _transferChecksum      = null;
+    private ChecksumFactory _checksumFactory;
+    private MessageDigest _digest;
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(256 * 1024, 256 * 1024, 256 * 1024);
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(1024 * 1024, 1024 * 1024, 1024 * 1024);
@@ -277,7 +280,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             return defaultValue;
         }
     }
-    
+
     @Override
     public String toString(){
         return "SM="+_spaceMonitorHandler+";S="+_status;
@@ -504,7 +507,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 case DCapConstants.IOCMD_READ :
                     //
                     //
-                    _transferChecksum= null;
+                    _digest = null;
 
                     long blockSize = requestBlock.nextLong();
 
@@ -542,7 +545,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     //
                 case DCapConstants.IOCMD_SEEK :
 
-                    _transferChecksum = null;
+                    _digest = null;
 
                     long offset = requestBlock.nextLong();
                     int  whence = requestBlock.nextInt();
@@ -571,7 +574,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     //
                 case DCapConstants.IOCMD_SEEK_AND_READ :
 
-                    _transferChecksum = null;
+                    _digest = null;
 
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
@@ -610,7 +613,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     //
                 case DCapConstants.IOCMD_SEEK_AND_WRITE :
 
-                    _transferChecksum = null;
+                    _digest = null;
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
 
@@ -869,7 +872,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         requestBlock.get(array);
 
-        _clientChecksum = new Checksum(crcType, array);
+        _clientChecksum =
+            new Checksum(ChecksumType.getChecksumType(crcType), array);
         storage.setKey("flag-c",_clientChecksum.toString());
 
         return;
@@ -1031,9 +1035,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     }
     private void updateChecksum(ByteBuffer buffer){
-        if(_transferChecksum == null)return;
-        buffer.rewind();
-        _transferChecksum.getMessageDigest().update(buffer);
+        if (_digest != null) {
+            buffer.rewind();
+            _digest.update(buffer);
+        }
     }
 
     private void doTheRead(FileChannel           fileChannel,
@@ -1115,14 +1120,16 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo) { return null; }
 
-    public void  setDigest(Checksum checksum){
-        _transferChecksum      =  checksum;
+    @Override
+    public void setDigest(ChecksumFactory factory){
+        _checksumFactory = factory;
+        _digest = factory.create();
     }
     public Checksum getClientChecksum(){
         return  _clientChecksum ;
     }
     public Checksum getTransferChecksum(){
-        return _transferChecksum;
+        return (_digest == null) ? null : _checksumFactory.create(_digest.digest());
     }
 
 }

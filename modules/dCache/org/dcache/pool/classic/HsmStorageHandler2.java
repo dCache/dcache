@@ -48,7 +48,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RunSystem;
 import diskCacheV111.util.SimpleJobScheduler;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
@@ -660,7 +660,7 @@ public class HsmStorageHandler2
 
                 fileChecksum =
                     _checksumModule.calculateFileChecksum(handle.getFile(),
-                                                          _checksumModule.getDefaultChecksum());
+                                                          _checksumModule.getDefaultChecksumFactory());
 
                 _log.debug("Checksum for " + pnfsId + " info=" + infoChecksum
                            + ";file=" + fileChecksum + " in "
@@ -700,7 +700,7 @@ public class HsmStorageHandler2
                         }
                         file.delete();
                     }
-                    return new Checksum(line);
+                    return Checksum.parseChecksum(line);
                 }
             } catch (FileNotFoundException e) {
                 /* Should not happen unless somebody else is removing

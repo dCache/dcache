@@ -14,7 +14,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
@@ -345,8 +345,7 @@ public class MigrationModuleServer
                         ChecksumFactory factory =
                             _checksumModule.getDefaultChecksumFactory();
                         Checksum checksum =
-                            _checksumModule.calculateFileChecksum(file,
-                                                                  factory.create());
+                            _checksumModule.calculateFileChecksum(file, factory);
                         _checksumModule.setMoverChecksums(_pnfsId,
                                                           file,
                                                           factory,

@@ -158,7 +158,6 @@ import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.ActiveAdapter;
 import diskCacheV111.util.ChecksumPersistence;
 import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.namespace.FileType;
@@ -185,6 +184,8 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
@@ -335,8 +336,8 @@ public abstract class AbstractFtpDoorV1
     private static final String buildChecksumList(){
         String result = "";
         int mod = 0;
-        for (String type : ChecksumFactory.getTypes()) {
-            result += type + ",";
+        for (ChecksumType type: ChecksumType.values()) {
+            result += type.getName() + ",";
             mod = 1;
         }
 
@@ -1577,11 +1578,14 @@ public abstract class AbstractFtpDoorV1
 
         try {
             if (!algo.equalsIgnoreCase("NONE")) {
-                _optCheckSumFactory = ChecksumFactory.getFactory(algo);
+                _optCheckSumFactory =
+                    ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
             } else {
                 _optCheckSumFactory = null;
             }
             reply("200 OK");
+        } catch (IllegalArgumentException e) {
+            reply("504 Unsupported checksum type: " + algo);
         } catch (NoSuchAlgorithmException e) {
             reply("504 Unsupported checksum type: " + algo);
         }
@@ -2061,7 +2065,8 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(504, "Unsupported checksum over partial file offset");
 
         try {
-            ChecksumFactory cf = ChecksumFactory.getFactory(algo);
+            ChecksumFactory cf =
+                ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
 
             try {
                 PnfsId pnfsId = _pnfs.getPnfsIdByPath(absolutePath(path));
@@ -2069,15 +2074,17 @@ public abstract class AbstractFtpDoorV1
                 if (checksum == null) {
                     throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
                 } else {
-                    reply("213 "+Checksum.toHexString(checksum.getDigest()));
+                    reply("213 " + checksum.getValue());
                 }
 
             } catch (CacheException ce) {
                 throw new FTPCommandException(550, "Error retrieving " + path
                                               + ": " + ce.getMessage());
             }
-        } catch (java.security.NoSuchAlgorithmException ex) {
-            throw new FTPCommandException(504, "Unsupported checksum type:" + ex);
+        } catch (IllegalArgumentException e) {
+            throw new FTPCommandException(504, "Unsupported checksum type:" + e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new FTPCommandException(504, "Unsupported checksum type:" + e);
         }
     }
 
@@ -2095,10 +2102,15 @@ public abstract class AbstractFtpDoorV1
     public void doCheckSum(String type, String value)
     {
         try {
-            _checkSumFactory = ChecksumFactory.getFactory(type);
+            _checkSumFactory =
+                ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
             _checkSum = _checkSumFactory.create(value);
             reply("213 OK");
         } catch (NoSuchAlgorithmException e) {
+            _checkSumFactory = null;
+            _checkSum = null;
+            reply("504 Unsupported checksum type:" + type);
+        } catch (IllegalArgumentException e) {
             _checkSumFactory = null;
             _checkSum = null;
             reply("504 Unsupported checksum type:" + type);
@@ -3061,10 +3073,10 @@ public abstract class AbstractFtpDoorV1
         protocolInfo.setMode(xferMode);
 
         if ( _optCheckSumFactory != null )
-            protocolInfo.setChecksumType(_optCheckSumFactory.getType());
+            protocolInfo.setChecksumType(_optCheckSumFactory.getType().getName());
 
         if ( _checkSumFactory != null )
-            protocolInfo.setChecksumType(_checkSumFactory.getType());
+            protocolInfo.setChecksumType(_checkSumFactory.getType().getName());
 
         /* Ask the pool to transfer the file.
          */

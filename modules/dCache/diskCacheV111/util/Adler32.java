@@ -12,6 +12,9 @@ package diskCacheV111.util;
 
 import java.io.* ;
 import java.util.zip.* ;
+
+import org.dcache.util.Checksum;
+
 /**
  *
  * @author  Patrick Fuhrmann
@@ -118,7 +121,7 @@ public class Adler32
        started = System.currentTimeMillis() - started ;
        in.close() ;
        byte [] digest = adler.digest() ;
-       System.out.println("Adler : ("+sum+") "+Checksum.toHexString(digest) ) ;
+       System.out.println("Adler : ("+sum+") "+Checksum.bytesToHexString(digest) ) ;
        System.out.println("Done in "+started+" milli seconds" ) ;
        System.exit(0);
    }

@@ -29,7 +29,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import diskCacheV111.util.Adler32;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
@@ -435,12 +436,17 @@ class Companion
             dataFile.close();
         }
 
+        Checksum checksum = null;
+        if (digest != null) {
+            checksum = new Checksum(ChecksumType.ADLER32, digest.digest());
+        }
+
         _checksumModule
             .setMoverChecksums(_pnfsId,
                                file,
                                _checksumModule.getDefaultChecksumFactory(),
                                null,
-                               digest != null ? new Checksum(digest) : null);
+                               checksum);
     }
 
     //

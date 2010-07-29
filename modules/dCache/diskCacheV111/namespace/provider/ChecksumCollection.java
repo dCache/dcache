@@ -4,7 +4,6 @@ import java.util.StringTokenizer;
 import diskCacheV111.util.CacheException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.*;
 
@@ -112,17 +111,17 @@ public class ChecksumCollection {
 
    private static int typeStoN(String typeName) throws CacheException {
       try {
-       return ChecksumFactory.mapStringTypeToId(typeName);
-      } catch ( NoSuchAlgorithmException ex ){
-        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum type is not supported:"+typeName);
+          return ChecksumType.getChecksumType(typeName).getType();
+      } catch (IllegalArgumentException ex) {
+        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum type is not supported: " + typeName);
       }
    }
 
    private static String typeNtoS(int type) {
       try {
-       return ChecksumFactory.mapIdTypeToString(type);
-      } catch ( NoSuchAlgorithmException ex ){
-        throw new IllegalArgumentException("Checksum type is not supported:"+Integer.toString(type));
+          return ChecksumType.getChecksumType(type).getName();
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("Checksum type is not supported: " + type);
       }
    }
 

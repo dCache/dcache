@@ -1,7 +1,7 @@
 package org.dcache.pool.repository;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
 

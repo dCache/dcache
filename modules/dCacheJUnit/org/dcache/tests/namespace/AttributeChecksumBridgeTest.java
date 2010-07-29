@@ -2,7 +2,8 @@ package org.dcache.tests.namespace;
 
 import diskCacheV111.namespace.AbstractNameSpaceProvider;
 import diskCacheV111.namespace.provider.AttributeChecksumBridge;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import diskCacheV111.util.PnfsId;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,24 +25,24 @@ public class AttributeChecksumBridgeTest {
     public void testSetGetRemoveMD5() throws Exception {
         String sum = "CAFE";
 
-        _mgr.setChecksum(null, null, sum, Checksum.MD5);
+        _mgr.setChecksum(null, null, sum, ChecksumType.MD5_TYPE.getType());
 
-        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null, null, Checksum.MD5));
+        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null, null, ChecksumType.MD5_TYPE.getType()));
 
-        _mgr.removeChecksum(null,null,Checksum.MD5);
-        assertNull("checksum not removed", _mgr.getChecksum(null, null, Checksum.MD5) );
+        _mgr.removeChecksum(null,null,ChecksumType.MD5_TYPE.getType());
+        assertNull("checksum not removed", _mgr.getChecksum(null, null, ChecksumType.MD5_TYPE.getType()) );
     }
 
     @Test
     public void testSetGetRemoveAdler32() throws Exception {
         String sum = "CAFE";
 
-        _mgr.setChecksum(null, null, sum, Checksum.ADLER32);
+        _mgr.setChecksum(null, null, sum, ChecksumType.ADLER32.getType());
 
-        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null,null, Checksum.ADLER32));
+        assertEquals("check sum mismatch", sum, _mgr.getChecksum(null,null, ChecksumType.ADLER32.getType()));
 
-        _mgr.removeChecksum(null,null,Checksum.ADLER32);
-        assertNull("checksum not removed", _mgr.getChecksum(null,null, Checksum.ADLER32) );
+        _mgr.removeChecksum(null,null,ChecksumType.ADLER32.getType());
+        assertNull("checksum not removed", _mgr.getChecksum(null,null, ChecksumType.ADLER32.getType()) );
     }
 
     @Test
@@ -49,12 +50,12 @@ public class AttributeChecksumBridgeTest {
         String md5Sum = "CAFE";
         String adlerSum = "BEEF";
 
-        _mgr.setChecksum(null, null, adlerSum, Checksum.ADLER32);
-        _mgr.setChecksum(null, null, md5Sum, Checksum.MD5);
+        _mgr.setChecksum(null, null, adlerSum, ChecksumType.ADLER32.getType());
+        _mgr.setChecksum(null, null, md5Sum, ChecksumType.MD5_TYPE.getType());
 
         assertEquals("Incorrect number of stored checksums", 2, _mgr.getChecksums(null, null).size() );
-        assertEquals("check sum mismatch", adlerSum, _mgr.getChecksum(null, null, Checksum.ADLER32));
-        assertEquals("check sum mismatch", md5Sum, _mgr.getChecksum(null, null, Checksum.MD5));
+        assertEquals("check sum mismatch", adlerSum, _mgr.getChecksum(null, null, ChecksumType.ADLER32.getType()));
+        assertEquals("check sum mismatch", md5Sum, _mgr.getChecksum(null, null, ChecksumType.MD5_TYPE.getType()));
     }
 
     class MyFakeNameSpaceProvider extends AbstractNameSpaceProvider

@@ -22,7 +22,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.StorageInfo;

@@ -32,9 +32,12 @@ import  java.security.NoSuchAlgorithmException ;
 
 import java.io.RandomAccessFile;
 
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+
 public abstract class ChecksumPersistence {
-  public abstract void store(CellEndpoint endpoint,PnfsId pnfsId, diskCacheV111.util.Checksum value) throws Exception;
-  public abstract String retrieve(CellEndpoint endpoint, PnfsId pnfsId,int type) throws Exception ;
+  public abstract void store(CellEndpoint endpoint,PnfsId pnfsId, Checksum value) throws Exception;
+  public abstract String retrieve(CellEndpoint endpoint, PnfsId pnfsId,ChecksumType type) throws Exception ;
   public abstract int[] listChecksumTypes(CellEndpoint endpoint, PnfsId pnfsId) throws Exception;
 
   public static ChecksumPersistence getPersistenceMgr(){
@@ -42,60 +45,21 @@ public abstract class ChecksumPersistence {
   }
 }
 
-// not really exception safe
-class ChecksumPersistenceImpl extends ChecksumPersistence {
-
-  private static final String basePath = System.getProperty("CHECKSUM_DB","/tmp");
-
-  private String getdbFileName(PnfsId pnfsId,int type){
-     return basePath+"/"+pnfsId.toString()+"_"+Integer.toString(type);
-  }
-
-  public void store(CellEndpoint endpoint, PnfsId pnfsId, diskCacheV111.util.Checksum value) throws Exception {
-
-    RandomAccessFile raf = new RandomAccessFile(getdbFileName(pnfsId,value.getType()),"rw");
-    raf.write(value.toHexString().getBytes());
-    raf.close();
-
-  }
-
-  public String retrieve(CellEndpoint endpoint, PnfsId pnfsId,int type) throws Exception
-  {
-     String fileNamePath = getdbFileName(pnfsId,type);
-     RandomAccessFile raf = new RandomAccessFile(fileNamePath,"r");
-
-     long numRead = raf.length();
-
-     byte [] digest = new byte[(int)numRead];
-
-
-     numRead = raf.read(digest);
-
-     raf.close();
-
-     if ( numRead <= 0 )
-        throw new Exception("Checksum value for "+fileNamePath);
-
-     return new String(digest);
-  }
-  public int[] listChecksumTypes(CellEndpoint endpoint, PnfsId pnfsId) throws Exception { return null; }
-}
-
 class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
 
-  public void store(CellEndpoint endpoint, PnfsId pnfsId, diskCacheV111.util.Checksum value) throws Exception {
+  public void store(CellEndpoint endpoint, PnfsId pnfsId, Checksum value) throws Exception {
          PnfsSetChecksumMessage flag =
-            new PnfsSetChecksumMessage(pnfsId, value.getType(), value.toHexString() ) ;
+             new PnfsSetChecksumMessage(pnfsId, value.getType().getType(), value.getValue() ) ;
          flag.setReplyRequired(true);
 
          endpoint.sendAndWait(new CellMessage(new CellPath("PnfsManager"),
                                               flag), 60000L);
   }
 
-  public String retrieve(CellEndpoint endpoint, PnfsId pnfsId,int type) throws Exception
+  public String retrieve(CellEndpoint endpoint, PnfsId pnfsId, ChecksumType type) throws Exception
   {
             PnfsGetChecksumMessage flag =
-                new PnfsGetChecksumMessage(pnfsId,type) ;
+                new PnfsGetChecksumMessage(pnfsId,type.getType()) ;
             flag.setReplyRequired(true) ;
             CellMessage msg = new CellMessage( new CellPath("PnfsManager") , flag ) ;
             msg = endpoint.sendAndWait( msg , 60000L );

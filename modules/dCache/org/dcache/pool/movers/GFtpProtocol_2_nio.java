@@ -21,7 +21,8 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.GFtpTransferStartedMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import java.security.NoSuchAlgorithmException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsId;
@@ -84,10 +85,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected BlockLog     _blockLog;
 
     /**
-     * If a checksum is requested, this points to the checksum object
-     * used for computing the checksum.
+     * If a checksum is requested, this points to the checksum factory
+     * to use.
      */
-    protected Checksum     _checksum;
+    protected ChecksumFactory _checksumFactory;
+
+    /**
+     * If a checksum is requested, this points to the algorithm used.
+     */
+    protected MessageDigest _digest;
 
     /**
      * The role of this transfer in the transaction. Either Sender or
@@ -250,14 +256,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     protected DigestThread createDigestThread()
     {
-        if (_checksum == null) {
+        if (_digest == null) {
             return null;
         } else if (_mappedDigest) {
-            return new MappedDigestThread(_fileChannel, _blockLog,
-                                          _checksum.getMessageDigest());
+            return new MappedDigestThread(_fileChannel, _blockLog, _digest);
         } else {
-            return new DirectDigestThread(_fileChannel, _blockLog,
-                                          _checksum.getMessageDigest());
+            return new DirectDigestThread(_fileChannel, _blockLog, _digest);
         }
     }
 
@@ -643,9 +647,11 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the ChecksumMover interface. */
-    public void setDigest(Checksum checksum)
+    @Override
+    public void setDigest(ChecksumFactory factory)
     {
-	_checksum = checksum;
+        _digest = factory.create();
+	_checksumFactory = factory;
     }
 
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
@@ -657,7 +663,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 return null;
 
             try {
-                return ChecksumFactory.getFactory(type);
+                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
             } catch (NoSuchAlgorithmException e) {
                 esay("CRC Algorithm is not supported: " + type);
             }
@@ -675,7 +681,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /** Part of the ChecksumMover interface. */
     public Checksum getTransferChecksum()
     {
-	return _checksum;
+	return (_checksumFactory == null) ? null : _checksumFactory.create(_digest.digest());
     }
 
     /** Part of the ConnectionMonitor interface. */
@@ -832,7 +838,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             mode.setPartialRetrieveParameters(offset, size);
 
 	    if (digest.length() > 0) {
-		mover.setDigest(new Checksum(MessageDigest.getInstance(digest)));
+		mover.setDigest(ChecksumFactory.getFactory(ChecksumType.getChecksumType(digest)));
 	    }
 
             mover.setVerboseLogging(verbose);
