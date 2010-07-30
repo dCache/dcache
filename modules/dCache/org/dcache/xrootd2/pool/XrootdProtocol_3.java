@@ -1,24 +1,29 @@
 package org.dcache.xrootd2.pool;
 
 import java.io.RandomAccessFile;
+
+
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.net.SocketException;
-import java.util.List;
-import java.util.Queue;
-import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
@@ -29,7 +34,6 @@ import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
-import org.dcache.util.PortRange;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
@@ -37,13 +41,11 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
 
-import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 import org.dcache.xrootd2.core.XrootdEncoder;
 import org.dcache.xrootd2.core.XrootdDecoder;
 import org.dcache.xrootd2.core.XrootdHandshakeHandler;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.*;
-import org.dcache.xrootd2.core.XrootdRequestHandler;
 import org.dcache.xrootd2.util.FileStatus;
 
 import static org.jboss.netty.channel.Channels.*;
@@ -52,11 +54,6 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
@@ -67,45 +64,43 @@ import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.PortRange;
 
 
 /**
- * Netty based XROOTD data server disguised as a dCache mover.
+ * xrootd mover.
  *
- * All mover instances use a shared Netty ChannelFactory and shared
- * thread pools. We add a ServerChannel per mover. The ServerChannel
- * listens on a previously unused port. This is the port send back to
- * the door. Upon the first connect on this port, a HangupHandler will
- * close the ServerChannel to prevent further connects on the same
- * port.
+ * The xrootd mover contains a static method for constructing a netty server
+ * that will listen for incoming connections on the xrootd port. The purpose
+ * of the server is to relay xrootd requests on the pool to the right mover.
+ * The first mover that is started by the door will start the netty server
+ * that is handling the pool requests; if there are no client connections to
+ * the server left and no mover is still active, the server is shut down again,
+ * thus unblocking the port.
  *
- * The mover instance doubles as an XrootdRequestHandler and is part
- * of the ChannelPipeline for the client Channel. It handles all
- * Xrootd requests from the client. This part of the mover is single
- * threaded and we use an OrderedMemoryAwareThreadPoolExecutor to
- * ensure that Xrootd messages are processed in order. Xrootd request
- * processing may block on disk IO or on space allocation.
+ * The mover responsible for a client connection is selected based on an opaque
+ * UUID included by the client in redirect from the door.
+ *
+ * Once the mover is invoked, it will wait (on a count down latch)
+ * for incoming requests from the started netty server. If the no open
+ * operation is performed within CONNECT_TIMEOUT, the thread will be killed
+ * by a TimeoutCacheException.
  *
  * The mover thread (the thread calling runIO) is inactive during the
- * transfer. It blocks on a latch opened by the HangupHandler once the
- * client channel closes.
+ * transfer. The close operation will count down the latch on which it waits
+ * and terminate the mover. The mover thread will return and dCache will close
+ * the RandomAccessFile and the Allocator. Closing those will cause any
+ * threads stuck in IO or space allocation to break out.
  *
- * There are essentially two ways a mover can shut down.
+ * If the mover is killed, then the intertransfer-timeout will eventually
+ * unblock the latch, which will remove the mover from the map
+ * (the intertransfer-timeout-handler is served from a different thread pool
+ * than the normal mover). The netty handler will return an error to the
+ * client during the next operation and the client will disconnect, which will
+ * shut down the server, once there are no active client connections left.
  *
- * * If the client disconnects, then the HangupHandler will open the
- *   latch and the mover thread will wake up. The HangupHandler is not
- *   served by the same thread pool and the Xrootd requests. Hence the
- *   HangupHandler is served even if the XrootdRequestHandler is
- *   blocked on IO or space allocation. The mover thread will return
- *   and dCache will close the RandomAccessFile and the
- *   Allocator. Closing those will cause any threads stuck in IO or
- *   space allocation to break out.
- *
- * * If the mover is killed, then the mover thread will close the
- *   ServerChannel and the client channel. dCache will close the
- *   RandomAccessFile and the Allocator causing any blocked threads to
- *   break out.
- *
+ * A transfer is considered to have succeeded if at least one file was
+ * opened and all opened files were closed again.
  *
  * Open issues:
  *
@@ -113,20 +108,6 @@ import org.dcache.util.NetworkUtils;
  *   calls. This is because both are served by the same thread
  *   pool. This should be changed such that separate thread pools are
  *   used (may fix later).
- *
- * * We use a port per connection; ideally the door would provide the
- *   client with a token which the client then has to present to the
- *   pool. The pool could then use that to match the request to the
- *   door. This is supported by the Xrootd protoocol, however the
- *   xrdcp client contains a bug in the code for parsing the
- *   token. Hence we cannot rely on it at the moment. Instead we may
- *   use the open request itself to match the request to the
- *   door. This would work as the door doesn't maintain state after it
- *   has started the mover (fix later).
- *
- * * Due to the one-port-connection design, the Channel open and close
- *   logic is messy and hard to follow. Will be resolved when we move
- *   away from this design (fix later).
  *
  * * Write messages are currently processed as one big message. If the
  *   client chooses to upload a huge file as a single write message,
@@ -143,22 +124,28 @@ import org.dcache.util.NetworkUtils;
  * * At least for vector read, the behaviour when reading beyond the
  *   end of the file is wrong.
  */
-@ChannelPipelineCoverage("one")
+
 public class XrootdProtocol_3
-    extends XrootdRequestHandler
     implements MoverProtocol
 {
     private static final int DEFAULT_DISK_THREAD_POOL_SIZE = 20;
     private static final int DEFAULT_SOCKET_THREAD_POOL_SIZE = 5;
     private static final int DEFAULT_PER_CHANNEL_LIMIT = 16 * (1 << 20);
     private static final int DEFAULT_TOTAL_LIMIT = 64 * (1 << 20);
+    private static final int DEFAULT_FILESTATUS_ID = 0;
+    private static final int DEFAULT_FILESTATUS_FLAGS = 0;
+    private static final int DEFAULT_FILESTATUS_MODTIME = 0;
+
     private static final int[] DEFAULT_PORTRANGE = { 20000, 25000 };
 
     /**
-     * Timeout in milliseconds for establishing a connection with the
-     * client. When an xrootd client is redirected to a pool, we
-     * expect the client to connect to the pool within this amount of
-     * time.
+     * If the client connection dies without closing the file, we will have
+     * a dangling mover. The pool request handler will notice that a client
+     * connection is gone (channelClosed), but will not know which mover to
+     * kill. Therefore a thread should check in regular intervals whether a
+     * transfer happened within a certain time interval and if not, shut down
+     * the mover. We can conveniently use the _lastTransferred property for
+     * that.
      */
     private static final long CONNECT_TIMEOUT = 300000; // 5 min
 
@@ -168,17 +155,18 @@ public class XrootdProtocol_3
      */
     private static final long SPACE_INC = 50 * (1 << 20);
 
-    private static final Logger _log = LoggerFactory.getLogger(XrootdProtocol_3.class);
-
-    private static final Logger _logSpaceAllocation =
-        LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
-                         XrootdProtocol_3.class.getName());
+    private static final Logger _log =
+        LoggerFactory.getLogger(XrootdProtocol_3.class);
 
     /**
      * Maximum frame size of a read or readv reply. Does not include
      * the size of the frame header.
      */
     private static int _maxFrameSize = 2 << 20;
+
+    private static final Logger _logSpaceAllocation =
+        LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+                         XrootdProtocol_3.class.getName());
 
     /**
      * Shared thread pool accepting TCP connections.
@@ -201,35 +189,25 @@ public class XrootdProtocol_3
     private static ChannelFactory _channelFactory;
 
     /**
+     * Shared Netty server channel
+     */
+    private static Channel _serverChannel;
+
+    /**
+     * mapping from tokens (opaque information) to movers
+     */
+    private static final Map<UUID, XrootdProtocol_3> _moversPerToken =
+        new ConcurrentHashMap<UUID, XrootdProtocol_3>();
+
+    /**
      * Communication endpoint.
      */
     private final CellEndpoint _endpoint;
 
     /**
-     * Queue of read requests.
-     */
-    private final Queue<Reader> _readers = new ArrayDeque();
-
-    /**
-     * Files opened by the client.
-     */
-    private final List<FileDescriptor> _descriptors = new ArrayList();
-
-    /**
      * Used to signal when the client TCP connection has been closed.
      */
     private final CountDownLatch _closeLatch = new CountDownLatch(1);
-
-    /**
-     * Hangup handler signals closure of the client connection.
-     */
-    private final HangupHandler _hangupHandler = new HangupHandler(_closeLatch);
-
-    /**
-     * Next response message used during read operations. Provides a
-     * simplistic read-ahead buffer.
-     */
-    private AbstractResponseMessage _block;
 
     /**
      * The file served by this mover.
@@ -259,6 +237,13 @@ public class XrootdProtocol_3
     private volatile boolean _inProgress = false;
 
     /**
+     * Tells the mover that a descriptor was actually opened upon termination.
+     * This field is only ever updated from a single thread, but may be read
+     * from multiple threads.
+     */
+    private volatile boolean _hasOpenedDescriptor = false;
+
+    /**
      * True if the transfer any data. The field is only ever updated
      * from a single thread, but may be read from multiple threads.
      */
@@ -272,24 +257,29 @@ public class XrootdProtocol_3
     private volatile long _transferStarted;
 
     /**
-     * Timestamp of when the last block was transferred. The field is
-     * only ever updated from a single thread, but may be read from
-     * multiple threads.
+     * Timestamp of when the last block was transferred - also updated by
+     * any thread invoking the callback.
      */
-    private volatile long _lastTransferred;
+    private AtomicLong _lastTransferred = new AtomicLong();
 
     /**
-     * The number of bytes transferred. The field is only ever updated
-     * from a single thread, but may be read from multiple threads.
+     * The number of bytes transferred - also updated by any thread invoking
+     * the callback.
      */
-    private volatile long _bytesTransferred;
+    private AtomicLong _bytesTransferred = new AtomicLong();
 
     /**
-     * The Netty Channel to the client.  The field is only ever
-     * updated from a single thread, but may be read from multiple
-     * threads.
+     * Keep track of opened descriptors
      */
-    private volatile Channel _clientChannel;
+    private Set<FileDescriptor> _openedDescriptors =
+        Collections.synchronizedSet(new HashSet<FileDescriptor>());
+
+    /**
+     * If both the number of client connections as well as waiting movers are
+     * 0, we can shut down the xrootd server. Use this variable to synchronize
+     * that. The only accessor to this variable is synchronized.
+     */
+    private static int _endpoints = 0;
 
     /**
      * Switch Netty to slf4j for logging. Should be moved somewhere
@@ -395,59 +385,66 @@ public class XrootdProtocol_3
                       int access)
         throws Exception
     {
-        _file = diskFile;
         _protocolInfo = (XrootdProtocolInfo) protocol;
-        _allocator = allocator;
 
-	_transferStarted  = System.currentTimeMillis();
-        _lastTransferred = _transferStarted;
+        UUID uuid = _protocolInfo.getUUID();
+        _log.debug("Received opaque information {}", uuid);
+        _moversPerToken.put(uuid, this);
 
-        _log.debug("Starting xrootd server");
-        Channel channel = startServer();
+        boolean transferSuccess;
+        incrementEndpointsToggleServer();
+
         try {
-            _inProgress = true;
+            _file = diskFile;
+            _allocator = allocator;
+            _transferStarted  = System.currentTimeMillis();
+            _lastTransferred.set(_transferStarted);
 
             InetSocketAddress address =
-                (InetSocketAddress) channel.getLocalAddress();
+                (InetSocketAddress) _serverChannel.getLocalAddress();
             sendAddressToDoor(address.getPort());
 
-            _log.debug("Waiting for server shutdown");
+            _log.debug("Starting xrootd server");
 
-            /* When an xrootd client is redirected to a pool, we
-             * expect the client to connect within a reasonable amount
-             * of time. Otherwise we kill the mover.
-             */
+            _inProgress = true;
+
             if (!_closeLatch.await(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)) {
-                if (_clientChannel == null) {
+                if (!_hasOpenedDescriptor) {
                     throw new TimeoutCacheException("No connection from Xrootd client after " +
-                                                    TimeUnit.MILLISECONDS.toSeconds(CONNECT_TIMEOUT) + " seconds. Giving up.");
+                                                    TimeUnit.MILLISECONDS.toSeconds(CONNECT_TIMEOUT) +
+                                                    " seconds. Giving up.");
                 }
+
                 _closeLatch.await();
             }
         } finally {
-            _log.debug("Server is down");
+            _moversPerToken.remove(uuid);
+            /* this effectively closes all file descriptors obtained via this
+             * mover */
+            _file = null;
+            _allocator = null;
             _inProgress = false;
-            channel.close();
 
-            Channel client = _clientChannel;
-            if (client != null && client.isOpen()) {
-                client.close();
-            }
+            transferSuccess = isTransferSuccessful(access);
+
+            _openedDescriptors.clear();
+            decrementEndpointsToggleServer();
         }
 
-        if (!isTransferSuccessful(access)) {
+       if (!transferSuccess) {
             _log.warn("Xrootd transfer failed");
             throw new CacheException("xrootd transfer failed");
-        }
+       }
 
-        _log.debug("Xrootd transfer completed");
+        _log.debug("Xrootd transfer completed, transferred {} bytes.",
+                   _bytesTransferred.get());
     }
 
     /**
-     * Starts the Xrootd server on a fresh port.
+     * Binds a new netty server to the xrootd port. This netty server will
+     * translate xrootd protocol requests to mover operations.
      */
-    private Channel startServer()
-        throws IOException
+    private static void bindServerChannel() throws IOException
     {
         String portRange = System.getProperty("org.dcache.net.tcp.portrange");
         PortRange range;
@@ -457,27 +454,29 @@ public class XrootdProtocol_3
             range = new PortRange(DEFAULT_PORTRANGE[0], DEFAULT_PORTRANGE[1]);
         }
 
+        _log.info("Binding a new server channel.");
         ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
         bootstrap.setOption("child.tcpNoDelay", false);
         bootstrap.setOption("child.keepAlive", true);
         bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-                public ChannelPipeline getPipeline()
-                {
-                    ChannelPipeline pipeline = pipeline();
-                    pipeline.addLast("encoder", new XrootdEncoder());
-                    pipeline.addLast("decoder", new XrootdDecoder());
-                    if (_log.isDebugEnabled()) {
-                        pipeline.addLast("logger", new LoggingHandler(XrootdProtocol_3.class));
-                    }
-                    pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
-                    pipeline.addLast("hangup", _hangupHandler);
-                    pipeline.addLast("executor", new ExecutionHandler(_diskExecutor));
-                    pipeline.addLast("transfer", XrootdProtocol_3.this);
-                    return pipeline;
+            public ChannelPipeline getPipeline()
+            {
+                ChannelPipeline pipeline = pipeline();
+                pipeline.addLast("encoder", new XrootdEncoder());
+                pipeline.addLast("decoder", new XrootdDecoder());
+                if (_log.isDebugEnabled()) {
+                    pipeline.addLast("logger",
+                                     new LoggingHandler(XrootdProtocol_3.class));
                 }
+                pipeline.addLast("handshake",
+                                 new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
+                pipeline.addLast("executor", new ExecutionHandler(_diskExecutor));
+                pipeline.addLast("transfer", new XrootdPoolRequestHandler());
+                return pipeline;
+            }
             });
 
-        return range.bind(bootstrap);
+        _serverChannel= range.bind(bootstrap);
     }
 
     /**
@@ -487,34 +486,37 @@ public class XrootdProtocol_3
         throws UnknownHostException, SocketException,
                CacheException, NoRouteToCellException
     {
-        Collection netifsCol = new ArrayList();
+        Collection<NetIFContainer> netifsCol = new ArrayList<NetIFContainer>();
 
         // try to pick the ip address with corresponds to the
         // hostname (which is hopefully visible to the world)
-        InetAddress localIP = NetworkUtils.getLocalAddressForClient(_protocolInfo.getHosts());
+        InetAddress localIP =
+            NetworkUtils.getLocalAddressForClient(_protocolInfo.getHosts());
 
         if (localIP != null && !localIP.isLoopbackAddress()
             && localIP instanceof Inet4Address) {
             // the ip we got from the hostname is at least not
             // 127.0.01 and from the IP4-family
-            Collection col = new ArrayList(1);
+            Collection<InetAddress> col = new ArrayList<InetAddress>(1);
             col.add(localIP);
             netifsCol.add(new NetIFContainer("", col));
-            _log.debug("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+port);
+            _log.debug("sending ip-address derived from hostname " +
+                       "to Xrootd-door: "+localIP+" port: "+port);
         } else {
             // the ip we got from the hostname seems to be bad,
             // let's loop through the network interfaces
-            Enumeration ifList = NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> ifList =
+                NetworkInterface.getNetworkInterfaces();
 
             while (ifList.hasMoreElements()) {
                 NetworkInterface netif =
-                    (NetworkInterface) ifList.nextElement();
+                    ifList.nextElement();
 
-                Enumeration ips = netif.getInetAddresses();
-                Collection ipsCol = new ArrayList(2);
+                Enumeration<InetAddress> ips = netif.getInetAddresses();
+                Collection<InetAddress> ipsCol = new ArrayList<InetAddress>(2);
 
                 while (ips.hasMoreElements()) {
-                    InetAddress addr = (InetAddress) ips.nextElement();
+                    InetAddress addr = ips.nextElement();
 
                     // check again each ip from each interface.
                     // WARNING: multiple ip addresses in case of
@@ -523,7 +525,9 @@ public class XrootdProtocol_3
                     if (addr instanceof Inet4Address
                         && !addr.isLoopbackAddress()) {
                         ipsCol.add(addr);
-                        _log.debug("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+port);
+                        _log.debug("sending ip-address derived from " +
+                                   "network-if to Xrootd-door: "+addr+
+                                   " port: "+port);
                     }
                 }
 
@@ -533,7 +537,8 @@ public class XrootdProtocol_3
             }
 
             if (netifsCol.isEmpty()) {
-                throw new CacheException("Error: Cannot determine my ip address. Aborting transfer");
+                throw new CacheException("Error: Cannot determine my ip" +
+                                         "address. Aborting transfer");
             }
         }
 
@@ -542,9 +547,10 @@ public class XrootdProtocol_3
         // serverport and ip
         //
         CellPath cellpath = _protocolInfo.getXrootdDoorCellPath();
+        boolean uuidEnabledPool = true;
         XrootdDoorAdressInfoMessage doorMsg =
             new XrootdDoorAdressInfoMessage(_protocolInfo.getXrootdFileHandle(),
-                                            port, netifsCol);
+                                            port, netifsCol, uuidEnabledPool);
         _endpoint.sendMessage (new CellMessage(cellpath, doorMsg));
 
         _log.debug("sending redirect message to Xrootd-door "+ cellpath);
@@ -553,6 +559,7 @@ public class XrootdProtocol_3
     @Override
     public void setAttribute(String name, Object attribute)
     {
+        /* currently not implemented */
     }
 
     @Override
@@ -564,21 +571,21 @@ public class XrootdProtocol_3
     @Override
     public long getBytesTransferred()
     {
-        return _bytesTransferred;
+        return _bytesTransferred.get();
     }
 
     @Override
     public long getTransferTime()
     {
         return
-            (_inProgress ? System.currentTimeMillis() : _lastTransferred)
+            (_inProgress ? System.currentTimeMillis() : _lastTransferred.get())
             - _transferStarted;
     }
 
     @Override
     public long getLastTransferred()
     {
-        return _lastTransferred;
+        return _lastTransferred.get();
     }
 
     @Override
@@ -587,341 +594,184 @@ public class XrootdProtocol_3
         return _wasChanged;
     }
 
-    @Override
-    public void channelOpen(ChannelHandlerContext ctx,
-                            ChannelStateEvent event)
-        throws Exception
-    {
-        _clientChannel = ctx.getChannel();
+    RandomAccessFile getFile() {
+        return _file;
     }
 
-    @Override
-    public void channelClosed(ChannelHandlerContext ctx,
-                              ChannelStateEvent event)
-        throws Exception
+    static XrootdProtocol_3 getMover(UUID uuid)
     {
-        _clientChannel = null;
+        return _moversPerToken.get(uuid);
     }
 
-    @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event)
+    /**
+     * Retrieve a new file descriptor from this mover.
+     * @param msg Request as received by the netty server
+     * @return the number of the file-descriptor
+     * @throws IOException
+     */
+    synchronized FileDescriptor open(OpenRequest msg) throws IOException
     {
-        _lastTransferred = System.currentTimeMillis();
-        super.messageReceived(ctx, event);
-    }
+        /* mover is killed between map lookup and open operation */
+        if (!_inProgress) {
+            throw new IOException("Open request failed, please retry.");
+        }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx,
-                                ExceptionEvent e)
-    {
-        Throwable t = e.getCause();
-        if (t instanceof ClosedChannelException) {
-            _log.info("Connection unexpectedly closed");
-        } else if (t instanceof RuntimeException || t instanceof Error) {
-            Thread me = Thread.currentThread();
-            me.getUncaughtExceptionHandler().uncaughtException(me, t);
+        _lastTransferred.set(System.currentTimeMillis());
+        _hasOpenedDescriptor = true;
+
+        FileDescriptor handler;
+
+        if (msg.isNew() || msg.isReadWrite()) {
+            handler = new WriteDescriptor(this);
         } else {
-            _log.warn(t.toString());
-        }
-        // TODO: If not already closed, we should probably close the
-        // channel.
-    }
-
-    @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx,
-                                       ChannelStateEvent e)
-    {
-        sendToClient(e.getChannel());
-    }
-
-    @Override
-    protected void doOnLogin(ChannelHandlerContext ctx, MessageEvent event,
-                             LoginRequest msg)
-    {
-        respond(ctx, event, new OKResponse(msg.getStreamID()));
-    }
-
-    @Override
-    protected void doOnAuthentication(ChannelHandlerContext ctx,
-                                      MessageEvent event,
-                                      AuthenticationRequest msg)
-    {
-        respond(ctx, event, new OKResponse(msg.getStreamID()));
-    }
-
-    @Override
-    protected void doOnOpen(ChannelHandlerContext ctx, MessageEvent event,
-                            OpenRequest msg)
-    {
-        try {
-            /* The OpenRequest has to be identical to the one issued to
-             * the door.
-             */
-            if (_protocolInfo.getChecksum() != msg.calcChecksum()) {
-                _log.error("OpenRequest checksums do not match");
-                closeWithError(ctx, event, msg,
-                               kXR_ArgInvalid,
-                               "OpenRequest different from the one the redirector got");
-                return;
-            }
-
-            int fd = getUnusedFileDescriptor();
-            FileDescriptor handler = null;
-            if (msg.isNew() || msg.isReadWrite()) {
-                handler = new WriteDescriptor(_file);
-            } else {
-                handler = new ReadDescriptor(_file);
-            }
-
-            _descriptors.set(fd, handler);
-
-            FileStatus stat = null;
-            if (msg.isRetStat()) {
-                stat = new FileStatus(0, _file.length(), 0, 0);
-            }
-
-            respond(ctx, event,
-                    new OpenResponse(msg.getStreamID(), fd, null, null, stat));
-        } catch (IOException e) {
-            respondWithError(ctx, event, msg, kXR_IOError, e.getMessage());
-        }
-    }
-
-    @Override
-    protected void doOnStat(ChannelHandlerContext ctx, MessageEvent event,
-                            StatRequest msg)
-    {
-        try {
-            String path = msg.getPath();
-            long size = _file.length();
-            FileStatus stat =
-                _protocolInfo.getPath().equals(path)
-                ? new FileStatus(0, size, 0, 0)
-                : FileStatus.FILE_NOT_FOUND;
-            respond(ctx, event, new StatResponse(msg.getStreamID(), stat));
-        } catch (IOException e) {
-            respondWithError(ctx, event, msg, kXR_IOError, e.getMessage());
-        }
-    }
-
-    @Override
-    protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent e,
-                             StatxRequest msg)
-    {
-        unsupported(ctx, e, msg);
-    }
-
-    @Override
-    protected void doOnRead(ChannelHandlerContext ctx, MessageEvent event,
-                            ReadRequest msg)
-    {
-        int fd = msg.getFileHandle();
-
-        if (!isValidFileDescriptor(fd)) {
-            respondWithError(ctx, event, msg, kXR_FileNotOpen,
-                             "Invalid file handle");
-            return;
+            handler = new ReadDescriptor(this);
         }
 
-        _readers.add(_descriptors.get(fd).read(msg));
-        sendToClient(event.getChannel());
+        _openedDescriptors.add(handler);
+        return handler;
     }
 
-    @Override
-    protected void doOnReadV(ChannelHandlerContext ctx, MessageEvent event,
-                             ReadVRequest msg)
+    /**
+     * Closes the file descriptor encapsulated in the request. If this is the
+     * last file descriptor of this mover, the mover will also be shut down.
+     *
+     * @param msg Request as received by the netty server
+     * @throws IllegalStateException File descriptor is not open.
+     * @throws IOException File descriptor is not valid.
+     */
+    synchronized void close(FileDescriptor descriptor)
+        throws IllegalStateException
     {
-        GenericReadRequestMessage.EmbeddedReadRequest[] list =
-            msg.getReadRequestList();
+        _lastTransferred.set(System.currentTimeMillis());
+        _openedDescriptors.remove(descriptor);
 
-        if (list == null || list.length == 0) {
-            respondWithError(ctx, event, msg, kXR_ArgMissing,
-                             "Request contains no vector");
-            return;
-        }
-
-        for (GenericReadRequestMessage.EmbeddedReadRequest req: list) {
-            if (!isValidFileDescriptor(req.getFileHandle())) {
-                respondWithError(ctx, event, msg, kXR_FileNotOpen,
-                                 "Invalid file handle");
-                return;
-            }
-
-            if (req.BytesToRead() + ReadResponse.READ_LIST_HEADER_SIZE > _maxFrameSize) {
-                respondWithError(ctx, event, msg, kXR_NoMemory,
-                                 "Single readv transfer is too large");
-                return;
-            }
-        }
-
-        _readers.add(new VectorReader(msg.getStreamID(), _descriptors, list));
-
-        sendToClient(event.getChannel());
-    }
-
-    @Override
-    protected void doOnWrite(ChannelHandlerContext ctx, MessageEvent event,
-                             WriteRequest msg)
-    {
-        try {
-            int fd = msg.getFileHandle();
-
-            if (!isValidFileDescriptor(fd)) {
-                respondWithError(ctx, event, msg, kXR_FileNotOpen,
-                                 "Invalid file handle");
-                return;
-            }
-
-            _bytesTransferred += msg.getDataLength();
-            _wasChanged = true;
-
-            /* Not ellegant to check the type of the file descriptor,
-             * but we need to test this before allocating
-             * space. Eventually this should be done by the
-             * descriptor.
-             */
-            FileDescriptor descriptor = _descriptors.get(fd);
-            if (!(descriptor instanceof WriteDescriptor)) {
-                throw new IOException("File is read only");
-            }
-
-            preallocate(msg.getWriteOffset() + msg.getDataLength());
-            descriptor.write(msg);
-
-            respond(ctx, event, new OKResponse(msg.getStreamID()));
-        } catch (InterruptedException e) {
-            respondWithError(ctx, event, msg, kXR_ServerError,
-                             "Server shutdown");
-        } catch (IOException e) {
-            respondWithError(ctx, event, msg, kXR_IOError, e.getMessage());
-        }
-    }
-
-    @Override
-    protected void doOnSync(ChannelHandlerContext ctx, MessageEvent event,
-                            SyncRequest msg)
-    {
-        try {
-            int fd = msg.getFileHandle();
-
-            if (!isValidFileDescriptor(fd)) {
-                respondWithError(ctx, event, msg, kXR_FileNotOpen,
-                                 "Invalid file handle");
-                return;
-            }
-
-            _descriptors.get(fd).sync(msg);
-            respond(ctx, event, new OKResponse(msg.getStreamID()));
-        } catch (IOException e) {
-            respondWithError(ctx, event, msg, kXR_IOError, e.getMessage());
-        }
-    }
-
-    @Override
-    protected void doOnClose(ChannelHandlerContext ctx, MessageEvent event,
-                             CloseRequest msg)
-    {
-        int fd = msg.getFileHandle();
-
-        if (!isValidFileDescriptor(fd)) {
-            respondWithError(ctx, event, msg, kXR_FileNotOpen,
-                             "Invalid file handle");
-            return;
-        }
-
-        _descriptors.set(fd, null).close();
-
-        respond(ctx, event, new OKResponse(msg.getStreamID()));
-    }
-
-    @Override
-    protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
-    {
-        unsupported(ctx, e, msg);
-    }
-
-
-    private int getUnusedFileDescriptor()
-    {
-        for (int i = 0; i < _descriptors.size(); i++) {
-            if (_descriptors.get(i) == null) {
-                return i;
-            }
-        }
-
-        _descriptors.add(null);
-        return _descriptors.size() - 1;
-    }
-
-    private boolean isValidFileDescriptor(int fd)
-    {
-        return fd >= 0 && fd < _descriptors.size() &&
-            _descriptors.get(fd) != null;
-    }
-
-    private AbstractResponseMessage readBlock()
-    {
-        try {
-            while (_readers.peek() != null) {
-                ReadResponse block = _readers.element().read(_maxFrameSize);
-                if (block != null) {
-                    _bytesTransferred += block.getDataLength();
-                    return block;
-                }
-                _readers.remove();
-            }
-            return null;
-        } catch (IOException e) {
-            Reader reader = _readers.remove();
-            return new ErrorResponse(reader.getStreamID(),
-                                     kXR_IOError, e.getMessage());
-        }
-    }
-
-    private void sendToClient(Channel channel)
-    {
-        if (_block == null) {
-            _block = readBlock();
-        }
-
-        while (_block != null && channel.isWritable()) {
-            _lastTransferred = System.currentTimeMillis();
-            write(channel, _block);
-            _block = readBlock();
+        /* shutdown the mover if all descriptors were removed. Should not
+         * race against adding in open due to the happens-before relationship
+         * of synchronized collections. */
+        if (_openedDescriptors.isEmpty()) {
+            _inProgress = false;
+            _closeLatch.countDown();
         }
     }
 
     /**
-     * We consider a transfer successful if all open files where
-     * properly closed and at least one file was opened.
+     * Return the status of a file
+     * @param path The path of the file on which stat should be called.
+     * @return FileStatus object
+     * @throws IOException
+     */
+    FileStatus stat(String path) throws IOException
+    {
+        _lastTransferred.set(System.currentTimeMillis());
+        if (_protocolInfo.getPath().equals(path)) {
+            return new FileStatus(DEFAULT_FILESTATUS_ID,
+                                  _file.length(),
+                                  DEFAULT_FILESTATUS_FLAGS,
+                                  DEFAULT_FILESTATUS_MODTIME);
+        } else {
+            return FileStatus.FILE_NOT_FOUND;
+        }
+    }
+
+    /**
+     * For write access, at least one descriptor must have been opened to
+     * regard the transfer as successul. In any case, all open descriptors
+     * must have been closed.
      */
     private boolean isTransferSuccessful(int access)
     {
         boolean isRead = (access & MoverProtocol.WRITE) == 0;
+        return _openedDescriptors.isEmpty() && (_hasOpenedDescriptor || isRead);
+    }
 
-        for (FileDescriptor descriptor: _descriptors) {
-            if (descriptor != null) {
-                return false;
-            }
-        }
+    /**
+     * Add length to the number of transferred bytes
+     * @param length The number of bytes that should be added.
+     */
+    void addTransferredBytes(long length) {
+        _bytesTransferred.getAndAdd(length);
+    }
 
-        return !_descriptors.isEmpty() || isRead;
+    /**
+     * Update the timestamp of the last transfer
+     */
+    void updateLastTransferred() {
+        _lastTransferred.set(System.currentTimeMillis());
+    }
+
+    /**
+     * Update whether the file associated with this mover was changed
+     * @param wasChanged
+     */
+    void setWasChanged(boolean wasChanged) {
+        _wasChanged = wasChanged;
     }
 
     /**
      * Ensures that we have allocated space up to the given position
      * in the file. May block if we run out of space.
      */
-    private void preallocate(long position) throws InterruptedException
+    synchronized void preallocate(long position) throws InterruptedException
     {
         if (position < 0)
             throw new IllegalArgumentException("Position must be positive");
 
-	if (position > _reservedSpace) {
-	    long additional = Math.max(position - _reservedSpace, SPACE_INC);
-            _logSpaceAllocation.debug("ALLOC: " + additional );
-            _allocator.allocate(additional);
-	    _reservedSpace += additional;
-	}
+        if (position > _reservedSpace) {
+            long additional = Math.max(position - _reservedSpace, SPACE_INC);
+                _logSpaceAllocation.debug("ALLOC: " + additional );
+                _allocator.allocate(additional);
+            _reservedSpace += additional;
+        }
+    }
+
+    static int getMaxFrameSize()
+    {
+        return _maxFrameSize;
+    }
+
+    /**
+     * Decrement the number of endpoints. If they become zero, meaning that
+     * neither the server endpoint nor the client endpoint is needing a
+     * connection anymore, shut down the server listening for client requests.
+     * @throws IOException If shutting down the server fails for some reason
+     */
+    static void decrementEndpointsToggleServer() throws IOException
+    {
+        changeEndpointsToggleServer(-1);
+    }
+
+    /**
+     * Increment the number of endpoints by one. If the server is not yet
+     * running, start it.
+     * @throws IOException Starting the server fails for some reason
+     */
+    static void incrementEndpointsToggleServer() throws IOException
+    {
+        changeEndpointsToggleServer(1);
+    }
+
+    /**
+     * Add delta to the number of active endpoints. If the number of endpoints
+     * is 0 and the server channel is still open, close it. If the number of
+     * endpoints is larger than zero and the server channel does not exist,
+     * open a new server channel.
+     * @param delta The delta by which the number of endpoints should be
+     *              changed.
+     * @throws IOException Starting or stopping the server fails for some
+     *                     reason.
+     */
+    private synchronized static void changeEndpointsToggleServer(int delta)
+        throws IOException
+    {
+        _endpoints += delta;
+
+        if (_endpoints > 0 && _serverChannel == null) {
+            bindServerChannel();
+        } else if (_endpoints == 0 && _serverChannel != null) {
+            _log.info("No open client channels or waiting movers, closing " +
+                      "down the server.");
+            _serverChannel.close();
+            _serverChannel = null;
+        }
     }
 }

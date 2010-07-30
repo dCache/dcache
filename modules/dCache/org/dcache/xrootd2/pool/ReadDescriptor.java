@@ -2,13 +2,9 @@ package org.dcache.xrootd2.pool;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.nio.channels.FileChannel;
 
-import org.dcache.pool.repository.ReadHandle;
-
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
-import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
 
@@ -23,19 +19,23 @@ public class ReadDescriptor implements FileDescriptor
     private final static Logger _log =
         LoggerFactory.getLogger(ReadDescriptor.class);
 
-    private RandomAccessFile _file;
+    /**
+     * Update mover meta-information
+     */
+    private XrootdProtocol_3 _mover;
 
-    public ReadDescriptor(RandomAccessFile file)
+    public ReadDescriptor(XrootdProtocol_3 mover)
     {
-        if (file == null) {
+        if (mover.getFile() == null) {
             throw new IllegalArgumentException("File must be non-null");
         }
-        _file = file;
+
+        _mover = mover;
     }
 
     private boolean isClosed()
     {
-        return _file == null;
+        return (_mover == null || _mover.getFile() == null);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class ReadDescriptor implements FileDescriptor
             throw new IllegalStateException("File not open");
         }
 
-        _file = null;
+        _mover.close(this);
     }
 
     @Override
@@ -56,8 +56,10 @@ public class ReadDescriptor implements FileDescriptor
         if (isClosed()) {
             throw new IllegalStateException("File not open");
         }
-        return new RegularReader(_file.getChannel(), msg.getStreamID(),
-                                 msg.getReadOffset(), msg.bytesToRead());
+
+        return new RegularReader(msg.getStreamID(),
+                                 msg.getReadOffset(), msg.bytesToRead(),
+                                 this);
     }
 
     @Override
@@ -67,6 +69,8 @@ public class ReadDescriptor implements FileDescriptor
         if (isClosed()) {
             throw new IllegalStateException("File not open");
         }
+
+        _mover.updateLastTransferred();
 
         /* As this is a read only file, there is no reason to sync
          * anything.
@@ -91,7 +95,13 @@ public class ReadDescriptor implements FileDescriptor
             throw new IllegalStateException("File not open");
         }
 
-        return _file.getChannel();
+        RandomAccessFile file = _mover.getFile();
+        return file.getChannel();
+    }
+
+    public XrootdProtocol_3 getMover()
+    {
+        return _mover;
     }
 }
 

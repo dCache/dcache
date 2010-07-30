@@ -3,12 +3,14 @@ package org.dcache.xrootd2.door;
 import java.net.InetSocketAddress;
 
 
+
 import java.security.GeneralSecurityException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.UUID;
 import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
 
@@ -171,6 +173,11 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                       localAddress);
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
+            UUID uuid = UUID.randomUUID();
+            String opaque =
+                OpaqueStringParser.buildOpaqueString(XrootdProtocol.UUID_PREFIX,
+                                                     uuid.toString());
+
             long checksum = req.calcChecksum();
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
@@ -180,20 +187,31 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                     XrootdProtocol.kXR_delete;
 
                 transfer =
-                    _door.write(remoteAddress, authPath, checksum,
+                    _door.write(remoteAddress, authPath, checksum, uuid,
                                 createDir, overwrite);
             } else {
                 transfer =
-                    _door.read(remoteAddress, authPath, checksum);
+                    _door.read(remoteAddress, authPath, checksum, uuid);
             }
 
             // ok, open was successful
             InetSocketAddress address = transfer.getRedirect();
             _log.info("Redirecting to {}", address);
-            respond(ctx, event,
-                    new RedirectResponse(req.getStreamID(),
-                                         address.getHostName(),
-                                         address.getPort()));
+
+            // new pool, send UUID in opaque part of redirect
+            if (transfer.isUUIDSupported()) {
+                respond(ctx, event,
+                        new RedirectResponse(req.getStreamID(),
+                                             address.getHostName(),
+                                             address.getPort(),
+                                             opaque,
+                                             ""));
+            } else { // old pool, don't include UUID to make checksums match
+                respond(ctx, event,
+                        new RedirectResponse(req.getStreamID(),
+                                             address.getHostName(),
+                                             address.getPort()));
+            }
         } catch (FileNotFoundCacheException fnfex) {
             respondWithError(ctx, event, req,
                              XrootdProtocol.kXR_FileNotOpen,

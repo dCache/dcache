@@ -57,4 +57,15 @@ public class OpaqueStringParser {
             return map;
         }
     }
+
+    /**
+     * Build an opaque string containing a single key and a single value
+     * @param key The key contained in the opaque string
+     * @param value The value contained in the opaque string
+     * @return string with correct opaque prefix and correct separator
+     */
+    public static String buildOpaqueString(String key, String value)
+    {
+        return OPAQUE_PREFIX + key + OPAQUE_SEPARATOR + value;
+    }
 }

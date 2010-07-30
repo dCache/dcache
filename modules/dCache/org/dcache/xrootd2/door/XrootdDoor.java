@@ -1,11 +1,7 @@
 package org.dcache.xrootd2.door;
 
-import static org.dcache.namespace.FileAttribute.MODE;
-import static org.dcache.namespace.FileAttribute.OWNER;
-import static org.dcache.namespace.FileAttribute.OWNER_GROUP;
-import static org.dcache.namespace.FileAttribute.TYPE;
-
 import java.io.PrintWriter;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,7 +27,6 @@ import java.security.Principal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
-import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -410,7 +405,8 @@ public class XrootdDoor
     }
 
     private XrootdTransfer
-        createTransfer(InetSocketAddress client, FsPath path, long checksum)
+        createTransfer(InetSocketAddress client, FsPath path, long checksum,
+                       UUID uuid)
     {
         Subject subject = createSubject(client.getAddress());
         XrootdTransfer transfer =
@@ -422,12 +418,13 @@ public class XrootdDoor
         transfer.setBillingStub(_billingStub);
         transfer.setClientAddress(client);
         transfer.setChecksum(checksum);
+        transfer.setUUID(uuid);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         return transfer;
     }
 
     public XrootdTransfer
-        read(InetSocketAddress client, String path, long checksum)
+        read(InetSocketAddress client, String path, long checksum, UUID uuid)
         throws CacheException, InterruptedException
     {
         FsPath fullPath = createFullPath(path);
@@ -436,7 +433,8 @@ public class XrootdDoor
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
-        XrootdTransfer transfer = createTransfer(client, fullPath, checksum);
+        XrootdTransfer transfer = createTransfer(client, fullPath, checksum,
+                                                 uuid);
         int handle = transfer.getFileHandle();
 
         InetSocketAddress address = null;
@@ -479,7 +477,7 @@ public class XrootdDoor
     }
 
     public XrootdTransfer
-        write(InetSocketAddress client, String path, long checksum,
+        write(InetSocketAddress client, String path, long checksum, UUID uuid,
               boolean createDir, boolean overwrite)
         throws CacheException, InterruptedException
     {
@@ -493,7 +491,8 @@ public class XrootdDoor
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
-        XrootdTransfer transfer = createTransfer(client, fullPath, checksum);
+        XrootdTransfer transfer = createTransfer(client, fullPath, checksum,
+                                                 uuid);
         transfer.setOverwriteAllowed(overwrite);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
@@ -833,6 +832,8 @@ public class XrootdDoor
         _log.debug("Received redirect msg from mover");
 
         XrootdTransfer transfer = _transfers.get(msg.getXrootdFileHandle());
+        transfer.setUUIDSupported(msg.isUUIDEnabledPool());
+
         if (transfer != null) {
             // REVISIT: pick the first IPv4 address from the
             // collection at this point, we can't determine, which of

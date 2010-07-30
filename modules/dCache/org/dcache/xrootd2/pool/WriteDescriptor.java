@@ -2,16 +2,9 @@ package org.dcache.xrootd2.pool;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.io.SyncFailedException;
 import java.nio.channels.FileChannel;
 
-import diskCacheV111.util.CacheException;
-
-import org.dcache.pool.repository.WriteHandle;
-
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
-import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
 
@@ -26,19 +19,20 @@ public class WriteDescriptor implements FileDescriptor
     private final static Logger _log =
         LoggerFactory.getLogger(WriteDescriptor.class);
 
-    private RandomAccessFile _file;
+    private XrootdProtocol_3 _mover;
 
-    public WriteDescriptor(RandomAccessFile file)
+    public WriteDescriptor(XrootdProtocol_3 mover)
     {
-        if (file == null) {
+        if (mover.getFile() == null) {
             throw new IllegalArgumentException("File must be non-null");
         }
-        _file = file;
+
+        _mover = mover;
     }
 
     private boolean isClosed()
     {
-        return _file == null;
+        return (_mover == null || _mover.getFile() == null);
     }
 
     @Override
@@ -48,7 +42,8 @@ public class WriteDescriptor implements FileDescriptor
         if (isClosed()) {
             throw new IllegalStateException("File not open");
         }
-        _file = null;
+
+        _mover.close(this);
     }
 
     @Override
@@ -57,8 +52,10 @@ public class WriteDescriptor implements FileDescriptor
         if (isClosed()) {
             throw new IllegalStateException("File not open");
         }
-        return new RegularReader(_file.getChannel(), msg.getStreamID(),
-                                 msg.getReadOffset(), msg.bytesToRead());
+
+        return new RegularReader(msg.getStreamID(),
+                                 msg.getReadOffset(), msg.bytesToRead(),
+                                 this);
     }
 
     @Override
@@ -69,18 +66,24 @@ public class WriteDescriptor implements FileDescriptor
             throw new IllegalStateException("File not open");
         }
 
-        _file.getFD().sync();
+        _mover.updateLastTransferred();
+        _mover.getFile().getFD().sync();
     }
 
     @Override
     public void write(WriteRequest msg)
-        throws IOException
+        throws IOException, InterruptedException
     {
         if (isClosed()) {
             throw new IllegalStateException("File not open");
         }
 
-        FileChannel channel = _file.getChannel();
+        _mover.preallocate(msg.getWriteOffset() + msg.getDataLength());
+        _mover.updateLastTransferred();
+        _mover.addTransferredBytes(msg.getDataLength());
+        _mover.setWasChanged(true);
+
+        FileChannel channel = _mover.getFile().getChannel();
         channel.position(msg.getWriteOffset());
         msg.getData(channel);
     }
@@ -92,6 +95,11 @@ public class WriteDescriptor implements FileDescriptor
             throw new IllegalStateException("File not open");
         }
 
-        return _file.getChannel();
+        return _mover.getFile().getChannel();
+    }
+
+    public XrootdProtocol_3 getMover()
+    {
+        return _mover;
     }
 }
