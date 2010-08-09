@@ -11,6 +11,7 @@ set context -c pnfsNumberOfListThreads 2
 set context -c DefaultAccessLatency NEARLINE
 set context -c DefaultRetentionPolicy CUSTODIAL
 set context -c pnfsFolding       false
+set context -c pnfsInheritFileOwnership false
 onerror shutdown
 
 check -strong cell.name
@@ -42,4 +43,5 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -chimeraConfig=${config}/chimera-config.xml \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -inheritFileOwnership=${pnfsInheritFileOwnership} \
        "

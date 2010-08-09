@@ -547,14 +547,16 @@ public class PnfsFile extends File
           try{ br.close() ;}catch(IOException e){}
        }
    }
-   public PnfsId getParentId(){
-      if( _pnfsId != null ){
+   public PnfsId getParentId() throws CacheException {
+      PnfsId pnfsId = getPnfsId();
+
+      if( pnfsId != null ){
 
           if (_logNameSpace.isInfoEnabled() ) {
-              _logNameSpace.info("parent for pnfsid " + _pnfsId);
+              _logNameSpace.info("parent for pnfsid " + pnfsId);
           }
 
-         File   f    = new File( getParent() , ".(parent)("+_pnfsId+")" ) ;
+         File   f    = new File( getParent() , ".(parent)("+pnfsId+")" ) ;
          String line = null ;
          BufferedReader br = null ;
          try{
