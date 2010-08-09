@@ -11,14 +11,15 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * @author timur
  */
 public class PAMStyleConfigurationParser implements ConfigurationParser {
     private static final Logger logger =
-            Logger.getLogger(PAMStyleConfigurationParser.class);
+            LoggerFactory.getLogger(PAMStyleConfigurationParser.class);
 
     // max number of times the reg expression is applied
     // when splitting the non empty configuration file line

@@ -14,7 +14,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.MalformedURLException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Various network related utility functions.
@@ -23,7 +24,7 @@ public abstract class NetworkUtils {
 
     private static final int RANDOM_PORT = 23241;
     private static final int FIRST_CLIENT_HOST = 0;
-    private static final Logger _log = Logger.getLogger(NetworkUtils.class);
+    private static final Logger _log = LoggerFactory.getLogger(NetworkUtils.class);
 
     /**
      * Returns the list of IP V4 addresses of this host.
@@ -53,13 +54,13 @@ public abstract class NetworkUtils {
         // try to pick the ip address with corresponds to the
         // hostname (which is hopefully visible to the world)
         // by service method
-        _log.debug("hostname:" + clientHosts[FIRST_CLIENT_HOST]);
+        _log.debug("hostname: {}", clientHosts[FIRST_CLIENT_HOST]);
         InetAddress clientAddress = InetAddress.getByName(clientHosts[FIRST_CLIENT_HOST]);
 
-        _log.debug("client:" + clientAddress.toString());
+        _log.debug("client: {}", clientAddress.toString());
         InetAddress localAddress = NetworkUtils.getLocalAddress(clientAddress);
-        _log.debug("local:" + localAddress.toString());
-        _log.debug("canonical:" + localAddress.getCanonicalHostName());
+        _log.debug("local: {}", localAddress.toString());
+        _log.debug("canonical: {}", localAddress.getCanonicalHostName());
         return localAddress;
     }
 
