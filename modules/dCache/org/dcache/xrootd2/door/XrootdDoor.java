@@ -832,9 +832,9 @@ public class XrootdDoor
         _log.debug("Received redirect msg from mover");
 
         XrootdTransfer transfer = _transfers.get(msg.getXrootdFileHandle());
-        transfer.setUUIDSupported(msg.isUUIDEnabledPool());
 
         if (transfer != null) {
+            transfer.setUUIDSupported(msg.isUUIDEnabledPool());
             // REVISIT: pick the first IPv4 address from the
             // collection at this point, we can't determine, which of
             // the pool IP-addresses is the right one, so we select
