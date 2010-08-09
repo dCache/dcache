@@ -204,7 +204,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 FileStatus stat = null;
 
                 if (msg.isRetStat()) {
-                    stat = mover.stat(msg.getPath());
+                    stat = mover.stat();
                 }
 
                 int fd = getUnusedFileDescriptor();
