@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Checksum;
 
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.FileSizeMismatchException;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
@@ -216,7 +216,7 @@ class WriteHandleImpl implements WriteHandle
         if (flags == null) {
             info.setKey("flag-c", checksum.toString());
             _entry.setStorageInfo(info);
-        } else if (!checksum.equals(new Checksum(flags))) {
+        } else if (!checksum.equals(Checksum.parseChecksum(flags))) {
             throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
                                                    checksum, flags));
         }

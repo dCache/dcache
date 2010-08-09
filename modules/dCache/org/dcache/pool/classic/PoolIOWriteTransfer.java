@@ -6,7 +6,7 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -119,7 +119,7 @@ public class PoolIOWriteTransfer
                         _checksumFactory =
                             _checksumModule.getDefaultChecksumFactory();
                     }
-                    cm.setDigest(_checksumFactory.create());
+                    cm.setDigest(_checksumFactory);
                 }
                 runMover(raf);
             } finally {

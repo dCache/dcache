@@ -1,5 +1,7 @@
 package org.dcache.vehicles;
 
+import java.util.UUID;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import dmg.cells.nucleus.CellPath;
@@ -28,8 +30,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private String _path;
 
+    private UUID _uuid;
+
 	public XrootdProtocolInfo(String protocol,  int major,int minor,
-			String host, int port, CellPath pathToDoor, PnfsId pnfsID, int xrootdFileHandle, long checksum) {
+			String host, int port, CellPath pathToDoor, PnfsId pnfsID, int xrootdFileHandle, long checksum, UUID uuid) {
 
 		_name = protocol;
 		_minor = minor;
@@ -41,6 +45,7 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		_pnfsId = pnfsID;
 		_xrootdFileHandle = xrootdFileHandle;
 		_checksum = checksum;
+		_uuid = uuid;
 	}
 
 	public XrootdProtocolInfo(String protocol, int major, int minor,
@@ -118,6 +123,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 	 */
 	public long getChecksum() {
 		return _checksum;
+	}
+
+	public UUID getUUID() {
+	    return _uuid;
 	}
 
     public void setPath(String path)

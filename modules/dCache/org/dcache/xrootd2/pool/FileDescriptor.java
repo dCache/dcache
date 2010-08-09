@@ -3,10 +3,7 @@ package org.dcache.xrootd2.pool;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
-import diskCacheV111.util.CacheException;
-
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
-import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 
@@ -22,10 +19,6 @@ public interface FileDescriptor
      *
      * @throws IllegalStateException if the descriptor is already
      *              closed.
-     * @throws InterruptedException if the thread is interrupted while
-     *              closing the descriptor.
-     * @throws CacheException in case of errors during post
-     *              processing.
      */
     void close()
         throws IllegalStateException;
@@ -54,15 +47,21 @@ public interface FileDescriptor
      *
      * @throws IllegalStateException if the descriptor is closed.
      * @throws IOException if the operation failed.
+     * @throws InterruptedException if preallocation on the pool fails
      */
     void write(WriteRequest msg)
-        throws IllegalStateException, IOException;
+        throws IllegalStateException, IOException, InterruptedException;
 
     /**
-     * Returns the FileChannel of this descriptor. This break the
-     * model and is a temporary hack to make vector read work.
+     * Returns the FileChannel of this descriptor.
      *
      * @throws IllegalStateException if the descriptor is closed.
      */
     FileChannel getChannel();
+
+    /**
+     * Get the mover associated with this file descriptor.
+     * @return The mover that owns this file descriptor.
+     */
+    XrootdProtocol_3 getMover();
 }

@@ -8,6 +8,9 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.Repository;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.namespace.FileAttribute;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -60,7 +63,8 @@ public class ChecksumModuleV1
         _repository = repository;
         _pnfs       = pnfs;
         try {
-            _defaultChecksumFactory = ChecksumFactory.getFactory("adler32");
+            _defaultChecksumFactory =
+                ChecksumFactory.getFactory(ChecksumType.ADLER32);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("adler32 is not supported", e);
         }
@@ -94,11 +98,11 @@ public class ChecksumModuleV1
 
         Checksum pnfsChecksum =
             (clientChecksum == null)
-            ? factory.createFromPersistentState(getCellEndpoint(), id)
+            ? factory.find(_pnfs.getFileAttributes(id, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums())
             : null;
         Checksum fileChecksum =
             (_onWrite || (_onTransfer && transferChecksum == null))
-            ? calculateFileChecksum(file, factory.create())
+            ? calculateFileChecksum(file, factory)
             : null;
         Checksum checksum =
             getFirstNonNull(clientChecksum, pnfsChecksum, transferChecksum, fileChecksum);
@@ -106,7 +110,7 @@ public class ChecksumModuleV1
         if (checksum == null) {
             if (!_enforceCRC)
                 return;
-            checksum = calculateFileChecksum(file, factory.create());
+            checksum = calculateFileChecksum(file, factory);
         }
 
         if (_fake_checksum_error
@@ -125,10 +129,10 @@ public class ChecksumModuleV1
 
     }
 
-    public Checksum calculateFileChecksum(File file, Checksum checksum)
+    public Checksum calculateFileChecksum(File file, ChecksumFactory factory)
         throws IOException, InterruptedException
     {
-        MessageDigest digest = checksum.getMessageDigest();
+        MessageDigest digest = factory.create();
 
         byte [] buffer = new byte[64 * 1024];
         long sum = 0L;
@@ -148,9 +152,9 @@ public class ChecksumModuleV1
             } catch (IOException e) {
             }
         }
+        Checksum checksum = factory.create(digest.digest());
         _log.debug(String.format("Computed checksum on %s, length %d, checksum %s",
                                  file, sum, checksum));
-        checksum.getDigest();
         return checksum;
     }
 
@@ -158,25 +162,14 @@ public class ChecksumModuleV1
         throws CacheException, NoRouteToCellException, InterruptedException
     {
         _log.info("Storing checksum " + checksum + " for " + pnfsId);
-       try {
-            ChecksumPersistence.getPersistenceMgr().store(getCellEndpoint(), pnfsId, checksum);
-        } catch (CacheException e) {
-            throw e;
-        } catch (NoRouteToCellException e) {
-            throw e;
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                    "Failed to set checksum: " + e.getMessage());
-        }
+        _pnfs.setChecksum(pnfsId, checksum);
     }
 
     public Checksum getChecksumFromPnfs(PnfsId pnfsId)
         throws CacheException
     {
         try {
-            return _defaultChecksumFactory.createFromPersistentState(getCellEndpoint(),pnfsId);
+            return _defaultChecksumFactory.find(_pnfs.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums());
         } catch (Exception e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                     "Failed to get checksum: " + e.getMessage());
@@ -186,17 +179,6 @@ public class ChecksumModuleV1
     public ChecksumFactory getDefaultChecksumFactory()
     {
         return _defaultChecksumFactory;
-    }
-
-    public Checksum getDefaultChecksum()
-    {
-        return _defaultChecksumFactory.create();
-    }
-
-    public Checksum checksumOf(String type)
-        throws java.security.NoSuchAlgorithmException
-    {
-        return ChecksumFactory.getFactory(type).create();
     }
 
     public void printSetup(PrintWriter pw)
@@ -348,7 +330,7 @@ public class ChecksumModuleV1
 
     private Checksum checkFile(File file) throws Exception
     {
-        return calculateFileChecksum(file, getDefaultChecksum());
+        return calculateFileChecksum(file, getDefaultChecksumFactory());
     }
 
     private class FullScan extends Singleton
@@ -380,7 +362,7 @@ public class ChecksumModuleV1
                         if (flags == null) {
                             file = getChecksumFromPnfs(id);
                         } else {
-                            file = new Checksum(flags);
+                            file = Checksum.parseChecksum(flags);
                         }
 
                         _totalCount++;
@@ -475,7 +457,7 @@ public class ChecksumModuleV1
                     String flags     = info == null ? null : info.getKey("flag-c");
                     _infoCRC = flags == null ?
                         null :
-                        new Checksum(flags);
+                        Checksum.parseChecksum(flags);
 
                     if (_infoCRC != null && !_infoCRC.equals(_fileCRC)) {
                         _bad.put(_pnfsId, _fileCRC);
@@ -635,7 +617,8 @@ public class ChecksumModuleV1
         //
         // can we do that  ?
         //
-        _defaultChecksumFactory  = ChecksumFactory.getFactory(newChecksumType);
+        _defaultChecksumFactory =
+            ChecksumFactory.getFactory(ChecksumType.getChecksumType(newChecksumType));
 
         //
         // seems to be ok

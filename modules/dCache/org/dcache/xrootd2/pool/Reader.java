@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.dcache.xrootd2.protocol.messages.ReadResponse;
 
+
 /**
  * Encapsulates a read request. To avoid that we deplete memory space,
  * we only read as much data as we can write to the socket without

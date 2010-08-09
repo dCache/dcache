@@ -208,4 +208,7 @@ public interface XrootdProtocol {
 
         public String xmlText() { return _xmlText; }
     };
+
+    /* passing information from the door to the pool */
+    public static final String UUID_PREFIX = "org.dcache.uuid";
 }

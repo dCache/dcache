@@ -2,6 +2,7 @@ package org.dcache.xrootd2.door;
 
 import javax.security.auth.Subject;
 import java.net.InetSocketAddress;
+import java.util.UUID;
 
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.util.RedirectedTransfer;
@@ -14,7 +15,9 @@ import dmg.cells.nucleus.CellPath;
 public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 {
     private long _checksum;
+    private UUID _uuid;
     private int _fileHandle;
+    private boolean _uuidSupported;
 
     public XrootdTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
         super(pnfs, subject, path);
@@ -32,6 +35,18 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
         _checksum = checksum;
     }
 
+    public synchronized void setUUID(UUID uuid) {
+        _uuid = uuid;
+    }
+
+    public synchronized void setUUIDSupported(boolean uuidSupported) {
+        _uuidSupported = uuidSupported;
+    }
+
+    public boolean isUUIDSupported() {
+        return _uuidSupported;
+    }
+
     protected synchronized ProtocolInfo createProtocolInfo() {
         InetSocketAddress client = getClientAddress();
         XrootdProtocolInfo protocolInfo =
@@ -43,7 +58,8 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
                                    new CellPath(getCellName(), getDomainName()),
                                    getPnfsId(),
                                    _fileHandle,
-                                   _checksum);
+                                   _checksum,
+                                   _uuid);
         protocolInfo.setPath(_path.toString());
         return protocolInfo;
     }

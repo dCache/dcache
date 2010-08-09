@@ -1,9 +1,9 @@
 package org.dcache.xrootd2.pool;
 
 import java.nio.channels.FileChannel;
-import java.io.IOException;
-
 import java.util.List;
+
+import java.io.IOException;
 
 import org.dcache.xrootd2.protocol.messages.ReadResponse;
 import org.dcache.xrootd2.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
@@ -69,6 +69,12 @@ public class VectorReader implements Reader
             position += read;
             length += read;
         }
+
+        /* inform the mover about transferred bytes and update last
+         * transfer information */
+        XrootdProtocol_3 mover = descriptor.getMover();
+        mover.addTransferredBytes(length);
+        mover.updateLastTransferred();
 
         return length;
     }

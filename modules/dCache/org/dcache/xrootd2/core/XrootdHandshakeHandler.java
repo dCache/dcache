@@ -46,7 +46,7 @@ public class XrootdHandshakeHandler extends SimpleChannelHandler
         if (!_isHandshaked) {
             if (!(msg instanceof HandshakeRequest)) {
                 _log.error("Invalid handshake");
-                close(ctx, e.getFuture());
+                close(ctx, e.getChannel(), e.getFuture());
                 return;
             }
 
@@ -54,7 +54,7 @@ public class XrootdHandshakeHandler extends SimpleChannelHandler
             if (!Arrays.equals(request, HANDSHAKE_REQUEST)) {
                 _log.error("Received corrupt handshake message ("
                            + request.length + " bytes).");
-                close(ctx, e.getFuture());
+                close(ctx, e.getChannel(), e.getFuture());
                 return;
             }
 
@@ -70,11 +70,11 @@ public class XrootdHandshakeHandler extends SimpleChannelHandler
 
             default:
                 _log.error("Unknown server type (" + _serverType + ")");
-                close(ctx, e.getFuture());
+                close(ctx, e.getChannel(), e.getFuture());
                 return;
             }
 
-            write(ctx, e.getFuture(), wrappedBuffer(response));
+            write(ctx, e.getChannel(), e.getFuture(), wrappedBuffer(response));
 
             _isHandshaked = true;
 

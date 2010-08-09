@@ -4,6 +4,8 @@ package diskCacheV111.namespace.provider;
 
 import  diskCacheV111.util.*;
 import  diskCacheV111.namespace.NameSpaceProvider;
+import org.dcache.util.ChecksumType;
+import org.dcache.util.Checksum;
 
 import  java.util.*;
 import javax.security.auth.Subject;
@@ -22,7 +24,7 @@ public class AttributeChecksumBridge {
     public String getChecksum(Subject subject, PnfsId pnfsId,int checksumType)
        throws CacheException
    {
-      if ( checksumType == Checksum.MD5 || checksumType == Checksum.ADLER32 ){
+       if ( checksumType == ChecksumType.MD5_TYPE.getType() || checksumType == ChecksumType.ADLER32.getType() ){
         // look into "c" flag
           String flagValue = (String)_nameSpaceProvider.getFileAttribute(subject, pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);
@@ -34,7 +36,7 @@ public class AttributeChecksumBridge {
       return new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(subject, pnfsId, CHECKSUM_COLLECTION_FLAG),true).get(checksumType);
    }
 
-   public Set<org.dcache.util.Checksum> getChecksums(Subject subject, PnfsId pnfsId)
+   public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
        throws CacheException
     {
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(subject, pnfsId, "c");
@@ -52,7 +54,7 @@ public class AttributeChecksumBridge {
     {
       // alder32 is always stored where everyone is expecting it to - using c flag
       // the other types are packed into list which serizalized value is managed under CHECKSUM_COLLECTION_FLAG
-      if ( checksumType == Checksum.ADLER32 ){
+        if ( checksumType == ChecksumType.ADLER32.getType() ){
         // look into "c" flag
           String flagValue = (String)_nameSpaceProvider.getFileAttribute(subject, pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);

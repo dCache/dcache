@@ -27,6 +27,6 @@ public class XrootdEncoder extends SimpleChannelHandler
             buffer.setInt(4, buffer.readableBytes() - 8);
             msg = buffer;
         }
-        write(ctx, e.getFuture(), msg);
+        write(ctx, e.getChannel(), e.getFuture(), msg);
     }
 }

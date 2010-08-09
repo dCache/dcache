@@ -70,9 +70,13 @@ package org.dcache.pool.movers;
 
 import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Checksum;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
@@ -86,6 +90,10 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
@@ -111,24 +119,33 @@ public class RemoteGsiftpTransferProtocol_1
         org.slf4j.LoggerFactory.getLogger(RemoteGsiftpTransferProtocol_1.class);
     //timeout after 5 minutes if credentials not delegated
     private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
+
+    private final static CellPath PNFS_MANAGER =
+        new CellPath("PnfsManager");
+
     private final CellEndpoint _cell;
     private long _starttime;
     private long _timeout_time;
     private PnfsId _pnfsId;
 
+    private ChecksumFactory _checksumFactory;
     private MessageDigest _transferMessageDigest;
-    private Checksum _transferChecksum;
 
     private long _previousUpdateEndOffset = 0;
 
     private RandomAccessFile _raDiskFile;
     private GridftpClient _client;
     private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
-    private diskCacheV111.util.ChecksumFactory _cksmFactory;
 
     {
+        ChecksumType[] types = ChecksumType.values();
+        String[] names = new String[types.length];
+        for (int i = 0; i < types.length; i++) {
+            names[i] = types[i].getName();
+        }
+
         // set checksum type set for further cksm negotiations
-        org.dcache.srm.util.GridftpClient.setSupportedChecksumTypes(ChecksumFactory.getTypes());
+        org.dcache.srm.util.GridftpClient.setSupportedChecksumTypes(names);
     }
 
     public RemoteGsiftpTransferProtocol_1(CellEndpoint cell)
@@ -354,10 +371,15 @@ public class RemoteGsiftpTransferProtocol_1
         _log.debug("gridFTPWrite started");
 
         try {
-            String checksumTypes [] = ChecksumFactory.getTypes(_cell,_pnfsId);
-            if ( checksumTypes != null ){
-                _log.debug("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
-                _client.setChecksum(checksumTypes[0],null);
+            PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
+            FileAttributes attributes =
+                pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
+            Set<Checksum> checksums = attributes.getChecksums();
+
+            if (!checksums.isEmpty()){
+                Checksum checksum = checksums.iterator().next();
+                _log.debug("Will use " + checksum + " for transfer verification of "+_pnfsId);
+                _client.setChecksum(checksum.getType().getName(), null);
             } else {
                 _log.debug("PnfsId "+_pnfsId+" does not have checksums");
             }
@@ -379,11 +401,16 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
-    // the following methods were adapted from DCapProtocol_3_nio mover
     public Checksum getClientChecksum()
     {
-        if ( _cksmFactory != null  && _ftpCksm != null ){
-            return _cksmFactory.create(_ftpCksm.value);
+        try {
+            if (_ftpCksm != null ){
+                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type)).create(_ftpCksm.value);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            _log.error("Checksum algorithm is not supported: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            _log.error("Checksum algorithm is not supported: " + e.getMessage());
         }
         return null;
     }
@@ -391,20 +418,18 @@ public class RemoteGsiftpTransferProtocol_1
     public Checksum getTransferChecksum()
     {
         try {
-            if (_transferChecksum == null) {
+            if (_transferMessageDigest == null) {
                 return null;
             }
 
-            if (_transferMessageDigest != null) {
-                int read;
-                byte[] bytes = new byte[128 * 1024];
-                _raDiskFile.seek(_previousUpdateEndOffset);
-                while ((read = _raDiskFile.read(bytes)) >= 0) {
-                    _transferMessageDigest.update(bytes, 0, read);
-                }
+            int read;
+            byte[] bytes = new byte[128 * 1024];
+            _raDiskFile.seek(_previousUpdateEndOffset);
+            while ((read = _raDiskFile.read(bytes)) >= 0) {
+                _transferMessageDigest.update(bytes, 0, read);
             }
 
-            return _transferChecksum;
+            return _checksumFactory.create(_transferMessageDigest.digest());
         } catch (IOException e) {
             _log.error(e.toString());
             return null;
@@ -413,9 +438,6 @@ public class RemoteGsiftpTransferProtocol_1
 
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
-        if ( _cksmFactory != null )
-            return _cksmFactory;
-
         if (protocol instanceof RemoteGsiftpTransferProtocolInfo) {
 
             RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo =  (RemoteGsiftpTransferProtocolInfo) protocol;
@@ -423,9 +445,10 @@ public class RemoteGsiftpTransferProtocol_1
                 createFtpClient(remoteGsiftpProtocolInfo);
                 GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
                 _ftpCksm = _client.negotiateCksm(src_url.getPath());
-                _cksmFactory = ChecksumFactory.getFactory(_ftpCksm.type);
-                return _cksmFactory;
+                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
             } catch (NoSuchAlgorithmException e) {
+                _log.error("Checksum algorithm is not supported: " + e.getMessage());
+            } catch (IllegalArgumentException e) {
                 _log.error("Checksum algorithm is not supported: " + e.getMessage());
             } catch (NoRouteToCellException e) {
                 _log.error("Failed to communicate with transfer manager: " + e.getMessage());
@@ -442,11 +465,12 @@ public class RemoteGsiftpTransferProtocol_1
         return null;
     }
 
-    public void setDigest(Checksum checksum)
+    @Override
+    public void setDigest(ChecksumFactory factory)
     {
-        _transferChecksum      =  checksum;
+        _checksumFactory = factory;
         _transferMessageDigest =
-            checksum != null? checksum.getMessageDigest() : null;
+            (factory != null) ? factory.create() : null;
     }
 
     public synchronized void receiveEBlock(byte[] array,
@@ -564,9 +588,13 @@ public class RemoteGsiftpTransferProtocol_1
             throws IOException,NoSuchAlgorithmException
         {
             try {
-                diskCacheV111.util.Checksum pnfsChecksum = diskCacheV111.util.ChecksumFactory.getFactory(type).createFromPersistentState(_cell, _pnfsId);
+                PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
+                FileAttributes attributes =
+                    pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
+                Checksum pnfsChecksum =
+                    ChecksumFactory.getFactory(ChecksumType.getChecksumType(type)).find(attributes.getChecksums());
                 if ( pnfsChecksum != null ){
-                    String hexValue = pnfsChecksum.toHexString();
+                    String hexValue = pnfsChecksum.getValue();
                     _log.debug(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
                     return hexValue;
                 }
