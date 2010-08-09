@@ -31,11 +31,24 @@ for jar in $SRM_PATH/lib/globus/*jar ; do
 SRM_CP=$SRM_CP:$jar
 done
 
+# slf4j
+for jar in $SRM_PATH/lib/slf4j/*jar
+do
+    SRM_CP=$SRM_CP:${jar}
+done
+
+# logback
+for jar in $SRM_PATH/lib/logback/*jar
+do
+    SRM_CP=$SRM_CP:${jar}
+done
+
+
 OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
 
 if [ "$SECURITY_DEBUG" = "true" ]
 then
-  OPTIONS=" ${OPTIONS} -Dlog4j.configuration=${SRM_PATH}/bin/log4j.properties.all"
+  OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=${SRM_PATH}/conf/logback-all.xml"
 fi
 
 #OPTIONS=" ${OPTIONS} -Dorg.globus.tcp.port.range=50000,50050"

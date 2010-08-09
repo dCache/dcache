@@ -58,7 +58,7 @@
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
-	<fileset dir="${libDir}/log4j" includes="*.jar" />
+	<fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
@@ -269,6 +269,9 @@
 
         <copy file="${srmclient.src}/conf/SRMServerV1.map" todir="${srmclient.bin.dir}/conf" />
         <copy file="${srmclient.src}/conf/JHRM.map" todir="${srmclient.bin.dir}/conf" />
+        <copy todir="${srmclient.bin.dir}/conf">
+            <fileset dir="${srmclient.src}/conf/" includes="logback*.xml"/>
+        </copy>
 
 
         <!-- external jars -->
@@ -281,10 +284,10 @@
             </fileset>
         </copy>
 
-        <!-- log4j -->
-        <mkdir dir="${srmclient.bin.dir}/lib/log4j" />
-        <copy todir="${srmclient.bin.dir}/lib/log4j">
-            <fileset dir="${libDir}/log4j">
+        <!-- logback -->
+        <mkdir dir="${srmclient.bin.dir}/lib/logback" />
+        <copy todir="${srmclient.bin.dir}/lib/logback">
+            <fileset dir="${libDir}/logback">
                 <include name="*.jar"/>
             </fileset>
         </copy>

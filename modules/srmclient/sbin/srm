@@ -121,7 +121,7 @@ for i in $SRM_PATH/lib/axis/*.jar
   SRM_CP=$SRM_CP:$i
 done
 
-for i in $SRM_PATH/lib/log4j/*.jar
+for i in $SRM_PATH/lib/logback/*.jar
   do
   SRM_CP=$SRM_CP:$i
 done
@@ -137,6 +137,8 @@ for i in $SRM_PATH/lib/security/*.jar
   SRM_CP=$SRM_CP:$i
 done
 
+SRM_CP=${SRM_PATH}/conf:$SRM_CP
+
 if [ "${SRM_JAVA_OPTIONS}" = "" ]
     then
     SRM_JAVA_OPTIONS="-Xms64m -Xmx64m"
@@ -147,15 +149,13 @@ OPTIONS=" ${SRM_JAVA_OPTIONS} -Djava.protocol.handler.pkgs=org.globus.net.protoc
 SRMCP_OPTIONS=""
 if [ "$DEBUG" = "true" ]
     then
-    SRM_CP=${SRM_PATH}/conf:$SRM_CP
-    OPTIONS=" ${OPTIONS} -Dlog4j.configuration=log4j.properties.axis"
+    OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=logback-axis.xml"
     OPTIONS=" ${OPTIONS} -Delectric.logging=SOAP,HTTP"
 fi
 
 if [ "$SECURITY_DEBUG" = "true" ]
     then
-    SRM_CP=${SRM_PATH}/conf:$SRM_CP
-    OPTIONS=" ${OPTIONS} -Dlog4j.configuration=log4j.properties.security -Dlog4j.debug=true "
+    OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=logback-security.properties"
 fi
 
 if [ "$SRM_CONFIG" != "" -a  "$SRM_CONFIG" != "NONE" -a  ! -f "$SRM_CONFIG" ]

@@ -3,16 +3,13 @@ package org.dcache.boot;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.xml.DOMConfigurator;
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.ReplaceableProperties;
@@ -21,6 +18,13 @@ import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
 import dmg.util.Args;
 import dmg.util.CommandException;
+
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
 
 /**
  * Domain encapsulates the configuration of a domain and its
@@ -33,13 +37,14 @@ public class Domain
     private static final String PROPERTY_DOMAIN_SERVICE_URI = "domain.service.uri";
     private static final String PROPERTY_DOMAIN_PRELOAD = "domain.preload";
 
-    private static final String PROPERTY_LOG4J_CONFIG = "dcache.log4j.configuration";
+    private static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";
 
     private static final String SCHEME_FILE = "file";
     private static final String SUFFIX_PROPERTIES = ".properties";
     private static final String SUFFIX_XML = ".xml";
 
-    private static final Logger _log = Logger.getLogger(SystemCell.class);
+    private static final Logger _log =
+        LoggerFactory.getLogger(SystemCell.class);
 
     private final ReplaceableProperties _properties;
     private final List<ReplaceableProperties> _services;
@@ -96,35 +101,35 @@ public class Domain
     }
 
     private void initializeLogging()
-        throws URISyntaxException
+        throws URISyntaxException, IOException
     {
-        String property = _properties.getReplacement(PROPERTY_LOG4J_CONFIG);
-        if (property == null) return;
+        try {
+            String property = _properties.getReplacement(PROPERTY_LOG_CONFIG);
+            if (property == null) return;
 
-        URI uri = new URI(property);
-        String path = uri.getPath();
-        if (path == null) {
-            throw new URISyntaxException(property, "Path is missing");
-        }
-
-        boolean isFile =
-            uri.getScheme() == null || uri.getScheme().equals(SCHEME_FILE);
-
-        LogManager.resetConfiguration();
-        if (path.endsWith(SUFFIX_PROPERTIES)) {
-            if (isFile) {
-                PropertyConfigurator.configureAndWatch(path);
-            } else {
-                PropertyConfigurator.configure(NetworkUtils.toURL(uri));
+            URI uri = new URI(property);
+            String path = uri.getPath();
+            if (path == null) {
+                throw new URISyntaxException(property, "Path is missing");
             }
-        } else if (path.endsWith(SUFFIX_XML)) {
-            if (isFile) {
-                DOMConfigurator.configureAndWatch(path);
-            } else {
-                DOMConfigurator.configure(NetworkUtils.toURL(uri));
+
+            if (uri.getScheme() == null || uri.getScheme().equals(SCHEME_FILE)) {
+                File f = new File(path);
+                uri = f.toURI();
             }
-        } else {
-            throw new URISyntaxException(property, "Unknown file ending");
+
+            LoggerContext loggerContext =
+                (LoggerContext) LoggerFactory.getILoggerFactory();
+            loggerContext.reset();
+            try {
+                JoranConfigurator configurator = new JoranConfigurator();
+                configurator.setContext(loggerContext);
+                configurator.doConfigure(NetworkUtils.toURL(uri));
+            } finally {
+                StatusPrinter.printInCaseOfErrorsOrWarnings(loggerContext);
+            }
+        } catch (JoranException e) {
+            throw new IOException("Failed to load log configuration:" + e.getMessage(), e);
         }
     }
 

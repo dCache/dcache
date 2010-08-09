@@ -14,8 +14,6 @@
     <property name="dcache.jar" location="${classesDir}/dcache.jar" />
     <property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 
-    <property name="log4jVersion" value="1.2.15" />
-
 	<target name="-isUptodate.dcache.jar" depends="-isUptodate.dcache.jar-classes,-isUptodate.dcache.jar-confs">
 		<condition property="dcache.jar.upToDate">
 			<and>
@@ -139,7 +137,7 @@
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
-        <pathelement location="${libDir}/log4j/log4j-${log4jVersion}.jar" />
+        <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement path="${dcache.build.dir}" />
@@ -239,7 +237,7 @@
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
-        <pathelement location="${libDir}/log4j/log4j-${log4jVersion}.jar" />
+        <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
@@ -448,12 +446,13 @@
             </fileset>
         </copy>
 
-        <!-- log4j -->
-        <mkdir dir="${server.bin.dir}/classes/log4j" />
-        <copy file="${libDir}/log4j/log4j-${log4jVersion}.jar" todir="${server.bin.dir}/classes/log4j" />
-
-        <!-- log4j properties file -->
-        <copy file="${dcache.src}/diskCacheV111/config/log4j.properties" todir="${server.bin.dir}/config" />
+        <!-- logback -->
+        <mkdir dir="${server.bin.dir}/classes/logback" />
+        <copy todir="${server.bin.dir}/classes/logback">
+          <fileset dir="${libDir}/logback/">
+            <include name="*.jar" />
+          </fileset>
+        </copy>
 
         <!-- BerkeleyDB -->
         <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />

@@ -10,10 +10,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
+
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.TestStateExhibitor;
@@ -27,16 +31,36 @@ import org.junit.Test;
 public class LinkInfoVisitorTests {
 
     static final StatePath LINKS_PATH = new StatePath( "links");
+    static final private String CONSOLE_APPENDER_NAME = "console";
+    static final private String CONSOLE_APPENDER_PATTERN = "%-5level - %msg%n";
 
     /**
-     * Direct all warning or more severe messages from ListInfoVisitor log4j target
-     * to the console.
+     * Direct all warning or more severe messages from ListInfoVisitor
+     * log4j target to the console.
+     *
+     * FIXME: This should be done by a generic configuration file
+     * specified as a system property in ant.
      */
     static {
-        Logger log = Logger.getRootLogger();
-        log.removeAllAppenders();
-        log.addAppender( new ConsoleAppender( new PatternLayout()));
-        log.setLevel( Level.WARN);
+        LoggerContext loggerContext =
+            (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
+
+        ConsoleAppender<ILoggingEvent> ca =
+            new ConsoleAppender<ILoggingEvent>();
+        ca.setContext(loggerContext);
+        ca.setName(CONSOLE_APPENDER_NAME);
+        PatternLayoutEncoder pl = new PatternLayoutEncoder();
+        pl.setContext(loggerContext);
+        pl.setPattern(CONSOLE_APPENDER_PATTERN);
+        pl.start();
+
+        ca.setEncoder(pl);
+        ca.start();
+
+        Logger logger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        logger.addAppender(ca);
+        logger.setLevel(Level.WARN);
     }
 
     /** A mapping between operation preference to the name of the corresponding metric */
@@ -120,7 +144,7 @@ public class LinkInfoVisitorTests {
         StateLocation.putLinkSpaceMetrics( _exhibitor, linkName, linkSpace);
 
         LinkInfo expectedLinkInfo = new LinkInfo(linkName);
-        
+
         assertSingleLinkInfo( linkName, expectedLinkInfo);
     }
 

@@ -1,0 +1,18 @@
+<configuration>
+  <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d [%t] %-5p %c - %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="OFF">
+    <appender-ref ref="stdout"/>
+  </root>
+
+  <logger name="org.globus" level="OFF"/>
+  <logger name="org.apache.axis.transport" level="DEBUG"/>
+  <logger name="org.apache.axis" level="DEBUG"/>
+  <logger name="org.apache.axis.encoding" level="INFO"/>
+  <logger name="org.apache.axis.utils" level="INFO"/>
+  <logger name="org.apache.axis.message" level="INFO"/>
+</configuration>

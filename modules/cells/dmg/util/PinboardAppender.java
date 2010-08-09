@@ -3,39 +3,46 @@ package dmg.util;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CDC;
 
-import org.apache.log4j.spi.LoggingEvent;
-import org.apache.log4j.AppenderSkeleton;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.core.Layout;
+import ch.qos.logback.core.layout.EchoLayout;
 
 /**
- * Log4j appender which can send messages to a pinboard. The Log4j MDC
- * must have a property with the key 'cell', which contains the cell
- * name. The cell name is used to identify the correct pinboard to
- * which to log the message.
+ * Logback appender which can send messages to a pinboard. The MDC
+ * must have an entry with the key 'cells.cell', which contains the
+ * cell name. The cell name is used to identify the correct pinboard
+ * to which to log the message.
  *
  * @see Pinboard
  */
-public class PinboardAppender extends AppenderSkeleton
+public class PinboardAppender extends AppenderBase<ILoggingEvent>
 {
-    protected void append(LoggingEvent event)
+    static private Layout<ILoggingEvent> _layout =
+        new EchoLayout<ILoggingEvent>();
+
+    public void setLayout(Layout<ILoggingEvent> layout)
     {
-        String cell = (String) event.getMDC(CDC.MDC_CELL);
-        if (cell != null) {
-            CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
-            if (nucleus != null) {
-                Pinboard pinboard = nucleus.getPinboard();
-                if (pinboard != null) {
-                    pinboard.pin(layout.format(event));
-                }
+        if (layout == null) {
+            throw new IllegalArgumentException("Null value is not allowed");
+        }
+        _layout = layout;
+    }
+
+    public Layout<ILoggingEvent> getLayout()
+    {
+        return _layout;
+    }
+
+    protected void append(ILoggingEvent event)
+    {
+        String cell = event.getMdc().get(CDC.MDC_CELL);
+        CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
+        if (nucleus != null) {
+            Pinboard pinboard = nucleus.getPinboard();
+            if (pinboard != null) {
+                pinboard.pin(_layout.doLayout(event));
             }
         }
-    }
-
-    public boolean requiresLayout()
-    {
-        return true;
-    }
-
-    public void close()
-    {
     }
 }

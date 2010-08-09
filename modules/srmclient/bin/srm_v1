@@ -38,7 +38,17 @@ SRM_CP=$SRM_CP:$SRM_PATH/lib/glue/jcert.jar
 # globus cog jars
 SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cog.jar:$SRM_PATH/lib/globus/iaik_javax_crypto.jar
 SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/iaik_jce_full.jar:$SRM_PATH/lib/globus/iaik_ssl.jar
-SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/log4j-core.jar
+
+for i in $SRM_PATH/lib/logback/*.jar
+  do
+  SRM_CP=$SRM_CP:$i
+done
+
+for i in $SRM_PATH/lib/slf4j/*.jar
+  do
+  SRM_CP=$SRM_CP:$i
+done
+
 
 #echo java -cp $SRM_CP gov.fnal.srm.client.CommandLineClientV1 -mapfile=$SRM_PATH/conf/JHRM.map $*
 

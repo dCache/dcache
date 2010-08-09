@@ -21,12 +21,13 @@ import org.dcache.util.ReplaceableProperties;
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.Glob;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
-import org.apache.log4j.ConsoleAppender;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 
 /**
  * Boot loader for dCache. This class contains the main method of
@@ -50,6 +51,9 @@ public class BootLoader
     private static final String OPT_CONFIG_FILE_DELIMITER = ":";
     private static final String OPT_DOMAIN = "domain";
     private static final String OPT_SHELL = "shell";
+
+    private static final String CONSOLE_APPENDER_NAME = "console";
+    private static final String CONSOLE_APPENDER_PATTERN = "%-5level - %msg%n";
 
     private BootLoader()
     {
@@ -247,12 +251,23 @@ public class BootLoader
 
     private static void logToConsoleAtLevel(Level level)
     {
-        LogManager.resetConfiguration();
+        LoggerContext loggerContext =
+            (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
 
-        Logger root = LogManager.getRootLogger();
-        root.setLevel( level);
+        ConsoleAppender<ILoggingEvent> ca =
+            new ConsoleAppender<ILoggingEvent>();
+        ca.setContext(loggerContext);
+        ca.setName(CONSOLE_APPENDER_NAME);
+        PatternLayoutEncoder pl = new PatternLayoutEncoder();
+        pl.setContext(loggerContext);
+        pl.setPattern(CONSOLE_APPENDER_PATTERN);
+        pl.start();
 
-        Appender console = new ConsoleAppender(new SimpleLayout(), ConsoleAppender.SYSTEM_ERR);
-        root.addAppender( console);
+        ca.setEncoder(pl);
+        ca.start();
+        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        rootLogger.addAppender(ca);
+        rootLogger.setLevel(level);
     }
 }

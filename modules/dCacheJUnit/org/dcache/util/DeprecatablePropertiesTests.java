@@ -6,11 +6,16 @@ import static org.junit.Assert.fail;
 
 import java.io.StringWriter;
 import java.util.Properties;
+import java.util.List;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.SimpleLayout;
-import org.apache.log4j.WriterAppender;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,7 +46,7 @@ public class DeprecatablePropertiesTests {
             "(deprecated)" + DEPRECATED_PROPERTY_NAME;
 
     private DeprecatableProperties _properties;
-    private StringBuffer _log;
+    private List<ILoggingEvent> _log;
 
     @Before
     public void setUp() {
@@ -60,11 +65,20 @@ public class DeprecatablePropertiesTests {
     }
 
     private void resetLogCapture() {
-        StringWriter writer = new StringWriter();
-        _log = writer.getBuffer();
-        LogManager.resetConfiguration();
-        BasicConfigurator.configure( new WriterAppender( new SimpleLayout(),
-                                                         writer));
+        LoggerContext loggerContext =
+            (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
+
+        ListAppender<ILoggingEvent> appender =
+            new ListAppender<ILoggingEvent>();
+        appender.setContext(loggerContext);
+        appender.setName("appender");
+        appender.start();
+        _log = appender.list;
+
+        Logger logger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        logger.addAppender(appender);
+        logger.setLevel(Level.WARN);
     }
 
     @Test
@@ -100,21 +114,26 @@ public class DeprecatablePropertiesTests {
     @Test
     public void testNormalPropertyPut() {
         _properties.put( NORMAL_PROPERTY_NAME, "some value");
-        assertEquals( "", _log.toString());
+        assertEquals(0, _log.size());
     }
 
     @Test
     public void testDeprecatedPropertyPut() {
         _properties.put( DEPRECATED_PROPERTY_NAME, "some value");
-        assertEquals( "WARN - The property " + DEPRECATED_PROPERTY_NAME +
-                      " is deprecated and will be removed.\n", _log.toString());
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("The property " + DEPRECATED_PROPERTY_NAME +
+                     " is deprecated and will be removed.",
+                     _log.get(0).getFormattedMessage());
     }
 
     @Test
     public void testObsoletePropertyPut() {
         _properties.put( OBSOLETE_PROPERTY_NAME, "some value");
-        assertEquals( "WARN - The property " + OBSOLETE_PROPERTY_NAME +
-                      " is no longer used.\n", _log.toString());
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("The property " + OBSOLETE_PROPERTY_NAME +
+                     " is no longer used.", _log.get(0).getFormattedMessage());
     }
 
     @Test
