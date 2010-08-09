@@ -655,22 +655,17 @@ public class XrootdProtocol_3
     }
 
     /**
-     * Return the status of a file
-     * @param path The path of the file on which stat should be called.
+     * Return the default file status
      * @return FileStatus object
      * @throws IOException
      */
-    FileStatus stat(String path) throws IOException
+    FileStatus stat() throws IOException
     {
         _lastTransferred.set(System.currentTimeMillis());
-        if (_protocolInfo.getPath().equals(path)) {
-            return new FileStatus(DEFAULT_FILESTATUS_ID,
-                                  _file.length(),
-                                  DEFAULT_FILESTATUS_FLAGS,
-                                  DEFAULT_FILESTATUS_MODTIME);
-        } else {
-            return FileStatus.FILE_NOT_FOUND;
-        }
+        return new FileStatus(DEFAULT_FILESTATUS_ID,
+                              _file.length(),
+                              DEFAULT_FILESTATUS_FLAGS,
+                              DEFAULT_FILESTATUS_MODTIME);
     }
 
     /**
