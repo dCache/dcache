@@ -89,6 +89,8 @@ import org.dcache.srm.Logger;
 
 import java.net.URL;
 import org.globus.util.GlobusURL;
+import java.util.Formatter;
+
 
 /**
  *
@@ -358,22 +360,64 @@ public class SRMDispatcher {
 		    System.exit(1);
 		}
 	    }
-        int repeatCount=conf.getRepeatCount() == null ?
-            1:conf.getRepeatCount();
-        for(int i=0; i<repeatCount; i++) {
-            SRMDispatcher dispatcher = new SRMDispatcher(conf);
-            dispatcher.work();
         }
-	}
 	catch(Exception e) {
-	   if(conf.isDebug()) { 
+	   if(conf.isDebug()) {
 		throw e;
 	    }
-	    else { 
+	    else {
 		    System.err.println("srm client error: \n" + e.toString());
 		    System.exit(1);
 	    }
 	}
+
+        int repeatCount=conf.getRepeatCount();
+        long endTime = System.currentTimeMillis();
+        long startTime = endTime;
+        Exception exception = null;
+        String clientName = null;
+        if(conf.isPrintPerfomance()) {
+            System.out.format("%25s, %19s, %19s, %5s, %s, %s\n",
+                    "<String(performace info)>","<StartMillis>",
+                    "<EndMillis>","<RunNumber>","<Status(success|failure)",
+                    "<performanceTestName>");
+        }
+        for(int i=0; i<repeatCount; i++) {
+            exception = null;
+            try {
+
+                    SRMDispatcher dispatcher = new SRMDispatcher(conf);
+                    dispatcher.work();
+                    clientName = dispatcher.getClientName();
+            }
+            catch(Exception e) {
+                exception = e;
+               if(conf.isDebug()) {
+                    e.printStackTrace();
+                }
+                else {
+                    System.err.println("srm client error: \n" + e.toString());
+                }
+            }
+            finally {
+                if(conf.isPrintPerfomance()) {
+                    String perfomanceTestName = conf.getPerformanceTestName();
+                    if(perfomanceTestName  == null) {
+                        perfomanceTestName = clientName;
+                    }
+                    String success = exception == null? "success":"failure";
+                    endTime = System.currentTimeMillis();
+                    StringBuilder sb = new StringBuilder();
+                    System.out.format("%25s, %19d, %19d, %5d, %s, %s\n",
+                            "performace info", startTime,endTime,i,success,perfomanceTestName );
+                    startTime = endTime;
+                }
+            }
+        }
+
+        if(exception != null) {
+           System.exit(1);
+        }
     }
     
     private void work() throws Exception {
@@ -944,6 +988,13 @@ public class SRMDispatcher {
 	    rc |= DIRECTORY_URL;
 	}
 	return rc;
+    }
+
+    public String getClientName() {
+        if(srmclient == null) {
+            return "unknown";
+        }
+        return srmclient.getClass().getSimpleName();
     }
 }
 

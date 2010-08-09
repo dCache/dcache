@@ -1785,20 +1785,60 @@ public class Configuration {
 	}
 
         @Option(
+                name = "print_performance",
+                description = "if print_performance is set to a true, " +
+                "print start and end time of each client run, " +
+                "followed by the number of the specific run, "+
+                 "followed by the value of the perf string, ",
+                defaultValue = "false",
+                required=false,
+                log=true
+                )
+                private boolean printPerformance;
+
+        public boolean isPrintPerfomance() {
+		return printPerformance ;
+	}
+
+        public void setPrintPerfomance(boolean printPerformance) {
+                this.printPerformance = printPerformance;
+        }
+
+        @Option(
+                name = "performance_test_name",
+                description = "if performance_test_name is set to a true, " +
+                "and performance_test_name is specified, this name will be printed in " +
+                "each line with performance info ",
+                defaultValue = "null",
+                required=false,
+                log=true
+                )
+                private String performanceTestName;
+
+        public String getPerformanceTestName() {
+		return performanceTestName ;
+	}
+
+        public void setPerformanceTestName(String performanceTestName) {
+                this.performanceTestName = performanceTestName;
+        }
+        
+
+        @Option(
                 name = "repeat",
                 description = "number of times to repeat a client run",
-                defaultValue = "null",
+                defaultValue = "1",
                 required=false,
                 log=true,
                 save=true
                 )
-                private Integer repeatCount;
+                private int repeatCount;
 
-        public Integer getRepeatCount() {
+        public int getRepeatCount() {
 		return repeatCount;
 	}
 
-        public void setRepeatCount(Integer count) {
+        public void setRepeatCount(int count) {
                 repeatCount=count;
         }
 
@@ -1809,14 +1849,14 @@ public class Configuration {
                 required=false,
                 log=true
                 )
-                private boolean dryrun;
+                private boolean dryRun;
 
-        public boolean isDryrun() {
-		return dryrun;
+        public boolean isDryRun() {
+		return dryRun;
 	}
 
         public void setDryrun(boolean dryrun) {
-                this.dryrun = dryrun;
+                this.dryRun = dryrun;
 	}
 	private String srmUrl;
 	private String surls[];

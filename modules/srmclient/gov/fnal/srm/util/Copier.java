@@ -94,7 +94,7 @@ import org.dcache.srm.Logger;
  */
 
 public class Copier implements Runnable {
-	private HashSet copy_jobs = new HashSet();
+    private HashSet copy_jobs = new HashSet();
     private boolean doneAddingJobs;
     private boolean stop;
     private Thread hook;
@@ -109,6 +109,7 @@ public class Copier implements Runnable {
     private int retry_num;
     private int num_jobs=0;
     private int num_completed_successfully =0;
+    private boolean dryRun;
  
     public final void say(String msg) {
         if(logger != null) {
@@ -139,6 +140,7 @@ public class Copier implements Runnable {
         this.configuration = configuration;
         this.retry_num = configuration.getRetry_num();
         this.retry_timeout = configuration.getRetry_timeout();
+        this.dryRun = configuration.isDryRun();
 
         logger = configuration.getLogger();
     }
@@ -521,7 +523,10 @@ public class Copier implements Runnable {
         }
         command = command+
         " -dst-path "+to.getPath();
-        int rc = ShellCommandExecuter.execute(command,logger);
+        int rc = 0;
+        if( !dryRun ) {
+            rc = ShellCommandExecuter.execute(command,logger);
+        }
         if(rc == 0) {
             say(" successfuly copied "+from.getURL()+" to "+to.getURL());
             num_completed_successfully++;
@@ -566,24 +571,27 @@ public class Copier implements Runnable {
                                                    "\". Allowed options \"passive\" or \"active\"");
             }
             boolean emode = (numberOfStreams!=1);
-            GridftpClient client;
-            client = new GridftpClient(src_url.getHost(),
-                                       src_url.getPort(),
-                                       configuration.getTcp_buffer_size(),
-                                       configuration.getBuffer_size(),
-                                       credential);
-            client.setStreamsNum(numberOfStreams);
-            client.setChecksum(configuration.getCksmType(),
-                               configuration.getCksmValue());
-            try {
-                client.gridFTPRead(src_url.getPath(),
-                                   dst_url.getPath(), 
-                                   emode,
-                                   passive_server_mode );
-		num_completed_successfully++;
-            }
-            finally {
-                client.close();
+            if(! dryRun ) {
+                GridftpClient client = new GridftpClient(src_url.getHost(),
+                                           src_url.getPort(),
+                                           configuration.getTcp_buffer_size(),
+                                           configuration.getBuffer_size(),
+                                           credential);
+                client.setStreamsNum(numberOfStreams);
+                client.setChecksum(configuration.getCksmType(),
+                                   configuration.getCksmValue());
+                try {
+                    client.gridFTPRead(src_url.getPath(),
+                                       dst_url.getPath(),
+                                       emode,
+                                       passive_server_mode );
+                    num_completed_successfully++;
+                }
+                finally {
+                    client.close();
+                }
+            }  else {
+                    num_completed_successfully++;
             }
             return;
         }
@@ -614,25 +622,28 @@ public class Copier implements Runnable {
                                                    "\". Allowed options \"passive\" or \"active\"");
             }
             boolean emode = (numberOfStreams!=1);
-            GridftpClient client;
-            client = new GridftpClient(dst_url.getHost(),
-                                       dst_url.getPort(),
-                                       configuration.getTcp_buffer_size(),
-                                       configuration.getBuffer_size(),
-                                       credential);
-            client.setStreamsNum(numberOfStreams);
-            client.setChecksum(configuration.getCksmType(),
-                               configuration.getCksmValue());
-            try {
-                client.gridFTPWrite(src_url.getPath(),
-                                    dst_url.getPath(),
-                                    emode,
-                                    configuration.getDoSendCheckSum(),
-                                    passive_server_mode);
-		num_completed_successfully++;
-            }
-            finally {
-                client.close();
+            if(! dryRun ) {
+                GridftpClient client = new GridftpClient(dst_url.getHost(),
+                                           dst_url.getPort(),
+                                           configuration.getTcp_buffer_size(),
+                                           configuration.getBuffer_size(),
+                                           credential);
+                client.setStreamsNum(numberOfStreams);
+                client.setChecksum(configuration.getCksmType(),
+                                   configuration.getCksmValue());
+                try {
+                    client.gridFTPWrite(src_url.getPath(),
+                                        dst_url.getPath(),
+                                        emode,
+                                        configuration.getDoSendCheckSum(),
+                                        passive_server_mode);
+                    num_completed_successfully++;
+                }
+                finally {
+                    client.close();
+                }
+            } else {
+                    num_completed_successfully++;
             }
             return;
         }

@@ -6,7 +6,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Arrays;
 import java.util.zip.Adler32;
 import org.globus.ftp.FeatureList;
@@ -18,13 +17,11 @@ import org.globus.ftp.DataSource;
 import org.globus.ftp.DataSink;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.HostPort;
-import org.globus.ftp.extended.GridFTPControlChannel;
 import org.globus.ftp.exception.ServerException;
 import org.globus.ftp.exception.FTPReplyParseException;
 import org.globus.ftp.exception.ClientException;
 import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
-import org.globus.ftp.vanilla.Command;
 import org.globus.util.GlobusURL;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.GlobusCredentialException;
@@ -183,9 +180,11 @@ public class GridftpClient
         // to "received" stream.
 
         DataSink sink = new DataSink() {
+                @Override
                 public void write(Buffer buffer) throws IOException {
                     received.write(buffer.getBuffer(), 0, buffer.getLength());
                 }
+                @Override
                 public void close() throws IOException {
                 };
             };
@@ -878,6 +877,7 @@ public class GridftpClient
             notifyAll();
         }
 
+        @Override
         public void run() {
             try {
                 if(_read) {
@@ -989,6 +989,7 @@ public class GridftpClient
             _transferred +=read;
         }
 
+        @Override
         public void close()
             throws IOException {
             logger.debug("DiskDataSink.close() called");
@@ -996,6 +997,7 @@ public class GridftpClient
         }
 
         /** Specified in org.globus.ftp.DataSource. */
+        @Override
         public long totalSize() throws IOException
         {
             return _source ? _diskFile.length() : -1;
@@ -1005,6 +1007,7 @@ public class GridftpClient
          * @return Value of property last_transfer_time.
          *
          */
+        @Override
         public long getLast_transfer_time() {
             return _last_transfer_time;
         }
@@ -1013,10 +1016,12 @@ public class GridftpClient
          * @return Value of property transfered.
          *
          */
+        @Override
         public synchronized long getTransfered() {
             return _transferred;
         }
 
+        @Override
         public synchronized Buffer read() throws IOException {
             if(!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
@@ -1036,6 +1041,7 @@ public class GridftpClient
             return buffer;
         }
 
+        @Override
         public long getAdler32() throws IOException{
             long adler32 = GridftpClient.getAdler32(_diskFile);
             logger.debug("adler 32 for file "+_diskFile+" is "+adler32);
@@ -1043,6 +1049,7 @@ public class GridftpClient
             return adler32;
         }
 
+        @Override
         public String getCksmValue(String type)
             throws IOException,NoSuchAlgorithmException
         {
@@ -1052,6 +1059,7 @@ public class GridftpClient
             return v;
         }
 
+        @Override
         public long length() throws IOException{
             return _diskFile.length();
         }
