@@ -16,6 +16,7 @@ class PoolListByPoolGroup
         _poolGroup = poolGroup;
     }
 
+    @Override
     public void refresh()
     {
         _poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(_poolGroup),
@@ -23,6 +24,7 @@ class PoolListByPoolGroup
                           this);
     }
 
+    @Override
     public String toString()
     {
         return String.format("pool group %s, %d pools",

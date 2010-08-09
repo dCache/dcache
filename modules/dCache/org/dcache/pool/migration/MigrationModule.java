@@ -44,6 +44,7 @@ import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.JexlException;
+import org.apache.commons.jexl2.JexlContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,10 @@ import org.slf4j.LoggerFactory;
  * effect. This is achieved by querying the set of target pools for
  * existing copies of the replica. If found, the transfer may be
  * skipped. Care is taken to check the state of the replica on the
- * target pool - and updating it if necessary.
+ * target pool - and updating it if necessary. Idempotence may however
+ * be affected by exclude and include expressions: If those rely on
+ * values that change during the runtime of the job, then the job will
+ * no longer be idempotent.
  *
  * Jobs monitor the local repository for changes. If a replica changes
  * state before it is transfered, and the replica no longer passes the
@@ -107,6 +111,15 @@ public class MigrationModule
 
     private final static PoolManagerPoolInformation DUMMY_POOL =
         new PoolManagerPoolInformation("pool", 0.0, 0.0);
+
+    public final static String CONSTANT_TARGET = "target";
+    public final static String CONSTANT_SOURCE = "source";
+    public final static String CONSTANT_TARGETS = "targets";
+    public final static String CONSTANT_QUEUE_FILES = "queue.files";
+    public final static String CONSTANT_QUEUE_BYTES = "queue.bytes";
+
+    public final static int NON_EMPTY_QUEUE = 1;
+    public final static int NO_TARGETS = 0;
 
     private final List<Job> _alive = new ArrayList();
     private final Map<Integer,Job> _jobs = new HashMap();
@@ -376,7 +389,7 @@ public class MigrationModule
         }
     }
 
-    private Expression createPoolExpression(String s, Expression ifNull)
+    private Expression createPredicate(String s, Expression ifNull, JexlContext context)
     {
         try {
             if (s == null) {
@@ -385,14 +398,30 @@ public class MigrationModule
 
             Expression expression = _jexl.createExpression(s);
 
-            MapContextWithConstants context = new MapContextWithConstants();
-            context.addConstant("target", new PoolValues(DUMMY_POOL));
             assertExpressionEvaluatesToBoolean(expression, context);
 
             return expression;
         } catch (JexlException e) {
             throw new IllegalArgumentException(s + ": " + e.getMessage(), e);
         }
+    }
+
+    private Expression createPoolPredicate(String s, Expression ifNull)
+    {
+        MapContextWithConstants context = new MapContextWithConstants();
+        context.addConstant(CONSTANT_SOURCE, new PoolValues(DUMMY_POOL));
+        context.addConstant(CONSTANT_TARGET, new PoolValues(DUMMY_POOL));
+        return createPredicate(s, ifNull, context);
+    }
+
+    private Expression createLifetimePredicate(String s)
+    {
+        MapContextWithConstants context = new MapContextWithConstants();
+        context.addConstant(CONSTANT_SOURCE, new PoolValues(DUMMY_POOL));
+        context.addConstant(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
+        context.addConstant(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
+        context.addConstant(CONSTANT_TARGETS, NO_TARGETS);
+        return createPredicate(s, null, context);
     }
 
     private Set<Pattern> createPatterns(String globs)
@@ -431,9 +460,16 @@ public class MigrationModule
         String concurrency = args.getOpt("concurrency");
         String pins = args.getOpt("pins");
         String order = args.getOpt("order");
+        String pauseWhen = args.getOpt("pause-when");
+        String stopWhen = args.getOpt("stop-when");
 
-        if (permanent && order != null) {
-            throw new IllegalArgumentException("Permanent jobs cannot be ordered");
+        if (permanent) {
+            if (order != null) {
+                throw new IllegalArgumentException("Permanent jobs cannot be ordered");
+            }
+            if (stopWhen != null) {
+                throw new IllegalArgumentException("Permanent jobs cannot have a stop condition.");
+            }
         }
 
         if (select == null) {
@@ -476,12 +512,22 @@ public class MigrationModule
             throw new IllegalArgumentException(pins + ": Invalid value for option -pins");
         }
 
+        /* The source list is used to fetch pool information about this pool.
+         */
+        RefreshablePoolList sourceList =
+            new PoolListByNames(_context.getPoolManagerStub(),
+                                Collections.singletonList(_context.getPoolName()));
+
+        Expression excludeExpression =
+            createPoolPredicate(excludeWhen, FALSE_EXPRESSION);
+        Expression includeExpression =
+            createPoolPredicate(includeWhen, TRUE_EXPRESSION);
+
         RefreshablePoolList poolList =
             new PoolListFilter(createPoolList(target, targets),
-                               excluded,
-                               createPoolExpression(excludeWhen, FALSE_EXPRESSION),
-                               included,
-                               createPoolExpression(includeWhen, TRUE_EXPRESSION));
+                               excluded, excludeExpression,
+                               included, includeExpression,
+                               sourceList);
 
         JobDefinition definition =
             new JobDefinition(createFilters(args),
@@ -489,12 +535,15 @@ public class MigrationModule
                               createCacheEntryMode(targetMode),
                               createPoolSelectionStrategy(1.0, 0.0, select),
                               createComparator(order),
+                              sourceList,
                               poolList,
                               Integer.valueOf(refresh) * 1000,
                               permanent,
                               eager,
                               mustMovePins,
-                              verify);
+                              verify,
+                              createLifetimePredicate(pauseWhen),
+                              createLifetimePredicate(stopWhen));
 
         if (definition.targetMode.state == CacheEntryMode.State.DELETE
             || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {
@@ -549,6 +598,11 @@ public class MigrationModule
         "target pool with the existing replica fails to respond, then the\n" +
         "operation is retried indefinitely, unless the job is marked as\n" +
         "eager.\n\n" +
+
+        "Please notice that a job is only idempotent as long as the set of\n" +
+        "target pools do not change. If pools go offline or are excluded as\n" +
+        "a result of a an exclude or include expression, then the idempotent\n" +
+        "nature of a job may be lost.\n\n" +
 
         "Both the state of the local replica and that of the target replica\n" +
         "can be specified. If the target replica already exists, the state\n" +
@@ -665,19 +719,19 @@ public class MigrationModule
         "  -exclude-when=<expr>\n" +
         "          Exclude target pools for which the expression evaluates to\n" +
         "          true. The expression may refer to the following constants:\n" +
-        "          target.name:\n" +
+        "          source.name/target.name:\n" +
         "              pool name\n" +
-        "          target.spaceCost:\n" +
+        "          source.spaceCost/target.spaceCost:\n" +
         "              space cost\n" +
-        "          target.cpuCost:\n" +
+        "          source.cpuCost/target.cpuCost:\n" +
         "              cpu cost\n" +
-        "          target.free:\n" +
+        "          source.free/target.free:\n" +
         "              free space in bytes\n" +
-        "          target.total:\n" +
+        "          source.total/target.total:\n" +
         "              total space in bytes\n" +
-        "          target.removable:\n" +
+        "          source.removable/target.removable:\n" +
         "              removable space in bytes\n" +
-        "          target.used:\n" +
+        "          source.used/target.used:\n" +
         "              used space in bytes\n" +
         "  -include=<pattern>[,<pattern>...]\n" +
         "          Only include target pools matching any of the patterns. Single\n" +
@@ -705,8 +759,36 @@ public class MigrationModule
         "          Determines the interpretation of the target names. The\n" +
         "          default is 'pool'.\n\n" +
         "Lifetime options:\n" +
+        "  -pause-when=<expr>\n" +
+        "          Pauses the job when the expression becomes true. The job\n" +
+        "          continues when the expression once again evaluates to false.\n" +
+        "          The following constants are defined for this pool:\n" +
+        "          queue.files:\n" +
+        "              the number of files remaining to be transferred.\n" +
+        "          queue.bytes:\n" +
+        "              the number of bytes remaining to be transferred.\n" +
+        "          source.name:\n" +
+        "              pool name\n" +
+        "          source.spaceCost:\n" +
+        "              space cost\n" +
+        "          source.cpuCost:\n" +
+        "              cpu cost\n" +
+        "          source.free:\n" +
+        "              free space in bytes\n" +
+        "          source.total:\n" +
+        "              total space in bytes\n" +
+        "          source.removable:\n" +
+        "              removable space in bytes\n" +
+        "          source.used:\n" +
+        "              used space in bytes\n" +
+        "          targets:\n" +
+        "              the number of target pools.\n" +
         "  -permanent\n" +
-        "          Mark job as permanent.\n";
+        "          Mark job as permanent.\n" +
+        "  -stop-when=<expr>\n" +
+        "          Terminates the job when the expression becomes true. This option\n" +
+        "          cannot be used for permanent jobs. See the description of\n" +
+        "          -pause-when for the list of constants allowed in the expression.\n";
 //         "  -dry-run\n" +
 //         "          Perform all the steps without actually copying anything\n" +
 //         "          or updating the state.";
@@ -829,6 +911,8 @@ public class MigrationModule
         "   INITIALIZING   Initial scan of repository\n" +
         "   RUNNING        Job runs (schedules new tasks)\n" +
         "   SLEEPING       A task failed; no tasks are scheduled for 10 seconds\n" +
+        "   PAUSED         Pause expression evaluates to true; no tasks for 10 seconds\n" +
+        "   STOPPING       Stop expression evaluated to true; waiting for tasks to stop\n" +
         "   SUSPENDED      Job suspended by user; no tasks are scheduled\n" +
         "   CANCELLING     Job cancelled by user; waiting for tasks to stop\n" +
         "   CANCELLED      Job cancelled by user; no tasks are running\n" +

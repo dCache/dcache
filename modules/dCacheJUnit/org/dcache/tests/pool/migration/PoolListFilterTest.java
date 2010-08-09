@@ -32,12 +32,15 @@ public class PoolListFilterTest
     private final PoolManagerPoolInformation POOL3 =
         createPool("pool3", Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
+    private final PoolManagerPoolInformation SOURCE =
+        createPool("source", 0.5, 0.5);
+
     @Test
     public void testExclude()
     {
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
-            createFilter(list, "*1", "false", null, "true");
+            createFilter(list, "*1", "false", null, "true", SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -52,7 +55,10 @@ public class PoolListFilterTest
     {
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
-            createFilter(list, null, "target.name=~'pool[12]'", null, "true");
+            createFilter(list,
+                         null, "target.name=~'pool[12]'",
+                         null, "true",
+                         SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -67,7 +73,7 @@ public class PoolListFilterTest
     {
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
-            createFilter(list, null, "false", "*1", "true");
+            createFilter(list, null, "false", "*1", "true", SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -82,7 +88,10 @@ public class PoolListFilterTest
     {
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
-            createFilter(list, null, "false", null, "target.name=~'pool[12]'");
+            createFilter(list,
+                         null, "false", null,
+                         "target.name=~'pool[12]'",
+                         SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -97,7 +106,7 @@ public class PoolListFilterTest
     {
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
-            createFilter(list, "*1", "false", "*1", "true");
+            createFilter(list, "*1", "false", "*1", "true", SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -111,7 +120,8 @@ public class PoolListFilterTest
         PoolListFilter filter =
             createFilter(list,
                          null, "target.name=='pool1'",
-                         null, "target.name=='pool1'");
+                         null, "target.name=='pool1'",
+                         SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -119,11 +129,30 @@ public class PoolListFilterTest
     }
 
     @Test
+    public void testFilterRefersToSource()
+    {
+        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolListFilter filter =
+            createFilter(list,
+                         null, "source.spaceCost<target.spaceCost",
+                         null, "true",
+                         SOURCE);
+        List<PoolManagerPoolInformation> result = filter.getPools();
+        assertEquals(2, result.size());
+        assertContainsPool(POOL1, result);
+        assertContainsPool(POOL2, result);
+        assertDoesNotContainPool(POOL3, result);
+    }
+
+    @Test
     public void testCacheInvalidation()
     {
         PoolList list = new PoolList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
-            createFilter(list, null, "false", null, "target.name=~'pool[12]'");
+            createFilter(list,
+                         null, "false",
+                         null, "target.name=~'pool[12]'",
+                         SOURCE);
 
         List<PoolManagerPoolInformation> result = filter.getPools();
 
@@ -168,13 +197,15 @@ public class PoolListFilterTest
     private static PoolListFilter
         createFilter(RefreshablePoolList list,
                      String exclude, String excludeWhen,
-                     String include, String includeWhen)
+                     String include, String includeWhen,
+                     PoolManagerPoolInformation source)
     {
         return new PoolListFilter(list,
                                   createPatterns(exclude),
                                   createExpression(excludeWhen),
                                   createPatterns(include),
-                                  createExpression(includeWhen));
+                                  createExpression(includeWhen),
+                                  new PoolList(source));
     }
 
     private static boolean containsPool(String name, List<PoolManagerPoolInformation> list)
@@ -216,6 +247,11 @@ public class PoolListFilterTest
         public PoolList(PoolManagerPoolInformation... pools)
         {
             setPools(pools);
+        }
+
+        public boolean isValid()
+        {
+            return true;
         }
 
         public void setPools(PoolManagerPoolInformation... pools)

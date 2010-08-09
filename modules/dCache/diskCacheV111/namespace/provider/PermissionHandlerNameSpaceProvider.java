@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileFilter;
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
@@ -36,18 +35,12 @@ import static org.dcache.namespace.FileAttribute.*;
  *
  * Only a subset of the methods of NameSpaceProvider are protected:
  *
- *    createEntry    maps to   canCreateSubDir/canCreateFile
- *    deleteEntry    maps to   canDeleteDir/canDeleteFile
- *    renameEntry    maps to   canRename
- *    pathToPnfsid   maps to   canLookup
- *    getStorageInfo maps to   canReadFile
- *    list           maps to   canListDir
- *
- * REVISIT: Notice that there is no read operation in the
- * NameSpaceProvider interface. To read a file from dCache, we assume
- * that a door needs to get the storge info of the file and hence we
- * map getStorageInfo to read. Once getStorageInfo is replaced by
- * getFileAttributes, this needs to be redesigned.
+ *    createEntry       maps to canCreateSubDir/canCreateFile
+ *    deleteEntry       maps to canDeleteDir/canDeleteFile
+ *    renameEntry       maps to canRename
+ *    pathToPnfsid      maps to canLookup
+ *    getFileAttributes maps to canGetAttributes
+ *    list              maps to canListDir
  */
 public class PermissionHandlerNameSpaceProvider
     extends AbstractNameSpaceProviderDecorator
@@ -282,15 +275,6 @@ public class PermissionHandlerNameSpaceProvider
     }
 
     @Override
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        FileAttributes result =
-            getFileAttributes(subject, pnfsId, EnumSet.of(STORAGEINFO));
-        return result.getStorageInfo();
-    }
-
-    @Override
     public FileAttributes getFileAttributes(Subject subject, PnfsId pnfsId,
                                             Set<FileAttribute> attr)
         throws CacheException
@@ -326,37 +310,6 @@ public class PermissionHandlerNameSpaceProvider
         }
 
         return super.getFileAttributes(subject, pnfsId, attr);
-    }
-
-    @Override
-    public void setFileMetaData(Subject subject, PnfsId pnfsId,
-                                FileMetaData metaData)
-        throws CacheException
-    {
-        if (!Subjects.isRoot(subject)) {
-            PnfsId parentId = super.getParentOf(subject, pnfsId);
-            FileAttributes parentAttributes =
-                getFileAttributesForPermissionHandler(parentId);
-            FileAttributes attributes =
-                getFileAttributesForPermissionHandler(pnfsId);
-            Set<FileAttribute> toChange = EnumSet.noneOf(FileAttribute.class);
-            if (metaData.isUserPermissionsSet()) {
-                toChange.add(MODE);
-                toChange.add(OWNER);
-                toChange.add(OWNER_GROUP);
-            }
-            if (!metaData.isDirectory() && metaData.isSizeSet()) {
-                toChange.add(SIZE);
-            }
-
-            if (_handler.canSetAttributes(subject, parentAttributes, attributes,
-                                          toChange) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " +
-                                                         pnfsId.toString());
-            }
-        }
-
-        super.setFileMetaData(subject, pnfsId, metaData);
     }
 
     @Override

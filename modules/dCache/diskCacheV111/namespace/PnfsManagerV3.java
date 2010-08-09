@@ -436,34 +436,29 @@ public class PnfsManagerV3 extends CellAdapter
         return "" ;
     }
 
-    public String hh_set_meta = "<pnfsid>|<globalPath> <uid> <gid> <perm> <level1> ..." ;
-    public String ac_set_meta_$_5_20( Args args )throws Exception {
-        PnfsId    pnfsId   = null ;
-        String reply = null;
+    public final static String hh_set_meta =
+        "<pnfsid>|<globalPath> <uid> <gid> <perm>";
+    public String ac_set_meta_$_4(Args args)
+    {
         try {
-            try{
-
-                pnfsId   = new PnfsId( args.argv(0) ) ;
-
-            }catch(Exception ee ){
+            PnfsId pnfsId;
+            if (PnfsId.isValid(args.argv(0))) {
+                pnfsId = new PnfsId(args.argv(0));
+            } else {
                 pnfsId = pathToPnfsid(ROOT, args.argv(0), true);
             }
 
-            FileMetaData metaData = _nameSpaceProvider.getFileMetaData(ROOT, pnfsId);
+            FileAttributes attributes = new FileAttributes();
+            attributes.setOwner(Integer.parseInt(args.argv(1)));
+            attributes.setGroup(Integer.parseInt(args.argv(2)));
+            attributes.setMode(Integer.parseInt(args.argv(3), 8));
 
-            int uid = Integer.parseInt(args.argv(1));
-            int gid = Integer.parseInt(args.argv(2));
-            int mode = Integer.parseInt(args.argv(3),8);
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
-            FileMetaData newMetaData = new FileMetaData(metaData.isDirectory(), uid, gid, mode);
-
-            _nameSpaceProvider.setFileMetaData(ROOT, pnfsId , newMetaData );
-            reply = "Ok";
+            return "Ok";
         }catch(Exception e) {
-            reply = "set metadata failed: + " + e.getMessage();
+            return "set metadata failed: + " + e.getMessage();
         }
-
-        return reply ;
     }
 
     public String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
@@ -482,7 +477,11 @@ public class PnfsManagerV3 extends CellAdapter
                 pnfsId = pathToPnfsid(ROOT,args.argv(0), true);
             }
 
-            StorageInfo storageInfo = _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                                                     EnumSet.of(FileAttribute.STORAGEINFO));
+
+            StorageInfo storageInfo = attributes.getStorageInfo();
 
             String accessLatency = args.getOpt("accessLatency");
             if( accessLatency != null ) {
@@ -541,7 +540,11 @@ public class PnfsManagerV3 extends CellAdapter
                 if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
             }
 
-            StorageInfo info = _nameSpaceProvider.getStorageInfo(ROOT, pnfsId);
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                                                     EnumSet.of(FileAttribute.STORAGEINFO));
+
+            StorageInfo info = attributes.getStorageInfo();
             if(v) {
                 sb.append(" Storage Info : "+info ).append("\n") ;
             }else{
@@ -578,7 +581,8 @@ public class PnfsManagerV3 extends CellAdapter
                 if(v)sb.append("       PnfsId : ").append(pnfsId).append("\n") ;
             }
 
-            FileMetaData info = _nameSpaceProvider.getFileMetaData(ROOT,  pnfsId ) ;
+            FileMetaData info =
+                new FileMetaData(_nameSpaceProvider.getFileAttributes(ROOT,  pnfsId, FileMetaData.getKnownFileAttributes()));
             if(v){
                 sb.append("    Meta Data : ").append(info ).append("\n") ;
             }else{
@@ -652,18 +656,16 @@ public class PnfsManagerV3 extends CellAdapter
         return "dumped";
     }
 
-    public String hh_set_file_size = " <pnfsid> <new size> # DANGER";
-    public String ac_set_file_size_$_2(Args args) throws Exception {
+    public final static String hh_set_file_size =
+        "<pnfsid> <new size> # DANGER";
+    public String ac_set_file_size_$_2(Args args) throws Exception
+    {
+    	PnfsId pnfsId = new PnfsId(args.argv(0));
 
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-    	long size = Long.valueOf( args.argv(1));
+        FileAttributes attributes = new FileAttributes();
+        attributes.setSize(Long.valueOf(args.argv(1)));
 
-
-    	FileMetaData dummyMetaData = new FileMetaData();
-
-    	dummyMetaData.setSize(size);
-
-    	_nameSpaceProvider.setFileMetaData(ROOT, pnfsId, dummyMetaData);
+    	_nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
     	return "";
     }
@@ -1131,20 +1133,23 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    public void setFileMetaData( PnfsSetFileMetaDataMessage pnfsMessage ) {
+    public void setFileMetaData(PnfsSetFileMetaDataMessage message)
+    {
         try {
-            PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            FileMetaData meta = pnfsMessage.getMetaData();
+            PnfsId pnfsId = populatePnfsId(message);
+            FileMetaData meta = message.getMetaData();
             _log.info("setFileMetaData=" + meta + " for " + pnfsId);
 
-            checkMask(pnfsMessage);
-            _nameSpaceProvider.setFileMetaData(pnfsMessage.getSubject(), pnfsId, meta);
+            checkMask(message);
+
+            _nameSpaceProvider.setFileAttributes(message.getSubject(), pnfsId,
+                                                 meta.toFileAttributes());
         } catch (CacheException e) {
             _log.warn("Failed to set meta data: " + e);
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
             _log.warn("Failed to set meta data", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+            message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
 
@@ -1162,9 +1167,10 @@ public class PnfsManagerV3 extends CellAdapter
             return true;
         }
 
-        FileMetaData meta =
-            _nameSpaceProvider.getFileMetaData(Subjects.ROOT, pnfsid);
-        return types.contains(meta.getFileType());
+        FileAttributes attributes =
+            _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsid,
+                                                 EnumSet.of(FileAttribute.TYPE));
+        return types.contains(attributes.getFileType());
     }
 
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
@@ -1774,53 +1780,6 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    public static int fileMetaDataToUnixMode( FileMetaData meta){
-
-        int mode = 0;
-
-
-        //FIXME: to be done more elegant
-
-        // user
-        if( meta.getUserPermissions().canRead() ) {
-            mode |= 0400;
-        }
-
-        if( meta.getUserPermissions().canWrite() ) {
-            mode |= 0200;
-        }
-        if( meta.getUserPermissions().canExecute() ) {
-            mode |= 0100;
-        }
-
-
-        // group
-        if( meta.getGroupPermissions().canRead() ) {
-            mode |= 0040;
-        }
-
-        if( meta.getGroupPermissions().canWrite() ) {
-            mode |= 0020;
-        }
-        if( meta.getGroupPermissions().canExecute() ) {
-            mode |= 0010;
-        }
-
-        // world
-        if( meta.getWorldPermissions().canRead() ) {
-            mode |= 0004;
-        }
-
-        if( meta.getWorldPermissions().canWrite() ) {
-            mode |= 0002;
-        }
-        if( meta.getWorldPermissions().canExecute() ) {
-            mode |= 0001;
-        }
-
-        return mode;
-    }
-
     /**
      * Maps path to PnfsId.
      *
@@ -1968,44 +1927,34 @@ public class PnfsManagerV3 extends CellAdapter
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             Set<FileAttribute> requested = message.getRequestedAttributes();
-            if (requested.isEmpty()) {
-                /* The semantics of the message requires us to check
-                 * for existence of the file when the attribute set is
-                 * empty. For now we do this here, but maybe this
-                 * requirement should be pushed into the name space
-                 * providers.
+            if(requested.contains(FileAttribute.STORAGEINFO)) {
+                /*
+                 * TODO: The 'classic' result of getStorageInfo was a
+                 * cobination of fileMetadata + storageInfo. This was
+                 * used add the owner and group information into
+                 * sorageInfo's internal Map. Uid and Gid used by the
+                 * HSM flush scripts.
+                 *
+                 * This atavism will have to be cut out when HSM
+                 * interface will undestand Subject or FileAttributes
+                 * will be passed to HSM interface.
                  */
-                _nameSpaceProvider.getFileMetaData(subject, pnfsId);
-            } else {
-                if(requested.contains(FileAttribute.STORAGEINFO)) {
-                    /*
-                     * TODO:
-                     * The 'classic' result of getStorageInfo was a cobination of
-                     * fileMetadata + storageInfo. This was used add the owner and group
-                     * information into sorageInfo's internal Map. Uid and Gid
-                     * used by the HSM flush scripts.
-                     *
-                     * This atavism will have to be cut out when HSM interface will
-                     * undestand Subject or FileAttributes will be passed to
-                     * HSM interface.
-                     */
-                    requested = EnumSet.copyOf(requested);
-                    requested.add(FileAttribute.OWNER);
-                    requested.add(FileAttribute.OWNER_GROUP);
-                }
-                FileAttributes attrs =
-                    _nameSpaceProvider.getFileAttributes(subject,
-                                                         pnfsId,
-                                                         requested);
-
-                if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
-                    attrs.getStorageInfo().setKey("path", message.getPnfsPath());
-                    attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
-                    attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
-                }
-
-                message.setFileAttributes(attrs);
+                requested = EnumSet.copyOf(requested);
+                requested.add(FileAttribute.OWNER);
+                requested.add(FileAttribute.OWNER_GROUP);
             }
+            FileAttributes attrs =
+                _nameSpaceProvider.getFileAttributes(subject,
+                                                     pnfsId,
+                                                     requested);
+
+            if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
+                attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
+                attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
+            }
+
+            message.setFileAttributes(attrs);
             message.setSucceeded();
         } catch (FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);

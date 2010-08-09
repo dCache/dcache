@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.dcache.auth.Subjects;
@@ -16,6 +17,7 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import diskCacheV111.namespace.provider.DcacheNameSpaceProviderFactory;
 import dmg.util.Args;
@@ -195,7 +197,8 @@ public class PerformanceTest extends Thread
                     getPnfsid(path);
                     break;
                 case FILE_META_DATA:
-                    provider.getFileMetaData(Subjects.ROOT, getPnfsid(path));
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
+                                               FileMetaData.getKnownFileAttributes());
                     break;
                 case DELETE_ENTRY:
                     provider.deleteEntry(Subjects.ROOT, getPnfsid(path));
@@ -228,10 +231,10 @@ public class PerformanceTest extends Thread
                     List<String> loc = provider.getCacheLocation(Subjects.ROOT, getPnfsid(path));
                     break;
 		case STORAGE_INFO:
-                    StorageInfo info = provider.getStorageInfo(Subjects.ROOT, getPnfsid(path));
+                    StorageInfo info = provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
                     break;
                 case SET_STORAGE_INFO:
-                    info = provider.getStorageInfo(Subjects.ROOT, getPnfsid(path));
+                    info = provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.of(FileAttribute.STORAGEINFO)).getStorageInfo();
                     info.isSetAccessLatency(true);
                     info.isSetRetentionPolicy(true);
                     provider.setStorageInfo(Subjects.ROOT, getPnfsid(path), info, NameSpaceProvider.SI_OVERWRITE);

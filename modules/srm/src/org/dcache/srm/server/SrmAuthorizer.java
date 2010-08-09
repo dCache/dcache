@@ -101,7 +101,6 @@ public class SrmAuthorizer {
    private org.dcache.srm.request.RequestCredentialStorage credential_storage;
    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(
              SrmAuthorizer.class);
-   private String logConfigFile;
    private Configuration config;
    public SrmAuthorizer(SrmDCacheConnector srmConn) {
       initialize(srmConn);
@@ -110,12 +109,7 @@ public class SrmAuthorizer {
 
    private synchronized void initialize(SrmDCacheConnector srmConn) {
       try {
-         logConfigFile = srmConn.getLogFile();
-         if (logConfigFile != null && !logConfigFile.equals("")) {
-             org.apache.log4j.xml.DOMConfigurator.configure(logConfigFile);
-         }
          // Below re-checks config file periodically; default 60 seconds
-         // DOMConfigurator.configureAndWatch(logConfigFile);
          config = SrmDCacheConnector.configuration;
          authorization =
             config.getAuthorization();

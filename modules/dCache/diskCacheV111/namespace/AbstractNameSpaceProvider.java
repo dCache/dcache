@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.List;
 import java.io.File;
 import java.io.FileFilter;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
@@ -20,20 +19,6 @@ import org.dcache.vehicles.FileAttributes;
 public class AbstractNameSpaceProvider
     implements NameSpaceProvider
 {
-    @Override
-    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public PnfsId createEntry(Subject subject, String path, int uid, int gid, int mode, boolean isDirectory)
         throws CacheException
@@ -142,13 +127,6 @@ public class AbstractNameSpaceProvider
 
     @Override
     public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();

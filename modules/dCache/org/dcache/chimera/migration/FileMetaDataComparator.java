@@ -66,7 +66,7 @@ public class FileMetaDataComparator implements PnfsIdValidator {
         FileMetaData fmd1, fmd2;
 
         try {
-            fmd1 = _nsp1.getFileMetaData( Subjects.ROOT, pnfsId);
+            fmd1 = new FileMetaData(_nsp1.getFileAttributes(Subjects.ROOT, pnfsId, FileMetaData.getKnownFileAttributes()));
         } catch (IllegalArgumentException e) {
 
             if( _pw != null)
@@ -82,7 +82,7 @@ public class FileMetaDataComparator implements PnfsIdValidator {
         }
 
         try {
-            fmd2 = _nsp2.getFileMetaData( Subjects.ROOT, pnfsId);
+            fmd2 = new FileMetaData(_nsp2.getFileAttributes(Subjects.ROOT, pnfsId, FileMetaData.getKnownFileAttributes()));
         } catch (IllegalArgumentException e) {
 
             if( _pw != null)

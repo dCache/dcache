@@ -161,52 +161,6 @@ public class ChimeraNameSpaceProvider
 		return stat;
 	}
 
-    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) {
-
-        _log.debug ("setFileMetaData: {} {}", pnfsId, metaData);
-
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
-
-        try {
-
-        	Stat metadataStat = fileMetadata2Stat(metaData, inode.isDirectory() );
-
-            Stat inodeStat = inode.statCache();
-            inodeStat.setMode(metadataStat.getMode());
-            inodeStat.setUid(metadataStat.getUid());
-            inodeStat.setGid(metadataStat.getGid());
-            inodeStat.setSize(metadataStat.getSize() );
-
-            inode.setStat(inodeStat);
-
-        }catch(ChimeraFsException hfe) {
-            _log.error("setFileMetadata failed: {}", hfe.getMessage());
-        }
-
-        return ;
-    }
-
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId) throws CacheException {
-
-        FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
-        Stat stat = null;
-        try {
-            stat = inode.stat();
-        }catch(FileNotFoundHimeraFsException fnf) {
-            throw new FileNotFoundCacheException("No such file or directory: " + inode);
-        }catch(ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        }
-
-        FileMetaData fileMetaData = new FileMetaData(inode.isDirectory(), stat.getUid(), stat.getGid(), stat.getMode() );
-        fileMetaData.setFileType(!inode.isDirectory(), inode.isDirectory(), inode.isLink());
-        fileMetaData.setSize( stat.getSize() );
-        fileMetaData.setTimes(stat.getATime(), stat.getMTime(), stat.getCTime());
-
-        return fileMetaData;
-    }
-
     public PnfsId createEntry(Subject subject, String path,  int uid, int gid, int mode, boolean isDir ) throws CacheException {
 
 
@@ -439,14 +393,6 @@ public class ChimeraNameSpaceProvider
         return new PnfsId( inode.toString() );
     }
 
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId) throws CacheException {
-
-        _log.debug ("getStorageInfo for {}", pnfsId);
-
-        FsInode inode = new FsInode(_fs, pnfsId.toString());
-        return _extractor.getStorageInfo(inode);
-    }
-
     public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
 
         _log.debug ("setStorageInfo for {}", pnfsId);
@@ -621,6 +567,10 @@ public class ChimeraNameSpaceProvider
                                              Set<FileAttribute> attr)
         throws IOException, ChimeraFsException, ACLException, CacheException
     {
+        if (!inode.exists()) {
+            throw new FileNotFoundHimeraFsException();
+        }
+
         FileAttributes attributes = new FileAttributes();
         Stat stat;
 

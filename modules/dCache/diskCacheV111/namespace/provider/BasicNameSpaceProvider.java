@@ -35,7 +35,6 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PathMap;
 import diskCacheV111.util.PnfsFile;
@@ -403,9 +402,11 @@ public class BasicNameSpaceProvider
 
         pnfsId = pf.getPnfsId();
         try {
-            FileMetaData metaData =
-                new FileMetaData(isDirectory, uid, gid, mode);
-            this.setFileMetaData(subject, pnfsId, metaData);
+            FileAttributes attributes = new FileAttributes();
+            attributes.setOwner(uid);
+            attributes.setGroup(gid);
+            attributes.setMode(mode);
+            setFileAttributes(ROOT, pnfsId, attributes);
         } catch (RuntimeException e) {
             pf.delete();
             throw e;
@@ -477,33 +478,6 @@ public class BasicNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
-    }
-
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        Set<FileAttribute> attributes = FileMetaData.getKnownFileAttributes();
-        return new FileMetaData(getFileAttributes(subject, pnfsId, attributes));
-    }
-
-    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData) throws CacheException {
-
-        if (metaData.isUserPermissionsSet()) {
-
-            File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
-            int uid = metaData.getUid();
-            int gid = metaData.getGid();
-            int mode = toUnixMode(metaData);
-            for (int level = 0; level < 2; level++) {
-                this.setAccessRights(mountPoint, pnfsId, level, uid, gid, mode);
-            }
-
-        }
-
-        if (!metaData.isDirectory() && metaData.isSizeSet()) {
-            setFileSize(pnfsId, metaData.getFileSize());
-        }
-
     }
 
     public String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException {
@@ -646,7 +620,7 @@ public class BasicNameSpaceProvider
         return _defaultRetentionPolicy;
     }
 
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
+    private StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         _logNameSpace.debug("getStorageInfo : " + pnfsId);
@@ -1026,54 +1000,6 @@ public class BasicNameSpaceProvider
         }
     }
 
-    /*
-     * TODO: shell we move this method into FileMetaData class?
-     */
-    private static int toUnixMode(FileMetaData metaData) {
-
-        int mode = 0;
-
-        // TODO: to be done more elegant
-
-        // user
-        if (metaData.getUserPermissions().canRead()) {
-            mode |= 0400;
-        }
-
-        if (metaData.getUserPermissions().canWrite()) {
-            mode |= 0200;
-        }
-        if (metaData.getUserPermissions().canExecute()) {
-            mode |= 0100;
-        }
-
-        // group
-        if (metaData.getGroupPermissions().canRead()) {
-            mode |= 0040;
-        }
-
-        if (metaData.getGroupPermissions().canWrite()) {
-            mode |= 0020;
-        }
-        if (metaData.getGroupPermissions().canExecute()) {
-            mode |= 0010;
-        }
-
-        // world
-        if (metaData.getWorldPermissions().canRead()) {
-            mode |= 0004;
-        }
-
-        if (metaData.getWorldPermissions().canWrite()) {
-            mode |= 0002;
-        }
-        if (metaData.getWorldPermissions().canExecute()) {
-            mode |= 0001;
-        }
-
-        return mode;
-    }
-
     private void setFileSize( PnfsId pnfsId , long length )throws CacheException {
         try {
             PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
@@ -1386,32 +1312,39 @@ public class BasicNameSpaceProvider
 
             /* MODE, GID and UID are updated together.
              */
-            if (definedAttributes.contains(FileAttribute.MODE) ||
-                definedAttributes.contains(FileAttribute.OWNER) ||
-                definedAttributes.contains(FileAttribute.OWNER_GROUP)) {
+            if (definedAttributes.contains(MODE) ||
+                definedAttributes.contains(OWNER) ||
+                definedAttributes.contains(OWNER_GROUP)) {
 
-                int mode, uid, gid;
-                FileMetaData meta = null;
+                Set<FileAttribute> missingAttributes =
+                    EnumSet.of(MODE, OWNER, OWNER_GROUP);
+                missingAttributes.removeAll(definedAttributes);
 
+                FileAttributes current = null;
+                if (!missingAttributes.isEmpty()) {
+                    current =
+                        getFileAttributes(subject, pnfsId, missingAttributes);
+                }
+
+                int mode;
                 if (definedAttributes.contains(FileAttribute.MODE)) {
                     mode = attr.getMode();
                 } else {
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    mode = meta.getMode();
+                    mode = current.getMode();
                 }
 
+                int uid;
                 if (definedAttributes.contains(FileAttribute.OWNER)) {
                     uid = attr.getOwner();
                 } else {
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    uid = meta.getUid();
+                    uid = current.getOwner();
                 }
 
+                int gid;
                 if (definedAttributes.contains(FileAttribute.OWNER_GROUP)) {
                     gid = attr.getGroup();
                 } else {
-                    meta = getFileMetaData(subject, pnfsId, meta);
-                    gid = meta.getGid();
+                    gid = current.getGroup();
                 }
 
                 for (int level = 0; level < 2; level++) {
@@ -1635,20 +1568,5 @@ public class BasicNameSpaceProvider
         if (id == null)
             throw new CacheException(36, "Couldn't determine parent ID");
         return PnfsFile.getFileByPnfsId(mountpoint, id);
-    }
-
-    /**
-     * Returns the meta data of a file.
-     *
-     * @param subject The subject who performs the operation
-     * @param pnfsId The PNFS ID of the file
-     * @param meta The meta data of the file; if non-null this value
-     *             is returned.
-     */
-    private FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId,
-                                         FileMetaData meta)
-        throws CacheException
-    {
-        return (meta != null) ? meta : getFileMetaData(subject, pnfsId);
     }
 }

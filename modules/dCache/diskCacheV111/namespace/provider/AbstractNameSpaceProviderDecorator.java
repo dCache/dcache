@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileFilter;
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
@@ -30,20 +29,6 @@ public class AbstractNameSpaceProviderDecorator
     public AbstractNameSpaceProviderDecorator(NameSpaceProvider inner)
     {
         _inner = inner;
-    }
-
-    @Override
-    public void setFileMetaData(Subject subject, PnfsId pnfsId, FileMetaData metaData)
-        throws CacheException
-    {
-        _inner.setFileMetaData(subject, pnfsId, metaData);
-    }
-
-    @Override
-    public FileMetaData getFileMetaData(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getFileMetaData(subject, pnfsId);
     }
 
     @Override
@@ -157,13 +142,6 @@ public class AbstractNameSpaceProviderDecorator
         throws CacheException
     {
         return _inner.getChecksums(subject, pnfsId);
-    }
-
-    @Override
-    public StorageInfo getStorageInfo(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getStorageInfo(subject, pnfsId);
     }
 
     @Override

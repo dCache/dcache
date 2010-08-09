@@ -1408,9 +1408,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             try {
                 FileMetaData meta = _fileMetaData;
-                meta.setUserPermissions(new FileMetaData.Permissions((_permission >> 6) & 0x7));
-                meta.setGroupPermissions(new FileMetaData.Permissions((_permission >> 3) & 0x7));
-                meta.setWorldPermissions(new FileMetaData.Permissions(_permission & 0x7));
+                meta.setMode(_permission);
                 _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
