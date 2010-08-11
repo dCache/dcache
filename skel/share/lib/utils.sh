@@ -27,13 +27,6 @@ reverse() # out $1 = reverse list, in $2+ = space delimited list of words,
     eval $out=\"$ret\"
 }
 
-# Normalises a path such that it does not contain double or trailing
-# slashes.
-sanitisePath() # in $1 = path, out $2 = path
-{
-    eval $2=\"$(echo $1 | sed -e 's_//*_/_g' -e 's_/$__')\"
-}
-
 # Returns the maximum width of any word in a given list.
 maxWidth() # out $1 = width, in $2+ = list of words,
 {

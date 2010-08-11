@@ -8,6 +8,22 @@
 # domains to services, starting and stopping domains, etc.
 #
 
+# Returns 0 if option is set to 'yes' or 'y' in node_config or
+# door_config, 1 otherwise.
+isNodeConfigEnabled() # in $1 = option name
+{
+    local value
+    eval value=\"\$NODE_CONFIG_$1\"
+    case "$(echo $value | tr '[A-Z]' '[a-z]')" in
+        yes|y)
+            return 0;
+            ;;
+        *)
+            return 1;
+            ;;
+    esac
+}
+
 # Prints all domains for the given service. Services like 'pool' and
 # 'dcap' may have more than one domain. Notice that this function is
 # not limitted to configured domains.
@@ -247,22 +263,6 @@ printAllPoolDomains()
     fi
 }
 
-# Given a mixed list of domains and services, prints all domains for
-# those services and domains. I.e. the domains are printed literally,
-# and the services are expanded to the list of domains for those
-# services. If no arguments are specified, a list of all configured
-# domains is printed.
-printExpandedServiceAndDomainList() # in $* = list of services and domains
-{
-    if [ $# -eq 0 ]; then
-        printAllDomains
-    else
-        for s in $*; do
-            printDomains $s
-        done
-    fi
-}
-
 # Returns the service name of a domain. The service name corresponds
 # to the name of the batch file of that service, without the file
 # suffix.
@@ -300,114 +300,6 @@ printServices() # in $* = list of domains
         getService $domain service
         printf "${service} "
     done
-}
-
-# Returns the PID stored in pidfile
-getPidFromFile() # in $1 = pidfile, out $2 = pid
-{
-    local ret
-    [ -f "$1" ] && ret=$(cat "$1") && [ "$ret" ] && eval $2=\"$ret\"
-}
-
-# Returns the PID directory of domain
-getPidDir() # in $1 = domain, out $2 = pid dir
-{
-    getConfigurationValue "$1" pidDir $2 && eval $2=\"\${$2:-$DCACHE_PID}\"
-}
-
-# The stop file is the file used to suppress domain restart
-getStopFile() # in $1 = domain, out $2 = stop file
-{
-    eval $2=\"/tmp/.dcache-stop.${1}\"
-}
-
-# The java pid file stores the PID of the java process
-getJavaPidFile() # $1 = domain, out $2 = pid file
-{
-    local dir
-    local service
-
-    getService "$domain" service || return
-    getPidDir "$1" dir || return
-
-    if [ "$service" = "srm" ]; then
-        eval $2=\"${dir}/dcache.$domain.pid\"
-    else
-        eval $2=\"${dir}/dcache.${domain}-java.pid\"
-    fi
-}
-
-# The daemon pid file stores the PID of the daemon wrapper
-getDaemonPidFile() # $1 = domain, out $2 = pid file
-{
-    local dir
-    local service
-
-    getService "$domain" service || return
-    getPidDir "$1" dir || return
-
-    if [ "$service" = "srm" ]; then
-        eval $2=\"${dir}/dcache.$domain.pid\"
-    else
-        eval $2=\"${dir}/dcache.${domain}-daemon.pid\"
-    fi
-}
-
-# If domain runs, provides the PID of its daemon wrapper
-# script. Returns 0 if domain is running, 1 otherwise.
-getPidOfDomain() # in $1 = Domain name, out $2 = pid
-{
-    local file
-    local pidOfDomain
-
-    getDaemonPidFile "$1" file || return
-    getPidFromFile "$file" pidOfDomain || return
-    isRunning "$pidOfDomain" || return
-    eval $2=\"$pidOfDomain\"
-}
-
-# If domain runs, provides the PID of its Java process.  Returns 0 if
-# domain is running, 1 otherwise.
-getJavaPidOfDomain() # in $1 = Domain name, out $2 = pid
-{
-    local file
-    local pidOfDomain
-
-    getJavaPidFile "$1" file || return
-    getPidFromFile "$file" pidOfDomain || return
-    isRunning "$pidOfDomain" || return
-    eval $2=\"$pidOfDomain\"
-}
-
-# Returns the name of the log file used by a domain.
-getLogOfDomain() # in $1 = Domain name, out $2 = log of domain
-{
-    local domain
-    local service
-    local logArea
-    local ret
-
-    domain="$1"
-
-    getService "${domain}" service || return
-
-    case "$service" in
-        srm)
-            # Getting the location of the SRM stuff is unfortunately
-            # somewhat messy...
-            if [ -r ${DCACHE_ETC}/srm_setup.env ] && [ -r ${DCACHE_HOME}/bin/dcache-srm ]; then
-                . ${DCACHE_ETC}/srm_setup.env
-                eval $(grep "export CATALINA_HOME" ${DCACHE_BIN}/dcache-srm)
-                ret="${CATALINA_HOME}/logs/catalina.out"
-            fi
-            ;;
-        *)
-            getConfigurationValue $domain logArea logArea || return
-            ret="${logArea:-$DCACHE_LOG}/${domain}.log"
-            ;;
-    esac
-
-    eval $2=\"$ret\"
 }
 
 # Returns the name of the pool list file for the given pool domain.
