@@ -48,6 +48,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RunSystem;
 import diskCacheV111.util.SimpleJobScheduler;
+import diskCacheV111.util.ChecksumFactory;
 import org.dcache.util.Checksum;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
@@ -638,8 +639,8 @@ public class HsmStorageHandler2
                 if (_checksumModule.getCrcFromHsm()) {
                     infoChecksum = getChecksumFromHsm(handle.getFile());
                     if (infoChecksum != null) {
-                        _log.info("Imported checksum from HSM: " + infoChecksum);
-                        _checksumModule.storeChecksumInPnfs(pnfsId, infoChecksum);
+                        _log.info("Storing checksum {} for {}", infoChecksum, pnfsId);
+                        _pnfs.setChecksum(pnfsId, infoChecksum);
                     }
                 } else {
                     infoChecksum = null;
@@ -648,23 +649,19 @@ public class HsmStorageHandler2
                 if (!_checksumModule.checkOnRestore())
                     return;
 
+                ChecksumFactory factory =
+                    _checksumModule.getDefaultChecksumFactory();
+
                 if (infoChecksum == null) {
-                    infoChecksum = _checksumModule.getChecksumFromPnfs(pnfsId);
+                    infoChecksum = factory.find(_pnfs.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.CHECKSUM)).getChecksums());
                     if (infoChecksum == null) {
                         _log.error("No checksum found; checksum not verified after restore.");
                         return;
                     }
                 }
 
-                long start = System.currentTimeMillis();
-
                 fileChecksum =
-                    _checksumModule.calculateFileChecksum(handle.getFile(),
-                                                          _checksumModule.getDefaultChecksumFactory());
-
-                _log.debug("Checksum for " + pnfsId + " info=" + infoChecksum
-                           + ";file=" + fileChecksum + " in "
-                           + (System.currentTimeMillis() - start));
+                    factory.computeChecksum(handle.getFile());
             } catch (IOException e) {
                 throw new CacheException(1010, "Checksum calculation failed due to I/O error: " + e.getMessage());
             } catch (CacheException e) {

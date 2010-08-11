@@ -345,7 +345,7 @@ public class MigrationModuleServer
                         ChecksumFactory factory =
                             _checksumModule.getDefaultChecksumFactory();
                         Checksum checksum =
-                            _checksumModule.calculateFileChecksum(file, factory);
+                            factory.computeChecksum(file);
                         _checksumModule.setMoverChecksums(_pnfsId,
                                                           file,
                                                           factory,
@@ -376,9 +376,6 @@ public class MigrationModuleServer
 
                 }
                 finished(null);
-            } catch (NoRouteToCellException e) {
-                finished(new CacheException(CacheException.TIMEOUT,
-                                            "Communication failure during checksum calculation: " + e.getMessage()));
             } catch (IOException e) {
                 finished(new CacheException(CacheException.ERROR_IO_DISK,
                                             "I/O error during checksum calculation: " + e.getMessage()));

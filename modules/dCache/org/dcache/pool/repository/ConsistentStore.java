@@ -27,8 +27,6 @@ import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.GenericStorageInfo;
 
-import dmg.cells.nucleus.NoRouteToCellException;
-
 /**
  * Wrapper for a MetaDataStore which encapsulates the logic for
  * recovering MetaDataRecord objects from PnfsManager in case they are
@@ -288,14 +286,6 @@ public class ConsistentStore
                     _log.error(String.format(BAD_MSG, id, e.getMessage()));
                     break;
                 }
-            } catch (NoRouteToCellException e) {
-                /* As far as the caller of entryOf is concerned, there
-                 * is no difference between the PnfsManager being down
-                 * and it timing out. We therefore masquerade the
-                 * exception as a timeout.
-                 */
-                throw new CacheException(CacheException.TIMEOUT,
-                                         "Timeout talking to PnfsManager");
             }
         }
 
