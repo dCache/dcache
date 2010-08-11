@@ -640,7 +640,6 @@ public class XrootdProtocol_3
      * @throws IOException File descriptor is not valid.
      */
     synchronized void close(FileDescriptor descriptor)
-        throws IllegalStateException
     {
         _lastTransferred.set(System.currentTimeMillis());
         _openedDescriptors.remove(descriptor);

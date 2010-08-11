@@ -1,6 +1,5 @@
 package org.dcache.xrootd2.pool;
 
-import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
@@ -30,26 +29,25 @@ public class WriteDescriptor implements FileDescriptor
         _mover = mover;
     }
 
-    private boolean isClosed()
+    private boolean isMoverShutdown()
     {
         return (_mover == null || _mover.getFile() == null);
     }
 
     @Override
     public void close()
-        throws IllegalStateException
     {
-        if (isClosed()) {
-            throw new IllegalStateException("File not open");
+        if (isMoverShutdown()) {
+            _log.debug("Mover has been closed, possibly due to a timeout.");
+        } else {
+            _mover.close(this);
         }
-
-        _mover.close(this);
     }
 
     @Override
     public Reader read(ReadRequest msg)
     {
-        if (isClosed()) {
+        if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");
         }
 
@@ -62,7 +60,7 @@ public class WriteDescriptor implements FileDescriptor
     public void sync(SyncRequest msg)
         throws IOException
     {
-        if (isClosed()) {
+        if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");
         }
 
@@ -74,7 +72,7 @@ public class WriteDescriptor implements FileDescriptor
     public void write(WriteRequest msg)
         throws IOException, InterruptedException
     {
-        if (isClosed()) {
+        if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");
         }
 
@@ -91,7 +89,7 @@ public class WriteDescriptor implements FileDescriptor
     @Override
     public FileChannel getChannel()
     {
-        if (isClosed()) {
+        if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");
         }
 
