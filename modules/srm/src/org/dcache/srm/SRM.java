@@ -300,13 +300,7 @@ public class SRM {
         host = java.net.InetAddress.getLocalHost();
 
         configuration.addSrmHost(host.getCanonicalHostName());
-        try {
-            Thread.sleep(5);
-        } catch (InterruptedException ie) {
-        }
-
         logger.debug("srm started :\n\t" + configuration.toString());
-
     }
 
     /**
