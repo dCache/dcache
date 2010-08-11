@@ -90,10 +90,7 @@ public interface NameSpaceProvider
 
     PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException;
 
-    String[] getFileAttributeList(Subject subject, PnfsId pnfsId) throws CacheException;
-    Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) throws CacheException;
     void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) throws CacheException;
-    void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) throws CacheException;
 
     /**
      * Clears checksum value storage for the specific file and checksum type.

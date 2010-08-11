@@ -598,20 +598,26 @@ public class PnfsManagerV3 extends CellAdapter
         return sb.toString() ;
     }
 
-    public String ac_flags_set_$_2_99( Args args )throws Exception {
-        PnfsId    pnfsId = new PnfsId( args.argv(0) ) ;
-
-        for( int i = 1 ; i < args.argc() ; i++ ){
-            String t = args.argv(i) ;
-            int l = t.length() ;
-            if( l == 0 )continue ;
-            int p = t.indexOf('=');
-            if( ( p < 0 ) || ( p == (l-1) ) ){
-                _nameSpaceProvider.setFileAttribute(ROOT, pnfsId, t, "");
-            }else if( p > 0 ){
-                _nameSpaceProvider.setFileAttribute(ROOT, pnfsId, t.substring(0,p), t.substring(p+1));
+    public String ac_flags_set_$_2_99(Args args) throws CacheException
+    {
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        Map<String,String> flags = new HashMap<String,String>();
+        for (int i = 1; i < args.argc(); i++) {
+            String t = args.argv(i);
+            int l = t.length();
+            if (l > 0) {
+                int p = t.indexOf('=');
+                if ((p < 0) || (p == (l - 1))) {
+                    flags.put(t, "");
+                } else if (p > 0) {
+                    flags.put(t.substring(0, p), t.substring(p + 1));
+                }
             }
         }
+
+        FileAttributes attributes = new FileAttributes();
+        attributes.setFlags(flags);
+        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
         return "" ;
     }
@@ -627,19 +633,17 @@ public class PnfsManagerV3 extends CellAdapter
         return "" ;
     }
 
-    public String ac_flags_ls_$_1( Args args )throws Exception {
-        PnfsId    pnfsId = new PnfsId( args.argv(0) ) ;
-        String[] keys = _nameSpaceProvider.getFileAttributeList(ROOT, pnfsId);
-
-        StringBuffer sb = new StringBuffer();
-        for( int i = 0; i < keys.length; i++) {
-            sb.append(keys[i]).append(" -> ").
-                append(  _nameSpaceProvider.getFileAttribute(ROOT, pnfsId, keys[i] ) ).append("\n");
-
+    public String ac_flags_ls_$_1(Args args) throws CacheException
+    {
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        FileAttributes attributes =
+            _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                                                 EnumSet.of(FileAttribute.FLAGS));
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String,String> e: attributes.getFlags().entrySet()) {
+            sb.append(e.getKey()).append(" -> ").append(e.getValue()).append("\n");
         }
-
-
-        return sb.toString() ;
+        return sb.toString();
     }
 
     public String fh_dumpthreadqueues = "   dumpthreadqueues [<threadId>]\n"
@@ -924,25 +928,31 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    private String updateFlag(Subject subject, PnfsId pnfsId, PnfsFlagMessage.FlagOperation operation, String flagName,
-                              String value) throws CacheException {
-
+    private String updateFlag(Subject subject, PnfsId pnfsId,
+                              PnfsFlagMessage.FlagOperation operation,
+                              String flagName, String value)
+        throws CacheException
+    {
+        FileAttributes attributes;
         switch (operation) {
-
         case SET:
             _log.info("flags set " + pnfsId + " " + flagName + "=" + value);
-            _nameSpaceProvider.setFileAttribute(subject, pnfsId, flagName, value);
+            attributes = new FileAttributes();
+            attributes.setFlags(Collections.singletonMap(flagName, value));
+            _nameSpaceProvider.setFileAttributes(subject, pnfsId, attributes);
             break;
         case SETNOOVERWRITE:
             _log.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
-            String x = (String) _nameSpaceProvider.getFileAttribute(subject, pnfsId, flagName);
-            if ((x == null) || (!x.equals(value))) {
-                _log.info("flags set " + pnfsId + " " + flagName + "=" + value);
-                _nameSpaceProvider.setFileAttribute(subject, pnfsId, flagName, value);
+            attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId, EnumSet.of(FileAttribute.FLAGS));
+            String current = attributes.getFlags().get(flagName);
+            if ((current == null) || (!current.equals(value))) {
+                updateFlag(subject, pnfsId, PnfsFlagMessage.FlagOperation.SET,
+                           flagName, value);
             }
             break;
         case GET:
-            String v = (String) _nameSpaceProvider.getFileAttribute(subject, pnfsId, flagName);
+            attributes = _nameSpaceProvider.getFileAttributes(subject, pnfsId, EnumSet.of(FileAttribute.FLAGS));
+            String v = attributes.getFlags().get(flagName);
             _log.info("flags ls " + pnfsId + " " + flagName + " -> " + v);
             return v;
         case REMOVE:

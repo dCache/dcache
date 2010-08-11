@@ -228,7 +228,7 @@ public class PerformanceTest extends Thread
                     provider.setFileAttributes(Subjects.ROOT, getPnfsid(path), fileAttributes);
                     break;
                 case GET_FILE_ATTR:
-                    String[] attrList = provider.getFileAttributeList(Subjects.ROOT, getPnfsid(path));
+                    provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.of(FileAttribute.FLAGS));
                     break;
                 case ADD_CACHE_LOC:
                     provider.addCacheLocation(Subjects.ROOT, getPnfsid(path), CACHE_LOCATION);

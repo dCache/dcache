@@ -71,28 +71,7 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data)
         throws CacheException
     {
         throw new UnsupportedOperationException();

@@ -72,20 +72,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public Object getFileAttribute( Subject subject, PnfsId pnfsId,
-                                    String attribute) throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
-    public String[] getFileAttributeList( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
     public FileAttributes getFileAttributes( Subject subject, PnfsId pnfsId,
                                              Set<FileAttribute> attr)
             throws CacheException {
@@ -142,13 +128,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     @Override
     public void renameEntry( Subject subject, PnfsId pnfsId, String newName,
                              boolean overwrite) throws CacheException {
-        fail( "not implemented");
-    }
-
-    @Override
-    public void setFileAttribute( Subject subject, PnfsId pnfsId,
-                                  String attribute, Object data)
-            throws CacheException {
         fail( "not implemented");
     }
 

@@ -401,71 +401,23 @@ public class ChimeraNameSpaceProvider
         _extractor.setStorageInfo(inode, storageInfo, accessMode);
     }
 
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId) {
-        String[] keys = null;
-
+    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
+        throws CacheException
+    {
         try {
-        	FsInode inode = new FsInode(_fs, pnfsId.toString(), 2);
-            ChimeraCacheInfo info   = new ChimeraCacheInfo( inode ) ;
-            ChimeraCacheInfo.CacheFlags flags = info.getFlags() ;
-            Set<Map.Entry<String, String>> s = flags.entrySet();
-
-            keys = new String[s.size()];
-            Iterator<Map.Entry<String, String>> it = s.iterator();
-
-            for( int i = 0; i < keys.length ; i++) {
-            	Map.Entry<String, String> entry = it.next() ;
-                keys[i] = entry.getKey() ;
-            }
-        }catch(Exception e){
-            _log.error(e.getMessage());
+            FsInode inode = new FsInode(_fs, pnfsId.toString(), 2);
+            ChimeraCacheInfo info = new ChimeraCacheInfo(inode);
+            ChimeraCacheInfo.CacheFlags flags = info.getFlags();
+            flags.remove(attribute);
+            info.writeCacheInfo(inode);
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory " + pnfsId);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        } catch (ChimeraFsException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
-
-        return keys;
-    }
-
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
-        Object attr = null;
-        try {
-        	FsInode inode = new FsInode(_fs, pnfsId.toString(), 2);
-            ChimeraCacheInfo info   = new ChimeraCacheInfo( inode ) ;
-            ChimeraCacheInfo.CacheFlags flags = info.getFlags() ;
-
-            attr =  flags.get(attribute);
-
-        }catch( Exception e){
-            _log.error(e.getMessage());
-        }
-
-        return attr;
-    }
-
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
-        try {
-        	FsInode inode = new FsInode(_fs, pnfsId.toString(), 2);
-            ChimeraCacheInfo info   = new ChimeraCacheInfo( inode ) ;
-            ChimeraCacheInfo.CacheFlags flags = info.getFlags() ;
-
-            flags.remove( attribute ) ;
-            info.writeCacheInfo( inode ) ;
-        }catch( Exception e){
-            _log.error(e.getMessage());
-        }
-    }
-
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) {
-
-        try {
-        	FsInode inode = new FsInode(_fs, pnfsId.toString(), 2);
-            ChimeraCacheInfo info   = new ChimeraCacheInfo( inode ) ;
-            ChimeraCacheInfo.CacheFlags flags = info.getFlags() ;
-
-            flags.put( attribute ,  data.toString()) ;
-
-            info.writeCacheInfo( inode ) ;
-       }catch( Exception e){
-           _log.error(e.getMessage());
-       }
     }
 
     public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
@@ -580,7 +532,8 @@ public class ChimeraNameSpaceProvider
                 attributes.setLocations(locations);
                 break;
             case FLAGS:
-                ChimeraCacheInfo info = new ChimeraCacheInfo(inode);
+                FsInode level2 = new FsInode(_fs, inode.toString(), 2);
+                ChimeraCacheInfo info = new ChimeraCacheInfo(level2);
                 Map<String,String> flags = new HashMap<String,String>();
                 for (Map.Entry<String,String> e: info.getFlags().entrySet()) {
                     flags.put(e.getKey(), e.getValue());
@@ -718,11 +671,12 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case FLAGS:
-                        ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(inode);
-                        for (Map.Entry<String, String> flag : attr.getFlags().entrySet()) {
+                        FsInode level2 = new FsInode(_fs, pnfsId.toString(), 2);
+                        ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(level2);
+                        for (Map.Entry<String,String> flag: attr.getFlags().entrySet()) {
                             cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
                         }
-                        cacheInfo.writeCacheInfo(inode);
+                        cacheInfo.writeCacheInfo(level2);
                         break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");

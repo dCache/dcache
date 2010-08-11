@@ -703,83 +703,19 @@ public class BasicNameSpaceProvider
         return info;
     }
 
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId) {
-
-        String[] keys = null;
-
+    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
+        throws CacheException
+    {
         try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo info   = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = info.getFlags() ;
-            Set<Map.Entry<String, String>> s = flags.entrySet();
-
-            keys = new String[s.size()];
-
-            int i = 0;
-            for( Map.Entry<String, String> entry: s) {
-                keys[i++] = entry.getKey() ;
-            }
-        }catch(Exception e){
-            _logNameSpace.error(e.getMessage());
+            PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+            CacheInfo info = new CacheInfo(pf);
+            CacheInfo.CacheFlags flags = info.getFlags();
+            flags.remove(attribute);
+            info.writeCacheInfo(pf);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
-
-        return keys;
-
-    }
-
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
-
-        Object attr = null;
-        try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            if(pf.isFile()) {
-                CacheInfo info   = new CacheInfo( pf ) ;
-                CacheInfo.CacheFlags flags = info.getFlags() ;
-
-                attr =  flags.get(attribute);
-            }else{
-
-                _logNameSpace.debug("getFileAttribute on non file object");
-            }
-        }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
-        }
-
-        return attr;
-    }
-
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) {
-
-        try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            if(pf.isFile() ) {
-                CacheInfo info   = new CacheInfo( pf ) ;
-                CacheInfo.CacheFlags flags = info.getFlags() ;
-
-                flags.put( attribute ,  data.toString()) ;
-
-                info.writeCacheInfo( pf ) ;
-            }else{
-                _logNameSpace.warn("setFileAttribute on non file object");
-            }
-        }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
-        }
-
-    }
-
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
-        try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo info   = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = info.getFlags() ;
-
-            flags.remove( attribute ) ;
-            info.writeCacheInfo( pf ) ;
-        }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
-        }
-
     }
 
     public void renameEntry(Subject subject, PnfsId pnfsId,

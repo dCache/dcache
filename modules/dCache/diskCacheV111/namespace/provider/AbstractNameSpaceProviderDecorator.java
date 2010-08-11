@@ -83,31 +83,10 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getFileAttributeList(subject, pnfsId);
-    }
-
-    @Override
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-        throws CacheException
-    {
-        return _inner.getFileAttribute(subject, pnfsId, attribute);
-    }
-
-    @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
         _inner.removeFileAttribute(subject, pnfsId, attribute);
-    }
-
-    @Override
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data)
-        throws CacheException
-    {
-        _inner.setFileAttribute(subject, pnfsId, attribute, data);
     }
 
     @Override
