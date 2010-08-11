@@ -8,6 +8,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 
@@ -100,7 +101,8 @@ public interface NameSpaceProvider
      * @param type the type (or algorithm) of the checksum
      * @param pnfsId file
      */
-    void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException;
+    void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
+        throws CacheException;
 
     void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException;
 

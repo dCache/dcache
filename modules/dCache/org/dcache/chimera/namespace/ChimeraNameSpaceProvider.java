@@ -468,10 +468,12 @@ public class ChimeraNameSpaceProvider
        }
     }
 
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
+    public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
+        throws CacheException
     {
         try {
-            _fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()), type);
+            _fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()),
+                                    type.getType());
         }catch(FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }catch(ChimeraFsException e) {

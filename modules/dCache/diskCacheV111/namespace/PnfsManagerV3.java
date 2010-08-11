@@ -721,24 +721,20 @@ public class PnfsManagerV3 extends CellAdapter
         throws CacheException, NoSuchAlgorithmException
     {
     	PnfsId pnfsId = new PnfsId(args.argv(0));
-        ChecksumType type =
-            ChecksumType.getChecksumType(Integer.parseInt(args.argv(1)));
+        ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
         Checksum checksum = new Checksum(type, args.argv(2));
-
         FileAttributes attributes = new FileAttributes();
         attributes.setChecksums(Collections.singleton(checksum));
         _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
-
     	return "";
     }
 
     public String hh_clear_file_checksum = "<pnfsid> <type>";
-    public String ac_clear_file_checksum_$_2(Args args) throws Exception {
-
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-
-    	_nameSpaceProvider.removeChecksum(ROOT, pnfsId, Integer.parseInt(args.argv(1)));
-
+    public String ac_clear_file_checksum_$_2(Args args) throws CacheException
+    {
+    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
+    	_nameSpaceProvider.removeChecksum(ROOT, pnfsId, type);
     	return "";
     }
 
@@ -747,10 +743,9 @@ public class PnfsManagerV3 extends CellAdapter
         throws CacheException, NoSuchAlgorithmException
     {
     	PnfsId pnfsId = new PnfsId(args.argv(0));
-        ChecksumType type =
-            ChecksumType.getChecksumType(Integer.parseInt(args.argv(1)));
+        ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
         Checksum checksum = getChecksum(ROOT, pnfsId, type);
-    	return checksum == null ? "" : checksum.toString();
+    	return (checksum == null) ? "" : checksum.toString();
     }
 
     public String hh_set_log_slow_threshold = "<timeout in ms>";

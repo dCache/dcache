@@ -12,6 +12,7 @@ import javax.security.auth.Subject;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
@@ -127,7 +128,7 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public void removeChecksum( Subject subject, PnfsId pnfsId, int type)
+    public void removeChecksum( Subject subject, PnfsId pnfsId, ChecksumType type)
             throws CacheException {
         fail( "not implemented");
     }

@@ -84,7 +84,12 @@ public class Checksum  implements Serializable
     @Override
     public String toString()
     {
-        return String.valueOf(type.getType()) + DELIMITER + value;
+        return toString(false);
+    }
+
+    public String toString(boolean useStringKey)
+    {
+        return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ":" + value;
     }
 
     private static String byteToHexString(byte b)
@@ -129,7 +134,7 @@ public class Checksum  implements Serializable
             throw new IllegalArgumentException("Not a dCache checksum");
         }
 
-        int type = Integer.parseInt(digest.substring(0, del));
+        String type = digest.substring(0, del);
         String checksum = digest.substring(del + 1);
 
         return new Checksum(ChecksumType.getChecksumType(type), checksum);

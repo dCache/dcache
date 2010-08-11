@@ -34,6 +34,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PathMap;
@@ -84,8 +85,6 @@ public class BasicNameSpaceProvider
 
     private final static String ACCESS_LATENCY_FLAG = "al";
     private final static String RETENTION_POLICY_FLAG = "rp";
-    private final static String CHECKSUM_COLLECTION_FLAG="uc";
-    private final static String CHECKSUM_ADLER32_FLAG ="c";
 
     /**
      * Attributes supported by SimpleAttributsListFilter.
@@ -809,30 +808,22 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
+    public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
         throws CacheException
     {
-        // alder32 is always stored where everyone is expecting it to
-        // - using c flag the other types are packed into list which
-        // serizalized value is managed under CHECKSUM_COLLECTION_FLAG
-
-        if (type == ChecksumType.ADLER32.getType()) {
-            String flagValue =
-                (String) getFileAttribute(subject, pnfsId,
-                                          CHECKSUM_ADLER32_FLAG);
-            ChecksumCollection collection = new ChecksumCollection(flagValue);
-            collection.put(type, null);
-            setFileAttribute(subject, pnfsId, CHECKSUM_ADLER32_FLAG,
-                             collection.serialize());
-        } else {
-            String flagValue =
-                (String) getFileAttribute(subject, pnfsId,
-                                          CHECKSUM_COLLECTION_FLAG);
-            ChecksumCollection collection =
-                new ChecksumCollection(flagValue, true);
-            collection.put(type, null);
-            setFileAttribute(subject, pnfsId, CHECKSUM_COLLECTION_FLAG,
-                             collection.serialize());
+        try {
+            PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+            if (!pf.isFile()) {
+                throw new NotFileCacheException("Not a file: " + pnfsId);
+            }
+            CacheInfo info = new CacheInfo(pf);
+            ChecksumCollection checksums = ChecksumCollection.extract(info);
+            checksums.remove(type);
+            checksums.serialize(info);
+            info.writeCacheInfo(pf);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
     }
 
@@ -1161,10 +1152,7 @@ public class BasicNameSpaceProvider
                 case CHECKSUM:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     ChecksumCollection collection =
-                        new ChecksumCollection(cacheInfo.getFlags().get(CHECKSUM_ADLER32_FLAG));
-                    ChecksumCollection collection1 =
-                        new ChecksumCollection(cacheInfo.getFlags().get(CHECKSUM_COLLECTION_FLAG), true);
-                    collection.add(collection1);
+                        ChecksumCollection.extract(cacheInfo);
                     attributes.setChecksums(collection.getChecksums());
                     break;
                 case LOCATIONS:
@@ -1264,29 +1252,10 @@ public class BasicNameSpaceProvider
                     break;
                 case CHECKSUM:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
-
-                    for (Checksum sum: attr.getChecksums()) {
-                        ChecksumCollection collection;
-                        String flagName;
-                        if (sum.getType() == ChecksumType.ADLER32) {
-                            flagName = CHECKSUM_ADLER32_FLAG;
-                            collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
-                        } else {
-                            flagName = CHECKSUM_COLLECTION_FLAG;
-                            collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName), true);
-                        }
-                        String currentValue =
-                            collection.get(sum.getType().getType());
-                        if (currentValue != null) {
-                            if (!currentValue.equals(sum.getValue())) {
-                                throw new CacheException(CacheException.INVALID_ARGS,
-                                                         "Checksum mismatch");
-                            }
-                            continue;
-                        }
-                        collection.put(sum.getType().getType(), sum.getValue());
-                        cacheInfo.getFlags().put(flagName, collection.serialize());
-                    }
+                    ChecksumCollection collection =
+                        ChecksumCollection.extract(cacheInfo);
+                    collection.add(attr.getChecksums());
+                    collection.serialize(cacheInfo);
                     break;
                 case LOCATIONS:
                     for (String location: attr.getLocations()) {

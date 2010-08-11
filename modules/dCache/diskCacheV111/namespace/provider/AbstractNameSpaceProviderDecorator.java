@@ -13,6 +13,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
@@ -110,7 +111,7 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
+    public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
         throws CacheException
     {
         _inner.removeChecksum(subject, pnfsId, type);

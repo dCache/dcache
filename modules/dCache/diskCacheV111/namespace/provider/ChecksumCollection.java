@@ -1,143 +1,114 @@
 package diskCacheV111.namespace.provider;
 
-import java.util.StringTokenizer;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
 import diskCacheV111.util.CacheException;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.util.*;
+import diskCacheV111.vehicles.CacheInfo;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
+public class ChecksumCollection
+{
+    private final static String CHECKSUM_DELIMITER = ",";
+    private final static String CHECKSUM_COLLECTION_FLAG = "uc";
+    private final static String CHECKSUM_ADLER32_FLAG ="c";
 
-public class ChecksumCollection {
+    private final Map<ChecksumType,String> _map =
+        new HashMap<ChecksumType,String>();
 
-    private static  final String CHECKSUM_DELIMITER=",";
-    private boolean useStringKey ;
-
-    public ChecksumCollection(String rep) throws CacheException {
-        this(rep, false);
-    }
-
-    public ChecksumCollection(String rep, boolean useStringKey)
-        throws CacheException
+    public ChecksumCollection()
     {
-      this.useStringKey = useStringKey;
-      if ( rep != null ) parseRep(rep);
     }
 
-    private void parseRep(String rep) throws CacheException {
-      StringTokenizer st = new StringTokenizer(rep,CHECKSUM_DELIMITER);
+    public ChecksumCollection(String s)
+    {
+        add(s);
+    }
 
-      while(st.hasMoreTokens() ){
-          String currentValue = st.nextToken();
+    public void add(Collection<Checksum> checksums)
+    {
+        for (Checksum checksum: checksums) {
+            put(checksum);
+        }
+    }
 
-          int checksumValuePos = currentValue.indexOf(":");
-          if ( checksumValuePos < 0 )
-             throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum stored in the wrong format "+currentValue);
+    public void add(String s)
+    {
+        if (s != null) {
+            for (String value: s.split(CHECKSUM_DELIMITER)) {
+                put(Checksum.parseChecksum(value));
+            }
+        }
+    }
 
-          if ( checksumValuePos == currentValue.length() )
-             throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum stored in the wrong format "+currentValue);
-         String stringKey = currentValue.substring(0,checksumValuePos);
-         int key ;
-         if(useStringKey) {
-             key = typeStoN(stringKey);
-         } else {
-            key = Integer.parseInt(stringKey);
-         }
-         String value =currentValue.substring(checksumValuePos+1);
-         put(key,value);
-      }
-   }
+    public String get(ChecksumType type)
+    {
+        return _map.get(type);
+    }
 
-   public void add(ChecksumCollection coll){
-      _map.putAll(coll._map);
-   }
+    public void put(Checksum checksum)
+    {
+        _map.put(checksum.getType(), checksum.getValue());
+    }
 
-   public String get(int checksumType){ return _map.get(new Integer(checksumType)); }
-   public void put(int checksumType,String value){ _map.put(new Integer(checksumType),value); }
+    public void remove(ChecksumType type)
+    {
+        _map.remove(type);
+    }
 
-   public int[] types() {
-      if ( _map.isEmpty() )
-         return null;
+    public void serialize(CacheInfo info)
+    {
+        StringBuilder result = null;
+        for (Map.Entry<ChecksumType, String> el: _map.entrySet()) {
+            ChecksumType type = el.getKey();
+            String value = el.getValue();
+            Checksum checksum = new Checksum(type, value);
+            if (type != ChecksumType.ADLER32) {
+                if (result == null) {
+                    result = new StringBuilder();
+                } else {
+                    result.append(CHECKSUM_DELIMITER);
+                }
+                result.append(checksum.toString(true));
+            }
+        }
+        if (result != null) {
+            info.getFlags().put(CHECKSUM_COLLECTION_FLAG, result.toString());
+        } else {
+            info.getFlags().remove(CHECKSUM_COLLECTION_FLAG);
+        }
 
-      int [] result =  new int[_map.size()];
+        /* For compatibility with old versions of dCache, ADLER32 is
+         * stored differently.
+         */
+        String adler32 = get(ChecksumType.ADLER32);
+        if (adler32 != null) {
+            Checksum checksum = new Checksum(ChecksumType.ADLER32, adler32);
+            info.getFlags().put(CHECKSUM_ADLER32_FLAG,
+                                checksum.toString(false));
+        } else {
+            info.getFlags().remove(CHECKSUM_ADLER32_FLAG);
+        }
+    }
 
-      int index = 0;
-      for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
-         i.hasNext(); ){
-         result[index] = i.next().getKey().intValue();
-         ++index;
-      }
-      return result;
-   }
+    public Set<Checksum> getChecksums()
+    {
+        Set<Checksum> checksums = new HashSet<Checksum>();
+        for (Map.Entry<ChecksumType,String> e: _map.entrySet()) {
+            checksums.add(new Checksum(e.getKey(), e.getValue()));
+        }
+        return checksums;
+    }
 
-   public String serialize(){
-     StringBuffer result = new StringBuffer();
-     int mod = 0;
-     for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
-         i.hasNext(); ){
-
-       Map.Entry<Integer,String> el = i.next();
-       String value = el.getValue();
-       if ( value != null ){
-          String key;
-          if(useStringKey) {
-              key = typeNtoS(el.getKey());
-          } else {
-              key = el.getKey().toString();
-          }
-          result.append(key).append(":").append(el.getValue()).append(CHECKSUM_DELIMITER);
-          mod = CHECKSUM_DELIMITER.length();
-       }
-     }
-     return result.substring(0,result.length()-mod);
-   }
-
-   public Set<Checksum> getChecksums(){
-     Set<Checksum> checksums = new HashSet<Checksum>();
-     int mod = 0;
-     for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
-         i.hasNext(); ){
-
-       Map.Entry<Integer,String> el = i.next();
-       String value = el.getValue();
-      ChecksumType cksmtype = ChecksumType.getChecksumType(el.getKey());
-      Checksum chksm = new Checksum(cksmtype,value);
-      checksums.add(chksm);
-     }
-
-     return checksums;
-   }
-
-
-   private static int typeStoN(String typeName) throws CacheException {
-      try {
-          return ChecksumType.getChecksumType(typeName).getType();
-      } catch (IllegalArgumentException ex) {
-        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum type is not supported: " + typeName);
-      }
-   }
-
-   private static String typeNtoS(int type) {
-      try {
-          return ChecksumType.getChecksumType(type).getName();
-      } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException("Checksum type is not supported: " + type);
-      }
-   }
-
-
-   private Map<Integer,String> _map = new HashMap<Integer,String>();
-
-
-  public static final Set<Checksum> extractChecksums(StorageInfo storageInfo) throws Exception{
-      Map<Integer,String> cksumMap = new HashMap();
-      String ckey = storageInfo.getKey("flag-c");
-      String uckey=storageInfo.getKey("flag-uc");
-      ChecksumCollection collection = new ChecksumCollection(ckey);
-      ChecksumCollection uccollection = new ChecksumCollection(uckey,true);
-      collection.add(uccollection);
-
-      return collection.getChecksums();
-  }
-
+    public static ChecksumCollection extract(CacheInfo info)
+    {
+        CacheInfo.CacheFlags flags = info.getFlags();
+        ChecksumCollection collection = new ChecksumCollection();
+        collection.add(flags.get(CHECKSUM_ADLER32_FLAG));
+        collection.add(flags.get(CHECKSUM_COLLECTION_FLAG));
+        return collection;
+    }
 }
