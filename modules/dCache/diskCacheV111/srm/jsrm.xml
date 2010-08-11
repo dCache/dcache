@@ -155,8 +155,6 @@
       -ls-request-thread-queue-size=${srmLsRequestThreadQueueSize}
       -ls-request-thread-pool-size=${srmLsRequestThreadPoolSize}
       -ls-request-max-waiting-requests=${srmLsRequestMaxWaitingRequests}
-      -ls-request-ready-queue-size=${srmLsRequestReadyQueueSize}
-      -ls-request-max-ready-requests=${srmLsRequestMaxReadyRequests}
       -ls-request-max-number-of-retries=${srmLsRequestMaxNumberOfRetries}
       -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
       -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
