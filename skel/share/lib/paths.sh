@@ -9,5 +9,5 @@
 [ -n "$DCACHE_PID" ]       || DCACHE_PID="/var/run"
 [ -n "$DCACHE_LOG" ]       || DCACHE_LOG="/var/log"
 [ -n "$DCACHE_PNFS_ROOT" ] || DCACHE_PNFS_ROOT="/pnfs"
-[ -n "$DCACHE_JE" ]        || DCACHE_JE="${DCACHE_HOME}/classes/berkeleyDB/je-3.2.76.jar"
+[ -n "$DCACHE_JE" ]        || DCACHE_JE="${DCACHE_HOME}/classes/berkeleyDB/*"
 DCACHE_SETUP="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
