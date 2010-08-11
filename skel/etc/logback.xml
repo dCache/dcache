@@ -88,9 +88,12 @@
       <minIndex>1</minIndex>
       <maxIndex>1</maxIndex>
     </rollingPolicy>
-    <triggerPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
       <maxFileSize>100MB</maxFileSize>
-    </triggerPolicy>
+    </triggeringPolicy>
+    <encoder>
+      <pattern>%d{yymmdd HH:mm:ss} (%X{cells.cell}@%X{cells.domain}) [%t] [%x] %c %l %m%n</pattern>
+    </encoder>
   </appender>
 
   <appender name="transactionlog" class="ch.qos.logback.core.FileAppender">
