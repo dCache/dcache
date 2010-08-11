@@ -71,7 +71,6 @@ public class BasicNameSpaceProvider
     private final PathManager       _pathManager ;
     private final Args        _args ;
     private final StorageInfoExtractable _extractor;
-    private final AttributeChecksumBridge _attChecksumImpl;
 
     private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
     private final NameSpaceProvider _cacheLocationProvider;
@@ -85,6 +84,8 @@ public class BasicNameSpaceProvider
 
     private final static String ACCESS_LATENCY_FLAG = "al";
     private final static String RETENTION_POLICY_FLAG = "rp";
+    private final static String CHECKSUM_COLLECTION_FLAG="uc";
+    private final static String CHECKSUM_ADLER32_FLAG ="c";
 
     /**
      * Attributes supported by SimpleAttributsListFilter.
@@ -99,8 +100,6 @@ public class BasicNameSpaceProvider
         _nucleus = nucleus;
 
         _args = args;
-
-        _attChecksumImpl = new AttributeChecksumBridge(this);
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
         if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
@@ -810,30 +809,32 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value) throws CacheException
+    public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
+        throws CacheException
     {
-        _attChecksumImpl.setChecksum(subject, pnfsId,value,type);
-    }
+        // alder32 is always stored where everyone is expecting it to
+        // - using c flag the other types are packed into list which
+        // serizalized value is managed under CHECKSUM_COLLECTION_FLAG
 
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
-    {
-        return _attChecksumImpl.getChecksum(subject, pnfsId,type);
+        if (type == ChecksumType.ADLER32.getType()) {
+            String flagValue =
+                (String) getFileAttribute(subject, pnfsId,
+                                          CHECKSUM_ADLER32_FLAG);
+            ChecksumCollection collection = new ChecksumCollection(flagValue);
+            collection.put(type, null);
+            setFileAttribute(subject, pnfsId, CHECKSUM_ADLER32_FLAG,
+                             collection.serialize());
+        } else {
+            String flagValue =
+                (String) getFileAttribute(subject, pnfsId,
+                                          CHECKSUM_COLLECTION_FLAG);
+            ChecksumCollection collection =
+                new ChecksumCollection(flagValue, true);
+            collection.put(type, null);
+            setFileAttribute(subject, pnfsId, CHECKSUM_COLLECTION_FLAG,
+                             collection.serialize());
+        }
     }
-
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException {
-        return _attChecksumImpl.getChecksums(subject, pnfsId);
-    }
-
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
-    {
-        _attChecksumImpl.removeChecksum(subject, pnfsId,type);
-    }
-
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId ) throws CacheException
-    {
-        return _attChecksumImpl.types(subject, pnfsId);
-    }
-
 
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
@@ -1158,7 +1159,13 @@ public class BasicNameSpaceProvider
                     attributes.setSize(filesize);
                     break;
                 case CHECKSUM:
-                    attributes.setChecksums(_attChecksumImpl.getChecksums(subject, pnfsId));
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    ChecksumCollection collection =
+                        new ChecksumCollection(cacheInfo.getFlags().get(CHECKSUM_ADLER32_FLAG));
+                    ChecksumCollection collection1 =
+                        new ChecksumCollection(cacheInfo.getFlags().get(CHECKSUM_COLLECTION_FLAG), true);
+                    collection.add(collection1);
+                    attributes.setChecksums(collection.getChecksums());
                     break;
                 case LOCATIONS:
                     if (_cacheLocationProvider != this) {
@@ -1258,18 +1265,20 @@ public class BasicNameSpaceProvider
                 case CHECKSUM:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
 
-                    for(Checksum sum: attr.getChecksums() ) {
+                    for (Checksum sum: attr.getChecksums()) {
+                        ChecksumCollection collection;
                         String flagName;
-                        if( sum.getType() == ChecksumType.ADLER32 ) {
-                            flagName = "c";
+                        if (sum.getType() == ChecksumType.ADLER32) {
+                            flagName = CHECKSUM_ADLER32_FLAG;
+                            collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
                         } else {
-                            flagName = "uc";
+                            flagName = CHECKSUM_COLLECTION_FLAG;
+                            collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName), true);
                         }
-                        ChecksumCollection collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
-
-                        String currentValue = collection.get(sum.getType().getType());
-                        if( currentValue != null && sum.getValue() != null) {
-                            if( !currentValue.equals(sum.getValue())) {
+                        String currentValue =
+                            collection.get(sum.getType().getType());
+                        if (currentValue != null) {
+                            if (!currentValue.equals(sum.getValue())) {
                                 throw new CacheException(CacheException.INVALID_ARGS,
                                                          "Checksum mismatch");
                             }

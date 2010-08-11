@@ -468,39 +468,6 @@ public class ChimeraNameSpaceProvider
        }
     }
 
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value) throws CacheException
-    {
-        try {
-            FsInode inode = new FsInode(_fs, pnfsId.toString());
-            String existingValue = _fs.getInodeChecksum(inode, type);
-            if (existingValue != null) {
-                if (!existingValue.equals(value)) {
-                    throw new CacheException(CacheException.INVALID_ARGS,
-                                             "Checksum mismatch");
-                }
-                return;
-            }
-            _fs.setInodeChecksum(inode, type, value);
-        }catch(FileNotFoundHimeraFsException e) {
-            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
-        }catch(ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        }
-    }
-
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
-    {
-        try {
-            return _fs.getInodeChecksum(new FsInode(_fs, pnfsId.toString()), type );
-        }catch(FileNotFoundHimeraFsException e) {
-            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
-        }catch(ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        }
-    }
-
     public void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
     {
         try {
@@ -511,28 +478,6 @@ public class ChimeraNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
-    }
-
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException {
-        Set<Checksum> checksums = new HashSet<Checksum>();
-        for(ChecksumType type:ChecksumType.values()) {
-            int int_type = type.getType();
-            String value = null;
-            try {
-                value = getChecksum(subject, pnfsId, int_type);
-            }
-            catch(Exception e) {}
-            if(value != null) {
-                checksums.add(new Checksum(type,value));
-            }
-
-        }
-        return checksums;
-    }
-
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId ) throws CacheException
-    {
-        return null;
     }
 
     @Override

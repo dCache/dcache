@@ -13,6 +13,8 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 import org.dcache.util.PrefixMap;
+import org.dcache.util.ChecksumType;
+import org.dcache.util.Checksum;
 import org.dcache.acl.handler.singleton.AclHandler;
 
 import java.io.* ;
@@ -33,7 +35,9 @@ import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.PermissionHandler;
 
 import org.dcache.commons.stats.RequestCounters;
+
 import javax.security.auth.Subject;
+import java.security.NoSuchAlgorithmException;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
@@ -713,13 +717,19 @@ public class PnfsManagerV3 extends CellAdapter
     }
 
     public String hh_add_file_checksum = "<pnfsid> <type> <checksum>";
-    public String ac_add_file_checksum_$_3(Args args) throws Exception {
+    public String ac_add_file_checksum_$_3(Args args)
+        throws CacheException, NoSuchAlgorithmException
+    {
+    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        ChecksumType type =
+            ChecksumType.getChecksumType(Integer.parseInt(args.argv(1)));
+        Checksum checksum = new Checksum(type, args.argv(2));
 
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-    	_nameSpaceProvider.addChecksum(ROOT, pnfsId, Integer.parseInt(args.argv(1)), args.argv(2));
+        FileAttributes attributes = new FileAttributes();
+        attributes.setChecksums(Collections.singleton(checksum));
+        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
 
     	return "";
-
     }
 
     public String hh_clear_file_checksum = "<pnfsid> <type>";
@@ -733,13 +743,14 @@ public class PnfsManagerV3 extends CellAdapter
     }
 
     public String hh_get_file_checksum = "<pnfsid> <type>";
-    public String ac_get_file_checksum_$_2(Args args) throws Exception {
-
-    	PnfsId pnfsId = new PnfsId( args.argv(0));
-
-    	String checkSum = _nameSpaceProvider.getChecksum(ROOT, pnfsId, Integer.parseInt(args.argv(1)));
-
-    	return checkSum == null ? "" : checkSum;
+    public String ac_get_file_checksum_$_2(Args args)
+        throws CacheException, NoSuchAlgorithmException
+    {
+    	PnfsId pnfsId = new PnfsId(args.argv(0));
+        ChecksumType type =
+            ChecksumType.getChecksumType(Integer.parseInt(args.argv(1)));
+        Checksum checksum = getChecksum(ROOT, pnfsId, type);
+    	return checksum == null ? "" : checksum.toString();
     }
 
     public String hh_set_log_slow_threshold = "<timeout in ms>";
@@ -810,18 +821,29 @@ public class PnfsManagerV3 extends CellAdapter
         _log.warn( sb.toString() );
     }
 
-    private void getChecksum(PnfsGetChecksumMessage msg){
+    private Checksum getChecksum(Subject subject, PnfsId pnfsId,
+                                 ChecksumType type)
+        throws CacheException, NoSuchAlgorithmException
+    {
+        ChecksumFactory factory = ChecksumFactory.getFactory(type);
+        FileAttributes attributes =
+            _nameSpaceProvider.getFileAttributes(subject, pnfsId,
+                                                 EnumSet.of(FileAttribute.CHECKSUM));
+        return factory.find(attributes.getChecksums());
+    }
 
-        PnfsId pnfsId    = msg.getPnfsId();
-        int    type      = msg.getType();
-
-        try{
+    private void getChecksum(PnfsGetChecksumMessage msg)
+    {
+        try {
+            PnfsId pnfsId    = msg.getPnfsId();
             if(pnfsId == null ) {
                 throw new InvalidMessageCacheException("no pnfsid defined");
             }
-            String checksumValue =
-                _nameSpaceProvider.getChecksum(msg.getSubject(), pnfsId,type);
-            msg.setValue(checksumValue);
+            ChecksumType type = ChecksumType.getChecksumType(msg.getType());
+            Checksum checksum = getChecksum(msg.getSubject(), pnfsId, type);
+            if (checksum != null) {
+                msg.setValue(checksum.getValue());
+            }
         }catch( CacheException e ){
             _log.warn(e.toString()) ;
             msg.setFailed( e.getRc() , e.getMessage() ) ;
@@ -835,9 +857,16 @@ public class PnfsManagerV3 extends CellAdapter
 
         PnfsId pnfsId    = msg.getPnfsId();
 
-        try{
-            int []types =
-                _nameSpaceProvider.listChecksumTypes(msg.getSubject(), pnfsId);
+        try {
+            FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(msg.getSubject(), pnfsId,
+                                                     EnumSet.of(FileAttribute.CHECKSUM));
+            Set<Checksum> checksums = attributes.getChecksums();
+            int[] types =  new int[checksums.size()];
+            int index = 0;
+            for (Checksum checksum: checksums) {
+                types[index++] = checksum.getType().getType();
+            }
             msg.setValue(types);
         }catch( CacheException e ){
             _log.warn(e.toString()) ;
@@ -852,10 +881,14 @@ public class PnfsManagerV3 extends CellAdapter
 
         PnfsId pnfsId    = msg.getPnfsId();
         String value     = msg.getValue() ;
-        int type         = msg.getType();
 
         try{
-            _nameSpaceProvider.addChecksum(msg.getSubject(), pnfsId,type,value);
+            ChecksumType type = ChecksumType.getChecksumType(msg.getType());
+            Checksum checksum = new Checksum(type, value);
+            FileAttributes attributes = new FileAttributes();
+            attributes.setChecksums(Collections.singleton(checksum));
+            _nameSpaceProvider.setFileAttributes(msg.getSubject(), pnfsId,
+                                                 attributes);
         }catch(FileNotFoundCacheException e) {
             msg.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage() );
         }catch( CacheException e ){

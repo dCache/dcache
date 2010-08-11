@@ -95,37 +95,12 @@ public interface NameSpaceProvider
     void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) throws CacheException;
 
     /**
-     * Adds new or replaces existing checksum value for the specific file and checksum type.
-     * The type of the checksum is arbitrary integer that client of this interface must chose
-     * and use consistently afterwards
-     * @param subject Subject of user who invoked this method.
-     * @param type the type (or algorithm) of the checksum
-     * @param value HEX presentation of the digest (checksum)
-     * @param pnfsId file
-     */
-    void addChecksum(Subject subject, PnfsId pnfsId, int type, String value) throws CacheException;
-
-    /**
-     * Returns HEX presentation of the checksum value for the specific file and checksum type.
-     * Returns null if value has not been set
-     * @param subject Subject of user who invoked this method.
-     * @param type the type (or algorithm) of the checksum
-     * @param pnfsId file
-     */
-    String getChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException;
-
-    /**
      * Clears checksum value storage for the specific file and checksum type.
      * @param subject Subject of user who invoked this method.
      * @param type the type (or algorithm) of the checksum
      * @param pnfsId file
      */
     void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException;
-
-
-    int[] listChecksumTypes(Subject subject, PnfsId pnfsId) throws CacheException;
-
-    Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException;
 
     void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int mode) throws CacheException;
 

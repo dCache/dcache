@@ -110,38 +110,10 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value)
-        throws CacheException
-    {
-        _inner.addChecksum(subject, pnfsId, type, value);
-    }
-
-    @Override
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type)
-        throws CacheException
-    {
-        return _inner.getChecksum(subject, pnfsId, type);
-    }
-
-    @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
         throws CacheException
     {
         _inner.removeChecksum(subject, pnfsId, type);
-    }
-
-    @Override
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.listChecksumTypes(subject, pnfsId);
-    }
-
-    @Override
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getChecksums(subject, pnfsId);
     }
 
     @Override

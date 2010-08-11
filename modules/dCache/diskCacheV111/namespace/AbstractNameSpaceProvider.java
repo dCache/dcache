@@ -98,35 +98,7 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();

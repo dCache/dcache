@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.dcache.auth.Subjects;
@@ -19,6 +20,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import diskCacheV111.namespace.provider.DcacheNameSpaceProviderFactory;
 import dmg.util.Args;
 
@@ -76,11 +78,12 @@ public class PerformanceTest extends Thread
     private static BlockingQueue<String> queue;
     private static List<Operation> ops;
     private static final String CACHE_LOCATION = "myPoolD";
-    private static final String CHECKSUM_VALUE = "123456";
     private static final int UID = 0;
     private static final int GID = 0;
     private static final int PERMISSION = 777;
-    private static final int CHECKSUM_TYPE = 1;
+    private static final Checksum CHECKSUM =
+        new Checksum(ChecksumType.ADLER32, "123456");
+
     public static List<String> getPaths(String fileName) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(fileName));
         List<String> toReturn = new ArrayList<String>();
@@ -189,6 +192,7 @@ public class PerformanceTest extends Thread
 
     private void processOperation(Operation aOp, String path) {
         try {
+            FileAttributes fileAttributes;
             switch (aOp) {
                 case CREATE_ENTRY:
                     provider.createEntry(Subjects.ROOT, path, UID, GID, PERMISSION, false);
@@ -210,13 +214,15 @@ public class PerformanceTest extends Thread
                     provider.getParentOf(Subjects.ROOT, getPnfsid(path));
                     break;
                 case ADD_CHECKSUM:
-                    provider.addChecksum(Subjects.ROOT, getPnfsid(path), CHECKSUM_TYPE, CHECKSUM_VALUE);
+                    fileAttributes = new FileAttributes();
+                    fileAttributes.setChecksums(Collections.singleton(CHECKSUM));
+                    provider.setFileAttributes(Subjects.ROOT, getPnfsid(path), fileAttributes);
                     break;
                 case GET_CHECKSUMS:
-                    Set<Checksum> cksums = provider.getChecksums(Subjects.ROOT, getPnfsid(path));
+                    Set<Checksum> cksums = provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
                     break;
                 case SET_FILE_ATTR:
-                    FileAttributes fileAttributes = new FileAttributes();
+                    fileAttributes = new FileAttributes();
                     fileAttributes.setDefaultAccessLatency();
                     fileAttributes.setDefaultRetentionPolicy();
                     provider.setFileAttributes(Subjects.ROOT, getPnfsid(path), fileAttributes);

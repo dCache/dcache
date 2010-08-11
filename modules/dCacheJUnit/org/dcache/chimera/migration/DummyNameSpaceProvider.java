@@ -37,12 +37,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public void addChecksum( Subject subject, PnfsId pnfsId, int type,
-                             String value) throws CacheException {
-        fail( "not implemented");
-    }
-
-    @Override
     public void clearCacheLocation( Subject subject, PnfsId pnfsId,
                                     String cacheLocation, boolean removeIfLast)
             throws CacheException {
@@ -71,20 +65,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
 
     @Override
     public List<String> getCacheLocation( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
-    public String getChecksum( Subject subject, PnfsId pnfsId, int type)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
-    public Set<Checksum> getChecksums( Subject subject, PnfsId pnfsId)
             throws CacheException {
         fail( "not implemented");
         return null;
@@ -130,13 +110,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
                       Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException {
         fail( "not implemented");
-    }
-
-    @Override
-    public int[] listChecksumTypes( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
     }
 
     @Override
