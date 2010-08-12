@@ -152,6 +152,7 @@ public final class CopyFileRequest extends FileRequest {
 		this.from_url = from_url;
 		this.to_url = to_url;
 		this.spaceReservationId = spaceToken;
+                storeInSharedMemory();
 		logger.debug("constructor from_url=" +from_url+" to_url="+to_url);
 	}
 
