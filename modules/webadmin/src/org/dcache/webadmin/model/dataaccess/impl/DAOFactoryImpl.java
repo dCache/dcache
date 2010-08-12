@@ -48,7 +48,7 @@ public class DAOFactoryImpl implements DAOFactory {
 
     @Override
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory) {
-        _log.debug("PoolsDAO commandSenderFactory set {}", commandSenderFactory.toString());
+        _log.debug("DefaultCommandSenderFactory set {}", commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
     }
 
