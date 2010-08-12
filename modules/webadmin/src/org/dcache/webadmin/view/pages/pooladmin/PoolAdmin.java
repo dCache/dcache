@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
     private static final String EMPTY_STRING = "";
+    public static final int RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS = 120;
     private static final Logger _log = LoggerFactory.getLogger(PoolAdmin.class);
     private List<PoolAdminBean> _poolGroups = new ArrayList<PoolAdminBean>();
     private PoolAdminBean _currentPoolGroup;
@@ -48,6 +49,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         poolAdminForm.add(new FeedbackPanel("feedback"));
         TextField commandInput = new TextField("commandText",
                 new PropertyModel(this, "_command"));
+        commandInput.setRequired(true);
         poolAdminForm.add(new SubmitButton("submit"));
         commandInput.add(new DefaultFocusBehaviour());
         poolAdminForm.add(commandInput);
@@ -130,9 +132,12 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
                     @Override
                     public void onClick() {
-                        clearResponses();
-                        deselectAll();
-                        _currentPoolGroup = poolGroup;
+                        if (!poolGroup.equals(_currentPoolGroup)) {
+                            clearResponses();
+                            deselectAll();
+                            _lastCommand = EMPTY_STRING;
+                            _currentPoolGroup = poolGroup;
+                        }
                     }
                 };
                 link.add(new Label("poolGroupLinkMessage",
@@ -163,6 +168,41 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
         };
     }
 
+    private void cutResponseForMultipleSelection() {
+        if (areMultiplePoolsSelected()) {
+            cutResponses();
+        }
+    }
+
+    private boolean areMultiplePoolsSelected() {
+        int selectedCount = 0;
+        for (SelectableWrapper wrapper : _currentPoolGroup.getPools()) {
+            if (wrapper.isSelected()) {
+                selectedCount++;
+            }
+        }
+        return (selectedCount > 1);
+    }
+
+    private void cutResponses() {
+        for (SelectableWrapper<PoolCommandBean> wrapper : _currentPoolGroup.getPools()) {
+            if (wrapper.isSelected()) {
+                String response = wrapper.getWrapped().getResponse();
+                if (isLongerThanCutoff(response)) {
+                    _log.debug("response longer than cutoff");
+                    String cutResponse = response.substring(
+                            0, RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS - 1);
+                    wrapper.getWrapped().setResponse(cutResponse +
+                            getStringResource("poolAdmin.cutoffMessage"));
+                }
+            }
+        }
+    }
+
+    private boolean isLongerThanCutoff(String response) {
+        return (response.length() > RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS);
+    }
+
     private class SubmitButton extends Button {
 
         public SubmitButton(String id) {
@@ -171,7 +211,7 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
 
         @Override
         public void onSubmit() {
-            if (_currentPoolGroup != null && _command != null) {
+            if (_currentPoolGroup != null) {
                 try {
                     _log.debug("button pressed with group {} and command {}",
                             _currentPoolGroup.getGroupName(), _command);
@@ -179,12 +219,13 @@ public class PoolAdmin extends BasePage implements AuthenticatedWebPage {
                     if (isAtLeastOneSelected()) {
                         getPoolAdminService().sendCommand(_currentPoolGroup.getPools(),
                                 _command);
+                        cutResponseForMultipleSelection();
                         deselectAll();
                     } else {
                         error(getStringResource("error.noSelection"));
                     }
                 } catch (PoolAdminServiceException e) {
-                    _log.error("couldn't send all PoolCommnads successful, {}",
+                    _log.error("couldn't send all PoolCommands successful, {}",
                             e.getMessage());
                     error("couldn't send all PoolCommands successful " + e.getMessage());
                 }
