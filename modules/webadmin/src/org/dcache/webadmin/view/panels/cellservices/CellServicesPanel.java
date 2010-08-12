@@ -6,14 +6,14 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.IModel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.dcache.webadmin.view.beans.CellServicesBean;
+import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 
 /**
  * Reusable Panel for the Listview on CellServices
  * @author jans
  */
-public class CellServicesPanel extends Panel {
+public class CellServicesPanel extends BasePanel {
 
     public CellServicesPanel(String id,
             IModel<? extends List<CellServicesBean>> model) {

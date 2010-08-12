@@ -36,14 +36,16 @@ public class BasePage extends WebPage {
 
     /*
      * conveniance method to access Property-File Stringresources
-     * since (nearly) every Page will need access to them
+     * since (nearly) every Page will need access to them. When a Resource is
+     * not found it catches the Exception and returns a String that tells to
+     * report/fix the missing ressource.
      */
     protected String getStringResource(String resourceKey) {
         try {
             return new StringResourceModel(resourceKey, this, null).getString();
         } catch (MissingResourceException e) {
         }
-        return "missing message, please report/fix";
+        return getString(getWebadminApplication().MISSING_RESOURCE_KEY);
     }
 
     /*

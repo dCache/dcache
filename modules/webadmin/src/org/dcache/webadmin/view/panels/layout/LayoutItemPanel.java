@@ -2,14 +2,14 @@ package org.dcache.webadmin.view.panels.layout;
 
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 
 /**
  * Reusable layout item nicely css-driven
  * @author jans
  */
-public class LayoutItemPanel extends Panel {
+public class LayoutItemPanel extends BasePanel {
 
     public LayoutItemPanel(String id, float percentagePrecious,
             float percentageUsed, float percentageFree) {

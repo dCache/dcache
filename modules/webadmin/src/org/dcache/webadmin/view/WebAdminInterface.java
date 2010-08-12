@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class WebAdminInterface extends WebApplication {
 
+    public static final String MISSING_RESOURCE_KEY = "missing.ressource";
     private PoolSpaceService _poolSpaceService;
     private LogInService _logInService;
     private PoolQueuesService _poolQueuesService;

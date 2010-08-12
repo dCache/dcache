@@ -1,7 +1,6 @@
 package org.dcache.webadmin.view.panels.poollist;
 
 import java.util.List;
-import java.util.MissingResourceException;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.CheckBox;
@@ -10,16 +9,15 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
+import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.StringResourceModel;
 import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
 
 /**
  * Reusable Panel for the Listview on Poolspaces
  * @author jans
  */
-public class PoolListPanel extends Panel {
+public class PoolListPanel extends BasePanel {
 
     private boolean _showCheckbox;
 
@@ -33,14 +31,6 @@ public class PoolListPanel extends Panel {
         add(selectBoxHeaderLabel);
         add(new LayoutHeaderPanel("PoolPanel.layoutHeaderPanel"));
         add(new PoolBeanListView("poolPanelListview", model));
-    }
-
-    private String getStringResource(String resourceKey) {
-        try {
-            return new StringResourceModel(resourceKey, this, null).getString();
-        } catch (MissingResourceException e) {
-        }
-        return "missing message, please report/fix";
     }
 
     private class PoolBeanListView extends EvenOddListView<PoolSpaceBean> {

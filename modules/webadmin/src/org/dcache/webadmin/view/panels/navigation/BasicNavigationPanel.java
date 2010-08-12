@@ -3,14 +3,11 @@ package org.dcache.webadmin.view.panels.navigation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.MissingResourceException;
 import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.list.ListItem;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.model.StringResourceModel;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
@@ -18,6 +15,7 @@ import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.infoxml.InfoXml;
 import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
+import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.CustomLink;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
@@ -29,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * correct index behind it (see in the File for the previous ones as examples)
  * @author jans
  */
-public class BasicNavigationPanel extends Panel {
+public class BasicNavigationPanel extends BasePanel {
 
     private Class _currentPage;
     private static List<Class> _linkList = new ArrayList<Class>(Arrays.asList(
@@ -45,14 +43,6 @@ public class BasicNavigationPanel extends Panel {
         _currentPage = currentPage;
         _log.debug(currentPage.getSimpleName());
         add(new LinkListView<Class>("linkList", _linkList));
-    }
-
-    private String getStringResource(String resourceKey) {
-        try {
-            return new StringResourceModel(resourceKey, this, null).getString();
-        } catch (MissingResourceException e) {
-        }
-        return "missing message, please report/fix";
     }
 
     private class LinkListView<T> extends ListView<T> {
