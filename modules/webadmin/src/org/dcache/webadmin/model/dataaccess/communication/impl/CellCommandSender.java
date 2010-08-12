@@ -2,6 +2,7 @@ package org.dcache.webadmin.model.dataaccess.communication.impl;
 
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
+import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
@@ -37,10 +38,10 @@ public class CellCommandSender implements CommandSender {
     }
 
     private void sendMessages() {
-        for (CellMessageRequest messageRequest : _messageGenerator) {
+        for (CellMessageRequest<? extends Serializable> messageRequest : _messageGenerator) {
             MessageCallback callback = new CellMessageCallback(messageRequest);
             _log.debug("sending to: {}", messageRequest.getDestination());
-            Message message = messageRequest.getPayload();
+            Serializable message = messageRequest.getPayload();
             CellPath destination = messageRequest.getDestination();
             Class payloadType = messageRequest.getPayloadType();
             _cellStub.send(destination, message, payloadType, callback);
@@ -70,7 +71,7 @@ public class CellCommandSender implements CommandSender {
      * Callback to handle answer of a Cell to a Message.
      * @author jans
      */
-    private class CellMessageCallback implements MessageCallback<Message> {
+    private class CellMessageCallback implements MessageCallback<Serializable> {
 
         private CellMessageRequest _messageRequest;
 
@@ -86,17 +87,22 @@ public class CellCommandSender implements CommandSender {
             } else {
                 processFailure();
             }
-            _messageRequest.setAnswer(answer);
         }
 
         @Override
-        public void success(Message message) {
-            evaluateReply(message);
+        public void success(Serializable message) {
+            if (message instanceof Message) {
+                evaluateReply((Message) message);
+            } else {
+                _messageRequest.setSuccessful(true);
+            }
+            _messageRequest.setAnswer(message);
             setAnswered();
         }
 
         @Override
         public void failure(int rc, Object error) {
+            _log.debug("error object: {}", error.toString());
             processFailure();
             setAnswered();
         }

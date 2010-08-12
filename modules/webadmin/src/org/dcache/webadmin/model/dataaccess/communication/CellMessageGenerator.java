@@ -1,7 +1,7 @@
 package org.dcache.webadmin.model.dataaccess.communication;
 
-import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
+import java.io.Serializable;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
 
 /**
@@ -9,13 +9,13 @@ import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.C
  * So that they can easily retrieved via an iterator.
  * @author jans
  */
-public interface CellMessageGenerator<M extends Message> extends Iterable<CellMessageRequest<M>> {
+public interface CellMessageGenerator<M extends Serializable> extends Iterable<CellMessageRequest<M>> {
 
     public int getNumberOfMessages();
 
-    interface CellMessageRequest<M extends Message> {
+    interface CellMessageRequest<M> {
 
-        public Message getPayload();
+        public M getPayload();
 
         public Class<M> getPayloadType();
 
@@ -25,6 +25,8 @@ public interface CellMessageGenerator<M extends Message> extends Iterable<CellMe
 
         public CellPath getDestination();
 
-        public void setAnswer(Message answer);
+        public void setAnswer(M answer);
+
+        public M getAnswer();
     }
 }

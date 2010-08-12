@@ -25,6 +25,7 @@ import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
 import org.dcache.webadmin.view.panels.poolQueuesPanel.PoolQueuesPanel;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
+import org.dcache.webadmin.view.util.EvenOddListView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,7 @@ public class PoolGroupView extends BasePage implements AuthenticatedWebPage {
     }
 
     private ListView<PoolGroupBean> createListview() {
-        return new ListView<PoolGroupBean>(
+        return new EvenOddListView<PoolGroupBean>(
                 "poolGroupView", new PropertyModel<List<PoolGroupBean>>(
                 this, "_poolGroups")) {
 

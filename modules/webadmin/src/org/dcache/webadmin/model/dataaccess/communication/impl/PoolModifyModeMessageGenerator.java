@@ -1,7 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
 import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import dmg.cells.nucleus.CellPath;
 import java.util.HashSet;
@@ -67,7 +66,7 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
         }
 
         @Override
-        public Message getPayload() {
+        public PoolModifyModeMessage getPayload() {
             _log.debug("getPayload for {}", _destination);
             return _payload;
         }
@@ -93,8 +92,13 @@ public class PoolModifyModeMessageGenerator implements CellMessageGenerator<Pool
         }
 
         @Override
-        public void setAnswer(Message answer) {
+        public void setAnswer(PoolModifyModeMessage answer) {
 //            currently no interest in answer since it is not used
+        }
+
+        @Override
+        public PoolModifyModeMessage getAnswer() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 }

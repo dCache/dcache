@@ -3,6 +3,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Set;
 import java.util.HashSet;
+import org.dcache.webadmin.model.businessobjects.CellResponse;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
@@ -79,5 +80,10 @@ public class PoolsDAOImplHelper implements PoolsDAO {
     private boolean isEnabled(PoolV2Mode poolMode) {
         return (poolMode.getMode() != PoolV2Mode.DISABLED_RDONLY &&
                 poolMode.getMode() != PoolV2Mode.DISABLED_STRICT);
+    }
+
+    @Override
+    public Set<CellResponse> sendCommand(Set<String> poolIds, String command) throws DAOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

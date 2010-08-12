@@ -24,7 +24,7 @@ public class DAOFactoryImpl implements DAOFactory {
         _log.debug("PoolsDAO requested");
         checkDefaultCommandSenderSet();
 //      maybe better make it an singleton - they all end up using one cell anyway?
-        return new PoolsDAOImpl(_defaultCommandSenderFactory);
+        return new StandardPoolsDAO(_defaultCommandSenderFactory);
     }
 
     @Override

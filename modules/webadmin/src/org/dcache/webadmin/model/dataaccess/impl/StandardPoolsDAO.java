@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.dcache.webadmin.model.businessobjects.CellResponse;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
@@ -19,6 +20,7 @@ import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PoolModifyModeMessageGenerator;
+import org.dcache.webadmin.model.dataaccess.communication.impl.StringCommandMessageGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,16 +33,18 @@ import org.slf4j.LoggerFactory;
  * It sends commands via a commandSender.
  * @author jan schaefer 29-10-2009
  */
-public class PoolsDAOImpl implements PoolsDAO {
+public class StandardPoolsDAO implements PoolsDAO {
 
+    public static final String EMPTY_STRING = "";
     public static final List<String> NAMEDCELLS_PATH = Arrays.asList("domains", "dCacheDomain",
             "routing", "named-cells");
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
-    private static final Logger _log = LoggerFactory.getLogger(PoolsDAOImpl.class);
+    public static final String RESPONSE_FAILED = "failed";
+    private static final Logger _log = LoggerFactory.getLogger(StandardPoolsDAO.class);
     private PoolXMLProcessor _xmlProcessor = new PoolXMLProcessor();
     private CommandSenderFactory _commandSenderFactory;
 
-    public PoolsDAOImpl(CommandSenderFactory commandSenderFactory) {
+    public StandardPoolsDAO(CommandSenderFactory commandSenderFactory) {
         _commandSenderFactory = commandSenderFactory;
     }
 
@@ -129,5 +133,40 @@ public class PoolsDAOImpl implements PoolsDAO {
             }
         }
         return failedIds;
+    }
+
+    @Override
+    public Set<CellResponse> sendCommand(Set<String> poolIds, String command)
+            throws DAOException {
+        try {
+            Set<CellResponse> responses = new HashSet<CellResponse>();
+            if (!poolIds.isEmpty() && !command.equals(EMPTY_STRING)) {
+                StringCommandMessageGenerator messageGenerator =
+                        new StringCommandMessageGenerator(poolIds, command);
+                CommandSender commandSender =
+                        _commandSenderFactory.createCommandSender(
+                        messageGenerator);
+                commandSender.sendAndWait();
+                createResponses(responses, messageGenerator);
+            }
+            return responses;
+        } catch (InterruptedException e) {
+            throw new DAOException(e);
+        }
+    }
+
+    private void createResponses(Set<CellResponse> responses,
+            CellMessageGenerator<String> messageGenerator) {
+        for (CellMessageRequest<String> request : messageGenerator) {
+            CellResponse response = new CellResponse();
+            response.setCellName(request.getDestination().getCellName());
+            if (request.isSuccessful()) {
+                response.setResponse(request.getAnswer());
+            } else {
+                response.setIsFailure(true);
+                response.setResponse(RESPONSE_FAILED);
+            }
+            responses.add(response);
+        }
     }
 }

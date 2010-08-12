@@ -1,6 +1,5 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
-import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
 import java.util.Iterator;
@@ -81,7 +80,7 @@ public class InfoGetSerialisedDataMessageGenerator
         }
 
         @Override
-        public Message getPayload() {
+        public InfoGetSerialisedDataMessage getPayload() {
             return _payload;
         }
 
@@ -106,8 +105,12 @@ public class InfoGetSerialisedDataMessageGenerator
         }
 
         @Override
-        public void setAnswer(Message answer) {
-            _answer = (InfoGetSerialisedDataMessage) answer;
+        public void setAnswer(InfoGetSerialisedDataMessage answer) {
+            _answer = answer;
+        }
+
+        public InfoGetSerialisedDataMessage getAnswer() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 }
