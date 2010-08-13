@@ -1,9 +1,9 @@
 //______________________________________________________________________________
-// 
+//
 // This is class stolen from dmg.util and modified to handle "--" option
 // $Id$
 // $Author$
-//   
+//
 //   I modified it slightly to ignore padding spaces  (litvinse@fnal.gov)
 //
 //______________________________________________________________________________
@@ -14,7 +14,7 @@ import java.util.* ;
 public class Args implements java.io.Serializable {
 
         static final long serialVersionUID = -8950082352156787965L;
-        private final Hashtable<String, String> _optHash = 
+        private final Hashtable<String, String> _optHash =
                 new Hashtable<String, String>()  ;
         private final List<String>    _optv  = new Vector<String>();
         private final List<String>    _argv  = new Vector<String>();
@@ -60,18 +60,21 @@ public class Args implements java.io.Serializable {
                 }
                 return value;
         }
-        
+
         public void shift(){
                 if( !_argv.isEmpty() ) {
                         _argv.remove(0);
                 }
         }
-        
+
         public Dictionary<String, String>  options() { return _optHash ; }
-        
+
+        @Override
         public Object clone(){ return new Args( this ) ; }
-        
+
+        @Override
         public String toString(){ return _line ; }
+
         public String getInfo(){
                 StringBuilder sb = new StringBuilder() ;
                 sb.append( "Positional :\n" );
@@ -96,9 +99,9 @@ public class Args implements java.io.Serializable {
         private static final int OPT_VALUE     = 4 ;
         private static final int OPT_QUOTED    = 5 ;
         private static final int OPT_PLAIN     = 6 ;
-        
+
         private void undo( char r ){ _res = r ; _undo = true ; }
-        
+
         private boolean _undo    = false ;
         private char    _res     = 0 ;
         private int     _current = 0 ;
@@ -109,9 +112,9 @@ public class Args implements java.io.Serializable {
                         return _current >= _line.length() ?
                                 END_OF_INFO :
                                 _line.charAt(_current++) ;
-                
+
         }
-        
+
         private final static char   END_OF_INFO = (char)-1 ;
         private void scanLine( String line ){
                 _line = line ;
@@ -124,7 +127,7 @@ public class Args implements java.io.Serializable {
                         switch( state ){
                         case IDLE :
                                 if( ( c == END_OF_INFO ) || ( c == ' ' ) || ( c == '\t' ) ){
-                                        // nothing to do 
+                                        // nothing to do
                                 }
                                 else if( c == '"' ){
                                         state = QUOTED_STRING ;

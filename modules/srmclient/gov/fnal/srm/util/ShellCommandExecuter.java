@@ -1,9 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.6  2004/06/30 21:57:05  timur
-//  added retries on each step, added the ability to use srmclient used by srm copy in the server, added srm-get-request-status
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -13,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -47,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -60,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -79,7 +73,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 /**
  *
  * @author  timur
@@ -87,14 +80,14 @@ import java.io.OutputStream;
 
 public class ShellCommandExecuter implements Runnable {
     public static int execute(String command,org.dcache.srm.Logger logger) {
-        
+
         logger.log("executing command "+command);
         char[] buffer = new char[1024];
         char[] subbuf;
         Process proc;
         InputStream StdErr;
         InputStream StdOut;
-        
+
         try {
             proc = Runtime.getRuntime().exec(command);
             StdErr = proc.getErrorStream();
@@ -104,7 +97,7 @@ public class ShellCommandExecuter implements Runnable {
             ioe.printStackTrace();
             return 1;
         }
-        
+
         java.io.BufferedReader OutReader =
         new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,new java.io.PrintWriter(System.out),logger);
@@ -120,16 +113,16 @@ public class ShellCommandExecuter implements Runnable {
         logger.log(" exit value is "+ exit_value);
         return exit_value;
     }
-    
+
     public static String[] executeAndReturnOutput(String command,org.dcache.srm.Logger logger) {
-        
+
         logger.log("executing command "+command);
         char[] buffer = new char[1024];
         char[] subbuf;
         Process proc;
         InputStream StdErr;
         InputStream StdOut;
-        
+
         try {
             proc = Runtime.getRuntime().exec(command);
             StdErr = proc.getErrorStream();
@@ -139,7 +132,7 @@ public class ShellCommandExecuter implements Runnable {
             ioe.printStackTrace();
             return null;
         }
-        
+
         java.io.StringWriter string_writer = new java.io.StringWriter();
         java.io.BufferedReader OutReader =
         new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
@@ -162,11 +155,11 @@ public class ShellCommandExecuter implements Runnable {
         }
         return result;
     }
-    
+
     java.io.BufferedReader reader;
     java.io.BufferedReader ErrReader;
     private java.io.Writer out;
-    
+
     private  ShellCommandExecuter(java.io.BufferedReader reader,
     java.io.Writer out,
     org.dcache.srm.Logger logger) {
@@ -174,8 +167,9 @@ public class ShellCommandExecuter implements Runnable {
         this.out = out;
         new Thread(this).start();
     }
-    
-    
+
+
+    @Override
     public void run() {
         try {
             String line;

@@ -17,28 +17,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -51,10 +51,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -64,10 +64,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -78,16 +78,13 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.ISRM;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Arrays;
-import java.io.File;
 
 
 /**
@@ -104,25 +101,27 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 	private HashMap   fileIDsMap = new HashMap();
 	private int       requestID;
 	private Thread hook;
-	
+
 	public SRMCopyClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
 		super(configuration);
 		report = new Report(from,to,configuration.getReport());
 		this.from = from;
 		this.to = to;
 	}
-    
+
+        @Override
 	public void connect() throws Exception {
-		if ( configuration.isPushmode()  ) { 
+		if ( configuration.isPushmode()  ) {
 			dsay("starting transfer in push mode");
 			connect(from[0]);
 		}
-		else { 
+		else {
 			dsay("starting transfer in pull mode");
 			connect(to[0]);
 		}
 	}
-    
+
+        @Override
 	public void start() throws Exception {
 		int len = from.length;
 		String[] srcSURLs = new String[len];
@@ -140,14 +139,14 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 		}
 		hook = new Thread(this);
 		Runtime.getRuntime().addShutdownHook(hook);
-		
+
 		RequestStatus rs = srm.copy(srcSURLs,dstSURLs,wantPerm);
 		if(rs == null) {
 			throw new IOException(" null requests status");
 		}
 		requestID = rs.requestId;
 		dsay(" srm returned requestId = "+rs.requestId);
-		
+
 		try {
 			if(rs.state.equals("Failed")) {
 				esay("Request with requestId ="+rs.requestId+
@@ -160,20 +159,20 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 				throw new IOException("Request with requestId ="+rs.requestId+
 						      " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
 			}
-			
+
 			if(rs.fileStatuses.length != len) {
 				esay( "incorrect number of RequestFileStatuses"+
 				      "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
 				throw new IOException("incorrect number of RequestFileStatuses "+
 						      "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
 			}
-			
+
 			for(int i =0; i<len;++i) {
 				Integer fileId = new Integer(rs.fileStatuses[i].fileId);
 				fileIDs.add(fileId);
 				fileIDsMap.put(fileId,rs.fileStatuses[i]);
 			}
-			
+
 			while(!fileIDs.isEmpty()) {
 				Iterator iter = fileIDs.iterator();
 				HashSet removeIDs = new HashSet();
@@ -184,14 +183,14 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 						throw new IOException("request status does not have"+
 								      "RequestFileStatus fileID = "+nextID);
 					}
-					
+
 					if(frs.state.equals("Failed")) {
 						say("FileRequestStatus is Failed => copying of "+frs.SURL+
 						    " has failed");
 						setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
 						removeIDs.add(nextID);
 					}
-					
+
 					if(frs.state.equals("Ready") ) {
 						say("FileRequestStatus is Ready => copying of "+frs.SURL+
 						    " is complete");
@@ -208,30 +207,30 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 				}
 				fileIDs.removeAll(removeIDs);
 				removeIDs = null;
-				
+
 				if(fileIDs.isEmpty()) {
 					Runtime.getRuntime().removeShutdownHook(hook);
 					//we have copyed all files
 					break;
 				}
-				
+
 				try {
 					int retrytime = rs.retryDeltaTime;
 					if( retrytime <= 0 ) {
 						retrytime = 1;
 					}
-					
+
 					say("sleeping "+retrytime+" seconds ...");
 					Thread.sleep(retrytime * 1000);
 				}
 				catch(InterruptedException ie) {
 				}
-				
+
 				rs = srm.getRequestStatus(requestID);
 				if(rs == null) {
 					throw new IOException(" null requests status");
 				}
-				
+
 				if(rs.state.equals("Failed")) {
 					Iterator iter1 = fileIDs.iterator();
 					while(iter1.hasNext()) {
@@ -282,6 +281,8 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                         }
 		}
 	}
+
+        @Override
 	public void run() {
 		say("setting all remaining file statuses of request"+
 		    " requestId="+requestID+" to \"Done\"");

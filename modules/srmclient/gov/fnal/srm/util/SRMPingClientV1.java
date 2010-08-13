@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -76,11 +73,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.ISRM;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.io.IOException;
-import java.util.Iterator;
 /**
  *
  * @author  timur
@@ -92,11 +84,13 @@ public class SRMPingClientV1 extends SRMClient {
 		super(configuration);
 		this.srmurl = srmurl;
 	}
-    
+
+        @Override
 	public void connect() throws Exception {
 		connect(srmurl);
 	}
-    
+
+        @Override
 	public void start() throws Exception {
 		try {
 			boolean result = srm.ping();

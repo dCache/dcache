@@ -103,7 +103,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
 import java.io.IOException;
 import org.apache.axis.types.URI;
@@ -116,8 +115,6 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private SrmCopyRequest req = new SrmCopyRequest();
 
     private org.ietf.jgss.GSSCredential cred = null;
-    private GlobusURL[] surls;
-    private String[] surl_strings;
     private ISRM srmv2;
     private Thread hook;
     private HashMap<String,Integer> pendingSurlsMap = new HashMap<String,Integer>();
@@ -135,6 +132,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         }
     }
 
+    @Override
     public void connect() throws Exception {
         GlobusURL srmUrl = null;
         if ( configuration.isPushmode()  ) {
@@ -152,6 +150,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 configuration.getWebservice_path());
     }
 
+    @Override
     public void start() throws Exception {
         try {
             if (cred.getRemainingLifetime() < 60)
@@ -294,12 +293,12 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                                 " failed, status = "+fileStatusCode+
                                 " explanation="+fileStatus.getExplanation();
                         esay(error);
-                        int indx = ((Integer) pendingSurlsMap.remove(from_surl_string)).intValue();
+                        int indx = pendingSurlsMap.remove(from_surl_string).intValue();
                         setReportFailed(from[indx],to[indx],error);
 
                     } else if ( fileStatusCode == TStatusCode.SRM_SUCCESS||
                             fileStatusCode == TStatusCode.SRM_DONE ) {
-                        int indx = ((Integer) pendingSurlsMap.remove(from_surl_string)).intValue();
+                        int indx = pendingSurlsMap.remove(from_surl_string).intValue();
                         say(" copying of "+from_surl_string+" to "+to_surl_string+ " succeeded");
                         setReportSucceeded(from[indx],to[indx]);
                     }
@@ -407,7 +406,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         }
     }
 
-
+    @Override
     public void run() {
         try {
             say("stopping ");
@@ -422,7 +421,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             return;
         }
         if (requestToken==null) return;
-        String[] surl_strings = (String[])pendingSurlsMap.keySet().toArray(new String[0]);
+        String[] surl_strings = pendingSurlsMap.keySet().toArray(new String[0]);
         int len = surl_strings.length;
         say("Releasing all remaining file requests");
         URI surlArray[] = new URI[len];

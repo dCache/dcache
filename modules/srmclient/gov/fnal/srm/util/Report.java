@@ -33,7 +33,7 @@ public class Report {
     int length;
     //
     private java.io.File reportFile;
-    
+
     /** Creates a new instance of Report */
     public Report(GlobusURL from[],GlobusURL to[], String reportFileName)  {
         if(from == null || to == null) {
@@ -74,7 +74,8 @@ public class Report {
             error[i]=INITIAL_ERROR;
         }
     }
-    
+
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         for(int i = 0; i <length; ++i) {
@@ -91,7 +92,7 @@ public class Report {
         }
         return sb.toString();
     }
-    
+
     public void setStatusBySourceUrl(GlobusURL srcURL,int returnCode,String errorDscr){
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
@@ -107,7 +108,7 @@ public class Report {
             }
         }
     }
-    
+
     public void setStatusByDestinationUrl(GlobusURL dstURL,int returnCode,String errorDscr){
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
@@ -126,7 +127,7 @@ public class Report {
         throw new IllegalArgumentException("record for dest="+
         dstURL.getURL()+" not found");
     }
-    
+
     public void setStatusBySourceDestinationUrl(GlobusURL srcURL,GlobusURL dstURL,int returnCode,String errorDscr){
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
@@ -134,7 +135,7 @@ public class Report {
         for(int i = 0; i <length; ++i) {
             if((dstURL.getURL().equals(to[i].getURL())&&
                 dstURL.getHost().equals(to[i].getHost())&&
-                dstURL.getProtocol()==to[i].getProtocol())&&
+                dstURL.getProtocol().equals(to[i].getProtocol()))&&
                (srcURL.getURL().equals(from[i].getURL())&&
                 srcURL.getHost().equals(from[i].getHost())&&
                 srcURL.getProtocol().equals(from[i].getProtocol()))) {
@@ -148,11 +149,11 @@ public class Report {
         throw new IllegalArgumentException("record for source="+
         srcURL.getURL()+" and dest="+dstURL.getURL()+" not found");
     }
-    
+
     public boolean isValidRC(int rc) {
         return rc >= 0 && rc <= MAX_RC_VALUE;
     }
-    
+
     public void dumpReport() {
         if(reportFile != null) {
             try {
@@ -165,7 +166,7 @@ public class Report {
             }
         }
     }
-    
+
     public boolean everythingAllRight(){
         for(int i=0; i<rc.length;++i){
             if(rc[i] != OK_RC) {

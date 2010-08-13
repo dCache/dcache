@@ -1,24 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.1  2005/12/07 02:05:22  timur
-// working towards srm v2 get client
-//
-// Revision 1.8  2005/04/27 16:39:59  timur
-// more work on report added gridftpcopy and adler32 binaries
-//
-// Revision 1.7  2005/04/26 02:06:08  timur
-// added the ability to create a report file
-//
-// Revision 1.6  2005/03/11 21:18:36  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.5  2005/01/25 23:20:20  timur
-// srmclient now uses srm libraries
-//
-// Revision 1.4  2004/06/30 21:57:04  timur
-//  added retries on each step, added the ability to use srmclient used by srm copy in the server, added srm-get-request-status
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -28,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -62,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -75,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -95,7 +74,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.ISRM;
 import org.dcache.srm.Logger;
 /**
  *
@@ -107,11 +85,11 @@ public class SimpleCopyJob implements CopyJob {
     private GlobusURL to;
     private boolean isDone;
     private Logger logger;
-    
+
     // added these to support generation of the report
     private SRMClient client;
 
-    
+
     public SimpleCopyJob(GlobusURL from, GlobusURL to, Logger logger, SRMClient client) {
         if(from == null || to == null) {
             throw new IllegalArgumentException("both source and destination"+
@@ -122,30 +100,36 @@ public class SimpleCopyJob implements CopyJob {
         this.logger = logger;
         this.client = client;
     }
-    
+
+    @Override
     public GlobusURL getSource() {
         return from;
     }
+
+    @Override
     public GlobusURL getDestination() {
         return to;
     }
-    
+
+    @Override
     public boolean equals(Object o) {
         if (o == null || !(o instanceof SimpleCopyJob)) {
             return false;
         }
-        
+
         SimpleCopyJob copy_job = (SimpleCopyJob) o;
-        
+
         return to.equals(copy_job.to) && from.equals(copy_job.from);
-        
+
     }
-    
+
+    @Override
     public String toString() {
         return "CopyJob, source = "+from.getURL()+
         " destination = "+to.getURL();
     }
-    
+
+    @Override
     public void done(boolean success, String error) {
         synchronized(this) {
             if(isDone) {
@@ -156,12 +140,12 @@ public class SimpleCopyJob implements CopyJob {
             client.setReportSucceeded(from,to);
         }
         else
-        {   
+        {
             error = "failed to copy: "+error;
             client.setReportFailed(from,to,error);
-        
+
         }
-        
+
         synchronized(this) {
             isDone = true;
         }

@@ -9,28 +9,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,10 +43,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -56,10 +56,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -77,12 +77,10 @@ package gov.fnal.srm.util;
 import java.util.HashSet;
 import java.net.URL;
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.ISRM;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient;
 import org.ietf.jgss.GSSCredential;
 import org.dcache.srm.Logger;
@@ -94,7 +92,7 @@ import org.dcache.srm.Logger;
  */
 
 public class Copier implements Runnable {
-    private HashSet copy_jobs = new HashSet();
+    private final HashSet copy_jobs = new HashSet();
     private boolean doneAddingJobs;
     private boolean stop;
     private Thread hook;
@@ -110,19 +108,19 @@ public class Copier implements Runnable {
     private int num_jobs=0;
     private int num_completed_successfully =0;
     private boolean dryRun;
- 
+
     public final void say(String msg) {
         if(logger != null) {
             logger.log(msg.toString());
         }
     }
-    
+
     public final void dsay(String msg) {
         if(logger != null) {
             logger.log(msg.toString());
         }
     }
-    
+
     //error say
     public final void esay(String err) {
         if(logger != null) {
@@ -134,7 +132,7 @@ public class Copier implements Runnable {
             logger.elog(t.toString());
         }
     }
-    
+
     public Copier(String urlcopy,Configuration configuration) {
         this.urlcopy = urlcopy;
         this.configuration = configuration;
@@ -144,13 +142,13 @@ public class Copier implements Runnable {
 
         logger = configuration.getLogger();
     }
-    
+
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
-    
+
     public void addCopyJob(CopyJob job) {
-	
+
         synchronized(copy_jobs) {
             copy_jobs.add(job);
 	    num_jobs++;
@@ -159,7 +157,7 @@ public class Copier implements Runnable {
             notify();
         }
     }
-    
+
     public void doneAddingJobs() {
         synchronized(copy_jobs) {
             doneAddingJobs = true;
@@ -169,7 +167,7 @@ public class Copier implements Runnable {
             notify();
         }
     }
-    
+
 //    public synchronized void waitCompletion() throws Exception {
 
 	//this method will wait for all the individual file transfers to complete
@@ -209,34 +207,35 @@ public class Copier implements Runnable {
 			}
 		}
 	}
-  
+
     public void stop() {
         synchronized(this) {
             stop = true;
             this.notifyAll();
         }
-        
+
         while(true) {
             if(copy_jobs.isEmpty()) {
                 return;
             }
-            
+
             CopyJob nextJob = (CopyJob)copy_jobs.iterator().next();
-            
+
             copy_jobs.remove(nextJob);
             nextJob.done(false,"stopped");
         }
     }
-    
+
+    @Override
     public void run() {
         if(Thread.currentThread() == hook) {
             cleanup();
             return;
         }
-        
+
         hook = new Thread(this);
         Runtime.getRuntime().addShutdownHook(hook);
-        
+
         while(true) {
             synchronized(this) {
                 if(stop) {
@@ -251,31 +250,31 @@ public class Copier implements Runnable {
             CopyJob nextJob = null;
             synchronized(copy_jobs) {
                 if(copy_jobs.isEmpty()) {
-                    
+
                     say("copy_jobs is empty");
                 }
                 else {
                     say("copy_jobs is not empty");
                 }
-                
+
                 if(doneAddingJobs && copy_jobs.isEmpty()) {
                     say("stopping copier");
                     Runtime.getRuntime().removeShutdownHook(hook);
                     break;
                 }
-                
+
                 if(!copy_jobs.isEmpty()) {
                     nextJob = (CopyJob)copy_jobs.iterator().next();
                 }
             }
-            
+
             if(nextJob != null) {
                 boolean job_success=false;
                 Exception job_error=null;
                 try {
                     int i = 0;
                     while(true) {
-                        
+
                         try {
                             copy(nextJob);
                             job_success=true;
@@ -299,7 +298,7 @@ public class Copier implements Runnable {
                         }
                         catch(InterruptedException ie) {
                         }
-                        
+
                     }
                 }
                 catch(Exception e) {
@@ -310,7 +309,7 @@ public class Copier implements Runnable {
                         error = e;
                         notifyAll();
                         return;
-                        
+
                     }
                 }
                 finally {
@@ -332,14 +331,14 @@ public class Copier implements Runnable {
                         break;
                     }
                 }
-                
+
                 synchronized(copy_jobs) {
                     copy_jobs.remove(nextJob);
                 }
-                
+
                 continue;
             }
-            
+
             synchronized(this) {
                 try {
                     this.wait();
@@ -354,20 +353,20 @@ public class Copier implements Runnable {
                 }
             }
         }
-        
+
         synchronized(this) {
             completed = true;
             notifyAll();
             return;
         }
-        
+
     }
-    
+
     public void copy(CopyJob job) throws Exception {
         GlobusURL from =job.getSource();
         GlobusURL to = job.getDestination();
         int totype = SRMDispatcher.getUrlType(to);
-        
+
         // handle directory
         if((totype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
             String filename = from.getPath();
@@ -377,7 +376,7 @@ public class Copier implements Runnable {
             }
             to = new GlobusURL(to.getURL().concat(filename));
         }
-        
+
         dsay("copying " +job);
         if(from.getProtocol().equals("dcap") ||
         to.getProtocol().equals("dcap") ||
@@ -402,17 +401,17 @@ public class Copier implements Runnable {
                         if(script_protocols[i].equals(from.getProtocol())) {
                             from_protocol_supported=true;
                         }
-                        
+
                         if(script_protocols[i].equals(to.getProtocol())) {
                             to_protocol_supported=true;
                         }
-                        
+
                         if(from_protocol_supported && to_protocol_supported) {
                             break;
                         }
                     }
                 }
-                
+
                 if(from_protocol_supported && to_protocol_supported) {
                     scriptCopy(from,to);
                     return;
@@ -423,7 +422,7 @@ public class Copier implements Runnable {
                 esay("trying native java copy");
             }
         }
-        
+
         if( (( from.getProtocol().equals("gsiftp") ||
         from.getProtocol().equals("gridftp") ) &&
         to.getProtocol().equals("file")) ||
@@ -431,7 +430,7 @@ public class Copier implements Runnable {
         ( to.getProtocol().equals("gsiftp") ||
         to.getProtocol().equals("gridftp") ))
         )
-            
+
         {
 	   GSSCredential credential =null;
             if(configuration.isUseproxy()) {
@@ -445,8 +444,8 @@ public class Copier implements Runnable {
                 configuration.getX509_user_cert(), configuration.getX509_user_key(),
                 GSSCredential.INITIATE_AND_ACCEPT);
             }
-            javaGridFtpCopy(from, 
-                            to, 
+            javaGridFtpCopy(from,
+                            to,
                             credential,
                             logger);
             return;
@@ -456,52 +455,52 @@ public class Copier implements Runnable {
         fromURL = new URL(from.getURL());
         toURL = new URL(to.getURL());
         javaUrlCopy(fromURL,toURL);
-        
+
     }
-    
+
     public String[] scriptCopyGetSupportedProtocols() throws Exception {
         String command = urlcopy;
         command = command+" -get-protocols";
         return ShellCommandExecuter.executeAndReturnOutput(command,logger);
     }
-    
+
     public void scriptCopy(GlobusURL from, GlobusURL to) throws Exception {
         String command = urlcopy;
         if(debug) {
             command = command+" -debug true";
         }
-        
+
         String x509_proxy = configuration.getX509_user_proxy();
         if(x509_proxy != null) {
             command = command+" -x509_user_proxy "+x509_proxy;
         }
-        
+
         String x509_key = configuration.getX509_user_key();
         if(x509_key != null) {
             command = command+" -x509_user_key "+x509_key;
         }
-        
+
         String x509_cert = configuration.getX509_user_cert();
         if(x509_cert != null) {
             command = command+" -x509_user_cert "+x509_cert;
         }
-        
+
         String x509_cert_dir =
         configuration.getX509_user_trusted_certificates();
         if(x509_cert_dir != null) {
             command = command+" -x509_user_certs_dir "+x509_cert_dir;
         }
-        
+
         int tcp_buffer_size = configuration.getTcp_buffer_size();
         if(tcp_buffer_size > 0) {
             command = command+" -tcp_buffer_size "+tcp_buffer_size;
         }
-        
+
         int buffer_size = configuration.getBuffer_size();
         if(buffer_size > 0) {
             command = command+" -buffer_size "+buffer_size;
         }
-        
+
         command = command+
         " -src-protocol "+from.getProtocol();
         if(from.getProtocol().equals("file")) {
@@ -537,7 +536,7 @@ public class Copier implements Runnable {
             throw new Exception(urlcopy+" return code = "+rc);
         }
     }
-    
+
     public void javaGridFtpCopy(GlobusURL src_url,
                                 GlobusURL dst_url,
                                 GSSCredential credential,
@@ -547,26 +546,26 @@ public class Copier implements Runnable {
         if((src_url.getProtocol().equals("gsiftp")||src_url.getProtocol().equals("gridftp")) &&
            dst_url.getProtocol().equals("file")) {
             //
-            // case of read 
+            // case of read
             //
             boolean passive_server_mode=true;
-            if (serverMode==null) { 
-                // this means server_mode option was not specified at all, 
+            if (serverMode==null) {
+                // this means server_mode option was not specified at all,
                 // we preserve default behavior (passive, any number of streams)
                 passive_server_mode=true;
             }
-            else if(serverMode.equalsIgnoreCase("passive")) { 
+            else if(serverMode.equalsIgnoreCase("passive")) {
                 // server_mode specified to passive, make sure number of streams is 1
                 passive_server_mode=true;
-                if (numberOfStreams!=1) { 
+                if (numberOfStreams!=1) {
                     logger.elog("server_mode is specified as passive, setting number of streams to 1");
                     numberOfStreams=1;
                 }
             }
-            else if(serverMode.equalsIgnoreCase("active")) { 
+            else if(serverMode.equalsIgnoreCase("active")) {
                 passive_server_mode=false;
             }
-            else { 
+            else {
                 throw new IllegalArgumentException("Unknown server_mode option specified \""+serverMode+
                                                    "\". Allowed options \"passive\" or \"active\"");
             }
@@ -595,29 +594,29 @@ public class Copier implements Runnable {
             }
             return;
         }
-        
+
         if(src_url.getProtocol().equals("file")&&
-           (dst_url.getProtocol().equals("gsiftp")||dst_url.getProtocol().equals("gridftp"))) { 
+           (dst_url.getProtocol().equals("gsiftp")||dst_url.getProtocol().equals("gridftp"))) {
             //
-            // case of write 
-            // 
+            // case of write
+            //
             boolean passive_server_mode=true;
-            if (serverMode==null) { 
-                // this means server_mode option was not specified at all, 
+            if (serverMode==null) {
+                // this means server_mode option was not specified at all,
                 // we preserve default behavior (passive, any number of streams)
                 passive_server_mode=true;
             }
-            else if(serverMode.equalsIgnoreCase("passive")) { 
+            else if(serverMode.equalsIgnoreCase("passive")) {
                 passive_server_mode=true;
             }
-            else if(serverMode.equalsIgnoreCase("active")) { 
+            else if(serverMode.equalsIgnoreCase("active")) {
                 passive_server_mode=false;
-                if (numberOfStreams!=1) { 
+                if (numberOfStreams!=1) {
                     logger.elog("server_mode is specified as active, setting number of streams to 1");
                     numberOfStreams=1;
                 }
             }
-            else { 
+            else {
                 throw new IllegalArgumentException("Unknown server_mode option specified \""+serverMode+
                                                    "\". Allowed options \"passive\" or \"active\"");
             }
@@ -649,7 +648,7 @@ public class Copier implements Runnable {
         }
         throw new IllegalArgumentException("need file-gridftp or gridftp-file combo");
     }
-    
+
     public void javaUrlCopy(URL from, URL to) throws Exception {
         InputStream in = null;
         if(from.getProtocol().equals("file")) {
@@ -659,7 +658,7 @@ public class Copier implements Runnable {
             in = from.openConnection().getInputStream();
         }
         OutputStream out = null;
-        
+
         if(to.getProtocol().equals("file")) {
             out = new FileOutputStream(to.getPath());
         }
@@ -681,19 +680,19 @@ public class Copier implements Runnable {
         say("successfuly copied "+total +" bytes from "+from+" to "+to);
         num_completed_successfully++;
     }
-    
+
     private void cleanup() {
         CopyJob jobs[] = new CopyJob[0];
         jobs =   (CopyJob[]) copy_jobs.toArray(jobs);
-        
+
         if(jobs == null) return;
-        
+
         for(int i = 0; i<jobs.length;++i) {
             jobs[i].done(false,"stopped by cleanup");
         }
-        
-        
-        
+
+
+
     }
-    
+
 }

@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -10,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -44,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -57,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -125,9 +122,10 @@ public class CopyJobFileReader {
             sources[i] = src_dest_array[i][0];
             destinations[i] = src_dest_array[i][1];
         }
-        
+
     }
-    
+
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer("# copy job file \n");
         for(int i = 0 ; i < size; ++i) {
@@ -135,7 +133,7 @@ public class CopyJobFileReader {
         }
         return sb.toString();
     }
-    
+
     /** Getter for property sources.
      * @return Value of property sources.
      *
@@ -143,8 +141,8 @@ public class CopyJobFileReader {
     public java.lang.String[] getSources() {
         return this.sources;
     }
-    
-    
+
+
     /** Getter for property destinations.
      * @return Value of property destinations.
      *
@@ -152,7 +150,7 @@ public class CopyJobFileReader {
     public java.lang.String[] getDestinations() {
         return this.destinations;
     }
-    
+
     /** Getter for property size.
      * @return Value of property size.
      *
@@ -160,7 +158,7 @@ public class CopyJobFileReader {
     public int size() {
         return size;
     }
-    
+
     public static final void main(String[] args) throws IOException {
         if(args == null || args.length != 1) {
             System.err.println(
@@ -169,5 +167,5 @@ public class CopyJobFileReader {
         }
         System.out.println(new CopyJobFileReader(args[0]).toString());
     }
-    
+
 }

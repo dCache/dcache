@@ -3,7 +3,7 @@
 // $Id$
 // $Author$
 //
-// 
+//
 // created 11/06 by Timur Perelmutov (timur@fnal.gov))
 //
 //______________________________________________________________________________
@@ -17,28 +17,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -51,10 +51,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -64,10 +64,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -81,15 +81,9 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
-import java.util.HashMap;
-import java.util.Iterator;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
-import org.ietf.jgss.GSSCredential;
 import java.io.IOException;
-import java.text.DateFormat;
-import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 
@@ -98,8 +92,8 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
 	private org.ietf.jgss.GSSCredential credential = null;
 	private ISRM srmv2;
 
-	public SRMGetSpaceTokensClientV2(Configuration configuration, 
-				       GlobusURL url) { 
+	public SRMGetSpaceTokensClientV2(Configuration configuration,
+				       GlobusURL url) {
 		super(configuration);
 		srmURL=url;
 		try {
@@ -110,42 +104,44 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
 			System.err.println("Couldn't getGssCredential.");
 		}
 	}
-	
+
+        @Override
 	public void connect() throws Exception {
-		
-		srmv2 = new SRMClientV2(srmURL, 
+
+		srmv2 = new SRMClientV2(srmURL,
 					getGssCredential(),
 					configuration.getRetry_timeout(),
 					configuration.getRetry_num(),
-					doDelegation, 
+					doDelegation,
 					fullDelegation,
 					gss_expected_name,
 					configuration.getWebservice_path());
 	}
-	
+
+        @Override
 	public void start() throws Exception {
 		try {
-			if (credential.getRemainingLifetime() < 60) 
+			if (credential.getRemainingLifetime() < 60)
 				throw new Exception(
 					"Remaining lifetime of credential is less than a minute.");
 		}
 		catch (org.ietf.jgss.GSSException gsse) {
 			throw gsse;
 		}
-		try { 
+		try {
                         String tokenDescription = configuration.getSpaceTokenDescription();
-                	SrmGetSpaceTokensRequest request = new SrmGetSpaceTokensRequest(); 
+                	SrmGetSpaceTokensRequest request = new SrmGetSpaceTokensRequest();
                         request.setUserSpaceTokenDescription(tokenDescription);
 			SrmGetSpaceTokensResponse response = srmv2.srmGetSpaceTokens(request);
 
 
-			if ( response == null ) { 
+			if ( response == null ) {
 				throw new IOException(" null SrmGetSpaceTokensResponse");
 			}
-			
+
 			TReturnStatus rs     = response.getReturnStatus();
-			if ( rs == null) { 
-				throw new IOException(" null TReturnStatus ");	
+			if ( rs == null) {
+				throw new IOException(" null TReturnStatus ");
 			}
 			if (RequestStatusTool.isFailedRequestStatus(rs)) {
 				throw new IOException("SrmGetSpaceTokens failed, unexpected or failed return status : "+
@@ -157,7 +153,7 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
                         String [] spaceTokens  = response.getArrayOfSpaceTokens().getStringArray();
                         System.out.println("Space Reservation Tokens:");
                         for(int i = 0; i< spaceTokens.length; ++i) {
-                            
+
                             System.out.println(spaceTokens[i]);
                         }
 

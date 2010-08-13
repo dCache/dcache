@@ -3,7 +3,7 @@
 // this class is stolen from org.dcache.services
 //
 // $Id$
-// $Author$ 
+// $Author$
 //______________________________________________________________________________
 
 

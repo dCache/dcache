@@ -17,28 +17,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -51,10 +51,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -64,10 +64,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -81,18 +81,9 @@ COPYRIGHT STATUS:
  */
 
 package gov.fnal.srm.util;
-import java.util.HashMap;
-import java.util.Iterator;
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.FileMetaData;
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
-import org.ietf.jgss.GSSCredential;
 import java.io.IOException;
-import java.text.DateFormat;
-import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 
@@ -103,7 +94,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     private ISRM srmv2;
     private Thread hook;
     private String requestToken;
-    
+
     public SRMReserveSpaceClientV2(Configuration configuration,
         GlobusURL url) {
         super(configuration);
@@ -115,9 +106,10 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             System.err.println("Couldn't getGssCredential.");
         }
     }
-    
+
+    @Override
     public void connect() throws Exception {
-        
+
         srmv2 = new SRMClientV2(srmURL,
             getGssCredential(),
             configuration.getRetry_timeout(),
@@ -127,7 +119,8 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             gss_expected_name,
             configuration.getWebservice_path());
     }
-    
+
+    @Override
     public void start() throws Exception {
         try {
             if (credential.getRemainingLifetime() < 60)
@@ -137,7 +130,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             throw gsse;
         }
         try {
-            
+
             TRetentionPolicy rp   =  null;
             if(configuration.getRetentionPolicy() != null ) {
                 rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
@@ -148,14 +141,14 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             }
             TRetentionPolicyInfo rpi = new TRetentionPolicyInfo(rp,al);
             request.setRetentionPolicyInfo(rpi);
-            if (configuration.getDesiredReserveSpaceSize()!=null) { 
+            if (configuration.getDesiredReserveSpaceSize()!=null) {
                     request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
             }
-            if (configuration.getGuaranteedReserveSpaceSize()!=null){ 
+            if (configuration.getGuaranteedReserveSpaceSize()!=null){
                     request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize().longValue()));
             }
             request.setUserSpaceTokenDescription(configuration.getSpaceTokenDescription());
-            if (configuration.getDesiredLifetime()!=null) { 
+            if (configuration.getDesiredLifetime()!=null) {
                     request.setDesiredLifetimeOfReservedSpace(new Integer((int)(configuration.getDesiredLifetime().longValue())));
             }
             if (configuration.getArrayOfClientNetworks()!=null ||
@@ -163,29 +156,29 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                 configuration.getAccessPattern()!=null ||
                 configuration.getProtocols()!=null) {
                     TTransferParameters tp = new TTransferParameters();
-                    if (configuration.getArrayOfClientNetworks()!=null) { 
+                    if (configuration.getArrayOfClientNetworks()!=null) {
                             tp.setArrayOfClientNetworks(new ArrayOfString(configuration.getArrayOfClientNetworks()));
                     }
-                    if (configuration.getConnectionType()!=null) { 
+                    if (configuration.getConnectionType()!=null) {
                             tp.setConnectionType(TConnectionType.fromString(configuration.getConnectionType()));
                     }
                     if (configuration.getAccessPattern()!=null) {
                             tp.setAccessPattern(TAccessPattern.fromString(configuration.getAccessPattern()));
                     }
-                    if (configuration.getProtocols()!=null) { 
+                    if (configuration.getProtocols()!=null) {
                             tp.setArrayOfTransferProtocols(new ArrayOfString(configuration.getProtocols()));
                     }
                     request.setTransferParameters(tp);
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            
+
             SrmReserveSpaceResponse response = srmv2.srmReserveSpace(request);
 
             if ( response == null ) {
                 throw new IOException(" null SrmReserveSpace");
             }
-            
+
             TReturnStatus rs     = response.getReturnStatus();
             requestToken         = response.getRequestToken();
             dsay(" srm returned requestToken = "+requestToken);
@@ -196,12 +189,12 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                 throw new IOException("srmReserveSpace submission failed, unexpected or failed return status : "+
                     rs.getStatusCode()+" explanation="+rs.getExplanation());
             }
-	    if (response.getSpaceToken()!=null) { 
+	    if (response.getSpaceToken()!=null) {
                     System.out.println("Space token ="+
 				       response.getSpaceToken());
                     logger.log("lifetime = "+
 			       response.getLifetimeOfReservedSpace());
-		    if (response.getRetentionPolicyInfo()!=null) { 
+		    if (response.getRetentionPolicyInfo()!=null) {
 			    logger.log("access latency = "+
 				       response.getRetentionPolicyInfo().getAccessLatency());
 			    logger.log("retention policy = "+
@@ -212,10 +205,10 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                     logger.log("total size = "+
 			       response.getSizeOfTotalReservedSpace());
 	    }
-            else { 
+            else {
 		    while(true) {
 			    long estimatedWaitInSeconds = 5;
-			    
+
 			    if(estimatedWaitInSeconds > 60) {
 				    estimatedWaitInSeconds = 60;
 			    }
@@ -236,7 +229,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
 			    req.setRequestToken(requestToken);
 			    req.setAuthorizationID(request.getAuthorizationID());
 			    SrmStatusOfReserveSpaceRequestResponse statusOfReserveSpaceRequestResponse =  srmv2.srmStatusOfReserveSpaceRequest(req);
-			    
+
 			    if( statusOfReserveSpaceRequestResponse == null) {
 				    throw new IOException(" null statusOfReserveSpaceRequestResponse");
 			    }
@@ -278,7 +271,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
 		    }
 	    }
             Runtime.getRuntime().removeShutdownHook(hook);
-        } 
+        }
 	catch(Exception e) {
 		esay(e.toString());
 		try {
@@ -293,7 +286,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
         }
     }
 
-    
+    @Override
     public void run() {
         try {
             say("stopping ");
@@ -304,7 +297,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             logger.elog(e.toString());
         }
     }
-    
+
     public void abortRequest() throws Exception {
         SrmAbortRequestRequest abortRequest = new SrmAbortRequestRequest();
         abortRequest.setRequestToken(requestToken);

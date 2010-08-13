@@ -9,15 +9,9 @@
 
 
 package gov.fnal.srm.util;
-import java.util.HashMap;
-import java.util.Iterator;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
-import org.ietf.jgss.GSSCredential;
 import java.io.IOException;
-import java.text.DateFormat;
-import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 
@@ -26,8 +20,8 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
     private GlobusURL srmURL;
     private org.ietf.jgss.GSSCredential credential = null;
     private ISRM srmv2;
-    
-    public SRMGetRequestSummaryClientV2(Configuration configuration, 
+
+    public SRMGetRequestSummaryClientV2(Configuration configuration,
 					GlobusURL url) {
 	super(configuration);
 	srmURL=url;
@@ -39,51 +33,53 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
 	    System.err.println("Couldn't getGssCredential.");
 	}
     }
-    
+
+    @Override
     public void connect() throws Exception {
-	srmv2 = new SRMClientV2(srmURL, 
+	srmv2 = new SRMClientV2(srmURL,
 				getGssCredential(),
 				configuration.getRetry_timeout(),
 				configuration.getRetry_num(),
-				doDelegation, 
+				doDelegation,
 				fullDelegation,
 				gss_expected_name,
 				configuration.getWebservice_path());
     }
-	
+
+    @Override
     public void start() throws Exception {
 	try {
-	    if (credential.getRemainingLifetime() < 60) 
+	    if (credential.getRemainingLifetime() < 60)
 		throw new Exception(
 		    "Remaining lifetime of credential is less than a minute.");
 	}
 	catch (org.ietf.jgss.GSSException gsse) {
 	    throw gsse;
 	}
-	try { 
+	try {
 	    String[] tokens = configuration.getArrayOfRequestTokens();
 	    SrmGetRequestSummaryRequest request = new SrmGetRequestSummaryRequest();
-	    
+
 	    request.setArrayOfRequestTokens(new ArrayOfString(tokens));
 
 	    SrmGetRequestSummaryResponse response = srmv2.srmGetRequestSummary(request);
-	    if ( response == null ) { 
+	    if ( response == null ) {
 		throw new IOException(" null SrmGetRequestSummaryResponse ");
 	    }
 	    TReturnStatus rs = response.getReturnStatus();
-	    if ( rs == null) { 
-		throw new IOException(" null TReturnStatus ");	
+	    if ( rs == null) {
+		throw new IOException(" null TReturnStatus ");
 	    }
 	    if (RequestStatusTool.isFailedRequestStatus(rs)) {
 		throw new IOException("srmGetRequestSummary failed, unexpected or failed return status : "+
 				      rs.getStatusCode()+" explanation="+rs.getExplanation());
 	    }
-	    if (response.getArrayOfRequestSummaries()!=null) { 
+	    if (response.getArrayOfRequestSummaries()!=null) {
 		ArrayOfTRequestSummary summaries = response.getArrayOfRequestSummaries();
-		if (summaries.getSummaryArray()!=null) { 
+		if (summaries.getSummaryArray()!=null) {
 		    for (int i=0;i<summaries.getSummaryArray().length;i++){
 			TRequestSummary summary = summaries.getSummaryArray(i);
-			if (summary != null) { 
+			if (summary != null) {
 			    TReturnStatus st   = summary.getStatus();
 			    TRequestType  type = summary.getRequestType();
 			    System.out.println("\tRequest number  : "+summary.getRequestToken());

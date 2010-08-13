@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -76,15 +73,10 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
-import java.util.Set;
 import java.util.Map;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.io.IOException;
 import java.util.Iterator;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
@@ -93,7 +85,7 @@ import org.dcache.srm.util.RequestStatusTool;
  * @author  timur
  */
 public class SRMGetClientV2 extends SRMClient implements Runnable {
-    public static String[] protocols;
+    private String[] protocols;
     GlobusURL from[];
     GlobusURL to[];
     private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
@@ -110,7 +102,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
         this.to = to;
     }
 
-
+    @Override
     public void connect() throws Exception {
         GlobusURL srmUrl = from[0];
         srmv2 = new SRMClientV2(srmUrl,
@@ -127,6 +119,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
         this.protocols = protocols;
     }
 
+    @Override
     public void start() throws Exception {
         try {
             copier = new Copier(urlcopy,configuration);
@@ -258,14 +251,14 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                         String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
                                 " explanation="+fileStatus.getExplanation();
                         esay(error);
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = pendingSurlsToIndex.remove(surl_string).intValue();
                         setReportFailed(from[indx],to[indx],error);
                         haveCompletedFileRequests = true;
                         continue;
                     }
                     if(getRequestFileStatus.getTransferURL() != null ) {
                         GlobusURL globusTURL = new GlobusURL(getRequestFileStatus.getTransferURL().toString());
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx =  pendingSurlsToIndex.remove(surl_string).intValue();
                         setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(globusTURL,
                                 to[indx],srmv2,requestToken,logger,from[indx],true,this);
@@ -303,7 +296,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 // so we always are sending the list of all pending srm urls
                 //if(haveCompletedFileRequests){
                 String [] pendingSurlStrings =
-                        (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
+                        pendingSurlsToIndex.keySet().toArray(new String[0]);
                 // if we do not have completed file requests
                 // we want to get status for all files
                 // we do not need to specify any surls
@@ -311,7 +304,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                 org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
 
                 for(int i=0;i<expectedResponseLength;++i){
-                    surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);;
+                    surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);
                 }
 
                 srmStatusOfGetRequestRequest.setArrayOfSourceSURLs(
@@ -403,7 +396,9 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
 
         }
     }
+
     // this is called when Ctrl-C is hit, or TERM signal received
+    @Override
     public void run() {
         try {
             say("stopping copier");
@@ -419,7 +414,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             return;
         }
         if(requestToken != null) {
-            String[] surl_strings = (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
+            String[] surl_strings = pendingSurlsToIndex.keySet().toArray(new String[0]);
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
             org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[len];

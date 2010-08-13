@@ -16,28 +16,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -50,10 +50,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -63,10 +63,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -82,11 +82,7 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
-import org.ietf.jgss.GSSCredential;
-
-import java.text.DateFormat;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
@@ -94,7 +90,7 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 	private org.ietf.jgss.GSSCredential cred = null;
 	private GlobusURL[] surls;
 	private String[] surl_string;
-	private ISRM srm;
+	private ISRM isrm;
 
 	public SRMGetPermissionClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_string) {
 		super(configuration);
@@ -107,22 +103,24 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 			System.err.println("Couldn't getGssCredential.");
 		}
 	}
-	
+
+        @Override
 	public void connect() throws Exception {
 		GlobusURL srmUrl = surls[0];
-		srm = new SRMClientV2(srmUrl, 
+		isrm = new SRMClientV2(srmUrl,
 				      getGssCredential(),
 				      configuration.getRetry_timeout(),
 				      configuration.getRetry_num(),
-				      doDelegation, 
+				      doDelegation,
 				      fullDelegation,
 				      gss_expected_name,
 				      configuration.getWebservice_path());
 	}
-	
+
+        @Override
 	public void start() throws Exception {
 		try {
-			if (cred.getRemainingLifetime() < 60) 
+			if (cred.getRemainingLifetime() < 60)
 				throw new Exception(
 					"Remaining lifetime of credential is less than a minute.");
 		}
@@ -137,21 +135,21 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 		for(int i=0;i<uriarray.length;i++){
 			uri=new URI(surl_string[i]);
 			uriarray[i]=uri;
-		} 				
-		
+		}
+
 		surlarray.setUrlArray(uriarray);
 
 
 		SrmGetPermissionRequest req = new SrmGetPermissionRequest();
 		req.setArrayOfSURLs(surlarray);
-		SrmGetPermissionResponse resp = srm.srmGetPermission(req);
+		SrmGetPermissionResponse resp = isrm.srmGetPermission(req);
 		TReturnStatus rs   = resp.getReturnStatus();
 		ArrayOfTPermissionReturn permissions=resp.getArrayOfPermissionReturns();
 		TPermissionReturn[] permissionarray=null;
-		if (permissions!=null) { 
+		if (permissions!=null) {
 			permissionarray=permissions.getPermissionArray();
 		}
-		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
+		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
 			TStatusCode rc  = rs.getStatusCode();
 			StringBuffer sb = new StringBuffer();
 			sb.append("Return code: "+rc.toString()+"\n");
@@ -160,17 +158,17 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 		}
 
 		StringBuffer txt = new StringBuffer();
-		if (permissionarray==null) { 
+		if (permissionarray==null) {
 			txt.append("permissions array is null\n");
 			System.out.println(txt.toString());
 			System.exit(1);
 		}
 		for(int i=0;i<permissionarray.length;i++){
 			txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
-			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
+			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
 				txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
 				txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
-				if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {  
+				if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
 					continue;
 				}
 			}
@@ -181,7 +179,7 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                         if (arrayOfUserPermissions!=null) {
                                 TUserPermission[] userPermissionArray = arrayOfUserPermissions.getUserPermissionArray();
                                 if (userPermissionArray!=null) {
-                                        for (TUserPermission upr : userPermissionArray) { 
+                                        for (TUserPermission upr : userPermissionArray) {
                                                 if (upr!=null) {
                                                         txt.append("user:"+upr.getUserID()+":"+upr.getMode().toString()+"\n");
                                                 }
@@ -191,8 +189,8 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                         ArrayOfTGroupPermission arrayOfGroupPermissions = pr.getArrayOfGroupPermissions();
                         if (arrayOfGroupPermissions!=null) {
                                 TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions.getGroupPermissionArray();
-                                if (groupPermissionArray!=null) { 
-                                        for (TGroupPermission upr: groupPermissionArray) { 
+                                if (groupPermissionArray!=null) {
+                                        for (TGroupPermission upr: groupPermissionArray) {
                                                 if (upr!=null) {
                                                         txt.append("group:"+upr.getGroupID()+":"+upr.getMode().toString()+"\n");
                                                 }
@@ -202,13 +200,13 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                         txt.append("other:"+pr.getOtherPermission().toString()+"\n");
 		}
 		System.out.println(txt.toString());
-		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
+		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
 			System.exit(1);
 		}
-		else { 
+		else {
 			System.exit(0);
 		}
-			
+
 	}
 
 }

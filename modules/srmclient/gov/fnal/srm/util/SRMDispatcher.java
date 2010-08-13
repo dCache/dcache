@@ -1,5 +1,3 @@
-// $Id$
-// $Author$ 
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -9,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -56,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -69,28 +67,10 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.dcache.srm.util.SrmUrl;
-import diskCacheV111.srm.FileMetaData;
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.ISRM;
-import diskCacheV111.srm.IInformationProvider;
-import org.dcache.srm.security.SslGsiSocketFactory;
 import java.io.IOException;
 import java.io.File;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Iterator;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import org.dcache.srm.Logger;
-
-import java.net.URL;
 import org.globus.util.GlobusURL;
-import java.util.Formatter;
-
 
 /**
  *
@@ -111,30 +91,36 @@ public class SRMDispatcher {
     private SRMClient     srmclient;
     private Configuration configuration;
     private Logger        logger;
-    
+
     private SRMDispatcher(Configuration configuration) throws Exception {
 	this.configuration = configuration;
 	this.logger = configuration.getLogger();
     }
-    
+
     private static class SRMCopyLogger implements Logger {
 	private boolean debug;
 	public SRMCopyLogger(boolean debug) {
 	    this.debug = debug;
 	}
+
+        @Override
 	public void elog(String s) {
 	    System.err.println(s);
 	}
+
+        @Override
 	public void elog(Throwable t) {
 	    t.printStackTrace(System.err);
 	}
+
+        @Override
 	public void log(String s) {
 	    if (debug) {
 		System.out.println(s);
 	    }
 	}
     }
-    
+
     public static final void main(String[] args) throws Exception {
 	Configuration conf = new Configuration();
 	String webservicePath=conf.getWebservice_path();
@@ -168,24 +154,24 @@ public class SRMDispatcher {
 			"cannot get metadata - surls not specified");
 		    System.exit(1);
 		}
-	    } 
+	    }
 	    else if (conf.isGetPermission()){
 		if(conf.getGetPermissionSurls() == null ||
-		   conf.getGetPermissionSurls().length == 0 ) { 
+		   conf.getGetPermissionSurls().length == 0 ) {
 		    System.err.println("cannot get permission - surls not specified");
 		    System.exit(1);
 		}
 	    }
 	    else if (conf.isCheckPermission()){
 		if(conf.getCheckPermissionSurls() == null ||
-		   conf.getCheckPermissionSurls().length == 0 ) { 
+		   conf.getCheckPermissionSurls().length == 0 ) {
 		    System.err.println("cannot check permission - surls not specified");
 		    System.exit(1);
 		}
 	    }
 	    else if (conf.isExtendFileLifetime()){
 		if(conf.getExtendFileLifetimeSurls() == null ||
-		   conf.getExtendFileLifetimeSurls().length == 0 ) { 
+		   conf.getExtendFileLifetimeSurls().length == 0 ) {
 		    System.err.println("cannot extend file lifetime - surls not specified");
 		    System.exit(1);
 		}
@@ -195,7 +181,7 @@ public class SRMDispatcher {
 		    System.err.println("cannot set permission - surls not specified");
 		    System.exit(1);
 		}
-		if (conf.getSetPermissionType()==null) { 
+		if (conf.getSetPermissionType()==null) {
 		    System.err.println("permission type is not specified");
 		    System.exit(1);
 		}
@@ -203,12 +189,12 @@ public class SRMDispatcher {
 		boolean ok=false;
 		for (int i=0; i<types.length;++i) {
 		    String p = types[i];
-		    if ( conf.getSetPermissionType().equalsIgnoreCase(p) ) { 
+		    if ( conf.getSetPermissionType().equalsIgnoreCase(p) ) {
 			ok=true;
 			break;
 		    }
 		}
-		if ( ok == false ) { 
+		if ( ok == false ) {
 		    StringBuffer sb=new StringBuffer();
 		    sb.append("Incorrect permission type specified "+conf.getSetPermissionType()+"\n");
 		    sb.append("supported permission types :\n");
@@ -220,20 +206,20 @@ public class SRMDispatcher {
 		    sb.append("\n");
 		    System.err.println(sb.toString());
 		    System.exit(1);
-    
+
 		}
 		String modes[] = {"NONE","X","W","WR","R","RX","RW","RWX"};
 		ok=false;
-		if ( conf.getSetOwnerPermissionMode() != null ) { 
+		if ( conf.getSetOwnerPermissionMode() != null ) {
 		    for (int i=0; i<modes.length;++i) {
 			String m = modes[i];
 			if ( conf.getSetOwnerPermissionMode().equalsIgnoreCase(m) ) {
 			    ok=true;
 			    break;
-			    
+
 			}
 		    }
-		    if ( ok == false ) { 
+		    if ( ok == false ) {
 			StringBuffer sb=new StringBuffer();
 			sb.append("Incorrect owner permission mode specified "+conf.getSetOwnerPermissionMode()+"\n");
 			sb.append("supported owner permission modes :\n");
@@ -248,16 +234,16 @@ public class SRMDispatcher {
 		    }
 		}
 		ok=false;
-		if ( conf.getSetGroupPermissionMode() != null ) { 
+		if ( conf.getSetGroupPermissionMode() != null ) {
 		    for (int i=0; i<modes.length;++i) {
 			String m = modes[i];
 			if ( conf.getSetGroupPermissionMode().equalsIgnoreCase(m) ) {
 			    ok=true;
 			    break;
-			    
+
 			}
 		    }
-		    if ( ok == false ) { 
+		    if ( ok == false ) {
 			StringBuffer sb=new StringBuffer();
 			sb.append("Incorrect group permission mode specified "+conf.getSetGroupPermissionMode()+"\n");
 			sb.append("supported group permission modes :\n");
@@ -272,16 +258,16 @@ public class SRMDispatcher {
 		    }
 		}
 		ok=false;
-		if ( conf.getSetOtherPermissionMode() != null ) { 
+		if ( conf.getSetOtherPermissionMode() != null ) {
 		    for (int i=0; i<modes.length;++i) {
 			String m = modes[i];
 			if ( conf.getSetOtherPermissionMode().equalsIgnoreCase(m) ) {
 			    ok=true;
 			    break;
-			    
+
 			}
 		    }
-		    if ( ok == false ) { 
+		    if ( ok == false ) {
 			StringBuffer sb=new StringBuffer();
 			sb.append("Incorrect other permission mode specified "+conf.getSetOtherPermissionMode()+"\n");
 			sb.append("supported other permission modes :\n");
@@ -303,25 +289,25 @@ public class SRMDispatcher {
 			"cannot perform advisory delete - surls not specified");
 		    System.exit(1);
 		}
-	    } 
+	    }
 	    else if (conf.isGetRequestStatus()) {
 		if (conf.getGetRequestStatusSurl() == null ) {
 		    System.err.println("surl, to be used for location of srm, is not specified");
 		    System.exit(1);
 		}
-	    } 
+	    }
 	    else if (conf.isGetRequestSummary()) {
 		if (conf.getGetRequestStatusSurl() == null ) {
 		    System.err.println("surl, to be used for location of srm, is not specified");
 		    System.exit(1);
 		}
-	    } 
+	    }
 	    else if (conf.isGetRequestTokens()) {
 		if (conf.getGetRequestStatusSurl() == null ) {
 		    System.err.println("surl, to be used for location of srm, is not specified");
 		    System.exit(1);
 		}
-	    } 
+	    }
 	    else if (conf.isCopy()||conf.isMove()) {
 		if((conf.getFrom() == null || conf.getTo() == null) &&
 		   conf.getCopyjobfile() == null ) {
@@ -329,33 +315,33 @@ public class SRMDispatcher {
 				"either argument or file");
 		    System.exit(1);
 		}
-	    } 
+	    }
 	    else if (conf.isReserveSpace()) {
-		if(conf.getGuaranteedReserveSpaceSize()<=0) { 
+		if(conf.getGuaranteedReserveSpaceSize()<=0) {
                         logger.elog("guaranteed size of space reservation must be greater than 0");
 			logger.elog(conf.usage());
-		    
+
 		    System.exit(1);
 		}
 	    }
 	    else if (conf.isReleaseSpace()) {
-		if(conf.getSpaceToken()==null || conf.getSpaceToken().trim().equals("")) { 
+		if(conf.getSpaceToken()==null || conf.getSpaceToken().trim().equals("")) {
 		    logger.elog("space token has to be specified to release explicit space reservation");
 		    System.exit(1);
 		}
 	    }
 	    else if (conf.isGetSpaceMetaData()) {
-		if(conf.getSrmUrl()==null ) { 
+		if(conf.getSrmUrl()==null ) {
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
-		if(conf.getSpaceTokensList()==null ||conf.getSpaceTokensList().length <1 ) { 
+		if(conf.getSpaceTokensList()==null ||conf.getSpaceTokensList().length <1 ) {
 		    logger.elog("at least one space token must be specified");
 		    System.exit(1);
 		}
 	    }
 	    else if (conf.isGetSpaceTokens()) {
-		if(conf.getSrmUrl()==null ) { 
+		if(conf.getSrmUrl()==null ) {
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
@@ -419,7 +405,7 @@ public class SRMDispatcher {
            System.exit(1);
         }
     }
-    
+
     private void work() throws Exception {
     if (configuration.isGetFileMetaData()) {
 	    String[] surl_strings = configuration.getGetFileMetaDataSurls();
@@ -442,18 +428,18 @@ public class SRMDispatcher {
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMGetPermissionClientV2(configuration, surls,surl_strings);
-	}	
+	}
 	else if (configuration.isCheckPermission()) {
 	    String[] surl_strings = configuration.getCheckPermissionSurls();
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());                                         
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMCheckPermissionClientV2(configuration, surls,surl_strings);
-	}	
+	}
 	else if (configuration.isExtendFileLifetime()) {
 	    String[] surl_strings = configuration.getExtendFileLifetimeSurls();
 	    int number_of_surls   = surl_strings.length;
@@ -464,20 +450,20 @@ public class SRMDispatcher {
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMExtendFileLifeTimeClientV2(configuration, surls,surl_strings);
-	}	
+	}
 	else if (configuration.isSetPermission()) {
 	    String surl_string = configuration.getSetPermissionSurl();
 	    GlobusURL surl     = new SrmUrl(surl_string,
-                                            configuration.getDefaultSrmPortNumber());  
+                                            configuration.getDefaultSrmPortNumber());
 	    srmclient = new SRMSetPermissionClientV2(configuration, surl,surl_string);
-	}	
+	}
 	else if (configuration.isls()) {
 	    String[] surl_strings  = configuration.getLsURLs();
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMLsClientV2(configuration, surls, surl_strings);
@@ -485,19 +471,19 @@ public class SRMDispatcher {
 	else if (configuration.isReserveSpace()) {
 	    String[] surl_strings  = configuration.getReserveSpaceURLs();
 	    int number_of_surls    = surl_strings.length;
-	    if (  surl_strings == null ) { 
+	    if (  surl_strings == null ) {
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
-	    if ( number_of_surls > 1  ) { 
+	    if ( number_of_surls > 1  ) {
 		throw new IllegalArgumentException("Only one SRM SURL is  supported " ) ;
-	    } 
-	    else if ( number_of_surls == 0  ) { 
+	    }
+	    else if ( number_of_surls == 0  ) {
 		throw new IllegalArgumentException("No URL specified ");
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMReserveSpaceClientV2(configuration, surls[0]);
@@ -505,39 +491,39 @@ public class SRMDispatcher {
 	else if (configuration.isReleaseSpace()) {
 	    String[] surl_strings  = configuration.getReserveSpaceURLs();
 	    int number_of_surls    = surl_strings.length;
-	    if (  surl_strings == null ) { 
+	    if (  surl_strings == null ) {
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
-	    if ( number_of_surls > 1  ) { 
+	    if ( number_of_surls > 1  ) {
 		throw new IllegalArgumentException("Only one SRM SURL is  supported " ) ;
-	    } 
-	    else if ( number_of_surls == 0  ) { 
+	    }
+	    else if ( number_of_surls == 0  ) {
 		throw new IllegalArgumentException("No URL specified ");
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMReleaseSpaceClientV2(configuration, surls[0]);
 	}
 	else if (configuration.isGetSpaceMetaData()) {
 	    String surl_string  = configuration.getSrmUrl();
-	    if (  surl_string == null ) { 
+	    if (  surl_string == null ) {
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
 	    GlobusURL surl      = new SrmUrl(surl_string,
-                                             configuration.getDefaultSrmPortNumber());  
+                                             configuration.getDefaultSrmPortNumber());
 	    srmclient              = new SRMGetSpaceMetaDataClientV2(configuration, surl);
 	}
 	else if (configuration.isGetSpaceTokens()) {
 	    String surl_string  = configuration.getSrmUrl();
-	    if (  surl_string == null ) { 
+	    if (  surl_string == null ) {
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
 	    GlobusURL surl      = new SrmUrl(surl_string,
-                                             configuration.getDefaultSrmPortNumber());  
+                                             configuration.getDefaultSrmPortNumber());
 	    srmclient              = new SRMGetSpaceTokensClientV2(configuration, surl);
 	}
 	else if (configuration.isStage()) {
@@ -546,7 +532,7 @@ public class SRMDispatcher {
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMStageClientV1(configuration, surls);
@@ -554,16 +540,16 @@ public class SRMDispatcher {
 	else if (configuration.isRmdir()) {
 	    String[] surl_strings  = configuration.getRmURLs();
 	    int number_of_surls    = surl_strings.length;
-	    if ( number_of_surls > 1 ) { 
+	    if ( number_of_surls > 1 ) {
 		throw new IllegalArgumentException("Only single directory tree removal is suported " ) ;
-	    } 
-	    else if ( number_of_surls == 0  ) { 
+	    }
+	    else if ( number_of_surls == 0  ) {
 		throw new IllegalArgumentException("No URL specified");
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                         configuration.getDefaultSrmPortNumber());  
+                                         configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMRmdirClientV2(configuration, surls[0], surl_strings[0]);
@@ -571,16 +557,16 @@ public class SRMDispatcher {
 	else if (configuration.isMkdir()) {
 	    String[] surl_strings  = configuration.getMkDirURLs();
 	    int number_of_surls    = surl_strings.length;
-	    if ( number_of_surls > 1  ) { 
+	    if ( number_of_surls > 1  ) {
 		throw new IllegalArgumentException("Only one directory at a time supported " ) ;
-	    } 
-	    else if ( number_of_surls == 0  ) { 
+	    }
+	    else if ( number_of_surls == 0  ) {
 		throw new IllegalArgumentException("No URL specified ");
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMMkDirClientV2(configuration, surls[0], surl_strings[0]);
@@ -591,7 +577,7 @@ public class SRMDispatcher {
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMRmClientV2(configuration, surls, surl_strings);
@@ -602,55 +588,55 @@ public class SRMDispatcher {
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMAdvisoryDeleteClientV1(configuration, surls, surl_strings);
-	} 
+	}
 	else if(configuration.isGetRequestStatus()) {
 	    String surl_string = configuration.getGetRequestStatusSurl();
 	    int requestId      = configuration.getGetRequestStatusId();
 	    GlobusURL surl     = new SrmUrl(surl_string,
-                                            configuration.getDefaultSrmPortNumber());  
-                                               
+                                            configuration.getDefaultSrmPortNumber());
+
 	    srmclient          = new SRMGetRequestStatusClientV1(configuration, surl,requestId);
-	} 
+	}
 	else if(configuration.isGetRequestSummary()) {
 	    String surl_string = configuration.getGetRequestStatusSurl();
 	    GlobusURL surl     = new SrmUrl(surl_string,
-                                            configuration.getDefaultSrmPortNumber());  
+                                            configuration.getDefaultSrmPortNumber());
 	    srmclient          = new SRMGetRequestSummaryClientV2(configuration, surl);
-	} 
+	}
 	else if(configuration.isGetRequestTokens()) {
 	    String surl_string = configuration.getGetRequestStatusSurl();
 	    GlobusURL surl     = new SrmUrl(surl_string,
-                                               configuration.getDefaultSrmPortNumber());  
+                                               configuration.getDefaultSrmPortNumber());
 	    srmclient          = new SRMGetRequestTokensClientV2(configuration, surl);
-	} 
+	}
 	else if (configuration.isMove()) {
 	    String from;
-	    String to;	
+	    String to;
 	    String[] surl_strings = new String[2];
 	    if(configuration.getCopyjobfile() != null) {
 		CopyJobFileReader reader = new CopyJobFileReader(configuration.getCopyjobfile());
-		if (reader.getSources().length>1||reader.getDestinations().length>1) { 
+		if (reader.getSources().length>1||reader.getDestinations().length>1) {
 		    throw new IllegalArgumentException("only signle source and single destination supported");
 		}
 		from = reader.getSources()[0];
 		to   = reader.getDestinations()[0];
-	    } 
+	    }
 	    else {
-		if (configuration.getFrom().length>1) { 
+		if (configuration.getFrom().length>1) {
 		    throw new IllegalArgumentException("only signle source and single destination supported");
 		}
-		
+
 		from           = configuration.getFrom()[0];
 		to             = configuration.getTo();
 	    }
 	    GlobusURL from_url = new SrmUrl(from,
-                                            configuration.getDefaultSrmPortNumber());  
+                                            configuration.getDefaultSrmPortNumber());
 	    GlobusURL to_url   = new SrmUrl(to,
-                                            configuration.getDefaultSrmPortNumber());  
+                                            configuration.getDefaultSrmPortNumber());
 	    GlobusURL[] surls  = new GlobusURL[2];
 	    surls[0] = from_url;
 	    surls[1] = to_url;
@@ -660,14 +646,14 @@ public class SRMDispatcher {
 	    int toType   = getUrlType(to_url);
 	    if ( fromType != toType ) {
 		throw new IllegalArgumentException("source and destination have to have same URL type");
-	    } 
-	    if ( fromType != SRM_URL ) { 
+	    }
+	    if ( fromType != SRM_URL ) {
 		throw new IllegalArgumentException("source and destination have to be SRM URLs");
 	    }
 	    checkURLSUniformity(fromType,surls,true);
 	    srmclient = new SRMMvClientV2(configuration, surls, surl_strings);
 	}
-	else if(configuration.isCopy()) { 
+	else if(configuration.isCopy()) {
 	    GlobusURL[] from_urls;
 	    GlobusURL[] to_urls;
 	    if(configuration.getCopyjobfile() != null) {
@@ -683,7 +669,7 @@ public class SRMDispatcher {
 		    to_urls[i]   = new SrmUrl(to[i],
                                               configuration.getDefaultSrmPortNumber());
 		}
-	    } 
+	    }
 	    else {
 		String[] from         = configuration.getFrom();
 		int number_of_sources = from.length;
@@ -704,7 +690,7 @@ public class SRMDispatcher {
 			to_urls[i] = new SrmUrl(to+"/"+file,
                                                 configuration.getDefaultSrmPortNumber());
 		    }
-		} 
+		}
 		else {
 		    to_urls[0] =  new  SrmUrl(to,
                                               configuration.getDefaultSrmPortNumber());
@@ -714,7 +700,7 @@ public class SRMDispatcher {
 	    checkURLSUniformity(fromType,from_urls,true);
 	    int toType = getUrlType(to_urls[0]);
 	    checkURLSUniformity(toType,to_urls,false);
-	    
+
 	    if (fromType == SRM_URL ) {
 		if ((toType & FILE_URL) == FILE_URL) {
 		    dsay("starting SRMGetClient");
@@ -723,7 +709,7 @@ public class SRMDispatcher {
 		    } else if(configuration.getSrmProtocolVersion() == 2) {
 			srmclient = new SRMGetClientV2(configuration,from_urls,to_urls);
 		    }
-		} 
+		}
 		else {
 		    if (toType == SRM_URL) {
 			// both source(s) and destination(s) are srm urls
@@ -731,26 +717,26 @@ public class SRMDispatcher {
 			if (configuration.getSrmProtocolVersion() == 1) {
 			    srmclient = new SRMCopyClientV1(configuration,from_urls,to_urls);
 			}
-			else  if ( configuration.getSrmProtocolVersion() == 2 )  { 
+			else  if ( configuration.getSrmProtocolVersion() == 2 )  {
 			    srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
 			}
-		    } 
+		    }
 		    else {
 			//
 			// Dmitry's kludge
 			//
-			if (!configuration.isPushmode()) { 
+			if (!configuration.isPushmode()) {
 			    configuration.setPushmode(true);
 			}
 			if (configuration.getSrmProtocolVersion() == 1) {
 			    srmclient = new SRMCopyClientV1(configuration,from_urls,to_urls);
 			}
-			else  if ( configuration.getSrmProtocolVersion() == 2 )  { 
+			else  if ( configuration.getSrmProtocolVersion() == 2 )  {
 			    srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
 			}
 		    }
 		}
-	    } 
+	    }
 	    else if(toType == SRM_URL) {
 		if ((fromType & FILE_URL) == FILE_URL) {
 		    if(configuration.getSrmProtocolVersion() == 1) {
@@ -758,22 +744,22 @@ public class SRMDispatcher {
 		    } else if(configuration.getSrmProtocolVersion() == 2) {
 			srmclient = new SRMPutClientV2(configuration,from_urls,to_urls);
 		    }
-		} 
+		}
 		else {
 		    //
 		    // Dmitry's kludge
 		    //
-		    if (configuration.isPushmode()) { 
+		    if (configuration.isPushmode()) {
 			configuration.setPushmode(false);
 		    }
 		    if(configuration.getSrmProtocolVersion() == 1) {
 			srmclient = new SRMCopyClientV1(configuration,from_urls,to_urls);
 		    }
-		    else  if ( configuration.getSrmProtocolVersion() == 2 )  { 
+		    else  if ( configuration.getSrmProtocolVersion() == 2 )  {
 			srmclient = new SRMCopyClientV2(configuration,from_urls,to_urls);
 		    }
 		}
-	    } 
+	    }
 	    else if(((fromType & FILE_URL) == FILE_URL ||
                     (fromType & SUPPORTED_PROTOCOL_URL)== SUPPORTED_PROTOCOL_URL) &&
                     ((toType & FILE_URL) == FILE_URL ||
@@ -782,7 +768,7 @@ public class SRMDispatcher {
                 srmclient = new SRMSimpleCopyClient(configuration,from_urls,to_urls);
             }
             else {
-                
+
 		esay("neither source nor destination are SRM URLs :"+
 		     from_urls[0].getURL()+" "+from_urls[0].getURL());
 		throw new IllegalArgumentException(
@@ -796,15 +782,15 @@ public class SRMDispatcher {
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
 		surls[i] = new SrmUrl(surl_strings[i],
-                                      configuration.getDefaultSrmPortNumber());  
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMBringOnlineClientV2(configuration, surls);
-	} 
+	}
 	else if(configuration.isPing()) {
             String surl_string = configuration.getSrmUrl();
             GlobusURL surl = new SrmUrl(surl_string,
-                                        configuration.getDefaultSrmPortNumber());  
+                                        configuration.getDefaultSrmPortNumber());
             if(configuration.getSrmProtocolVersion() == 1) {
                 srmclient  = new SRMPingClientV1(configuration,surl);
             }
@@ -812,19 +798,19 @@ public class SRMDispatcher {
                 srmclient  = new SRMPingClientV2(configuration,surl);
             }
 	}
-	else if (configuration.isAbortRequest()) { 
+	else if (configuration.isAbortRequest()) {
 		String surl_string  = configuration.getSrmUrl();
-		if (  surl_string == null ) { 
+		if (  surl_string == null ) {
 			throw new IllegalArgumentException("Must specify SRM URL" ) ;
 		}
 		GlobusURL surl      = new SrmUrl(surl_string,
-                                                  configuration.getDefaultSrmPortNumber());  
+                                                  configuration.getDefaultSrmPortNumber());
 		srmclient           = new SRMAbortRequestClientV2(configuration, surl);
 	}
-	else if (configuration.isAbortFiles()) { 
+	else if (configuration.isAbortFiles()) {
 		srmclient           = new SRMAbortFilesClientV2(configuration);
 	}
-	else if (configuration.isReleaseFiles()) { 
+	else if (configuration.isReleaseFiles()) {
 		srmclient           = new SRMReleaseFilesClientV2(configuration);
 	}
 	else {
@@ -834,11 +820,11 @@ public class SRMDispatcher {
 	srmclient.connect();
 	srmclient.start();
     }
-    
+
     public void  checkURLSUniformity(int type,GlobusURL urls[],boolean areSources) throws Exception {
 	//String[] from = configuration.getFrom();
 	int number_of_sources = urls.length;
-	if (number_of_sources==0) { 
+	if (number_of_sources==0) {
 	      throw new IllegalArgumentException("No URL(s) specified ");
 	}
       String host = urls[0].getHost();
@@ -851,7 +837,7 @@ public class SRMDispatcher {
             esay(error);
             throw new IllegalArgumentException(error );
          }
-         
+
          for(int i=0; i<number_of_sources; ++i) {
             if(type != getUrlType(urls[i])) {
                String error ="if specifying multiple sources/destinations,"+
@@ -876,7 +862,7 @@ public class SRMDispatcher {
                throw new IllegalArgumentException(error);
             }
          }
-      } 
+      }
       else if((type & FILE_URL) == FILE_URL) {
 	  for(int i=1; i<number_of_sources; ++i) {
 	      int thisTypeI =
@@ -906,7 +892,7 @@ public class SRMDispatcher {
 		throw new IllegalArgumentException(error);
             }
 	  }
-      } 
+      }
       else {
 	  String error = "Unknown type of source(s) or destination(s)";
 	  esay(error);
@@ -926,31 +912,31 @@ public class SRMDispatcher {
 	  }
       }
     }
-    
+
     public final void say(String msg) {
 	logger.log(new java.util.Date().toString() +": "+msg);
     }
-    
+
     //say if debug
     public  final void dsay(String msg) {
 	if(configuration.isDebug()) {
 	    logger.log(new java.util.Date().toString() +": "+msg);
 	}
     }
-    
+
     //error say
     public final void esay(String err) {
       logger.elog(new java.util.Date().toString() +": "+err);
     }
-    
+
     //esay if debug
     public  final void edsay(String err) {
 	if(configuration.isDebug()) {
 	    logger.elog(new java.util.Date().toString() +": "+err);
       }
     }
-   
-    
+
+
     public static int getUrlType(GlobusURL url) throws IOException {
 	String prot = url.getProtocol();
 	if(prot != null ) {
@@ -966,12 +952,12 @@ public class SRMDispatcher {
 		      prot.equals("dcap")   ||
 		      prot.equals("rfio")) {
 		return SUPPORTED_PROTOCOL_URL;
-	    } 
+	    }
 	    else if(!prot.equals("file")) {
 		return UNKNOWN_URL;
 	    }
 	}
-	
+
 	File f = new File(url.getPath());
 	f = f.getCanonicalFile();
 	int rc = FILE_URL;

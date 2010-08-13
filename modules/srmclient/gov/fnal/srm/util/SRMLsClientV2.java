@@ -1,5 +1,3 @@
-// $Id$
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -75,18 +73,9 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.FileMetaData;
-import diskCacheV111.srm.RequestFileStatus;
-import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
-import org.ietf.jgss.GSSCredential;
 import java.io.IOException;
-
-
-import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.handler.SrmLs;
 import org.dcache.srm.util.RequestStatusTool;
 import java.text.DateFormat;
 
@@ -95,7 +84,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
         private org.ietf.jgss.GSSCredential cred = null;
         private GlobusURL surls[];
         private String surl_strings[];
-        private ISRM srm;
+        private ISRM isrm;
         private String requestToken;
         private Thread hook;
 
@@ -114,9 +103,10 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                 }
         }
 
+        @Override
         public void connect() throws Exception {
                 GlobusURL srmUrl = surls[0];
-                srm = new SRMClientV2(srmUrl,
+                isrm = new SRMClientV2(srmUrl,
                                       getGssCredential(),
                                       configuration.getRetry_timeout(),
                                       configuration.getRetry_num(),
@@ -126,6 +116,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                       configuration.getWebservice_path());
         }
 
+        @Override
         public void start() throws Exception {
                 try {
                         if(cred.getRemainingLifetime() < 60) {
@@ -151,7 +142,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                         req.setArrayOfSURLs(new ArrayOfAnyURI(turlia));
                         hook = new Thread(this);
                         Runtime.getRuntime().addShutdownHook(hook);
-                        SrmLsResponse response = srm.srmLs(req);
+                        SrmLsResponse response = isrm.srmLs(req);
                         if(response == null){
                                 throw new Exception ("srm ls response is null!");
                         }
@@ -214,7 +205,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                                                 System.exit(1);
                                         }
                                         estimatedWaitInSeconds*=2;
-                                        SrmStatusOfLsRequestResponse statusResponse = srm.srmStatusOfLsRequest(statusRequest);
+                                        SrmStatusOfLsRequestResponse statusResponse = isrm.srmStatusOfLsRequest(statusRequest);
                                         if (statusResponse==null) {
                                                 throw new IOException("SrmStatusOfLsRequestResponse is null for request "+requestToken);
                                         }
@@ -273,6 +264,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
                 }
         }
 
+        @Override
         public void run() {
                 try {
                         say("stopping ");
@@ -288,7 +280,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
         public void abortRequest() throws Exception {
                 SrmAbortRequestRequest abortRequest = new SrmAbortRequestRequest();
                 abortRequest.setRequestToken(requestToken);
-                SrmAbortRequestResponse abortResponse = srm.srmAbortRequest(abortRequest);
+                SrmAbortRequestResponse abortResponse = isrm.srmAbortRequest(abortRequest);
                 if (abortResponse == null) {
                         logger.elog(" SrmAbort is null");
 

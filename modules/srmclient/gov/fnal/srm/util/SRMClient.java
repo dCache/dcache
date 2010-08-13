@@ -1,24 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.26  2005/11/10 00:02:10  litvinse
-// implementation of srmrm client
-//
-// Revision 1.25  2005/10/12 22:50:39  timur
-// srmls
-//
-// Revision 1.24  2005/08/29 22:56:51  timur
-// commiting changes made by Neha needed by OSG
-//
-// Revision 1.23  2005/08/09 22:08:10  leoheska
-// Changed a logging message.
-//
-// Revision 1.22  2005/07/27 14:53:28  leoheska
-// Minor improvements.
-//
-// Revision 1.21  2005/06/29 22:30:18  leoheska
-// updates to support new srm functionality
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -88,7 +67,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.ISRM;

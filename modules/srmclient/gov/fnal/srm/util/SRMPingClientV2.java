@@ -1,5 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -9,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -56,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -75,17 +73,9 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
 import java.io.IOException;
-import java.util.Iterator;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.util.RequestStatusTool;
 /**
  *
  * @author  timur
@@ -98,7 +88,8 @@ public class SRMPingClientV2 extends SRMClient  {
 		super(configuration);
 		this.srmurl = srmurl;
 	}
-	
+
+        @Override
 	public void connect() throws Exception {
 		srmv2 = new SRMClientV2(srmurl,
 					getGssCredential(),
@@ -109,8 +100,8 @@ public class SRMPingClientV2 extends SRMClient  {
 					gss_expected_name,
 					configuration.getWebservice_path());
 	}
-	
-	
+
+	@Override
 	public void start() throws Exception {
 		try {
 			SrmPingRequest request = new SrmPingRequest();
@@ -121,10 +112,10 @@ public class SRMPingClientV2 extends SRMClient  {
 			}
 			StringBuffer sb = new StringBuffer();
 			sb.append("VersionInfo : "+response.getVersionInfo()+"\n");
-			if (response.getOtherInfo()!=null) { 
+			if (response.getOtherInfo()!=null) {
 				ArrayOfTExtraInfo info = response.getOtherInfo();
 				if (info.getExtraInfoArray()!=null) {
-					for (int i=0;i<info.getExtraInfoArray().length;i++) { 
+					for (int i=0;i<info.getExtraInfoArray().length;i++) {
 						TExtraInfo extraInfo = info.getExtraInfoArray()[i];
 						sb.append(extraInfo.getKey() +":"+(extraInfo.getValue())+"\n");
 					}

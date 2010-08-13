@@ -1,6 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -10,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -44,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -57,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -76,15 +73,10 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.RequestFileStatus;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
 import java.util.Iterator;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
@@ -93,7 +85,7 @@ import org.dcache.srm.util.RequestStatusTool;
  * @author  timur
  */
 public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
-    public static String[] protocols;
+    private String[] protocols;
     GlobusURL from[];
     private HashMap pendingSurlsToIndex = new HashMap();
     private String requestToken;
@@ -106,8 +98,8 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
         this.protocols = configuration.getProtocols();
         this.from = from;
     }
-    
-    
+
+    @Override
     public void connect() throws Exception {
         GlobusURL srmUrl = from[0];
         srmv2 = new SRMClientV2(srmUrl,
@@ -119,11 +111,12 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 gss_expected_name,
                 configuration.getWebservice_path());
     }
-    
+
     public void setProtocols(String[] protocols) {
         this.protocols = protocols;
     }
-    
+
+    @Override
     public void start() throws Exception {
         try {
             int len = from.length;
@@ -139,14 +132,14 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            
+
             SrmBringOnlineRequest srmBringOnlineRequest = new SrmBringOnlineRequest();
             srmBringOnlineRequest.setDesiredTotalRequestTime(
                     new Integer((int)configuration.getRequestLifetime()));
             //
-            if (configuration.getDesiredLifetime()!=null) { 
+            if (configuration.getDesiredLifetime()!=null) {
                     srmBringOnlineRequest.setDesiredLifeTime(
-                            new Integer((int)configuration.getDesiredLifetime().intValue()));
+                            new Integer(configuration.getDesiredLifetime().intValue()));
             }
             TRetentionPolicy rp = null;
             TAccessLatency al = null;
@@ -187,11 +180,11 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                                                                                         arrayOfClientNetworks,
                                                                                         protocolArray));
             }
-	    if (configuration.getExtraParameters().size()>0) { 
+	    if (configuration.getExtraParameters().size()>0) {
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
                     Map extraParameters = configuration.getExtraParameters();
-		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) { 
+		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
                             String key = (String)i.next();
                             String value = (String)extraParameters.get(key);
 			    extraInfoArray[counter++]=new TExtraInfo(key,value);
@@ -229,7 +222,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         "in RequestStatus expected "+len+" received "+
                         bringOnlineRequestFileStatuses.length);
             }
-            
+
             boolean haveCompletedFileRequests = false;
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
@@ -275,7 +268,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         estimatedWaitInSeconds = bringOnlineRequestFileStatus.getEstimatedWaitTime().intValue();
                     }
                 }
-                
+
                 if(pendingSurlsToIndex.isEmpty()) {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
@@ -286,7 +279,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                     estimatedWaitInSeconds = 60;
                 }
                 try {
-                    
+
                     say("sleeping "+estimatedWaitInSeconds+" seconds ...");
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 } catch(InterruptedException ie) {
@@ -305,11 +298,11 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 // we do not need to specify any surls
                 int expectedResponseLength= pendingSurlStrings.length;
                 org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
-                
+
                 for(int i=0;i<expectedResponseLength;++i){
-                    surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);;
+                    surlArray[i]=new org.apache.axis.types.URI(pendingSurlStrings[i]);
                 }
-                
+
                 srmStatusOfBringOnlineRequestRequest.setArrayOfSourceSURLs(
                         new ArrayOfAnyURI(surlArray));
                 //}
@@ -327,14 +320,14 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 }
                 bringOnlineRequestFileStatuses =
                         srmStatusOfBringOnlineRequestResponse.getArrayOfFileStatuses().getStatusArray();
-                
-                
+
+
                 if(bringOnlineRequestFileStatuses == null ||
                         bringOnlineRequestFileStatuses.length !=  expectedResponseLength) {
                     esay( "incorrect number of RequestFileStatuses");
                     throw new IOException("incorrect number of RequestFileStatuses");
                 }
-                
+
                 status = srmStatusOfBringOnlineRequestResponse.getReturnStatus();
                 if(status == null) {
                     throw new IOException(" null return status");
@@ -368,10 +361,11 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 System.err.println("srm bring online of at least one file failed or not completed");
                 System.exit(1);
             }
-            
+
         }
     }
     // this is called when Ctrl-C is hit, or TERM signal received
+    @Override
     public void run() {
         try {
             abortAllPendingFiles();
@@ -379,7 +373,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             logger.elog(e.toString());
         }
     }
-    
+
     private void abortAllPendingFiles() throws Exception{
         if(pendingSurlsToIndex.isEmpty()) {
             return;
@@ -389,7 +383,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
             org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[len];
-            
+
             for(int i=0;i<len;++i){
                 surlArray[i]=new org.apache.axis.types.URI(surl_strings[i]);
             }
@@ -410,6 +404,6 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             }
         }
     }
-    
-    
+
+
 }

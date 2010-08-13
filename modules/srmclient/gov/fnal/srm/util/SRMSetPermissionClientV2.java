@@ -82,11 +82,7 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.globus.util.GlobusURL;
-import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.client.SRMClientV2;
-import org.ietf.jgss.GSSCredential;
-
-import java.text.DateFormat;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
@@ -101,7 +97,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 	private org.ietf.jgss.GSSCredential cred = null;
 	private GlobusURL surl;
 	private String surl_string;
-	private ISRM srm;
+	private ISRM isrm;
 
 	public SRMSetPermissionClientV2(Configuration configuration,
 					  GlobusURL surl, String surl_string) {
@@ -117,9 +113,10 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 		}
 	}
 
+        @Override
 	public void connect() throws Exception {
 		GlobusURL srmUrl = surl;
-		srm = new SRMClientV2(srmUrl,
+		isrm = new SRMClientV2(srmUrl,
 				      getGssCredential(),
 				      configuration.getRetry_timeout(),
 				      configuration.getRetry_num(),
@@ -129,6 +126,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 				      configuration.getWebservice_path());
 	}
 
+        @Override
 	public void start() throws Exception {
 		try {
 			if (cred.getRemainingLifetime() < 60)
@@ -163,7 +161,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 			other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
 		}
 		req.setOtherPermission(other);
-		SrmSetPermissionResponse resp = srm.srmSetPermission(req);
+		SrmSetPermissionResponse resp = isrm.srmSetPermission(req);
 		try {
 			TReturnStatus rs   = resp.getReturnStatus();
 			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
