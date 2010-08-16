@@ -579,7 +579,6 @@ public class PoolV4
                       : (_dupRequest == DUP_REQ_IGNORE)
                       ? "ignore"
                       : "refresh"));
-        _flushingThread.printSetup(pw);
         _ioQueue.printSetup(pw);
     }
 
