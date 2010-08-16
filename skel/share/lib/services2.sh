@@ -105,12 +105,13 @@ domainStart()
     fi
 
     if [ "${DCACHE_TERRACOTTA_ENABLED:-false}" = "true" ] ; then
-        local terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh"
-        if [ ! -f "${terracotta_dso_env_sh}" ] ; then
-            fail 1 "Terracotta is enabled, but ${terracotta_dso_env_sh} was not found"
-        fi
-        if [ ! -f "${DCACHE_TERRACOTTA_CONFIG_PATH}" ] ; then
-            fail 1 "Terracotta is enabled, but terracotta config file ${DCACHE_TERRACOTTA_CONFIG_PATH} was not found"
+        local terracotta_dso_env_sh
+        if [ -f "${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh" ] ; then
+           terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh"
+        elif [ -f "${DCACHE_TERRACOTTA_INSTALL_DIR}/platform/bin/dso-env.sh" ] ; then
+           terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/platform/bin/dso-env.sh"
+        else
+            fail 1 "Terracotta is enabled, but dso-env.sh can't be found"
         fi
         # TC_INSTALL_DIR and TC_CONFIG_PATH need to be defined for a successful execution of dso-env.sh
         export TC_INSTALL_DIR=${DCACHE_TERRACOTTA_INSTALL_DIR}
