@@ -526,8 +526,8 @@ case "$1" in
                 rm -f "${opt_out}" || exit
 
                 for cert in $opt_cacerts/*.0; do
-                    cert_alias="${cert%.0}"
-                    readconf "${cert_alias}.info" cert_ || fail 1 "No .info file for $cert"
+                    base="${cert%.0}"
+                    readconf "${file}.info" cert_ || cert_alias=$(basename "${base"})
                     printf "$cert_alias "
                     openssl x509 -in "${cert}" | ${keytool} -importcert -noprompt -alias "${cert_alias}" -storepass "${opt_password}" -keystore "${opt_out}" > /dev/null || exit
                 done
