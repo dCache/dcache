@@ -2,8 +2,10 @@
 #      WebDAV Door
 #
 
-onerror shutdown
+###########################################################################
+# Verify properties needed by WebDAV
 
+onerror shutdown
 check -strong cell.name
 check -strong port
 check -strong webdavProtocol
@@ -50,6 +52,24 @@ enddefine
 exec env verify-${webdavProtocol}.exe
 exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
 
+###########################################################################
+# If srmSpaceManagerEnabled is on we need to use SrmSpaceManager as
+#
+
+onerror continue
+
+define env srmSpaceManagerOn.exe endExe
+  set env -c doorPoolManager "${spacemanager}"
+endExe
+
+eval ${srmSpaceManagerEnabled} yes ==
+exec env srmSpaceManagerOn.exe -ifok
+set context -c doorPoolManager "${poolmanager}"
+
+###########################################################################
+# Create door cell
+
+onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:org/dcache/webdav/webdav-${webdavProtocol}.xml \
     -webdavKeyStore=${webdavKeyStore} \
@@ -73,7 +93,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdavWantClientAuth=${webdavWantClientAuth} \
     -webdavNeedClientAuth=${webdavNeedClientAuth} \
     -pnfsmanager=${pnfsmanager} \
-    -poolmanager=${poolmanager} \
+    -poolmanager=${doorPoolManager} \
     -gplazma=${gplazma} \
     -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
     -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
