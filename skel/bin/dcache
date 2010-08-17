@@ -497,8 +497,8 @@ case "$1" in
             hostcert)
                 require openssl
 
-                opt_password="${dCache_keyStorePassword:-dcache}"
-                opt_out="${dCache_keyStore:-${DCACHE_HOME}/etc/hostcert.p12}"
+                opt_password="${DCACHE_KEYSTOREPASSWORD:-dcache}"
+                opt_out="${DCACHE_KEYSTORE:-${DCACHE_HOME}/etc/hostcert.p12}"
                 opt_hostcert="/etc/grid-security/hostcert.pem"
                 opt_hostkey="/etc/grid-security/hostkey.pem"
 
@@ -517,8 +517,8 @@ case "$1" in
                         JRE. Please ensure that either keytool is in the path
                         or update JAVA_HOME."
 
-                opt_password="${dCache_trustStorePassword:-dcache}"
-                opt_out="${dCache_trustStore:-${DCACHE_HOME}/etc/certificates.jks}"
+                opt_password="${DCACHE_TRUSTSTOREPASSWORD:-dcache}"
+                opt_out="${DCACHE_TRUSTSTORE:-${DCACHE_HOME}/etc/certificates.jks}"
                 opt_cacerts="/etc/grid-security/certificates"
 
                 parseOptions "out password cacerts" "$@" || shift $?
