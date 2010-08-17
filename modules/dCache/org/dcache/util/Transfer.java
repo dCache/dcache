@@ -549,6 +549,8 @@ public abstract class Transfer implements Comparable<Transfer>
                                                  storageInfo.getFileSize());
             }
             request.setId(_sessionId);
+            request.setSubject(_subject);
+            request.setPnfsPath(_path.toString());
 
             setPool(_poolManager.sendAndWait(request).getPoolName());
         } finally {
