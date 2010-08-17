@@ -7,7 +7,6 @@ package org.dcache.commons.plot.renderer.batik;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.util.Random;
 import org.apache.batik.transcoder.Transcoder;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
@@ -15,10 +14,12 @@ import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.transcoder.image.JPEGTranscoder;
 import org.apache.batik.transcoder.image.TIFFTranscoder;
+import org.dcache.commons.plot.ParamOutputFileName;
 import org.dcache.commons.plot.PlotException;
 import org.dcache.commons.plot.PlotReply;
 import org.dcache.commons.plot.PlotRequest;
 import org.dcache.commons.plot.dao.TupleList;
+import org.dcache.commons.plot.renderer.PlotOutputType;
 import org.dcache.commons.plot.renderer.Renderer;
 import org.dcache.commons.plot.renderer.svg.RectRenderer;
 import org.dcache.commons.plot.renderer.svg.SVGRenderer;
@@ -29,7 +30,7 @@ import org.dcache.commons.plot.renderer.svg.SVGRenderer;
  */
 public class BatikRenderer implements Renderer {
 
-    private String outputFileName = "out.png";
+    private String outputFileName = "out";
     private SVGRenderer svgRenderer = new RectRenderer();
     private String tempDir = "/tmp";
 
@@ -63,42 +64,49 @@ public class BatikRenderer implements Renderer {
             throw new PlotException("SVG renderer must be set first");
         }
 
-        int n = (new Random()).nextInt();
-        String intermediateFileName = tempDir + "/temp" + n + ".svg";
-        svgRenderer.setOutputFileName(intermediateFileName);
+        ParamOutputFileName fileName = request.getParameter(ParamOutputFileName.class);
+
+        if (fileName != null) {
+            outputFileName = fileName.getOutputFileName();
+        }
+
+        String extension = ".png";
+        PlotOutputType type = request.getParameter(PlotOutputType.class);
+        Transcoder transcoder = null;
+        switch (type) {
+            case PNG:
+                extension = ".png";
+                transcoder = new PNGTranscoder();
+                break;
+            case JPEG:
+                extension = ".jpg";
+                transcoder = new JPEGTranscoder();
+                transcoder.addTranscodingHint(JPEGTranscoder.KEY_QUALITY, new Float(1.0));
+                break;
+            case TIFF:
+                extension = ".tiff";
+                transcoder = new TIFFTranscoder();
+                break;
+            default:
+                throw new PlotException("PlotOutputType not supported by Batik: " + type);
+        }
         svgRenderer.render(plotData, request);
 
-        File svgFile = new File(intermediateFileName);
+        File svgFile = new File(outputFileName + ".svg");
         if (!svgFile.exists()) {
             throw new PlotException("failure in creating intermediate SVG file");
         }
 
         try {
             TranscoderInput input = new TranscoderInput(svgFile.toURL().toString());
-            OutputStream ostream = new FileOutputStream(outputFileName);
+            OutputStream ostream = new FileOutputStream(outputFileName + extension);
             TranscoderOutput output = new TranscoderOutput(ostream);
-
-            Transcoder transcoder = null;
-            if (outputFileName.toLowerCase().endsWith("png")) {
-                transcoder = new PNGTranscoder();
-            } else if (outputFileName.toLowerCase().endsWith("jpg")
-                    || outputFileName.toLowerCase().endsWith("jpeg")) {
-                transcoder = new JPEGTranscoder();
-                transcoder.addTranscodingHint(JPEGTranscoder.KEY_QUALITY, new Float(1.0));
-            } else if (outputFileName.toLowerCase().endsWith("tff")
-                    || outputFileName.toLowerCase().endsWith("tiff")) {
-                transcoder = new TIFFTranscoder();
-            }
-
-            if (transcoder == null) {
-                throw new PlotException("image format " + outputFileName.substring(outputFileName.lastIndexOf(".")) + " not supported by Batik");
-            }
 
             transcoder.transcode(input, output);
             ostream.close();
 
             PlotReply reply = new PlotReply();
-            File file = new File(outputFileName);
+            File file = new File(outputFileName + extension);
             reply.setOutputURL(file.toURL());
             svgFile.delete();
             return reply;

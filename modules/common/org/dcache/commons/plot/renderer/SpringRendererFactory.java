@@ -1,8 +1,7 @@
 package org.dcache.commons.plot.renderer;
 
-import org.dcache.commons.plot.PlotException;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 
 /**
  *
@@ -12,24 +11,22 @@ public class SpringRendererFactory extends PlotRendererFactory {
 
     private String xmlBeanFile = System.getProperty(
             "org.dcache.commons.plot.renderer.SpringRendererFactory",
-            "org/dcache/commons/plot/PlotConfiguration.xml");
-    private XmlBeanFactory beanFactory = new XmlBeanFactory(new ClassPathResource(xmlBeanFile));;
+            System.getProperty("dcache.home", "/opt/d-cache") + "/etc/PlotConfiguration.xml");
+    private XmlBeanFactory beanFactory = null;
 
     public String getXmlBeanFile() {
         return xmlBeanFile;
     }
 
-    public void setXmlBeanFile(String xmlBeanFile) throws PlotException {
+    public void setXmlBeanFile(String xmlBeanFile){
         this.xmlBeanFile = xmlBeanFile;
-        try {
-            beanFactory = new XmlBeanFactory(new ClassPathResource(xmlBeanFile));
-        } catch (Exception e) {
-            throw new PlotException("failed in setting xml file: " + e, e);
-        }
     }
 
     @Override
     public Renderer getPlotRenderer(PlotOutputType plotOutputType) {
+        if (beanFactory == null) {
+            beanFactory = new XmlBeanFactory(new FileSystemResource(xmlBeanFile));
+        }
         return (Renderer) beanFactory.getBean(plotOutputType.toString(),
                 Renderer.class);
     }

@@ -10,8 +10,7 @@ import org.dcache.commons.plot.PlotRequest;
 import org.dcache.commons.plot.dao.TupleList;
 import org.dcache.commons.plot.renderer.Renderer;
 import org.w3c.dom.Element;
-import java.util.Set;
-import org.dcache.commons.plot.renderer.AxisInfo;
+import org.dcache.commons.plot.ParamOutputFileName;
 
 /**
  *
@@ -26,7 +25,7 @@ public class SVGRenderer<T extends TupleList> implements Renderer<T> {
     protected PlotRequest request;
     protected T tupleList;
     protected float width = 640, height = 480, margin = 40;
-    protected String outputFileName = "out.svg";
+    protected String outputFileName = "out";
     protected Element elemFrame, elemBackground, elemData;
 
     public String getOutputFileName() {
@@ -90,9 +89,15 @@ public class SVGRenderer<T extends TupleList> implements Renderer<T> {
     protected void renderData() throws PlotException {
     }
 
+    @Override
     public PlotReply render(T tupleList, PlotRequest plotRequest) throws PlotException {
         this.tupleList = tupleList;
         this.request = plotRequest;
+
+        ParamOutputFileName fileName = request.getParameter(ParamOutputFileName.class);
+        if (fileName != null) {
+            outputFileName = fileName.getOutputFileName() + ".svg";
+        }
 
         elemBackground = svg.createGroup(TagBackground);
         svg.getRoot().appendChild(elemBackground);

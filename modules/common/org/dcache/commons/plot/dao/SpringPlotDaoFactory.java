@@ -1,9 +1,8 @@
 package org.dcache.commons.plot.dao;
 
 import org.dcache.commons.plot.ParamPlotType;
-import org.dcache.commons.plot.PlotException;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 
 /**
  * default Dao factory for getting DAO (Data Access Object) from xml bean file
@@ -14,25 +13,20 @@ public class SpringPlotDaoFactory extends PlotDaoFactory {
     private String xmlBeanFile =
             System.getProperty(
             "org.dcache.commons.plot.dao.SpringPlotDaoFactory.configuration",
-            "org/dcache/commons/plot/PlotConfiguration.xml");
+            System.getProperty("dcache.home", "/opt/d-cache") + "/etc/PlotConfiguration.xml");
     private XmlBeanFactory beanFactory = null;
 
     public String getXmlBeanFile() {
         return xmlBeanFile;
     }
 
-    public void setXmlBeanFile(String xmlBeanFile) throws PlotException {
+    public void setXmlBeanFile(String xmlBeanFile){
         this.xmlBeanFile = xmlBeanFile;
-        try {
-            beanFactory = new XmlBeanFactory(new ClassPathResource(xmlBeanFile));
-        } catch (Exception e) {
-            throw new PlotException("failed in setting xml file: " + e, e);
-        }
     }
 
     public PlotDao getPlotDao(ParamPlotType paramPlotType) {
         if (beanFactory == null) {
-            beanFactory = new XmlBeanFactory(new ClassPathResource(xmlBeanFile));
+            beanFactory = new XmlBeanFactory(new FileSystemResource(xmlBeanFile));
         }
         return (PlotDao) beanFactory.getBean(paramPlotType.getType(),
                 PlotDao.class);

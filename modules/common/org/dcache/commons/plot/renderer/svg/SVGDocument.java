@@ -80,11 +80,11 @@ public class SVGDocument {
     }
 
     public void setWidth(float width){
-        svg.setAttribute("wdith", "" + width);
+        svg.setAttribute("wdith", Float.toString(width));
     }
 
     public void setHeight(float height){
-        svg.setAttribute("height", "" + height);
+        svg.setAttribute("height", Float.toString(height));
     }
 
     public SVGColor getFillColor() {
@@ -181,10 +181,10 @@ public class SVGDocument {
      */
     public Element createRectangle(float x, float y, float width, float height) {
         Element rect = document.createElement("rect");
-        rect.setAttribute("x", "" + x);
-        rect.setAttribute("y", "" + y);
-        rect.setAttribute("width", "" + width);
-        rect.setAttribute("height", "" + height);
+        rect.setAttribute("x", Float.toString(x));
+        rect.setAttribute("y", Float.toString(y));
+        rect.setAttribute("width", Float.toString(width));
+        rect.setAttribute("height", Float.toString(height));
         String style = "fill:" + fill
                 + ";stroke:" + stroke
                 + ";stroke-width:" + strokeWidth
@@ -202,8 +202,8 @@ public class SVGDocument {
      */
     public Element createText(float x, float y, String t) {
         Element text = document.createElement("text");
-        text.setAttribute("x", "" + x);
-        text.setAttribute("y", "" + y);
+        text.setAttribute("x", Float.toString(x));
+        text.setAttribute("y", Float.toString(y));
         text.setTextContent(t);
 
         String style = "font-family:" + fontFamily
@@ -230,10 +230,10 @@ public class SVGDocument {
     public Element createLine(float x1, float y1, float x2, float y2,
             float[] dash) {
         Element line = document.createElement("line");
-        line.setAttribute("x1", "" + x1);
-        line.setAttribute("y1", "" + y1);
-        line.setAttribute("x2", "" + x2);
-        line.setAttribute("y2", "" + y2);
+        line.setAttribute("x1", Float.toString(x1));
+        line.setAttribute("y1", Float.toString(y1));
+        line.setAttribute("x2", Float.toString(x2));
+        line.setAttribute("y2", Float.toString(y2));
         String style = "stroke:" + stroke
                 + ";stroke-width:" + strokeWidth
                 + ";opacity:" + opacity;
@@ -242,7 +242,7 @@ public class SVGDocument {
         if (dash != null && dash.length >= 1) {
             style += ";stroke-dasharray:";
             for (int i = 0; i < dash.length; i++) {
-                style += dash[i] + "";
+                style += dash[i];
                 if (i != dash.length - 1) {
                     style += ",";
                 }
@@ -254,13 +254,13 @@ public class SVGDocument {
 
     public Element createCircle(float x, float y, float r){
         Element circle = document.createElement("circle");
-        circle.setAttribute("cx", x + "");
-        circle.setAttribute("cy", y + "");
-        circle.setAttribute("r", r + "");
+        circle.setAttribute("cx", Float.toString(x));
+        circle.setAttribute("cy", Float.toString(y));
+        circle.setAttribute("r", Float.toString(r));
 
         circle.setAttribute("stroke", stroke.toString());
         circle.setAttribute("fill", fill.toString());
-        circle.setAttribute("stroke-width", ""+strokeWidth);
+        circle.setAttribute("stroke-width", Float.toString(strokeWidth));
 
         return circle;
     }

@@ -42,19 +42,19 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber> > {
     protected void renderFrame() throws PlotException {
         super.renderFrame();
 
-        for (AxisInfo axis : getAxis()) {
-            switch (axis.getLocation()) {
+        for (AxisInfo curAxis : getAxis()) {
+            switch (curAxis.getLocation()) {
                 case BOTTOM:
-                    bottomAxis = axis;
+                    bottomAxis = curAxis;
                     break;
                 case RIGHT:
-                    rightAxis = axis;
+                    rightAxis = curAxis;
                     break;
                 case LEFT:
-                    leftAxis = axis;
+                    leftAxis = curAxis;
                     break;
                 case TOP:
-                    topAxis = axis;
+                    topAxis = curAxis;
                     break;
             }
         }

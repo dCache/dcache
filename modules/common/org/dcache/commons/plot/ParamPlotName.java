@@ -1,7 +1,7 @@
 package org.dcache.commons.plot;
 
 /**
- *
+ * Plot name is the title of the plot in the final rendering
  * @author timur and tao
  */
 public class ParamPlotName implements PlotParameter {
