@@ -199,7 +199,7 @@ public class XrootdDoor
         _transactionPrefix = prefix;
     }
 
-    public String setTransactionPrefix()
+    public String getTransactionPrefix()
     {
         return _transactionPrefix;
     }
