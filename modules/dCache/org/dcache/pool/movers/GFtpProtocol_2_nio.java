@@ -498,11 +498,18 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                  * seems like a safe assumption that the data channel
                  * will be established from the same network.
                  */
-                InetAddress localAddress = NetworkUtils.getLocalAddressForClient(gftpProtocolInfo.getHosts());
+                InetAddress clientAddress =
+                    InetAddress.getByName(gftpProtocolInfo.getClientAddress());
+                InetAddress localAddress =
+                    NetworkUtils.getLocalAddress(clientAddress);
+                String localHostName =
+                    localAddress.getCanonicalHostName();
+                int localPort =
+                    channel.socket().getLocalPort();
                 message =
                     new GFtpTransferStartedMessage(pnfsId.getId(),
-                                                   localAddress.getCanonicalHostName(),
-                                                   channel.socket().getLocalPort());
+                                                   localHostName,
+                                                   localPort);
                 mode.setPassive(channel);
             } else {
                 /* If passive mode is disabled, then fall back to
