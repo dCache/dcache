@@ -95,20 +95,13 @@ NOTE:
 These jars are included in the comprehensive classpath listed above for
 dCacheSetup. Please do not worry about these.
 
-[B] Built-in gPLAZMAlite Service Suite's source files are not compiled with 
-the preparePackage.sh script. Instead, a pre-prepared jar file has been 
-already included in the classes/gplazma/gplazmalite directory.
-
-[C] The preparePackage.sh has been updated to reflect the above logic. 
-Just uncomment the build_gplazma line, you are all set.
-
-[D] Attempt has been made to make dcachesrm-gplazma.policy self-explanatory.
+[B] Attempt has been made to make dcachesrm-gplazma.policy self-explanatory.
 Try various combinations of Switches|Priorities.
 
-[E] If your site does not have a remote SAML-based mapping service, try the 
+[C] If your site does not have a remote SAML-based mapping service, try the 
 Built-in gPLAZMAlite Service Suite. VO-Role-mapping out-of-the-box.
 
-[F] Correct version of voms-proxy-init is required to make avail of VO-Role-mapping.
+[D] Correct version of voms-proxy-init is required to make avail of VO-Role-mapping.
 
 ------------------------------------------------------------------------------------
 EOF
