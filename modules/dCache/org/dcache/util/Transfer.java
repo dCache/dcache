@@ -2,6 +2,7 @@ package org.dcache.util;
 
 import java.util.Set;
 import java.util.EnumSet;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import javax.security.auth.Subject;
 
@@ -24,6 +25,8 @@ import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.CheckStagePermission;
+import diskCacheV111.poolManager.RequestContainerV5;
 
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -75,6 +78,7 @@ public abstract class Transfer implements Comparable<Transfer>
     protected CellStub _poolManager;
     protected CellStub _pool;
     protected CellStub _billing;
+    protected CheckStagePermission _checkStagePermission;
 
     private String _cellName;
     private String _domainName;
@@ -86,8 +90,10 @@ public abstract class Transfer implements Comparable<Transfer>
     private String _status;
     private CacheException _error;
     private StorageInfo _storageInfo;
+    private ProtocolInfo _protocolInfo;
     private boolean _isWrite;
     private InetSocketAddress _clientAddress;
+    private long _allocated;
 
     private boolean _isBillingNotified;
     private boolean _isOverwriteAllowed;
@@ -107,6 +113,7 @@ public abstract class Transfer implements Comparable<Transfer>
         _startedAt = System.currentTimeMillis();
         _sessionId = _sessionCounter.next();
         _session = CDC.getSession();
+        _checkStagePermission = new CheckStagePermission(null);
     }
 
     /**
@@ -161,6 +168,13 @@ public abstract class Transfer implements Comparable<Transfer>
     public synchronized void setBillingStub(CellStub stub)
     {
         _billing = stub;
+    }
+
+
+    public synchronized void
+        setCheckStagePermission(CheckStagePermission checkStagePermission)
+    {
+        _checkStagePermission = checkStagePermission;
     }
 
     /**
@@ -273,6 +287,24 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Returns the ProtocolInfo returned by the pool after the
+     * transfer completed.
+     */
+    public synchronized void setProtocolInfo(ProtocolInfo info)
+    {
+        _protocolInfo = info;
+    }
+
+    /**
+     * Returns the ProtocolInfo returned by the pool after the
+     * transfer completed.
+     */
+    public synchronized ProtocolInfo getProtocolInfo()
+    {
+        return _protocolInfo;
+    }
+
+    /**
      * The transaction uniquely (with a high probably) identifies this
      * transfer.
      */
@@ -314,6 +346,8 @@ public abstract class Transfer implements Comparable<Transfer>
      */
     public final synchronized void finished(DoorTransferFinishedMessage msg)
     {
+        setStorageInfo(msg.getStorageInfo());
+        setProtocolInfo(msg.getProtocolInfo());
         if (msg.getReturnCode() != 0) {
             finished(CacheExceptionFactory.exceptionOf(msg));
         } else {
@@ -521,6 +555,20 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Sets the size of the preallocation to make.
+     *
+     * Only valid for uploads. If the upload is larger than the
+     * preallocation, then the upload may fail.
+     */
+    public synchronized void setAllocation(long length)
+    {
+        if (!isWrite()) {
+            throw new IllegalStateException("Can only set length for uploads");
+        }
+        _allocated = length;
+    }
+
+    /**
      * Selects a pool suitable for the transfer.
      */
     public void selectPool()
@@ -538,21 +586,36 @@ public abstract class Transfer implements Comparable<Transfer>
             ProtocolInfo protocolInfo = createProtocolInfoForPoolManager();
             PoolMgrSelectPoolMsg request;
             if (isWrite()) {
+                long allocated = _allocated;
+                if (allocated == 0) {
+                    allocated = storageInfo.getFileSize();
+                }
                 request =
                     new PoolMgrSelectWritePoolMsg(pnfsId, storageInfo,
                                                   protocolInfo,
-                                                  storageInfo.getFileSize());
+                                                  allocated);
             } else {
+                int allowedStates =
+                    _checkStagePermission.canPerformStaging(_subject, storageInfo)
+                    ? RequestContainerV5.allStates
+                    : RequestContainerV5.allStatesExceptStage;
+
                 request =
                     new PoolMgrSelectReadPoolMsg(pnfsId, storageInfo,
                                                  protocolInfo,
-                                                 storageInfo.getFileSize());
+                                                 storageInfo.getFileSize(),
+                                                 allowedStates);
             }
             request.setId(_sessionId);
             request.setSubject(_subject);
             request.setPnfsPath(_path.toString());
 
-            setPool(_poolManager.sendAndWait(request).getPoolName());
+            PoolMgrSelectPoolMsg reply = _poolManager.sendAndWait(request);
+            setPool(reply.getPoolName());
+            setStorageInfo(reply.getStorageInfo());
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         } finally {
             setStatus(null);
         }
