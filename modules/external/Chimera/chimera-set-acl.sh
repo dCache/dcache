@@ -20,7 +20,7 @@ ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
 # Load libraries
 . "${DCACHE_HOME}/share/lib/paths.sh"
 . "${DCACHE_LIB}/utils.sh"
-. "${DCACHE_LIB}/services2.sh"
+. "${DCACHE_LIB}/services.sh"
 
 # Check for java
 if ! findJavaTool java; then
