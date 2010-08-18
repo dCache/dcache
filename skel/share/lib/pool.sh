@@ -4,21 +4,6 @@
 # services.sh. These must be loaded prior to calling any of the
 # following functions.
 
-# Writes the poollist file of the given pool domain to stdout. The
-# format is 'name directory parameters'. Aborts if the file does not
-# exist.
-printPoolsInDomain() # in $1 = Pool domain
-{
-    local poolFile
-
-    getPoolListFile $1 poolFile
-    if [ ! -f ${poolFile} ]; then
-        printp "Pool file not found: ${poolFile}" 1>&2
-        exit 4
-    fi
-    cat $poolFile
-}
-
 getPoolSetting() # in $1 = pool path, in $2 = key, out $3 = value
 {
     local path
