@@ -438,7 +438,7 @@ public abstract class Transfer implements Comparable<Transfer>
                                _poolName,
                                _status,
                                _startedAt,
-                               _clientAddress.getAddress().getHostAddress());
+                               _clientAddress.getAddress().getHostName());
     }
 
     /**
