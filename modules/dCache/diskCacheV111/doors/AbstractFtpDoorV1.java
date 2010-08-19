@@ -71,8 +71,6 @@ package diskCacheV111.doors;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -114,7 +112,6 @@ import java.text.SimpleDateFormat;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
@@ -143,6 +140,7 @@ import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
@@ -153,7 +151,6 @@ import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.util.VOInfo;
 import diskCacheV111.util.ProxyAdapter;
 import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.ActiveAdapter;
@@ -173,6 +170,7 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
+import org.dcache.cells.CellStub;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.vehicles.FileAttributes;
@@ -187,6 +185,7 @@ import org.dcache.util.Glob;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
+import org.dcache.util.Transfer;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
@@ -242,25 +241,6 @@ class FTPCommandException extends Exception
     public String getReply()
     {
         return _reply;
-    }
-}
-
-/**
- * Exception indicating and error condition during a sendAndWait
- * operation.
- *
- * TODO: This should be refined to better convey the actual error.
- */
-class SendAndWaitException extends Exception
-{
-    public SendAndWaitException(String msg)
-    {
-        super(msg);
-    }
-
-    public SendAndWaitException(String msg, Throwable cause)
-    {
-        super(msg, cause);
     }
 }
 
@@ -369,7 +349,6 @@ public abstract class AbstractFtpDoorV1
         }
         throw new RuntimeException(text, exc);
     }
-
 
     /**
      * FTP door instances are created by the LoginManager. This is the
@@ -589,7 +568,7 @@ public abstract class AbstractFtpDoorV1
     )
     protected int _defaultStreamsPerClient;
 
-    protected final int _sleepAfterMoverKill = 15; // seconds
+    protected final int _sleepAfterMoverKill = 1; // seconds
 
     protected final int _spaceManagerTimeout = 5 * 60;
 
@@ -628,9 +607,6 @@ public abstract class AbstractFtpDoorV1
 
     protected long   _skipBytes  = 0;
 
-    protected boolean _needUser = true;
-    protected boolean _needPass = true;
-
     protected boolean _confirmEOFs = false;
 
     protected Subject _subject;
@@ -638,16 +614,14 @@ public abstract class AbstractFtpDoorV1
     protected String _pathRoot;
     protected String _curDirV;
     protected String _xferMode = "S";
-    protected final CellPath _billingCellPath = new CellPath("billing");
+    protected CellStub _billingStub;
+    protected CellStub _poolManagerStub;
+    protected CellStub _poolStub;
 
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
 
     protected LoginStrategy _loginStrategy;
-
-    /**
-     *   NEW
-     */
 
     /** Generalized kpwd file path used by all flavors. */
     protected String _kpwdFilePath;
@@ -656,7 +630,6 @@ public abstract class AbstractFtpDoorV1
     protected String _gReplyType = "clear";
 
     protected Mode _mode = Mode.ACTIVE;
-    private FTPTransactionLog _tLog;
 
     //These are the number of parallel streams to have
     //when doing mode e transfers
@@ -692,111 +665,487 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Queue used to pass the address on which a pool listens when in
-     * passive mode between threads. Under normal circumstances, this
-     * queue will at most contain a single message.
+     * Encapsulation of an FTP transfer.
      */
-    private BlockingQueue<GFtpTransferStartedMessage> _transferStartedMessages
-        = new LinkedBlockingQueue<GFtpTransferStartedMessage>();
-
-
-    /**
-     * Encapsulation of all parameters of a transfer.
-     */
-    protected class Transfer
+    protected class FtpTransfer extends Transfer
     {
-        /**
-         * The session ID of this transfer. The session id is unique
-         * for each transfer within the same AbstractFtpDoorV1.
-         */
-        final long sessionId;
+        private final Mode _mode;
+        private final String _xferMode;
+        private final int _parallel;
+        private final InetSocketAddress _client;
+        private final int _bufSize;
+        private final boolean _reply127;
+        private final int _version;
 
-        /**
-         * Time when the transfer started, in milliseconds since the epoch.
-         */
-        final long startedAt;
+        private long _offset;
+        private long _size;
 
-        /** The name of the file being transferred. */
-        final String  path;
-
-        /**
-         * Information for the billing cell.
-         */
-        final DoorRequestInfoMessage info;
-
-        /** Description of the current state of the transfer. */
-        String state;
-
-        /** */
-        Integer moverId;
-
-        /** The name of the pool used for the transfer. */
-        String pool;
-
-        /** The PNFS id of the file being transferred. */
-        PnfsId pnfsId;
-
-        /** The host name of the client side of the data connection. */
-        String client_host;
-
-        /** The TCP port of the client side of the data connection. */
-        int client_port;
-
-        /**
-         * True when a pnfs entry has been created for path, but the
-         * transfer has not yet successfully completed.
-         */
-        boolean pnfsEntryIncomplete = false;
+        protected FTPTransactionLog _tLog;
 
         /**
          * Socket adapter used for the transfer.
          */
-        ProxyAdapter adapter;
+        protected ProxyAdapter _adapter;
 
         /**
          * Task that periodically generates performance markers. May
          * be null.
          */
-        PerfMarkerTask perfMarkerTask;
+        protected PerfMarkerTask _perfMarkerTask;
 
         /**
          * True if the transfer was aborted.
          */
-        boolean aborted = false;
+        protected boolean _aborted = false;
 
-        Transfer(String aPath)
+        /**
+         * True if the transfer completed successfully.
+         */
+        protected boolean _completed = false;
+
+        public FtpTransfer(FsPath path,
+                           long offset,
+                           long size,
+                           Mode mode,
+                           String xferMode,
+                           int parallel,
+                           InetSocketAddress client,
+                           int bufSize,
+                           boolean reply127,
+                           int version)
         {
-            sessionId = nextSessionId();
-            startedAt = System.currentTimeMillis();
-            path      = aPath;
+            super(AbstractFtpDoorV1.this._pnfs,
+                  AbstractFtpDoorV1.this._subject, path);
 
-            info =
-                new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
-                                           getNucleus().getCellDomainName());
-            info.setTransactionTime(startedAt);
-            info.setClient(_engine.getInetAddress().getHostName());
-            // some requests do not have a pnfsId yet, fill it with dummy
-            info.setPnfsId( new PnfsId("000000000000000000000000") );
-            if (path != null) {
-                info.setPath(path);
+            setDomainName(AbstractFtpDoorV1.this.getCellDomainName());
+            setCellName(AbstractFtpDoorV1.this.getCellName());
+            setClientAddress((InetSocketAddress) _engine.getSocket().getRemoteSocketAddress());
+            setCheckStagePermission(_checkStagePermission);
+            setOverwriteAllowed(_overwrite);
+            setPoolManagerStub(_poolManagerStub);
+            setPoolStub(_poolStub);
+            setBillingStub(_billingStub);
+            setAllocation(_allo);
+
+            _offset = offset;
+            _size = size;
+            _mode = mode;
+            _xferMode = xferMode;
+            _parallel = parallel;
+            _client = client;
+            _bufSize = bufSize;
+            _reply127 = reply127;
+            _version = version;
+
+            setTransfer(this);
+        }
+
+        /**
+         * Create an adapter, if needed.
+         *
+         * Since a pool may reject to be passive, we need to set up an
+         * adapter even when we can use passive pools.
+         */
+        private synchronized void createAdapter()
+            throws IOException
+        {
+            switch (_mode) {
+            case PASSIVE:
+                if (_reply127) {
+                    info("Creating adapter for passive mode");
+                    ServerSocketChannel serverChannel =
+                        ServerSocketChannel.open();
+                    _passiveModePortRange.bind(serverChannel.socket());
+                    _adapter =
+                        new SocketAdapter(AbstractFtpDoorV1.this,
+                                          serverChannel);
+                } else {
+                    _adapter =
+                        new SocketAdapter(AbstractFtpDoorV1.this,
+                                          _passiveModeServerSocket);
+                    _passiveModeServerSocket = null;
+                }
+                _adapter.setMaxStreams(_maxStreamsPerClient);
+                break;
+
+            case ACTIVE:
+                if (_isProxyRequiredOnActive) {
+                    info("Creating adapter for active mode");
+                    _adapter =
+                        new ActiveAdapter(_passiveModePortRange,
+                                          _client.getAddress().getHostAddress(),
+                                          _client.getPort());
+                    _adapter.setMaxStreams(_parallel);
+                }
+                break;
+            }
+
+            if (_adapter != null) {
+                _adapter.setMaxBlockSize(_maxBlockSize);
+                _adapter.setModeE(_xferMode.equals("E"));
+                if (isWrite()) {
+                    _adapter.setDirClientToPool();
+                } else {
+                    _adapter.setDirPoolToClient();
+                }
             }
         }
 
-        /** Sends door request information to the billing cell. */
-        void sendDoorRequestInfo(int code, String msg)
+        public synchronized void checkAndDeriveOffsetAndSize()
+            throws FTPCommandException
+        {
+            long fileSize = getStorageInfo().getFileSize();
+            if (_offset == -1) {
+                _offset = 0;
+            }
+            if (_size == -1) {
+                _size = fileSize;
+            }
+            if (_offset < 0) {
+                throw new FTPCommandException(500, "prm offset is " + _offset);
+            }
+            if (_size < 0) {
+                throw new FTPCommandException(500, "prm_size is " + _size);
+            }
+
+            if (_offset + _size > fileSize) {
+                throw new FTPCommandException(500,
+                                              "invalid prm_offset=" + _offset
+                                              + " and prm_size " + _size
+                                              + " for file of size " + fileSize);
+            }
+        }
+
+        @Override
+        protected synchronized ProtocolInfo createProtocolInfoForPoolManager()
+        {
+            return new GFtpProtocolInfo("GFtp",
+                                        _version,
+                                        0,
+                                        _client.getAddress().getHostAddress(),
+                                        _client.getPort(),
+                                        _parallel,
+                                        _parallel,
+                                        _parallel,
+                                        _bufSize, 0, 0);
+        }
+
+        @Override
+        protected synchronized ProtocolInfo createProtocolInfoForPool()
+        {
+            /* We can only let the pool be passive if this has been
+             * enabled and if we can provide the address to the client
+             * using a 127 response.
+             */
+            boolean usePassivePool = !_isProxyRequiredOnPassive && _reply127;
+
+            /* Construct protocol info. For backward compatibility, when
+             * an adapter could be used we put the adapter address into
+             * the protocol info.
+             */
+            GFtpProtocolInfo protocolInfo;
+            if (_adapter != null) {
+                protocolInfo =
+                    new GFtpProtocolInfo("GFtp",
+                                         _version, 0,
+                                         _local_host,
+                                         _adapter.getPoolListenerPort(),
+                                         _parallel,
+                                         _parallel,
+                                         _parallel,
+                                         _bufSize,
+                                         _offset,
+                                         _size);
+            } else {
+                protocolInfo =
+                    new GFtpProtocolInfo("GFtp",
+                                         _version, 0,
+                                         _client.getAddress().getHostAddress(),
+                                         _client.getPort(),
+                                         _parallel,
+                                         _parallel,
+                                         _parallel,
+                                         _bufSize,
+                                         _offset,
+                                         _size);
+            }
+
+            protocolInfo.setDoorCellName(getCellName());
+            protocolInfo.setDoorCellDomainName(getCellDomainName());
+            protocolInfo.setClientAddress(_client.getAddress().getHostAddress());
+            protocolInfo.setPassive(usePassivePool);
+            protocolInfo.setMode(_xferMode);
+
+            if (_optCheckSumFactory != null) {
+                protocolInfo.setChecksumType(_optCheckSumFactory.getType().getName());
+            }
+
+            if (_checkSumFactory != null) {
+                protocolInfo.setChecksumType(_checkSumFactory.getType().getName());
+            }
+
+            return protocolInfo;
+        }
+
+        public void createTransactionLog()
+        {
+            if (_tLogRoot != null) {
+                info("Door will log ftp transactions to " + _tLogRoot);
+                _tLog = new FTPTransactionLog(_tLogRoot);
+                startTlog(_tLog, _path.toString(), isWrite() ? "write" : "read");
+            }
+        }
+
+        public void setChecksum(Checksum checksum)
+            throws CacheException
+        {
+            if (checksum != null) {
+                setStatus("PnfsManager: Setting checksum");
+                try {
+                    _pnfs.setChecksum(getPnfsId(), checksum);
+                } finally {
+                    setStatus(null);
+                }
+            }
+        }
+
+        protected synchronized void startTransfer()
+        {
+            if (_adapter != null) {
+                _adapter.start();
+            }
+            reply("150 Opening BINARY data connection for " + _path, false);
+
+            if (isWrite() && _perfMarkerConf.use && _xferMode.equals("E")) {
+                _perfMarkerTask =
+                    new PerfMarkerTask(getPool(),
+                                       getMoverId(),
+                                       _perfMarkerConf.period / 2);
+                _timer.schedule(_perfMarkerTask,
+                                _perfMarkerConf.period,
+                                _perfMarkerConf.period);
+            }
+        }
+
+        @Override
+        public synchronized void startMover(String queue)
+            throws CacheException, InterruptedException
+        {
+            super.startMover(queue);
+            if (_version == 1) {
+                startTransfer();
+            }
+        }
+
+        public synchronized void transferStarted(CellMessage envelope,
+                                                 GFtpTransferStartedMessage message)
         {
             try {
-                info.setResult(code, msg);
-                sendMessage(new CellMessage(_billingCellPath , info));
-            } catch (NoRouteToCellException e) {
-                error("FTP Door: couldn't send door request data to " +
-                      "billing database: " + e.getMessage());
+                if (_aborted || _completed) {
+                    return;
+                }
+
+                if (_version != 2) {
+                    _logger.error("Received unexpected GFtpTransferStartedMessage for {} from {}", message.getPnfsId(), envelope.getSourceAddress());
+                    return;
+                }
+
+                if (!message.getPnfsId().equals(getPnfsId().getId())) {
+                    _logger.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), message.getPnfsId());
+                    throw new FTPCommandException(451, "Transient internal failure");
+                }
+
+                if (message.getPassive() && !_reply127) {
+                    _logger.error("Pool {} unexpectedly volunteered to be passive", envelope.getSourceAddress());
+                    throw new FTPCommandException(451, "Transient internal failure");
+                }
+
+                /* If passive X mode was requested, but the pool rejected
+                 * it, then we have to fail for now. REVISIT: We should
+                 * use the other adapter in this case.
+                 */
+                if (_mode == Mode.PASSIVE && !message.getPassive() && _xferMode.equals("X")) {
+                    throw new FTPCommandException(504, "Cannot use passive X mode");
+                }
+
+                /* Determine the 127 response address to send back to the
+                 * client. When the pool is passive, this is the address of
+                 * the pool (and in this case we no longer need the
+                 * adapter). Otherwise this is the address of the adapter.
+                 */
+                if (message.getPassive()) {
+                    assert _reply127;
+                    assert _adapter != null;
+
+                    reply127PORT(message.getPoolAddress());
+
+                    info("Closing adapter");
+                    _adapter.close();
+                    _adapter = null;
+                } else if (_reply127) {
+                    reply127PORT(new InetSocketAddress(_engine.getLocalAddress(),
+                                                       _adapter.getClientListenerPort()));
+                }
+                startTransfer();
+            } catch (FTPCommandException e) {
+                abort(e.getCode(), e.getReply());
+            } catch (RuntimeException e) {
+                abort(426, "Transient internal error", e);
             }
+        }
+
+        @Override
+        public void finished(CacheException error)
+        {
+            super.finished(error);
+            transferCompleted(error);
+        }
+
+        protected synchronized void transferCompleted(CacheException error)
+        {
+            try {
+                /* It may happen the transfer has been aborted
+                 * already. This is not a failure.
+                 */
+                if (_aborted) {
+                    return;
+                }
+
+                if (_completed) {
+                    throw new RuntimeException("DoorTransferFinished message received more than once");
+                }
+
+                if (error != null) {
+                    throw error;
+                }
+
+                /* Wait for adapter to shut down.
+                 */
+                if (_adapter != null) {
+                    info("Waiting for adapter to finish.");
+                    _adapter.join(300000); // 5 minutes
+                    if (_adapter.isAlive()) {
+                        throw new FTPCommandException(426, "FTP proxy did not shut down");
+                    } else if (_adapter.hasError()) {
+                        throw new FTPCommandException(426, "FTP proxy failed: " + _adapter.getError());
+                    }
+
+                    debug("Closing adapter");
+                    _adapter.close();
+                }
+
+                if (_perfMarkerTask != null) {
+                    _perfMarkerTask.stop((GFtpProtocolInfo) getProtocolInfo());
+                }
+
+                StorageInfo storageInfo = getStorageInfo();
+                if (_tLog != null) {
+                    _tLog.middle(storageInfo.getFileSize());
+                    _tLog.success();
+                    _tLog = null;
+                }
+
+                notifyBilling(0, "");
+                reply("226 Transfer complete.");
+                _completed = true;
+                setTransfer(null);
+            } catch (CacheException e) {
+                abort(426, e.getMessage());
+            } catch (FTPCommandException e) {
+                abort(e.getCode(), e.getReply());
+            } catch (InterruptedException e) {
+                abort(426, "FTP proxy was interrupted", e);
+            } catch (RuntimeException e) {
+                abort(426, "Transient internal error", e);
+            }
+        }
+
+        public void abort(int replyCode, String msg)
+        {
+            abort(replyCode, msg, null);
+        }
+
+        /**
+         * Aborts a transfer and performs all necessary cleanup steps,
+         * including killing movers and removing incomplete files. A
+         * failure message is send to the client. Both the reply code
+         * and reply message are logged as errors.
+         *
+         * If an exception is specified, then the error message in the
+         * exception is logged too and the exception itself is logged
+         * at a debug level. The intention is that an exception is
+         * only specified for exceptional cases, i.e. errors we would
+         * not expect to appear in normal use (potential
+         * bugs). Communication errors and the like should not be
+         * logged with an exception.
+         *
+         * In case the caller knows that an exception is certainly a
+         * bug, <code>reportBug</code> should be called. That method
+         * logs the exception as fatal, meaning it will always be
+         * added to the log. In most cases <code>reportBug</code>
+         * should be called instead of <code>abort</code>, since the
+         * former will throw a <code>RuntimeException</code>, which in
+         * turn causes <code>abort</code> to be called.
+         *
+         * @param replyCode reply code to send the the client
+         * @param replyMsg error message to send back to the client
+         * @param exception exception to log or null
+         */
+        public synchronized void abort(int replyCode, String replyMsg,
+                                       Exception exception)
+        {
+            if (_aborted) {
+                return;
+            }
+
+            if (_completed) {
+                _logger.error("Cannot abort transfer that already completed: {} {}",
+                              replyCode, replyMsg);
+                return;
+            }
+
+            if (_perfMarkerTask != null) {
+                _perfMarkerTask.stop();
+            }
+
+            if (_adapter != null) {
+                _adapter.close();
+                _adapter = null;
+            }
+
+            killMover(_sleepAfterMoverKill * 1000);
+
+            if (isWrite()) {
+                if (_removeFileOnIncompleteTransfer) {
+                    _logger.warn("Removing incomplete file {}: {}", getPnfsId(), _path);
+                    deleteNameSpaceEntry();
+                } else {
+                    _logger.warn("Incomplete file was not removed: {}", _path);
+                }
+            }
+
+            /* Report errors.
+             */
+            String msg = String.valueOf(replyCode) + " " + replyMsg;
+            notifyBilling(replyCode, replyMsg);
+            if (_tLog != null) {
+                _tLog.error(msg);
+                _tLog = null;
+            }
+            if (exception == null) {
+                error("Transfer error: " + msg);
+            } else {
+                error("Transfer error: " + msg
+                      + " (" + exception.getMessage() + ")");
+                debug(exception);
+            }
+            reply(msg);
+            _aborted = true;
+            setTransfer(null);
         }
     }
 
-    protected Transfer _transfer;
-
+    protected FtpTransfer _transfer;
 
     //
     // Use initializer to load up hashes.
@@ -819,27 +1168,6 @@ public abstract class AbstractFtpDoorV1
     {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
                                "$Revision$");
-    }
-
-    public void SetTLog(FTPTransactionLog tlog)
-    {
-        //XXX See IVM for how this is supposed to work
-        // In some cases, passive retrieves are resetting tlog before it
-        // can be used.
-        if( tlog == null) {
-            info("FTP Door: SetTLog isn't setting _tLog to " +
-                 "null because it seems to screw things up");
-        } else {
-            info("FTP Door: SetTLog setting _tLog");
-            _tLog = tlog;
-        }
-        //         try {
-        //             throw new Exception();
-        //         }
-        //         catch(Exception ex) {
-        //             ex.printStackTrace();
-        //         }
-
     }
 
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
@@ -908,6 +1236,14 @@ public abstract class AbstractFtpDoorV1
 	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                              _engine.getInetAddress());
 
+        _billingStub =
+            new CellStub(this, new CellPath("billing"));
+        _poolManagerStub =
+            new CellStub(this, new CellPath(_poolManager),
+                         _poolManagerTimeout * 1000);
+        _poolStub =
+            new CellStub(this, null, _poolTimeout * 1000);
+
         adminCommandListener = new AdminCommandListener();
         addCommandListener(adminCommandListener);
 
@@ -964,15 +1300,9 @@ public abstract class AbstractFtpDoorV1
             doorInfo.setProtocol("GFtp","1");
             doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
             doorInfo.setProcess("0");
-            if (_transfer != null) {
-                IoDoorEntry[] entries = {
-                    new IoDoorEntry(_transfer.sessionId,
-                                    _transfer.pnfsId,
-                                    _transfer.pool,
-                                    _transfer.state,
-                                    _transfer.startedAt,
-                                    _transfer.client_host)
-                };
+            Transfer transfer = _transfer;
+            if (transfer != null) {
+                IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
                 doorInfo.setIoDoorEntries(entries);
             } else {
                 IoDoorEntry[] entries = {};
@@ -1163,8 +1493,9 @@ public abstract class AbstractFtpDoorV1
                 /* In case of failure, we may have a transfer hanging
                  * around.
                  */
-                if (_transfer != null) {
-                    abortTransfer(451, "Aborting transfer due to session termination");
+                FtpTransfer transfer = _transfer;
+                if (transfer != null) {
+                    transfer.abort(451, "Aborting transfer due to session termination");
                 }
 
                 closePassiveModeServerSocket();
@@ -1293,165 +1624,23 @@ public abstract class AbstractFtpDoorV1
         pw.println(adminCommandListener.ac_get_door_info(new Args("")));
     }
 
-    /**
-     * Handles post-transfer success/failure messages going back to
-     * the client.
-     */
-    public void messageArrived(CellMessage envelope,
-                               DoorTransferFinishedMessage reply)
+     public void messageArrived(CellMessage envelope,
+                                GFtpTransferStartedMessage message)
+     {
+         _logger.debug("Received TransferStarted message");
+         FtpTransfer transfer = _transfer;
+         if (transfer != null) {
+             transfer.transferStarted(envelope, message);
+         }
+     }
+
+    public void messageArrived(DoorTransferFinishedMessage message)
     {
-        String adapterError = null;
-        boolean adapterClosed = false;
-        ProxyAdapter adapter;
-
-        /* The synchronization is required to ensure that the call
-         * to transfer() has returned before we clean up after the
-         * transfer. It is also needed to ensure that this block
-         * completes before we start shutting down the cell.
-         */
-        synchronized (this) {
-            debug("FTP Door received 'Door Transfer Finished' message");
-
-            /* It may happen the transfer has been cancelled and
-             * cleaned up after already. This is not a failure.
-             */
-            if (_transfer == null) {
-                return;
-            }
-
-            /* The abortTransfer method may wait for moverId to be
-             * reset.
-             */
-            _transfer.moverId = null;
-            notifyAll();
-
-            /* It may happen the transfer has been aborted
-             * already. This is not a failure.
-             */
-            if (_transfer.aborted) {
-                return;
-            }
-
-            /* Kill the adapter in case of errors.
-             */
-            adapter = _transfer.adapter;
-            if (adapter != null && reply.getReturnCode() != 0) {
-                debug("FTP Door closing adapter after message arrived.");
-                adapter.close();
-                adapterClosed = true;
-            }
-        }
-
-        /* Wait for adapter to shut down.
-         *
-         * We do this unsynchronized to avoid blocking while
-         * holding the monitor. Concurrent access to the adapter
-         * itself is safe and the following will be a noop if
-         * another thread happens to close the adapter.
-         */
-        if (adapter != null) {
-            info("FTP Door: Message arrived. Waiting for adapter to finish.");
-            try {
-                adapter.join(300000); // 5 minutes
-                if (adapter.isAlive()) {
-                    warn("FTP Door: Adapter didn't shut down. Killing adapter");
-                    adapterClosed = true;
-                    adapterError = "adapter did not shut down";
-                    adapter.close();
-                    adapter.join(10000); // 10 seconds
-                    if (adapter.isAlive()) {
-                        error("FTP Door: failed to kill adapter");
-                    }
-                } else if (adapter.hasError()) {
-                    adapterError = adapter.getError();
-                }
-            } catch (InterruptedException e) {
-                error("FTP Door: thread join error: " + e.getMessage());
-                adapterError = "adapter did not shut down";
-            }
-
-            /* With GridFTP v2 GET and PUT commands, we may
-             * have a temporary socket adapter specific to
-             * this transfer. If so, close it.
-             */
-            if (!adapterClosed) {
-                debug("FTP Door: Message arrived. Closing adapter");
-                adapter.close();
-                adapterClosed = true;
-            }
-        }
-
-        synchronized (this) {
-            /* It may happen that the transfer was aborted while we
-             * killed the adapter. This is not a failure.
-             */
-            if (_transfer == null || _transfer.aborted) {
-                return;
-            }
-
-            if (reply.getReturnCode() == 0 && adapterError == null) {
-                if (_transfer.perfMarkerTask != null) {
-                    ProtocolInfo pinfo = reply.getProtocolInfo();
-                    if (pinfo != null && pinfo instanceof GFtpProtocolInfo) {
-                        _transfer.perfMarkerTask.stop((GFtpProtocolInfo)reply.getProtocolInfo());
-                    } else {
-                        _transfer.perfMarkerTask.stop();
-                        reportBug("messageArrived",
-                    "DoorTransferFinishedMessage arrived and " +
-                                  "ProtocolInfo is null or is not of type " +
-                                  "GFtpProtocolInfo", null);
-                    }
-                }
-
-                StorageInfo storageInfo = reply.getStorageInfo();
-                if (_tLog != null) {
-                    _tLog.middle(storageInfo.getFileSize());
-                    _tLog.success();
-                    SetTLog(null);
-                }
-
-
-                // RDK: Note that data/command channels both dropped (esp. ACTIVE mode) at same time
-                //      can lead to a race. The transfer will be declared successful, this flag cleared,
-                //      and THEN the command channel drop is reacted to. This is difficult to reproduce.
-                //      Treat elsewhere to prevent a successful return code from being returned.
-                //      Clear the _pnfsEntryIncomplete flag since transfer successful
-                _transfer.sendDoorRequestInfo(0, "");
-                _transfer = null;
-                notifyAll();
-                reply("226 Transfer complete.");
-            } else {
-                StringBuffer errMsg = new StringBuffer("Transfer aborted (");
-
-                if (reply.getReturnCode() != 0) {
-                    if (reply.getErrorObject() != null) {
-                        errMsg.append(reply.getErrorObject());
-                    } else {
-                        errMsg.append("mover failure");
-                    }
-                    if (adapterError != null) {
-                        errMsg.append("/");
-                        errMsg.append(adapterError);
-                    }
-                } else {
-                    errMsg.append(adapterError);
-                }
-                errMsg.append(")");
-
-                abortTransfer(426, errMsg.toString());
-            }
-        }
-    }
-
-    public void messageArrived(CellMessage envelope,
-                               GFtpTransferStartedMessage message)
-    {
-        try {
-            _transferStartedMessages.put(message);
-        } catch (InterruptedException e) {
-            /* The queue is not bounded, thus this should never happen.
-             */
-            error("FTP Door: unexpected interrupted exception: " + e);
+        _logger.debug("Received TransferFinished message [rc={}]",
+                      message.getReturnCode());
+        FtpTransfer transfer = _transfer;
+        if (transfer != null) {
+            transfer.finished(message);
         }
     }
 
@@ -2347,64 +2536,19 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    /**
-     * Sends a message to a cell and waits for the reply. The reply is
-     * expected to contain a message object of the same type as the
-     * message object that was sent, and the return code of that
-     * message is expected to be zero. If either is not the case,
-     * Exception is thrown.
-     *
-     * @param  path    the path to the cell to which to send the message
-     * @param  msg     the message object to send
-     * @param  timeout timeout in milliseconds
-     * @return         the message object from the reply
-     * @throws TimeoutException If no reply was received in time
-     * @throws SendAndWaitException If the message could not be sent,
-     *       the object in the reply was of the wrong type, or the
-     *       return code was non-zero.
-     * @throws FileNotOnlineException If file is not online and STAGING is NOT allowed for this user
-     */
-    private <T extends Message> T sendAndWait(CellPath path, T msg, int timeout)
-        throws TimeoutException, SendAndWaitException, InterruptedException, FileNotOnlineCacheException
+    protected synchronized Transfer setTransfer(FtpTransfer transfer)
     {
-        CellMessage replyMessage = null;
-        try {
-            replyMessage = sendAndWait(new CellMessage(path, msg), timeout);
-        } catch (NoRouteToCellException e) {
-            String errmsg = "FTP Door: cannot send message to " + path +
-                            ". Got error: " + e.getMessage();
-            error(errmsg);
-            throw new SendAndWaitException(errmsg, e);
-        }
+        _transfer = transfer;
+        notifyAll();
+        return transfer;
+    }
 
-        if (replyMessage == null) {
-            String errmsg = "FTP Door got timeout sending message to " + path;
-            throw new TimeoutException(errmsg);
+    protected synchronized void joinTransfer()
+        throws InterruptedException
+    {
+        while (_transfer != null) {
+            wait();
         }
-
-        Object replyObject = replyMessage.getMessageObject();
-        if (!(msg.getClass().isInstance(replyObject))) {
-            String errmsg = "FTP Door got unexpected message of class " +
-                            replyObject.getClass() + " from " +
-                            replyMessage.getSourceAddress();
-            error(errmsg);
-            throw new SendAndWaitException(errmsg);
-        }
-
-        T reply = (T)replyObject;
-        if (reply.getReturnCode() != 0) {
-            if (reply.getReturnCode() == CacheException.FILE_NOT_ONLINE) {
-               throw new FileNotOnlineCacheException(reply.getErrorObject().toString());
-            } else {
-              String errmsg = "FTP Door: got response from '" +
-                            replyMessage.getSourceAddress() + "' with error " +
-                            reply.getErrorObject();
-              warn(errmsg);
-              throw new SendAndWaitException(errmsg);
-            }
-        }
-
-        return reply;
     }
 
     /**
@@ -2432,14 +2576,16 @@ public abstract class AbstractFtpDoorV1
                       InetSocketAddress client, int bufSize,
                       boolean reply127, int version)
     {
-        /* Close incomplete log.
-         */
-        if (_tLog != null) {
-            _tLog.error("incomplete transaction");
-            SetTLog(null);
-        }
-
-        _transfer = new Transfer(absolutePath(file));
+        FtpTransfer transfer =
+            new FtpTransfer(new FsPath(absolutePath(file)),
+                            offset, size,
+                            mode,
+                            xferMode,
+                            parallel,
+                            client,
+                            bufSize,
+                            reply127,
+                            version);
         try {
             /* Check preconditions.
              */
@@ -2456,85 +2602,16 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(530, "Not logged in.");
             }
 
-            if ( _checkSumFactory != null || _checkSum != null ){
+            if (_checkSumFactory != null || _checkSum != null) {
                 throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
             }
 
-            /* Set ownership and other information for transfer.
-             */
-            _transfer.info.setOwner(getUser());
-            _transfer.info.setGid((int) Subjects.getPrimaryGid(_subject));
-            _transfer.info.setUid((int) Subjects.getUid(_subject));
-            _transfer.client_host = client.getHostName();
-            _transfer.client_port = client.getPort();
+            info("retrieve user=" + getUser());
+            info("retrieve addr=" + _engine.getInetAddress().toString());
 
-            /* ?
-             */
-            _curDirV = (_curDirV == null ? "/" : _curDirV);
-            FsPath relativeToRootPath = new FsPath(_curDirV);
-            relativeToRootPath.add(file);
-
-            info("FTP Door: retrieve user=" + getUser());
-            info("FTP Door: retrieve vpath=" + relativeToRootPath);
-            info("FTP Door: retrieve addr=" + _engine.getInetAddress().toString());
-
-            //XXX When we upgrade to the GSSAPI version of GSI
-            //we need to revisit this code and put something more useful
-            //in the userprincipal spotpoolManager
-            if (_tLogRoot != null) {
-                SetTLog(new FTPTransactionLog(_tLogRoot));
-                info("FTP Door will log ftp transactions to " + _tLogRoot);
-            } else{
-                info("FTP Door: tlog is not specified, door will not log FTP transactions");
-            }
-            startTlog(_tLog, _transfer.path, "read");
-            debug("FTP Door: tLog begin done");
-
-            /* Retrieve storage information for file.
-             */
-            _transfer.state = "waiting for storage info";
-            FileAttributes attributes =
-                _pnfs.getFileAttributes(_transfer.path,
-                                        EnumSet.of(PNFSID,
-                                                   STORAGEINFO,
-                                                   SIZE,
-                                                   SIMPLE_TYPE),
-                                        EnumSet.of(AccessMask.READ_DATA));
-            _transfer.state = "received storage info";
-
-            FileType type = attributes.getFileType();
-            if (type == FileType.DIR || type == FileType.SPECIAL) {
-                throw new FTPCommandException(550, "Not a regular file");
-            }
-
-            StorageInfo storageInfo = attributes.getStorageInfo();
-            _transfer.info.setPnfsId(attributes.getPnfsId());
-            _transfer.pnfsId = attributes.getPnfsId();
-
-            /* Sanity check offset and size parameters. We cannot do
-             * this earlier, because we need the size of the file
-             * first.
-             */
-            long fileSize = attributes.getSize();
-            if (offset == -1) {
-                offset = 0;
-            }
-            if (size == -1) {
-                size = fileSize;
-            }
-            if (offset < 0) {
-                throw new FTPCommandException(500, "prm offset is "+offset);
-            }
-            if (size < 0) {
-                throw new FTPCommandException(500, "500 prm_size is " + size);
-            }
-
-            if (offset + size > fileSize) {
-                throw new FTPCommandException(500,
-                                              "invalid prm_offset=" + offset
-                                              + " and prm_size " + size
-                                              + " for file of size " + fileSize);
-            }
+            transfer.readNameSpaceEntry();
+            transfer.createTransactionLog();
+            transfer.checkAndDeriveOffsetAndSize();
 
             /* Transfer the file. As there is a delay between the
              * point when a pool goes offline and when the pool
@@ -2544,61 +2621,52 @@ public abstract class AbstractFtpDoorV1
             int retry = 0;
             _commandQueue.enableInterrupt();
             try {
+                transfer.createAdapter();
                 for (;;) {
                     try {
-                        transfer(mode, xferMode,
-                                 parallel,
-                                 client, bufSize, offset, size,
-                                 storageInfo, reply127, false, version);
+                        transfer.selectPool();
+                        transfer.startMover(_ioQueueName);
                         break;
-                    } catch (TimeoutException e){
-                        error("FTP Door got timeout: while retrieving: " +
-                              e.getMessage());
-                    } catch (SendAndWaitException e){
-                        error("FTP Door: retrieve got SendAndWaitException: "
-                              + e.getMessage());
+                    } catch (CacheException e) {
+                        error("Failed to create mover: " + e.getMessage());
                     }
                     retry++;
                     if (retry >= _maxRetries) {
                         throw new FTPCommandException(425, "Cannot open port: No pools available", "No pools available");
                     }
                     Thread.sleep(_retryWait*1000);
-                    info("FTP Door: retrieve retry attempt " + retry);
+                    info("retrieve retry attempt " + retry);
                 }  //end of retry loop
             } finally {
                 _commandQueue.disableInterrupt();
             }
-
-            // no perf markers on retry (REVISIT: why not?)
-            //if ( _perfMarkerConf.use && _xferMode.equals("E") ) {
-            //     /** @todo: done ### ac_retr - breadcrumb - performance markers */
-            //    _perfMarkerEngine = new PerfMarkerEngine( protocolInfo.getMax() ) ;
-            //    _perfMarkerEngine.startEngine();
-            //}
         } catch (PermissionDeniedCacheException e) {
-            abortTransfer(550, "Permission denied");
+            transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
             case CacheException.DIR_NOT_EXISTS:
-                abortTransfer(550, "File not found");
+                transfer.abort(550, "File not found");
                 break;
             case CacheException.TIMEOUT:
-                abortTransfer(451, "Internal timeout", e);
+                transfer.abort(451, "Internal timeout", e);
                 break;
             case CacheException.NOT_DIR:
-                abortTransfer(550, "Not a directory");
+                transfer.abort(550, "Not a directory");
                 break;
             default:
-                abortTransfer(451, "Operation failed: " + e.getMessage(), e);
+                transfer.abort(451, "Operation failed: " + e.getMessage(), e);
                 break;
             }
         } catch (FTPCommandException e) {
-            abortTransfer(e.getCode(), e.getReply());
+            transfer.abort(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
-            abortTransfer(451, "Operation cancelled");
+            transfer.abort(451, "Operation cancelled");
         } catch (IOException e) {
-            abortTransfer(451, "Operation failed: " + e.getMessage());
+            transfer.abort(451, "Operation failed: " + e.getMessage());
+        } catch (RuntimeException e) {
+            _logger.error("Retrieve failed", e);
+            transfer.abort(451, "Transient internal failure");
         } finally {
             _checkSumFactory = null;
             _checkSum = null;
@@ -2665,7 +2733,16 @@ public abstract class AbstractFtpDoorV1
                        InetSocketAddress client, int bufSize,
                        boolean reply127, int version)
     {
-        _transfer = new Transfer(absolutePath(file));
+        FtpTransfer transfer =
+            new FtpTransfer(new FsPath(absolutePath(file)),
+                            0, 0,
+                            mode,
+                            xferMode,
+                            parallel,
+                            client,
+                            bufSize,
+                            reply127,
+                            version);
         try {
             if (_readOnly) {
                 throw new FTPCommandException(502, "Command disabled");
@@ -2686,14 +2763,6 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(554, "Anonymous write access not permitted");
             }
 
-            /* Set ownership and other information for transfer.
-             */
-            _transfer.info.setOwner(getUser());
-            _transfer.info.setGid((int) Subjects.getPrimaryGid(_subject));
-            _transfer.info.setUid((int) Subjects.getUid(_subject));
-            _transfer.client_host = client.getHostName();
-            _transfer.client_port = client.getPort();
-
             if (xferMode.equals("E") && mode == Mode.ACTIVE) {
                 throw new FTPCommandException(504, "Cannot store in active E mode");
             }
@@ -2701,542 +2770,56 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(504, "Cannot use passive X mode");
             }
 
-            info("FTP Door: store receiving with mode " + xferMode);
+            info("store receiving with mode " + xferMode);
 
-            if (_tLogRoot != null) {
-                SetTLog(new FTPTransactionLog(_tLogRoot));
-                debug("FTP Door: store will log ftp transactions to " + _tLogRoot);
-            } else {
-                info("FTP Door: tlog is not specified. Store will not log FTP transactions");
-            }
-
-            // for monitoring
-            _transfer.state = "waiting for storage info";
-
-            info("FTP Door: store user=" + getUser());
-            info("FTP Door: store path=" + _transfer.path);
-            info("FTP Door: store addr=" + _engine.getInetAddress().toString());
-            //XXX When we upgrade to the GSSAPI version of GSI
-            //we need to revisit this code and put something more useful
-            //in the userprincipal spot
-            startTlog(_tLog, _transfer.path, "write");
-            debug("FTP Door: store: _tLog begin done");
-
-            /* Create PNFS entry.
-             */
-            _transfer.state = "creating pnfs entry";
-            StorageInfo storageInfo;
-            PnfsGetFileAttributes pnfsEntry;
-
-            /* FIXME: There is a race condition here. In case we break
-             * out, maybe due to a thread interrupt, or due to some
-             * other failure, while we wait for the reply from the
-             * PnfsManager, then we do not know whether the entry was
-             * actually created at that point - and if the entry
-             * exists, we cannot know whether we created it or whether
-             * it already existed. This means we cannot reliably clean
-             * up after ourself and thus we risk leaving empty files
-             * behind, even though the transfer failed.
-             */
-            try {
-                pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
-            } catch (FileExistsCacheException fnfe) {
-                if(_overwrite) {
-                    warn("FTP Door: Overwrite is enabled. File \"" +
-                         _transfer.path + "\" exists, and will be overwritten");
-                    _pnfs.deletePnfsEntry( _transfer.path);
-                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
-                } else {
-                    throw new FTPCommandException(553,
-                                                  _transfer.path
-                                                  + ": Cannot create file: "
-                                                  + fnfe.getMessage());
-                }
-            } catch (CacheException ce) {
-                // Unfortunately if file exists the regular file
-                // exeption is still being thown. FIXME: we have to
-                // distinguish between transient and permanent errors!
-                if(_overwrite) {
-                    warn("FTP Door: Overwrite is enabled. File \"" +
-                         _transfer.path + "\" exists, and will be overwritten");
-                    _pnfs.deletePnfsEntry(_transfer.path);
-                    pnfsEntry = _pnfs.createPnfsEntry(_transfer.path);
-                } else {
-                    throw new FTPCommandException(553,
-                                                  _transfer.path
-                                                  + ": Cannot create file: "
-                                                  + ce.getMessage());
-                }
-            }
-
-            /* The PNFS entry has been created, but the file transfer
-             * has not yet successfully completed. Setting
-             * pnfsEntryIncomplete to true ensures that the entry will
-             * be deleted if anything goes wrong.
-             */
-            _transfer.pnfsEntryIncomplete = true;
-            _transfer.pnfsId = pnfsEntry.getPnfsId();
-            _transfer.info.setPnfsId(_transfer.pnfsId);
-            info("FTP Door: store created new pnfs entry: " +
-                 _transfer.pnfsId);
-
-            debug("FTP Door: store getting related StorageInfo");
-            storageInfo = pnfsEntry.getFileAttributes().getStorageInfo();
-            if (storageInfo == null) {
-                throw new FTPCommandException
-                    (533,
-                     "Couldn't get StorageInfo for : " + _transfer.pnfsId);
-            }
-            info("FTP Door: store got storageInfo : " + storageInfo);
-
-            /* Send checksum to PNFS manager.
-             */
-            if (_checkSum != null) {
-                _transfer.state = "setting checksum in pnfs";
-                _pnfs.setChecksum(_transfer.pnfsId, _checkSum);
-            }
+            transfer.createNameSpaceEntry();
+            transfer.createTransactionLog();
+            transfer.setChecksum(_checkSum);
 
             _commandQueue.enableInterrupt();
             try {
-                transfer(mode, xferMode, parallel,
-                         client, bufSize, 0, 0, storageInfo,
-                         reply127, true, version);
+                transfer.createAdapter();
+                transfer.selectPool();
+                transfer.startMover(_ioQueueName);
             } finally {
                 _commandQueue.disableInterrupt();
             }
-
-            if (_perfMarkerConf.use && xferMode.equals("E")) {
-                /** @todo: done ### ac_stor - breadcrumb - performance markers
-                 */
-                _transfer.perfMarkerTask =
-                    new PerfMarkerTask(_transfer.pool,
-                                       _transfer.moverId,
-                                       _perfMarkerConf.period / 2);
-                _timer.schedule(_transfer.perfMarkerTask,
-                                _perfMarkerConf.period,
-                                _perfMarkerConf.period);
-            }
         } catch (FTPCommandException e) {
-            abortTransfer(e.getCode(), e.getReply());
+            transfer.abort(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
-            abortTransfer(451, "Operation cancelled");
+            transfer.abort(451, "Operation cancelled");
         } catch (IOException e) {
-            abortTransfer(451, "Operation failed: " + e.getMessage());
+            transfer.abort(451, "Operation failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {
-            abortTransfer(550, "Permission denied");
+            transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
-                abortTransfer(550, "File not found");
+                transfer.abort(550, "File not found");
                 break;
             case CacheException.DIR_NOT_EXISTS:
-                abortTransfer(550, "Directory not found");
+                transfer.abort(550, "Directory not found");
                 break;
             case CacheException.FILE_EXISTS:
-                abortTransfer(550, "File exists");
+                transfer.abort(550, "File exists");
                 break;
             case CacheException.TIMEOUT:
-                abortTransfer(451, "Internal timeout", e);
+                transfer.abort(451, "Internal timeout", e);
                 break;
             case CacheException.NOT_DIR:
-                abortTransfer(501, "Not a directory");
+                transfer.abort(501, "Not a directory");
                 break;
             default:
-                abortTransfer(451, "Operation failed: " + e.getMessage(), e);
+                transfer.abort(451, "Operation failed: " + e.getMessage(), e);
                 break;
             }
-        } catch (TimeoutException e) {
-            abortTransfer(451, "Internal timeout", e);
-        } catch (SendAndWaitException e) {
-            abortTransfer(451, "Operation failed: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            _logger.error("Store failed", e);
+            transfer.abort(451, "Transient internal failure");
         } finally {
             _checkSumFactory = null;
             _checkSum = null;
             _allo = 0;
-        }
-    }
-
-    /**
-     * Selects a pool and initiates a transfer between the client and
-     * the pool.
-     *
-     * Unless space reservation is used, a pool is selected by
-     * contacting the PoolMananger.
-     *
-     * Once the pool is known, the pool is asked to initiate a
-     * transfer. If we can make the pool passive or if mode X is used,
-     * then GFtp/2 is used to talk to the pool. Otherwise GFtp/1 is
-     * used. If GFtp/2 is used, this method will block and await a
-     * GFtpTransferStartedMessage from the pool.
-     *
-     * If an adapter (proxy) has to be used, the _transfer.adapter
-     * field will become non-null. The pool may decline to be passive
-     * and force the door to use an adapter.
-     *
-     * The method is synchronized to ensure that it completes before
-     * any DoorTransferFinishedMessage is received from the pool (see
-     * @link messageArrived).
-     *
-     * If replu127 is true, an FTP 127 response will be
-     * generated. This is only valid if mode is set to PASSIVE.
-     *
-     * TODO: We can simplify the parameter list by including more of
-     * this information into the _transfer object.
-     *
-     * @param mode          indicates the direction of connection
-     *                      establishment
-     * @param xferMode      the transfer mode to use
-     * @param parallel      number of simultaneous streams to use
-     * @param client        address of the client.
-     * @param bufSize       TCP buffers size to use (send and receive),
-     * @param offset        the position at which to begin the transfer
-     * @param size          the number of bytes to transfer (whole
-     *                      file when -1).
-     * @param storageInfo   Storage information about the file to transfer
-     * @param reply127      GridFTP v2 127 reply is generated when true.
-     *                      Requires mode to be PASSIVE.
-     * @param isWrite       True writing to pool, false when reading.
-     * @param version       The mover version to use for the transfer
-     * @throws FileNotOnlineCacheException If file is not online and STAGING is NOT allowed for this user
-     */
-    private synchronized void transfer(Mode              mode,
-                                       String            xferMode,
-                                       int               parallel,
-                                       InetSocketAddress client,
-                                       int               bufSize,
-                                       long              offset,
-                                       long              size,
-                                       StorageInfo       storageInfo,
-                                       boolean           reply127,
-                                       boolean           isWrite,
-                                       int               version)
-        throws InterruptedException,
-               TimeoutException,
-               SendAndWaitException,
-               IOException,
-               FTPCommandException,
-               FileNotOnlineCacheException
-    {
-        /* reply127 implies passive mode.
-         */
-        assert !reply127 || mode == Mode.PASSIVE;
-
-        /* We can only let the pool be passive if this has been
-         * enabled and if we can provide the address to the client
-         * using a 127 response.
-         */
-        boolean usePassivePool = !_isProxyRequiredOnPassive && reply127;
-
-        /* Set up an adapter, if needed. Since a pool may reject to be
-         * passive, we need to set up an adapter even when we can use
-         * passive pools.
-         */
-        switch (mode) {
-        case PASSIVE:
-            info("FTP Door: transfer creating adapter for passive mode");
-            if (reply127) {
-                ServerSocketChannel serverChannel =
-                    ServerSocketChannel.open();
-                _passiveModePortRange.bind(serverChannel.socket());
-                _transfer.adapter =
-                    new SocketAdapter(this, serverChannel);
-            } else {
-                _transfer.adapter =
-                    new SocketAdapter(this, _passiveModeServerSocket);
-                _passiveModeServerSocket = null;
-            }
-            _transfer.adapter.setMaxStreams(_maxStreamsPerClient);
-            break;
-
-        case ACTIVE:
-            if (_isProxyRequiredOnActive) {
-                info("FTP Door: transfer creating adapter for active mode");
-                _transfer.adapter =
-                    new ActiveAdapter(_passiveModePortRange, client.getAddress().getHostAddress(), client.getPort());
-                _transfer.adapter.setMaxStreams(parallel);
-            }
-            break;
-        }
-
-        if (_transfer.adapter != null) {
-            _transfer.adapter.setMaxBlockSize(_maxBlockSize);
-            _transfer.adapter.setModeE(xferMode.equals("E"));
-            if (isWrite) {
-                _transfer.adapter.setDirClientToPool();
-            } else {
-                _transfer.adapter.setDirPoolToClient();
-            }
-        }
-
-        // Find a pool suitable for the transfer.
-
-        _transfer.state = "waiting for pool selection by PoolManager";
-        GFtpProtocolInfo protocolInfo =
-            new GFtpProtocolInfo("GFtp",
-                                 version,
-                                 0,
-                                 client.getAddress().getHostAddress(),
-                                 client.getPort(),
-                                 parallel,
-                                 parallel,
-                                 parallel,
-                                 bufSize, 0, 0);
-
-        PoolMgrSelectPoolMsg request;
-        if (isWrite) {
-            request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
-                                                    storageInfo,
-                                                    protocolInfo,
-                                                    _allo);
-        } else {   //transfer: 'retrieve'
-            int allowedStates =
-                _checkStagePermission.canPerformStaging(_subject, storageInfo)
-                ? RequestContainerV5.allStates
-                : RequestContainerV5.allStatesExceptStage;
-            request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
-                                                   storageInfo,
-                                                   protocolInfo,
-                                                   0L,
-                                                   allowedStates);
-        }
-        request.setSubject(_subject);
-        request.setPnfsPath(_transfer.path);
-        request = sendAndWait(new CellPath(_poolManager), request,
-                              _poolManagerTimeout * 1000);
-
-        // use the updated StorageInfo from the PoolManager/SpaceManager
-        storageInfo = request.getStorageInfo();
-
-        _transfer.pool = request.getPoolName();
-
-        /* Construct protocol info. For backward compatibility, when
-         * an adapter could be used we put the adapter address into
-         * the protocol info (this behaviour is consistent with dCache
-         * 1.7).
-         */
-        if (_transfer.adapter != null) {
-            protocolInfo =
-                new GFtpProtocolInfo("GFtp",
-                                      version, 0,
-                                     _local_host,
-                                     _transfer.adapter.getPoolListenerPort(),
-                                     parallel,
-                                     parallel,
-                                     parallel,
-                                     bufSize,
-                                     offset,
-                                     size);
-        } else {
-            protocolInfo =
-                new GFtpProtocolInfo("GFtp",
-                                     version, 0,
-                                     client.getAddress().getHostAddress(),
-                                     client.getPort(),
-                                     parallel,
-                                     parallel,
-                                     parallel,
-                                     bufSize,
-                                     offset,
-                                     size);
-        }
-
-        protocolInfo.setDoorCellName(getCellName());
-        protocolInfo.setDoorCellDomainName(getCellDomainName());
-        protocolInfo.setClientAddress(client.getAddress().getHostAddress());
-        protocolInfo.setPassive(usePassivePool);
-        protocolInfo.setMode(xferMode);
-
-        if ( _optCheckSumFactory != null )
-            protocolInfo.setChecksumType(_optCheckSumFactory.getType().getName());
-
-        if ( _checkSumFactory != null )
-            protocolInfo.setChecksumType(_checkSumFactory.getType().getName());
-
-        /* Ask the pool to transfer the file.
-         */
-        askForFile(_transfer, storageInfo, protocolInfo, isWrite);
-
-        /* When version 2 is used, then block until we got a 'transfer
-         * started' message.
-         */
-        GFtpTransferStartedMessage message = null;
-        if (version == 2) {
-            do {
-                message = _transferStartedMessages.take();
-            } while (!message.getPnfsId().equals(_transfer.pnfsId.getId()));
-
-            if (message.getPassive() && !reply127) {
-                reportBug("transfer",
-                          "internal error: pool unexpectedly volunteered to " +
-                          "be passive", null);
-            }
-
-            /* If passive X mode was requested, but the pool rejected
-             * it, then we have to fail for now. REVISIT: We should
-             * use the other adapter in this case.
-             */
-            if (mode == Mode.PASSIVE && !message.getPassive() && xferMode.equals("X")) {
-                throw new FTPCommandException(504, "Cannot use passive X mode");
-            }
-        }
-
-        /* Determine the 127 response address to send back to the
-         * client. When the pool is passive, this is the address of
-         * the pool (and in this case we no longer need the
-         * adapter). Otherwise this is the address of the adapter.
-         */
-        if (message != null && message.getPassive()) {
-            assert reply127;
-
-            reply127PORT(message.getPoolAddress());
-
-            info("FTP Door: transfer closing adapter");
-            _transfer.adapter.close();
-            _transfer.adapter = null;
-        } else if (reply127) {
-            reply127PORT(new InetSocketAddress(_engine.getLocalAddress(),
-                                               _transfer.adapter.getClientListenerPort()));
-        }
-
-        /* If an adapter is used, then start it now.
-         */
-        if (_transfer.adapter != null) {
-            _transfer.adapter.start();
-        }
-
-        reply("150 Opening BINARY data connection for " + _transfer.path, false);
-    }
-
-    /**
-     * Returns the number of milliseconds until a specified point in
-     * time. May be negative if the point in time is in the past.
-     *
-     * TODO: Move to a utility class.
-     *
-     * @param time a point in time measured in milliseconds since
-     *             midnight, January 1, 1970 UTC.
-     * @return the difference, measured in milliseconds, between
-     *         <code>time</code> and midnight, January 1, 1970 UTC.
-     */
-    private long timeUntil(long time)
-    {
-        return time - System.currentTimeMillis();
-    }
-
-    private void abortTransfer(int replyCode, String msg)
-    {
-        abortTransfer(replyCode, msg, null);
-    }
-
-    /**
-     * Aborts a transfer and performs all necessary cleanup steps,
-     * including killing movers and removing incomplete files. A
-     * failure message is send to the client. Both the reply code and
-     * reply message are logged as errors.
-     *
-     * If an exception is specified, then the error message in the
-     * exception is logged too and the exception itself is logged at a
-     * debug level. The intention is that an exception is only
-     * specified for exceptional cases, i.e. errors we would not
-     * expect to appear in normal use (potential bugs). Communication
-     * errors and the like should not be logged with an exception.
-     *
-     * In case the caller knows that an exception is certainly a bug,
-     * <code>reportBug</code> should be called. That method logs the
-     * exception as fatal, meaning it will always be added to the
-     * log. In most cases <code>reportBug</code> should be called
-     * instead of <code>abortTransfer</code>, since the former will
-     * throw a <code>RuntimeException</code>, which in turn causes
-     * <code>abortTransfer</code> to be called.
-     *
-     * @param replyCode reply code to send the the client
-     * @param replyMsg error message to send back to the client
-     * @param exception exception to log or null
-     */
-    private synchronized void abortTransfer(int replyCode, String replyMsg,
-                                             Exception exception)
-    {
-        if (_transfer != null) {
-            _transfer.aborted = true;
-
-            if (_transfer.perfMarkerTask != null) {
-                _transfer.perfMarkerTask.stop();
-            }
-
-            if (_transfer.adapter != null) {
-                _transfer.adapter.close();
-            }
-
-            if (_transfer.moverId != null) {
-                assert _transfer.pool != null;
-
-                warn("FTP Door: Transfer error. Sending kill to pool " +
-                     _transfer.pool + " for mover " + _transfer.moverId);
-                try {
-                    PoolMoverKillMessage message =
-                        new PoolMoverKillMessage(_transfer.pool,
-                                                 _transfer.moverId);
-                    message.setReplyRequired(false);
-                    sendMessage(new CellMessage(new CellPath(_transfer.pool),
-                                                message));
-
-                    /* Since the mover doesn't register the file in
-                     * the companion until the transfer is completed,
-                     * we wait for some time to avoid orphaned
-                     * files. This is an imperfect hack, as there is
-                     * no upper bound on how long it could take to
-                     * kill the mover.
-                     */
-                    long timeToWait = _sleepAfterMoverKill * 1000;
-                    long deadline = System.currentTimeMillis() + timeToWait;
-                    while (_transfer.moverId != null && timeToWait > 0) {
-                        wait(timeToWait);
-                        timeToWait = timeUntil(deadline);
-                    }
-                } catch (InterruptedException e) {
-                    /* Bugger, something decided that we are in a
-                     * hurry (most likely domain shutdown). We are
-                     * shutting down anyway, so continue doing that...
-                     */
-                } catch (NoRouteToCellException e) {
-                    error("FTP Door: Transfer error. Can't send message to " +
-                          _transfer.pool + ": " + e.getMessage());
-                }
-            }
-
-            if (_transfer.pnfsEntryIncomplete) {
-                if (_removeFileOnIncompleteTransfer) {
-                    warn("FTP Door: Transfer error. Removing incomplete file "
-                         + _transfer.pnfsId + ": " + _transfer.path);
-                    try {
-                        _pnfs.deletePnfsEntry(_transfer.pnfsId);
-                    } catch (CacheException e) {
-                        error("FTP Door: Failed to delete " + _transfer.pnfsId
-                              + ": " + e.getMessage());
-                    }
-                } else {
-                    warn("FTP Door: Transfer error. Incomplete file was not removed:"
-                         + _transfer.path);
-                }
-            }
-
-            /* Report errors.
-             */
-            String msg = String.valueOf(replyCode) + " " + replyMsg;
-            _transfer.sendDoorRequestInfo(replyCode, replyMsg);
-            reply(msg);
-            if (_tLog != null) {
-                _tLog.error(msg);
-            }
-            if (exception == null) {
-                error("FTP Door: Transfer error: " + msg);
-            } else {
-                error("FTP Door: Transfer error: " + msg
-                      + " (" + exception.getMessage() + ")");
-                debug(exception);
-            }
-            _transfer = null;
-            notifyAll();
         }
     }
 
@@ -3614,7 +3197,7 @@ public abstract class AbstractFtpDoorV1
     //      The delayed QUIT has not been directly implemented yet, instead...
     // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
     // ---------------------------------------------
-    public synchronized void ac_quit(String arg)
+    public void ac_quit(String arg)
         throws CommandExitException
     {
         reply("221 Goodbye");
@@ -3632,9 +3215,7 @@ public abstract class AbstractFtpDoorV1
          */
         try {
             _commandQueue.enableInterrupt();
-            while (_transfer != null) {
-                wait();
-            }
+            joinTransfer();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
@@ -3657,7 +3238,10 @@ public abstract class AbstractFtpDoorV1
     // ---------------------------------------------
     public void ac_abor(String arg)
     {
-        abortTransfer(426, "Transfer aborted");
+        FtpTransfer transfer = _transfer;
+        if (transfer != null) {
+            transfer.abort(426, "Transfer aborted");
+        }
         closeDataSocket();
         reply("226 Abort successful");
     }
@@ -3675,73 +3259,6 @@ public abstract class AbstractFtpDoorV1
     public String ok(String cmd)
     {
         return "200 "+cmd+" command successful";
-    }
-
-    /**
-     * Asks a pool to perform a transfer.
-     *
-     * Information about which pool to ask and the file to ask for is
-     * taken from the <tt>transfer</tt> parameter. On success, the
-     * moverId field of <tt>transfer</tt> will be filled in. On
-     * failure, Exception is thrown.
-     *
-     * @param transfer     The transfer to perform.
-     * @param storageInfo  Storage information of the file to transfer
-     * @param protocolInfo Protocol information for the transfer
-     * @param isWrite      True when transfer is to the pool, otherwise false
-     * @throws FileNotOnlineCacheException If file is not online and STAGING is NOT allowed for this user
-     */
-    private void askForFile(Transfer     transfer,
-                            StorageInfo  storageInfo,
-                            ProtocolInfo protocolInfo,
-                            boolean      isWrite)
-        throws SendAndWaitException, TimeoutException, InterruptedException, FileNotOnlineCacheException
-    {
-        info("FTP Door: trying pool " + transfer.pool +
-             " for " + (isWrite ? "write" : "read"));
-        transfer.state = "sending " + (isWrite ? "write" : "read")
-            + " request to pool";
-
-        PoolIoFileMessage poolMessage;
-        if (isWrite) {
-            poolMessage = new PoolAcceptFileMessage(transfer.pool,
-                                                    transfer.pnfsId,
-                                                    protocolInfo,
-                                                    storageInfo);
-        } else {
-            poolMessage = new PoolDeliverFileMessage(transfer.pool,
-                                                     transfer.pnfsId,
-                                                     protocolInfo,
-                                                     storageInfo);
-        }
-
-        if (_ioQueueName != null) {
-            poolMessage.setIoQueueName(_ioQueueName);
-        }
-
-        poolMessage.setId(transfer.sessionId);
-        // let the pool know which request triggered the transfer
-        if (transfer.info != null) {
-            poolMessage.setInitiator(transfer.info.getTransaction());
-        }
-
-        CellPath toPool = null;
-        if (_poolProxy == null) {
-            toPool = new CellPath(transfer.pool);
-        } else {
-            toPool = new CellPath(_poolProxy);
-            toPool.add(transfer.pool);
-        }
-
-        PoolIoFileMessage poolReply =
-            sendAndWait(toPool, poolMessage, _poolTimeout * 1000);
-        transfer.moverId = poolReply.getMoverId();
-
-        info("FTP Door: mover " + transfer.moverId + " at pool " +
-             transfer.pool + " will " + (isWrite ? "receive" : "send") +
-            " file " + transfer.pnfsId);
-        _transfer.state = "mover " + transfer.moverId
-            + (isWrite ? ": receiving" : ": sending");
     }
 
     /**
@@ -4262,11 +3779,11 @@ public abstract class AbstractFtpDoorV1
             infoRemove.setPath(pathInPnfs);
             infoRemove.setClient(_client_data_host);
 
-            sendMessage(new CellMessage(_billingCellPath, infoRemove));
-            } catch (NoRouteToCellException e) {
-                error("FTP Door: Can't send remove message to " +
-                        "billing database: " + e.getMessage());
-            }
+            _billingStub.send(infoRemove);
+        } catch (NoRouteToCellException e) {
+            error("Can't send remove message to " +
+                  "billing database: " + e.getMessage());
+        }
      }
 
     /** A short format which only includes the file name. */

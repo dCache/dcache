@@ -557,14 +557,11 @@ public abstract class Transfer implements Comparable<Transfer>
     /**
      * Sets the size of the preallocation to make.
      *
-     * Only valid for uploads. If the upload is larger than the
+     * Only affects uploads. If the upload is larger than the
      * preallocation, then the upload may fail.
      */
     public synchronized void setAllocation(long length)
     {
-        if (!isWrite()) {
-            throw new IllegalStateException("Can only set length for uploads");
-        }
         _allocated = length;
     }
 
