@@ -13,6 +13,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
@@ -82,20 +83,6 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getFileAttributeList(subject, pnfsId);
-    }
-
-    @Override
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-        throws CacheException
-    {
-        return _inner.getFileAttribute(subject, pnfsId, attribute);
-    }
-
-    @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
@@ -103,45 +90,10 @@ public class AbstractNameSpaceProviderDecorator
     }
 
     @Override
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data)
-        throws CacheException
-    {
-        _inner.setFileAttribute(subject, pnfsId, attribute, data);
-    }
-
-    @Override
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value)
-        throws CacheException
-    {
-        _inner.addChecksum(subject, pnfsId, type, value);
-    }
-
-    @Override
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type)
-        throws CacheException
-    {
-        return _inner.getChecksum(subject, pnfsId, type);
-    }
-
-    @Override
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
+    public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
         throws CacheException
     {
         _inner.removeChecksum(subject, pnfsId, type);
-    }
-
-    @Override
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.listChecksumTypes(subject, pnfsId);
-    }
-
-    @Override
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        return _inner.getChecksums(subject, pnfsId);
     }
 
     @Override

@@ -257,6 +257,7 @@ public class BootLoader
 
         ConsoleAppender<ILoggingEvent> ca =
             new ConsoleAppender<ILoggingEvent>();
+        ca.setTarget("System.err");
         ca.setContext(loggerContext);
         ca.setName(CONSOLE_APPENDER_NAME);
         PatternLayoutEncoder pl = new PatternLayoutEncoder();

@@ -34,6 +34,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotDirCacheException;
+import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PathMap;
@@ -71,7 +72,6 @@ public class BasicNameSpaceProvider
     private final PathManager       _pathManager ;
     private final Args        _args ;
     private final StorageInfoExtractable _extractor;
-    private final AttributeChecksumBridge _attChecksumImpl;
 
     private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
     private final NameSpaceProvider _cacheLocationProvider;
@@ -99,8 +99,6 @@ public class BasicNameSpaceProvider
         _nucleus = nucleus;
 
         _args = args;
-
-        _attChecksumImpl = new AttributeChecksumBridge(this);
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
         if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
@@ -705,83 +703,19 @@ public class BasicNameSpaceProvider
         return info;
     }
 
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId) {
-
-        String[] keys = null;
-
+    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
+        throws CacheException
+    {
         try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo info   = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = info.getFlags() ;
-            Set<Map.Entry<String, String>> s = flags.entrySet();
-
-            keys = new String[s.size()];
-
-            int i = 0;
-            for( Map.Entry<String, String> entry: s) {
-                keys[i++] = entry.getKey() ;
-            }
-        }catch(Exception e){
-            _logNameSpace.error(e.getMessage());
+            PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+            CacheInfo info = new CacheInfo(pf);
+            CacheInfo.CacheFlags flags = info.getFlags();
+            flags.remove(attribute);
+            info.writeCacheInfo(pf);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
         }
-
-        return keys;
-
-    }
-
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
-
-        Object attr = null;
-        try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            if(pf.isFile()) {
-                CacheInfo info   = new CacheInfo( pf ) ;
-                CacheInfo.CacheFlags flags = info.getFlags() ;
-
-                attr =  flags.get(attribute);
-            }else{
-
-                _logNameSpace.debug("getFileAttribute on non file object");
-            }
-        }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
-        }
-
-        return attr;
-    }
-
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data) {
-
-        try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            if(pf.isFile() ) {
-                CacheInfo info   = new CacheInfo( pf ) ;
-                CacheInfo.CacheFlags flags = info.getFlags() ;
-
-                flags.put( attribute ,  data.toString()) ;
-
-                info.writeCacheInfo( pf ) ;
-            }else{
-                _logNameSpace.warn("setFileAttribute on non file object");
-            }
-        }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
-        }
-
-    }
-
-    public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute) {
-        try {
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo info   = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = info.getFlags() ;
-
-            flags.remove( attribute ) ;
-            info.writeCacheInfo( pf ) ;
-        }catch( Exception e){
-            _logNameSpace.error(e.getMessage());
-        }
-
     }
 
     public void renameEntry(Subject subject, PnfsId pnfsId,
@@ -810,30 +744,24 @@ public class BasicNameSpaceProvider
         }
     }
 
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value) throws CacheException
+    public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
+        throws CacheException
     {
-        _attChecksumImpl.setChecksum(subject, pnfsId,value,type);
+        try {
+            PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+            if (!pf.isFile()) {
+                throw new NotFileCacheException("Not a file: " + pnfsId);
+            }
+            CacheInfo info = new CacheInfo(pf);
+            ChecksumCollection checksums = ChecksumCollection.extract(info);
+            checksums.remove(type);
+            checksums.serialize(info);
+            info.writeCacheInfo(pf);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     e.getMessage());
+        }
     }
-
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
-    {
-        return _attChecksumImpl.getChecksum(subject, pnfsId,type);
-    }
-
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId) throws CacheException {
-        return _attChecksumImpl.getChecksums(subject, pnfsId);
-    }
-
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type) throws CacheException
-    {
-        _attChecksumImpl.removeChecksum(subject, pnfsId,type);
-    }
-
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId ) throws CacheException
-    {
-        return _attChecksumImpl.types(subject, pnfsId);
-    }
-
 
     ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////
@@ -1158,7 +1086,10 @@ public class BasicNameSpaceProvider
                     attributes.setSize(filesize);
                     break;
                 case CHECKSUM:
-                    attributes.setChecksums(_attChecksumImpl.getChecksums(subject, pnfsId));
+                    cacheInfo = getCacheInfo(pf, cacheInfo);
+                    ChecksumCollection collection =
+                        ChecksumCollection.extract(cacheInfo);
+                    attributes.setChecksums(collection.getChecksums());
                     break;
                 case LOCATIONS:
                     if (_cacheLocationProvider != this) {
@@ -1257,27 +1188,10 @@ public class BasicNameSpaceProvider
                     break;
                 case CHECKSUM:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
-
-                    for(Checksum sum: attr.getChecksums() ) {
-                        String flagName;
-                        if( sum.getType() == ChecksumType.ADLER32 ) {
-                            flagName = "c";
-                        } else {
-                            flagName = "uc";
-                        }
-                        ChecksumCollection collection = new ChecksumCollection(cacheInfo.getFlags().get(flagName));
-
-                        String currentValue = collection.get(sum.getType().getType());
-                        if( currentValue != null && sum.getValue() != null) {
-                            if( !currentValue.equals(sum.getValue())) {
-                                throw new CacheException(CacheException.INVALID_ARGS,
-                                                         "Checksum mismatch");
-                            }
-                            continue;
-                        }
-                        collection.put(sum.getType().getType(), sum.getValue());
-                        cacheInfo.getFlags().put(flagName, collection.serialize());
-                    }
+                    ChecksumCollection collection =
+                        ChecksumCollection.extract(cacheInfo);
+                    collection.add(attr.getChecksums());
+                    collection.serialize(cacheInfo);
                     break;
                 case LOCATIONS:
                     for (String location: attr.getLocations()) {

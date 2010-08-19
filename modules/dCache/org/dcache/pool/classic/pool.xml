@@ -147,9 +147,15 @@
     <property name="account" ref="account"/>
   </bean>
 
+  <bean id="scanner" class="org.dcache.pool.classic.ChecksumScanner">
+    <description>Implements background checksum verification</description>
+    <property name="pnfs" ref="pnfs"/>
+    <property name="repository" ref="rep"/>
+    <property name="checksumModule" ref="csm"/>
+  </bean>
+
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
     <description>Checksum module</description>
-    <constructor-arg ref="rep"/>
     <constructor-arg ref="pnfs"/>
   </bean>
 

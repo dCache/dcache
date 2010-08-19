@@ -12,6 +12,7 @@ import javax.security.auth.Subject;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
@@ -33,12 +34,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     @Override
     public void addCacheLocation( Subject s, PnfsId p, String c)
             throws CacheException {
-        fail( "not implemented");
-    }
-
-    @Override
-    public void addChecksum( Subject subject, PnfsId pnfsId, int type,
-                             String value) throws CacheException {
         fail( "not implemented");
     }
 
@@ -77,34 +72,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public String getChecksum( Subject subject, PnfsId pnfsId, int type)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
-    public Set<Checksum> getChecksums( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
-    public Object getFileAttribute( Subject subject, PnfsId pnfsId,
-                                    String attribute) throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
-    public String[] getFileAttributeList( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
     public FileAttributes getFileAttributes( Subject subject, PnfsId pnfsId,
                                              Set<FileAttribute> attr)
             throws CacheException {
@@ -133,13 +100,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public int[] listChecksumTypes( Subject subject, PnfsId pnfsId)
-            throws CacheException {
-        fail( "not implemented");
-        return null;
-    }
-
-    @Override
     public PnfsId pathToPnfsid( Subject subject, String path,
                                 boolean followLinks) throws CacheException {
         fail( "not implemented");
@@ -154,7 +114,7 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     }
 
     @Override
-    public void removeChecksum( Subject subject, PnfsId pnfsId, int type)
+    public void removeChecksum( Subject subject, PnfsId pnfsId, ChecksumType type)
             throws CacheException {
         fail( "not implemented");
     }
@@ -168,13 +128,6 @@ public class DummyNameSpaceProvider implements NameSpaceProvider {
     @Override
     public void renameEntry( Subject subject, PnfsId pnfsId, String newName,
                              boolean overwrite) throws CacheException {
-        fail( "not implemented");
-    }
-
-    @Override
-    public void setFileAttribute( Subject subject, PnfsId pnfsId,
-                                  String attribute, Object data)
-            throws CacheException {
         fail( "not implemented");
     }
 

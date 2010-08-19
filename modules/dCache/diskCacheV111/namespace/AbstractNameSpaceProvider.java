@@ -10,6 +10,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 
@@ -70,20 +71,6 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public String[] getFileAttributeList(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Object getFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
@@ -91,42 +78,7 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void setFileAttribute(Subject subject, PnfsId pnfsId, String attribute, Object data)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void addChecksum(Subject subject, PnfsId pnfsId, int type, String value)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getChecksum(Subject subject, PnfsId pnfsId, int type)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void removeChecksum(Subject subject, PnfsId pnfsId, int type)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int[] listChecksumTypes(Subject subject, PnfsId pnfsId)
-        throws CacheException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
+    public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
         throws CacheException
     {
         throw new UnsupportedOperationException();

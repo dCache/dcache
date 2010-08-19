@@ -1,511 +1,205 @@
-# Useful functions for working with services and domains.
+# Useful functions for working with domains.
 
-# The concept of a service is an abstraction used in dCache scripts. A
-# service is the type of a domain. A service can have zero or more
-# domains. A service corresponds to a job file in the jobs directory.
-#
-# This script defines functions for mapping services to domains,
-# domains to services, starting and stopping domains, etc.
-#
-
-# Prints all domains for the given service. Services like 'pool' and
-# 'dcap' may have more than one domain. Notice that this function is
-# not limitted to configured domains.
-printDomains() # in $1 = service
+# Invokes the dCache boot loader
+bootLoader()
 {
-    local i
-    local door
-    local file
-
-    case "$1" in
-        dcap)
-            for i in ${DCACHE_CONFIG}/door*Setup; do
-                door=$(echo $i | sed -e "s#.*door\(.*\)Setup#\1#")
-                printf "%s" "dcap${door}-${hostname}Domain "
-            done
-            ;;
-
-        gPlazma)
-            printf "%s" "gPlazma-${hostname}Domain "
-            ;;
-
-        xrootd)
-            printf "%s" "xrootd-${hostname}Domain "
-            ;;
-
-        gridftp)
-            for i in ${DCACHE_CONFIG}/gridftpdoor*Setup; do
-                door=$(echo $i | sed -e "s#.*gridftpdoor\(.*\)Setup#\1#")
-                printf "%s" "gridftp${door}-${hostname}Domain "
-            done
-            ;;
-
-        weakftp)
-            for i in ${DCACHE_CONFIG}/weakftpdoor*Setup; do
-                door=$(echo $i | sed -e "s#.*weakftpdoor\(.*\)Setup#\1#")
-                printf "%s" "weakftp${door}-${hostname}Domain "
-            done
-            ;;
-
-        kerberosftp)
-            for i in ${DCACHE_CONFIG}/kerberosftpdoor*Setup; do
-                door=$(echo $i | sed -e "s#.*kerberosftpdoor\(.*\)Setup#\1#")
-                printf "%s" "kerberosftp${door}-${hostname}Domain "
-            done
-            ;;
-
-        webdav)
-            printf "%s" "webdav-${hostname}Domain "
-            ;;
-
-        gsidcap)
-            for i in ${DCACHE_CONFIG}/gsidcapdoor*Setup; do
-                door=$(echo $i | sed -e "s#.*gsidcapdoor\(.*\)Setup#\1#")
-                printf "%s" "gsidcap${door}-${hostname}Domain "
-            done
-            ;;
-
-        kerberosdcap)
-            for i in ${DCACHE_CONFIG}/kerberosdcapdoor*Setup; do
-                door=$(echo $i | sed -e "s#.*kerberosdcapdoor\(.*\)Setup#\1#")
-                printf "%s" "kerberosdcap${door}-${hostname}Domain "
-            done
-            ;;
-
-        srm)
-            printf "%s" "srm-${hostname}Domain "
-            ;;
-
-        pool)
-            for i in $(printAllPoolDomains); do
-                getPoolListFile $i file
-                if ! isFileEmpty "$file"; then
-                    printf "%s" "$i "
-                fi
-            done
-            ;;
-
-        admin)
-            printf "adminDoorDomain "
-            ;;
-
-        dir)
-            printf "dirDomain "
-            ;;
-
-        *Domain)
-            printf "%s" "$1 "
-            ;;
-
-        *)
-            printf "%s" "${1}Domain "
-            ;;
-    esac
+    local quietFlag
+    shouldBootLoaderBeQuiet && quietFlag="-q"
+    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" $quietFlag "$@"
 }
 
-# Prints domains used by all node types as defined by legacy
-# node_config variables.
-printLegacyDomains()
+shouldBootLoaderBeQuiet()
 {
-    if isNodeConfigEnabled replicaManager; then
-        printDomains replica
-    fi
-    if isNodeConfigEnabled DCAP; then
-        printDomains dcap
-    fi
-    if isNodeConfigEnabled XROOTD; then
-        printDomains xrootd
-    fi
-    if isNodeConfigEnabled GRIDFTP; then
-        printDomains gridftp
-    fi
-    if isNodeConfigEnabled GSIDCAP; then
-        printDomains gsidcap
-    fi
-    if isNodeConfigEnabled SPACEMANAGER; then
-        printDomains spacemanager
-    fi
-    if isNodeConfigEnabled TRANSFERMANAGERS; then
-        printDomains transfermanagers
-    fi
-    if isNodeConfigEnabled SRM; then
-        printDomains srm
+    [ -n "$BOOTLOADER_IS_QUIET" ]
+}
+
+setBootLoaderQuiet()
+{
+    BOOTLOADER_IS_QUIET=1
+}
+
+setBootLoaderNoisy()
+{
+    unset BOOTLOADER_IS_QUIET || :
+}
+
+# Prints all domains that match a given pattern
+printDomains() # $1+ = patterns
+{
+    bootLoader list "$@" || fail 1 "Failed to invoke dCache"
+}
+
+# Returns the PID stored in pidfile. Fails if the file does not exist,
+# is empty or doesn't contain a valid PID.
+printPidFromFile() # $1 = file
+{
+    local pid
+
+    [ -f "$1" ] || return
+    pid=$(cat "$1") || return
+    [ -n "$pid" ] || return
+    isRunning "$pid" || return
+
+    printf "%s" "$pid"
+}
+
+# Reads the given configuration parameters into environment
+# variables. The environment variables used are upper case versions of
+# the keys.
+loadConfig() # $1+ = keys
+{
+    eval $(bootLoader config -shell ${DOMAIN:+"-domain=$DOMAIN"} "$@")
+}
+
+# Print "stopped", "running" or "restarting" depending on the status
+# of the domain.
+printDomainStatus()
+{
+    local pid
+
+    if ! pid=$(printPidFromFile "$DCACHE_PID_DAEMON"); then
+        printf "stopped"
+    elif ! pid=$(printPidFromFile "$DCACHE_PID_JAVA"); then
+        printf "restarting"
+    else
+        printf "running"
     fi
 }
 
-# Prints domains used by admin and custom nodes as defined by legacy
-# node_config variables.
-printLegacyAdminDomains()
+# Prints the PID of the daemon wrapper script
+printDaemonPid()
 {
-    if isNodeConfigEnabled info; then
-        printDomains info
-    fi
-    if isNodeConfigEnabled statistics; then
-        printDomains statistics
-    fi
+    printPidFromFile "$DCACHE_PID_DAEMON"
 }
 
-# Prints domains used by custom nodes as defined by legacy node_config
-# variables.
-printLegacyCustomDomains()
+# Prints the PID of the Java process
+printJavaPid()
 {
-    if isNodeConfigEnabled lmDomain; then
-        printDomains lm
-    fi
-    if isNodeConfigEnabled poolManager; then
-        printDomains dCache
-    fi
-    if isNodeConfigEnabled dirDomain; then
-        printDomains dir
-    fi
-    if isNodeConfigEnabled adminDoor; then
-        printDomains admin
-    fi
-    if isNodeConfigEnabled httpDomain; then
-        printDomains httpd
-    fi
-    if isNodeConfigEnabled utilityDomain; then
-        printDomains utility
-    fi
-    if isNodeConfigEnabled gPlazmaService; then
-        printDomains gPlazma
-    fi
-    if isNodeConfigEnabled pnfsManager; then
-        printNameSpaceDomains
-    fi
+    printPidFromFile "$DCACHE_PID_JAVA"
 }
 
-# Prints domain hosting PnfsManager
-printNameSpaceDomains()
+# Start domain. Use runDomain rather than calling this function
+# directly.
+domainStart()
 {
-    case "$NODE_CONFIG_NAMESPACE" in
-        chimera)
-            printDomains chimera
-            ;;
-        *)
-            printDomains pnfs
-            ;;
-    esac
-}
+    # Don't do anything if already running
+    if [ "$(printDomainStatus)" != "stopped" ]; then
+        fail 1 "${DOMAIN} is already running"
+    fi
 
-# Prints all configured domains
-printAllDomains()
-{
-    case "$NODE_CONFIG_NODE_TYPE" in
-        admin)
-            printDomains lm
-            printDomains dCache
-            printDomains dir
-            printDomains admin
-            printDomains httpd
-            printDomains utility
-            printDomains gPlazma
-            printNameSpaceDomains
-            printDomains pool
-            printLegacyAdminDomains
-            printLegacyDomains
-            ;;
+    # Build classpath
+    classpath="${DCACHE_HOME}/classes/cells.jar:${DCACHE_HOME}/classes/dcache.jar"
+    if [ "$DCACHE_JAVA_CLASSPATH" ]; then
+        classpath="${classpath}:${DCACHE_JAVA_CLASSPATH}"
+    fi
+    if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
+        . "${DCACHE_HOME}/classes/extern.classpath"
+        classpath="${classpath}:${externalLibsClassPath}"
+    fi
 
-        custom)
-            printLegacyCustomDomains
-            printDomains pool
-            printLegacyAdminDomains
-            printLegacyDomains
-            ;;
-        pool)
-            printDomains pool
-            printLegacyDomains
-            ;;
+    # LD_LIBRARY_PATH override
+    if [ "$DCACHE_JAVA_LIBRARY_PATH" ]; then
+	LD_LIBRARY_PATH="$DCACHE_JAVA_LIBRARY_PATH"
+        export LD_LIBRARY_PATH
+    fi
 
-        door)
-            printLegacyDomains
-            ;;
-    esac
+    # Prepare log file
+    if [ "$DCACHE_LOG_MODE" = "new" ]; then
+        mv -f "${DCACHE_LOG_FILE}" "${DCACHE_LOG_FILE}.old"
+    fi
+    touch "${DCACHE_LOG_FILE}" || fail 1 "Could not write to ${DCACHE_LOG_FILE}"
 
-    for service in $NODE_CONFIG_SERVICES; do
-        printDomains $service
+    # Source dcache.local.sh
+    if [ -f "${DCACHE_BIN}/dcache.local.sh" ]  ; then
+        . "${DCACHE_BIN}/dcache.local.sh"
+    fi
+
+    # Execute dcache.local.run.sh
+    if [ -f "${DCACHE_BIN}/dcache.local.run.sh" ]; then
+        if ! "${DCACHE_BIN}/dcache.local.run.sh" $action; then
+            fail $? "Site local script ${DCACHE_BIN}/dcache.local.run.sh failed: errno = $?"
+        fi
+    fi
+
+    if [ "${DCACHE_TERRACOTTA_ENABLED:-false}" = "true" ] ; then
+        local terracotta_dso_env_sh
+        if [ -f "${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh" ] ; then
+           terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh"
+        elif [ -f "${DCACHE_TERRACOTTA_INSTALL_DIR}/platform/bin/dso-env.sh" ] ; then
+           terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/platform/bin/dso-env.sh"
+        else
+            fail 1 "Terracotta is enabled, but dso-env.sh can't be found"
+        fi
+        # TC_INSTALL_DIR and TC_CONFIG_PATH need to be defined for a successful execution of dso-env.sh
+        export TC_INSTALL_DIR=${DCACHE_TERRACOTTA_INSTALL_DIR}
+        export TC_CONFIG_PATH=${DCACHE_TERRACOTTA_CONFIG_PATH}
+        # Result of this script execution is the definition of the options needed for startup of the
+        # defined in ${TC_JAVA_OPTS}
+        . ${terracotta_dso_env_sh}
+    fi
+
+    # Start daemon
+    rm -f "$DCACHE_RESTART_FILE"
+    cd "$DCACHE_HOME"
+    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${DCACHE_USER:+-u} ${DCACHE_USER:+"$DCACHE_USER"} -l -r "$DCACHE_RESTART_FILE" -d "$DCACHE_RESTART_DELAY" -f -c "$DCACHE_PID_JAVA" -p "$DCACHE_PID_DAEMON" -o "$DCACHE_LOG_FILE" "$JAVA" ${DCACHE_JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$DOMAIN"
+
+    # Wait for confirmation
+    printf "Starting ${DOMAIN} "
+    for c in 6 5 4 3 2 1 0; do
+	if [ "$(printDomainStatus)" != "stopped" ]; then
+            echo "done"
+            return
+        fi
+        sleep 1
+        printf "$c "
     done
+
+    echo "failed"
+    grep PANIC "$DCACHE_LOG_FILE"
+    exit 4
 }
 
-# Prints the list of all configured pool domains, including empty
-# domains.
-printAllPoolDomains()
+# Stop domain. Use runDomain rather than calling this function
+# directly.
+domainStop() # $1 = domain
 {
-    if [ -f "${pool_config}/${hostname}.domains" ]; then
+    local daemonPid
+    local javaPid
 
-        while read domain; do
-            if [ ! -f "${pool_config}/${domain}.poollist" ]; then
-                printp "Requested pool list file not found (skipped):
-                        ${domain}.poollist" 1>&2
-            else
-                printf "%s" "${domain}Domain "
-            fi
-        done < "${pool_config}/${hostname}.domains"
-
-    elif [ -f "${pool_config}/${hostname}.poollist" ]; then
-        printf "%s" "${hostname}Domain "
+    if [ "$(printDomainStatus)" = "stopped" ]; then
+        return 0
     fi
-}
 
-# Given a mixed list of domains and services, prints all domains for
-# those services and domains. I.e. the domains are printed literally,
-# and the services are expanded to the list of domains for those
-# services. If no arguments are specified, a list of all configured
-# domains is printed.
-printExpandedServiceAndDomainList() # in $* = list of services and domains
-{
-    if [ $# -eq 0 ]; then
-        printAllDomains
-    else
-        for s in $*; do
-            printDomains $s
-        done
+    daemonPid=$(printDaemonPid) || return
+
+    # Fail if we don't have permission to signal the daemon
+    if ! kill -0 $daemonPid; then
+	fail 1 "Failed to kill ${DOMAN}"
     fi
-}
 
-# Returns the service name of a domain. The service name corresponds
-# to the name of the batch file of that service, without the file
-# suffix.
-getService() # in $1 = domain name, out $2 = service
-{
-    local ret
-    if contains $1 $(printAllPoolDomains); then
-        ret="pool"
-    else
-        case "$1" in
-            dcap*-*Domain)   ret="dcap" ;;
-            gPlazma-*Domain) ret="gPlazma" ;;
-            xrootd-*Domain)  ret="xrootd" ;;
-            gridftp*-*Domain) ret="gridftp" ;;
-            weakftp*-*Domain) ret="weakftp" ;;
-            kerberosftp*-*Domain) ret="kerberosftp" ;;
-            webdav-*Domain)  ret="webdav" ;;
-            gsidcap*-*Domain) ret="gsidcap" ;;
-            kerberosdcap*-*Domain) ret="kerberosdcap" ;;
-            srm-*Domain)     ret="srm" ;;
-            adminDoorDomain) ret="admin" ;;
-            *Domain)         ret="${1%Domain}" ;;
-            *)               return 1 ;;
-        esac
+    # Stopping a dCache domain for good requires that we supress the
+    # automatic restart by creating a stop file.
+    touch "$DCACHE_RESTART_FILE" || return
+
+    if javaPid=$(printJavaPid); then
+	kill -TERM "$javaPid" 1>/dev/null 2>/dev/null || :
     fi
-    eval $2=\"$ret\"
-}
 
-# Given a list of domains, prints a list of corresponding service
-# names.
-printServices() # in $* = list of domains
-{
-    local service
-    for domain in $*; do
-        getService $domain service
-        printf "${service} "
-    done
-}
-
-# Returns the PID stored in pidfile
-getPidFromFile() # in $1 = pidfile, out $2 = pid
-{
-    local ret
-    [ -f "$1" ] && ret=$(cat "$1") && [ "$ret" ] && eval $2=\"$ret\"
-}
-
-# Returns the PID directory of domain
-getPidDir() # in $1 = domain, out $2 = pid dir
-{
-    getConfigurationValue "$1" pidDir $2 && eval $2=\"\${$2:-$DCACHE_PID}\"
-}
-
-# The stop file is the file used to suppress domain restart
-getStopFile() # in $1 = domain, out $2 = stop file
-{
-    eval $2=\"/tmp/.dcache-stop.${1}\"
-}
-
-# The java pid file stores the PID of the java process
-getJavaPidFile() # $1 = domain, out $2 = pid file
-{
-    local dir
-    local service
-
-    getService "$domain" service || return
-    getPidDir "$1" dir || return
-
-    if [ "$service" = "srm" ]; then
-        eval $2=\"${dir}/dcache.$domain.pid\"
-    else
-        eval $2=\"${dir}/dcache.${domain}-java.pid\"
-    fi
-}
-
-# The daemon pid file stores the PID of the daemon wrapper
-getDaemonPidFile() # $1 = domain, out $2 = pid file
-{
-    local dir
-    local service
-
-    getService "$domain" service || return
-    getPidDir "$1" dir || return
-
-    if [ "$service" = "srm" ]; then
-        eval $2=\"${dir}/dcache.$domain.pid\"
-    else
-        eval $2=\"${dir}/dcache.${domain}-daemon.pid\"
-    fi
-}
-
-# If domain runs, provides the PID of its daemon wrapper
-# script. Returns 0 if domain is running, 1 otherwise.
-getPidOfDomain() # in $1 = Domain name, out $2 = pid
-{
-    local file
-    local pidOfDomain
-
-    getDaemonPidFile "$1" file || return
-    getPidFromFile "$file" pidOfDomain || return
-    isRunning "$pidOfDomain" || return
-    eval $2=\"$pidOfDomain\"
-}
-
-# If domain runs, provides the PID of its Java process.  Returns 0 if
-# domain is running, 1 otherwise.
-getJavaPidOfDomain() # in $1 = Domain name, out $2 = pid
-{
-    local file
-    local pidOfDomain
-
-    getJavaPidFile "$1" file || return
-    getPidFromFile "$file" pidOfDomain || return
-    isRunning "$pidOfDomain" || return
-    eval $2=\"$pidOfDomain\"
-}
-
-# Returns the name of the log file used by a domain.
-getLogOfDomain() # in $1 = Domain name, out $2 = log of domain
-{
-    local domain
-    local service
-    local logArea
-    local ret
-
-    domain="$1"
-
-    getService "${domain}" service || return
-
-    case "$service" in
-        srm)
-            # Getting the location of the SRM stuff is unfortunately
-            # somewhat messy...
-            if [ -r ${DCACHE_ETC}/srm_setup.env ] && [ -r ${DCACHE_HOME}/bin/dcache-srm ]; then
-                . ${DCACHE_ETC}/srm_setup.env
-                eval $(grep "export CATALINA_HOME" ${DCACHE_BIN}/dcache-srm)
-                ret="${CATALINA_HOME}/logs/catalina.out"
-            fi
-            ;;
-        *)
-            getConfigurationValue $domain logArea logArea || return
-            ret="${logArea:-$DCACHE_LOG}/${domain}.log"
-            ;;
-    esac
-
-    eval $2=\"$ret\"
-}
-
-# Returns the name of the pool list file for the given pool domain.
-getPoolListFile() # in $1 = domain name, out $2 = pool list file
-{
-    eval $2=\"${pool_config}/${1%Domain}.poollist\"
-}
-
-# Returns the setup file path for a service or domain
-getConfigurationFile() # in $1 = service or domain, out $2 = configuration file
-{
-    local filename
-    local name
-    name="$1"
-
-    case "${name}" in
-        srm|srm-*Domain)
-            filename="srmSetup"
-            ;;
-        dcap)
-            filename="doorSetup"
-            ;;
-        dcap*-*Domain)
-	    name=${name%%-*Domain}
-            filename="door${name#dcap}Setup"
-            ;;
-        xrootd|xrootd-*Domain)
-            filename="xrootdDoorSetup"
-            ;;
-        weakftp|weakftp*-*Domain)
-	    tmp=${name%%-*Domain}
-            filename="weakftpdoor${tmp#weakftp}Setup"
-            ;;
-        kerberosftp|kerberosftp*-*Domain)
-	    tmp=${name%%-*Domain}
-            filename="kerberosftpdoor${tmp#kerberosftp}Setup"
-            ;;
-        gridftp|gridftp*-*Domain)
-	    tmp=${name%%-*Domain}
-            filename="gridftpdoor${tmp#gridftp}Setup"
-            ;;
-        kerberosdcap|kerberosdcap*-*Domain)
-	    tmp=${name%%-*Domain}
-            filename="kerberosdcapdoor${tmp#kerberosdcap}Setup"
-            ;;
-        gsidcap|gsidcap*-*Domain)
-	    tmp=${name%%-*Domain}
-            filename="gsidcapdoor${tmp#gsidcap}Setup"
-            ;;
-        admin|adminDoorDomain)
-            filename="adminDoorSetup"
-            ;;
-        gPlazma|gPlazma-*Domain)
-            filename="gPlazmaSetup"
-            ;;
-        webdav|webdav-*Domain)
-            filename="webdavSetup"
-            ;;
-        *Domain)
-	    if contains $name $(printAllPoolDomains); then
-		filename="poolSetup"
-	    else
-		filename="${name%Domain}Setup"
+    printf "Stopping ${DOMAIN} (pid=$daemonPid) "
+    for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+        if ! isRunning $daemonPid; then
+            rm -f "$DCACHE_PID_DAEMON" "$DCACHE_PID_JAVA"
+            echo "done"
+            return
+        fi
+        printf "$c "
+        sleep 1
+        if [ $c -eq 9 ] ; then
+	    if javaPid=$(printJavaPid); then
+		kill -9 $javaPid 1>/dev/null 2>/dev/null || true
 	    fi
-            ;;
-        *)
-            filename="${name}Setup"
-            ;;
-    esac
-
-    if [ -f "${DCACHE_CONFIG}/${filename}" ] ; then
-        eval $2=\"${DCACHE_CONFIG}/${filename}\"
-    elif [ -f "${DCACHE_CONFIG}/${filename}-$(uname -n)" ] ; then
-        eval $2=\"${DCACHE_CONFIG}/${filename}-$(uname -n)\"
-    elif [ -f "/etc/${filename}" ] ; then
-        eval $2=\"/etc/${filename}\"
-    else
-        return 1
-    fi
-}
-
-# Loads a setup into environment variables. All environment variables
-# are prefixed by $2 followed by an underscore. Only loads the setup
-# file the first time the function is called for a given prefix.
-loadConfigurationFile() # in $1 = service or domain, in $2 = prefix
-{
-    local file
-    if eval "[ -z \"\$SETUP_$2\" ]"; then
-        getConfigurationFile "$1" file || return
-        readconf "$file" "$2_" || return
-        eval "SETUP_$2=1"
-    fi
-}
-
-# Returns configuration value for a service
-getConfigurationValue() # in $1 = service or domain, in $2 = key, out $3 = value
-{
-    local prefix
-    prefix=$(echo $1 | sed -e 's/_/__/g' -e 's/-/_/g')
-    loadConfigurationFile $1 $prefix && eval $3=\"\${${prefix}_$2}\"
+        fi
+    done
+    echo
+    fail 4 "Giving up. ${DOMAIN} might still be running."
 }
