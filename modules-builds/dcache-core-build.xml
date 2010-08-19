@@ -80,6 +80,7 @@
     <path id="dcache.classpath">
         <path refid="cells.classpath" />
         <path refid="chimera.classpath" />
+        <path refid="dependency.classpath" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/srm.jar" />
@@ -116,7 +117,6 @@
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
         <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
-        <pathelement location="${libDir}/grizzly-nio/grizzly-nio-framework-1.9.19-SNAPSHOT.jar" />
     </path>
 
 
@@ -644,11 +644,13 @@
 	  </fileset>
 	</copy>
 
-        <!-- grizzly -->
-        <mkdir dir="${server.bin.dir}/classes/grizzly-nio" />
-        <copy file="${libDir}/grizzly-nio/grizzly-nio-framework-1.9.19-SNAPSHOT.jar"
-            todir="${server.bin.dir}/classes/grizzly-nio"
-        />
+        <!-- external libraries -->
+        <mkdir dir="${server.bin.dir}/classes/lib" />
+        <copy todir="${server.bin.dir}/classes/lib">
+            <fileset refid="dependency.fileset" />
+            <!-- This mapper strips off all leading directory information -->
+            <mapper type="flatten" />
+         </copy>
 
     </target>
 

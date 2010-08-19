@@ -1,11 +1,15 @@
 <!-- $Id: common.xml,v 1.33 2007-10-24 10:05:13 tigran Exp $ -->
 
-<project>
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
     <!-- Define task for invoking SMC - the state machine compiler -->
     <taskdef name="smc" classname="net.sf.smc.ant.SmcJarWrapper" classpath="${libDir}/smc/smc-ant.jar" />
     <property name="smc.jar" location="${libDir}/smc/Smc.jar" />
 
+    <path id="maven-ant-tasks.classpath" path="${antlib.dir}/maven-ant/maven-ant-tasks-2.1.1.jar" />
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+           uri="antlib:org.apache.maven.artifact.ant"
+           classpathref="maven-ant-tasks.classpath" />
     <!--
         Useful information from Environment
     -->
@@ -26,6 +30,14 @@
         <format property="sortableTimestamp" timezone="UTC" pattern="yyyyMMddHHmmss" />
     </tstamp>
 
+    <!-- external dependencies -->
+    <artifact:dependencies pathId="dependency.classpath" filesetId="dependency.fileset">
+        <!-- Remote repositories -->
+        <remoteRepository id="glassfish.repository" url="http://download.java.net/maven/glassfish/" />
+
+        <!-- external dependencies -->
+        <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
+    </artifact:dependencies>
     <!--
         Untar axis, glite, cog, glue
     -->
