@@ -127,19 +127,19 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
                                "$Revision: 1.17 $");
     }
 
-    public void startTlog(String path,String action) {
-        if (_tLog == null || _subject == null) {
-            return;
-        }
-        try {
-            String user =
-                _user + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-            _tLog.begin(user, "gsiftp", action, path,
-                        _engine.getInetAddress());
-        }
-        catch (Exception e) {
-            error("GsiFtpDoor: couldn't start tLog. " +
-                  "Ignoring exception: " + e.getMessage());
+    @Override
+    public void startTlog(FTPTransactionLog tlog, String path, String action) {
+        if (_subject != null) {
+            try {
+                String user =
+                    _user + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
+                tlog.begin(user, "gsiftp", action, path,
+                           _engine.getInetAddress());
+            }
+            catch (Exception e) {
+                error("GsiFtpDoor: couldn't start tLog. " +
+                      "Ignoring exception: " + e.getMessage());
+            }
         }
     }
 

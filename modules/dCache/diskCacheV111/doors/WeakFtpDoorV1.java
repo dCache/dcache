@@ -130,19 +130,19 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         println("230 User " + _user + " logged in");
     }
 
-    public void startTlog(String path, String action) {
-        if (_tLog == null || _subject == null) {
-            return;
-        }
-        try {
-            String user =
-                Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-            _tLog.begin(user, "weakftp", action, path,
-                        _engine.getInetAddress());
-        }
-        catch (Exception e) {
-            error("WeakFtpDoor: couldn't start tLog. " +
-                  "Ignoring exception: " + e.getMessage());
+    @Override
+    public void startTlog(FTPTransactionLog tlog, String path, String action) {
+        if (_subject != null) {
+            try {
+                String user =
+                    Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
+                tlog.begin(user, "weakftp", action, path,
+                           _engine.getInetAddress());
+            }
+            catch (Exception e) {
+                error("WeakFtpDoor: couldn't start tLog. " +
+                      "Ignoring exception: " + e.getMessage());
+            }
         }
     }
 }

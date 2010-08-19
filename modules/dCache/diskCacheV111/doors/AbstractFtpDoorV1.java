@@ -656,7 +656,7 @@ public abstract class AbstractFtpDoorV1
     protected String _gReplyType = "clear";
 
     protected Mode _mode = Mode.ACTIVE;
-    protected FTPTransactionLog _tLog;
+    private FTPTransactionLog _tLog;
 
     //These are the number of parallel streams to have
     //when doing mode e transfers
@@ -2482,12 +2482,12 @@ public abstract class AbstractFtpDoorV1
             //we need to revisit this code and put something more useful
             //in the userprincipal spotpoolManager
             if (_tLogRoot != null) {
-                SetTLog(new FTPTransactionLog(_tLogRoot, this));
+                SetTLog(new FTPTransactionLog(_tLogRoot));
                 info("FTP Door will log ftp transactions to " + _tLogRoot);
             } else{
                 info("FTP Door: tlog is not specified, door will not log FTP transactions");
             }
-            startTlog(_transfer.path, "read");
+            startTlog(_tLog, _transfer.path, "read");
             debug("FTP Door: tLog begin done");
 
             /* Retrieve storage information for file.
@@ -2626,7 +2626,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public abstract void startTlog(String path,String action);
+    public abstract void startTlog(FTPTransactionLog log, String path, String action);
 
     public void ac_stor(String arg)
     {
@@ -2704,7 +2704,7 @@ public abstract class AbstractFtpDoorV1
             info("FTP Door: store receiving with mode " + xferMode);
 
             if (_tLogRoot != null) {
-                SetTLog(new FTPTransactionLog(_tLogRoot, this));
+                SetTLog(new FTPTransactionLog(_tLogRoot));
                 debug("FTP Door: store will log ftp transactions to " + _tLogRoot);
             } else {
                 info("FTP Door: tlog is not specified. Store will not log FTP transactions");
@@ -2719,7 +2719,7 @@ public abstract class AbstractFtpDoorV1
             //XXX When we upgrade to the GSSAPI version of GSI
             //we need to revisit this code and put something more useful
             //in the userprincipal spot
-            startTlog(_transfer.path, "write");
+            startTlog(_tLog, _transfer.path, "write");
             debug("FTP Door: store: _tLog begin done");
 
             /* Create PNFS entry.
