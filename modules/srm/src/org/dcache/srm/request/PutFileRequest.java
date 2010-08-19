@@ -157,6 +157,7 @@ public final class PutFileRequest extends FileRequest {
         if(retentionPolicy != null ) {
             this.retentionPolicy = retentionPolicy;
         }
+        storeInSharedMemory();
     }
 
 
@@ -473,7 +474,7 @@ public final class PutFileRequest extends FileRequest {
 
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
-        sb.append(" GetFileRequest ");
+        sb.append(" PutFileRequest ");
         sb.append(" id:").append(getId());
         sb.append(" priority:").append(getPriority());
         sb.append(" creator priority:");
