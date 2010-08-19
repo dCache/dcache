@@ -97,10 +97,10 @@ import org.dcache.cells.AbstractCell;
 public class SocketAdapter implements Runnable, ProxyAdapter
 {
     /** Channel listening for connections from the client. */
-    private ServerSocketChannel _clientListenerChannel;
+    private final ServerSocketChannel _clientListenerChannel;
 
     /** Channel listening for connections from the pool. */
-    private ServerSocketChannel _poolListenerChannel;
+    private final ServerSocketChannel _poolListenerChannel;
 
     /** Current number of data channel connections. */
     private int _dataChannelConnections;
@@ -350,68 +350,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	}
     }
 
-    public SocketAdapter(int bufferSize, AbstractCell door) throws IOException
-    {
-        this(door);
-        _bufferSize = bufferSize;
-    }
-
-    public SocketAdapter(AbstractCell door) throws IOException
-    {
-        _clientListenerChannel = ServerSocketChannel.open();
-        _poolListenerChannel   = ServerSocketChannel.open();
-
-        if (_bufferSize > 0) {
-            _clientListenerChannel.socket().setReceiveBufferSize(_bufferSize);
-            _poolListenerChannel.socket().setReceiveBufferSize(_bufferSize);
-        }
-
-	_clientListenerChannel.socket().bind(null);
-	_poolListenerChannel.socket().bind(null);
-
-        _localAddress =
-            _clientListenerChannel.socket().getLocalSocketAddress().toString();
-
-        _clientToPool = true;
-        _modeE        = false;
-        _eodSeen      = 0;
-        _door         = door;
-        _thread	      = new Thread(this, "SocketAdapter-" + _localAddress);
-    }
-
-    public SocketAdapter(AbstractCell door, int lowPort, int highPort)
+    public SocketAdapter(AbstractCell door,
+                         ServerSocketChannel clientListenerChannel)
 	throws IOException
     {
         _door = door;
-        if (lowPort > highPort) {
-            throw new IllegalArgumentException("lowPort > highPort");
-        }
 
-        debug("Port range is " + lowPort + " to " + highPort);
-        if (lowPort > 0) {
-	    /* We randomise the first socket to try to reduce the risk
-	     * of conflicts and to make the port less predictable.
-	     */
-	    int start = _random.nextInt(highPort - lowPort + 1) + lowPort;
-	    int i = start;
-            do {
-                try {
-                    debug("Trying Port " + i);
-		    _clientListenerChannel = ServerSocketChannel.open();
-		    _clientListenerChannel.socket().bind(new InetSocketAddress(i));
-                    break;
-                } catch (BindException ee) {
-                    debug("Problems trying port " + i + ": " + ee);
-                    if (i == highPort) {
-                        throw ee;
-                    }
-                }
-		i = (i < highPort ? i + 1 : lowPort);
-            } while (i != start);
-        } else {
-	    _clientListenerChannel = ServerSocketChannel.open();
-            _clientListenerChannel.socket().bind(null);
-        }
+        _clientListenerChannel = clientListenerChannel;
         _poolListenerChannel = ServerSocketChannel.open();
 	_poolListenerChannel.socket().bind(null);
 
@@ -603,14 +548,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     public int getPoolListenerPort()
     {
         return _poolListenerChannel.socket().getLocalPort();
-    }
-
-    /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#acceptOnClientListener()
-     */
-    public Socket acceptOnClientListener() throws IOException
-    {
-        return _clientListenerChannel.accept().socket();
     }
 
     /* (non-Javadoc)
@@ -871,19 +808,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	_thread.interrupt();
 
         try {
-	    if (_clientListenerChannel != null) {
-		_clientListenerChannel.close();
-		_clientListenerChannel = null;
-	    }
+            _clientListenerChannel.close();
         } catch (IOException e) {
             warn("Failed to close client socket: " + e.getMessage());
         }
 
         try {
-	    if (_poolListenerChannel != null) {
-		_poolListenerChannel.close();
-		_poolListenerChannel = null;
-	    }
+            _poolListenerChannel.close();
 	} catch (IOException e) {
             warn("Failed to close pool socket: " + e.getMessage());
         }

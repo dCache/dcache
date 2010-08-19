@@ -101,6 +101,7 @@ import java.io.BufferedOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.InputStreamReader;
 import java.io.EOFException;
+import java.nio.channels.ServerSocketChannel;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.lang.reflect.InvocationTargetException;
@@ -185,6 +186,7 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.PortRange;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
@@ -591,17 +593,8 @@ public abstract class AbstractFtpDoorV1
 
     protected final int _spaceManagerTimeout = 5 * 60;
 
-    /**
-     * Lowest allowable port to use for the data channel when using an
-     * adapter.
-     */
-    protected int _lowDataListenPort;
-
-    /**
-     * Highest allowable port to use for the data channel when using
-     * an adapter.
-     */
-    protected int _highDataListenPort;
+    protected PortRange _passiveModePortRange;
+    protected ServerSocketChannel _passiveModeServerSocket;
 
     private final CommandQueue        _commandQueue =
         new CommandQueue();
@@ -663,7 +656,6 @@ public abstract class AbstractFtpDoorV1
     protected String _gReplyType = "clear";
 
     protected Mode _mode = Mode.ACTIVE;
-    protected ProxyAdapter _adapter;
     protected FTPTransactionLog _tLog;
 
     //These are the number of parallel streams to have
@@ -901,26 +893,11 @@ public abstract class AbstractFtpDoorV1
         /* Data channel port range used when client issues PASV
          * command.
          */
-        int low = 0;
-        int high = 0;
         if (_portRange != null) {
-            try {
-                int ind = _portRange.indexOf(":");
-                if ((ind <= 0) || (ind == (_portRange.length() - 1)))
-                    throw new IllegalArgumentException("Not a port range");
-
-                low  = Integer.parseInt(_portRange.substring(0, ind));
-                high = Integer.parseInt(_portRange.substring(ind + 1));
-                debug("Ftp Door: client data port range [" +
-                      low + ":" + high + "]");
-            } catch (NumberFormatException ee) {
-                error("FTP Door: invalid port range string: " +
-                      _portRange + ". Command ignored." );
-                low = 0;
-            }
+            _passiveModePortRange = PortRange.valueOf(_portRange);
+        } else {
+            _passiveModePortRange = new PortRange(0);
         }
-        _lowDataListenPort = low;
-        _highDataListenPort = high;
 
         /* Parallelism for mode E transfers.
          */
@@ -1118,13 +1095,17 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-
-    protected synchronized void closeAdapter()
+    private synchronized void closePassiveModeServerSocket()
     {
-        if (_adapter != null) {
-            info("Ftp Door closing adapter");
-            _adapter.close();
-            _adapter = null;
+        if (_passiveModeServerSocket != null) {
+            try {
+                _logger.info("Ftp Door closing adapter");
+                _passiveModeServerSocket.close();
+            } catch (IOException e) {
+                _logger.warn("Failed to close passive mode server socket: {}",
+                             e.getMessage());
+            }
+            _passiveModeServerSocket = null;
         }
     }
 
@@ -1136,7 +1117,7 @@ public abstract class AbstractFtpDoorV1
      * logic is in this method, including:
      *
      * - Emergency shutdown of performance marker engine
-     * - Shut down of socket adapter
+     * - Shut down of passive mode server socket
      * - Abort and cleanup after failed transfers
      * - Cell shutdown initiation
      *
@@ -1186,7 +1167,7 @@ public abstract class AbstractFtpDoorV1
                     abortTransfer(451, "Aborting transfer due to session termination");
                 }
 
-                closeAdapter();
+                closePassiveModeServerSocket();
 
                 debug("FTP Door: end of stream encountered");
             }
@@ -1382,7 +1363,7 @@ public abstract class AbstractFtpDoorV1
                         error("FTP Door: failed to kill adapter");
                     }
                 } else if (adapter.hasError()) {
-                    adapterError =_transfer.adapter.getError();
+                    adapterError = adapter.getError();
                 }
             } catch (InterruptedException e) {
                 error("FTP Door: thread join error: " + e.getMessage());
@@ -1393,7 +1374,7 @@ public abstract class AbstractFtpDoorV1
              * have a temporary socket adapter specific to
              * this transfer. If so, close it.
              */
-            if (adapter != _adapter && !adapterClosed) {
+            if (!adapterClosed) {
                 debug("FTP Door: Message arrived. Closing adapter");
                 adapter.close();
                 adapterClosed = true;
@@ -1932,7 +1913,7 @@ public abstract class AbstractFtpDoorV1
         _client_data_port = tok[4] * 256 + tok[5];
 
         // Switch to active mode
-        closeAdapter();
+        closePassiveModeServerSocket();
         _mode = Mode.ACTIVE;
 
         reply(ok("PORT"));
@@ -1941,11 +1922,11 @@ public abstract class AbstractFtpDoorV1
     public void ac_pasv(String arg)
     {
         try {
-            closeAdapter();
+            closePassiveModeServerSocket();
             info("FTP Door creating adapter for passive mode");
-            _adapter = new SocketAdapter(this, _lowDataListenPort , _highDataListenPort);
-            _adapter.setMaxBlockSize(_maxBlockSize);
-            int port = _adapter.getClientListenerPort();
+            _passiveModeServerSocket = ServerSocketChannel.open();
+            int port =
+                _passiveModePortRange.bind(_passiveModeServerSocket.socket());
             byte[] hostb = _engine.getLocalAddress().getAddress();
             int[] host = new int[4];
             for (int i = 0; i < 4; i++) {
@@ -1965,7 +1946,7 @@ public abstract class AbstractFtpDoorV1
         } catch (IOException e) {
             reply("500 Cannot enter passive mode: " + e);
             _mode = Mode.ACTIVE;
-            closeAdapter();
+            closePassiveModeServerSocket();
         }
     }
 
@@ -2952,12 +2933,17 @@ public abstract class AbstractFtpDoorV1
          */
         switch (mode) {
         case PASSIVE:
+            info("FTP Door: transfer creating adapter for passive mode");
             if (reply127) {
-                info("FTP Door: transfer creating adapter for passive mode");
+                ServerSocketChannel serverChannel =
+                    ServerSocketChannel.open();
+                _passiveModePortRange.bind(serverChannel.socket());
                 _transfer.adapter =
-                    new SocketAdapter(this, _lowDataListenPort, _highDataListenPort);
+                    new SocketAdapter(this, serverChannel);
             } else {
-                _transfer.adapter = _adapter;
+                _transfer.adapter =
+                    new SocketAdapter(this, _passiveModeServerSocket);
+                _passiveModeServerSocket = null;
             }
             _transfer.adapter.setMaxStreams(_maxStreamsPerClient);
             break;
@@ -2966,7 +2952,7 @@ public abstract class AbstractFtpDoorV1
             if (_isProxyRequiredOnActive) {
                 info("FTP Door: transfer creating adapter for active mode");
                 _transfer.adapter =
-                    new ActiveAdapter(_lowDataListenPort , _highDataListenPort, client.getAddress().getHostAddress(), client.getPort());
+                    new ActiveAdapter(_passiveModePortRange, client.getAddress().getHostAddress(), client.getPort());
                 _transfer.adapter.setMaxStreams(parallel);
             }
             break;
@@ -3177,7 +3163,7 @@ public abstract class AbstractFtpDoorV1
                 _transfer.perfMarkerTask.stop();
             }
 
-            if (_transfer.adapter != null && _transfer.adapter != _adapter) {
+            if (_transfer.adapter != null) {
                 _transfer.adapter.close();
             }
 
@@ -3334,7 +3320,7 @@ public abstract class AbstractFtpDoorV1
          * we establish the data connection to the client.
          */
         if (_mode == Mode.PASSIVE) {
-            _dataSocket = _adapter.acceptOnClientListener();
+            _dataSocket = _passiveModeServerSocket.accept().socket();
         } else {
             _dataSocket = new Socket(_client_data_host, _client_data_port);
         }

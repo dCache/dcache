@@ -50,16 +50,6 @@ public interface ProxyAdapter {
     public abstract int getPoolListenerPort();
 
     /**
-     * Accepts and returns a connection from the client. This is used
-     * in the FTP door to create a connection on which listing are
-     * transferred.
-     *
-     * @todo Consider if this should be handeled differently. It seems
-     * a little strange to use the SocketAdapter for this.
-     */
-    public abstract Socket acceptOnClientListener() throws IOException;
-
-    /**
      * Configures the adapter to transfer data from the client to the
      * pool.
      */
