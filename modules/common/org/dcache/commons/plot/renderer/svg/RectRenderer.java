@@ -30,7 +30,7 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
         new RGBColor(0, 255, 155),
         new RGBColor(155, 255, 15),
         new RGBColor(255, 255, 15),};
-    private static final RenderStyle renderStyle = RenderStyle.BARS;
+    private RenderStyle renderStyle = RenderStyle.BARS;
     private Range<Date> xRange;
     private Range<BigDecimal> yRange;
     private DateFormat xFormat = new SimpleDateFormat("MMM,dd yyyy");
@@ -41,6 +41,14 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
     private float[] gridDash = {2.0f, 1.0f};
     private Scale scale = Scale.LOG;
     private String[] names = null;
+
+    public RenderStyle getRenderStyle() {
+        return renderStyle;
+    }
+
+    public void setRenderStyle(RenderStyle renderStyle) {
+        this.renderStyle = renderStyle;
+    }
 
     public RectRenderer() {
         super();
@@ -322,13 +330,16 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
                         break;
                     case LINES:
                         svg.setStrokeColor(colors[col]);
-                        svg.setStrokeWidth(1);
+                        if (barWidth > 5){
+                            svg.setStrokeWidth(2);
+                        }
                         if (row > 0) {
                             elemFrame.appendChild(
                                     svg.createLine(x, py, x, y, null));
                         }
                         elemFrame.appendChild(svg.createLine(x, y,
                                 x + barWidth * numCols, y, null));
+                        svg.setStrokeWidth(1);
                         break;
                 }
                 row++;
