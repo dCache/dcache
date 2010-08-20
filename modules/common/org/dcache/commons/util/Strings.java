@@ -3,6 +3,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -66,5 +68,20 @@ public final class Strings {
             }
         }
         return matchList.toArray(ZERO_LENGTH_STRING_ARRAY);
+    }
+
+    public static <T> String join(Collection<T> collection, String separator)
+    {
+        if (collection.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder out = new StringBuilder();
+        Iterator<T> i = collection.iterator();
+        out.append(i.next());
+        while (i.hasNext()) {
+            out.append(separator).append(i.next());
+        }
+        return out.toString();
     }
 }

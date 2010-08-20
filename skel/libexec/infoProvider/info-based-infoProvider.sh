@@ -55,15 +55,15 @@ fi
 JAVA="$java"
 
 # Import configuration
-loadConfig xsltProcessor xylophoneConfigurationFile xylophoneConfigurationDir httpHost httpPort xylophoneXSLTDir saxonDir
+loadConfig -q
 
-xsltProcessor="${XSLTPROCESSOR:-saxon}"
-xylophoneConfigurationFile="${XYLOPHONECONFIGURATIONFILE:-glue-1.3.xml}"
-xylophoneConfigurationDir="${XYLOPHONECONFIGURATIONDIR:-${DCACHE_HOME}/etc}"
-httpHost="${HTTPHOST:-localhost}"
-httpPort="${HTTPPORT:-2288}"
-xylophoneXSLTDir="${XYLOPHONEXSLTDIR:-${DCACHE_HOME}/share/xml/xylophone}"
-saxonDir="${SAXONDIR:-${DCACHE_HOME}/classes/saxon}"
+xsltProcessor="$(getProperty xsltProcessor)"
+xylophoneConfigurationFile="$(getProperty xylophoneConfigurationFile)"
+xylophoneConfigurationDir="$(getProperty xylophoneConfigurationDir)"
+httpHost="$(getPropety httpHost)"
+httpPort="$(getProperty httpPort)"
+xylophoneXSLTDir="$(getProperty xylophoneXSLTDir)"
+saxonDir="$(getProperty saxonDir)"
 dCacheSetupFile="$DCACHE_HOME/etc/dcache.conf"
 
 #  Apply any environment overrides

@@ -3,30 +3,25 @@
 # Invokes the dCache boot loader
 bootLoader()
 {
-    local quietFlag
-    shouldBootLoaderBeQuiet && quietFlag="-q"
-    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/cells.jar:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" $quietFlag "$@"
+    $JAVA -client -cp "$DCACHE_HOME/classes/*:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
 }
 
-shouldBootLoaderBeQuiet()
-{
-    [ -n "$BOOTLOADER_IS_QUIET" ]
-}
-
-setBootLoaderQuiet()
-{
-    BOOTLOADER_IS_QUIET=1
-}
-
-setBootLoaderNoisy()
-{
-    unset BOOTLOADER_IS_QUIET || :
-}
-
-# Prints all domains that match a given pattern
+# Prints all domains that match a given pattern. Prints all domains if
+# no patterns are provided.
 printDomains() # $1+ = patterns
 {
-    bootLoader list "$@" || fail 1 "Failed to invoke dCache"
+    local domain
+    local domains
+    domains=$(getProperty dcache.domains)
+    if [ $# -eq 0 ]; then
+        echo $domains
+    else
+        for domain in $domains; do
+            if matchesAny "$domain" "$@"; then
+                echo $domain
+            fi
+        done
+    fi
 }
 
 # Returns the PID stored in pidfile. Fails if the file does not exist,
@@ -43,23 +38,36 @@ printPidFromFile() # $1 = file
     printf "%s" "$pid"
 }
 
-# Reads the given configuration parameters into environment
-# variables. The environment variables used are upper case versions of
-# the keys.
-loadConfig() # $1+ = keys
+# Called by getProperty when invoked on an unknown domain
+undefinedDomain()
 {
-    eval $(bootLoader config -shell ${DOMAIN:+"-domain=$DOMAIN"} "$@")
+    fail 1 "Unknown domain $1"
+}
+
+# Called by getProperty when invoked on an unknown property
+undefinedProperty()
+{
+    :
+}
+
+# Loads configuration parameters into memory. Configuration parameters
+# can be queried by calling
+#
+#    getProperty KEY [DOMAIN]
+#
+loadConfig()
+{
+    eval $(bootLoader "$@" compile)
 }
 
 # Print "stopped", "running" or "restarting" depending on the status
 # of the domain.
-printDomainStatus()
+printDomainStatus() # $1 = domain
 {
     local pid
-
-    if ! pid=$(printPidFromFile "$DCACHE_PID_DAEMON"); then
+    if ! pid=$(printDaemonPid "$1"); then
         printf "stopped"
-    elif ! pid=$(printPidFromFile "$DCACHE_PID_JAVA"); then
+    elif ! pid=$(printJavaPid "$1"); then
         printf "restarting"
     else
         printf "running"
@@ -67,30 +75,44 @@ printDomainStatus()
 }
 
 # Prints the PID of the daemon wrapper script
-printDaemonPid()
+printDaemonPid() # $1 = domain
 {
-    printPidFromFile "$DCACHE_PID_DAEMON"
+    printPidFromFile "$(getProperty dcache.pid.daemon "$1")"
 }
 
 # Prints the PID of the Java process
-printJavaPid()
+printJavaPid() # $1 = domain
 {
-    printPidFromFile "$DCACHE_PID_JAVA"
+    printPidFromFile "$(getProperty dcache.pid.java "$1")"
 }
 
 # Start domain. Use runDomain rather than calling this function
 # directly.
-domainStart()
+domainStart() # $1 = domain
 {
+    local domain
+    local JAVA_CLASSPATH
+    local JAVA_LIBRARY_PATH
+    local LOG_FILE
+    local RESTART_FILE
+    local RESTART_DELAY
+    local USER
+    local PID_JAVA
+    local PID_DAEMON
+    local JAVA_OPTIONS
+
+    domain="$1"
+
     # Don't do anything if already running
-    if [ "$(printDomainStatus)" != "stopped" ]; then
-        fail 1 "${DOMAIN} is already running"
+    if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
+        fail 1 "${domain} is already running"
     fi
 
     # Build classpath
     classpath="${DCACHE_HOME}/classes/cells.jar:${DCACHE_HOME}/classes/dcache.jar"
-    if [ "$DCACHE_JAVA_CLASSPATH" ]; then
-        classpath="${classpath}:${DCACHE_JAVA_CLASSPATH}"
+    JAVA_CLASSPATH="$(getProperty dcache.java.classpath "$domain")"
+    if [ "$JAVA_CLASSPATH" ]; then
+        classpath="${classpath}:$JAVA_CLASSPATH"
     fi
     if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
         . "${DCACHE_HOME}/classes/extern.classpath"
@@ -98,16 +120,18 @@ domainStart()
     fi
 
     # LD_LIBRARY_PATH override
-    if [ "$DCACHE_JAVA_LIBRARY_PATH" ]; then
-	LD_LIBRARY_PATH="$DCACHE_JAVA_LIBRARY_PATH"
+    JAVA_LIBRARY_PATH="$(getProperty dcache.java.library.path "$domain")"
+    if [ "$JAVA_LIBRARY_PATH" ]; then
+	LD_LIBRARY_PATH="$JAVA_LIBRARY_PATH"
         export LD_LIBRARY_PATH
     fi
 
     # Prepare log file
-    if [ "$DCACHE_LOG_MODE" = "new" ]; then
-        mv -f "${DCACHE_LOG_FILE}" "${DCACHE_LOG_FILE}.old"
+    LOG_FILE="$(getProperty dcache.log.file "$domain")"
+    if [ "$(getProperty dcache.log.mode "$domain")" = "new" ]; then
+        mv -f "${LOG_FILE}" "${LOG_FILE}.old"
     fi
-    touch "${DCACHE_LOG_FILE}" || fail 1 "Could not write to ${DCACHE_LOG_FILE}"
+    touch "${LOG_FILE}" || fail 1 "Could not write to ${LOG_FILE}"
 
     # Source dcache.local.sh
     if [ -f "${DCACHE_BIN}/dcache.local.sh" ]  ; then
@@ -121,32 +145,41 @@ domainStart()
         fi
     fi
 
-    if [ "${DCACHE_TERRACOTTA_ENABLED:-false}" = "true" ] ; then
-        local terracotta_dso_env_sh
-        if [ -f "${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh" ] ; then
-           terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/bin/dso-env.sh"
-        elif [ -f "${DCACHE_TERRACOTTA_INSTALL_DIR}/platform/bin/dso-env.sh" ] ; then
-           terracotta_dso_env_sh="${DCACHE_TERRACOTTA_INSTALL_DIR}/platform/bin/dso-env.sh"
+    if [ "$(getProperty dcache.terracotta.enabled "$domain")" = "true" ] ; then
+        # TC_INSTALL_DIR and TC_CONFIG_PATH need to be defined for a
+        # successful execution of dso-env.sh
+        TC_INSTALL_DIR="$(getProperty dcache.terracotta.install.dir "$domain")"
+        TC_CONFIG_PATH="$(getProperty dcache.terracotta.config.path "$domain")"
+        export TC_INSTALL_DIR
+        export TC_CONFIG_PATH
+
+        # Result of this script execution is the definition of the
+        # options needed for startup of the defined in ${TC_JAVA_OPTS}
+        if [ -f "${TC_INSTALL_DIR}/bin/dso-env.sh" ] ; then
+            . "${TC_INSTALL_DIR}/bin/dso-env.sh"
+        elif [ -f "${TC_INSTALL_DIR}/platform/bin/dso-env.sh" ] ; then
+           . "${TC_INSTALL_DIR}/platform/bin/dso-env.sh"
         else
             fail 1 "Terracotta is enabled, but dso-env.sh can't be found"
         fi
-        # TC_INSTALL_DIR and TC_CONFIG_PATH need to be defined for a successful execution of dso-env.sh
-        export TC_INSTALL_DIR=${DCACHE_TERRACOTTA_INSTALL_DIR}
-        export TC_CONFIG_PATH=${DCACHE_TERRACOTTA_CONFIG_PATH}
-        # Result of this script execution is the definition of the options needed for startup of the
-        # defined in ${TC_JAVA_OPTS}
-        . ${terracotta_dso_env_sh}
     fi
 
     # Start daemon
-    rm -f "$DCACHE_RESTART_FILE"
+    RESTART_FILE="$(getProperty dcache.restart.file "$domain")"
+    RESTART_DELAY="$(getProperty dcache.restart.delay "$domain")"
+    USER="$(getProperty dcache.user "$domain")"
+    PID_JAVA="$(getProperty dcache.pid.java "$domain")"
+    PID_DAEMON="$(getProperty dcache.pid.daemon "$domain")"
+    JAVA_OPTIONS="$(getProperty dcache.java.options "$domain")"
+
+    rm -f "$RESTART_FILE"
     cd "$DCACHE_HOME"
-    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${DCACHE_USER:+-u} ${DCACHE_USER:+"$DCACHE_USER"} -l -r "$DCACHE_RESTART_FILE" -d "$DCACHE_RESTART_DELAY" -f -c "$DCACHE_PID_JAVA" -p "$DCACHE_PID_DAEMON" -o "$DCACHE_LOG_FILE" "$JAVA" ${DCACHE_JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$DOMAIN"
+    CLASSPATH="$classpath" /bin/sh "${DCACHE_LIB}/daemon" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$domain"
 
     # Wait for confirmation
-    printf "Starting ${DOMAIN} "
+    printf "Starting ${domain} "
     for c in 6 5 4 3 2 1 0; do
-	if [ "$(printDomainStatus)" != "stopped" ]; then
+	if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
             echo "done"
             return
         fi
@@ -155,7 +188,7 @@ domainStart()
     done
 
     echo "failed"
-    grep PANIC "$DCACHE_LOG_FILE"
+    grep PANIC "$LOG_FILE"
     exit 4
 }
 
@@ -163,14 +196,20 @@ domainStart()
 # directly.
 domainStop() # $1 = domain
 {
+    local domain
     local daemonPid
     local javaPid
+    local RESTART_FILE
+    local PID_JAVA
+    local PID_DAEMON
 
-    if [ "$(printDomainStatus)" = "stopped" ]; then
+    domain="$1"
+
+    if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
         return 0
     fi
 
-    daemonPid=$(printDaemonPid) || return
+    daemonPid=$(printDaemonPid "$domain") || return
 
     # Fail if we don't have permission to signal the daemon
     if ! kill -0 $daemonPid; then
@@ -179,27 +218,30 @@ domainStop() # $1 = domain
 
     # Stopping a dCache domain for good requires that we supress the
     # automatic restart by creating a stop file.
-    touch "$DCACHE_RESTART_FILE" || return
+    RESTART_FILE="$(getProperty dcache.restart.file "$domain")"
+    touch "$RESTART_FILE" || return
 
-    if javaPid=$(printJavaPid); then
+    if javaPid=$(printJavaPid "$domain"); then
 	kill -TERM "$javaPid" 1>/dev/null 2>/dev/null || :
     fi
 
-    printf "Stopping ${DOMAIN} (pid=$daemonPid) "
+    printf "Stopping ${domain} (pid=$daemonPid) "
     for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
         if ! isRunning $daemonPid; then
-            rm -f "$DCACHE_PID_DAEMON" "$DCACHE_PID_JAVA"
+            PID_JAVA="$(getProperty dcache.pid.java "$domain")"
+            PID_DAEMON="$(getProperty dcache.pid.daemon "$domain")"
+            rm -f "$PID_DAEMON" "$PID_JAVA"
             echo "done"
             return
         fi
         printf "$c "
         sleep 1
         if [ $c -eq 9 ] ; then
-	    if javaPid=$(printJavaPid); then
+	    if javaPid=$(printJavaPid "$domain"); then
 		kill -9 $javaPid 1>/dev/null 2>/dev/null || true
 	    fi
         fi
     done
     echo
-    fail 4 "Giving up. ${DOMAIN} might still be running."
+    fail 4 "Giving up. ${domain} might still be running."
 }

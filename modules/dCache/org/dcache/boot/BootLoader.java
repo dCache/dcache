@@ -1,6 +1,7 @@
 package org.dcache.boot;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
+import java.io.PrintStream;
 
 import dmg.util.Args;
 import dmg.util.CommandException;
@@ -43,14 +45,11 @@ public class BootLoader
     private static final String PROPERTY_HOST_FQDN = "host.fqdn";
 
     private static final String CMD_START = "start";
-    private static final String CMD_LIST = "list";
-    private static final String CMD_CONFIG = "config";
+    private static final String CMD_COMPILE = "compile";
 
     private static final char OPT_SILENT = 'q';
     private static final String OPT_CONFIG_FILE = "f";
     private static final String OPT_CONFIG_FILE_DELIMITER = ":";
-    private static final String OPT_DOMAIN = "domain";
-    private static final String OPT_SHELL = "shell";
 
     private static final String CONSOLE_APPENDER_NAME = "console";
     private static final String CONSOLE_APPENDER_PATTERN = "%-5level - %msg%n";
@@ -62,34 +61,18 @@ public class BootLoader
     private static void help()
     {
         System.err.println("SYNOPSIS:");
-        System.err.println("  java org.dcache.util.BootLoader [-q] [-f=FILE[:FILE...]] CMD [ARGS]");
+        System.err.println("  java org.dcache.util.BootLoader [-q] [-f=PATH[:PATH...]] COMMAND [ARGS]");
         System.err.println();
         System.err.println("OPTIONS:");
-        System.err.println("    q    Do not emit warnings if configuration assigns values to deprecated");
-        System.err.println("         or obsolete properties.");
-        System.err.println();
-        System.err.println("    f    Supply the path to the dCache setup files.  Each supplied FILE is");
-        System.err.println("         is either a file or a directory.  If FILE is a file then it is read");
-        System.err.println("         as a dCache configuration file.  If FILE is a directory then all");
-        System.err.println("         files in that directory that end .properties are parsed.");
-        System.err.println();
-        System.err.println("    CMD  The operation to undertake.  The following ARGS, if required, are");
-        System.err.println("         the arguments for the command.  Whether ARGS is required and their");
-        System.err.println("         effect is command-specific.  The commands and possible arguments are");
-        System.err.println("         described below.");
+        System.err.println("    -q    Suppress warnings.");
+        System.err.println("    -f    Paths to the dCache setup files.");
         System.err.println();
         System.err.println("COMMANDS:");
-        System.err.println("   start  start the domain ARGS.  ARGS is a single word: the name of the");
-        System.err.println("          domain.");
+        System.err.println("   start DOMAIN");
+        System.err.println("          Start a domain.");
         System.err.println();
-        System.err.println("   config prints all configuration values.  If -shell is included in ARGS");
-        System.err.println("          then the result is formatted as assignment statements for a");
-        System.err.println("          POSIX-compliant shell.  If -domain=DOMAIN is included in ARGS");
-        System.err.println("          then the list will be the configuration values for domain DOMAIN");
-        System.err.println();
-        System.err.println("   list   list the configured domains.  If ARGS is specified then it is");
-        System.err.println("          taken as a glob pattern and only those domains that match");
-        System.err.println("          it will be printed.");
+        System.err.println("   compile");
+        System.err.println("          Compiles the layout to a shell script.");
         System.exit(1);
     }
 
@@ -135,31 +118,46 @@ public class BootLoader
         return layout;
     }
 
-    private static void printProperties(ReplaceableProperties properties,
-                                        Set<String> keys)
+    private static String quote(String s)
     {
-        for (String key: keys) {
-            System.out.println(key + "=" + properties.getReplacement(key));
-        }
+        return s.replace("\\", "\\\\").replace("$", "\\$").replace("`", "\\`").replace("\"", "\\\"");
     }
 
-    private static void printPropertiesForShell(ReplaceableProperties properties,
-                                                Set<String> keys)
+    private static String quoteForCase(String s)
     {
-        for (String key: keys) {
-            String var = key.toUpperCase().replace('.', '_').replace('-', '_');
-            String value = properties.getReplacement(key).replace("\\", "\\\\").replace("$", "\\$").replace("`", "\\`").replace("\"", "\\\"");
-            System.out.println(var + "=\"" + value + "\"");
-        }
+        return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[");
     }
 
-    private static Collection<Pattern> toPatterns(Args args)
+    private static void compileToShell(ReplaceableProperties properties)
     {
-        List<Pattern> patterns = new ArrayList<Pattern>();
-        for (int i = 0; i < args.argc(); i++) {
-            patterns.add(new Glob(args.argv(i)).toPattern());
+        PrintStream out = System.out;
+        out.println("      case \"$1\" in");
+        for (String key: properties.stringPropertyNames()) {
+            out.println("        " + quoteForCase(key) + ") echo \"" + quote(properties.getReplacement(key)) + "\";;");
         }
-        return patterns;
+        out.println("        *) undefinedProperty \"$1\" \"$2\";;");
+        out.println("      esac");
+    }
+
+    private static void compileToShell(Layout layout)
+    {
+        PrintStream out = System.out;
+        out.println("getProperty()");
+        out.println("{");
+        out.println("  case \"$2\" in");
+        out.println("    \"\")");
+        compileToShell(layout.properties());
+        out.println("      ;;");
+        for (Domain domain: layout.getDomains()) {
+            out.println("    " + quoteForCase(domain.getName()) + ")");
+            compileToShell(domain.properties());
+            out.println("      ;;");
+        }
+        out.println("    *)");
+        out.println("      undefinedDomain \"$1\"");
+        out.println("      ;;");
+        out.println("  esac;");
+        out.println("}");
     }
 
     public static void main(String arguments[])
@@ -171,10 +169,11 @@ public class BootLoader
             }
 
             /* Basic logging setup that will be used until the real
-             * log4j configuration is loaded.
+             * log configuration is loaded.
              */
-            Level level = args.isOneCharOption( OPT_SILENT) ? Level.ERROR : Level.WARN;
-            logToConsoleAtLevel( level);
+            Level level =
+                args.isOneCharOption(OPT_SILENT) ? Level.ERROR : Level.WARN;
+            logToConsoleAtLevel(level);
 
             ReplaceableProperties config = getDefaults();
             String tmp = args.getOpt(OPT_CONFIG_FILE);
@@ -195,36 +194,8 @@ public class BootLoader
                 }
 
                 domain.start();
-            } else if (command.equals(CMD_LIST)) {
-                args.shift();
-                if (args.argc() == 0) {
-                    layout.printDomainNames(System.out);
-                } else {
-                    layout.printMatchingDomainNames(System.out, toPatterns(args));
-                }
-            } else if (command.equals(CMD_CONFIG)) {
-                ReplaceableProperties domainConfig;
-                if (args.getOpt(OPT_DOMAIN) != null) {
-                    Domain domain = layout.getDomain(args.getOpt(OPT_DOMAIN));
-                    if (domain == null) {
-                        throw new IllegalArgumentException("No such domain: " + args.getOpt(OPT_DOMAIN));
-                    }
-                    domainConfig = domain.properties();
-                } else {
-                    domainConfig = layout.properties();
-                }
-
-                args.shift();
-                Set<String> keys =
-                    (args.argc() == 0)
-                    ? domainConfig.stringPropertyNames()
-                    : domainConfig.matchingStringPropertyNames(toPatterns(args));
-
-                if (args.getOpt(OPT_SHELL) != null) {
-                    printPropertiesForShell(domainConfig, keys);
-                } else {
-                    printProperties(domainConfig, keys);
-                }
+            } else if (command.equals(CMD_COMPILE)) {
+                compileToShell(layout);
             } else {
                 throw new IllegalArgumentException("Invalid command: " + command);
             }

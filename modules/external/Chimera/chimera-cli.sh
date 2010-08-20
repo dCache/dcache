@@ -38,17 +38,19 @@ if ! findJavaTool java; then
 fi
 JAVA="$java"
 
-loadConfig "dcache.*"
+loadConfig -q
+JAVA_CLASSPATH="$(getProperty dcache.java.classpath "$domain")"
+JAVA_OPTIONS="$(getProperty dcache.java.options "$domain")"
 
 # Build classpath
 classpath="${DCACHE_HOME}/classes/cells.jar"
-if [ "$DCACHE_JAVA_CLASSPATH" ]; then
-    classpath="${classpath}:${DCACHE_JAVA_CLASSPATH}"
+if [ "$JAVA_CLASSPATH" ]; then
+    classpath="${classpath}:${JAVA_CLASSPATH}"
 fi
 if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
     . "${DCACHE_HOME}/classes/extern.classpath"
     classpath="${classpath}:${externalLibsClassPath}"
 fi
 
-CLASSPATH="$classpath" ${JAVA} ${DCACHE_JAVA_OPTIONS}  \
+CLASSPATH="$classpath" ${JAVA} ${JAVA_OPTIONS}  \
      org.dcache.chimera.examples.cli.${command} ${DCACHE_HOME}/config/chimera-config.xml $*

@@ -28,11 +28,13 @@ if ! findJavaTool java; then
 fi
 JAVA="$java"
 
-loadConfig "dcache.*"
+loadConfig -q
+JAVA_CLASSPATH="$(getProperty dcache.java.classpath "$domain")"
+JAVA_OPTIONS="$(getProperty dcache.java.options "$domain")"
 
 # Build classpath
-if [ "$DCACHE_JAVA_CLASSPATH" ]; then
-    classpath="${DCACHE_JAVA_CLASSPATH}"
+if [ "$JAVA_CLASSPATH" ]; then
+    classpath="${JAVA_CLASSPATH}"
 fi
 
 if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
@@ -40,5 +42,5 @@ if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
     classpath="${classpath}:${externalLibsClassPath}"
 fi
 
-CLASSPATH="$classpath" ${JAVA} ${DCACHE_JAVA_OPTIONS}  \
+CLASSPATH="$classpath" ${JAVA} ${JAVA_OPTIONS}  \
       -Xmx512M org.dcache.chimera.acl.client.SetAclClient ${DCACHE_HOME}/config/acl.properties

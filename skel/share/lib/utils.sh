@@ -252,3 +252,17 @@ readconf() # in $1 = file in $2 = prefix
     eval $(sed -f "${DCACHE_LIB}/config.sed" "$1"  |
         sed -e "s/\([^=]*\)=\(.*\)/$2\1=\2/")
 }
+
+matchesAny() # $1 = word, $2+ = patterns
+{
+    local word
+    word="$1"
+    shift
+    while [ $# -gt 0 ]; do
+        if [ -z "${word##$1}" ]; then
+            return 0
+        fi
+        shift
+    done
+    return 1
+}

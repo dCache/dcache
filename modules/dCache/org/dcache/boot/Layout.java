@@ -10,15 +10,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.ReplaceableProperties;
+import org.dcache.commons.util.Strings;
 
 /**
  * Layout encapsulates the configuration of a set of domains.
@@ -29,6 +32,9 @@ public class Layout
 
     private static final Pattern SECTION_HEADER =
         Pattern.compile("^\\s*\\[([^\\]/]+)(/([^\\]/]+))?\\]\\s*$");
+
+    private static final String PROPERTY_DOMAINS =
+        "dcache.domains";
 
     private final ReplaceableProperties _properties;
     private final Map<String,Domain> _domains =
@@ -44,6 +50,11 @@ public class Layout
         return _properties;
     }
 
+    public Collection<Domain> getDomains()
+    {
+        return Collections.unmodifiableCollection(_domains.values());
+    }
+
     public Domain getDomain(String name)
     {
         return _domains.get(name);
@@ -55,6 +66,8 @@ public class Layout
         if (domain == null) {
             domain = new Domain(name, _properties);
             _domains.put(name, domain);
+            _properties.put(PROPERTY_DOMAINS,
+                            Strings.join(_domains.keySet(), " "));
         }
         return domain;
     }
