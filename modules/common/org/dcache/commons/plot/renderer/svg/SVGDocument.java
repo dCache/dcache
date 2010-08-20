@@ -78,7 +78,7 @@ public class SVGDocument {
     }
 
     public void setWidth(float width) {
-        svg.setAttribute("wdith", Float.toString(width));
+        svg.setAttribute("width", Float.toString(width));
     }
 
     public void setHeight(float height) {
