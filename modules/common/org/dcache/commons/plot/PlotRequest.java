@@ -11,13 +11,13 @@ import java.util.HashSet;
  * parameters such as startData, endDate, etc which is applicable when necessary
  * @author timur and tao
  */
-
 public class PlotRequest implements Serializable {
 
     private static final long serialVersionUID = 4078163908298034209L;
     private final Set<PlotParameter> parameters = new HashSet<PlotParameter>();
 
-    public PlotRequest(){}
+    public PlotRequest() {
+    }
 
     public PlotRequest(Set<PlotParameter> parameters) {
         this.parameters.addAll(parameters);

@@ -3,6 +3,10 @@ package org.dcache.commons.plot.renderer.svg;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import org.dcache.commons.plot.ParamPlotName;
 import org.dcache.commons.plot.PlotException;
 import org.dcache.commons.plot.PlotReply;
@@ -22,10 +26,10 @@ public class SVGRenderer<T extends TupleList> implements Renderer<T> {
     protected static String TagFrame = "frame";
     protected static String TagData = "data";
     protected SVGDocument svg = new SVGDocument();
-    protected PlotRequest request;
-    protected T tupleList;
-    protected float width = 640, height = 480, margin = 40;
-    protected String outputFileName = "out";
+    protected PlotRequest plotRequest;
+    protected List<T> tupleLists;
+    protected float width = 800, height = 500, margin = 40;
+    protected String outputFileName;
     protected Element elemFrame, elemBackground, elemData;
 
     public String getOutputFileName() {
@@ -34,14 +38,6 @@ public class SVGRenderer<T extends TupleList> implements Renderer<T> {
 
     public void setOutputFileName(String outputFileName) {
         this.outputFileName = outputFileName;
-    }
-
-    public T getTupleList() {
-        return tupleList;
-    }
-
-    public void setTupleList(T tupleList) {
-        this.tupleList = tupleList;
     }
 
     public void writeToFile(String filename) throws PlotException {
@@ -54,35 +50,34 @@ public class SVGRenderer<T extends TupleList> implements Renderer<T> {
         }
     }
 
-    public PlotRequest getRequest() {
-        return request;
-    }
-
-    public void setRequest(PlotRequest request) {
-        this.request = request;
-    }
-
-    public SVGDocument getSvg() {
-        return svg;
-    }
-
-    public void setSvg(SVGDocument svg) {
-        this.svg = svg;
-    }
-
     protected void renderBackground() throws PlotException {
-        svg.setFillColor(SVGColor.WHITE);
+        svg.setFillColor(new RGBColor(200, 200, 230));
+        SVGGradient color = new SVGGradient(svg.getDocument(), "background_grad");
+        color.setLinerGradient(0, 0, new RGBColor(200, 200, 230), 1.0f,
+                    100, 100, new RGBColor(200, 200, 200), 1.0f);
+        svg.setFillColor(color);
+        svg.setStrokeWidth(0);
+        svg.setWidth(width);
+        svg.setHeight(height);
         elemBackground.appendChild(svg.createRectangle(0, 0, width, height));
     }
 
     protected void renderFrame() throws PlotException {
         //plot name
-        ParamPlotName plotName = request.getParameter(ParamPlotName.class);
+        svg.setStrokeWidth(0);
+        ParamPlotName plotName = plotRequest.getParameter(ParamPlotName.class);
         if (plotName != null) {
             svg.setFillColor(SVGColor.BLACK);
             svg.setStroke(SVGColor.BLACK);
+            svg.setTextSize(svg.getTextSize() * 1.5f);
             svg.setTextAlignment(SVGDocument.TextAlignment.CENTER);
-            elemFrame.appendChild(svg.createText(width / 2, margin, plotName.getName()));
+            elemFrame.appendChild(svg.createText(width / 2, height - svg.getTextSize(),
+                    plotName.getName()));
+            svg.setTextSize(svg.getTextSize() / 1.5f);
+            Date curDate = new Date();
+            DateFormat format = new SimpleDateFormat("MMM, dd, yyyy HH:mm");
+            svg.setTextAlignment(SVGDocument.TextAlignment.LEFT);
+            elemFrame.appendChild(svg.createText(0, height - svg.getTextSize(), format.format(curDate)));
         }
     }
 
@@ -90,11 +85,11 @@ public class SVGRenderer<T extends TupleList> implements Renderer<T> {
     }
 
     @Override
-    public PlotReply render(T tupleList, PlotRequest plotRequest) throws PlotException {
-        this.tupleList = tupleList;
-        this.request = plotRequest;
+    public PlotReply render(List<T> tupleList, PlotRequest plotRequest) throws PlotException {
+        this.tupleLists = tupleList;
+        this.plotRequest = plotRequest;
 
-        ParamOutputFileName fileName = request.getParameter(ParamOutputFileName.class);
+        ParamOutputFileName fileName = this.plotRequest.getParameter(ParamOutputFileName.class);
         if (fileName != null) {
             outputFileName = fileName.getOutputFileName() + ".svg";
         }

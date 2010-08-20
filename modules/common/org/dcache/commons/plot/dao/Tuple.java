@@ -21,4 +21,12 @@ public class Tuple<X, Y> {
     public Y getYValue() {
         return yValue;
     }
+
+    public void setxValue(X xValue) {
+        this.xValue = xValue;
+    }
+
+    public void setyValue(Y yValue) {
+        this.yValue = yValue;
+    }
 }

@@ -41,8 +41,8 @@ public class SVGGradient implements SVGColor{
     * @param color2 color of end offset
     * @param opacity2 opacity of end offset
     */
-    public void setLinerGradient(int x1, int y1, RGBColor color1, float opacity1,
-            int x2, int y2, RGBColor color2, float opacity2){
+    public void setLinerGradient(float x1, float y1, RGBColor color1, float opacity1,
+            float x2, float y2, RGBColor color2, float opacity2){
        element.setAttribute("x1", x1 + "%");
        element.setAttribute("y1", y1 + "%");
        element.setAttribute("x2", x2 + "%");

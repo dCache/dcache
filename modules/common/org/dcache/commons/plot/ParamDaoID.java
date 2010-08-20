@@ -7,11 +7,12 @@ package org.dcache.commons.plot;
 public class ParamDaoID implements PlotParameter{
     private String daoID;
 
+    public ParamDaoID(String id) {
+        this.daoID = id;
+    }
+
     public String getDaoID() {
         return daoID;
     }
 
-    public void setDaoID(String daoID) {
-        this.daoID = daoID;
-    }
 }

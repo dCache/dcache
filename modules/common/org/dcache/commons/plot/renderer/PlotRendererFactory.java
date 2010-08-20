@@ -47,6 +47,6 @@ public abstract class PlotRendererFactory {
         }
     }
 
-    public abstract Renderer getPlotRenderer(PlotOutputType plotOutputType);
+    public abstract Renderer getPlotRenderer(String rendererID);
 
 }

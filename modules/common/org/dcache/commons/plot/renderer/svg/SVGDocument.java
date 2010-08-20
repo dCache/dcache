@@ -71,19 +71,17 @@ public class SVGDocument {
         //set svg element attribute
         svg.setAttribute("version", "1.1");
         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        svg.setAttribute("width", "640");
-        svg.setAttribute("height", "480");
 
         //defs
         defs = document.createElement("defs");
         svg.appendChild(defs);
     }
 
-    public void setWidth(float width){
+    public void setWidth(float width) {
         svg.setAttribute("wdith", Float.toString(width));
     }
 
-    public void setHeight(float height){
+    public void setHeight(float height) {
         svg.setAttribute("height", Float.toString(height));
     }
 
@@ -252,7 +250,7 @@ public class SVGDocument {
         return line;
     }
 
-    public Element createCircle(float x, float y, float r){
+    public Element createCircle(float x, float y, float r) {
         Element circle = document.createElement("circle");
         circle.setAttribute("cx", Float.toString(x));
         circle.setAttribute("cy", Float.toString(y));
@@ -264,6 +262,7 @@ public class SVGDocument {
 
         return circle;
     }
+
     public Element createPolygon(List<SVGPoint> vertices) {
         Element poly = document.createElement("polygon");
 

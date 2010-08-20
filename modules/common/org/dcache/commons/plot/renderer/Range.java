@@ -14,7 +14,8 @@ public class Range<T extends Comparable> {
 
     T minimum, maximum;
 
-    public Range() {}
+    public Range() {
+    }
 
     public Range(T minimum, T maximum) {
         this.minimum = minimum;
@@ -63,33 +64,49 @@ public class Range<T extends Comparable> {
                 minimum = item;
             }
         }
+
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "[" + minimum.toString() + ", " + maximum.toString() + "]";
     }
 
-    public int getNumBins(Number binSize) throws PlotException{
-        if (minimum instanceof Date){
+    public int getNumBins(Number binSize) throws PlotException {
+        if (minimum instanceof Date) {
             long period = 1000l;
-            switch (binSize.intValue()){
-                case Calendar.SECOND: break;
-                case Calendar.MINUTE: period *= 60; break;
-                case Calendar.HOUR: period *= 60 * 60; break;
-                case Calendar.DATE: period *= 60 * 60 * 24; break;
+            switch (binSize.intValue()) {
+                case Calendar.SECOND:
+                    break;
+                case Calendar.MINUTE:
+                    period *= 60;
+                    break;
+                case Calendar.HOUR:
+                    period *= 60 * 60;
+                    break;
+                case Calendar.DAY_OF_YEAR:
+                case Calendar.DAY_OF_WEEK_IN_MONTH:
+                case Calendar.DATE:
+                    period *= 60 * 60 * 24;
+                    break;
                 case Calendar.WEEK_OF_YEAR:
-                case Calendar.WEEK_OF_MONTH: period *= 60 * 60 * 24 * 7; break;
-                case Calendar.MONTH: period *= 60 * 60 * 24 * 30; break;
-                case Calendar.YEAR: period *= 60 * 60 * 24 * 365; break;
+                case Calendar.WEEK_OF_MONTH:
+                    period *= 60 * 60 * 24 * 7;
+                    break;
+                case Calendar.MONTH:
+                    period *= 60 * 60 * 24 * 30;
+                    break;
+                case Calendar.YEAR:
+                    period *= 60 * 60 * 24 * 365;
+                    break;
             }
-            long length = ((Date)maximum).getTime() - ((Date)minimum).getTime();
-            return (int)(length/period);
+            long length = ((Date) maximum).getTime() - ((Date) minimum).getTime();
+            return (int) (length / period);
         }
 
-        if (minimum instanceof Number){
-            double length = ((Number)maximum).doubleValue() - ((Number)minimum).doubleValue();
-            return  (int)(length / binSize.doubleValue());
+        if (minimum instanceof Number) {
+            double length = ((Number) maximum).doubleValue() - ((Number) minimum).doubleValue();
+            return (int) (length / binSize.doubleValue());
         }
 
         throw new PlotException("number of bins can not be calculated for type " + minimum.getClass().getCanonicalName());
@@ -124,11 +141,11 @@ public class Range<T extends Comparable> {
      * @return an object that lies at the position specified within the range
      */
     public Comparable getItemAt(float position) throws PlotException {
-        if (position == 0) {
+        if (position <= 0) {
             return minimum;
         }
 
-        if (position == 1) {
+        if (position >= 1) {
             return maximum;
         }
 
@@ -138,10 +155,10 @@ public class Range<T extends Comparable> {
             return new Double((max.doubleValue() - min.doubleValue()) * position + min.doubleValue());
         }
 
-        if (minimum instanceof Date){
-            Date max = (Date)maximum;
-            Date min = (Date)minimum;
-            return new Date((long)((max.getTime() - min.getTime()) * position + min.getTime()));
+        if (minimum instanceof Date) {
+            Date max = (Date) maximum;
+            Date min = (Date) minimum;
+            return new Date((long) ((max.getTime() - min.getTime()) * position + min.getTime()));
         }
         throw new PlotException("Operation not supported by this type: " + minimum.getClass().getCanonicalName());
     }

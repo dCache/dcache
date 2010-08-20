@@ -7,14 +7,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+import org.dcache.commons.plot.ParamBinSize;
+import org.dcache.commons.plot.ParamEndDate;
+import org.dcache.commons.plot.ParamStartDate;
 import org.dcache.commons.plot.PlotException;
 import org.dcache.commons.plot.PlotRequest;
 import org.dcache.commons.plot.dao.PlotDao;
 import org.dcache.commons.plot.dao.TupleDateNumber;
 import org.dcache.commons.plot.dao.TupleList;
+import org.dcache.commons.plot.renderer.Range;
 
 /**
  *
@@ -24,6 +26,7 @@ public class DaoJdbc implements PlotDao {
 
     private String username, password, connectionURL, query, database, className;
     private DaoJdbcStatementHandler statementHandler = new DefaultJdbcStatementHandler();
+    private PlotRequest plotRequest;
 
     public DaoJdbc() {
     }
@@ -69,7 +72,9 @@ public class DaoJdbc implements PlotDao {
         this.username = username;
     }
 
+    @Override
     public TupleList getData(PlotRequest request) throws PlotException {
+        plotRequest = request;
         try {
             Class.forName(className);
         } catch (ClassNotFoundException ex) {
@@ -133,52 +138,70 @@ public class DaoJdbc implements PlotDao {
      * create a tuple list from a result set
      * @param resultSet
      * @return
-     * @throws SQLException
+     * @throws PlotException
      */
-    private static TupleList createTupleList(ResultSet resultSet) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int numColumns = metaData.getColumnCount();
-
-        String[] columnClassNames = new String[numColumns];
-        for (int i = 0; i < numColumns; i++) {
-            columnClassNames[i] = metaData.getColumnClassName(i + 1);
-        }
-
-        //if the first column is date, and the rest is Number,
-        //create a date vs number tuple list
-        if (numColumns > 1
-                && columnClassNames[0].compareTo(java.sql.Date.class.getCanonicalName())
-                == 0) {
-            boolean numbers = true;
-            for (int col = 1; col < numColumns; col++) {
-                if (columnClassNames[col].compareTo(BigDecimal.class.getCanonicalName()) != 0
-                        && columnClassNames[col].compareTo(Long.class.getCanonicalName()) != 0) {
-                    numbers = false;
-                    break;
-                }
+    private TupleList createTupleList(ResultSet resultSet) throws PlotException {
+        try {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            if (metaData.getColumnCount() != 2) {
+                throw new PlotException("number of columns in JDBC does not match 2: "
+                        + metaData.getColumnCount());
             }
-            if (numbers) {
-                TupleList<TupleDateNumber> list = new TupleList<TupleDateNumber>();
-                while (resultSet.next()) {
-                    List<Number> yValues = new ArrayList<Number>();
-                    Date xValue = new Date(
-                            resultSet.getDate(1).getTime());
-                    for (int col = 2; col <= numColumns; col++) {
-                        yValues.add(new BigDecimal(((Number) resultSet.getObject(col)).doubleValue()));
-                    }
-                    list.add(new TupleDateNumber(xValue, yValues));
-                }
-                return list;
-            }
-        }
 
-        //general case
-        while (resultSet.next()) {
-            Object[] curRow = new Object[numColumns];
-            for (int col = 0; col < numColumns; col++) {
-                curRow[col] = resultSet.getObject(col + 1);
+            String c1 = metaData.getColumnClassName(1);
+            String c2 = metaData.getColumnClassName(2);
+
+            if (c1.compareTo(java.sql.Timestamp.class.getCanonicalName()) != 0
+                    && c1.compareTo(java.sql.Timestamp.class.getCanonicalName()) != 0) {
+                throw new PlotException("column 1 must be date type but is " + c1);
             }
+
+            if (c2.compareTo(BigDecimal.class.getCanonicalName()) != 0
+                    && c1.compareTo(Double.class.getCanonicalName()) != 0
+                    && c1.compareTo(Integer.class.getCanonicalName()) != 0) {
+                throw new PlotException("column 2 must be number type but is " + c1);
+            }
+
+            ParamStartDate startDate = plotRequest.getParameter(ParamStartDate.class);
+            ParamEndDate endDate = plotRequest.getParameter(ParamEndDate.class);
+            ParamBinSize binSize = plotRequest.getParameter(ParamBinSize.class);
+            if (startDate == null) {
+                throw new PlotException("StartDate not specified in JDBC DAO");
+            }
+
+            if (endDate == null) {
+                throw new PlotException("EndDate not specified in JDBC DAO");
+            }
+
+            if (binSize == null) {
+                throw new PlotException("BinSize not specified in JDBC DAO");
+            }
+
+            Range<Date> range = new Range<Date>();
+            range.setMinimum(startDate);
+            range.setMaximum(endDate);
+
+            int numBins = range.getNumBins(binSize);
+            TupleList<TupleDateNumber> tupleList = new TupleList<TupleDateNumber>();
+
+            for (int i = 0; i < numBins; i++){
+                Date curDate = (Date) range.getItemAt((float)i / numBins);
+                TupleDateNumber tuple = new TupleDateNumber(curDate, 0);
+                tupleList.add(tuple);
+            }
+
+            while(resultSet.next()){
+                Date date = new Date(resultSet.getTimestamp(1).getTime());
+                BigDecimal value = resultSet.getBigDecimal(2);
+                int index = (int)(range.getPosition(date) * numBins);
+                BigDecimal newValue = new BigDecimal(tupleList.get(index).getYValue().doubleValue()
+                        + value.doubleValue());
+                tupleList.get(index).setyValue(newValue);
+            }
+
+            return tupleList;
+        } catch (Exception e) {
+            throw new PlotException("Exception occured in JDBC DAO: " + e, e);
         }
-        return null;
     }
 }

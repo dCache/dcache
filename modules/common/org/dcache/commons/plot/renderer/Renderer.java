@@ -1,5 +1,6 @@
 package org.dcache.commons.plot.renderer;
 
+import java.util.List;
 import org.dcache.commons.plot.PlotException;
 import org.dcache.commons.plot.PlotReply;
 import org.dcache.commons.plot.PlotRequest;
@@ -10,5 +11,5 @@ import org.dcache.commons.plot.dao.TupleList;
  * @author
  */
 public interface Renderer<T extends TupleList> {
-    public PlotReply render(T tupleList, PlotRequest plotRequest) throws PlotException;
+    public PlotReply render(List<T> tupleLists, PlotRequest plotRequest) throws PlotException;
 }

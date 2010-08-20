@@ -14,4 +14,5 @@ public interface SVGColor {
     public static RGBColor RED = new RGBColor(255, 0, 0);
     public static RGBColor BLUE = new RGBColor(0, 0, 255);
     public static RGBColor GREEN = new RGBColor(0, 255, 0);
+    public static RGBColor MAGENTA = new RGBColor(255, 0, 255);
 }

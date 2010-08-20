@@ -6,17 +6,17 @@ import java.util.Date;
  *
  * @author timur and tao
  */
-public class ParamStartDate extends Date implements PlotParameter {
+public class ParamStartDate extends ParamDate {
 
     public ParamStartDate() {
         super();
     }
 
-    public ParamStartDate(long time) {
-        super(time);
+    public ParamStartDate(Date date){
+        super(date.getTime());
     }
 
-    public ParamStartDate(int year, int month, int date, int hour, int minute, int second) {
-        super(hour, month, date, hour, minute, second);
+    public ParamStartDate(long time) {
+        super(time);
     }
 }

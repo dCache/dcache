@@ -1,4 +1,4 @@
-package org.dcache.commons.plot.renderer;
+package org.dcache.commons.plot.renderer.batik;
 
 import org.dcache.commons.plot.PlotParameter;
 

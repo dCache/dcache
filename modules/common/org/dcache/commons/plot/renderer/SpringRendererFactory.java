@@ -23,11 +23,11 @@ public class SpringRendererFactory extends PlotRendererFactory {
     }
 
     @Override
-    public Renderer getPlotRenderer(PlotOutputType plotOutputType) {
+    public Renderer getPlotRenderer(String redererID) {
         if (beanFactory == null) {
             beanFactory = new XmlBeanFactory(new FileSystemResource(xmlBeanFile));
         }
-        return (Renderer) beanFactory.getBean(plotOutputType.toString(),
+        return (Renderer) beanFactory.getBean(redererID,
                 Renderer.class);
     }
 

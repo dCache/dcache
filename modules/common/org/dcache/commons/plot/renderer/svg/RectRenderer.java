@@ -1,21 +1,18 @@
 package org.dcache.commons.plot.renderer.svg;
 
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import org.dcache.commons.plot.ParamDaoID;
 import org.dcache.commons.plot.PlotException;
-import org.dcache.commons.plot.PlotParameter;
-import org.dcache.commons.plot.dao.Tuple;
 import org.dcache.commons.plot.dao.TupleDateNumber;
 import org.dcache.commons.plot.dao.TupleList;
-import org.dcache.commons.plot.renderer.AxisInfo;
-import org.dcache.commons.plot.renderer.ParamColumnRenderDescriptor;
 import org.dcache.commons.plot.renderer.Range;
+import org.dcache.commons.plot.renderer.RenderStyle;
 import org.dcache.commons.plot.renderer.Scale;
-import org.dcache.commons.plot.renderer.svg.SVGDocument.TextAlignment;
 import org.w3c.dom.Element;
 
 /**
@@ -24,159 +21,231 @@ import org.w3c.dom.Element;
  *
  * @author timur and tao
  */
-public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber> > {
+public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
 
-    private AxisInfo bottomAxis = null, leftAxis = null,
-            topAxis = null, rightAxis = null;
-    private Set<AxisInfo> axis;
+    private static final SVGColor[] colors = {
+        new RGBColor(10, 10, 255),
+        new RGBColor(10, 255, 15),
+        new RGBColor(255, 10, 15),
+        new RGBColor(0, 255, 155),
+        new RGBColor(155, 255, 15),
+        new RGBColor(255, 255, 15),};
+    private static final RenderStyle renderStyle = RenderStyle.BARS;
+    private Range<Date> xRange;
+    private Range<BigDecimal> yRange;
+    private DateFormat xFormat = new SimpleDateFormat("MMM,dd yyyy");
+    private NumberFormat yFormat = new DecimalFormat("#0.00E0");
+    private int numXLabels = 12;
+    private int numYLabels = 10;
+    private int xLabelAngle = 20;
+    private float[] gridDash = {2.0f, 1.0f};
+    private Scale scale = Scale.LOG;
+    private String[] names = null;
 
-    public Set<AxisInfo> getAxis() {
-        return axis;
+    public RectRenderer() {
+        super();
+        svg.setWidth(width);
+        svg.setHeight(height);
     }
 
-    public void setAxis(Set<AxisInfo> axis) {
-        this.axis = axis;
+    public float[] getGridDash() {
+        return gridDash;
+    }
+
+    public void setGridDash(float[] gridDash) {
+        this.gridDash = gridDash;
+    }
+
+    public String[] getNames() {
+        return names;
+    }
+
+    public void setNames(String[] names) {
+        this.names = names;
+    }
+
+    public int getNumXLabels() {
+        return numXLabels;
+    }
+
+    public void setNumXLabels(int numXLabels) {
+        this.numXLabels = numXLabels;
+    }
+
+    public int getNumYLabels() {
+        return numYLabels;
+    }
+
+    public void setNumYLabels(int numYLabels) {
+        this.numYLabels = numYLabels;
+    }
+
+    public Scale getScale() {
+        return scale;
+    }
+
+    public void setScale(Scale scale) {
+        this.scale = scale;
+    }
+
+    public DateFormat getxFormat() {
+        return xFormat;
+    }
+
+    public void setxFormat(DateFormat xFormat) {
+        this.xFormat = xFormat;
+    }
+
+    public int getxLabelAngle() {
+        return xLabelAngle;
+    }
+
+    public void setxLabelAngle(int xLabelAngle) {
+        this.xLabelAngle = xLabelAngle;
+    }
+
+    public NumberFormat getyFormat() {
+        return yFormat;
+    }
+
+    public void setyFormat(NumberFormat yFormat) {
+        this.yFormat = yFormat;
     }
 
     @Override
     protected void renderFrame() throws PlotException {
         super.renderFrame();
 
-        for (AxisInfo curAxis : getAxis()) {
-            switch (curAxis.getLocation()) {
-                case BOTTOM:
-                    bottomAxis = curAxis;
-                    break;
-                case RIGHT:
-                    rightAxis = curAxis;
-                    break;
-                case LEFT:
-                    leftAxis = curAxis;
-                    break;
-                case TOP:
-                    topAxis = curAxis;
-                    break;
+        if (tupleLists.isEmpty()) {
+            return;
+        }
+
+        int rows = tupleLists.get(0).size();
+
+        //collect data stats
+        TupleList<TupleDateNumber> firstList = tupleLists.get(0);
+        Date startDate = firstList.get(0).getXValue();
+        Date endDate = firstList.get(firstList.size() - 1).getXValue();
+        xRange = new Range<Date>();
+        xRange.setMinimum(startDate);
+        xRange.setMaximum(endDate);
+
+        yRange = new Range<BigDecimal>();
+        double max = Double.NEGATIVE_INFINITY;
+        double min = Double.POSITIVE_INFINITY;
+
+        for (TupleList<TupleDateNumber> tupleList : tupleLists) {
+            for (TupleDateNumber tuple : tupleList.getTuples()) {
+                if (max < tuple.getYValue().doubleValue()) {
+                    max = tuple.getYValue().doubleValue();
+                }
+
+                if (min > tuple.getYValue().doubleValue()) {
+                    min = tuple.getYValue().doubleValue();
+                }
             }
         }
 
-        this.renderAxis(bottomAxis);
-        this.renderAxis(leftAxis);
+        if (scale == Scale.LINEAR) {
+            if (min != 0) {
+                int exp = (int) Math.log10(min);
+                double newMin = 1;
+                for (int i = 0; i < exp; i++) {
+                    newMin *= 10;
+                }
+                if (newMin != min / 10) {
+                    min = newMin;
+                }
+            }
 
-        if (topAxis != null) {
-            this.renderAxis(topAxis);
+            if (max != 0) {
+                int exp = (int) Math.log10(max) + 1;
+                double newMax = 1;
+                for (int i = 0; i < exp; i++) {
+                    newMax *= 10;
+                }
+                if (max < newMax / 10) {
+                    max = newMax / 10;
+                } else if (max < newMax / 8) {
+                    max = newMax / 8;
+                } else if (max < newMax / 5) {
+                    max = newMax / 5;
+                } else if (max < newMax / 4) {
+                    max = newMax / 4;
+                } else if (max < newMax / 2) {
+                    max = newMax / 2;
+                }
+            }
         }
+        yRange.setMaximum(new BigDecimal(max));
+        yRange.setMinimum(new BigDecimal(min));
 
-        if (rightAxis != null) {
-            this.renderAxis(rightAxis);
-        }
+        float x1 = margin * 2, y1 = margin * 2;
+        float x2 = width - margin * 2;
+        float y2 = height - margin * 2;
+        float w = width - 4 * margin;
+        float h = height - 4 * margin;
 
-    }
-
-    private void renderAxis(AxisInfo axis) throws PlotException {
-        float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-        float xOffset = axis.getTickLength();
-        float yOffset = axis.getTickLength();
-        svg.setFillColor(SVGColor.BLACK);
+        //draw frames
         svg.setStrokeColor(SVGColor.BLACK);
-        svg.setOpacity(1);
-        svg.setTextAlignment(TextAlignment.LEFT);
-        switch (axis.getLocation()) {
-            case BOTTOM:
-                x1 = margin * 2;
-                x2 = width - x1;
-                y2 = y1 = height - x1;
-                yOffset *= -1;
-                xOffset = 0;
-                if (axis.getRange() == null) {
-                    Collection c = new HashSet();
-                    for (Object obj : tupleList.getTuples()) {
-                        Tuple tuple = (Tuple) obj;
-                        c.add(tuple.getXValue());
-                    }
-                    Range xRange = new Range();
-                    xRange.findRange(c);
-                    axis.setRange(xRange);
-                }
-                break;
-            case LEFT:
-                y2 = x2 = x1 = margin * 2;
-                y1 = height - y2;
-                yOffset = 0;
-                svg.setTextAlignment(TextAlignment.RIGHT);
-                if (axis.getRange() == null) {
-                    Collection c = new HashSet();
-                    Range<BigDecimal> range = new Range<BigDecimal>();
-                    for (Object obj : tupleList.getTuples()) {
-                        Tuple tuple = (Tuple) obj;
-                        if (tuple.getYValue() instanceof Number) {
-                            c.add(tuple.getYValue());
-                        }
-                        if (tuple.getYValue() instanceof Collection) {
-                            Collection c2 = (Collection) tuple.getYValue();
-                            Iterator iterator = c2.iterator();
+        svg.setStrokeWidth(1);
+        elemFrame.appendChild(svg.createLine(x1, y1, x1, y2, null));
+        elemFrame.appendChild(svg.createLine(x1, y1, x2, y1, null));
+        elemFrame.appendChild(svg.createLine(x2, y1, x2, y2, null));
+        elemFrame.appendChild(svg.createLine(x1, y2, x2, y2, null));
 
-                            while (iterator.hasNext()) {
-                                c.add(iterator.next());
-                            }
-                        }
-                    }
-                    range.findRange(c);
-
-                    //indication of empty bins
-                    if (bottomAxis.getRange().getNumBins(bottomAxis.getBinSize()) > tupleList.size()
-                            && range.getMinimum().compareTo(new BigDecimal(0)) > 0) {
-                        range.setMinimum(new BigDecimal(0));
-                    }
-                    axis.setRange(range);
-                }
-                break;
-            case TOP:
-                x1 = y1 = y2 = margin * 2;
-                x2 = width - x1;
-                xOffset = 0;
-                break;
-            case RIGHT:
-                y2 = margin * 2;
-                x1 = x2 = width - y2;
-                y1 = height - y2;
-                yOffset = 0;
-                xOffset *= -1;
-                break;
+        //draw x labels
+        if (numXLabels > rows) {
+            numXLabels = rows;
         }
 
-        elemFrame.appendChild(svg.createLine(x1, y1, x2, y2, null));
+        if (numXLabels <= 0) {
+            return;
+        }
 
-        if (axis.getScale() == Scale.LINEAR) {
-            for (int i = 0; i < axis.getMaxNumTicks(); i++) {
-                Object label = axis.getRange().getItemAt(1.0f * i / (axis.getMaxNumTicks() - 1));
-                float x = x1 + i * (x2 - x1) / (axis.getMaxNumTicks() - 1);
-                float y = y1 + i * (y2 - y1) / (axis.getMaxNumTicks() - 1);
-                //draw ticks
-                elemFrame.appendChild(svg.createLine(x, y, x + xOffset, y + yOffset, null));
-                //draw text
-                Element text = svg.createText(x - xOffset * 2, y - yOffset * 2, axis.getFormat().format(label));
-                text.setAttribute("transform", "rotate(" + axis.getTextAngle() + ", " + (x - xOffset)
-                        + ", " + (y - yOffset) + ")");
-                elemFrame.appendChild(text);
+        svg.setStrokeColor(SVGColor.BLACK);
+        svg.setFillColor(SVGColor.BLACK);
+        svg.setTextAlignment(SVGDocument.TextAlignment.LEFT);
+
+        float halfWidth = w / numXLabels / 2;
+        for (float i = 0; i < numXLabels; i++) {
+            float x = i / numXLabels * w + x1;
+            float y = y2;
+            elemFrame.appendChild(svg.createLine(x, y2, x, y2 - 5, null));
+            elemFrame.appendChild(svg.createLine(x, y1, x, y2, gridDash));
+            x += halfWidth;
+            y += svg.getTextSize();
+            Date date = (Date) xRange.getItemAt(i / numXLabels);
+            String label = xFormat.format(date);
+            Element element = svg.createText(x, y, label);
+            element.setAttribute("transform", "rotate(" + xLabelAngle + " " + x + "," + y + ")");
+            elemFrame.appendChild(element);
+        }
+
+        //draw y labels
+        svg.setTextAlignment(SVGDocument.TextAlignment.RIGHT);
+        if (scale == Scale.LOG) {
+            double power = 1;
+
+            while (power < max) {
+                float y = (float) (Math.log(power) / Math.log(max));
+                y = y2 - y * h;
+                elemFrame.appendChild(svg.createLine(x1, y, x1 + 5, y, null));
+                power *= 10;
+                elemFrame.appendChild(svg.createLine(x1, y, x2, y, gridDash));
+                String Label = yFormat.format(power);
+                elemFrame.appendChild(svg.createText(x1 - svg.getTextSize(), y, Label));
             }
         }
 
-        if (axis.getScale() == Scale.LOG) {
-            if (!(axis.getRange().getMaximum() instanceof Number)) {
-                return;
-            }
-            double maxValue = ((Number) axis.getRange().getMaximum()).doubleValue();
-            for (double curValue = 1.0; curValue < maxValue; curValue *= 10) {
-                float x = (float) (x1 + Math.log(curValue) / Math.log(maxValue) * (x2 - x1));
-                float y = (float) (y1 + Math.log(curValue) / Math.log(maxValue) * (y2 - y1));
-
-                //draw ticks
-                elemFrame.appendChild(svg.createLine(x, y, x + xOffset, y + yOffset, null));
-                //draw text
-                Element text = svg.createText(x - xOffset * 2, y - yOffset * 2, axis.getFormat().format(curValue));
-                text.setAttribute("transform", "rotate(" + axis.getTextAngle() + ", " + (x - xOffset)
-                        + ", " + (y - yOffset) + ")");
-                elemFrame.appendChild(text);
+        if (scale == Scale.LINEAR) {
+            for (double i = 1; i < numYLabels; i++) {
+                double curValue = i / numYLabels * max;
+                float y = y2 - (float) (curValue / (max - min)) * h;
+                elemFrame.appendChild(svg.createLine(x1, y, x1 + 5, y, null));
+                elemFrame.appendChild(svg.createLine(x1, y, x2, y, gridDash));
+                String Label = yFormat.format(curValue);
+                elemFrame.appendChild(svg.createText(x1 - svg.getTextSize(), y, Label));
             }
         }
     }
@@ -187,104 +256,111 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber> > {
      */
     @Override
     protected void renderData() throws PlotException {
-        this.elemData = svg.createGroup("data");
-        svg.getRoot().appendChild(elemData);
-        for (PlotParameter param : request.getParameters()) {
-            if (!(param instanceof ParamColumnRenderDescriptor)) {
-                continue;
+        if (tupleLists.isEmpty()) {
+            return;
+        }
+
+        if (names == null) {
+            ParamDaoID daoId = plotRequest.getParameter(ParamDaoID.class);
+            if (daoId != null) {
+                names = daoId.getDaoID().split(":");
             }
-            ParamColumnRenderDescriptor render = (ParamColumnRenderDescriptor) param;
+        }
 
-            int index = render.getIndex();
+        int numRows = tupleLists.get(0).size();
+        int numCols = tupleLists.size();
+        int col = 0;
+        float y2 = height - margin * 2;
+        float barWidth = (width - margin * 4) / numRows / numCols;
 
-            Range rangeObj = null;
-            Scale scale = Scale.LINEAR;
-            switch (render.getRangeReference()) {
-                case LEFT:
-                    rangeObj = this.leftAxis.getRange();
-                    scale = leftAxis.getScale();
-                    break;
-                case RIGHT:
-                    rangeObj = this.rightAxis.getRange();
-                    scale = rightAxis.getScale();
-                    break;
-                case TOP:
-                case BOTTOM:
-                    throw new PlotException("data render range reference must be LEFT or RIGHT");
-            }
+        double max = yRange.getMaximum().doubleValue();
+        double min = yRange.getMinimum().doubleValue();
+        float h = height - margin * 4;
 
-            if (!(rangeObj.getMaximum() instanceof Number)) {
-                throw new PlotException("LEFT or RIGHT axis range must be instance of Number");
-            }
-
-            double maxValue = ((Number) (rangeObj.getMaximum())).doubleValue();
-            double minValue = ((Number) (rangeObj.getMinimum())).doubleValue();
-            double range = maxValue - minValue;
-
-            float[] yCoords = null;
-            int numBins = bottomAxis.getRange().getNumBins(bottomAxis.getBinSize());
-            yCoords = new float[numBins];
-
-            //populate bins
+        for (TupleList<TupleDateNumber> tupleList : tupleLists) {
+            int row = 0;
+            float py = 0;
+            double statsMin = Double.POSITIVE_INFINITY;
+            double statsMax = Double.NEGATIVE_INFINITY;
+            double statsSum = 0;
+            double statsSS = 0;
             for (TupleDateNumber tuple : tupleList.getTuples()) {
-                List<Number> numArray = tuple.getYValue();
-                double yValue = numArray.get(index).doubleValue();
-                int xCoord = (int) (bottomAxis.getRange().getPosition((Comparable) tuple.getXValue()) * numBins);
-                if (xCoord >= numBins) {
-                    xCoord = numBins - 1;
+                float x = (float) (row) / numRows * (width - margin * 4) + margin * 2;
+                double curValue = tuple.getYValue().doubleValue();
+
+                statsSum += curValue;
+                statsSS += curValue * curValue;
+
+                if (curValue > statsMax) {
+                    statsMax = curValue;
                 }
-                switch (scale) {
-                    case LINEAR:
-                        yCoords[xCoord] = (float) (yValue / range);
+
+                if (curValue < statsMin) {
+                    statsMin = curValue;
+                }
+
+                float y = 0;
+                if (scale == Scale.LOG) {
+                    y = (float) (Math.log(curValue + 1) / Math.log(max + 1) * h);
+                    y = y2 - y;
+                } else {
+                    y = (float) ((curValue - min) / (max - min) * h);
+                    y = y2 - y;
+                }
+
+                switch (renderStyle) {
+                    case BARS:
+                        svg.setFillColor(colors[col]);
+                        svg.setOpacity(0.8f);
+                        if (barWidth < 2) {
+                            svg.setStroke(colors[col]);
+                        } else {
+                            svg.setStroke(SVGColor.BLACK);
+                        }
+                        elemFrame.appendChild(
+                                svg.createRectangle(x + col * barWidth, y, barWidth, y2 - y));
                         break;
-                    case LOG:
-                        yCoords[xCoord] = (float) (Math.log(yValue + 1) / Math.log(range + 1));
+                    case LINES:
+                        svg.setStrokeColor(colors[col]);
+                        svg.setStrokeWidth(1);
+                        if (row > 0) {
+                            elemFrame.appendChild(
+                                    svg.createLine(x, py, x, y, null));
+                        }
+                        elemFrame.appendChild(svg.createLine(x, y,
+                                x + barWidth * numCols, y, null));
                         break;
                 }
-
-                //render
-                svg.setFillColor(render.getColor());
-                float w = (width - 4 * margin) / yCoords.length;
-                float px = 0, py = 0;
-                for (int i = 0; i < yCoords.length; i++) {
-                    float x = i * (width - 4 * margin) / yCoords.length + margin * 2;
-                    float y = height - 2 * margin - yCoords[i] * (height - 4 * margin);
-
-                    switch (render.getRenderStyle()) {
-
-                        case BARS:
-                            svg.setFillColor(render.getColor());
-                            svg.setStrokeWidth(1);
-                            svg.setStrokeColor(SVGColor.BLACK);
-                            Element bar = svg.createRectangle(x, y, w, height - 2 * margin - y);
-                            elemData.appendChild(bar);
-                            break;
-                        case DOTS:
-                            svg.setFillColor(SVGColor.WHITE);
-                            svg.setStroke(render.getColor());
-                            if (y == height - 2 * margin) {
-                                break;
-                            }
-                            Element dot = svg.createCircle(x, y, 3);
-                            elemData.appendChild(dot);
-                            break;
-                        case LINES:
-                            if (i == 0) {
-                                break;
-                            }
-                            if (y == height - 2 * margin
-                                    && py == height - 2 * margin) {
-                                break;
-                            }
-                            svg.setFillColor(render.getColor());
-                            svg.setStroke(render.getColor());
-                            Element line = svg.createLine(px, py, x, y, null);
-                            elemData.appendChild(line);
-                    }
-                    px = x;
-                    py = y;
-                }
+                row++;
+                py = y;
+                //System.out.println(curValue +" " + max);
             }
+
+            //plot stats
+            svg.setFillColor(colors[col]);
+            svg.setStroke(SVGColor.BLACK);
+            svg.setTextAlignment(SVGDocument.TextAlignment.LEFT);
+            float y = margin * 2 - svg.getTextSize() * 1.5f * col - 10;
+            elemFrame.appendChild(svg.createRectangle(margin * 2, y - 10, 20, svg.getTextSize()));
+            svg.setFillColor(SVGColor.BLACK);
+            if (names != null && names.length > col) {
+                elemFrame.appendChild(svg.createText(margin * 2 + 30, y, names[col]));
+            }
+
+            elemFrame.appendChild(svg.createText(margin * 2 + 30 + svg.getTextSize() * 10,
+                    y, "min: " + yFormat.format(statsMin)));
+
+            double mean = statsSum / numRows;
+            elemFrame.appendChild(svg.createText(margin * 2 + 30 + svg.getTextSize() * 20,
+                    y, "avg: " + yFormat.format(mean)));
+
+            elemFrame.appendChild(svg.createText(margin * 2 + 30 + svg.getTextSize() * 30,
+                    y, "max: " + yFormat.format(statsMax)));
+
+            double std = Math.sqrt(statsSS / numRows - mean * mean);
+            elemFrame.appendChild(svg.createText(margin * 2 + 30 + svg.getTextSize() * 40,
+                    y, "std: " + yFormat.format(Math.sqrt(std))));
+            col++;
         }
     }
 }

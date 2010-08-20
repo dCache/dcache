@@ -1,21 +1,18 @@
 package org.dcache.commons.plot;
 
+import java.math.BigDecimal;
+
 /**
  *
  * @author timur and tao
  */
-public class ParamBinSize<T extends Number> implements PlotParameter{
-    private T binSize;
+public class ParamBinSize extends BigDecimal implements PlotParameter{
 
-    public ParamBinSize(T value){
-        binSize = value;
+    public ParamBinSize(double value){
+        super(value);
     }
 
-    public Number getBinSize() {
-        return binSize;
-    }
-
-    public void setBinSize(Number binSize) {
-        this.binSize = (T) binSize;
+    public ParamBinSize(Number value){
+        super(value.toString());
     }
 }

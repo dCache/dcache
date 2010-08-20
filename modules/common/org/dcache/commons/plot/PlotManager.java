@@ -1,9 +1,10 @@
 package org.dcache.commons.plot;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.dcache.commons.plot.dao.PlotDao;
 import org.dcache.commons.plot.dao.PlotDaoFactory;
 import org.dcache.commons.plot.dao.TupleList;
-import org.dcache.commons.plot.renderer.PlotOutputType;
 import org.dcache.commons.plot.renderer.PlotRendererFactory;
 import org.dcache.commons.plot.renderer.Renderer;
 
@@ -28,23 +29,23 @@ public class PlotManager {
      * Class
      */
     public static PlotReply plot(PlotRequest request) throws PlotException {
-        ParamPlotType plotType = request.getParameter(ParamPlotType.class);
-        if (plotType == null) {
-            throw new PlotException("plot type is not specified in the request");
-        }
 
         PlotDaoFactory plotDaoFactory = PlotDaoFactory.getInstance();
-        PlotDao plotDao = plotDaoFactory.getPlotDao(plotType);
-
-        TupleList table = plotDao.getData(request);
-
-        PlotOutputType plotOutputType =
-                request.getParameter(PlotOutputType.class);
+        ParamDaoID daoID = request.getParameter(ParamDaoID.class);
+        String[] ids = daoID.getDaoID().split(":");
+        List<TupleList> tupleLists = new ArrayList<TupleList>();
+        for (int i = 0; i < ids.length; i++) {
+            PlotDao plotDao = plotDaoFactory.getPlotDao(new ParamPlotType(ids[i]));
+            TupleList tupleList = plotDao.getData(request);
+            tupleLists.add(tupleList);
+        }
 
         PlotRendererFactory rendererFactory =
                 PlotRendererFactory.getInstance();
-        Renderer renderer = rendererFactory.getPlotRenderer(plotOutputType);
+        ParamRendererID rendererID = request.getParameter(ParamRendererID.class);
+        Renderer renderer =
+                rendererFactory.getPlotRenderer(rendererID.getRendererID());
 
-        return renderer.render(table, request);
+        return renderer.render(tupleLists, request);
     }
 }
