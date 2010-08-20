@@ -1977,7 +1977,7 @@ public class PoolV4
         return mover_ls(Arrays.asList(js), binary);
     }
 
-    private Object mover_ls(List<JobScheduler> jobSchedulers, boolean binary) {        
+    private Object mover_ls(List<JobScheduler> jobSchedulers, boolean binary) {
 
         if (binary) {
             List<JobInfo> list = new ArrayList<JobInfo>();

@@ -871,14 +871,10 @@ public final class BringOnlineFileRequest extends FileRequest {
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                try {
-                    fr.setState(State.FAILED,"ThePinCallbacks Timeout");
+                logger.info("Pin request timed out");
+                if (!fr.getState().isFinalState()) {
+                    fr.pinFile();
                 }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-
-                logger.error("GetCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e.toString());
