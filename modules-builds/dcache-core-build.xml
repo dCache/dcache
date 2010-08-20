@@ -117,6 +117,7 @@
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
         <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
+	<fileset dir="${libDir}/batik-1.7" includes="*.jar" />
     </path>
 
 

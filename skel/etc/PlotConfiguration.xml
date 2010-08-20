@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- configuration file for plot, reference to this file can be set via
+system variable "PlotObjectFactoryConfig"-->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd" xmlns:aop="http://www.springframework.org/schema/aop">
+    <!--template JDBC connection, change the setting on this template will affect
+    all database connections-->
+    <bean id="templateJDBC" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <property name="username">
+            <value>srmdcache</value>
+        </property>
+        <property name="database">
+            <value>billing</value>
+        </property>
+        <property name="className">
+            <value>org.postgresql.Driver</value>
+        </property>
+        <property name="connectionURL">
+            <value>jdbc:postgresql://localhost/billing</value>
+        </property>
+        <property name="password">
+            <value></value>
+        </property>
+    </bean>
+
+    <!-- DAO (jdbc) section -->
+    <bean id="dcache_write" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, fullsize
+            from billinginfo
+            where isnew='t'
+            and datestamp &gt; ? and datestamp &lt; ?
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <bean id="dcache_read" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, fullsize
+            from billinginfo
+            where isnew='f'
+            and datestamp &gt; ? and datestamp &lt; ?
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <bean id="dcache_conn_time" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, connectiontime
+            from billinginfo
+            where datestamp &gt; ? and datestamp &lt; ?
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <bean id="enstore_conn_time" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, connectiontime
+            from storageinfo
+            where datestamp &gt; ? and datestamp &lt; ?
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <bean id="enstore_read" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, fullsize
+            from storageinfo
+            where action='restore'
+            and datestamp &gt; ? and datestamp &lt; ?
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <bean id="enstore_write" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, fullsize
+            from storageinfo
+            where action='store'
+            and datestamp &gt; ? and datestamp &lt; ?
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <!--- renderer section -->
+    <bean id="renderer_year_svg" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "12"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="MMM, yyyy"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="renderer_month_svg" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "15"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="MM, dd, yyyy"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="renderer_week_svg" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "7"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="EE, MMM-dd"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="renderer_day_svg" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "12"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="hh:mm MM,dd"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="renderer_year_svg_log" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "12"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="MMM, yyyy"/>
+            </bean>
+        </property>
+        <property name="scale">
+            <util:constant static-field="org.dcache.commons.plot.renderer.Scale.LOG"/>
+        </property>
+        <property name="renderStyle">
+            <util:constant static-field="org.dcache.commons.plot.renderer.RenderStyle.LINES"/>
+        </property>
+    </bean>
+
+    <bean id="renderer_month_svg_log" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "15"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="MM, dd, yyyy"/>
+            </bean>
+        </property>
+        <property name="scale">
+            <util:constant static-field="org.dcache.commons.plot.renderer.Scale.LOG"/>
+        </property>
+        <property name="renderStyle">
+            <util:constant static-field="org.dcache.commons.plot.renderer.RenderStyle.LINES"/>
+        </property>
+    </bean>
+
+    <bean id="renderer_week_svg_log" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "7"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="EE, MMM-dd"/>
+            </bean>
+        </property>
+        <property name="scale">
+            <util:constant static-field="org.dcache.commons.plot.renderer.Scale.LOG"/>
+        </property>
+        <property name="renderStyle">
+            <util:constant static-field="org.dcache.commons.plot.renderer.RenderStyle.LINES"/>
+        </property>
+    </bean>
+
+    <bean id="renderer_day_svg_log" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
+        <property name="numXLabels" value = "12"/>
+        <property name="xFormat">
+            <bean class="java.text.SimpleDateFormat">
+                <constructor-arg value="hh:mm MM,dd"/>
+            </bean>
+        </property>
+        <property name="scale">
+            <util:constant static-field="org.dcache.commons.plot.renderer.Scale.LOG"/>
+        </property>
+        <property name="renderStyle">
+            <util:constant static-field="org.dcache.commons.plot.renderer.RenderStyle.LINES"/>
+        </property>
+    </bean>
+
+    <!--png output -->
+    <bean id="renderer_year_png" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_year_svg"/>
+    </bean>
+
+    <bean id="renderer_month_png" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_month_svg"/>
+    </bean>
+
+    <bean id="renderer_week_png" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_week_svg"/>
+    </bean>
+
+    <bean id="renderer_day_png" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_day_svg"/>
+    </bean>
+
+    <bean id="renderer_year_png_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_year_svg_log"/>
+    </bean>
+
+    <bean id="renderer_month_png_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_month_svg_log"/>
+    </bean>
+
+    <bean id="renderer_week_png_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_week_svg_log"/>
+    </bean>
+
+    <bean id="renderer_day_png_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.PNG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_day_svg_log"/>
+    </bean>
+
+    <!--jpeg output -->
+    <bean id="renderer_year_jpg" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_year_svg"/>
+    </bean>
+
+    <bean id="renderer_month_jpg" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_month_svg"/>
+    </bean>
+
+    <bean id="renderer_week_jpg" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_week_svg"/>
+    </bean>
+
+    <bean id="renderer_day_jpg" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_day_svg"/>
+    </bean>
+
+    <bean id="renderer_year_jpg_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_year_svg_log"/>
+    </bean>
+
+    <bean id="renderer_month_jpg_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_month_svg_log"/>
+    </bean>
+
+    <bean id="renderer_week_jpg_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_week_svg_log"/>
+    </bean>
+
+    <bean id="renderer_day_jpg_log" class="org.dcache.commons.plot.renderer.batik.BatikRenderer">
+        <property name="plotOutputType">
+            <util:constant static-field="org.dcache.commons.plot.renderer.batik.PlotOutputType.JPEG"/>
+        </property>
+        <property name="svgRenderer" ref="renderer_day_svg_log"/>
+    </bean>
+</beans>
