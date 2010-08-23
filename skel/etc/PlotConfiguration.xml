@@ -112,6 +112,36 @@ http://www.springframework.org/schema/util http://www.springframework.org/schema
         </property>
     </bean>
 
+    <bean id="hits_cached" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, count(*)
+            from hitinfo
+            where filecached='t'
+            and datestamp &gt; ? and datestamp &lt; ?
+            group by datestamp
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
+    <bean id="hits_uncached" class="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+        <constructor-arg type="org.dcache.commons.plot.dao.jdbc.DaoJdbc">
+            <ref bean="templateJDBC"/>
+        </constructor-arg>
+        <property name="query">
+            <value>select datestamp, count(*)
+            from hitinfo
+            where filecached='f'
+            and datestamp &gt; ? and datestamp &lt; ?
+            group by datestamp
+            order by datestamp
+            </value>
+        </property>
+    </bean>
+
     <!--- renderer section -->
     <bean id="renderer_year_svg" class="org.dcache.commons.plot.renderer.svg.RectRenderer">
         <property name="numXLabels" value = "12"/>

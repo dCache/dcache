@@ -2,9 +2,7 @@ package org.dcache.services.plots;
 
 import dmg.util.HttpException;
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.dcache.commons.plot.ParamBinSize;
@@ -24,13 +22,11 @@ import org.w3c.dom.Element;
 public class DisplayPage extends PlotPage {
 
     protected Map<String, String> urls = new HashMap<String, String>();
-    protected static String imageDir = System.getProperty("org.dcache.services.plots.imagedir", "/tmp/img");
-    protected final static String YEAR = "year";
+     protected final static String YEAR = "year";
     protected final static String MONTH = "month";
     protected final static String WEEK = "week";
     protected final static String DAY = "day";
-
-    protected final static String outputType = "png";
+    
     /**
      * this map dictates how often plots are updated
      */
@@ -43,16 +39,15 @@ public class DisplayPage extends PlotPage {
         plotDuration.put(DAY, Calendar.HOUR);
     }
 
-
     /**
      * make sure plots are up to date and urls are set
      */
-    protected void updatePlots() throws HttpException{
+    protected void updatePlots() throws HttpException {
         try {
             for (String timeSpan : plotDuration.keySet()) {
                 PlotRequest plotRequest = getPlotRequest(timeSpan);
                 ParamOutputFileName paramFileName = plotRequest.getParameter(ParamOutputFileName.class);
-                String fileName = paramFileName.getOutputFileName() +"." +this.outputType;
+                String fileName = paramFileName.getOutputFileName() + "." + DisplayPage.imgFormat;
                 File file = new File(fileName);
 
                 boolean isUpToDate = false;
@@ -67,7 +62,7 @@ public class DisplayPage extends PlotPage {
                     }
                 }
                 //plot
-                if (!isUpToDate){
+                if (!isUpToDate) {
                     PlotReply reply = PlotManager.plot(plotRequest);
                 }
                 String[] tokens = fileName.split(File.separator);
@@ -90,7 +85,7 @@ public class DisplayPage extends PlotPage {
     }
 
     @Override
-    protected void buildBody() throws HttpException{
+    protected void buildBody() throws HttpException {
         updatePlots();
 
         Element table = document.createElement("table");
@@ -122,114 +117,6 @@ public class DisplayPage extends PlotPage {
         img.setAttribute("src", urls.get(YEAR));
     }
 
-    /**
-     * output an html form that contains start/end day fields and bin size
-     * @param action which page this form is submitted to
-     * @return dom element representing the form
-     */
-    protected Element createForm(String action) {
-        SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
-        String curDateString = format.format(new Date());
-
-        Element form = document.createElement("form");
-        form.setAttribute("action", action);
-        Element table = document.createElement("table");
-        form.appendChild(table);
-
-        Element tr = null, td = null, input;
-
-        tr = document.createElement("tr");
-        table.appendChild(tr);
-
-        //start date
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("Start Date");
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        input = document.createElement("input");
-        td.appendChild(input);
-        input.setAttribute("value", curDateString);
-        input.setAttribute("name", "start_date");
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("Format YYYY-MM-DD hh:mm:ss");
-
-        //end date
-        tr = document.createElement("tr");
-        table.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("End Date");
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        input = document.createElement("input");
-        td.appendChild(input);
-        input.setAttribute("name", "end_date");
-        input.setAttribute("value", curDateString);
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("Format YYYY-MM-DD hh:mm:ss");
-
-        //bin size
-        tr = document.createElement("tr");
-        table.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("Bin Size");
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        input = document.createElement("select");
-        td.appendChild(input);
-        input.setAttribute("name", "bin_size");
-        Element option = null;
-
-        option = document.createElement("option");
-        input.appendChild(option);
-        option.setAttribute("value", "monthly");
-        option.setTextContent("Monthly");
-
-        option = document.createElement("option");
-        input.appendChild(option);
-        option.setAttribute("value", "weekly");
-        option.setTextContent("Weekly");
-
-        option = document.createElement("option");
-        input.appendChild(option);
-        option.setAttribute("value", "daily");
-        option.setTextContent("Daily");
-
-        option = document.createElement("option");
-        input.appendChild(option);
-        option.setAttribute("value", "hourly");
-        option.setTextContent("Hourly");
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("Plot bin size");
-
-
-        //submit
-        tr = document.createElement("tr");
-        table.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        td.setTextContent("Submit");
-
-        td = document.createElement("td");
-        tr.appendChild(td);
-        input = document.createElement("input");
-        td.appendChild(input);
-        input.setAttribute("type", "submit");
-
-        return form;
-    }
-
     public PlotRequest getPlotRequest(String timeSpan) {
         PlotRequest plotRequest = new PlotRequest();
         Calendar cal = Calendar.getInstance();
@@ -238,7 +125,7 @@ public class DisplayPage extends PlotPage {
             cal.add(Calendar.YEAR, -1);
             plotRequest.setParameter(new ParamStartDate(cal.getTime().getTime()));
             plotRequest.setParameter(new ParamBinSize(Calendar.MONTH));
-            plotRequest.setParameter(new ParamRendererID("renderer_year_" + outputType));
+            plotRequest.setParameter(new ParamRendererID("renderer_year_" + imgFormat));
             return plotRequest;
         }
 
@@ -246,7 +133,7 @@ public class DisplayPage extends PlotPage {
             cal.add(Calendar.MONTH, -1);
             plotRequest.setParameter(new ParamStartDate(cal.getTime().getTime()));
             plotRequest.setParameter(new ParamBinSize(Calendar.DATE));
-            plotRequest.setParameter(new ParamRendererID("renderer_month_" + outputType));
+            plotRequest.setParameter(new ParamRendererID("renderer_month_" + imgFormat));
             return plotRequest;
         }
 
@@ -254,7 +141,7 @@ public class DisplayPage extends PlotPage {
             cal.add(Calendar.WEEK_OF_YEAR, -1);
             plotRequest.setParameter(new ParamStartDate(cal.getTime().getTime()));
             plotRequest.setParameter(new ParamBinSize(Calendar.DATE));
-            plotRequest.setParameter(new ParamRendererID("renderer_week_" + outputType));
+            plotRequest.setParameter(new ParamRendererID("renderer_week_" + imgFormat));
             return plotRequest;
         }
 
@@ -262,7 +149,7 @@ public class DisplayPage extends PlotPage {
             cal.add(Calendar.DATE, -1);
             plotRequest.setParameter(new ParamStartDate(cal.getTime().getTime()));
             plotRequest.setParameter(new ParamBinSize(Calendar.HOUR));
-            plotRequest.setParameter(new ParamRendererID("renderer_day_" + outputType));
+            plotRequest.setParameter(new ParamRendererID("renderer_day_" + imgFormat));
             return plotRequest;
         }
         return plotRequest;

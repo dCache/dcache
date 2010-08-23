@@ -67,11 +67,18 @@ public class BillingPlotsHttpEngine implements HttpResponseEngine, Cell {
 
             if (pageName.compareTo(PlotPage.TRANSFERRATE_PAGE) == 0) {
                 page = new TransferRate();
-                page.setQueryString(queryString);
             }
 
             if (pageName.compareTo(PlotPage.CONNECTIONTIME_PAGE) == 0) {
                 page = new ConnectionTime();
+            }
+
+            if (pageName.compareTo(PlotPage.CACHEHITS_PAGE) == 0) {
+                page = new CacheHits();
+            }
+
+            if (pageName.compareTo(PlotPage.CUSTOMIZED_PAGE) == 0) {
+                page = new CustomizedPage();
                 page.setQueryString(queryString);
             }
 
