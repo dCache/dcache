@@ -157,9 +157,10 @@ public class DaoJdbc implements PlotDao {
             }
 
             if (c2.compareTo(BigDecimal.class.getCanonicalName()) != 0
-                    && c1.compareTo(Double.class.getCanonicalName()) != 0
-                    && c1.compareTo(Integer.class.getCanonicalName()) != 0) {
-                throw new PlotException("column 2 must be number type but is " + c1);
+                    && c2.compareTo(Double.class.getCanonicalName()) != 0
+                    && c2.compareTo(Integer.class.getCanonicalName()) != 0
+                    && c2.compareTo(Long.class.getCanonicalName()) != 0) {
+                throw new PlotException("column 2 must be number type but is " + c2);
             }
 
             ParamStartDate startDate = plotRequest.getParameter(ParamStartDate.class);

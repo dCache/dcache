@@ -216,12 +216,12 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
         svg.setTextAlignment(SVGDocument.TextAlignment.LEFT);
 
         float halfWidth = w / numXLabels / 2;
-        for (float i = 0; i < numXLabels; i++) {
+        for (float i = 0; i <= numXLabels; i++) {
             float x = i / numXLabels * w + x1;
             float y = y2;
             elemFrame.appendChild(svg.createLine(x, y2, x, y2 - 5, null));
             elemFrame.appendChild(svg.createLine(x, y1, x, y2, gridDash));
-            x += halfWidth;
+            //x += halfWidth;
             y += svg.getTextSize();
             Date date = (Date) xRange.getItemAt(i / numXLabels);
             String label = xFormat.format(date);
@@ -277,6 +277,9 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
 
         int numRows = tupleLists.get(0).size();
         int numCols = tupleLists.size();
+        if (numRows == 0){
+            return;
+        }
         int col = 0;
         float y2 = height - margin * 2;
         float barWidth = (width - margin * 4) / numRows / numCols;
@@ -309,7 +312,7 @@ public class RectRenderer extends SVGRenderer<TupleList<TupleDateNumber>> {
 
                 float y = 0;
                 if (scale == Scale.LOG) {
-                    y = (float) (Math.log(curValue + 1) / Math.log(max + 1) * h);
+                    y = (float) (Math.log(curValue + 1) / Math.log(max + 2) * h);
                     y = y2 - y;
                 } else {
                     y = (float) ((curValue - min) / (max - min) * h);
