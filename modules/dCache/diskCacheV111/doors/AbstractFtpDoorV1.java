@@ -568,6 +568,14 @@ public abstract class AbstractFtpDoorV1
     )
     protected int _defaultStreamsPerClient;
 
+    @Option(
+        name = "perfMarkerPeriod",
+        description = "Performance marker period",
+        defaultValue = "90",
+        unit = "seconds"
+    )
+    protected long _performanceMarkerPeriod;
+
     protected final int _sleepAfterMoverKill = 1; // seconds
 
     protected final int _spaceManagerTimeout = 5 * 60;
@@ -646,23 +654,6 @@ public abstract class AbstractFtpDoorV1
     protected Set<Fact> _currentFacts =
         new HashSet(Arrays.asList(new Fact[] {
                     Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE }));
-
-    /**
-     * Configuration parameters related to performance markers.
-     */
-    protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
-
-    protected static class PerfMarkerConf
-    {
-        protected boolean use;
-        protected long    period;
-
-        PerfMarkerConf()
-        {
-            use    = false;
-            period = 3 * 60 * 1000L; // default - 3 minutes
-        }
-    }
 
     /**
      * Encapsulation of an FTP transfer.
@@ -925,14 +916,12 @@ public abstract class AbstractFtpDoorV1
 
             reply("150 Opening BINARY data connection for " + _path, false);
 
-            if (isWrite() && _perfMarkerConf.use && _xferMode.equals("E")) {
+            if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
+                long period = _performanceMarkerPeriod * 1000;
+                long timeout = period / 2;
                 _perfMarkerTask =
-                    new PerfMarkerTask(getPool(),
-                                       getMoverId(),
-                                       _perfMarkerConf.period / 2);
-                _timer.schedule(_perfMarkerTask,
-                                _perfMarkerConf.period,
-                                _perfMarkerConf.period);
+                    new PerfMarkerTask(getPool(), getMoverId(), timeout);
+                _timer.schedule(_perfMarkerTask, period, period);
             }
         }
 
