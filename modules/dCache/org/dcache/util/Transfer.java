@@ -780,7 +780,7 @@ public abstract class Transfer implements Comparable<Transfer>
             msg.setPath(_path.toString());
             msg.setTransactionTime(_startedAt);
             msg.setTransaction(getTransaction());
-            msg.setClient(_clientAddress.getAddress().getHostAddress());
+            msg.setClient(_clientAddress.getAddress().getHostName());
             msg.setPnfsId(getPnfsId());
             msg.setResult(code, error);
             msg.setStorageInfo(_storageInfo);
