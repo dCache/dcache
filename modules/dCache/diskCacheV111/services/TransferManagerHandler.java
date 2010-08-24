@@ -142,7 +142,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
         }
 		try {
 			if(manager.getLogRootName() != null) {
-				tlog = new FTPTransactionLog(manager.getLogRootName(),manager);
+				tlog = new FTPTransactionLog(manager.getLogRootName());
 				String user_info = transferRequest.getUser().getName()+
 					"("+transferRequest.getUser().getUid() +"."+
                     transferRequest.getUser().getGid()+")";
@@ -457,7 +457,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 
         public void checkPermissionAndSelectPool() {
 		if(store) {
-			boolean can_write =  
+			boolean can_write =
                 AccessType.ACCESS_ALLOWED  ==permissionHandler.canWriteFile(
                      transferRequest.getUser().getSubject(),
                      fileAttributes);

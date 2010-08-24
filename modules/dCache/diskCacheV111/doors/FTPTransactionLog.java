@@ -30,7 +30,6 @@ package diskCacheV111.doors;
 import java.util.*;
 import java.io.*;
 import java.net.InetAddress;
-import dmg.cells.nucleus.CellAdapter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,22 +44,20 @@ public class	FTPTransactionLog
 	private String root;
 	private String tid;
 	private boolean GotMiddle;
-        CellAdapter cell;
 
-	public FTPTransactionLog(String root, String tid, CellAdapter cell)
+	public FTPTransactionLog(String root, String tid)
 	{
-		this(root,cell);
+		this(root);
 		this.tid = tid;
 	}
 
-	public FTPTransactionLog(String root,CellAdapter cell)
+	public FTPTransactionLog(String root)
 	{
 		long time = System.currentTimeMillis();
 		this.root = root;
 		this.tid = "" + time;
 		LWriter = null;
 		GotMiddle = false;
-                this.cell = cell;
 	}
 
 	public void finalize()
