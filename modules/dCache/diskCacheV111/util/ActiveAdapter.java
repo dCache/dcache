@@ -82,6 +82,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
+import org.dcache.util.PortRange;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,52 +115,20 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private int _streamsCreated;
 
     /**
-     * @param lowPort Lower limit of port range
-     * @param highPort Upper limit of port range
+     * @param range Port range for server socket
      * @param host Host to connect to
      * @param port Port to connect to
      * @throws IOException
      */
-    public ActiveAdapter(int lowPort, int highPort, String host, int port)
+    public ActiveAdapter(PortRange range, String host, int port)
         throws IOException
     {
         _tgtHost = host;
         _tgtPort = port;
 
-        if (lowPort > highPort) {
-            throw new IllegalArgumentException("lowPort > highPort");
-        }
-
-        say("Port range=" + lowPort + "-" + highPort);
-        if (lowPort > 0) {
-            /*
-             * We randomise the first socket to try to reduce the risk of
-             * conflicts and to make the port less predictable.
-             */
-            int start = _random.nextInt(highPort - lowPort + 1) + lowPort;
-            int i = start;
-            do {
-                try {
-                    say("Trying Port " + i);
-                    _ssc = ServerSocketChannel.open();
-                    _ssc.configureBlocking(false); // Set it to non-blocking,
-                                                    // so we can use select
-                    _ssc.socket().bind(new InetSocketAddress(i));
-                    break;
-                } catch (BindException ee) {
-                    say("Problems trying port " + i + " " + ee);
-                    if (i == highPort) {
-                        throw ee;
-                    }
-                }
-                i = (i < highPort ? i + 1 : lowPort);
-            } while (i != start);
-        } else {
-            _ssc = ServerSocketChannel.open();
-            _ssc.configureBlocking(false); // Set it to non-blocking, so we can
-                                            // use select
-            _ssc.socket().bind(null);
-        }
+        _ssc = ServerSocketChannel.open();
+        _ssc.configureBlocking(false);
+        range.bind(_ssc.socket());
         _laddr = InetAddress.getLocalHost().getHostAddress(); // Find the
                                                                 // address as a
                                                                 // string
@@ -166,14 +136,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         _t = new Thread(this);
         // Create a new Selector for selecting
         _selector = Selector.open();
-    }
-
-    public synchronized Socket acceptOnClientListener() throws IOException
-    {
-        if (_ssc == null) {
-            throw new IllegalStateException("Proxy is closed");
-        }
-        return _ssc.accept().socket();
     }
 
     public synchronized void close()

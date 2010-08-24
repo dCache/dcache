@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import diskCacheV111.util.ActiveAdapter;
+import org.dcache.util.PortRange;
 
 public class ActiveAdapterTest {
 
@@ -17,7 +18,7 @@ public class ActiveAdapterTest {
 
     @Before
     public void setUp() throws IOException {
-        activeAdapter = new ActiveAdapter(0, 0, null, 0);
+        activeAdapter = new ActiveAdapter(new PortRange(0), null, 0);
     }
 
     @After
