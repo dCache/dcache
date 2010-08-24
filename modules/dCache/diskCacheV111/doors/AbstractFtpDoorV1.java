@@ -289,11 +289,6 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Used for generating session IDs unique to this domain.
-     */
-    private static long   __counter = 10000;
-
-    /**
      * Feature strings returned when the client sends the FEAT
      * command.
      */
@@ -323,32 +318,6 @@ public abstract class AbstractFtpDoorV1
         }
 
         return result.substring(0, result.length() - mod);
-    }
-
-    /**
-     * This reports an internal error as a fatal error to the log file and
-     * then throws a RuntimeException to stop the program.
-     * @param methodName The name of the method where the bug was detected.
-     * @param message A message indicating the nature of the bug.
-     * @param exc An exception that may have been caught that indicated the bug.
-     *          This can be null if no exception was involved.
-     * @throws RuntimeException This is always thrown to terminate the process.
-     */
-    protected void reportBug(String methodName,
-                             String message,
-                             Throwable exc)
-        throws RuntimeException
-    {
-        String text = "BUG: " + getNucleus().getCellName() + "@" +
-                       getNucleus().getCellDomainName() + ":" +
-                       getClass().getName() + "::" + methodName +
-                       ": " + message;
-        if (exc != null) {
-            _logger.error(text, exc);
-        } else {
-            _logger.error(text);
-        }
-        throw new RuntimeException(text, exc);
     }
 
     /**
@@ -1080,14 +1049,6 @@ public abstract class AbstractFtpDoorV1
          * bugs). Communication errors and the like should not be
          * logged with an exception.
          *
-         * In case the caller knows that an exception is certainly a
-         * bug, <code>reportBug</code> should be called. That method
-         * logs the exception as fatal, meaning it will always be
-         * added to the log. In most cases <code>reportBug</code>
-         * should be called instead of <code>abort</code>, since the
-         * former will throw a <code>RuntimeException</code>, which in
-         * turn causes <code>abort</code> to be called.
-         *
          * @param replyCode reply code to send the the client
          * @param replyMsg error message to send back to the client
          * @param exception exception to log or null
@@ -1157,11 +1118,6 @@ public abstract class AbstractFtpDoorV1
                 _methodDict.put(name.substring(3), method);
             }
         }
-    }
-
-    private synchronized static long nextSessionId()
-    {
-        return __counter++ ;
     }
 
     public static CellVersion getStaticCellVersion()
@@ -1404,7 +1360,7 @@ public abstract class AbstractFtpDoorV1
             _logger.error("FTP command '{}' got exception", cmd, te);
             _skipBytes = 0;
         } catch (IllegalAccessException e) {
-            reportBug("ftpcommand", "got illegal access exception", e);
+            _logger.error("This is a bug. Please report it.", e);
         }
     }
 
@@ -1565,14 +1521,6 @@ public abstract class AbstractFtpDoorV1
     {
         synchronized (_out) {
             _out.println(str + "\r");
-            _out.flush();
-        }
-    }
-
-    public void print(String str)
-    {
-        synchronized (_out) {
-            _out.print(str);
             _out.flush();
         }
     }
@@ -1768,7 +1716,7 @@ public abstract class AbstractFtpDoorV1
         if (_currentFacts.isEmpty()) {
             reply("200 MLST");
         } else {
-            StringBuffer s = new StringBuffer("200 MLST ");
+            StringBuilder s = new StringBuilder("200 MLST ");
             for (Fact fact: _currentFacts) {
                 s.append(fact).append(';');
             }
@@ -2662,26 +2610,6 @@ public abstract class AbstractFtpDoorV1
             _checkSumFactory = null;
             _checkSum = null;
             _allo = 0;
-        }
-    }
-
-    private void setLength(PnfsId pnfsId, long length)
-    {
-        CellPath pnfsCellPath;
-        CellMessage pnfsCellMessage;
-        PnfsSetLengthMessage pnfsMessage;
-
-        pnfsCellPath = new CellPath(_pnfsManager);
-        pnfsMessage = new PnfsSetLengthMessage(pnfsId,length);
-        pnfsCellMessage = new CellMessage(pnfsCellPath, pnfsMessage);
-
-        _logger.debug("SetLength setting length of file {} to {}",
-                      pnfsId, length);
-
-        try {
-            sendMessage(pnfsCellMessage);
-        } catch (NoRouteToCellException e) {
-            _logger.error("SetLength cannot send message {}", e.getMessage());
         }
     }
 
@@ -4021,7 +3949,7 @@ public abstract class AbstractFtpDoorV1
          */
         private void printPermFact(FileAttributes parentAttr, FileAttributes attr)
         {
-            StringBuffer s = new StringBuffer();
+            StringBuilder s = new StringBuilder();
             if (attr.getFileType() == FileType.DIR) {
                 if (_pdp.canCreateFile(_subject, attr) == AccessType.ACCESS_ALLOWED) {
                     s.append('c');
