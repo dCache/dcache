@@ -2955,7 +2955,7 @@ public abstract class AbstractFtpDoorV1
         File f = new File(absolutepath);
 
         try {
-
+            _commandQueue.enableInterrupt();
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -3012,6 +3012,8 @@ public abstract class AbstractFtpDoorV1
         } catch (IOException e) {
             reply("451 Local error in processing");
             warn("Error in LIST: " + e.getMessage());
+        } finally {
+            _commandQueue.disableInterrupt();
         }
     }
 
@@ -3022,6 +3024,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
+            _commandQueue.enableInterrupt();
+
             /* 550 is not a valid reply for NLST. However other FTP
              * servers use this return code for NLST. Gerd and Timur
              * decided to follow their example and violate the spec.
@@ -3075,6 +3079,8 @@ public abstract class AbstractFtpDoorV1
         } catch (IOException e) {
             reply("451 Local error in processing");
             warn("Error in NLST: " + e.getMessage());
+        } finally {
+            _commandQueue.disableInterrupt();
         }
     }
 
@@ -3129,6 +3135,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
+            _commandQueue.enableInterrupt();
+
             String path;
             if (arg.length() == 0) {
                 path = absolutePath(".") + "/";
@@ -3184,6 +3192,8 @@ public abstract class AbstractFtpDoorV1
         } catch (IOException e) {
             reply("451 Local error in processing");
             warn("Error in MLSD: " + e.getMessage());
+        } finally {
+            _commandQueue.disableInterrupt();
         }
     }
 
