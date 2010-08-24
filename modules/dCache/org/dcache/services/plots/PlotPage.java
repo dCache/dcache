@@ -19,15 +19,15 @@ public class PlotPage {
     protected Document document;
     protected String queryString;
     protected HttpRequest httpRequest;
-    protected String DATE_FORMAT = "yyyy-MM-dd HH:mm";
-    protected static String PLOTDIR = "plots";
-    protected static String TRANSFERRATE_PAGE = "transferrate";
-    protected static String CONNECTIONTIME_PAGE = "connectiontime";
-    protected static String CACHEHITS_PAGE = "cachehits";
-    protected static String IMAGE_PAGE = "images";
-    protected static String NAV_PAGE = "navigation";
-    protected static String CUSTOMIZED_PAGE = "customized";
-    protected static String SHOW_FRAME = "showframe";
+    protected final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
+    protected final static String PLOTDIR = "plots";
+    protected final static String TRANSFERRATE_PAGE = "transferrate";
+    protected final static String CONNECTIONTIME_PAGE = "connectiontime";
+    protected final static String CACHEHITS_PAGE = "cachehits";
+    protected final static String IMAGE_PAGE = "images";
+    protected final static String NAV_PAGE = "navigation";
+    protected final static String CUSTOMIZED_PAGE = "customized";
+    protected final static String SHOW_FRAME = "showframe";
     protected static String imageDir = System.getProperty("org.dcache.services.plots.imagedir", "/tmp/img");
     protected final static String imgFormat = "png";
 
