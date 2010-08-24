@@ -919,6 +919,10 @@ public abstract class AbstractFtpDoorV1
             if (_adapter != null) {
                 _adapter.start();
             }
+
+            setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
+                      (isWrite() ? "Receiving" : "Sending"));
+
             reply("150 Opening BINARY data connection for " + _path, false);
 
             if (isWrite() && _perfMarkerConf.use && _xferMode.equals("E")) {
@@ -937,6 +941,7 @@ public abstract class AbstractFtpDoorV1
             throws CacheException, InterruptedException
         {
             super.startMover(queue);
+            setStatus("Mover " + getPool() + "/" + getMoverId());
             if (_version == 1) {
                 startTransfer();
             }
