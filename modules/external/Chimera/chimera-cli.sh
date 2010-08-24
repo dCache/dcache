@@ -25,32 +25,9 @@ if [ ! -d "$DCACHE_HOME" ]; then
     echo "$DCACHE_HOME is not a directory"
     exit 2
 fi
-ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
 
-# Load libraries
-. "${DCACHE_HOME}/share/lib/paths.sh"
-. "${DCACHE_LIB}/utils.sh"
-. "${DCACHE_LIB}/services.sh"
+${DCACHE_HOME}/share/lib/loadConfig.sh -q
 
-# Check for java
-if ! findJavaTool java; then
-    fail 1 "Could not find usable Java VM. Please set JAVA_HOME."
-fi
-JAVA="$java"
-
-loadConfig -q
-JAVA_CLASSPATH="$(getProperty dcache.java.classpath "$domain")"
-JAVA_OPTIONS="$(getProperty dcache.java.options "$domain")"
-
-# Build classpath
-classpath="${DCACHE_HOME}/classes/cells.jar"
-if [ "$JAVA_CLASSPATH" ]; then
-    classpath="${classpath}:${JAVA_CLASSPATH}"
-fi
-if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
-    . "${DCACHE_HOME}/classes/extern.classpath"
-    classpath="${classpath}:${externalLibsClassPath}"
-fi
-
-CLASSPATH="$classpath" ${JAVA} ${JAVA_OPTIONS}  \
-     org.dcache.chimera.examples.cli.${command} ${DCACHE_HOME}/config/chimera-config.xml $*
+CLASSPATH="$(getProperty dcache.paths.classpath)" \
+    ${JAVA} $(getProperty dcache.java.options) \
+    org.dcache.chimera.examples.cli.${command} ${DCACHE_CONFIG}/chimera-config.xml $*

@@ -66,7 +66,7 @@ createPool() # in $1 = size, in $2 = path
     fail 1 "Failed to create directory tree"
 
     set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
-    sed -e "$set_size" ${DCACHE_CONFIG}/setup.temp > ${path}/setup || exit 1
+    sed -e "$set_size" "${DCACHE_CONFIG}/setup.temp" > "${path}/setup" || exit 1
 
     printp "Created a $size GiB pool in $path. The pool cannot be used
             until it has been added to a domain. Use 'pool add' to do so."\
@@ -82,11 +82,14 @@ reconstructMeta() # in $1 = src meta dir, in $2 = dst meta dir
     local dump
     local load
     local databases
+    local classpath
+
+    classpath="$(getProperty dcache.paths.classpath)"
 
     src="$1"
     dst="$2"
-    dump="${java} -cp ${DCACHE_JE} com.sleepycat.je.util.DbDump"
-    load="${java} -cp ${DCACHE_JE} com.sleepycat.je.util.DbLoad"
+    dump="CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbDump"
+    load="CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbLoad"
     databases="java_class_catalog state_store storage_info_store"
 
     for db in ${databases}; do
@@ -98,3 +101,6 @@ reconstructMeta() # in $1 = src meta dir, in $2 = dst meta dir
         rm "${dst}/${db}.dump"
     done
 }
+
+# Check prerequisites
+require sed dirname rm

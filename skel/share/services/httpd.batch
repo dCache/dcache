@@ -9,11 +9,12 @@
 onerror shutdown
 check -strong port
 check -strong config
-check -strong dcache.home
+check -strong dcache.paths.etc
+check -strong dcache.paths.docs
 check -strong cell.name
 
 onerror continue
-set context -c styles ${dcache.home}/docs/styles
+set context -c styles ${dcache.paths.docs}/styles
 onerror shutdown
 
 # Default content for httpd service.
@@ -138,11 +139,11 @@ endDefine
 ####################################################################
 
 define env notice.exe endDefine
-  say -level=esay "${dcache.home}/etc/httpd.conf not loaded. This is not an error."
+  say -level=esay "${dcache.paths.etc}/httpd.conf not loaded. This is not an error."
 endDefine
 
 onerror continue
-exec file:${dcache.home}/etc/httpd.conf
+exec file:${dcache.paths.etc}/httpd.conf
 exec env notice.exe -ifnotok
 
 # Transfer observer collects information about active transfers

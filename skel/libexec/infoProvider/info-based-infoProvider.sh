@@ -41,21 +41,10 @@ if [ ! -d "$DCACHE_HOME" ]; then
     echo "$DCACHE_HOME is not a directory"
     exit 2
 fi
-ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
 
 # Load libraries
-. "${DCACHE_HOME}/share/lib/paths.sh"
-. "${DCACHE_LIB}/utils.sh"
-. "${DCACHE_LIB}/services.sh"
-
-# Check for java
-if ! findJavaTool java; then
-    fail 1 "Could not find usable Java VM. Please set JAVA_HOME."
-fi
-JAVA="$java"
-
-# Import configuration
-loadConfig -q
+. ${DCACHE_HOME}/share/lib/loadConfig.sh -q
+. ${DCACHE_LIB}/utils.sh
 
 xsltProcessor="$(getProperty xsltProcessor)"
 xylophoneConfigurationFile="$(getProperty xylophoneConfigurationFile)"

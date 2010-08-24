@@ -7,7 +7,7 @@
 #
 check -strong port
 
-exec file:${dcache.home}/share/cells/threadmanager.fragment
+exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
 #
 #   Default values
@@ -129,14 +129,14 @@ set context -c srmDbLogEnabled   false
 set context -c RecursiveDirectoryCreation  true
 set context -c AdvisoryDelete              true
 
-set context -c kpwdFile          ${dcache.home}/etc/dcache.kpwd
+set context -c kpwdFile          ${dcache.paths.etc}/dcache.kpwd
 
 # to enable terapath plugin uncomment:
 #set context -c qosPluginClass   org.dcache.srm.qos.terapaths.TerapathsPlugin
-#set context -c qosConfigFile    ${dcache.home}/config/terapaths.properties
+#set context -c qosConfigFile    ${dcache.paths.config}/terapaths.properties
 # to enable lambda station plugin, uncomment:
 #set context -c qosPluginClass   org.dcache.srm.qos.terapaths.LambdaStation
-#set context -c qosConfigFile    ${dcache.home}/config/lambdastation.properties
+#set context -c qosConfigFile    ${dcache.paths.config}/lambdastation.properties
 
 
 set context -c overwriteEnabled false
@@ -148,7 +148,7 @@ set context -c srmSizeOfSingleRemoveBatch 100
 
 # this is the directory in which the delegated user credentials will be stored
 # as files. We recommend set permissions to 700 on this dir
-set context -c srmUserCredentialsDirectory  ${dcache.home}/credentials
+set context -c srmUserCredentialsDirectory ${dcache.home}/credentials
 
 set context -c srmPnfsManager PnfsManager
 set context -c srmPoolManager PoolManager
@@ -256,7 +256,7 @@ onerror shutdown
 #exec context localhost.exe -ifnotok=srmDbHostIsSet
 #onerror shutdown
 #
-exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
+exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/jsrm.xml \

@@ -2,7 +2,7 @@
 
 # Defaults
 onerror continue
-set context -c billingDb ${dcache.home}/billing
+check -strong billingDb
 set context -c billingDisableTxt ""
 
 #

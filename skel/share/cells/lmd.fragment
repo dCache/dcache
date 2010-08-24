@@ -8,5 +8,5 @@ define context lmd.defaults endDefine
 endDefine
 
 create dmg.cells.services.LocationManager lmd \
-       "!lmd.defaults ${broker.port} -strict=no -noclient -setup=${dcache.home}/etc/lm.config"
+       "!lmd.defaults ${broker.port} -strict=no -noclient -setup=${dcache.paths.etc}/lm.config"
 #

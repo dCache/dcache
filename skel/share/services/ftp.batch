@@ -52,7 +52,7 @@ set env -c myPoolManager ${poolmanager}
 
 onerror shutdown
 
-exec file:${dcache.home}/share/cells/stage.fragment doors
+exec file:${dcache.paths.share}/cells/stage.fragment doors
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \

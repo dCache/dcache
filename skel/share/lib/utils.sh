@@ -161,37 +161,6 @@ findJavaTool() # in $1 = tool
     return 1
 }
 
-# Sets the fqdn, hostname, and domainname variables
-determineHostName()
-{
-    case "$(uname)" in
-        SunOS)
-            fqdn=$(/usr/lib/mail/sh/check-hostname |cut -d" " -f7) ||
-	        fail 1 "Failed to determine hostname. Please ensure that
-                        /usr/lib/mail/sh/check-hostname is available."
-            ;;
-        Darwin)
-            fqdn=$(hostname) ||
-	        fail 1 "Failed to determine hostname. Please check the
-                        output of hostname".
-            ;;
-        *)
-            fqdn=$(hostname --fqdn) ||
-	        fail 1 "Failed to determine hostname. Please check the
-                        output of hostname --fqdn".
-            ;;
-    esac
-
-    hostname="${fqdn%%.*}"
-
-    if [ "$hostname" = "$fqdn" ]; then
-        domainname=
-    else
-        domainname="${fqdn#*.}"
-    fi
-}
-
-
 # Converts a string describing some amount of disk space (using an
 # optional suffix of k, K, m, M, g, G, t, T, for powers of 1024) to an
 # integer number of GiB.
@@ -249,7 +218,7 @@ getFreeSpace() # in $1 = path, out $2 = free space
 readconf() # in $1 = file in $2 = prefix
 {
     [ -f "$1" ] &&
-    eval $(sed -f "${DCACHE_LIB}/config.sed" "$1"  |
+    eval $(sed -f "${DCACHE_HOME}/share/lib/config.sed" "$1"  |
         sed -e "s/\([^=]*\)=\(.*\)/$2\1=\2/")
 }
 
@@ -266,3 +235,6 @@ matchesAny() # $1 = word, $2+ = patterns
     done
     return 1
 }
+
+# Check prerequisites
+require awk df sed wc dirname which

@@ -104,24 +104,20 @@
 
     <!--
         generate dcache run-time classpath.
-        generate a file with all jar files located in ${server.bin.dir}/classes
     -->
     <target name="-dcache-classpath">
-        <path id="dcache.external.jars">
-            <fileset dir="${server.bin.dir}/classes" includes="**/*.jar">
-                <exclude name="cells.jar" />
-                <exclude name="dcache.jar" />
-            </fileset>
+        <path id="dcache.jars">
+            <fileset dir="${server.bin.dir}/classes" includes="**/*.jar"/>
         </path>
 
         <!--
-            replace absolute path with  ${ourHomeDir} variable
+            replace absolute path with path property
         -->
-        <pathconvert property="dcache.classpath" targetos="unix" refid="dcache.external.jars">
-            <map from="${server.bin.dir}/classes" to="${ourHomeDir}/classes" />
+        <pathconvert property="dcache.classpath" targetos="unix" refid="dcache.jars">
+            <map from="${server.bin.dir}/classes" to="${dcache.paths.classes}" />
         </pathconvert>
         <echo>Generating runtime classpath...</echo>
-        <echo file="${server.bin.dir}/classes/extern.classpath" append="no">externalLibsClassPath=${dcache.classpath}</echo>
+        <echo file="${server.bin.dir}/share/defaults/classpath.properties" append="no">dcache.paths.classpath=\${dcache.java.classpath}:${dcache.classpath}</echo>
     </target>
 
 </project>

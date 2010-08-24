@@ -192,9 +192,13 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    "$JAVA" -jar ${DCACHE_HOME}/classes/dcache.jar
+    "$JAVA" -jar "$(getProperty dcache.paths.classes)/dcache.jar"
 }
 
+loadConfig()
+{
+    . ${DCACHE_HOME}/share/lib/loadConfig.sh "$@"
+}
 
 # Parse global options
 parseOptions "d" "$@" || shift $?
@@ -223,53 +227,39 @@ if [ ! -d "$DCACHE_HOME" ]; then
     exit 2
 fi
 
-ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
-
-# Load libraries
-. ${DCACHE_HOME}/share/lib/paths.sh
-. ${DCACHE_LIB}/utils.sh
-. ${DCACHE_LIB}/services.sh
-. ${DCACHE_LIB}/pool.sh
-
-# Check prerequisites
-require awk df egrep grep sed cat hostname wc dirname basename mount mv tr which
-
-# Check for java
-if ! findJavaTool java || [ ! -x "${java}" ] || ! "$java" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
-    fail 1 "Could not find usable Java VM. Please set JAVA_HOME to
-            the path to Java 6 or newer."
-fi
-JAVA="$java"
-
-determineHostName
-
 case "$1" in
     start)
         shift
         loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
         for domain in $domains; do
             domainStart $domain || :
         done
 
-        touch $DCACHE_LOCK 2> /dev/null || :
+        touch "$(getProperty dcache.paths.lock.file)" 2> /dev/null || :
         ;;
 
     stop)
         shift
         loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
         reverse domains_backward $domains
         for domain in $domains_backward; do
             domainStop $domain || :
         done
 
-        rm -f $DCACHE_LOCK
+        rm -f "$(getProperty dcache.paths.lock.file)"
         ;;
 
     restart)
         shift
         loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -285,6 +275,8 @@ case "$1" in
     condrestart)
         shift
         loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -302,7 +294,10 @@ case "$1" in
         ;;
 
     status)
+        shift
         loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "*")
         maxWidth width $domains
         format="%-${width}s %-10s %5s\n"
@@ -315,6 +310,7 @@ case "$1" in
         ;;
 
     version)
+        loadConfig -q
         showVersion
 	;;
 
@@ -324,6 +320,10 @@ case "$1" in
         if [ $# -eq 0 ]; then
             usage
         fi
+
+        loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/pool.sh
 
         command=$1
         shift
@@ -378,6 +378,10 @@ case "$1" in
             usage
         fi
 
+        loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
+
         command=$1
         shift
 
@@ -386,8 +390,6 @@ case "$1" in
                 parseOptions "force" "$@" || shift $?
 
                 [ $# -ne 2 ] && usage
-
-                loadConfig -q
 
                 domain="$1"
                 file="$2"
@@ -425,7 +427,6 @@ case "$1" in
                 ;;
 
             threads)
-                loadConfig -q
                 for domain in $(printDomains "$@"); do
                     if pid=$(printJavaPid "$domain"); then
                         if ! kill -s QUIT "${pid}"; then
@@ -447,12 +448,12 @@ case "$1" in
 
     import)
         shift
-
         if [ $# -eq 0 ]; then
             usage
         fi
 
         loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
 
         command=$1
         shift

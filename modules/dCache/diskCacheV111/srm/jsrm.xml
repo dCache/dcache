@@ -180,7 +180,7 @@
     <description>The SRM config file</description>
     <constructor-arg><null/></constructor-arg>
     <constructor-arg value="srmConfigFile"/>
-    <constructor-arg value="${ourHomeDir}/share/srm-webapp/WEB-INF/srmConfigFile.xml"/>
+    <constructor-arg value="${dcache.paths.share}/srm-webapp/WEB-INF/srmConfigFile.xml"/>
     <constructor-arg value="true"/>
   </bean>
 
@@ -219,7 +219,7 @@
     <property name="handler">
       <bean class="org.eclipse.jetty.webapp.WebAppContext" depends-on="srm">
         <property name="contextPath" value="/srm"/>
-        <property name="war" value="${ourHomeDir}/share/srm-webapp"/>
+        <property name="war" value="${dcache.paths.share}/srm-webapp"/>
         <property name="configurationClasses">
           <list>
             <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>

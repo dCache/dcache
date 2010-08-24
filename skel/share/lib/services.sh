@@ -1,11 +1,5 @@
 # Useful functions for working with domains.
 
-# Invokes the dCache boot loader
-bootLoader()
-{
-    $JAVA -client -cp "$DCACHE_HOME/classes/*:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
-}
-
 # Prints all domains that match a given pattern. Prints all domains if
 # no patterns are provided.
 printDomains() # $1+ = patterns
@@ -36,28 +30,6 @@ printPidFromFile() # $1 = file
     isRunning "$pid" || return
 
     printf "%s" "$pid"
-}
-
-# Called by getProperty when invoked on an unknown domain
-undefinedDomain()
-{
-    fail 1 "Unknown domain $1"
-}
-
-# Called by getProperty when invoked on an unknown property
-undefinedProperty()
-{
-    :
-}
-
-# Loads configuration parameters into memory. Configuration parameters
-# can be queried by calling
-#
-#    getProperty KEY [DOMAIN]
-#
-loadConfig()
-{
-    eval $(bootLoader "$@" compile)
 }
 
 # Print "stopped", "running" or "restarting" depending on the status
@@ -91,7 +63,7 @@ printJavaPid() # $1 = domain
 domainStart() # $1 = domain
 {
     local domain
-    local JAVA_CLASSPATH
+    local classpath
     local JAVA_LIBRARY_PATH
     local LOG_FILE
     local RESTART_FILE
@@ -109,15 +81,7 @@ domainStart() # $1 = domain
     fi
 
     # Build classpath
-    classpath="${DCACHE_HOME}/classes/cells.jar:${DCACHE_HOME}/classes/dcache.jar"
-    JAVA_CLASSPATH="$(getProperty dcache.java.classpath "$domain")"
-    if [ "$JAVA_CLASSPATH" ]; then
-        classpath="${classpath}:$JAVA_CLASSPATH"
-    fi
-    if [ -r "${DCACHE_HOME}/classes/extern.classpath" ]; then
-        . "${DCACHE_HOME}/classes/extern.classpath"
-        classpath="${classpath}:${externalLibsClassPath}"
-    fi
+    classpath="$(getProperty dcache.paths.classpath "$domain")"
 
     # LD_LIBRARY_PATH override
     JAVA_LIBRARY_PATH="$(getProperty dcache.java.library.path "$domain")"
@@ -174,7 +138,7 @@ domainStart() # $1 = domain
 
     rm -f "$RESTART_FILE"
     cd "$DCACHE_HOME"
-    CLASSPATH="$classpath" /bin/sh "${DCACHE_LIB}/daemon" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$domain"
+    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$domain"
 
     # Wait for confirmation
     printf "Starting ${domain} "
@@ -245,3 +209,6 @@ domainStop() # $1 = domain
     echo
     fail 4 "Giving up. ${domain} might still be running."
 }
+
+# Check prerequisites
+require cat mv rm
