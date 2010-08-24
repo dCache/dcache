@@ -181,6 +181,11 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         _closeForced = true;
         if (_selector != null) {
         _selector.wakeup();
+        if (!_t.isAlive()) {
+            /* Take care of the case where the adapter was never started.
+             */
+            closeNow();
+        }
     }
     }
 
