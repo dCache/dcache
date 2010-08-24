@@ -536,11 +536,11 @@ public class JMSTunnel
             String cell = address.getCellName();
             String domain = address.getCellDomainName();
 
-            if (domain.equals("local")) {
-                domain = lookup(cell);
+            if (cell == null || domain == null) {
+                throw new JMSException("Message has no destination: " + envelope);
             }
 
-            if (domain == null) {
+            if (domain.equals("local") && (domain = lookup(cell)) == null) {
                 resolve(cell, envelope);
             } else {
                 logSend(envelope);
@@ -727,7 +727,7 @@ public class JMSTunnel
             try {
                 TextMessage textMessage = (TextMessage) message;
                 String name = textMessage.getText();
-                if (_names.contains(name) || name.equals(WILDCARD_QUERY)) {
+                if (_names.contains(name) || WILDCARD_QUERY.equals(name)) {
                     TextMessage reply = _session.createTextMessage(_domain);
                     reply.setText(_domain);
                     reply.setJMSCorrelationID(textMessage.getJMSMessageID());
