@@ -16,6 +16,7 @@ import org.dcache.webadmin.controller.util.NamedCellUtil;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
+import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
@@ -41,7 +42,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
             _log.debug("returned pools: " + pools.size());
             List<PoolSpaceBean> poolBeans = new ArrayList<PoolSpaceBean>(pools.size());
             Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getPoolsDAO().getNamedCells());
+                    getDomainsDAO().getNamedCells());
             for (Pool currentPool : pools) {
                 PoolSpaceBean newPoolBean = createPoolBean(currentPool, namedCells);
                 poolBeans.add(newPoolBean);
@@ -71,6 +72,10 @@ public class StandardPoolSpaceService implements PoolSpaceService {
 
     private PoolsDAO getPoolsDAO() {
         return _daoFactory.getPoolsDAO();
+    }
+
+    private DomainsDAO getDomainsDAO() {
+        return _daoFactory.getDomainsDAO();
     }
 
     @Override

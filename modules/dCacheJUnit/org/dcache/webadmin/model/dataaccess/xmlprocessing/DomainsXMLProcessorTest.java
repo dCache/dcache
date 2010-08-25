@@ -3,10 +3,12 @@ package org.dcache.webadmin.model.dataaccess.xmlprocessing;
 import java.util.HashSet;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
+import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Document;
 import static org.junit.Assert.*;
 
 /**
@@ -54,6 +56,41 @@ public class DomainsXMLProcessorTest {
                 getExpectedPoolNames(),
                 _processor.createXMLDocument(XMLDataGathererHelper.emptyXmlcontent));
         assertTrue(parsedCellStatuses.isEmpty());
+    }
+
+    @Test
+    public void testCreateNamedCellXMLDocument() throws ParsingException {
+        Document document = _processor.createXMLDocument(
+                XMLDataGathererHelper.namedCellXmlcontent);
+        assertNotNull(document);
+    }
+
+    @Test
+    public void testParseNamedCellsDocument() throws ParsingException {
+        Set<NamedCell> namedCells = _processor.parseNamedCellsDocument(
+                _processor.createXMLDocument(XMLDataGathererHelper.namedCellXmlcontent));
+        assertNotNull("Set is null", namedCells);
+        assertNotSame("zero elements returned", 0, namedCells.size());
+//      look, if the specific element is in it
+        boolean isFound = false;
+        for (NamedCell expectedNamedCell : XMLDataGathererHelper.getExpectedNamedCells()) {
+            for (NamedCell currentCell : namedCells) {
+                if (expectedNamedCell.getCellName().equals(currentCell.getCellName())) {
+                    assertEquals(currentCell.getDomainName(),
+                            expectedNamedCell.getDomainName());
+                    isFound = true;
+                    break;
+                }
+            }
+        }
+        assertTrue("none of the named cells found in result", isFound);
+    }
+
+    @Test
+    public void testParseNamedCellsEmptyDocument() throws ParsingException {
+        Set<NamedCell> namedCells = _processor.parseNamedCellsDocument(
+                _processor.createXMLDocument(XMLDataGathererHelper.emptyXmlcontent));
+        assertEquals("more than zero elements returned", 0, namedCells.size());
     }
 
     private Set<String> getExpectedPoolNames() {

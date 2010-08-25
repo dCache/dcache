@@ -2,8 +2,6 @@ package org.dcache.webadmin.model.dataaccess;
 
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Set;
-import org.dcache.webadmin.model.businessobjects.CellResponse;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
@@ -22,25 +20,10 @@ public interface PoolsDAO {
 
     /**
      *
-     * @return delivers a list of Named Cells in dCache
-     */
-    public Set<NamedCell> getNamedCells() throws DAOException;
-
-    /**
-     *
      * @param poolIds pools to change mode
      * @param poolMode mode to change to
      * @param userName user who calls the method
      */
     public void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName)
-            throws DAOException;
-
-    /**
-     *
-     * @param poolIds pools to change mode
-     * @param poolMode mode to change to
-     * @param userName user who calls the method
-     */
-    public Set<CellResponse> sendCommand(Set<String> poolIds, String command)
             throws DAOException;
 }

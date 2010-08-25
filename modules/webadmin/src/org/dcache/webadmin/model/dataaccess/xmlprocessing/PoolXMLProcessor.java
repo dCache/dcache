@@ -3,7 +3,6 @@ package org.dcache.webadmin.model.dataaccess.xmlprocessing;
 import java.util.Set;
 import java.util.HashSet;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.w3c.dom.Document;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.w3c.dom.Element;
@@ -17,20 +16,14 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolXMLProcessor extends XMLProcessor {
 
-    private static final String SPECIAL_CELL_FRAGMENT = "/dCache/domains/domain" +
-            "[@name='dCacheDomain']/routing/named-cells/cell[@name='";
     private static final String SPECIAL_POOL_FRAGMENT = "/dCache/pools/pool[@name='";
     private static final String SPECIAL_QUEUE_FRAGMENT = "/queues/queue[@type='";
-    private static final String SPECIAL_NAMEDQUEUE_FRAGMENT = "/queues/named-queues/queue[@name='";
+    private static final String SPECIAL_NAMEDQUEUE_FRAGMENT =
+            "/queues/named-queues/queue[@name='";
     private static final String ALL_POOLNODES = "/dCache/pools/pool";
-    private static final String ALL_CELLNODES = "/dCache/domains/domain" +
-            "[@name='dCacheDomain']/routing/named-cells/cell";
     private static final String ALL_QUEUES_OF_POOL = "/queues/queue";
     private static final String ALL_NAMEDQUEUES_OF_POOL = "/queues/named-queues/queue";
     private static final String ALL_POOLGROUPS_OF_POOL = "/poolgroups/poolgroupref";
-//   the equivalent for each NamedCellmember in the InfoproviderXML
-//   to the NamedCell class
-    private static final String NAMEDCELLMEMBER_DOMAIN = "/domainref/@name";
 //   the equivalent for each Poolmember in the InfoproviderXML
 //   to the Pool class
     private static final String POOLMEMBER_ENABLED = "/metric[@name='enabled']";
@@ -42,36 +35,6 @@ public class PoolXMLProcessor extends XMLProcessor {
     private static final String QUEUE_MAX_FRAGMENT = "/metric[@name='max-active']/text()";
     private static final String QUEUE_QUEUED_FRAGMENT = "/metric[@name='queued']/text()";
     private static final Logger _log = LoggerFactory.getLogger(PoolXMLProcessor.class);
-
-    /**
-     * @param document document to parse
-     * @return Set of NamedCell objects parsed out of the document
-     */
-    public Set<NamedCell> parseNamedCellsDocument(Document document) {
-        assert document != null;
-        Set<NamedCell> namedCells = new HashSet<NamedCell>();
-        // get a nodelist of all cell Elements
-        NodeList cellNodes = getNodesFromXpath(ALL_CELLNODES, document);
-        if (cellNodes != null) {
-            for (int cellIndex = 0; cellIndex < cellNodes.getLength(); cellIndex++) {
-                Element currentCellNode = (Element) cellNodes.item(cellIndex);
-                NamedCell namedCellEntry = createNamedCell(document,
-                        currentCellNode.getAttribute(ATTRIBUTE_NAME));
-                _log.debug("Named Cell parsed: {}", namedCellEntry.getCellName());
-                namedCells.add(namedCellEntry);
-            }
-        }
-        return namedCells;
-    }
-
-    private NamedCell createNamedCell(Document document, String cellName) {
-        NamedCell namedCellEntry = new NamedCell();
-        namedCellEntry.setCellName(cellName);
-        String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + XPATH_PREDICATE_CLOSING_FRAGMENT +
-                NAMEDCELLMEMBER_DOMAIN;
-        namedCellEntry.setDomainName(getStringFromXpath(xpathExpression, document));
-        return namedCellEntry;
-    }
 
     /**
      * @param document document to parse

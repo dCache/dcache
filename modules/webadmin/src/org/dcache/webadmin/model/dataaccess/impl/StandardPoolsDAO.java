@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.dcache.webadmin.model.businessobjects.CellResponse;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
@@ -20,28 +18,23 @@ import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PoolModifyModeMessageGenerator;
-import org.dcache.webadmin.model.dataaccess.communication.impl.StringCommandMessageGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This is an DataAccessObject for the pools offered by the model. It provides
  * the access to the needed data concerning pools.
- * It processes the collected data
- * in the XML-processor and
- * puts it into the matching businessobjects. This is returned to the caller.
+ * It maps the collected data
+ * in the XML-processor to Business Objects. These are returned to the caller.
  * It sends commands via a commandSender.
  * @author jan schaefer 29-10-2009
  */
 public class StandardPoolsDAO implements PoolsDAO {
 
-    public static final String EMPTY_STRING = "";
-    public static final List<String> NAMEDCELLS_PATH = Arrays.asList("domains", "dCacheDomain",
-            "routing", "named-cells");
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
     public static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardPoolsDAO.class);
-    private PoolXMLProcessor _xmlProcessor = new PoolXMLProcessor();
+    private PoolXMLProcessor _xmlToObjectMapper = new PoolXMLProcessor();
     private CommandSenderFactory _commandSenderFactory;
 
     public StandardPoolsDAO(CommandSenderFactory commandSenderFactory) {
@@ -62,26 +55,8 @@ public class StandardPoolsDAO implements PoolsDAO {
 
     private Set<Pool> tryToGetPools() throws ParsingException, DataGatheringException {
         String serialisedXML = getXmlForStatePath(POOLS_PATH);
-        Document xmlDocument = _xmlProcessor.createXMLDocument(serialisedXML);
-        return _xmlProcessor.parsePoolsDocument(xmlDocument);
-    }
-
-    @Override
-    public Set<NamedCell> getNamedCells() throws DAOException {
-        _log.debug("getNamedCells called");
-        try {
-            return tryToGetNamedCells();
-        } catch (ParsingException ex) {
-            throw new DAOException(ex);
-        } catch (DataGatheringException ex) {
-            throw new DAOException(ex);
-        }
-    }
-
-    private Set<NamedCell> tryToGetNamedCells() throws ParsingException, DataGatheringException {
-        String serialisedXML = getXmlForStatePath(NAMEDCELLS_PATH);
-        Document xmlDocument = _xmlProcessor.createXMLDocument(serialisedXML);
-        return _xmlProcessor.parseNamedCellsDocument(xmlDocument);
+        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
+        return _xmlToObjectMapper.parsePoolsDocument(xmlDocument);
     }
 
     private String getXmlForStatePath(List<String> statePath) throws DataGatheringException {
@@ -133,40 +108,5 @@ public class StandardPoolsDAO implements PoolsDAO {
             }
         }
         return failedIds;
-    }
-
-    @Override
-    public Set<CellResponse> sendCommand(Set<String> poolIds, String command)
-            throws DAOException {
-        try {
-            Set<CellResponse> responses = new HashSet<CellResponse>();
-            if (!poolIds.isEmpty() && !command.equals(EMPTY_STRING)) {
-                StringCommandMessageGenerator messageGenerator =
-                        new StringCommandMessageGenerator(poolIds, command);
-                CommandSender commandSender =
-                        _commandSenderFactory.createCommandSender(
-                        messageGenerator);
-                commandSender.sendAndWait();
-                createResponses(responses, messageGenerator);
-            }
-            return responses;
-        } catch (InterruptedException e) {
-            throw new DAOException(e);
-        }
-    }
-
-    private void createResponses(Set<CellResponse> responses,
-            CellMessageGenerator<String> messageGenerator) {
-        for (CellMessageRequest<String> request : messageGenerator) {
-            CellResponse response = new CellResponse();
-            response.setCellName(request.getDestination().getCellName());
-            if (request.isSuccessful()) {
-                response.setResponse(request.getAnswer());
-            } else {
-                response.setIsFailure(true);
-                response.setResponse(RESPONSE_FAILED);
-            }
-            responses.add(response);
-        }
     }
 }

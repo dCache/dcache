@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
+import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -18,11 +19,15 @@ public class DomainsXMLProcessor extends XMLProcessor {
 
     private static final Logger _log = LoggerFactory.getLogger(
             DomainsXMLProcessor.class);
+    private static final String ALL_CELLNODES = "/dCache/domains/domain" +
+            "[@name='dCacheDomain']/routing/named-cells/cell";
     private static final String ALL_DOMAINNODES = "/dCache/domains/domain";
     private static final String ALL_DOORNODES = "/dCache/doors/door";
     private static final String ALL_POOLNODES = "/dCache/pools/pool";
     private static final String SPECIAL_DOMAIN_FRAGMENT = "/dCache/domains/domain[@name='";
     private static final String ALL_CELLS_OF_DOMAIN = "/cells/cell";
+    private static final String SPECIAL_CELL_FRAGMENT = "/dCache/domains/domain" +
+            "[@name='dCacheDomain']/routing/named-cells/cell[@name='";
     private static final String SPECIAL_CELL_OF_DOMAIN_FRAGMENT = "/cells/cell[@name='";
 //    cell members
     private static final String CELLMEMBER_THREADCOUNT = "/metric[@name='thread-count']";
@@ -32,7 +37,40 @@ public class DomainsXMLProcessor extends XMLProcessor {
     private static final String CELLMEMBER_RELEASE = "/version/metric[@name='release']";
     private static final String[] STANDARD_DESIRED_NAMES = new String[]{"PoolManager",
         "srm-LoginBroker", "gPlazma", "LoginBroker", "PnfsManager"};
+//   the equivalent for each NamedCellmember in the InfoproviderXML
+//   to the NamedCell class
+    private static final String NAMEDCELLMEMBER_DOMAIN = "/domainref/@name";
     private Set<String> _cellServicesToParse;
+
+    /**
+     * @param document document to parse
+     * @return Set of NamedCell objects parsed out of the document
+     */
+    public Set<NamedCell> parseNamedCellsDocument(Document document) {
+        assert document != null;
+        Set<NamedCell> namedCells = new HashSet<NamedCell>();
+        // get a nodelist of all cell Elements
+        NodeList cellNodes = getNodesFromXpath(ALL_CELLNODES, document);
+        if (cellNodes != null) {
+            for (int cellIndex = 0; cellIndex < cellNodes.getLength(); cellIndex++) {
+                Element currentCellNode = (Element) cellNodes.item(cellIndex);
+                NamedCell namedCellEntry = createNamedCell(document,
+                        currentCellNode.getAttribute(ATTRIBUTE_NAME));
+                _log.debug("Named Cell parsed: {}", namedCellEntry.getCellName());
+                namedCells.add(namedCellEntry);
+            }
+        }
+        return namedCells;
+    }
+
+    private NamedCell createNamedCell(Document document, String cellName) {
+        NamedCell namedCellEntry = new NamedCell();
+        namedCellEntry.setCellName(cellName);
+        String xpathExpression = SPECIAL_CELL_FRAGMENT + cellName + XPATH_PREDICATE_CLOSING_FRAGMENT +
+                NAMEDCELLMEMBER_DOMAIN;
+        namedCellEntry.setDomainName(getStringFromXpath(xpathExpression, document));
+        return namedCellEntry;
+    }
 
     public Set<String> parseDoorList(Document document) {
         assert document != null;

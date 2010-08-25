@@ -12,6 +12,7 @@ import org.dcache.webadmin.model.businessobjects.CellResponse;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
+import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
@@ -41,7 +42,7 @@ public class StandardPoolAdminService implements PoolAdminService {
             Set<Pool> pools = getPoolsDAO().getPools();
             Set<String> poolGroups = getPoolGroupDAO().getPoolGroupNames();
             Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getPoolsDAO().getNamedCells());
+                    getDomainsDAO().getNamedCells());
 
             List<PoolAdminBean> adminBeans = new ArrayList<PoolAdminBean>();
             for (String currentPoolGroup : poolGroups) {
@@ -54,6 +55,10 @@ public class StandardPoolAdminService implements PoolAdminService {
             throw new PoolAdminServiceException(e);
         }
 
+    }
+
+    private DomainsDAO getDomainsDAO() {
+        return _daoFactory.getDomainsDAO();
     }
 
     private PoolsDAO getPoolsDAO() {
@@ -95,7 +100,7 @@ public class StandardPoolAdminService implements PoolAdminService {
         Set<String> poolIds = getSelectedPools(pools);
         _log.debug("Sending commnd {} to following pools {}", command, poolIds);
         try {
-            Set<CellResponse> responses = getPoolsDAO().sendCommand(poolIds, command);
+            Set<CellResponse> responses = getDomainsDAO().sendCommand(poolIds, command);
 
             for (SelectableWrapper<PoolCommandBean> pool : pools) {
                 clearResponse(pool);

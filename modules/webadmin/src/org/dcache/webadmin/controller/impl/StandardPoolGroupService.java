@@ -44,7 +44,7 @@ public class StandardPoolGroupService implements PoolGroupService {
             _log.debug("returned pools: {} returned poolGroups: {}", pools.size(),
                     poolGroupNames.size());
             Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getPoolsDAO().getNamedCells());
+                    getDomainsDAO().getNamedCells());
 
             Set<CellStatus> cellStatuses = getDomainsDAO().getCellStatuses();
 

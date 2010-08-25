@@ -12,6 +12,7 @@ import org.dcache.webadmin.controller.util.NamedCellUtil;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
+import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
@@ -39,7 +40,7 @@ public class StandardPoolQueuesService implements PoolQueuesService {
             _log.debug("returned pools: " + pools.size());
             List<PoolQueueBean> poolQueues = new ArrayList<PoolQueueBean>(pools.size());
             Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getPoolsDAO().getNamedCells());
+                    getDomainsDAO().getNamedCells());
             for (Pool currentPool : pools) {
                 PoolQueueBean newPoolQueueBean = createPoolQueueBean(currentPool,
                         namedCells);
@@ -63,6 +64,10 @@ public class StandardPoolQueuesService implements PoolQueuesService {
 //        if there is no match for the pool in the namedCells(perhaps
 //        not yet available etc.) fill in only the pool
         return BeanDataMapper.poolQueueModelToView(pool);
+    }
+
+    private DomainsDAO getDomainsDAO() {
+        return _daoFactory.getDomainsDAO();
     }
 
     private PoolsDAO getPoolsDAO() {

@@ -3,8 +3,6 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Set;
 import java.util.HashSet;
-import org.dcache.webadmin.model.businessobjects.CellResponse;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
@@ -19,11 +17,9 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 public class PoolsDAOImplHelper implements PoolsDAO {
 
     private Set<Pool> _pools = new HashSet();
-    private Set<NamedCell> _namedCell = new HashSet();
 
     public PoolsDAOImplHelper() {
         _pools = XMLDataGathererHelper.getExpectedPools();
-        _namedCell = XMLDataGathererHelper.getExpectedNamedCells();
     }
 
     @Override
@@ -33,19 +29,6 @@ public class PoolsDAOImplHelper implements PoolsDAO {
 
     public void resetPools() {
         _pools.clear();
-    }
-
-    @Override
-    public Set<NamedCell> getNamedCells() {
-        return _namedCell;
-    }
-
-    public void resetNamedCells() {
-        _namedCell.clear();
-    }
-
-    public void addNamedCell(NamedCell namedCell) {
-        _namedCell.add(namedCell);
     }
 
     public void addPool(Pool pool) {
@@ -80,10 +63,5 @@ public class PoolsDAOImplHelper implements PoolsDAO {
     private boolean isEnabled(PoolV2Mode poolMode) {
         return (poolMode.getMode() != PoolV2Mode.DISABLED_RDONLY &&
                 poolMode.getMode() != PoolV2Mode.DISABLED_STRICT);
-    }
-
-    @Override
-    public Set<CellResponse> sendCommand(Set<String> poolIds, String command) throws DAOException {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
