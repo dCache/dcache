@@ -1,7 +1,11 @@
 package org.dcache.webadmin.model.dataaccess.xmlprocessing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
@@ -118,10 +122,7 @@ public class DomainsXMLProcessor extends XMLProcessor {
 
     private void checkAllCellNamesPerDomain(Set<CellStatus> cellStates,
             String domain, Document document) {
-// get all cell names per domain
-        String xpathExpression = buildXpathForParticularDomain(domain) +
-                ALL_CELLS_OF_DOMAIN;
-        NodeList cellNodes = getNodesFromXpath(xpathExpression, document);
+        NodeList cellNodes = getAllCellNodesForDomain(domain, document);
         if (cellNodes != null) {
             for (int cellIndex = 0; cellIndex < cellNodes.getLength(); cellIndex++) {
                 Element currentCell = (Element) cellNodes.item(cellIndex);
@@ -131,6 +132,12 @@ public class DomainsXMLProcessor extends XMLProcessor {
                 }
             }
         }
+    }
+
+    private NodeList getAllCellNodesForDomain(String domain, Document document) {
+        String xpathExpression = buildXpathForParticularDomain(domain) +
+                ALL_CELLS_OF_DOMAIN;
+        return getNodesFromXpath(xpathExpression, document);
     }
 
     private boolean isDesiredName(String cellName) {
@@ -196,6 +203,33 @@ public class DomainsXMLProcessor extends XMLProcessor {
         _cellServicesToParse = new HashSet<String>();
         _cellServicesToParse.addAll(pools);
         _cellServicesToParse.addAll((Arrays.asList(STANDARD_DESIRED_NAMES)));
+    }
+
+    public Map<String, List<String>> parseDomainsMapDocument(Document document) {
+        assert document != null;
+        Map<String, List<String>> domainMap = new HashMap<String, List<String>>();
+        NodeList domainNodes = getNodesFromXpath(ALL_DOMAINNODES, document);
+        if (domainNodes != null) {
+            for (int domainIndex = 0; domainIndex < domainNodes.getLength(); domainIndex++) {
+                Element currentNode = (Element) domainNodes.item(domainIndex);
+                String domainName = currentNode.getAttribute(ATTRIBUTE_NAME);
+                List<String> cells = createCells(domainName, document);
+                domainMap.put(domainName, cells);
+            }
+        }
+        return domainMap;
+    }
+
+    private List<String> createCells(String domainName, Document document) {
+        List<String> cells = new ArrayList<String>();
+        NodeList cellNodes = getAllCellNodesForDomain(domainName, document);
+        if (cellNodes != null) {
+            for (int cellIndex = 0; cellIndex < cellNodes.getLength(); cellIndex++) {
+                Element currentCellNode = (Element) cellNodes.item(cellIndex);
+                cells.add(currentCellNode.getAttribute(ATTRIBUTE_NAME));
+            }
+        }
+        return cells;
     }
 }
 

@@ -18,6 +18,7 @@ import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.infoxml.InfoXml;
 import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
+import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.util.CustomLink;
 import org.dcache.webadmin.view.util.Role;
@@ -36,10 +37,10 @@ public class BasicNavigationPanel extends BasePanel {
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
     private static List<Class> _linkList = new ArrayList<Class>(Arrays.asList(
             DCacheServices.class, CellServices.class, PoolList.class,
-            PoolQueues.class, PoolGroupView.class,
-            PoolAdmin.class, InfoXml.class));
+            PoolQueues.class, PoolGroupView.class, PoolAdmin.class,
+            CellAdmin.class, InfoXml.class));
     private static List<Class> _adminLinks = new ArrayList<Class>(Arrays.asList(
-            PoolAdmin.class));
+            PoolAdmin.class, CellAdmin.class));
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {

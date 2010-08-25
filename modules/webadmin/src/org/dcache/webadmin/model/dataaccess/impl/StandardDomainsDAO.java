@@ -3,6 +3,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.CellResponse;
@@ -146,5 +147,24 @@ public class StandardDomainsDAO implements DomainsDAO {
             }
             responses.add(response);
         }
+    }
+
+    @Override
+    public Map<String, List<String>> getDomainsMap() throws DAOException {
+        _log.debug("getDomainsMap called");
+        try {
+            return tryToGetDomainsMap();
+        } catch (ParsingException ex) {
+            throw new DAOException(ex);
+        } catch (DataGatheringException ex) {
+            throw new DAOException(ex);
+        }
+    }
+
+    private Map<String, List<String>> tryToGetDomainsMap()
+            throws ParsingException, DataGatheringException {
+        String serialisedXML = getXmlForStatePath(DOMAINS_PATH);
+        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
+        return _xmlToObjectMapper.parseDomainsMapDocument(xmlDocument);
     }
 }

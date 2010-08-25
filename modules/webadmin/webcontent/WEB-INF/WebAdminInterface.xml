@@ -101,6 +101,12 @@
         </constructor-arg>
     </bean>
 
+    <bean id="CellAdminService" class="org.dcache.webadmin.controller.impl.StandardCellAdminService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="logInService" ref="LogInService"/>
@@ -109,6 +115,7 @@
         <property name="infoService" ref="InfoService"/>
         <property name="cellsService" ref="CellsService"/>
         <property name="poolAdminService" ref="PoolAdminService"/>
+        <property name="cellAdminService" ref="CellAdminService"/>
         <property name="httpPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
                 <property name="targetBeanName" value="InfoCellStub"/>
