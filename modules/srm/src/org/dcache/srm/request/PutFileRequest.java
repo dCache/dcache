@@ -157,7 +157,7 @@ public final class PutFileRequest extends FileRequest {
         if(retentionPolicy != null ) {
             this.retentionPolicy = retentionPolicy;
         }
-        storeInSharedMemory();
+        updateMemoryCache();
     }
 
 

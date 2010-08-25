@@ -143,7 +143,17 @@ public abstract class Job  {
 
     private transient TimerTask retryTimer;
 
+    // this instance is registered as a terracotta root
+    // the objects put in this cache are clustered,
+    // but they are not guaranteed to present in local
+    // memory
     private static final SharedMemoryCache sharedMemoryCache =
+            new SharedMemoryCache();
+    
+    // this instance is not registered as a terracotta root
+    // the objects put in this cache are guaranteed to present in
+    // local memory, for as long as their state is not final
+    private static final SharedMemoryCache localMemoryCache =
             new SharedMemoryCache();
 
     private static final long serialVersionUID = 2690583464813886836L;
@@ -251,8 +261,9 @@ public abstract class Job  {
         jobHistory.add( new JobHistory(nextLong(),state,"created",lastStateTransitionTime));
     }
 
-    protected void storeInSharedMemory () {
+    protected final void updateMemoryCache () {
         sharedMemoryCache.updateSharedMemoryChache(this);
+        localMemoryCache.updateSharedMemoryChache(this);
     }
 
    private JobStorage getJobStorage() {
@@ -346,7 +357,7 @@ public abstract class Job  {
             if (job != null)
             {
                 weakJobStorage.put(job.id,new WeakReference<Job>(job));
-                sharedMemoryCache.updateSharedMemoryChache(job);
+                job.updateMemoryCache();
             }
         }
 
@@ -539,7 +550,6 @@ public abstract class Job  {
 
             if(state.isFinalState()) {
                 LifetimeExpiration.cancel(id);
-                schedulerId = null;
             }
             else {
                 if(schedulerId == null) {
@@ -547,7 +557,7 @@ public abstract class Job  {
                 }
             }
             if(!old.isFinalState() && state.isFinalState()) {
-                 sharedMemoryCache.updateSharedMemoryChache(this);
+                 updateMemoryCache();
             }
             stateChanged(old);
             if(save) {
@@ -591,6 +601,8 @@ public abstract class Job  {
          */
         if(schedulerId != null) {
             Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
+            // we excpect that the scheduler in not null only in the jvm
+            // that created and scheduled the job in the first place
             if(scheduler != null) {
                 scheduler.tryToReadyJob(this);
             }
@@ -1216,33 +1228,51 @@ public abstract class Job  {
      * @param newState
      */
     private void notifySchedulerOfStateChange(State oldState, State newState) {
-        /*
-         * The state change needs to be correctly accounted by the scheduler that
-         * executes this job. This is done by call to scheduler's stateChanged
-         * method. If the job is replicated in multiple jvm's, the job might have
-         * a scheduler associated with it in different jvm.
-         * Then in this jvm call to stateChanged should not take place.
-         * Insted whatever clastering mechanizm is used needs to makes sure that
-         * if this method is also called in an instance where the job was
-         * originally scheduled and where the Scheduler.getScheduler(schedulerId)
-         * will return non null result.
-         * In case of terracotta it is achived by including this method in the
-         * "distributed-method" section of the configuration file  :
-         *       <distributed-methods>
-         *          <method-expression>
-         *            void org.dcache.srm.scheduler.Job.notifySchedulerOfStateChange(..)
-         *          </method-expression>
-         *       <method-expression>
-         *
-         */
+        // we need to lock again, even if the call is from the setState method
+        // where weh have locked already. The method is configured to run in 
+        // multiple jvms though "dsitributed method" invocation, which means 
+        // the method can be called on its own by terracotta framework
+        wlock();
+        try {
+            /*
+             * The state change needs to be correctly accounted by the scheduler that
+             * executes this job. This is done by call to scheduler's stateChanged
+             * method. If the job is replicated in multiple jvm's, the job might have
+             * a scheduler associated with it in different jvm.
+             * Then in this jvm call to stateChanged should not take place.
+             * Insted whatever clastering mechanizm is used needs to makes sure that
+             * if this method is also called in an instance where the job was
+             * originally scheduled and where the Scheduler.getScheduler(schedulerId)
+             * will return non null result.
+             * In case of terracotta it is achived by including this method in the
+             * "distributed-method" section of the configuration file  :
+             *       <distributed-methods>
+             *          <method-expression>
+             *            void org.dcache.srm.scheduler.Job.notifySchedulerOfStateChange(..)
+             *          </method-expression>
+             *       <method-expression>
+             *
+             */
 
-         if (schedulerId != null) {
-            Scheduler scheduler = Scheduler.getScheduler(schedulerId);
-            if (scheduler != null) {
-                logger.debug("notifySchedulerOfStateChange calls " +
-                        "scheduler.stateChanged()");
-                scheduler.stateChanged(this, oldState, newState);
+             if (schedulerId != null) {
+                Scheduler scheduler = Scheduler.getScheduler(schedulerId);
+                // we excpect that the scheduler in not null only in the jvm
+                // that created and scheduled the job in the first place
+                if (scheduler != null) {
+                    // code bellow is executed only in one SRM in the cluster
+                    // the SRM that created this job
+                    logger.debug("notifySchedulerOfStateChange calls " +
+                            "scheduler.stateChanged()");
+                    scheduler.stateChanged(this, oldState, newState);
+                    // set schedulerId to null only in jvm
+                    // that has scheduler that "owns" this job
+                    if(state.isFinalState()) {
+                        schedulerId = null;
+                    }
+                }
             }
+        } finally {
+            wunlock();
         }
     }
 

@@ -141,7 +141,7 @@ public final class GetFileRequest extends FileRequest {
         catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
-        storeInSharedMemory();
+        updateMemoryCache();
 
     }
     /**

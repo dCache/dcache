@@ -138,7 +138,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             throw new IllegalArgumentException(murle.toString());
         }
 
-        storeInSharedMemory();
+        updateMemoryCache();
     }
     /**
      * restore constructore, used for restoring the existing

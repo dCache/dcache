@@ -66,7 +66,7 @@ public final class LsRequest extends ContainerRequest {
                                                   lifetime,
                                                   max_number_of_retries);
                 }
-                storeInSharedMemory();
+                updateMemoryCache();
         }
 
         public  LsRequest(

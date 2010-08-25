@@ -146,7 +146,7 @@ public final class BringOnlineRequest extends ContainerRequest {
 
             fileRequests[i] = fileRequest;
         }
-         storeInSharedMemory();
+         updateMemoryCache();
     }
 
     /**

@@ -245,10 +245,10 @@
            can be set to false to execute distributed only on those nodes
            that already have a reference to the object on which the method
            is called -->
-        <method-expression>
+        <method-expression run-on-all-nodes="false">
           void org.dcache.srm.scheduler.Job.tryToReady()
         </method-expression>
-        <method-expression>
+        <method-expression run-on-all-nodes="false">
           void org.dcache.srm.scheduler.Job.notifySchedulerOfStateChange(..)
         </method-expression>
       </distributed-methods>

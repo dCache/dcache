@@ -51,7 +51,7 @@ public final class LsFileRequest extends FileRequest {
                       lifetime,
                       maxNumberOfRetries);
                 this.surl=url;
-                storeInSharedMemory();
+                updateMemoryCache();
         }
 
         public LsFileRequest(

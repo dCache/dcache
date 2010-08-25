@@ -199,7 +199,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = overwriteMode;
         this.targetSpaceToken = spaceToken;
-        storeInSharedMemory();
+        updateMemoryCache();
         logger.debug("Request.createCopyRequest : created new request succesfully");
     }
 

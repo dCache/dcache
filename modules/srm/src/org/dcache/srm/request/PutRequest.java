@@ -153,7 +153,7 @@ public final class PutRequest extends ContainerRequest{
 
             fileRequests[i] = fileRequest;
         }
-        storeInSharedMemory();
+        updateMemoryCache();
 
     }
 

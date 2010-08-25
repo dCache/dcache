@@ -136,7 +136,7 @@ public final class ReserveSpaceRequest extends Request {
         this.retentionPolicy = retentionPolicy;
         this.accessLatency = accessLatency;
         this.spaceReservationLifetime = spaceReservationLifetime;
-        storeInSharedMemory();
+        updateMemoryCache();
         logger.debug("created");
 
     }
