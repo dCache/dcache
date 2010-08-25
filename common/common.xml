@@ -120,4 +120,51 @@
         <echo file="${server.bin.dir}/share/defaults/classpath.properties" append="no">dcache.paths.classpath=$${dcache.java.classpath}:${dcache.classpath}</echo>
     </target>
 
+    <!--
+        Generate eclipse project files
+    -->
+    <target name="eclipse-classpath" description="creates an eclipse .classpath file">
+        <pathconvert property="eclipse.entries" refid="dependency.classpath"
+ pathsep="&quot;/&gt;&#10;    &lt;classpathentry kind=&quot;lib&quot; path=&quot;" />
+
+        <echo file=".classpath"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path="${dcache-common.src}"/>
+    <classpathentry kind="src" path="${cells.src}"/>
+    <classpathentry kind="src" path="${dcache.src}"/>
+    <classpathentry kind="src" path="${gplazma.src}"/>
+    <classpathentry kind="src" path="${srm.src}"/>
+    <classpathentry kind="src" path="${srmclient.src}"/>
+    <classpathentry kind="src" path="${javatunnel.src}"/>
+    <classpathentry kind="src" path="${unittest.src}"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="lib" path="${eclipse.entries}"/>
+    <classpathentry kind="output" path="${buildDir}"/>
+</classpath>
+]]>
+        </echo>
+     </target>
+
+    <target name="eclipse" description="creates an eclipse .project file" depends="eclipse-classpath">
+        <echo file=".project"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+    <name>${project.name}</name>
+    <comment></comment>
+    <projects>
+    </projects>
+    <buildSpec>
+        <buildCommand>
+            <name>org.eclipse.jdt.core.javabuilder</name>
+            <arguments>
+            </arguments>
+        </buildCommand>
+    </buildSpec>
+    <natures>
+        <nature>org.eclipse.jdt.core.javanature</nature>
+    </natures>
+</projectDescription>
+]]>
+        </echo>
+     </target>
+
 </project>
