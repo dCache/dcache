@@ -138,7 +138,7 @@ domainStart() # $1 = domain
 
     rm -f "$RESTART_FILE"
     cd "$DCACHE_HOME"
-    CLASSPATH="$classpath" /bin/sh "${DCACHE_HOME}/share/lib/daemon" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$domain"
+    CLASSPATH="$classpath" /bin/sh "${DCACHE_LIB}/daemon" ${USER:+-u} ${USER:+"$USER"} -l -r "$RESTART_FILE" -d "$RESTART_DELAY" -f -c "$PID_JAVA" -p "$PID_DAEMON" -o "$LOG_FILE" "$JAVA" ${JAVA_OPTIONS} ${TC_JAVA_OPTS} "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" start "$domain"
 
     # Wait for confirmation
     printf "Starting ${domain} "

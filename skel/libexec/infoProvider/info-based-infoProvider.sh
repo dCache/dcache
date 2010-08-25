@@ -14,13 +14,17 @@
 #  Apply any sanity checks before launching the XSLT processor
 sanityCheck()
 {
+    local dcacheConfFile
+
+    dcacheConfFile="$DCACHE_ETC/dcache.conf"
+
     if [ ! -r "$xylophoneXMLFile" ]; then
-        printp "[ERROR] Unable to read $xylophoneXMLFile.  Try creating this file or editing the variable 'xylophoneConfigurationDir' (currently \"$xylophoneConfigurationDir\") or 'xylophoneConfigurationFile' (currently \"$xylophoneConfigurationFile\") in $dCacheSetupFile"
+        printp "[ERROR] Unable to read $xylophoneXMLFile.  Try creating this file or editing the variable 'xylophoneConfigurationDir' (currently \"$xylophoneConfigurationDir\") or 'xylophoneConfigurationFile' (currently \"$xylophoneConfigurationFile\") in $dcacheConfFile"
         exit 1
     fi
 
     if [ ! -r "$xylophoneXSLTFile" ]; then
-        printp "[ERROR] Unable to read ${xylophoneXSLTFile}.  If the file exists, try editing the variable 'xylophoneXSLTDir' (currently \"$xylophoneXSLTDir\") in $dCacheSetupFile"
+        printp "[ERROR] Unable to read ${xylophoneXSLTFile}.  If the file exists, try editing the variable 'xylophoneXSLTDir' (currently \"$xylophoneXSLTDir\") in $dcacheConfFile"
         exit 1
     fi
 }
@@ -53,7 +57,6 @@ httpHost="$(getPropety httpHost)"
 httpPort="$(getProperty httpPort)"
 xylophoneXSLTDir="$(getProperty xylophoneXSLTDir)"
 saxonDir="$(getProperty saxonDir)"
-dCacheSetupFile="$DCACHE_HOME/etc/dcache.conf"
 
 #  Apply any environment overrides
 if [ -n "$XSLT_PROCESSOR" ]; then

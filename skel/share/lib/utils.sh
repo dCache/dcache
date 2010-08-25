@@ -218,7 +218,7 @@ getFreeSpace() # in $1 = path, out $2 = free space
 readconf() # in $1 = file in $2 = prefix
 {
     [ -f "$1" ] &&
-    eval $(sed -f "${DCACHE_HOME}/share/lib/config.sed" "$1"  |
+    eval $(sed -f "${DCACHE_LIB}/config.sed" "$1"  |
         sed -e "s/\([^=]*\)=\(.*\)/$2\1=\2/")
 }
 
