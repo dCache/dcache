@@ -28,7 +28,14 @@ import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.PoolQueuesService;
+import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
+import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.info.Info;
+import org.dcache.webadmin.view.pages.infoxml.InfoXml;
+import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
+import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
+import org.dcache.webadmin.view.pages.poollist.PoolList;
+import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +63,17 @@ public class WebAdminInterface extends WebApplication {
     protected void init() {
         super.init();
         setAuthorizationStrategies();
+//      warning changes in the pagenames here may affect LegacyForwardHandler in
+//      Jettycell always doublecheck when making changes
         mountBookmarkablePage("login", LogIn.class);
         mountBookmarkablePage("info", Info.class);
+        mountBookmarkablePage("cellinfo", CellServices.class);
+        mountBookmarkablePage("queueInfo", PoolQueues.class);
+        mountBookmarkablePage("usageInfo", PoolList.class);
+        mountBookmarkablePage("poolgroups", PoolGroupView.class);
+        mountBookmarkablePage("pooladmin", PoolAdmin.class);
+        mountBookmarkablePage("celladmin", CellAdmin.class);
+        mountBookmarkablePage("infoxml", InfoXml.class);
     }
 
     @Override

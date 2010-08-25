@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import javax.naming.InitialContext;
 import org.dcache.cells.Option;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -169,7 +171,7 @@ public class JettyCell extends AbstractCell {
         RequestLogHandler requestLogHandler = new RequestLogHandler();
         HandlerCollection handlers = new HandlerCollection();
         handlers.setHandlers(new Handler[]{(Handler) createWebappContext(),
-                    new InfoForwardHandler(), new DefaultHandler(),
+                    new LegacyForwardHandler(), new DefaultHandler(),
                     requestLogHandler});
         _server.setHandler(handlers);
     }
@@ -204,25 +206,56 @@ public class JettyCell extends AbstractCell {
         return _httpsPort;
     }
 
-    private class InfoForwardHandler extends AbstractHandler {
+    private class LegacyForwardHandler extends AbstractHandler {
 
-        private String INFO_CONTEXT = "/info";
-        private String WEBADMIN_INFOURL = "/webadmin/info?statepath=";
-        private int INFO_CONTEXT_LENGTH = 5;
+        private final String INFO_CONTEXT = "/info";
+        private final String CELLINFO_CONTEXT = "/cellInfo";
+        private final String QUEUEINFO_CONTEXT = "/queueInfo";
+        private final String USAGEINFO_CONTEXT = "/usageInfo";
+        private final String POOLGROUPS_CONTEXT = "/pools";
+        private final String WEBADMIN_INFO_CONTEXT = "/webadmin/info?statepath=";
+        private final String WEBADMIN_CELLINFO_CONTEXT = "/webadmin/cellinfo";
+        private final String WEBADMIN_QUEUEINFO_CONTEXT = "/webadmin/queueInfo";
+        private final String WEBADMIN_USAGEINFO_CONTEXT = "/webadmin/usageInfo";
+        private final String WEBADMIN_POOLGROUPS_CONTEXT = "/webadmin/poolgroups";
+        private final int CONTEXT_INDEX = 1;
+        private Map<String, String> legacyContextToNewContext = new HashMap<String, String>();
+
+        @Override
+        protected void doStart() throws Exception {
+            super.doStart();
+            initContextMapping();
+        }
+
+        private void initContextMapping() {
+            _log.debug("init of urlmap");
+            legacyContextToNewContext.put(INFO_CONTEXT, WEBADMIN_INFO_CONTEXT);
+            legacyContextToNewContext.put(CELLINFO_CONTEXT, WEBADMIN_CELLINFO_CONTEXT);
+            legacyContextToNewContext.put(QUEUEINFO_CONTEXT, WEBADMIN_QUEUEINFO_CONTEXT);
+            legacyContextToNewContext.put(USAGEINFO_CONTEXT, WEBADMIN_USAGEINFO_CONTEXT);
+            legacyContextToNewContext.put(POOLGROUPS_CONTEXT, WEBADMIN_POOLGROUPS_CONTEXT);
+        }
 
         @Override
         public void handle(String target, Request baseRequest,
                 HttpServletRequest request, HttpServletResponse response) throws
                 IOException, ServletException {
-            if (target.startsWith(INFO_CONTEXT)) {
+            String[] splitted = target.split("/");
+            if (isContextLegacyOne(splitted)) {
                 _log.debug("target: {}", target);
+                String legacyContext = "/" + splitted[CONTEXT_INDEX];
+                String webadminContext = legacyContextToNewContext.get(legacyContext);
                 StringBuffer targetUrl = new StringBuffer(target);
-                int i = targetUrl.indexOf(INFO_CONTEXT);
+                int i = targetUrl.indexOf(legacyContext);
                 String newUrl = targetUrl.replace(
-                        i, i + INFO_CONTEXT_LENGTH, WEBADMIN_INFOURL).toString();
+                        i, i + legacyContext.length(), webadminContext).toString();
                 _log.debug("redirected to: {}", newUrl);
                 response.sendRedirect(newUrl);
             }
+        }
+
+        private boolean isContextLegacyOne(String[] splitted) {
+            return legacyContextToNewContext.containsKey("/" + splitted[CONTEXT_INDEX]);
         }
     }
 }
