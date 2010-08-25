@@ -867,7 +867,7 @@ create_data_socket(int *dataFd, unsigned short *cbPort)
 int
 ascii_open_conversation(struct vsp_node * node)
 {
-
+    int             scrRc;
 	char           *openStr;
 	int             len;
 	int             uid;
@@ -1011,11 +1011,14 @@ ascii_open_conversation(struct vsp_node * node)
 	}
 
 	len = sprintf(openStr, "%s -uid=%d\n", openStr, uid);
-
-	sendControlMessage(node->fd, openStr, len, node->tunnel);
+    /* We should have some error handling here */
+	scrRc = sendControlMessage(node->fd, openStr, len, node->tunnel);
 	/* getControlMessage(MAYBE, NULL); */
 	free(openStr);
-
+    if (scrRc < 0){
+        return -1;
+    }
+    
 	if ( (node->asciiCommand == DCAP_CMD_OPEN ) ||
 		(node->asciiCommand == DCAP_CMD_OPENDIR ) ||
 		(node->asciiCommand == DCAP_CMD_TRUNC ) ) {
@@ -1072,8 +1075,8 @@ int sendControlMessage(int to, const char *buff, size_t len, ioTunnel *en)
 	pfd.events = POLLOUT;
 
 	n = poll(&pfd, 1, 1000*10); /* 10 seconds */
-
-	if( (n == 1) && ( (pfd.revents & POLLERR) || (pfd.revents & POLLHUP) ) ) {
+    /* Should we handle n=0 here as the operation may time out */
+	if( (n == 1) && ( (pfd.revents & POLLERR) || (pfd.revents & POLLHUP) || (pfd.revents & POLLNVAL) ) ) {
 		dc_debug(DC_ERROR, "Unable to send control message, line [%d] is down", to);
 		n = -1;
 	}else{

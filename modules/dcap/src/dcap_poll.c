@@ -217,7 +217,9 @@ dcap_poll(int mode, struct vsp_node *node, int what)
 							c_broadcast(&gCond);
 							m_unlock(&controlLock);
 							dc_debug(DC_INFO, "Retry for Queue [%d].", node->queueID);
-							recover_connection(node, 1); /*FIXME: mode */
+							if (recover_connection(node, 1) != 0){ /*FIXME: mode */
+                                return -1;
+                            }
 							continue;
 						case ASCII_FAILED:
 							free(aM->msg);

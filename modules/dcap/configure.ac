@@ -146,8 +146,12 @@ AC_MSG_ERROR([zlib was not found])
 ])
 AC_SUBST(ZLIB)
 
+dnl === Manage variables ===
+
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
+dnl Should not be needed but becasue globus libraries
+dnl linking is soem what problematic this is needed.
 LD_LIBRARY_PATH=${_ldlibpath}
 
 
@@ -196,7 +200,11 @@ AC_ARG_WITH(globus-lib,
 if test "X${withval}" != "X" ; then
 GLOBUS_LIB_DIR=$withval
 LDFLAGS="${LDFLAGS} -L$withval"
+if test "X${LD_LIBRARY_PATH}" = "X" ; then
+LD_LIBRARY_PATH="${withval}"
+else
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${withval}"
+fi
 fi
 ])
 AC_ARG_WITH(globus-include,

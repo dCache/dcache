@@ -136,11 +136,10 @@ int recover_connection(struct vsp_node *, int);
 int recover_connection(struct vsp_node * node, int mode)
 {
 	char fail_message[64];
-
 	fail_message[0] = '\0';
 	sprintf(fail_message, "%d 1 client fail\n", node->queueID);
+    /* No need to trap failure to send message as we are going to reconect anyway.*/
 	sendControlMessage(node->fd, fail_message, strlen(fail_message), node->tunnel);
-
 	return smart_reconnect(node, mode);
 }
 
