@@ -475,6 +475,71 @@ fileNotPrecious() # $1 filename
   done
 }
 
+# emit lines of a dCacheSetup file suitable for dcache.conf
+emitDcacheSetup() # in $1 filename
+{
+    redefined_properties_file=$(mktemp)
+
+    line_number=0
+    cat "$1" | while IFS="" read -r line_text; do
+	line_number=$(( $line_number + 1 ))
+
+	if shouldLineBeExcluded "$1" $line_number "$line_text"; then
+	    echo "# $line_text"
+        else
+	    echo "$line_text"
+	fi
+    done
+
+    redefinedProperties=$(cat $redefined_properties_file)
+    rm $redefined_properties_file
+}
+
+shouldLineBeExcluded() # in $1 filename, $2 line number, $3 line text
+{
+    if isLineAPropertyAssignment "$3"; then
+	extractPropertyFromAssignment property "$3"
+
+	if isPropertyRedefinedLater "$1" $2 "$property"; then
+	    acceptRedefinedProperty "$property"
+	    return 0
+	fi
+    fi
+
+    return 1
+}
+
+acceptRedefinedProperty() # in $1 property name
+{
+    if ! contains "$property" $redefinedProperties; then
+	redefinedProperties="$redefinedProperties $property"
+	echo -n "$property " >> $redefined_properties_file
+    fi
+}
+
+isLineAPropertyAssignment() # $1 line of text
+{
+    echo "$1" | grep '^ *[^#=][^=]*=' > /dev/null
+}
+
+extractPropertyFromAssignment() # out $1 property, in $2 line of config file.
+{
+    ret="$(echo "$2" | sed 's/^ *//;s/ *=.*$//')"
+    eval $1=\"$ret\"
+}
+
+isPropertyRedefinedLater() # $1 filename, $2 line number of assignment, $3 property name
+{
+    makeReFromString re_fragment "$3"
+    tail -n +$(($2 + 1)) "$1" | grep "^[ \t]*$re_fragment[ \t]*=" >/dev/null
+}
+
+makeReFromString() # out $1 RE, in $2 an arbitrary string
+{
+    ret="$(echo "$2" | sed 's/\./\\./g;s/\$/\\$/g;s/\[/\\[/g')"
+    eval $1=\"$ret\"
+}
+
 # Set home path
 if [ -z "$DCACHE_HOME" ]; then
     DCACHE_HOME="/opt/d-cache"
@@ -545,10 +610,12 @@ loadConfigurationFile pool pool || loadConfigurationFile dCache pool
 # Create configuration file
 printp "Converting ${DCACHE_CONFIG}/dCacheSetup
         to ${DCACHE_ETC}/dcache.conf."
-(
+
+generateDcacheConf() # in $1 dCacheSetup path
+{
     echo "# Auto generated configuration file."
     echo "#"
-    echo "# Source: ${DCACHE_CONFIG}/dCacheSetup"
+    echo "# Source: $1"
     echo "# Date: $(date)"
     echo "#"
     disclaimer "# "
@@ -567,12 +634,14 @@ printp "Converting ${DCACHE_CONFIG}/dCacheSetup
 
     echo "dcache.layout=imported"
     echo
-    echo "# The following is a verbatim copy of the old configuration file."
+    echo "# The following is taken from the old dCacheSetup file."
     echo "# Some configuration parameters may no longer apply."
     echo
 
-    cat "${DCACHE_CONFIG}/dCacheSetup"
-) > "${DCACHE_ETC}/dcache.conf"
+    emitDcacheSetup "$1"
+} > "${DCACHE_ETC}/dcache.conf"
+
+generateDcacheConf "${DCACHE_CONFIG}/dCacheSetup"
 renameToPreMigration "${DCACHE_CONFIG}/dCacheSetup"
 echo
 
@@ -749,3 +818,25 @@ copyIfNew "${DCACHE_JOBS}/dcache.local.run.sh" "${DCACHE_BIN}/dcache.local.run.s
 
 echo
 disclaimer
+
+if [ -n "$redefinedProperties" ]; then
+  echo
+  echo "NOTICE: the dCacheSetup file contains at least one property that is"
+  echo "        assigned a value multiple times.  For such properties,"
+  echo "        previous versions of dCache would use the assignment closest"
+  echo "        to the end of dCacheSetup file (the last assignment \"wins\")."
+  echo
+  echo "        A dcache.conf file may not have more than one line that"
+  echo "        assigns a value to the same property.  If the file attempts"
+  echo "        to redefine a property's value then an error message is"
+  echo "        reported and dCache will not start."
+  echo
+  echo "        The migration script has created a dcache.conf file, based on"
+  echo "        dCacheSetup, except that lines where a property is assigned a"
+  echo "        value that is subsequent redefined have been commented out."
+  echo "        The last assignment line (the one that would \"win\") is left"
+  echo "        uncommented.  The resulting dcache.conf file should give the"
+  echo "        same behaviour as the dCacheSetup file."
+  echo
+  echo "        This affects the following properties: $redefinedProperties"
+fi
