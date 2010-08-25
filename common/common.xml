@@ -117,7 +117,7 @@
             <map from="${server.bin.dir}/classes" to="${dcache.paths.classes}" />
         </pathconvert>
         <echo>Generating runtime classpath...</echo>
-        <echo file="${server.bin.dir}/share/defaults/classpath.properties" append="no">dcache.paths.classpath=\${dcache.java.classpath}:${dcache.classpath}</echo>
+        <echo file="${server.bin.dir}/share/defaults/classpath.properties" append="no">dcache.paths.classpath=$${dcache.java.classpath}:${dcache.classpath}</echo>
     </target>
 
 </project>
