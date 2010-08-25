@@ -70,29 +70,16 @@ int do_command_welcome(char **argv, asciiMessage *result)
 
 int do_command_dummy(char **argv, asciiMessage *result)
 {
-	char *msg;
-    int msglen = 0;
-    int i=0;
+	int i=0;
 	system_write(2, "Unknown replay from server: \"", 28);
+
 	while(argv[i] != NULL ){
-        msglen += strlen(argv[i]) +1;
+		system_write(2, argv[i], strlen(argv[i]) );
+		system_write(2, " ", 1);
 		i++;
 	}
-    msg = (char *)malloc((sizeof(char) * (msglen + 1)));
-    if (msg == NULL){
-        dc_debug(DC_ERROR, "Unknown reply from server:");
-        dc_debug(DC_ERROR, "Failed allocate memory for server mesage.");
-        return 0;
-    }
-    msg[0] = '\0';
-    i = 0;
-    while(argv[i] != NULL ){
-        msg = strcat(msg,argv[i]);
-        msg = strcat(msg," ");
-		i++;
-	}
-    dc_debug(DC_ERROR, "Unknown replay from server: %s",msg);
-    dc_errno = DESRVMSG;
+
+	system_write(2, "\"\n", 2);
 	return 0;
 }
 

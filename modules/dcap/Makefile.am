@@ -62,10 +62,9 @@ rpm: dist @PACKAGE@.spec
 
 docfiles = \
 	AUTHORS \
-	COPYING \
-	LICENSE \
-	ChangeLog \
-	INSTALL
+	COPYING.LIB \
+	LICENSE
+
 
 
 docdir = $(DOC_DIR)
