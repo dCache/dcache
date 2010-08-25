@@ -147,7 +147,7 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/share/doc/@PACKAGE@-@VERSION@/INSTALL
 %{prefix}/share/doc/@PACKAGE@-@VERSION@/NEWS
 %{prefix}/share/doc/@PACKAGE@-@VERSION@/README
-%{prefix}/share/doc/@PACKAGE@-@VERSION@/COPYING.LIB
+%{prefix}/share/doc/@PACKAGE@-@VERSION@/COPYING
 %{prefix}/share/doc/@PACKAGE@-@VERSION@/LICENSE
 
 
