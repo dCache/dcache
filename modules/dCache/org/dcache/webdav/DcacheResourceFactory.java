@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Date;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -624,7 +623,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _downloads.remove(transfer.getSessionId());
+            _downloads.remove((int) transfer.getSessionId());
             _transfers.remove(transfer);
         }
     }
@@ -1011,12 +1010,12 @@ public class DcacheResourceFactory
         public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
         {
             super(pnfs, subject, path);
-            setCellName(_cellName);
-            setDomainName(_domainName);
-            setPoolManagerStub(_poolManagerStub);
-            setPoolStub(_poolStub);
-            setBillingStub(_billingStub);
-            setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
+            this.setCellName(_cellName);
+            this.setDomainName(_domainName);
+            this.setPoolManagerStub(_poolManagerStub);
+            this.setPoolStub(_poolStub);
+            this.setBillingStub(_billingStub);
+            this.setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
                                                    PROTOCOL_INFO_UNKNOWN_PORT));
         }
 
@@ -1129,7 +1128,7 @@ public class DcacheResourceFactory
         public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
         {
             super(pnfs, subject, path);
-            setOverwriteAllowed(_isOverwriteAllowed);
+            this.setOverwriteAllowed(_isOverwriteAllowed);
         }
 
         public synchronized void openServerChannel()
