@@ -201,9 +201,10 @@ domainStop() # $1 = domain
         printf "$c "
         sleep 1
         if [ $c -eq 9 ] ; then
-	    if javaPid=$(printJavaPid "$domain"); then
-		kill -9 $javaPid 1>/dev/null 2>/dev/null || true
-	    fi
+            if javaPid=$(printJavaPid "$domain"); then
+                kill -9 $javaPid 1>/dev/null 2>/dev/null || true
+                printf "[K] "
+            fi
         fi
     done
     echo
