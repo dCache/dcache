@@ -1,0 +1,59 @@
+function cron_job () {
+
+if [ $# -ne 3 ]; then
+    return 1
+fi
+
+CRON_DIR=${CRON_DIR:-/etc/cron.d}
+
+if [ ${CRON_DIR} = "/dev/null" ]; then
+    return 0
+fi
+
+filename="$1"
+user="$2"
+job="$3"
+
+# extract the time and the command...
+time=`echo "$job"  |   sed 's/^\(\([^ ]\+ \)\{4\}[^ ]\+\) *\(.*\)$/\1/'`
+command=`echo "$job" | sed 's/^\(\([^ ]\+ \)\{4\}[^ ]\+\) *\(.*\)$/\3/'`
+
+if [ -z "$time" -o -z "$command" ]; then
+    return 1
+fi
+
+# remove the user root if it's been added to the command
+if ( echo $command | grep '^root ' > /dev/null ); then
+    command=`echo $command | sed 's/^root //'`
+fi
+
+# see if the job is already defined elsewhere
+
+if [ $UID -eq 0 ]; then
+    croncomm="crontab -u $user -l"
+else
+    croncomm="crontab -l"
+fi
+
+if ( $croncomm 2> /dev/null | grep -F "$command" > /dev/null ); then
+    return 0
+fi
+
+if [ $UID -ne 0 ]; then
+    if ( ! $croncomm 2> /dev/null | grep -F "$command" > /dev/null ); then
+        ( $croncomm 2> /dev/null; echo "$time $command" ) | crontab -
+    fi
+return 0
+fi
+
+if [ ! -d ${CRON_DIR} ]; then
+    mkdir -p ${CRON_DIR} || (echo "Couldn't mkdir ${CRON_DIR}"; return 1)
+fi
+
+echo 'PATH=/sbin:/bin:/usr/sbin:/usr/bin' > ${CRON_DIR}/$filename || return 1
+echo "$time $user $command" >> ${CRON_DIR}/$filename || return 1
+chmod 644 ${CRON_DIR}/$filename
+
+return 0
+
+}

@@ -1,0 +1,11 @@
+#!/bin/sh -f
+#
+# Usage: srm-stat <path>
+
+. /local/ups/etc/setups.sh
+setup dfarm
+
+path=$1
+
+dfarm ls $path | awk '{print $4}'
+

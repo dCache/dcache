@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>DataFlowNodeTest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<pre>
+
+<a name="1" href="#1">1</a>   <strong>package</strong> test.net.sourceforge.pmd.dfa;
+<a name="2" href="#2">2</a>   
+<a name="3" href="#3">3</a>   <strong>import</strong> <strong>static</strong> org.junit.Assert.assertEquals;
+<a name="4" href="#4">4</a>   <strong>import</strong> <strong>static</strong> org.junit.Assert.assertFalse;
+<a name="5" href="#5">5</a>   <strong>import</strong> <strong>static</strong> org.junit.Assert.assertTrue;
+<a name="6" href="#6">6</a>   <strong>import</strong> net.sourceforge.pmd.dfa.DataFlowNode;
+<a name="7" href="#7">7</a>   <strong>import</strong> net.sourceforge.pmd.dfa.IDataFlowNode;
+<a name="8" href="#8">8</a>   <strong>import</strong> net.sourceforge.pmd.dfa.NodeType;
+<a name="9" href="#9">9</a>   <strong>import</strong> net.sourceforge.pmd.dfa.StartOrEndDataFlowNode;
+<a name="10" href="#10">10</a>  
+<a name="11" href="#11">11</a>  <strong>import</strong> org.junit.Test;
+<a name="12" href="#12">12</a>  
+<a name="13" href="#13">13</a>  <strong>import</strong> java.util.LinkedList;
+<a name="14" href="#14">14</a>  
+<a name="15" href="#15">15</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../../test/net/sourceforge/pmd/dfa/DataFlowNodeTest.html">DataFlowNodeTest</a> {
+<a name="16" href="#16">16</a>  
+<a name="17" href="#17">17</a>      @Test
+<a name="18" href="#18">18</a>      <strong>public</strong> <strong>void</strong> testAddPathToChild() {
+<a name="19" href="#19">19</a>          DataFlowNode parent = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 10, false);
+<a name="20" href="#20">20</a>          IDataFlowNode child = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 12, false);
+<a name="21" href="#21">21</a>          parent.addPathToChild(child);
+<a name="22" href="#22">22</a>          assertEquals(parent.getChildren().size(), 1);
+<a name="23" href="#23">23</a>          assertTrue(child.getParents().contains(parent));
+<a name="24" href="#24">24</a>          assertTrue(parent.getChildren().contains(child));
+<a name="25" href="#25">25</a>      }
+<a name="26" href="#26">26</a>  
+<a name="27" href="#27">27</a>      @Test
+<a name="28" href="#28">28</a>      <strong>public</strong> <strong>void</strong> testRemovePathToChild() {
+<a name="29" href="#29">29</a>          DataFlowNode parent = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 10, false);
+<a name="30" href="#30">30</a>          IDataFlowNode child = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 12, false);
+<a name="31" href="#31">31</a>          parent.addPathToChild(child);
+<a name="32" href="#32">32</a>  
+<a name="33" href="#33">33</a>          assertTrue(parent.removePathToChild(child));
+<a name="34" href="#34">34</a>          assertFalse(child.getParents().contains(parent));
+<a name="35" href="#35">35</a>          assertFalse(parent.getChildren().contains(child));
+<a name="36" href="#36">36</a>      }
+<a name="37" href="#37">37</a>  
+<a name="38" href="#38">38</a>      @Test
+<a name="39" href="#39">39</a>      <strong>public</strong> <strong>void</strong> testRemovePathWithNonChild() {
+<a name="40" href="#40">40</a>          DataFlowNode parent = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 10, false);
+<a name="41" href="#41">41</a>          IDataFlowNode child = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 12, false);
+<a name="42" href="#42">42</a>          assertFalse(parent.removePathToChild(child));
+<a name="43" href="#43">43</a>      }
+<a name="44" href="#44">44</a>  
+<a name="45" href="#45">45</a>      @Test
+<a name="46" href="#46">46</a>      <strong>public</strong> <strong>void</strong> testReverseParentPathsTo() {
+<a name="47" href="#47">47</a>          DataFlowNode parent1 = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 10, false);
+<a name="48" href="#48">48</a>          DataFlowNode parent2 = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 12, false);
+<a name="49" href="#49">49</a>          IDataFlowNode child1 = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 13, false);
+<a name="50" href="#50">50</a>          IDataFlowNode child2 = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 13, false);
+<a name="51" href="#51">51</a>          parent1.addPathToChild(child1);
+<a name="52" href="#52">52</a>          parent2.addPathToChild(child1);
+<a name="53" href="#53">53</a>          assertTrue(parent1.getChildren().contains(child1));
+<a name="54" href="#54">54</a>  
+<a name="55" href="#55">55</a>          child1.reverseParentPathsTo(child2);
+<a name="56" href="#56">56</a>          assertTrue(parent1.getChildren().contains(child2));
+<a name="57" href="#57">57</a>          assertFalse(parent1.getChildren().contains(child1));
+<a name="58" href="#58">58</a>          assertTrue(parent2.getChildren().contains(child2));
+<a name="59" href="#59">59</a>          assertFalse(parent2.getChildren().contains(child1));
+<a name="60" href="#60">60</a>  
+<a name="61" href="#61">61</a>          assertEquals(0, child1.getParents().size());
+<a name="62" href="#62">62</a>          assertEquals(2, child2.getParents().size());
+<a name="63" href="#63">63</a>      }
+<a name="64" href="#64">64</a>  
+<a name="65" href="#65">65</a>      @Test
+<a name="66" href="#66">66</a>      <strong>public</strong> <strong>void</strong> testSetType() {
+<a name="67" href="#67">67</a>          DataFlowNode node = <strong>new</strong> StartOrEndDataFlowNode(<strong>new</strong> LinkedList&lt;DataFlowNode>(), 10, false);
+<a name="68" href="#68">68</a>          node.setType(NodeType.BREAK_STATEMENT);
+<a name="69" href="#69">69</a>          assertTrue(node.isType(NodeType.BREAK_STATEMENT));
+<a name="70" href="#70">70</a>          assertFalse(node.isType(NodeType.CASE_LAST_STATEMENT));
+<a name="71" href="#71">71</a>      }
+<a name="72" href="#72">72</a>  
+<a name="73" href="#73">73</a>      <strong>public</strong> <strong>static</strong> junit.framework.Test suite() {
+<a name="74" href="#74">74</a>          <strong>return</strong> <strong>new</strong> junit.framework.JUnit4TestAdapter(DataFlowNodeTest.<strong>class</strong>);
+<a name="75" href="#75">75</a>      }
+<a name="76" href="#76">76</a>  }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

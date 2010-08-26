@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!-- $Id: config.xml 295 2007-10-30 14:33:18Z irinak $      -->
+
+<config>
+
+ <db fsid="0" url="jdbc:hsqldb:mem:chimeramem" drv="org.hsqldb.jdbcDriver" user="sa" pass="" dialect="HsqlDB"/>
+
+        <nfs>
+                <port>2049</port>
+                <logLevel>0</logLevel>
+                <logFile>/tmp/himera.log</logFile>
+        </nfs>
+	
+</config>

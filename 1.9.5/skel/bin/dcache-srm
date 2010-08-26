@@ -1,0 +1,116 @@
+#!/bin/sh
+# $Id: dcache-srm,v 1.5 2007-08-14 21:13:00 tigran Exp $
+#
+# chkconfig: - 91 9
+# description: srm tomcat startup script
+#
+
+ourHomeDir=/opt/d-cache
+
+cmd1=$1
+
+if [ -r ${ourHomeDir}/etc/srm_setup.env ] ; then
+  . ${ourHomeDir}/etc/srm_setup.env
+fi
+
+hostname=`hostname | awk -F. '{print $1}'`
+
+PID_DIR=${PID_DIR:-/var/run}
+
+JAVA_OPTS="${JAVA_OPTS} -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
+# we need to activate the globus gsi key pair caching for those installations that
+# continue to use  dCacheSetup where -Dorg.globus.jglobus.delegation.cache.lifetime is not
+# specified
+if ! echo "${JAVA_OPTS}" | grep -- "-Dorg\.globus\.jglobus\.delegation\.cache\.lifetime=" 2>&1 >/dev/null ; then
+    JAVA_OPTS="${JAVA_OPTS} \
+                 -Dorg.globus.jglobus.delegation.cache.lifetime=30000"
+fi
+
+export JAVA_HOME
+export JAVA_OPTS
+
+export CATALINA_HOME=${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20
+export config=${ourHomeDir}/config
+export CATALINA_PID=${PID_DIR}/dcache.srm-${hostname}Domain.pid
+
+export X509_CERT
+export X509_KEY
+export SRM_V2_PORT
+
+procStop() {
+   if [ ! -f ${CATALINA_PID} ] ; then
+      echo "Cannot find appropriate pid file (${CATALINA_PID})" 1>&2
+      exit 0
+   fi
+   x=`cat ${CATALINA_PID}`
+   if [ -z "$x" ] ; then
+      echo "Pid file (${CATALINA_PID}) does not contain valid PID" 1>&2
+      exit 1
+   fi
+   touch ${config}/realStop.lastPid.srm-${hostname} 2>/dev/null
+   kill -TERM $x 1>/dev/null 2>/dev/null
+   printf "Stopping srm-${hostname} (pid=`cat ${CATALINA_PID}`) "
+
+   for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+     kill -0 $x 1>/dev/null 2>/dev/null
+     if [ $? -ne 0 ] ; then
+        rm -f $CATALINA_PID
+        echo "Done"
+        exit 0
+     fi
+     printf "$c "
+     sleep 1
+     if [ $c -eq 9 ] ; then
+         kill -9 $x
+     fi
+   done
+   echo "Giving up : srm-${hostname} might still be running" 1>&2
+   exit 4
+
+}
+
+case $cmd1 in
+  start)
+        # in order for the toplink to create and/or use its
+        # schema creation and deletion definition files
+        # we need to be in a well known place and the path
+        # to these files is relative to the current working dir
+        cd ${ourHomeDir}
+        if [ -f ${CATALINA_PID} ] ; then
+          x=`cat ${CATALINA_PID}`
+          kill -0 $x 1>/dev/null 2>/dev/null
+          if [ $? -eq 0 ] ; then
+            echo "srm-${hostname} might still be running" 1>&2
+            exit 4
+          fi
+        fi
+
+        ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/startup.sh
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/srm-tomcat
+	echo "Pinging srm server to wake it up, will take few seconds ..."
+	export CLASSPATH
+	sleep 2 
+	for jar in `find /opt/d-cache/classes/ -name '*jar'`; do  CLASSPATH=${CLASSPATH}:${jar}; done
+	$JAVA_HOME/bin/java org.dcache.srm.client.SrmStartUpPing
+	echo "Done"
+        ;;
+  stop)
+         ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/shutdown.sh
+          procStop
+          RETVAL=$?
+          echo
+          [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/srm-tomcat
+          ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+exit 0
+

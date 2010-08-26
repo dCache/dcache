@@ -1,0 +1,54 @@
+#! /bin/sh
+
+command=`which $0`
+commanddir=`dirname $command`
+OUR_PATH=`dirname $commanddir`
+
+if [ "$SRM_PATH" != "" -a "$SRM_PATH" != "${OUR_PATH}" ]
+    then
+    echo "WARNING: SRM_PATH is defined, but does not point to the expected place " 2>&1
+    echo "WARNING: a wrong version of srm client may be executed " 2>&1
+    echo "WARNING: SRM_PATH=$SRM_PATH " 2>&1
+    echo "WARNING: expected path ${OUR_PATH} " 2>&1
+elif [ "$SRM_PATH" = "" ]
+    then
+    SRM_PATH=${OUR_PATH}
+    export SRM_PATH
+fi
+
+if [ ! -f $SRM_PATH/lib/srm_client.jar ]
+then
+  echo cannot find $SRM_PATH/lib/srm_client.jar
+  exit 1
+fi
+
+
+SRM_CP=$SRM_PATH/lib/srm_client.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/srm.jar
+
+# globus cog
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cryptix.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/ce-jdk13-120.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/log4j-1.2.8.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cog-jglobus.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cryptix-asn1.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cryptix32.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/junit.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/puretls.jar
+
+
+OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
+
+if [ "$SECURITY_DEBUG" = "true" ]
+then
+  OPTIONS=" ${OPTIONS} -Dlog4j.configuration=${SRM_PATH}/bin/log4j.properties.all"
+fi
+
+#OPTIONS=" ${OPTIONS} -Dorg.globus.tcp.port.range=50000,50050"
+
+cmd="java -cp $SRM_CP $OPTIONS org.dcache.srm.util.GridftpList  $*"
+if [ "$DEBUG" = "true" ]
+then
+	echo $cmd
+fi
+$cmd

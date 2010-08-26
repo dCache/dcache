@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        replicateOnArrival=off
+        poolIoQueue=
+        checkRepository=true
+        waitForRepositoryReady=false
+        gsiftpAllowPassivePool=true
+        metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
+        metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataStore
+        gsiftpReadAhead=16777216
+        allowCleaningPreciousFiles=false
+        poolupDestination=PoolManager
+        lfs=none
+        pnfsmanager=PnfsManager
+        flushMessageTarget=broadcast
+        sweeper=org.dcache.pool.classic.SpaceSweeper2
+        workerThreads=5
+      </value>
+    </property>
+  </bean>
+
+  <!-- The lock protects the pool from being accessed by multiple
+       instances. If the lock cannot be acquired, pool creation will
+       fail with an exception. Although the wrapper script will
+       immediately restart the pool, the pool is protected from
+       corruption.
+  -->
+  <bean id="lock" class="org.dcache.util.LockFile"
+        init-method="acquire" destroy-method="release">
+    <description>Pool lock</description>
+    <constructor-arg value="${pooldir}/lock"/>
+  </bean>
+
+  <bean id="pool" class="org.dcache.pool.classic.PoolV4"
+        init-method="init"
+        destroy-method="cleanUp">
+    <description>Main pool component</description>
+    <constructor-arg index="0" value="${poolname}"/>
+    <constructor-arg index="1" value="
+        -io-queues=${poolIoQueue}
+        ${arguments}"/>
+
+    <property name="baseDir"
+              value="${pooldir}"/>
+    <property name="version"
+              value="4"/>
+    <property name="poolUpDestination"
+              value="${poolupDestination}"/>
+    <property name="allowCleaningPreciousFiles"
+              value="${allowCleaningPreciousFiles}"/>
+    <property name="LFSMode"
+              value="${lfs}"/>
+    <property name="replicateOnArrival"
+              value="${replicateOnArrival}"/>
+
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="repository" ref="rep"/>
+    <property name="checksumModule" ref="csm"/>
+    <property name="storageQueue" ref="queue"/>
+    <property name="storageHandler" ref="storagehandler"/>
+    <property name="HSMSet" ref="hsmset"/>
+    <property name="timeoutManager" ref="jtm"/>
+    <property name="flushController" ref="flush"/>
+    <property name="PPClient" ref="pp"/>
+    <property name="account" ref="account"/>
+  </bean>
+
+  <!-- The PnfsHandler class takes a CellPath constructor
+       argument. Notice how we can instantiate such an object
+       'inline'. Spring calls this an anonymous bean, since we didn't
+       give it a name and we cannot reference it from anywhere else.
+  -->
+  <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+    <description>PNFS manager client module</description>
+    <constructor-arg>
+      <bean class="dmg.cells.nucleus.CellPath">
+        <constructor-arg value="${pnfsmanager}"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg value="${poolname}"/>
+  </bean>
+
+  <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
+    <description>Store for pool files</description>
+    <constructor-arg value="${pooldir}"/>
+  </bean>
+
+  <bean id="meta-store" class="${metaDataRepository}"
+        destroy-method="close">
+    <description>Store for pool meta data</description>
+    <constructor-arg ref="file-store"/>
+    <constructor-arg value="${pooldir}"/>
+  </bean>
+
+  <bean id="import-store" class="${metaDataRepositoryImport}"
+        destroy-method="close">
+    <description>Store for imported pool meta data</description>
+    <constructor-arg ref="file-store"/>
+    <constructor-arg value="${pooldir}"/>
+   </bean>
+
+  <bean id="sweeper" class="${sweeper}">
+    <description>Pool garbage collector</description>
+    <property name="repository" ref="rep"/>
+    <property name="account" ref="account"/>
+  </bean>
+
+  <bean id="rep"
+        class="org.dcache.pool.repository.v5.CacheRepositoryV5"
+        destroy-method="shutdown">
+    <description>Repository manager</description>
+    <property name="executor" ref="threadPool"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="periodicChecks" value="${checkRepository}"/>
+    <property name="account" ref="account"/>
+    <property name="allocator" ref="allocator"/>
+    <property name="spaceSweeperPolicy" ref="sweeper"/>
+    <property name="metaDataStore">
+      <bean class="org.dcache.pool.repository.ConsistentStore">
+        <constructor-arg ref="csm"/>
+        <constructor-arg ref="pnfs"/>
+        <constructor-arg ref="file-store"/>
+        <constructor-arg ref="meta-store"/>
+        <constructor-arg ref="import-store"/>
+        <property name="poolName" value="${poolname}"/>
+        <property name="LFSMode" value="${lfs}"/>
+       </bean>
+    </property>
+  </bean>
+
+  <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
+    <description>Repository user interface</description>
+    <property name="repository" ref="rep"/>
+    <property name="account" ref="account"/>
+  </bean>
+
+  <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
+    <description>Checksum module</description>
+    <constructor-arg ref="rep"/>
+    <constructor-arg ref="pnfs"/>
+  </bean>
+
+  <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
+    <description>HSM flush queue manager</description>
+    <constructor-arg ref="rep"/>
+    <constructor-arg value="${poolname}"/>
+  </bean>
+
+  <bean id="hsmset" class="diskCacheV111.util.HsmSet">
+    <description>HSM backend manager</description>
+  </bean>
+
+  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2"
+        destroy-method="shutdown">
+    <description>HSM integration module</description>
+    <constructor-arg ref="rep"/>
+    <constructor-arg ref="pnfs"/>
+    <constructor-arg ref="hsmset"/>
+    <constructor-arg ref="csm"/>
+    <property name="flushMessageTarget" value="${flushMessageTarget}"/>
+  </bean>
+
+  <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
+    <description>HSM module user interface</description>
+    <constructor-arg ref="storagehandler"/>
+    <constructor-arg ref="pnfs"/>
+  </bean>
+
+  <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager">
+    <description>Job timeout manager</description>
+  </bean>
+
+  <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
+    <description>Controller for centralising flushing</description>
+    <constructor-arg ref="queue"/>
+    <constructor-arg ref="storagehandler"/>
+  </bean>
+
+  <bean id="pnfsStub" class="org.dcache.cells.CellStub">
+    <description>PNFS manager cell stub</description>
+    <property name="timeout" value="300000"/>
+    <property name="destination" value="PnfsManager"/>
+  </bean>
+
+  <bean id="poolStub" class="org.dcache.cells.CellStub">
+    <description>Pool cell stub</description>
+    <property name="timeout" value="60000"/>
+  </bean>
+
+  <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
+    <description>Pool manager cell stub</description>
+    <property name="timeout" value="120000"/>
+    <property name="destination" value="PoolManager"/>
+  </bean>
+
+  <bean id="threadPool"
+        class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool"
+        destroy-method="shutdown">
+    <constructor-arg value="${workerThreads}"/>
+    <property name="executeExistingDelayedTasksAfterShutdownPolicy"
+              value="false"/>
+    <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
+              value="false"/>
+  </bean>
+
+  <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
+    <description>Pin manager cell stub</description>
+    <property name="timeout" value="120000"/>
+    <property name="destination" value="PinManager"/>
+  </bean>
+
+
+  <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
+        destroy-method="shutdown">
+    <description>Pool to pool transfer manager</description>
+    <property name="repository" ref="rep"/>
+    <property name="checksumModule" ref="csm"/>
+    <property name="pnfs" ref="pnfsStub"/>
+    <property name="pool" ref="poolStub"/>
+    <property name="executor" ref="threadPool"/>
+  </bean>
+
+  <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
+        destroy-method="cancelAll">
+    <description>Replica migration module client</description>
+    <property name="repository" ref="rep"/>
+    <property name="executor" ref="threadPool"/>
+    <property name="pnfsStub" ref="pnfsStub"/>
+    <property name="poolStub" ref="poolStub"/>
+    <property name="poolManagerStub" ref="poolManagerStub"/>
+    <property name="pinManagerStub" ref="pinManagerStub"/>
+  </bean>
+
+  <bean id="migration-server"
+        class="org.dcache.pool.migration.MigrationModuleServer">
+    <description>Replica migration module backend</description>
+    <property name="repository" ref="rep"/>
+    <property name="migrationModule" ref="migration"/>
+    <property name="PPClient" ref="pp"/>
+    <property name="executor" ref="threadPool"/>
+    <property name="checksumModule" ref="csm"/>
+  </bean>
+
+  <bean id="account"
+        class="org.dcache.pool.repository.Account">
+    <description>Repository space accounting</description>
+  </bean>
+
+  <bean id="allocator"
+        class="org.dcache.pool.classic.FairQueueAllocation">
+    <description>Space allocation policy</description>
+    <property name="account" ref="account"/>
+  </bean>
+</beans>

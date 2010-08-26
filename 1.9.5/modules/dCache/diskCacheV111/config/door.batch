@@ -1,0 +1,65 @@
+#
+# $Id: door.batch,v 1.21 2007-03-21 14:11:42 radicke Exp $
+#
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong dCapPort
+
+# Cell communication
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
+
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
+
+#
+#
+onerror continue
+set context -c dcapMaxLogin         1500
+set context -c dcapIoQueue          ""
+set context -c dcapIoQueueOverwrite denied
+onerror shutdown
+#
+#    dCap    D o o r
+#
+create dmg.cells.services.login.LoginManager DCap-${thisHostname} \
+            "${dCapPort} \
+             -export \
+             diskCacheV111.doors.DCapDoor \
+             -keepAlive=300 \
+             -poolRetry=2700 \
+             -prot=telnet -localOk \
+             -truncate=${truncate} \
+             -maxLogin=${dcapMaxLogin} \
+             -brokerUpdateTime=30 \
+             -protocolFamily=dcap \
+             -protocolVersion=1.3.0 \
+             -poolProxy=PoolManager \
+             -io-queue=${dcapIoQueue} \
+             -permission-handler=${permissionHandler} \
+             -aclTable=${aclTable} \
+             -aclConnDriver=${aclConnDriver} \
+             -aclConnUrl=${aclConnUrl} \
+             -aclConnUser=${aclConnUser} \
+             -aclConnPswd=${aclConnPswd} \
+             -stageConfigurationFilePath=${stageConfigurationFilePath} \
+             -io-queue-overwrite=${dcapIoQueueOverwrite} \
+             -loginBroker=LoginBroker  \
+"
+#
+#

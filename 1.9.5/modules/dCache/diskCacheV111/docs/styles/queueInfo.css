@@ -1,0 +1,30 @@
+th
+{
+  font-weight: normal;
+}
+
+th.active, th.max
+{
+  background: #0099FF;
+}
+
+th.queued
+{
+  background: #00bbFF; 
+}
+
+td.idle
+{
+  color: #008080;
+}
+
+td.queued
+{
+  color: red;
+}
+
+tr.total th, tr.total td
+{
+  background: #0000FF;
+  color: white;
+}

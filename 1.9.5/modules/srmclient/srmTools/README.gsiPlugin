@@ -1,0 +1,315 @@
+GSI plugin for gSOAP Toolkit
+
+This software has been developed in the context of the GridLab project (http://www.gridlab.org)
+Support for GSI has been added by:
+
+Massimo Cafaro & Daniele Lezzi
+High Performance Computing Center
+University of Lecce, Italy
+massimo.cafaro@unile.it, daniele.lezzi@unile.it
+
+and
+
+Robert Van Engelen
+Florida State University, USA
+engelen@cs.fsu.edu
+
+You will find in this directory gsi enabled example client and servers (calc) that show how to use mutual authentication/authorization (with a globus callback) and how to use connection caching;
+there are also example client and servers (submit) using delegation to submit a batch job.
+
+REQUIREMENTS: 
+
+1) autoconf 2.57
+2) automake 1.7.2
+3) Globus Toolkit 2.4 or alpha 3 version of Globus Toolkit 3.0
+4) gSOAP Toolkit, v2.2.3d available on the gSOAP web site,
+http://www.cs.fsu.edu/~engelen/soap
+
+Please note that the latest gSOAP release is available from
+http://sourceforge.net/project/showfiles.php?group_id=52781
+
+WARNING: the code has been tested only on linux kernel 2.4.x, however it should work on other platforms as well, may be after modifying a little bit the source code to make happy your compiler
+
+INTEROPERABILITY WITH ALPHA VERSION of Globus Toolkit 3.0
+
+This software needs to be linked against the GSI library available in Globus Toolkit version 2.4, or against the GSI library available in the alpha 3 version of Globus Toolkit 3.0 in order to provide full interoperability. This is because Globus Toolkit 2.4 and 3.0 use a different proxy format than v2.2.x
+
+If you want to compile the code using ALPHA 3 VERSION of Globus Toolkit 3.0:
+you need to use the provided Makefile-gt3-alpha3.am
+
+cp Makefile-gt3-alpha3.am Makefile.am
+
+now you can compile both the GSI plugin and the example server and client (calc-gsi-server-fork.c
+and calc-gsi-client.c) following the INSTALLATION INSTRUCTIONS below. To compile the code using
+Globus 2.4 just do
+
+cp Makefile.am.bck Makefile.am before starting again the build.
+
+INSTALLATION INSTRUCTIONS
+
+Get a copy of gSOAP 2.2.3d and put the files stdsoap2.h stdsoap2.c soapcpp2 in this directory.
+
+You begin modifying the Makefile.conf file to reflect your Globus installation:
+
+1) edit Makefile.conf and modify Globus related variables according to your installation
+
+Now you build everything as follows:
+
+
+2) autoreconf --force
+3) configure --prefix=<your installation directory>
+4) make init
+5) make
+
+When the build is complete you can install the software:
+
+6) make install
+
+THE CALC SERVER
+
+We provide the code for a simple multi-threaded calc server, and the code for the fastest possible implementation pre-threaded calc server, using mutex locking around gsi_accept()
+
+
+The calc server receives two integers, adds them and returns the result to the client.
+The calc client and server use GSI to authenticate, so that before using the client and the server, use grid-proxy-init to create a fresh proxy. You can also use the credentials pointed to by X509_USER_PROXY environment variable.
+The calc server upon receiving a GSI request checks the received distinguished name against an access control list
+stored in the file called authorized_dn (that needs to be in the same directory of the server executable).
+If the distinguished name received belongs to the access control list then the client is authorized to access the server, otherwise the server complains about the client identity.
+The calc client is also notified of the peer's identity, because the implementation supports mutual authentication. If the client access is denied, the client will exit reporting that an authentication operation has failed.
+
+The calc server (threaded and prethreaded) and its client show how to use connection caching. If a remote GSI enabled web service uses connection caching, then a client can open a connection to the server and then issue multiple calls without each time closing and reopening the connection. This leads to improved performance.
+
+To run the example:
+
+Edit the calc server files
+
+1) edit the file authorized_dn and store inside the distinguished names to be authorized
+   edit the file calc.h and modify the location httpg://localhost:18000 to reflect the correct hostname and port used by the server
+   edit the file prethreaded-calc-gsi-server.c and modify server and port defaults
+   edit the file calc-gsi-server-threads.c and modify server and port defaults
+   edit the file calc-gsi-client.c and modify server and port defaults
+
+Build the software
+
+2) make clean
+3) make init
+4) make
+5) make install
+
+Run the software
+
+6) grid-proxy-init on the machines where client and server are
+7) run your server:
+
+	cd <your installation directory>/servers
+	./prethreaded-calc-gsi-server -s hostname -p port
+	or ./calc-gsi-server-threads -s hostname -p port
+
+8) run your client:
+
+	cd <your installation directory>/bin
+	./calc-gsi-client -s hostname -p port -a int -b int
+
+The server is concurrent, so that you can actually run multiple clients concurrently. 
+
+THE SUBMIT SERVER
+
+We provide the code for a simple concurrent submit server that handles incoming requests forking childs, and the code for the fastest possible implementation pre-forked submit server, using POSIX compliant file locking around gsi_accept()
+
+The submit client authenticates using GSI to the submit server; the example uses delegation.
+The submit server authenticates the client, and if the client is authorized (we are using the callback mode in the example) then the server submits a batch job on behalf of the client and returns the job identifier (the globus url).
+
+To run the example:
+
+Edit the submit server files
+
+1) edit the file authorized_dn and store inside the distinguished names to be authorized
+   edit the file submit.h and modify the location httpg://localhost:18000 to reflect the correct hostname and port used by the server
+   edit the file preforked-submit-gsi-server.c
+   edit the file submit-gsi-server-fork.c and modify server and port defaults
+   edit the file submit-gsi-client.c and modify server and port defaults
+
+Build the software
+
+2) make clean
+3) make init
+4) make
+5) make install
+
+Run the software
+
+6) grid-proxy-init on the machines where client and server are
+7) run your server:
+
+	cd <your installation directory>/servers 
+	./preforked-submit-gsi-server -s hostname -p port
+	or ./submit-gsi-server-fork -s hostname -p port
+	
+8) run your client:
+
+	cd <your installation directory>/bin
+	./submit-gsi-client -s hostname -p port -j job_manager_hostname -r RSL_string 
+
+RELEVANT GSI FUNCTIONS inside the file gsi.c
+
+globus_gsi: plugin registration
+gsi_copy: copy per thread plugin data
+gsi_delete: delete per thread plugin data
+gsi_listener: setup of a tcp listener for the server
+gsi_listen: listening for incoming connections
+gsi_accept: accepting incoming connections
+globus_io_secure_authorization_callback: callback executed upon GSI connection
+gsi_connect: connecting to a server
+gsi_disconnect: terminating a connection
+gsi_send: sending data 
+gsi_recv: receiving data
+gsi_error: reporting errors
+gsi_set_secure_socket_reuse_addr: setup of reuse addr option; useful server side
+gsi_set_secure_authentication_mode: setup of authentication mode attribute; both server & client side
+gsi_set_secure_channel_mode: setup of channel mode attribute; both server & client side
+gsi_set_secure_protection_mode: setup of protection mode attribute; both server & client side
+gsi_set_secure_authorization_mode: setup of authorization mode attribute; both server & client side
+gsi_set_secure_delegation_mode: setup of delegation mode attribute; useful client side
+gsi_connection_caching: setup of connection caching; both server & client side
+gsi_reset_connection_caching: reset connection caching; useful client side
+
+You will need to modify globus_io_secure_authorization_callback to enforce your own policy, both for the server and the client. We just give an example here.
+
+HOW TO WRITE A CLIENT
+
+To write a client:
+
+suppose to declare struct soap *soap;
+
+1) #include "gsi.h"
+2) after calling soap_new() or soap_init() or soap_init2() insert the following
+
+if (soap_register_plugin(soap, globus_gsi))
+{ soap_print_fault(soap, stderr);
+  exit(1);
+}
+
+/* this shows example settings */
+gsi_set_secure_authentication_mode(soap, GLOBUS_IO_SECURE_AUTHENTICATION_MODE_GSSAPI);
+gsi_set_secure_channel_mode(soap, GLOBUS_IO_SECURE_CHANNEL_MODE_GSI_WRAP);
+gsi_set_secure_protection_mode(soap, GLOBUS_IO_SECURE_PROTECTION_MODE_PRIVATE);
+/* if delegation is nedeed call the following function */
+gsi_set_secure_delegation_mode(soap, GLOBUS_IO_SECURE_DELEGATION_MODE_FULL_PROXY);
+
+/* if GLOBUS_IO_SECURE_AUTHORIZATION_MODE_CALLBACK, then set also the callback function */
+/* otherwise, just set the last parameter to NULL */
+gsi_set_secure_authorization_mode(soap, GLOBUS_IO_SECURE_AUTHORIZATION_MODE_CALLBACK, client_callback_func);
+
+this will register the plugin and will setup the GSI channel.
+
+
+
+HOW TO WRITE A SIMPLE SERVER USING FORK OR THREADS
+
+To write a simple server using fork or threads (pre-threaded and preforked server are different: see the source code for these versions):
+
+suppose to declare struct soap soap;
+
+1) #include "gsi.h"
+2) declare the following data structure
+
+static struct gsi_plugin_data *data;
+
+see gsi.h for a description
+
+3) after calling soap_init() insert the following
+
+soap_register_plugin(&soap, globus_gsi);
+
+to register the plugin
+
+insert the following to setup the GSI channel
+
+/* this shows example settings */
+gsi_set_secure_socket_reuse_addr(&soap, GLOBUS_TRUE);
+gsi_set_secure_authentication_mode(&soap, GLOBUS_IO_SECURE_AUTHENTICATION_MODE_GSSAPI);
+gsi_set_secure_channel_mode(&soap, GLOBUS_IO_SECURE_CHANNEL_MODE_GSI_WRAP);
+gsi_set_secure_protection_mode(&soap, GLOBUS_IO_SECURE_PROTECTION_MODE_PRIVATE);
+/* if GLOBUS_IO_SECURE_AUTHORIZATION_MODE_CALLBACK, then set also the callback function */
+/* otherwise, just set the last parameter to NULL */
+gsi_set_secure_authorization_mode(soap, GLOBUS_IO_SECURE_AUTHORIZATION_MODE_CALLBACK, server_callback_func);
+
+3) call gsi_listener() 
+4) in the server's infinite loop do the following:
+
+call gsi_listen();
+calls gsi_accept()
+
+retrieve the plugin data structure 
+
+data = (struct gsi_plugin_data*)soap_lookup_plugin(&soap, GSI_PLUGIN_ID);
+
+call soap_copy() to get per-thread soap data
+
+5) if you only need mutual authentication, then you can use threads:
+call pthread_create() to serve an incoming request; see source code for calc-gsi-server-threads
+
+otherwise, if you also need to handle delegation, do not use threads, use fork instead;
+see the source code for submit-gsi-server-fork. You can not use threads, since the server's environment
+is shared among threads.
+
+HOW TO USE CONNECTION CACHING
+
+SERVER SIDE:
+
+1) init the gsoap runtime environment with soap_init2() as follows:
+
+   struct soap soap;
+
+   soap_init2(&soap, SOAP_IO_KEEPALIVE, SOAP_IO_KEEPALIVE);
+
+2) after plugin registration with soap_register_plugin(), you must enable connection caching with
+
+   gsi_connection_caching(&soap);
+
+3) add in your process_request() the following lines to setup properly timeouts:
+
+   ((struct soap*)soap)->recv_timeout = 300; // Timeout after 5 minutes stall on recv
+   ((struct soap*)soap)->send_timeout = 60; // Timeout after 1 minute stall on send
+
+   as an example:
+
+   void *
+   process_request (void *soap)
+   {
+     ((struct soap*)soap)->recv_timeout = 300; // Timeout after 5 minutes stall on recv
+     ((struct soap*)soap)->send_timeout = 60; // Timeout after 1 minute stall on send
+     soap_serve ((struct soap *) soap);
+     soap_destroy ((struct soap *) soap);
+     soap_end ((struct soap *) soap);
+     free (soap);
+   }
+
+CLIENT SIDE:
+
+1) init the gsoap runtime environment with soap_init2() as follows:
+
+   struct soap soap;
+
+   soap_init2(&soap, SOAP_IO_KEEPALIVE, SOAP_IO_KEEPALIVE);
+
+2) after plugin registration with soap_register_plugin(), you must enable connection caching with
+
+   gsi_connection_caching(&soap);
+
+3) before the last call to one of the remote web service methods, you must reset connection caching:
+
+   gsi_reset_connection_caching(&soap);
+
+4)  after your last call you must, as usual, deallocate the gsoap runtime environment as follows:
+
+    soap_destroy(&soap);
+    soap_end (&soap);
+    soap_done (&soap);
+
+
+DISCLAIMER:
+
+The software is provided "as is", without any warranty.
+We welcome your feedback.
+Massimo Cafaro, Daniele Lezzi & Robert Van Engelen

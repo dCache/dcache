@@ -1,0 +1,709 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>GUI xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../apidocs/net/sourceforge/pmd/cpd/GUI.html">View Javadoc</a></div><pre>
+
+<a name="1" href="#1">1</a>   <em>/**</em>
+<a name="2" href="#2">2</a>   <em> * BSD-style license; for more info see <a href="http://pmd.sourceforge.net/license.html" target="alexandria_uri">http://pmd.sourceforge.net/license.html</a></em>
+<a name="3" href="#3">3</a>   <em> */</em>
+<a name="4" href="#4">4</a>   <strong>package</strong> net.sourceforge.pmd.cpd;
+<a name="5" href="#5">5</a>   
+<a name="6" href="#6">6</a>   <strong>import</strong> javax.swing.*;
+<a name="7" href="#7">7</a>   <strong>import</strong> javax.swing.event.ListSelectionEvent;
+<a name="8" href="#8">8</a>   <strong>import</strong> javax.swing.event.ListSelectionListener;
+<a name="9" href="#9">9</a>   <strong>import</strong> javax.swing.event.TableModelListener;
+<a name="10" href="#10">10</a>  <strong>import</strong> javax.swing.table.DefaultTableCellRenderer;
+<a name="11" href="#11">11</a>  <strong>import</strong> javax.swing.table.JTableHeader;
+<a name="12" href="#12">12</a>  <strong>import</strong> javax.swing.table.TableColumn;
+<a name="13" href="#13">13</a>  <strong>import</strong> javax.swing.table.TableColumnModel;
+<a name="14" href="#14">14</a>  <strong>import</strong> javax.swing.table.TableModel;
+<a name="15" href="#15">15</a>  <strong>import</strong> java.awt.BorderLayout;
+<a name="16" href="#16">16</a>  <strong>import</strong> java.awt.Component;
+<a name="17" href="#17">17</a>  <strong>import</strong> java.awt.Dimension;
+<a name="18" href="#18">18</a>  <strong>import</strong> java.awt.Point;
+<a name="19" href="#19">19</a>  <strong>import</strong> java.awt.Toolkit;
+<a name="20" href="#20">20</a>  <strong>import</strong> java.awt.datatransfer.StringSelection;
+<a name="21" href="#21">21</a>  <strong>import</strong> java.awt.event.ActionEvent;
+<a name="22" href="#22">22</a>  <strong>import</strong> java.awt.event.ActionListener;
+<a name="23" href="#23">23</a>  <strong>import</strong> java.awt.event.ItemEvent;
+<a name="24" href="#24">24</a>  <strong>import</strong> java.awt.event.ItemListener;
+<a name="25" href="#25">25</a>  <strong>import</strong> java.awt.event.KeyEvent;
+<a name="26" href="#26">26</a>  <strong>import</strong> java.awt.event.MouseAdapter;
+<a name="27" href="#27">27</a>  <strong>import</strong> java.awt.event.MouseEvent;
+<a name="28" href="#28">28</a>  <strong>import</strong> java.io.File;
+<a name="29" href="#29">29</a>  <strong>import</strong> java.io.FileOutputStream;
+<a name="30" href="#30">30</a>  <strong>import</strong> java.io.IOException;
+<a name="31" href="#31">31</a>  <strong>import</strong> java.io.PrintWriter;
+<a name="32" href="#32">32</a>  <strong>import</strong> java.util.ArrayList;
+<a name="33" href="#33">33</a>  <strong>import</strong> java.util.Collections;
+<a name="34" href="#34">34</a>  <strong>import</strong> java.util.Comparator;
+<a name="35" href="#35">35</a>  <strong>import</strong> java.util.HashMap;
+<a name="36" href="#36">36</a>  <strong>import</strong> java.util.HashSet;
+<a name="37" href="#37">37</a>  <strong>import</strong> java.util.Iterator;
+<a name="38" href="#38">38</a>  <strong>import</strong> java.util.List;
+<a name="39" href="#39">39</a>  <strong>import</strong> java.util.Map;
+<a name="40" href="#40">40</a>  <strong>import</strong> java.util.Properties;
+<a name="41" href="#41">41</a>  <strong>import</strong> java.util.Set;
+<a name="42" href="#42">42</a>  <strong>import</strong> net.sourceforge.pmd.PMD;
+<a name="43" href="#43">43</a>  
+<a name="44" href="#44">44</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../net/sourceforge/pmd/cpd/GUI.html">GUI</a> implements <a href="../../../../net/sourceforge/pmd/cpd/CPDListener.html">CPDListener</a> {
+<a name="45" href="#45">45</a>  
+<a name="46" href="#46">46</a>  	<strong>private</strong> <strong>interface</strong> <a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a> {
+<a name="47" href="#47">47</a>  		String render(Iterator&lt;Match> items);
+<a name="48" href="#48">48</a>  	}
+<a name="49" href="#49">49</a>  	
+<a name="50" href="#50">50</a>  	<strong>private</strong> <strong>static</strong> <strong>final</strong> Object[][] rendererSets = <strong>new</strong> Object[][] {
+<a name="51" href="#51">51</a>  		{ <span class="string">"Text"</span>, 		<strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a>() { <strong>public</strong> String render(Iterator&lt;Match> items) { <strong>return</strong> <strong>new</strong> SimpleRenderer().render(items); } } },
+<a name="52" href="#52">52</a>  		{ <span class="string">"XML"</span>, 		<strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a>() { <strong>public</strong> String render(Iterator&lt;Match> items) { <strong>return</strong> <strong>new</strong> XMLRenderer().render(items); } } },
+<a name="53" href="#53">53</a>  		{ <span class="string">"CSV (comma)"</span>,<strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a>() { <strong>public</strong> String render(Iterator&lt;Match> items) { <strong>return</strong> <strong>new</strong> CSVRenderer(',').render(items); } } },
+<a name="54" href="#54">54</a>  		{ <span class="string">"CSV (tab)"</span>,	<strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a>() { <strong>public</strong> String render(Iterator&lt;Match> items) { <strong>return</strong> <strong>new</strong> CSVRenderer('\t').render(items); } } }
+<a name="55" href="#55">55</a>  		};
+<a name="56" href="#56">56</a>  	
+<a name="57" href="#57">57</a>  	<strong>private</strong> <strong>interface</strong> LanguageConfig {
+<a name="58" href="#58">58</a>  		Language languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p);
+<a name="59" href="#59">59</a>  		<strong>boolean</strong> ignoreLiteralsByDefault();
+<a name="60" href="#60">60</a>  		String[] extensions();
+<a name="61" href="#61">61</a>  	};
+<a name="62" href="#62">62</a>  	
+<a name="63" href="#63">63</a>  	<strong>private</strong> <strong>static</strong> <strong>final</strong> Object[][] languageSets = <strong>new</strong> Object[][] {
+<a name="64" href="#64">64</a>  		{<span class="string">"Java"</span>, 			<strong>new</strong> LanguageConfig() { 
+<a name="65" href="#65">65</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(<span class="string">"java"</span>); }
+<a name="66" href="#66">66</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> <strong>true</strong>; }
+<a name="67" href="#67">67</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">".java"</span>, <span class="string">".class"</span> }; }; } },
+<a name="68" href="#68">68</a>  		{<span class="string">"JSP"</span>, 			<strong>new</strong> LanguageConfig() { 
+<a name="69" href="#69">69</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(<span class="string">"jsp"</span>); }
+<a name="70" href="#70">70</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> false; }
+<a name="71" href="#71">71</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">".jsp"</span> }; }; } },
+<a name="72" href="#72">72</a>  		{<span class="string">"C++"</span>, 			<strong>new</strong> LanguageConfig() { 
+<a name="73" href="#73">73</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(<span class="string">"cpp"</span>); }
+<a name="74" href="#74">74</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> false; }
+<a name="75" href="#75">75</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">".cpp"</span>, <span class="string">".c"</span> }; }; } },
+<a name="76" href="#76">76</a>  		{<span class="string">"Ruby"</span>,			<strong>new</strong> LanguageConfig() { 
+<a name="77" href="#77">77</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(<span class="string">"ruby"</span>); }
+<a name="78" href="#78">78</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> false; }
+<a name="79" href="#79">79</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">".rb"</span> }; }; } },
+<a name="80" href="#80">80</a>  		{<span class="string">"Fortran"</span>,			<strong>new</strong> LanguageConfig() {
+<a name="81" href="#81">81</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(<span class="string">"fortran"</span>); }
+<a name="82" href="#82">82</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> false; }
+<a name="83" href="#83">83</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">".rb"</span> }; }; } },
+<a name="84" href="#84">84</a>  		{<span class="string">"by extension..."</span>, <strong>new</strong> LanguageConfig() {
+<a name="85" href="#85">85</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(LanguageFactory.BY_EXTENSION, p); }
+<a name="86" href="#86">86</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> false; }
+<a name="87" href="#87">87</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">""</span> }; }; } },
+<a name="88" href="#88">88</a>  		{<span class="string">"PHP"</span>, 			<strong>new</strong> LanguageConfig() { 
+<a name="89" href="#89">89</a>  									<strong>public</strong> <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> languageFor(<a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a> lf, Properties p) { <strong>return</strong> lf.createLanguage(<span class="string">"php"</span>); }
+<a name="90" href="#90">90</a>  									<strong>public</strong> <strong>boolean</strong> ignoreLiteralsByDefault() { <strong>return</strong> false; }
+<a name="91" href="#91">91</a>  									<strong>public</strong> String[] extensions() { <strong>return</strong> <strong>new</strong> String[] {<span class="string">".php"</span> }; };	} },
+<a name="92" href="#92">92</a>  		};
+<a name="93" href="#93">93</a>  	
+<a name="94" href="#94">94</a>  	<strong>private</strong> <strong>static</strong> <strong>final</strong> <strong>int</strong>		defaultCPDMinimumLength = 75;
+<a name="95" href="#95">95</a>  	<strong>private</strong> <strong>static</strong> <strong>final</strong> Map		langConfigsByLabel = <strong>new</strong> HashMap(languageSets.length);
+<a name="96" href="#96">96</a>  	<strong>private</strong> <strong>static</strong> <strong>final</strong> KeyStroke	copy = KeyStroke.getKeyStroke(KeyEvent.VK_C,ActionEvent.CTRL_MASK,false);
+<a name="97" href="#97">97</a>  	<strong>private</strong> <strong>static</strong> <strong>final</strong> KeyStroke	delete = KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0);
+<a name="98" href="#98">98</a>  	
+<a name="99" href="#99">99</a>  	<strong>private</strong> <strong>class</strong> ColumnSpec {
+<a name="100" href="#100">100</a> 		<strong>private</strong> String label;
+<a name="101" href="#101">101</a> 		<strong>private</strong> <strong>int</strong> alignment;
+<a name="102" href="#102">102</a> 		<strong>private</strong> <strong>int</strong> width;
+<a name="103" href="#103">103</a> 		<strong>private</strong> Comparator&lt;Match> sorter;
+<a name="104" href="#104">104</a> 		
+<a name="105" href="#105">105</a> 		<strong>public</strong> ColumnSpec(String aLabel, <strong>int</strong> anAlignment, <strong>int</strong> aWidth, Comparator&lt;Match> aSorter) {
+<a name="106" href="#106">106</a> 			label = aLabel;
+<a name="107" href="#107">107</a> 			alignment = anAlignment;
+<a name="108" href="#108">108</a> 			width = aWidth;
+<a name="109" href="#109">109</a> 			sorter = aSorter;
+<a name="110" href="#110">110</a> 		}
+<a name="111" href="#111">111</a> 		<strong>public</strong> String label() { <strong>return</strong> label; };
+<a name="112" href="#112">112</a> 		<strong>public</strong> <strong>int</strong> alignment() { <strong>return</strong> alignment; };
+<a name="113" href="#113">113</a> 		<strong>public</strong> <strong>int</strong> width() { <strong>return</strong> width; };
+<a name="114" href="#114">114</a> 		<strong>public</strong> Comparator&lt;Match> sorter() { <strong>return</strong> sorter; };
+<a name="115" href="#115">115</a> 	}
+<a name="116" href="#116">116</a> 
+<a name="117" href="#117">117</a> 	<strong>private</strong> <strong>final</strong> ColumnSpec[] matchColumns = <strong>new</strong> ColumnSpec[] {
+<a name="118" href="#118">118</a> 		<strong>new</strong> ColumnSpec(<span class="string">"Source"</span>, 	SwingConstants.LEFT, -1, Match.LabelComparator),
+<a name="119" href="#119">119</a> 		<strong>new</strong> ColumnSpec(<span class="string">"Matches"</span>, 	SwingConstants.RIGHT, 60, Match.MatchesComparator),
+<a name="120" href="#120">120</a> 		<strong>new</strong> ColumnSpec(<span class="string">"Lines"</span>, 	SwingConstants.RIGHT, 45, Match.LinesComparator),
+<a name="121" href="#121">121</a> 		};
+<a name="122" href="#122">122</a>     
+<a name="123" href="#123">123</a> 	<strong>static</strong> {		
+<a name="124" href="#124">124</a> 		<strong>for</strong> (<strong>int</strong> i=0; i&lt;languageSets.length; i++) {
+<a name="125" href="#125">125</a> 			langConfigsByLabel.put(languageSets[i][0], languageSets[i][1]);
+<a name="126" href="#126">126</a> 		}
+<a name="127" href="#127">127</a> 	}
+<a name="128" href="#128">128</a> 	
+<a name="129" href="#129">129</a> 	<strong>private</strong> <strong>static</strong> LanguageConfig languageConfigFor(String label) {
+<a name="130" href="#130">130</a> 		<strong>return</strong> (LanguageConfig)langConfigsByLabel.get(label);
+<a name="131" href="#131">131</a> 	}
+<a name="132" href="#132">132</a> 	
+<a name="133" href="#133">133</a>     <strong>private</strong> <strong>static</strong> <strong>class</strong> CancelListener implements ActionListener {
+<a name="134" href="#134">134</a>         <strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) {
+<a name="135" href="#135">135</a>             System.exit(0);
+<a name="136" href="#136">136</a>         }
+<a name="137" href="#137">137</a>     }
+<a name="138" href="#138">138</a> 
+<a name="139" href="#139">139</a>     <strong>private</strong> <strong>class</strong> GoListener implements ActionListener {
+<a name="140" href="#140">140</a>         <strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) {
+<a name="141" href="#141">141</a>             <strong>new</strong> Thread(<strong>new</strong> Runnable() {
+<a name="142" href="#142">142</a>                 <strong>public</strong> <strong>void</strong> run() {
+<a name="143" href="#143">143</a>                     tokenizingFilesBar.setValue(0);
+<a name="144" href="#144">144</a>                     tokenizingFilesBar.setString(<span class="string">""</span>);
+<a name="145" href="#145">145</a>                     resultsTextArea.setText(<span class="string">""</span>);
+<a name="146" href="#146">146</a>                     phaseLabel.setText(<span class="string">""</span>);
+<a name="147" href="#147">147</a>                     timeField.setText(<span class="string">""</span>);
+<a name="148" href="#148">148</a>                     go();
+<a name="149" href="#149">149</a>                 }
+<a name="150" href="#150">150</a>             }).start();
+<a name="151" href="#151">151</a>         }
+<a name="152" href="#152">152</a>     }
+<a name="153" href="#153">153</a>     
+<a name="154" href="#154">154</a>     <strong>private</strong> <strong>class</strong> SaveListener implements ActionListener {
+<a name="155" href="#155">155</a>     	
+<a name="156" href="#156">156</a>     	<strong>final</strong> <a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a> renderer;
+<a name="157" href="#157">157</a>     	
+<a name="158" href="#158">158</a>     	<strong>public</strong> SaveListener(<a href="../../../../net/sourceforge/pmd/cpd/Renderer.html">Renderer</a> theRenderer) {
+<a name="159" href="#159">159</a>     		renderer = theRenderer;
+<a name="160" href="#160">160</a>     	}
+<a name="161" href="#161">161</a>     	
+<a name="162" href="#162">162</a>         <strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent evt) {
+<a name="163" href="#163">163</a>             JFileChooser fcSave	= <strong>new</strong> JFileChooser();
+<a name="164" href="#164">164</a>             <strong>int</strong> ret = fcSave.showSaveDialog(GUI.<strong>this</strong>.frame);
+<a name="165" href="#165">165</a>             File f = fcSave.getSelectedFile();
+<a name="166" href="#166">166</a>             <strong>if</strong> (f == <strong>null</strong> || ret != JFileChooser.APPROVE_OPTION) <strong>return</strong>;
+<a name="167" href="#167">167</a>                         
+<a name="168" href="#168">168</a>             <strong>if</strong> (!f.canWrite()) {
+<a name="169" href="#169">169</a>                 PrintWriter pw = <strong>null</strong>;
+<a name="170" href="#170">170</a>                 <strong>try</strong> {
+<a name="171" href="#171">171</a>                     pw = <strong>new</strong> PrintWriter(<strong>new</strong> FileOutputStream(f));
+<a name="172" href="#172">172</a>                     pw.write(renderer.render(matches.iterator()));
+<a name="173" href="#173">173</a>                     pw.flush();
+<a name="174" href="#174">174</a>                     JOptionPane.showMessageDialog(frame, <span class="string">"Saved "</span> + matches.size() + <span class="string">" matches"</span>);
+<a name="175" href="#175">175</a>                 } <strong>catch</strong> (IOException e) {
+<a name="176" href="#176">176</a>                     error(<span class="string">"Couldn't save file"</span> + f.getAbsolutePath(), e);
+<a name="177" href="#177">177</a>                 } <strong>finally</strong> {
+<a name="178" href="#178">178</a>                     <strong>if</strong> (pw != <strong>null</strong>) pw.close();
+<a name="179" href="#179">179</a>                 }
+<a name="180" href="#180">180</a>             } <strong>else</strong> {
+<a name="181" href="#181">181</a>                 error(<span class="string">"Could not write to file "</span> + f.getAbsolutePath(), <strong>null</strong>);
+<a name="182" href="#182">182</a>             }
+<a name="183" href="#183">183</a>         }
+<a name="184" href="#184">184</a> 
+<a name="185" href="#185">185</a>         <strong>private</strong> <strong>void</strong> error(String message, Exception e) {
+<a name="186" href="#186">186</a>             <strong>if</strong> (e != <strong>null</strong>) {
+<a name="187" href="#187">187</a>                 e.printStackTrace();
+<a name="188" href="#188">188</a>             }
+<a name="189" href="#189">189</a>             JOptionPane.showMessageDialog(GUI.<strong>this</strong>.frame, message);
+<a name="190" href="#190">190</a>         }
+<a name="191" href="#191">191</a> 
+<a name="192" href="#192">192</a>     }
+<a name="193" href="#193">193</a> 
+<a name="194" href="#194">194</a>     <strong>private</strong> <strong>class</strong> BrowseListener implements ActionListener {
+<a name="195" href="#195">195</a>         <strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) {
+<a name="196" href="#196">196</a>             JFileChooser fc = <strong>new</strong> JFileChooser(rootDirectoryField.getText());
+<a name="197" href="#197">197</a>             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+<a name="198" href="#198">198</a>             fc.showDialog(frame, <span class="string">"Select"</span>);
+<a name="199" href="#199">199</a>             <strong>if</strong> (fc.getSelectedFile() != <strong>null</strong>) {
+<a name="200" href="#200">200</a>                 rootDirectoryField.setText(fc.getSelectedFile().getAbsolutePath());
+<a name="201" href="#201">201</a>             }
+<a name="202" href="#202">202</a>         }
+<a name="203" href="#203">203</a>     }
+<a name="204" href="#204">204</a>     
+<a name="205" href="#205">205</a> 	<strong>private</strong> <strong>class</strong> AlignmentRenderer <strong>extends</strong> DefaultTableCellRenderer {
+<a name="206" href="#206">206</a> 		
+<a name="207" href="#207">207</a> 		<strong>private</strong> <strong>int</strong>[] alignments;
+<a name="208" href="#208">208</a> 		
+<a name="209" href="#209">209</a> 		<strong>public</strong> AlignmentRenderer(<strong>int</strong>[] theAlignments) {
+<a name="210" href="#210">210</a> 			alignments = theAlignments;
+<a name="211" href="#211">211</a> 		};
+<a name="212" href="#212">212</a> 		
+<a name="213" href="#213">213</a> 		<strong>public</strong> Component getTableCellRendererComponent(JTable table, Object value, <strong>boolean</strong> isSelected, <strong>boolean</strong> hasFocus, <strong>int</strong> row, <strong>int</strong> column) {
+<a name="214" href="#214">214</a> 			<strong>super</strong>.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+<a name="215" href="#215">215</a>  
+<a name="216" href="#216">216</a> 			setHorizontalAlignment(alignments[column]);
+<a name="217" href="#217">217</a>  
+<a name="218" href="#218">218</a> 			<strong>return</strong> <strong>this</strong>;
+<a name="219" href="#219">219</a> 		}
+<a name="220" href="#220">220</a> 	}
+<a name="221" href="#221">221</a>     
+<a name="222" href="#222">222</a>     <strong>private</strong> JTextField rootDirectoryField	= <strong>new</strong> JTextField(System.getProperty(<span class="string">"user.home"</span>));
+<a name="223" href="#223">223</a>     <strong>private</strong> JTextField minimumLengthField	= <strong>new</strong> JTextField(Integer.toString(defaultCPDMinimumLength));
+<a name="224" href="#224">224</a>     <strong>private</strong> JTextField encodingField		= <strong>new</strong> JTextField(System.getProperty(<span class="string">"file.encoding"</span>));
+<a name="225" href="#225">225</a>     <strong>private</strong> JTextField timeField			= <strong>new</strong> JTextField(6);
+<a name="226" href="#226">226</a>     <strong>private</strong> JLabel phaseLabel				= <strong>new</strong> JLabel();
+<a name="227" href="#227">227</a>     <strong>private</strong> JProgressBar tokenizingFilesBar = <strong>new</strong> JProgressBar();
+<a name="228" href="#228">228</a>     <strong>private</strong> JTextArea resultsTextArea		= <strong>new</strong> JTextArea();
+<a name="229" href="#229">229</a>     <strong>private</strong> JCheckBox recurseCheckbox		= <strong>new</strong> JCheckBox(<span class="string">""</span>, <strong>true</strong>);
+<a name="230" href="#230">230</a>     <strong>private</strong> JCheckBox ignoreLiteralsCheckbox = <strong>new</strong> JCheckBox(<span class="string">""</span>, false);
+<a name="231" href="#231">231</a>     <strong>private</strong> JComboBox languageBox			= <strong>new</strong> JComboBox();
+<a name="232" href="#232">232</a>     <strong>private</strong> JTextField extensionField		= <strong>new</strong> JTextField();
+<a name="233" href="#233">233</a>     <strong>private</strong> JLabel extensionLabel			= <strong>new</strong> JLabel(<span class="string">"Extension:"</span>, SwingConstants.RIGHT);
+<a name="234" href="#234">234</a>     <strong>private</strong> JTable resultsTable				= <strong>new</strong> JTable();    
+<a name="235" href="#235">235</a>     <strong>private</strong> JButton goButton;
+<a name="236" href="#236">236</a>     <strong>private</strong> JButton cancelButton;
+<a name="237" href="#237">237</a>     <strong>private</strong> JPanel progressPanel;
+<a name="238" href="#238">238</a>     <strong>private</strong> JFrame frame;
+<a name="239" href="#239">239</a>     <strong>private</strong> <strong>boolean</strong> trimLeadingWhitespace;
+<a name="240" href="#240">240</a> 
+<a name="241" href="#241">241</a>     <strong>private</strong> List&lt;Match> matches = <strong>new</strong> ArrayList&lt;Match>();
+<a name="242" href="#242">242</a> 
+<a name="243" href="#243">243</a>     <strong>private</strong> <strong>void</strong> addSaveOptionsTo(JMenu menu) {
+<a name="244" href="#244">244</a>     	
+<a name="245" href="#245">245</a>         JMenuItem saveItem;
+<a name="246" href="#246">246</a>         
+<a name="247" href="#247">247</a>         <strong>for</strong> (<strong>int</strong> i=0; i&lt;rendererSets.length; i++) {
+<a name="248" href="#248">248</a>         	saveItem = <strong>new</strong> JMenuItem(<span class="string">"Save as "</span> + rendererSets[i][0]);
+<a name="249" href="#249">249</a>         	saveItem.addActionListener(<strong>new</strong> SaveListener((Renderer)rendererSets[i][1]));
+<a name="250" href="#250">250</a>         	menu.add(saveItem);
+<a name="251" href="#251">251</a>         }
+<a name="252" href="#252">252</a>     }
+<a name="253" href="#253">253</a>     
+<a name="254" href="#254">254</a>     <strong>public</strong> <a href="../../../../net/sourceforge/pmd/cpd/GUI.html">GUI</a>() {
+<a name="255" href="#255">255</a>         frame = <strong>new</strong> JFrame(<span class="string">"PMD Duplicate Code Detector (v "</span> + PMD.VERSION + ')');
+<a name="256" href="#256">256</a> 
+<a name="257" href="#257">257</a>         timeField.setEditable(false);
+<a name="258" href="#258">258</a> 
+<a name="259" href="#259">259</a>         JMenu fileMenu = <strong>new</strong> JMenu(<span class="string">"File"</span>);
+<a name="260" href="#260">260</a>         fileMenu.setMnemonic('f');
+<a name="261" href="#261">261</a>         
+<a name="262" href="#262">262</a>         addSaveOptionsTo(fileMenu);
+<a name="263" href="#263">263</a>              
+<a name="264" href="#264">264</a>         JMenuItem exitItem = <strong>new</strong> JMenuItem(<span class="string">"Exit"</span>);
+<a name="265" href="#265">265</a>         exitItem.setMnemonic('x');
+<a name="266" href="#266">266</a>         exitItem.addActionListener(<strong>new</strong> CancelListener());
+<a name="267" href="#267">267</a>         fileMenu.add(exitItem);
+<a name="268" href="#268">268</a>         JMenu viewMenu = <strong>new</strong> JMenu(<span class="string">"View"</span>);
+<a name="269" href="#269">269</a>         fileMenu.setMnemonic('v');
+<a name="270" href="#270">270</a>         JMenuItem trimItem = <strong>new</strong> JCheckBoxMenuItem(<span class="string">"Trim leading whitespace"</span>);
+<a name="271" href="#271">271</a>         trimItem.addItemListener(<strong>new</strong> ItemListener() {
+<a name="272" href="#272">272</a>             <strong>public</strong> <strong>void</strong> itemStateChanged(ItemEvent e) {
+<a name="273" href="#273">273</a>                 AbstractButton button = (AbstractButton)e.getItem();
+<a name="274" href="#274">274</a>                 GUI.<strong>this</strong>.trimLeadingWhitespace = button.isSelected();
+<a name="275" href="#275">275</a>             }
+<a name="276" href="#276">276</a>         });
+<a name="277" href="#277">277</a>         viewMenu.add(trimItem);
+<a name="278" href="#278">278</a>         JMenuBar menuBar = <strong>new</strong> JMenuBar();
+<a name="279" href="#279">279</a>         menuBar.add(fileMenu);
+<a name="280" href="#280">280</a>         menuBar.add(viewMenu);
+<a name="281" href="#281">281</a>         frame.setJMenuBar(menuBar);
+<a name="282" href="#282">282</a> 
+<a name="283" href="#283">283</a>         <em class="comment">// first make all the buttons</em>
+<a name="284" href="#284">284</a>         JButton browseButton = <strong>new</strong> JButton(<span class="string">"Browse"</span>);
+<a name="285" href="#285">285</a>         browseButton.setMnemonic('b');
+<a name="286" href="#286">286</a>         browseButton.addActionListener(<strong>new</strong> BrowseListener());
+<a name="287" href="#287">287</a>         goButton = <strong>new</strong> JButton(<span class="string">"Go"</span>);
+<a name="288" href="#288">288</a>         goButton.setMnemonic('g');
+<a name="289" href="#289">289</a>         goButton.addActionListener(<strong>new</strong> GoListener());
+<a name="290" href="#290">290</a>         cancelButton = <strong>new</strong> JButton(<span class="string">"Cancel"</span>);
+<a name="291" href="#291">291</a>         cancelButton.addActionListener(<strong>new</strong> CancelListener());
+<a name="292" href="#292">292</a> 
+<a name="293" href="#293">293</a>         JPanel settingsPanel = makeSettingsPanel(browseButton, goButton, cancelButton);
+<a name="294" href="#294">294</a>         progressPanel = makeProgressPanel();
+<a name="295" href="#295">295</a>         JPanel resultsPanel = makeResultsPanel();
+<a name="296" href="#296">296</a> 
+<a name="297" href="#297">297</a>         adjustLanguageControlsFor((LanguageConfig)languageSets[0][1]);
+<a name="298" href="#298">298</a>         
+<a name="299" href="#299">299</a>         frame.getContentPane().setLayout(<strong>new</strong> BorderLayout());
+<a name="300" href="#300">300</a>         JPanel topPanel = <strong>new</strong> JPanel();
+<a name="301" href="#301">301</a>         topPanel.setLayout(<strong>new</strong> BorderLayout());
+<a name="302" href="#302">302</a>         topPanel.add(settingsPanel, BorderLayout.NORTH);
+<a name="303" href="#303">303</a>         topPanel.add(progressPanel, BorderLayout.CENTER);
+<a name="304" href="#304">304</a>         setProgressControls(false);	<em class="comment">// not running now        </em>
+<a name="305" href="#305">305</a>         frame.getContentPane().add(topPanel, BorderLayout.NORTH);
+<a name="306" href="#306">306</a>         frame.getContentPane().add(resultsPanel, BorderLayout.CENTER);
+<a name="307" href="#307">307</a>         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+<a name="308" href="#308">308</a>         frame.pack();
+<a name="309" href="#309">309</a>         frame.setVisible(<strong>true</strong>);
+<a name="310" href="#310">310</a>     }
+<a name="311" href="#311">311</a> 
+<a name="312" href="#312">312</a>     <strong>private</strong> <strong>void</strong> adjustLanguageControlsFor(LanguageConfig current) {
+<a name="313" href="#313">313</a>     	 ignoreLiteralsCheckbox.setEnabled(current.ignoreLiteralsByDefault());
+<a name="314" href="#314">314</a>          extensionField.setText(current.extensions()[0]);
+<a name="315" href="#315">315</a>          <strong>boolean</strong> enableExtension = current.extensions()[0].length() == 0;
+<a name="316" href="#316">316</a>          extensionField.setEnabled(enableExtension);
+<a name="317" href="#317">317</a>          extensionLabel.setEnabled(enableExtension);
+<a name="318" href="#318">318</a>     }
+<a name="319" href="#319">319</a>     
+<a name="320" href="#320">320</a>     <strong>private</strong> JPanel makeSettingsPanel(JButton browseButton, JButton goButton, JButton cxButton) {
+<a name="321" href="#321">321</a>         JPanel settingsPanel = <strong>new</strong> JPanel();
+<a name="322" href="#322">322</a>         <a href="../../../../net/sourceforge/pmd/cpd/GridBagHelper.html">GridBagHelper</a> helper = <strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/GridBagHelper.html">GridBagHelper</a>(settingsPanel, <strong>new</strong> <strong>double</strong>[]{0.2, 0.7, 0.1, 0.1});
+<a name="323" href="#323">323</a>         helper.addLabel(<span class="string">"Root source directory:"</span>);
+<a name="324" href="#324">324</a>         helper.add(rootDirectoryField);
+<a name="325" href="#325">325</a>         helper.add(browseButton, 2);
+<a name="326" href="#326">326</a>         helper.nextRow();
+<a name="327" href="#327">327</a>         helper.addLabel(<span class="string">"Report duplicate chunks larger than:"</span>);
+<a name="328" href="#328">328</a>         minimumLengthField.setColumns(4);
+<a name="329" href="#329">329</a>         helper.add(minimumLengthField);
+<a name="330" href="#330">330</a>         helper.addLabel(<span class="string">"Language:"</span>);
+<a name="331" href="#331">331</a>         <strong>for</strong> (<strong>int</strong> i=0; i&lt;languageSets.length; i++) {
+<a name="332" href="#332">332</a>         	languageBox.addItem(languageSets[i][0]);
+<a name="333" href="#333">333</a>         }
+<a name="334" href="#334">334</a>         languageBox.addActionListener(<strong>new</strong> ActionListener() {
+<a name="335" href="#335">335</a>             <strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) {
+<a name="336" href="#336">336</a>             	adjustLanguageControlsFor(
+<a name="337" href="#337">337</a>             			languageConfigFor((String)languageBox.getSelectedItem())
+<a name="338" href="#338">338</a>             			);
+<a name="339" href="#339">339</a>             }
+<a name="340" href="#340">340</a>         });
+<a name="341" href="#341">341</a>         helper.add(languageBox);
+<a name="342" href="#342">342</a>         helper.nextRow();
+<a name="343" href="#343">343</a>         helper.addLabel(<span class="string">"Also scan subdirectories?"</span>);
+<a name="344" href="#344">344</a>         helper.add(recurseCheckbox);
+<a name="345" href="#345">345</a> 
+<a name="346" href="#346">346</a>         helper.add(extensionLabel);
+<a name="347" href="#347">347</a>         helper.add(extensionField);
+<a name="348" href="#348">348</a> 
+<a name="349" href="#349">349</a>         helper.nextRow();
+<a name="350" href="#350">350</a>         helper.addLabel(<span class="string">"Ignore literals and identifiers?"</span>);
+<a name="351" href="#351">351</a>         helper.add(ignoreLiteralsCheckbox);
+<a name="352" href="#352">352</a>         helper.add(goButton);
+<a name="353" href="#353">353</a>         helper.add(cxButton);
+<a name="354" href="#354">354</a>         helper.nextRow();
+<a name="355" href="#355">355</a> 
+<a name="356" href="#356">356</a>         helper.addLabel(<span class="string">"File encoding (defaults based upon locale):"</span>);
+<a name="357" href="#357">357</a>         encodingField.setColumns(1);
+<a name="358" href="#358">358</a>         helper.add(encodingField);
+<a name="359" href="#359">359</a>         helper.addLabel(<span class="string">""</span>);
+<a name="360" href="#360">360</a>         helper.addLabel(<span class="string">""</span>);
+<a name="361" href="#361">361</a>         helper.nextRow();
+<a name="362" href="#362">362</a> <em class="comment">//        settingsPanel.setBorder(BorderFactory.createTitledBorder("Settings"));</em>
+<a name="363" href="#363">363</a>         <strong>return</strong> settingsPanel;
+<a name="364" href="#364">364</a>     }
+<a name="365" href="#365">365</a> 
+<a name="366" href="#366">366</a>     <strong>private</strong> JPanel makeProgressPanel() {
+<a name="367" href="#367">367</a>         JPanel progressPanel = <strong>new</strong> JPanel();
+<a name="368" href="#368">368</a>         <strong>final</strong> <strong>double</strong>[] weights = {0.0, 0.8, 0.4, 0.2};
+<a name="369" href="#369">369</a>         <a href="../../../../net/sourceforge/pmd/cpd/GridBagHelper.html">GridBagHelper</a> helper = <strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/GridBagHelper.html">GridBagHelper</a>(progressPanel, weights);
+<a name="370" href="#370">370</a>         helper.addLabel(<span class="string">"Tokenizing files:"</span>);
+<a name="371" href="#371">371</a>         helper.add(tokenizingFilesBar, 3);
+<a name="372" href="#372">372</a>         helper.nextRow();
+<a name="373" href="#373">373</a>         helper.addLabel(<span class="string">"Phase:"</span>);
+<a name="374" href="#374">374</a>         helper.add(phaseLabel);
+<a name="375" href="#375">375</a>         helper.addLabel(<span class="string">"Time elapsed:"</span>);
+<a name="376" href="#376">376</a>         helper.add(timeField);
+<a name="377" href="#377">377</a>         helper.nextRow();
+<a name="378" href="#378">378</a>         progressPanel.setBorder(BorderFactory.createTitledBorder(<span class="string">"Progress"</span>));
+<a name="379" href="#379">379</a>         <strong>return</strong> progressPanel;
+<a name="380" href="#380">380</a>     }
+<a name="381" href="#381">381</a>     
+<a name="382" href="#382">382</a>     <strong>private</strong> JPanel makeResultsPanel() {
+<a name="383" href="#383">383</a>         JPanel resultsPanel = <strong>new</strong> JPanel();
+<a name="384" href="#384">384</a>         resultsPanel.setLayout(<strong>new</strong> BorderLayout());
+<a name="385" href="#385">385</a>         JScrollPane areaScrollPane = <strong>new</strong> JScrollPane(resultsTextArea);
+<a name="386" href="#386">386</a>         resultsTextArea.setEditable(false);
+<a name="387" href="#387">387</a>         areaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+<a name="388" href="#388">388</a>         areaScrollPane.setPreferredSize(<strong>new</strong> Dimension(600, 300));
+<a name="389" href="#389">389</a>         
+<a name="390" href="#390">390</a>         resultsPanel.add(makeMatchList(), BorderLayout.WEST);
+<a name="391" href="#391">391</a>         resultsPanel.add(areaScrollPane, BorderLayout.CENTER);
+<a name="392" href="#392">392</a>         <strong>return</strong> resultsPanel;
+<a name="393" href="#393">393</a>     }
+<a name="394" href="#394">394</a> 
+<a name="395" href="#395">395</a>     <strong>private</strong> <strong>void</strong> populateResultArea() {
+<a name="396" href="#396">396</a>     	<strong>int</strong>[] selectionIndices = resultsTable.getSelectedRows();
+<a name="397" href="#397">397</a>     	TableModel model = resultsTable.getModel();
+<a name="398" href="#398">398</a>     	List&lt;Match> selections = <strong>new</strong> ArrayList&lt;Match>(selectionIndices.length);
+<a name="399" href="#399">399</a>     	<strong>for</strong> (<strong>int</strong> i=0; i&lt;selectionIndices.length; i++) {
+<a name="400" href="#400">400</a>     		selections.add((Match)model.getValueAt(selectionIndices[i], 99));
+<a name="401" href="#401">401</a>     	}
+<a name="402" href="#402">402</a>     	String report = <strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/SimpleRenderer.html">SimpleRenderer</a>(trimLeadingWhitespace).render(selections.iterator());
+<a name="403" href="#403">403</a>     	resultsTextArea.setText(report);
+<a name="404" href="#404">404</a>     	resultsTextArea.setCaretPosition(0);	<em class="comment">// move to the top</em>
+<a name="405" href="#405">405</a>     }
+<a name="406" href="#406">406</a>         
+<a name="407" href="#407">407</a>     <strong>private</strong> <strong>void</strong> copyMatchListSelectionsToClipboard() {
+<a name="408" href="#408">408</a>     	
+<a name="409" href="#409">409</a>     	<strong>int</strong>[] selectionIndices = resultsTable.getSelectedRows();
+<a name="410" href="#410">410</a>     	<strong>int</strong> colCount = resultsTable.getColumnCount();
+<a name="411" href="#411">411</a>     	
+<a name="412" href="#412">412</a>     	StringBuffer sb = <strong>new</strong> StringBuffer();
+<a name="413" href="#413">413</a>     	    	
+<a name="414" href="#414">414</a>     	<strong>for</strong> (<strong>int</strong> r=0; r&lt;selectionIndices.length; r++) {
+<a name="415" href="#415">415</a> 			<strong>if</strong> (r > 0) sb.append('\n');
+<a name="416" href="#416">416</a> 			sb.append(resultsTable.getValueAt(selectionIndices[r], 0));
+<a name="417" href="#417">417</a>     		<strong>for</strong> (<strong>int</strong> c=1; c&lt;colCount; c++) {
+<a name="418" href="#418">418</a>     			sb.append('\t');
+<a name="419" href="#419">419</a>     			sb.append(resultsTable.getValueAt(selectionIndices[r], c));
+<a name="420" href="#420">420</a>     		}
+<a name="421" href="#421">421</a>     	}
+<a name="422" href="#422">422</a>     	
+<a name="423" href="#423">423</a>     	StringSelection ss = <strong>new</strong> StringSelection(sb.toString());
+<a name="424" href="#424">424</a>         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, <strong>null</strong>);
+<a name="425" href="#425">425</a>     }
+<a name="426" href="#426">426</a>     
+<a name="427" href="#427">427</a>     <strong>private</strong> <strong>void</strong> deleteMatchlistSelections() {
+<a name="428" href="#428">428</a>     	
+<a name="429" href="#429">429</a>     	<strong>int</strong>[] selectionIndices = resultsTable.getSelectedRows();
+<a name="430" href="#430">430</a>     	
+<a name="431" href="#431">431</a>     	<strong>for</strong> (<strong>int</strong> i=selectionIndices.length-1; i >=0; i--) {
+<a name="432" href="#432">432</a>     		matches.remove(selectionIndices[i]);
+<a name="433" href="#433">433</a>     	}
+<a name="434" href="#434">434</a>     	
+<a name="435" href="#435">435</a>     	resultsTable.getSelectionModel().clearSelection();
+<a name="436" href="#436">436</a>     	resultsTable.addNotify();
+<a name="437" href="#437">437</a>     }
+<a name="438" href="#438">438</a>     
+<a name="439" href="#439">439</a>     <strong>private</strong> JComponent makeMatchList() {
+<a name="440" href="#440">440</a>     	
+<a name="441" href="#441">441</a>     	resultsTable.getSelectionModel().addListSelectionListener(<strong>new</strong> ListSelectionListener() {
+<a name="442" href="#442">442</a> 			<strong>public</strong> <strong>void</strong> valueChanged(ListSelectionEvent e) {
+<a name="443" href="#443">443</a> 				populateResultArea();				
+<a name="444" href="#444">444</a> 			}});
+<a name="445" href="#445">445</a>     	
+<a name="446" href="#446">446</a>     	resultsTable.registerKeyboardAction(<strong>new</strong> ActionListener() {
+<a name="447" href="#447">447</a> 			<strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) { copyMatchListSelectionsToClipboard(); } 
+<a name="448" href="#448">448</a>     		},<span class="string">"Copy"</span>, copy, JComponent.WHEN_FOCUSED);
+<a name="449" href="#449">449</a>     	
+<a name="450" href="#450">450</a>     	resultsTable.registerKeyboardAction(<strong>new</strong> ActionListener() {
+<a name="451" href="#451">451</a> 			<strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) { deleteMatchlistSelections(); } 
+<a name="452" href="#452">452</a>     		},<span class="string">"Del"</span>, delete, JComponent.WHEN_FOCUSED);
+<a name="453" href="#453">453</a>     	
+<a name="454" href="#454">454</a>     	<strong>int</strong>[] alignments = <strong>new</strong> <strong>int</strong>[matchColumns.length];
+<a name="455" href="#455">455</a>     	<strong>for</strong> (<strong>int</strong> i=0; i&lt;alignments.length; i++) alignments[i] = matchColumns[i].alignment();
+<a name="456" href="#456">456</a> 
+<a name="457" href="#457">457</a>     	resultsTable.setDefaultRenderer(Object.<strong>class</strong>, <strong>new</strong> AlignmentRenderer(alignments));
+<a name="458" href="#458">458</a>     	
+<a name="459" href="#459">459</a>     	<strong>final</strong> JTableHeader header = resultsTable.getTableHeader();
+<a name="460" href="#460">460</a>     	header.addMouseListener( <strong>new</strong> MouseAdapter() {
+<a name="461" href="#461">461</a> 			<strong>public</strong> <strong>void</strong> mouseClicked(MouseEvent e) {
+<a name="462" href="#462">462</a> 				sortOnColumn(header.columnAtPoint(<strong>new</strong> Point(e.getX(), e.getY())));
+<a name="463" href="#463">463</a> 				}
+<a name="464" href="#464">464</a> 			});
+<a name="465" href="#465">465</a>     	
+<a name="466" href="#466">466</a>         <strong>return</strong> <strong>new</strong> JScrollPane(resultsTable);
+<a name="467" href="#467">467</a>     }
+<a name="468" href="#468">468</a>     
+<a name="469" href="#469">469</a>     <strong>private</strong> <strong>boolean</strong> isLegalPath(String path, LanguageConfig config) {
+<a name="470" href="#470">470</a>     	String[] extensions = config.extensions();
+<a name="471" href="#471">471</a>     	<strong>for</strong> (<strong>int</strong> i=0; i&lt;extensions.length; i++) {
+<a name="472" href="#472">472</a>     		<strong>if</strong> (path.endsWith(extensions[i]) &amp;&amp; extensions[i].length() > 0) <strong>return</strong> <strong>true</strong>;
+<a name="473" href="#473">473</a>     	}
+<a name="474" href="#474">474</a>     	<strong>return</strong> false;
+<a name="475" href="#475">475</a>     }
+<a name="476" href="#476">476</a>     
+<a name="477" href="#477">477</a>     <strong>private</strong> String setLabelFor(<a href="../../../../net/sourceforge/pmd/cpd/Match.html">Match</a> match) {
+<a name="478" href="#478">478</a>     	
+<a name="479" href="#479">479</a>     	Set&lt;String> sourceIDs = <strong>new</strong> HashSet&lt;String>(match.getMarkCount());
+<a name="480" href="#480">480</a>     	<strong>for</strong> (Iterator&lt;TokenEntry> occurrences = match.iterator(); occurrences.hasNext();) {
+<a name="481" href="#481">481</a>              sourceIDs.add(occurrences.next().getTokenSrcID());
+<a name="482" href="#482">482</a>           }
+<a name="483" href="#483">483</a>     	String label;
+<a name="484" href="#484">484</a>     	
+<a name="485" href="#485">485</a>     	<strong>if</strong> (sourceIDs.size() == 1) {
+<a name="486" href="#486">486</a>     		String sourceId = sourceIDs.iterator().next();
+<a name="487" href="#487">487</a>     		<strong>int</strong> separatorPos = sourceId.lastIndexOf(File.separatorChar);
+<a name="488" href="#488">488</a>     		label = <span class="string">"..."</span> + sourceId.substring(separatorPos);
+<a name="489" href="#489">489</a>     		} <strong>else</strong> {
+<a name="490" href="#490">490</a>     	    	label = <span class="string">"("</span> + sourceIDs.size() + <span class="string">" separate files)"</span>;
+<a name="491" href="#491">491</a>     		}
+<a name="492" href="#492">492</a>     		
+<a name="493" href="#493">493</a>     	match.setLabel(label);
+<a name="494" href="#494">494</a>     	<strong>return</strong> label;
+<a name="495" href="#495">495</a>     }
+<a name="496" href="#496">496</a>     
+<a name="497" href="#497">497</a>     <strong>private</strong> <strong>void</strong> setProgressControls(<strong>boolean</strong> isRunning) {
+<a name="498" href="#498">498</a>         progressPanel.setVisible(isRunning);
+<a name="499" href="#499">499</a>         goButton.setEnabled(!isRunning);
+<a name="500" href="#500">500</a>         cancelButton.setEnabled(isRunning);
+<a name="501" href="#501">501</a>     }
+<a name="502" href="#502">502</a>     
+<a name="503" href="#503">503</a>     <strong>private</strong> <strong>void</strong> go() {
+<a name="504" href="#504">504</a>     	String dirPath = rootDirectoryField.getText();
+<a name="505" href="#505">505</a>         <strong>try</strong> {
+<a name="506" href="#506">506</a>             <strong>if</strong> (!(<strong>new</strong> File(dirPath)).exists()) {
+<a name="507" href="#507">507</a>                 JOptionPane.showMessageDialog(frame,
+<a name="508" href="#508">508</a>                         <span class="string">"Can't read from that root source directory"</span>,
+<a name="509" href="#509">509</a>                         <span class="string">"Error"</span>, JOptionPane.ERROR_MESSAGE);
+<a name="510" href="#510">510</a>                 <strong>return</strong>;
+<a name="511" href="#511">511</a>             }
+<a name="512" href="#512">512</a>       
+<a name="513" href="#513">513</a>             setProgressControls(<strong>true</strong>);
+<a name="514" href="#514">514</a> 
+<a name="515" href="#515">515</a>             Properties p = <strong>new</strong> Properties();
+<a name="516" href="#516">516</a>             p.setProperty(JavaTokenizer.IGNORE_LITERALS, String.valueOf(ignoreLiteralsCheckbox.isSelected()));
+<a name="517" href="#517">517</a>             p.setProperty(LanguageFactory.EXTENSION, extensionField.getText());
+<a name="518" href="#518">518</a>             LanguageConfig conf = languageConfigFor((String)languageBox.getSelectedItem());
+<a name="519" href="#519">519</a>             <a href="../../../../net/sourceforge/pmd/Language.html">Language</a> language = conf.languageFor(<strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/LanguageFactory.html">LanguageFactory</a>(), p);
+<a name="520" href="#520">520</a>             <a href="../../../../net/sourceforge/pmd/cpd/CPD.html">CPD</a> cpd = <strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/CPD.html">CPD</a>(Integer.parseInt(minimumLengthField.getText()), language);
+<a name="521" href="#521">521</a>             cpd.setEncoding(encodingField.getText());
+<a name="522" href="#522">522</a>             cpd.setCpdListener(<strong>this</strong>);
+<a name="523" href="#523">523</a>             tokenizingFilesBar.setMinimum(0);
+<a name="524" href="#524">524</a>             phaseLabel.setText(<span class="string">""</span>);
+<a name="525" href="#525">525</a>             <strong>if</strong> (isLegalPath(dirPath, conf)) {	<em class="comment">// should use the language file filter instead?</em>
+<a name="526" href="#526">526</a>             	cpd.add(<strong>new</strong> File(dirPath));
+<a name="527" href="#527">527</a>             } <strong>else</strong> {
+<a name="528" href="#528">528</a>                 <strong>if</strong> (recurseCheckbox.isSelected()) {
+<a name="529" href="#529">529</a>                     cpd.addRecursively(dirPath);
+<a name="530" href="#530">530</a>                 } <strong>else</strong> {
+<a name="531" href="#531">531</a>                     cpd.addAllInDirectory(dirPath);
+<a name="532" href="#532">532</a>                 }
+<a name="533" href="#533">533</a>             }
+<a name="534" href="#534">534</a>             <strong>final</strong> <strong>long</strong> start = System.currentTimeMillis();
+<a name="535" href="#535">535</a>             Timer t = <strong>new</strong> Timer(1000, <strong>new</strong> ActionListener() {
+<a name="536" href="#536">536</a>                 <strong>public</strong> <strong>void</strong> actionPerformed(ActionEvent e) {
+<a name="537" href="#537">537</a>                     <strong>long</strong> now = System.currentTimeMillis();
+<a name="538" href="#538">538</a>                     <strong>long</strong> elapsedMillis = now - start;
+<a name="539" href="#539">539</a>                     <strong>long</strong> elapsedSeconds = elapsedMillis / 1000;
+<a name="540" href="#540">540</a>                     <strong>long</strong> minutes = (<strong>long</strong>) Math.floor(elapsedSeconds / 60);
+<a name="541" href="#541">541</a>                     <strong>long</strong> seconds = elapsedSeconds - (minutes * 60);
+<a name="542" href="#542">542</a>                     timeField.setText(munge(String.valueOf(minutes)) + ':' + munge(String.valueOf(seconds)));
+<a name="543" href="#543">543</a>                 }
+<a name="544" href="#544">544</a> 
+<a name="545" href="#545">545</a>                 <strong>private</strong> String munge(String in) {
+<a name="546" href="#546">546</a>                     <strong>if</strong> (in.length() &lt; 2) {
+<a name="547" href="#547">547</a>                         in = <span class="string">"0"</span> + in;
+<a name="548" href="#548">548</a>                     }
+<a name="549" href="#549">549</a>                     <strong>return</strong> in;
+<a name="550" href="#550">550</a>                 }
+<a name="551" href="#551">551</a>             });
+<a name="552" href="#552">552</a>             t.start();
+<a name="553" href="#553">553</a>             cpd.go();
+<a name="554" href="#554">554</a>             t.stop();
+<a name="555" href="#555">555</a>             
+<a name="556" href="#556">556</a>         	matches = <strong>new</strong> ArrayList&lt;Match>();
+<a name="557" href="#557">557</a>         	Match match;
+<a name="558" href="#558">558</a>         	<strong>for</strong> (Iterator&lt;Match> i = cpd.getMatches(); i.hasNext();) {
+<a name="559" href="#559">559</a>         		match = i.next();
+<a name="560" href="#560">560</a>         		setLabelFor(match);
+<a name="561" href="#561">561</a>         		matches.add(match);
+<a name="562" href="#562">562</a>         	}
+<a name="563" href="#563">563</a> 
+<a name="564" href="#564">564</a>             String report = <strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/SimpleRenderer.html">SimpleRenderer</a>().render(cpd.getMatches());
+<a name="565" href="#565">565</a>             <strong>if</strong> (report.length() == 0) {
+<a name="566" href="#566">566</a>                 JOptionPane.showMessageDialog(frame,
+<a name="567" href="#567">567</a>                         <span class="string">"Done; couldn't find any duplicates longer than "</span> + minimumLengthField.getText() + <span class="string">" tokens"</span>);
+<a name="568" href="#568">568</a>             } <strong>else</strong> {
+<a name="569" href="#569">569</a>                 resultsTextArea.setText(report);
+<a name="570" href="#570">570</a>                 setListDataFrom(cpd.getMatches());
+<a name="571" href="#571">571</a>                 
+<a name="572" href="#572">572</a>             }
+<a name="573" href="#573">573</a>         } <strong>catch</strong> (IOException t) {
+<a name="574" href="#574">574</a>             t.printStackTrace();
+<a name="575" href="#575">575</a>             JOptionPane.showMessageDialog(frame, <span class="string">"Halted due to "</span> + t.getClass().getName() + <span class="string">"; "</span> + t.getMessage());
+<a name="576" href="#576">576</a>         } <strong>catch</strong> (RuntimeException t) {
+<a name="577" href="#577">577</a>             t.printStackTrace();
+<a name="578" href="#578">578</a>             JOptionPane.showMessageDialog(frame, <span class="string">"Halted due to "</span> + t.getClass().getName() + <span class="string">"; "</span> + t.getMessage());
+<a name="579" href="#579">579</a>         }
+<a name="580" href="#580">580</a>         setProgressControls(false);
+<a name="581" href="#581">581</a>     }
+<a name="582" href="#582">582</a> 	
+<a name="583" href="#583">583</a>     <strong>private</strong> <strong>interface</strong> SortingTableModel&lt;E> <strong>extends</strong> TableModel {
+<a name="584" href="#584">584</a>     	<strong>public</strong> <strong>int</strong> sortColumn();
+<a name="585" href="#585">585</a>     	<strong>public</strong> <strong>void</strong> sortColumn(<strong>int</strong> column);
+<a name="586" href="#586">586</a>     	<strong>public</strong> <strong>boolean</strong> sortDescending();
+<a name="587" href="#587">587</a>     	<strong>public</strong> <strong>void</strong> sortDescending(<strong>boolean</strong> flag);
+<a name="588" href="#588">588</a>     	<strong>public</strong> <strong>void</strong> sort(Comparator&lt;E> comparator);
+<a name="589" href="#589">589</a>     }
+<a name="590" href="#590">590</a>     
+<a name="591" href="#591">591</a>     <strong>private</strong> TableModel tableModelFrom(<strong>final</strong> List&lt;Match> items) {
+<a name="592" href="#592">592</a>     	
+<a name="593" href="#593">593</a>     	TableModel model = <strong>new</strong> SortingTableModel&lt;Match>() {
+<a name="594" href="#594">594</a>     		
+<a name="595" href="#595">595</a>     		<strong>private</strong> <strong>int</strong> sortColumn;
+<a name="596" href="#596">596</a>     		<strong>private</strong> <strong>boolean</strong> sortDescending;
+<a name="597" href="#597">597</a>     		
+<a name="598" href="#598">598</a>     		 <strong>public</strong> Object getValueAt(<strong>int</strong> rowIndex, <strong>int</strong> columnIndex) {
+<a name="599" href="#599">599</a>     			Match match = items.get(rowIndex);
+<a name="600" href="#600">600</a>     			<strong>switch</strong> (columnIndex) {
+<a name="601" href="#601">601</a>     				<strong>case</strong> 0: <strong>return</strong> match.getLabel();
+<a name="602" href="#602">602</a>     				<strong>case</strong> 2: <strong>return</strong> Integer.toString(match.getLineCount());
+<a name="603" href="#603">603</a>     				<strong>case</strong> 1: <strong>return</strong> match.getMarkCount() > 2 ? Integer.toString(match.getMarkCount()) : <span class="string">""</span>;
+<a name="604" href="#604">604</a>     				<strong>case</strong> 99: <strong>return</strong> match;
+<a name="605" href="#605">605</a>     				}
+<a name="606" href="#606">606</a>     			<strong>return</strong> <span class="string">""</span>;
+<a name="607" href="#607">607</a>     		 	}
+<a name="608" href="#608">608</a> 			<strong>public</strong> <strong>int</strong> getColumnCount() { <strong>return</strong> matchColumns.length;	}
+<a name="609" href="#609">609</a> 			<strong>public</strong> <strong>int</strong> getRowCount() {	<strong>return</strong> items.size(); }
+<a name="610" href="#610">610</a> 			<strong>public</strong> <strong>boolean</strong> isCellEditable(<strong>int</strong> rowIndex, <strong>int</strong> columnIndex) {	<strong>return</strong> false;	}
+<a name="611" href="#611">611</a> 			<strong>public</strong> Class&lt;?> getColumnClass(<strong>int</strong> columnIndex) { <strong>return</strong> Object.<strong>class</strong>;	}
+<a name="612" href="#612">612</a> 			<strong>public</strong> <strong>void</strong> setValueAt(Object aValue, <strong>int</strong> rowIndex, <strong>int</strong> columnIndex) {	}
+<a name="613" href="#613">613</a> 			<strong>public</strong> String getColumnName(<strong>int</strong> i) {	<strong>return</strong> matchColumns[i].label();	}
+<a name="614" href="#614">614</a> 			<strong>public</strong> <strong>void</strong> addTableModelListener(TableModelListener l) { }
+<a name="615" href="#615">615</a> 			<strong>public</strong> <strong>void</strong> removeTableModelListener(TableModelListener l) { }
+<a name="616" href="#616">616</a> 			<strong>public</strong> <strong>int</strong> sortColumn() { <strong>return</strong> sortColumn; };
+<a name="617" href="#617">617</a> 			<strong>public</strong> <strong>void</strong> sortColumn(<strong>int</strong> column) { sortColumn = column; };
+<a name="618" href="#618">618</a> 			<strong>public</strong> <strong>boolean</strong> sortDescending() { <strong>return</strong> sortDescending; };
+<a name="619" href="#619">619</a> 			<strong>public</strong> <strong>void</strong> sortDescending(<strong>boolean</strong> flag) { sortDescending = flag; };
+<a name="620" href="#620">620</a> 			<strong>public</strong> <strong>void</strong> sort(Comparator&lt;Match> comparator) { 
+<a name="621" href="#621">621</a> 				Collections.sort(items, comparator);
+<a name="622" href="#622">622</a> 				<strong>if</strong> (sortDescending) Collections.reverse(items);
+<a name="623" href="#623">623</a> 				}
+<a name="624" href="#624">624</a>     		};
+<a name="625" href="#625">625</a>     	
+<a name="626" href="#626">626</a>     	<strong>return</strong> model;
+<a name="627" href="#627">627</a>     }    
+<a name="628" href="#628">628</a>         
+<a name="629" href="#629">629</a>     <strong>private</strong> <strong>void</strong> sortOnColumn(<strong>int</strong> columnIndex) {
+<a name="630" href="#630">630</a>     	Comparator&lt;Match> comparator = matchColumns[columnIndex].sorter();
+<a name="631" href="#631">631</a>     	SortingTableModel&lt;Match> model = (SortingTableModel&lt;Match>)resultsTable.getModel();
+<a name="632" href="#632">632</a>     	<strong>if</strong> (model.sortColumn() == columnIndex) {
+<a name="633" href="#633">633</a>     		model.sortDescending(!model.sortDescending());
+<a name="634" href="#634">634</a>     	}
+<a name="635" href="#635">635</a>     	model.sortColumn(columnIndex);
+<a name="636" href="#636">636</a>     	model.sort(comparator);
+<a name="637" href="#637">637</a>     	
+<a name="638" href="#638">638</a>     	resultsTable.getSelectionModel().clearSelection();    	
+<a name="639" href="#639">639</a>     	resultsTable.repaint();
+<a name="640" href="#640">640</a>     }
+<a name="641" href="#641">641</a>     
+<a name="642" href="#642">642</a>     <strong>private</strong> <strong>void</strong> setListDataFrom(Iterator iter) {
+<a name="643" href="#643">643</a> 
+<a name="644" href="#644">644</a>     	resultsTable.setModel(tableModelFrom(matches));
+<a name="645" href="#645">645</a>     	
+<a name="646" href="#646">646</a>     	TableColumnModel colModel = resultsTable.getColumnModel();
+<a name="647" href="#647">647</a>     	TableColumn column;
+<a name="648" href="#648">648</a>     	<strong>int</strong> width;
+<a name="649" href="#649">649</a>     	
+<a name="650" href="#650">650</a>     	<strong>for</strong> (<strong>int</strong> i=0; i&lt;matchColumns.length; i++) {
+<a name="651" href="#651">651</a>     		<strong>if</strong> (matchColumns[i].width() > 0) {
+<a name="652" href="#652">652</a>     			column = colModel.getColumn(i);
+<a name="653" href="#653">653</a>     			width = matchColumns[i].width();
+<a name="654" href="#654">654</a>     			column.setPreferredWidth(width);
+<a name="655" href="#655">655</a>     			column.setMinWidth(width);
+<a name="656" href="#656">656</a>     			column.setMaxWidth(width);
+<a name="657" href="#657">657</a>     		}
+<a name="658" href="#658">658</a>     	}    	
+<a name="659" href="#659">659</a>     }
+<a name="660" href="#660">660</a>     
+<a name="661" href="#661">661</a>     <em class="comment">// CPDListener</em>
+<a name="662" href="#662">662</a>     <strong>public</strong> <strong>void</strong> phaseUpdate(<strong>int</strong> phase) {
+<a name="663" href="#663">663</a>         phaseLabel.setText(getPhaseText(phase));
+<a name="664" href="#664">664</a>     }
+<a name="665" href="#665">665</a> 
+<a name="666" href="#666">666</a>     <strong>public</strong> String getPhaseText(<strong>int</strong> phase) {
+<a name="667" href="#667">667</a>         <strong>switch</strong> (phase) {
+<a name="668" href="#668">668</a>             <strong>case</strong> CPDListener.INIT:
+<a name="669" href="#669">669</a>                 <strong>return</strong> <span class="string">"Initializing"</span>;
+<a name="670" href="#670">670</a>             <strong>case</strong> CPDListener.HASH:
+<a name="671" href="#671">671</a>                 <strong>return</strong> <span class="string">"Hashing"</span>;
+<a name="672" href="#672">672</a>             <strong>case</strong> CPDListener.MATCH:
+<a name="673" href="#673">673</a>                 <strong>return</strong> <span class="string">"Matching"</span>;
+<a name="674" href="#674">674</a>             <strong>case</strong> CPDListener.GROUPING:
+<a name="675" href="#675">675</a>                 <strong>return</strong> <span class="string">"Grouping"</span>;
+<a name="676" href="#676">676</a>             <strong>case</strong> CPDListener.DONE:
+<a name="677" href="#677">677</a>                 <strong>return</strong> <span class="string">"Done"</span>;
+<a name="678" href="#678">678</a>             <strong>default</strong> :
+<a name="679" href="#679">679</a>                 <strong>return</strong> <span class="string">"Unknown"</span>;
+<a name="680" href="#680">680</a>         }
+<a name="681" href="#681">681</a>     }
+<a name="682" href="#682">682</a> 
+<a name="683" href="#683">683</a>     <strong>public</strong> <strong>void</strong> addedFile(<strong>int</strong> fileCount, File file) {
+<a name="684" href="#684">684</a>         tokenizingFilesBar.setMaximum(fileCount);
+<a name="685" href="#685">685</a>         tokenizingFilesBar.setValue(tokenizingFilesBar.getValue() + 1);
+<a name="686" href="#686">686</a>     }
+<a name="687" href="#687">687</a>     <em class="comment">// CPDListener</em>
+<a name="688" href="#688">688</a> 
+<a name="689" href="#689">689</a>     
+<a name="690" href="#690">690</a>     <strong>public</strong> <strong>static</strong> <strong>void</strong> main(String[] args) {
+<a name="691" href="#691">691</a>     	<em class="comment">//this should prevent the disk not found popup</em>
+<a name="692" href="#692">692</a>         <em class="comment">// System.setSecurityManager(null);</em>
+<a name="693" href="#693">693</a>         <strong>new</strong> <a href="../../../../net/sourceforge/pmd/cpd/GUI.html">GUI</a>();
+<a name="694" href="#694">694</a>     }
+<a name="695" href="#695">695</a> 
+<a name="696" href="#696">696</a> }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

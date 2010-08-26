@@ -1,0 +1,47 @@
+#!/bin/sh -f
+#
+# Usage: srm-get-turl (get|put) <path> <user> <proto> ...
+#
+
+host="cchpssd0.in2p3.fr"
+
+method="$1"
+path="$2"
+path=`echo $2| sed "s/^\/*/\//"`
+eval user=$3
+
+echo `date` "  " $dir $path $user >> /tmp/srm-get-turl.out
+
+shift
+shift
+shift
+
+proto=""
+port=""
+done="no"
+
+#echo $dir $path $user $1 $2
+
+while [ "$done" = "no" -a ! -z "$1" ]
+do
+	#echo try $1
+	case "$1" in
+		rfio)	proto="rfio"
+			done="yes"
+			;;
+	esac
+	shift
+done
+
+if [ -z "$proto" ]
+then
+       echo "no sutable protocol found" >&2
+       exit 1
+fi
+
+if [ ! -z "$user" ]
+then
+	user="${user}@"
+fi
+
+echo "${proto}://${user}${host}${port}/${path}"

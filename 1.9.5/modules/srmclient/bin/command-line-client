@@ -1,0 +1,40 @@
+#!/bin/sh
+
+command=`which $0`
+commanddir=`dirname $command`
+OUR_PATH=`dirname $commanddir`
+
+if [ "$SRM_PATH" != "" -a "$SRM_PATH" != "${OUR_PATH}" ]
+    then
+    echo "WARNING: SRM_PATH is defined, but does not point to the expected place " 2>&1
+    echo "WARNING: a wrong version of srm client may be executed " 2>&1
+    echo "WARNING: SRM_PATH=$SRM_PATH " 2>&1
+    echo "WARNING: expected path ${OUR_PATH} " 2>&1
+elif [ "$SRM_PATH" = "" ]
+    then
+    SRM_PATH=${OUR_PATH}
+    export SRM_PATH
+fi
+
+if [ ! -f $SRM_PATH/lib/srm_client.jar ]
+then
+  echo cannot find $SRM_PATH/lib/srm_client.jar
+  exit 1
+fi
+
+if [ ! -f $SRM_PATH/lib/glue/GLUE-STD.jar ]
+then
+  echo cannot find $SRM_PATH/lib/glue/GLUE-STD.jar
+  exit 1
+fi
+
+SRM_CP=$SRM_PATH/lib/srm_client.jar:$SRM_PATH/lib/glue/GLUE-STD.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/glue/dom.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/glue/servlet.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/glue/jnet.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/glue/jsse.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/glue/jcert.jar
+
+#echo java -cp $SRM_CP gov.fnal.srm.client.CommandLineClient $*
+
+java -cp $SRM_CP gov.fnal.srm.client.CommandLineClient $*

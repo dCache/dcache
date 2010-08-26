@@ -1,0 +1,8 @@
+#!/bin/sh
+
+${JAVA_HOME}/bin/java -jar ${LCG_LOCATION}/libexec/infoDynamicSE.jar 		\
+		-mode=plugin							\
+		-ldif=${LCG_LOCATION_VAR}/gip/ldif/lcg-info-static-SE.ldif	\
+		-type=dcache							\
+		-host=${HOSTNAME}  						\
+		-port=22111

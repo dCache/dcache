@@ -1,0 +1,45 @@
+#
+# $Id$
+#
+
+set printout default 2
+set printout CellGlue none
+
+onerror continue
+   set context -c maintenanceLibPath  ${ourHomeDir}/var/lib/dCache/maintenance
+   set context -c maintenanceLibAutogeneratePaths   true
+   set context -c maintenanceLogoutTime            18000
+onerror shutdown
+
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong statisticsLocation
+
+#
+#  Cell communication
+#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+#
+define context maintenanceSetup endDefine
+  define module copy-module diskCacheV111.replicaManager.EasyCopyCellModule
+  set logout time ${maintenanceLogoutTime}
+endDefine
+#
+create dmg.cells.services.CommandTaskCell maintenance \
+      "default   \
+       -export   \
+       -autogenerate=${maintenanceLibAutogeneratePaths} \
+       -base=${maintenanceLibPath} \
+"
+#

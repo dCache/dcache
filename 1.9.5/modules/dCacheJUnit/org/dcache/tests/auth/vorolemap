@@ -1,0 +1,3 @@
+"/O=GermanGrid/OU=DESY/CN=Tigran Mkrtchyan" "/dteam/Role=NULL/Capability=NULL" tigran
+"*" "/dteam" dteamuser
+"/O=GermanGrid/OU=DESY/CN=Tigran Mkrtchyan" "/cms/Role=NULL/Capability=NULL" tigrancms

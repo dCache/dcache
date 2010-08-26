@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="release-build">
+
+    <!--
+        VCS specific.
+        Current implelemtation is based on SVN
+    -->
+
+    <!-- pick up jar files located at antlib -->
+    <path id="antlib.classpath">
+        <fileset dir="${antlib.dir}" includes="**/*.jar" />
+    </path>
+
+    <taskdef resource="svntask.properties" classpathref="antlib.classpath" />
+
+    <!-- =====================================================================
+       Get current revision number from VCS
+    ========================================================================-->
+    <target name="-get.current.revision">
+        <svn>
+            <status path="." revisionProperty="current.revision" />
+        </svn>
+    </target>
+    <!-- =======================================================================
+        Bump patch number and commit into VCS
+    =========================================================================-->
+    <target name="-bump.patch.number" >
+        <buildnumber file="${patch.id.store}" />
+        <svn>
+            <commit message="bump patch number of ${build.name}" file="${patch.id.store}" />
+        </svn>
+    </target>
+
+    <!-- =======================================================================
+        Bump version number and commit into VCS
+    =========================================================================-->
+    <target name="-bump.version.number" >
+        <buildnumber file="${build.id.store}" />
+        <svn>
+            <commit message="bump version number of ${build.name}" file="${patch.id.store}" />
+        </svn>
+    </target>
+
+
+    <!-- =======================================================================
+        Create a new tag named as curent ${version}-${patch}
+    =========================================================================-->
+    <target name="-create.tag" >
+        <svn>
+            <copy revision="${current.revision}" message="New tag ${build.name}"
+                srcUrl="${scm.url}/${scm.branch}"
+                destUrl="${scm.url}/tags/${version}-${patch}"
+            />
+        </svn>
+    </target>
+
+    <!-- =======================================================================
+        Create a new branch named as curent ${version}
+    =========================================================================-->
+    <target name="-create.branch" >
+         <svn>
+            <copy revision="${current.revision}" message="New branch ${build.name}"
+                srcUrl="${scm.url}/${scm.branch}"
+                destUrl="${scm.url}/branches/${version}"
+            />
+        </svn>
+    </target>
+
+    <!-- =======================================================================
+        meta target
+    =========================================================================-->
+    <target name="commit-release" depends="-get.current.revision,-bump.version.number,-create.tag,-create.branch"
+        description="Bump version number, create a branch and a tag."
+    />
+
+    <target name="commit-patch" depends="-get.current.revision,-create.tag,-bump.patch.number"
+        description="Bump patch number, create a tag."
+    />
+
+
+</project>

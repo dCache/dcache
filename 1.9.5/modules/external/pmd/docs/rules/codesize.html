@@ -1,0 +1,777 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head><title>PMD - Rule Set: Code Size Rules</title><style type="text/css" media="all">
+          @import url("../style/maven-base.css");
+          
+          @import url("../style/maven-theme.css");</style><link rel="stylesheet" href="../style/print.css" type="text/css" media="print"></link><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></meta><meta name="author" content="Tom Copeland"></meta><meta name="email" content="tom@infoether.com"></meta></head><body class="composite"><div id="banner"><a href="http://pmd.sourceforge.net/" id="organizationLogo"><img alt="InfoEther" src="http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5"></img></a><a href="http://pmd.sourceforge.net/" id="projectLogo"><img alt="PMD" src="../images/pmd_logo_small.jpg"></img></a><div class="clear"><hr></hr></div></div><div id="breadcrumbs"><div class="xleft"></div><div class="xright">
+        
+        <a href="http://pmdapplied.com/" class="externalLink" title="External Link">**** Get the book! ****</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net/projects/pmd" class="externalLink" title="External Link">SourceForge.net Project Page</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net" class="externalLink" title="External Link">Hosted by SourceForge</a>
+      </div><div class="clear"><hr></hr></div></div><div id="leftColumn"><div id="navcolumn"><div id="menuOverview"><h5>Overview</h5><ul><li class="none"><a href="http://sourceforge.net/project/showfiles.php?group_id=56262&amp;package_id=51441&amp;release_id=632850" class="externalLink" title="External Link">Download PMD 4.2.5</a></li><li class="none"><a href="http://sourceforge.net/project/shownotes.php?release_id=632850&amp;group_id=56262" class="externalLink" title="External Link">What's new in PMD 4.2.5</a></li><li class="none"><a href="../news.html">PMD in the news</a></li><li class="none"><a href="../products.html">PMD-related products and books</a></li><li class="none"><a href="../bestpractices.html">Best practices</a></li><li class="none"><a href="../future.html">Future directions</a></li><li class="none"><a href="../similar-projects.html">Similar projects</a></li><li class="none"><a href="../credits.html">Credits</a></li><li class="none"><a href="../license.html">License</a></li><li class="none"><a href="../meaning.html">What does 'PMD' mean?</a></li></ul></div><div id="menuUsage"><h5>Usage</h5><ul><li class="none"><a href="../installing.html">Installation</a></li><li class="none"><a href="../running.html">Command line usage</a></li><li class="none"><a href="../ant-task.html">Ant task usage</a></li><li class="none"><a href="../maven-plugin.html">Maven plugin usage</a></li><li class="none"><a href="../mvn-plugin.html">Mvn plugin usage</a></li><li class="none"><a href="../integrations.html">IDE plugin usage</a></li><li class="none"><a href="../suppressing.html">Suppressing warnings</a></li><li class="none"><a href="../cpd.html">Finding duplicated code</a></li><li class="none"><a href="../jspsupport.html">JSP support</a></li></ul></div><div id="menuCustomizing_PMD"><h5>Customizing PMD</h5><ul><li class="none"><a href="../compiling.html">Compiling PMD</a></li><li class="none"><a href="../howtowritearule.html">How to write a rule</a></li><li class="none"><a href="../xpathruletutorial.html">Writing XPath rules</a></li><li class="none"><a href="../howtomakearuleset.html">How to make a rule set</a></li><li class="none"><a href="../howitworks.html">How it works</a></li><li class="none"><a href="../rule-guidelines.html">Rule guidelines</a></li></ul></div><div id="menuFor_example"><h5>For example</h5><ul><li class="none"><a href="../scoreboard.html">Run PMD on a Sourceforge project</a></li></ul></div><div id="menuRule_Sets"><h5>Rule Sets</h5><ul><li class="none"><a href="../rules/index.html">Index</a></li><li class="none"><a href="../rules/android.html">Android</a></li><li class="none"><a href="../rules/basic.html">Basic</a></li><li class="none"><a href="../rules/braces.html">Braces</a></li><li class="none"><strong><a href="../rules/codesize.html">Code Size</a></strong></li><li class="none"><a href="../rules/clone.html">Clone</a></li><li class="none"><a href="../rules/controversial.html">Controversial</a></li><li class="none"><a href="../rules/coupling.html">Coupling</a></li><li class="none"><a href="../rules/design.html">Design</a></li><li class="none"><a href="../rules/finalizers.html">Finalizers</a></li><li class="none"><a href="../rules/imports.html">Import Statements</a></li><li class="none"><a href="../rules/j2ee.html">J2EE</a></li><li class="none"><a href="../rules/javabeans.html">Javabeans</a></li><li class="none"><a href="../rules/junit.html">JUnit Tests</a></li><li class="none"><a href="../rules/logging-java.html">Logging (Java)</a></li><li class="none"><a href="../rules/logging-jakarta-commons.html">Logging (Jakarta)</a></li><li class="none"><a href="../rules/migrating.html">Migrating</a></li><li class="none"><a href="../rules/naming.html">Naming</a></li><li class="none"><a href="../rules/optimizations.html">Optimizations</a></li><li class="none"><a href="../rules/strictexception.html">Strict Exceptions</a></li><li class="none"><a href="../rules/strings.html">Strings</a></li><li class="none"><a href="../rules/sunsecure.html">Sun Security</a></li><li class="none"><a href="../rules/unusedcode.html">Unused Code</a></li><li class="none"><a href="../rules/basic-jsp.html">Java Server Pages</a></li><li class="none"><a href="../rules/basic-jsf.html">Java Server Faces</a></li></ul></div><div id="menuProject_Documentation"><h5>Project Documentation</h5><ul><li class="none"><a href="../index.html">About</a></li><li class="collapsed"><a href="../project-info.html">Project Info</a></li><li class="collapsed"><a href="../maven-reports.html">Project Reports</a></li><li class="none"><a href="../development-process.html">Development Process</a></li></ul></div><div id="legend"><h5>Legend</h5><ul><li class="externalLink">External Link</li><li class="newWindow">Opens in a new window</li></ul></div><a href="http://maven.apache.org/" title="Built by Maven" id="poweredBy"><img alt="Built by Maven" src="../images/logos/mavenlogo_builtby_w.png"></img></a></div></div><div id="bodyColumn"><div class="contentBox"><div class="section"><a name="Code_Size_Rules"></a><h2>Code Size Rules</h2>
+				
+
+  
+The Code Size Ruleset contains a collection of rules that find code size related problems.
+  
+
+
+	
+	<div class="subsection"><a name="NPathComplexity"></a><h3>NPathComplexity</h3>
+		<p>Since: PMD 3.9</p>
+		<p>
+   The NPath complexity of a method is the number of acyclic execution paths through that method.
+   A threshold of 200 is generally considered the point where measures should be taken to reduce complexity.
+   </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/NpathComplexity.html">net.sourceforge.pmd.rules.design.NpathComplexity</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+ 
+ public class Foo {
+  void bar() {
+   // lots of complicated code
+  }
+ }
+ 
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>minimum</td>
+                    <td>200</td>
+                    <td>The npath reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+ 
+	
+	<div class="subsection"><a name="ExcessiveMethodLength"></a><h3>ExcessiveMethodLength</h3>
+		<p>Since: PMD 0.6</p>
+		<p>
+Violations of this rule usually indicate that the method is doing
+too much.  Try to reduce the method size by creating helper methods and removing any copy/pasted code.
+   </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/LongMethodRule.html">net.sourceforge.pmd.rules.design.LongMethodRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ public void doSomething() {
+  System.out.println("Hello world!");
+  System.out.println("Hello world!");
+  // 98 copies omitted for brevity.
+ }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>minimum</td>
+                    <td>100</td>
+                    <td>The method size reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+ 
+	
+	<div class="subsection"><a name="ExcessiveParameterList"></a><h3>ExcessiveParameterList</h3>
+		<p>Since: PMD 0.9</p>
+		<p>
+Long parameter lists can indicate that a new object should be created to
+ wrap the numerous parameters.  Basically, try to group the parameters together.
+   </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/LongParameterListRule.html">net.sourceforge.pmd.rules.design.LongParameterListRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ public void addData(
+  int p0, int p1, int p2, int p3, int p4, int p5,
+  int p5, int p6, int p7, int p8, int p9, int p10) {
+  }
+ }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>minimum</td>
+                    <td>10</td>
+                    <td>The parameter count reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+ 
+	
+	<div class="subsection"><a name="ExcessiveClassLength"></a><h3>ExcessiveClassLength</h3>
+		<p>Since: PMD 0.6</p>
+		<p>
+Long Class files are indications that the class may be trying to
+do too much.  Try to break it down, and reduce the size to something
+manageable.
+   </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/LongClassRule.html">net.sourceforge.pmd.rules.design.LongClassRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+  public void bar() {
+    // 1000 lines of code
+  }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>minimum</td>
+                    <td>1000</td>
+                    <td>The class size reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+    
+	
+	<div class="subsection"><a name="CyclomaticComplexity"></a><h3>CyclomaticComplexity</h3>
+		<p>Since: PMD 1.03</p>
+		<p>
+   		
+Complexity is determined by the number of decision points in a method plus one for the
+method entry.  The decision points are 'if', 'while', 'for', and 'case labels'.  Generally,
+1-4 is low complexity, 5-7 indicates moderate complexity, 8-10 is high complexity,
+ and 11+ is very high complexity.
+		
+   </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/CyclomaticComplexity.html">net.sourceforge.pmd.rules.CyclomaticComplexity</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+// Cyclomatic Complexity = 12
+public class Foo {
+1   public void example()  {
+2       if (a == b)  {
+3           if (a1 == b1) {
+                fiddle();
+4           } else if a2 == b2) {
+                fiddle();
+            }  else {
+                fiddle();
+            }
+5       } else if (c == d) {
+6           while (c == d) {
+                fiddle();
+            }
+7        } else if (e == f) {
+8           for (int n = 0; n &lt; h; n++) {
+                fiddle();
+            }
+        } else{
+            switch (z) {
+9               case 1:
+                    fiddle();
+                    break;
+10              case 2:
+                    fiddle();
+                    break;
+11              case 3:
+                    fiddle();
+                    break;
+12              default:
+                    fiddle();
+                    break;
+            }
+        }
+    }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>reportLevel</td>
+                    <td>10</td>
+                    <td>The Cyclomatic Complexity reporting threshold</td>
+                    </tr>
+                
+                    <tr class="a">
+                    <td>showClassesComplexity</td>
+                    <td>true</td>
+                    <td>Indicate if class average violation should be added to the report</td>
+                    </tr>
+                
+                    <tr class="b">
+                    <td>showMethodsComplexity</td>
+                    <td>true</td>
+                    <td>Indicate if class average violation should be added to the report</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="ExcessivePublicCount"></a><h3>ExcessivePublicCount</h3>
+		<p>Since: PMD 1.04</p>
+		<p>
+A large number of public methods and attributes declared in a class can indicate the
+ class may need to be broken up as increased effort will be required to thoroughly test it.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/ExcessivePublicCount.html">net.sourceforge.pmd.rules.ExcessivePublicCount</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+    
+public class Foo {
+ public String value;
+ public Bar something;
+ public Variable var;
+ // [... more more public attributes ...]
+ public void doWork() {}
+ public void doMoreWork() {}
+ public void doWorkAgain() {}
+ // [... more more public methods ...]
+}
+    
+    
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>minimum</td>
+                    <td>45</td>
+                    <td>The public item reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="TooManyFields"></a><h3>TooManyFields</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+Classes that have too many fields could be redesigned to have fewer fields, possibly
+ through some nested object grouping of some of the information.  For example, a class with
+ city/state/zip fields could instead have one Address field.
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/TooManyFields.html">net.sourceforge.pmd.rules.design.TooManyFields</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+   
+public class Person {
+   String one;
+   int two;
+   int three;
+   [... many more public fields ...]
+}
+   
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>maxfields</td>
+                    <td>15</td>
+                    <td>The field count reporting threshold </td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+	
+	<div class="subsection"><a name="NcssMethodCount"></a><h3>NcssMethodCount</h3>
+		<p>Since: PMD 3.9</p>
+		<p>
+This rule uses the NCSS (Non Commenting Source Statements) algorithm to determine the number of lines
+of code for a given method. NCSS ignores comments, and counts actual statements. Using this algorithm,
+lines of code that are split are counted as one.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/codesize/NcssMethodCount.html">net.sourceforge.pmd.rules.codesize.NcssMethodCount</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo extends Bar {
+ public int methd() {
+     super.methd();
+
+
+
+
+
+ //this method only has 1 NCSS lines
+      return 1;
+ }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>minimum</td>
+                    <td>100</td>
+                    <td>The method NCSS count reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+	
+	<div class="subsection"><a name="NcssTypeCount"></a><h3>NcssTypeCount</h3>
+		<p>Since: PMD 3.9</p>
+		<p>
+This rule uses the NCSS (Non Commenting Source Statements) algorithm to determine the number of lines
+of code for a given type. NCSS ignores comments, and counts actual statements. Using this algorithm,
+lines of code that are split are counted as one.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/codesize/NcssTypeCount.html">net.sourceforge.pmd.rules.codesize.NcssTypeCount</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo extends Bar {
+ public Foo() {
+ //this class only has 6 NCSS lines
+     super();
+
+
+
+
+
+      super.foo();
+ }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>minimum</td>
+                    <td>1500</td>
+                    <td>The type NCSS count reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+	
+	<div class="subsection"><a name="NcssConstructorCount"></a><h3>NcssConstructorCount</h3>
+		<p>Since: PMD 3.9</p>
+		<p>
+This rule uses the NCSS (Non Commenting Source Statements) algorithm to determine the number of lines
+of code for a given constructor. NCSS ignores comments, and counts actual statements. Using this algorithm,
+lines of code that are split are counted as one.
+    </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/codesize/NcssConstructorCount.html">net.sourceforge.pmd.rules.codesize.NcssConstructorCount</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo extends Bar {
+ public Foo() {
+     super();
+
+
+
+
+
+ //this constructor only has 1 NCSS lines
+      super.foo();
+ }
+}
+
+   
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>minimum</td>
+                    <td>100</td>
+                    <td>The constructor NCSS count reporting threshold</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="TooManyMethods"></a><h3>TooManyMethods</h3>
+		<p>Since: PMD 4.2</p>
+		<p>
+            
+A class with too many methods is probably a good suspect for refactoring, in order to reduce its complexity and find a way to
+have more fine grained objects.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+                    
+                     //ClassOrInterfaceDeclaration/ClassOrInterfaceBody
+                    [
+                        count(descendant::MethodDeclarator[
+                            not
+                            (
+                            starts-with(@Image,'get')
+                                or
+                            starts-with(@Image,'set')
+                            )
+                        ]) &amp;gt; $maxmethods
+                    ]
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="b">
+                    <td>maxmethods</td>
+                    <td>10</td>
+                    <td>The method count reporting threshold </td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+
+
+			</div></div></div><div class="clear"><hr></hr></div><div id="footer"><div class="xright">© 2002-2009, InfoEther</div><div class="clear"><hr></hr></div></div></body></html>

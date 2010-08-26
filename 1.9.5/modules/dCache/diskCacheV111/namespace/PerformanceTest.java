@@ -1,0 +1,255 @@
+package diskCacheV111.namespace;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import org.dcache.auth.Subjects;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.util.Checksum;
+import diskCacheV111.namespace.provider.DcacheNameSpaceProviderFactory;
+import dmg.util.Args;
+
+
+enum Operation {
+    PATH_TO_PNFS_ID("pathtopnfsid", "Reads the pnfs id of a file"),
+    FILE_META_DATA("filemetadata", "Reads the meta data of the file"),
+    CREATE_ENTRY("createentry", "Create a new file entry in the pool"),
+    DELETE_ENTRY("deleteentry", "Removes file entry from the pool"),
+    PNFS_ID_TO_PATH("pnfsidtopath", "Reads path of the file"),
+    GET_PARENT("getparent", "Reads the parent pnfsid of the file"),
+    ADD_CHECKSUM("addchecksum", "Adds the given checksum to the file"),
+    GET_CHECKSUMS("getchecksums", "Reads all the checksums of the file"),
+    SET_FILE_ATTR("setfileattr", "Updates the file attributes"),
+    GET_FILE_ATTR("getfileattr", "Reads the attributes of the file"),
+    ADD_CACHE_LOC("addcacheloc", "Add a new pool to the file"),
+    GET_CACHE_LOC("getcacheloc", "Reads all the pools of the file"),
+    SET_STORAGE_INFO("setstorageinfo", "Updates the storage info of the file"),
+    STORAGE_INFO("storageinfo", "Read storage info of files (implies -filemetadata)");
+    private final String userInput;
+    private final String desc;
+    Operation(String userInput, String desc) {
+        this.userInput = userInput;
+	this.desc = desc;
+    }
+    public String getDesc() {
+        return desc;
+    }
+    public String getUserInput() {
+        return userInput;
+    }
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('\t');
+        sb.append('-');
+        sb.append(userInput);
+        sb.append('\t');
+        sb.append(desc);
+        return sb.toString();
+    }
+}
+
+/**
+ * This utility performs performance tests for various name space
+ * lookup operations. The utility is independent of any specific name
+ * space provider and can be used with any name space provider
+ * providing a DcacheNameSpaceProviderFactory.
+ *
+ * The utility can measure pnfsid lookup, file meta data lookup and
+ * storage info lookup. It can use a configurable number of threads.
+ */
+public class PerformanceTest extends Thread
+{
+    private static NameSpaceProvider provider;
+    private static BlockingQueue<String> queue;
+    private static List<Operation> ops;
+    private static final String CACHE_LOCATION = "myPoolD";
+    private static final String CHECKSUM_VALUE = "123456";
+    private static final int UID = 0;
+    private static final int GID = 0;
+    private static final int PERMISSION = 777;
+    private static final int CHECKSUM_TYPE = 1;
+    public static List<String> getPaths(String fileName) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+        List<String> toReturn = new ArrayList<String>();
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                toReturn.add(line);
+            }
+        } finally {
+            reader.close();
+        }
+        return toReturn;
+    }
+
+    public static List<Operation> getOps(Args args){
+        List<Operation> toReturn = new ArrayList<Operation>();
+        for(Operation aOp: Operation.values()) {
+            if(args.getOpt(aOp.getUserInput()) != null) {
+		    toReturn.add(aOp);
+	    }
+        }
+        return toReturn;
+    }
+
+    public static void main(String arguments[]) throws Exception
+    {
+        /* Parse arguments.
+         */
+        Args args = new Args(arguments);
+        if (args.argc() < 2) {
+            System.err.print("Usage: PerformanceTest [-threads=<n>] ");
+            for(Operation aOp: Operation.values()) {
+		    System.err.print("[-" + aOp.getUserInput() + "] ");
+	    }
+            System.err.println(" <file> <provider-factory>");
+            System.err.println("  where <file> contains a list of paths to load.");
+            System.err.println("  and   <provider-factory> is of the type DcacheNameSpaceProviderFactory");
+            System.err.println("Options:");
+            for(Operation aOp: Operation.values()) {
+		    System.err.println(aOp);
+	    }
+            System.err.println("\t-threads\tSets number of concurrent reads");
+            System.err.println("");
+            System.err.println("Remaining arguments are passed on to the provider factory.");
+            System.exit(2);
+        }
+
+        String fileName = args.argv(0);
+        String factoryName = args.argv(1);
+        args.shift();
+
+	ops = getOps(args);
+        int concurrency =
+            (args.getOpt("threads") != null) ? Integer.parseInt(args.getOpt("threads")) : 1;
+
+        /* Instantiate provider.
+         */
+        DcacheNameSpaceProviderFactory factory =
+            (DcacheNameSpaceProviderFactory)Class.forName(factoryName).newInstance();
+        provider = (NameSpaceProvider)factory.getProvider(args, null);
+
+        /* Read paths.
+         */
+        System.out.println("Loading " + fileName);
+        queue = new LinkedBlockingQueue();
+        List<String> paths = getPaths(fileName);
+        queue.addAll(paths);
+
+
+        /* Run test.
+         */
+        System.out.println("Running test...");
+        long start = System.currentTimeMillis();
+        Thread[] threads = new Thread[concurrency];
+        for (int i = 0; i < concurrency; i++) {
+            threads[i] = new PerformanceTest();
+            threads[i].start();
+        }
+        for (int i = 0; i < concurrency; i++) {
+            threads[i].join();
+        }
+        long end = System.currentTimeMillis();
+        long total = end - start;
+
+        /* Report result.
+         */
+        System.out.println("Number of files  : " + paths.size());
+        System.out.println("Number of threads: " + concurrency);
+        System.out.print("Operations       : [");
+        for(Operation aOp: ops) {
+            System.out.print(aOp.getUserInput() + ", ");
+        }
+        System.out.println("]");
+
+        System.out.println("Start time       : " + new Date(start));
+        System.out.println("End time         : " + new Date(end));
+        System.out.println("Total time       : " + total + " ms");
+        System.out.println("Average pr. op   : " + (double)(total)/paths.size() + " ms");
+
+
+    }
+
+    private PnfsId getPnfsid(String path) throws CacheException {
+        return provider.pathToPnfsid(Subjects.ROOT, path, true);
+    }
+
+    private void processOperation(Operation aOp, String path) {
+        try {
+            switch (aOp) {
+                case CREATE_ENTRY:
+                    FileMetaData metaData =  new FileMetaData(false, UID, GID, PERMISSION);
+                    PnfsId id = provider.createEntry(Subjects.ROOT, path, metaData, false);
+                    break;
+                case PATH_TO_PNFS_ID:
+                    id = getPnfsid(path);
+                    break;
+                case FILE_META_DATA:
+                    metaData = provider.getFileMetaData(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case DELETE_ENTRY:
+                    provider.deleteEntry(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case PNFS_ID_TO_PATH:
+                    provider.pnfsidToPath(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case GET_PARENT:
+                    provider.getParentOf(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case ADD_CHECKSUM:
+                    provider.addChecksum(Subjects.ROOT, getPnfsid(path), CHECKSUM_TYPE, CHECKSUM_VALUE);
+                    break;
+                case GET_CHECKSUMS:
+                    Set<Checksum> cksums = provider.getChecksums(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case SET_FILE_ATTR:
+                    FileAttributes fileAttributes = new FileAttributes();
+                    fileAttributes.setDefaultAccessLatency();
+                    fileAttributes.setDefaultRetentionPolicy();
+                    provider.setFileAttributes(Subjects.ROOT, getPnfsid(path), fileAttributes);
+                    break;
+                case GET_FILE_ATTR:
+                    String[] attrList = provider.getFileAttributeList(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case ADD_CACHE_LOC:
+                    provider.addCacheLocation(Subjects.ROOT, getPnfsid(path), CACHE_LOCATION);
+                    break;
+                case GET_CACHE_LOC:
+                    List<String> loc = provider.getCacheLocation(Subjects.ROOT, getPnfsid(path));
+                    break;
+		case STORAGE_INFO:
+                    StorageInfo info = provider.getStorageInfo(Subjects.ROOT, getPnfsid(path));
+                    break;
+                case SET_STORAGE_INFO:
+                    info = provider.getStorageInfo(Subjects.ROOT, getPnfsid(path));
+                    info.isSetAccessLatency(true);
+                    info.isSetRetentionPolicy(true);
+                    provider.setStorageInfo(Subjects.ROOT, getPnfsid(path), info, NameSpaceProvider.SI_OVERWRITE);
+                    break;
+                default: break;
+            }//switch
+        }catch (CacheException e) {
+            System.err.println("Exception " + aOp.getUserInput() + " :" + e.getMessage());
+        }
+    }
+
+    public void run() {
+        String path;
+        while ( (path = queue.poll()) != null) {
+            for(Operation aOp: ops) {
+                processOperation(aOp, path);
+            }
+        }
+    }//run
+}//class

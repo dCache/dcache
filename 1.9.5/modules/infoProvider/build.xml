@@ -1,0 +1,98 @@
+<!-- $Id: build.xml,v 1.2 2006-04-25 11:56:59 tigran Exp $ -->
+
+<project name="infoProvider" default="help" basedir=".">
+
+	<!--
+          Property initialization 
+  -->
+
+
+	<import file="common/common.xml" />
+
+	<!-- destDir will be used by the copylibs target to get the external lib files to a central place -->
+
+	<!-- internal properties and paths -->
+	<property name="sourceDir" location="src" />
+	<property name="infoProvider.jar" location="${classesDir}/infoProvider.jar" />
+
+	<!-- Classpath for infoProvider.jar -->
+
+	<selector id="infoprovider.classpath.selector">
+		<or>
+			<filename name="**/cells.jar" />
+			<filename name="**/dcache.jar" />
+		</or>
+	</selector>
+
+	<path id="infoprovider.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="infoprovider.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="infoprovider.classpath.selector" />
+		</fileset>
+	</path>
+	<!--
+          Directory creation
+  -->
+
+	<target name="prepare">
+		<mkdir dir="${buildDir}" />
+	</target>
+
+	<!-- 
+          Clean Targets
+  -->
+
+	<target name="clean">
+		<delete dir="${buildDir}" />
+	</target>
+
+	<target name="cleanall" depends="clean">
+		<delete file="${infoProvider.jar}" />
+	</target>
+
+	<!-- 
+          Build infoProvider 
+  -->
+
+	<target name="infoProvider" depends="prepare">
+
+		<mkdir dir="${buildDir}/infoProvider" />
+		
+		<javac destdir="${buildDir}/infoProvider" classpathref="infoprovider.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+			<src path="${sourceDir}" />
+			<exclude name="org/dcache/services/jclarens/**" />
+		</javac>
+
+	</target>
+
+	<target name="infoProvider.jar" depends="infoProvider">
+
+		<jar jarfile="${infoProvider.jar}">
+			<fileset dir="${buildDir}/infoProvider" includes="**/*.class" />
+		</jar>
+
+	</target>
+
+	<!--
+          Copy external libraries to ${destDir}
+  -->
+
+	<target name="copylibs">
+
+		<condition property="destDir.available">
+			<and>
+				<isset property="destDir" />
+				<available file="${destDir}" type="dir" />
+			</and>
+		</condition>
+		<fail unless="destDir.available" message="No destination directory specified with property destDir." />
+
+		<copy todir="${destDir}">
+			<fileset refid="lib.classpath.files" />
+		</copy>
+
+	</target>
+
+</project>

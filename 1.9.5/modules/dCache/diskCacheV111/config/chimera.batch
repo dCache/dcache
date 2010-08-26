@@ -1,0 +1,106 @@
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+
+# Cell communication
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
+
+#
+# If companionDatabaseHost and defaultPnfsServer are not set in dCacheSetup, use localhost, for pnfs use /pnfs/fs:
+#
+onerror continue
+set context -c companionDatabaseHost localhost
+set context -c defaultPnfsServer localhost
+set context -c pnfs /pnfs/fs
+set context -c pnfsNumberOfThreads 4
+set context -c pnfsNumberOfThreadGroups 1
+set context -c pnfsNumberOfListThreads 1
+
+
+#
+# defaults for Access Latency and Retention Policy
+#
+
+set context -c DefaultAccessLatency ""
+set context -c DefaultRetentionPolicy ""
+
+onerror shutdown
+#
+create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+        "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \
+        -cmRelay=broadcast \
+        -threads=${pnfsNumberOfThreads} \
+        -threadGroups=${pnfsNumberOfThreadGroups} \
+        -listThreads=${pnfsNumberOfListThreads} \
+        -pnfsDeleteRelay=SrmSpaceManager \
+        -default=${defaultPnfsServer} \
+        -pnfs=${pnfs} \
+        -DefaultAccessLatency=${DefaultAccessLatency} \
+        -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
+        -aclEnabled=${aclEnabled} \
+        -aclTable=${aclTable} \
+        -aclConnDriver=${aclConnDriver} \
+        -aclConnUrl=${aclConnUrl} \
+        -aclConnUser=${aclConnUser} \
+        -aclConnPswd=${aclConnPswd} \
+        -chimeraConfig=${config}/chimera-config.xml \
+        -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+       "
+#
+#   The 'remove' handler (informs the dCache about pfns removes)
+#
+
+#
+# Cleaner
+#
+
+onerror continue
+set context -c cleanerRefresh              120
+set context -c cleanerRecover              240
+set context -c cleanerPoolTimeout          100
+set context -c cleanerProcessFilesPerRun   500
+onerror shutdown
+
+# onerror continue
+create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
+        "-export \
+         -refresh=${cleanerRefresh} \
+         -recover=${cleanerRecover} \
+         -reportRemove=broadcast \
+         -poolTimeout=${cleanerPoolTimeout}   \
+         -processFilesPerRun=${cleanerProcessFilesPerRun} \
+         -chimeraConfig=${config}/chimera-config.xml \
+  "
+
+#
+# ACL-administration
+#
+onerror continue
+
+#
+create org.dcache.acl.AclCell acladmin \
+        "-export \
+         -aclEnabled=${aclEnabled} \
+         -aclTable=${aclTable} \
+         -aclConnDriver=${aclConnDriver} \
+         -aclConnUrl=${aclConnUrl} \
+         -aclConnUser=${aclConnUser} \
+         -aclConnPswd=${aclConnPswd} \
+         "
+onerror shutdown

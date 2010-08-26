@@ -1,0 +1,5 @@
+#!/bin/sh -f
+#
+# Usage: srm-supported-protocols
+
+echo dfarm gsiftp	

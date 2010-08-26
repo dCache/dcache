@@ -1,0 +1,12 @@
+SRM may be configured to use a single QOS (Quality of Service) plugin such as Terapaths or Lambdastation.  To do so, uncomment the following lines in srm.batch:
+	#        -qosPluginClass=${qosPluginClass} \
+	#        -qosConfigFile=${qosConfigFile} \
+and then configure the particular plugin.  For terapaths include the following lines:
+	set context -c qosPluginClass   org.dcache.srm.qos.terapaths.TerapathsPlugin
+	set context -c qosConfigFile    ${ourHomeDir}/config/terapaths.properties
+For lambda station include the following lines:
+	set context -c qosPluginClass   org.dcache.srm.qos.lambdastation.LambdaStationPlugin
+	set context -c qosConfigFile    ${ourHomeDir}/config/lambdastation.properties
+Other plugins are configured similarly.  Finally, make sure the configuration file specified for qosConfigFile is set up properly.  Templates of each are provided in the config directory.
+
+NOTE: the QOS plugin is invoked only when performing a local to remote SRM transfer in push mode (use the -pushmode option).

@@ -1,0 +1,47 @@
+#! /bin/sh
+
+#DEBUG=true
+DEBUG=false
+SRM_PATH=/home/timur/cvs/Sandbox/Java/diskCacheV111/classes
+SCRIPTS_DIR=/home/timur/cvs/Sandbox/Java/diskCacheV111/srm/scripts
+SRM_ROOT=/home/timur/cvs/Sandbox/Java/diskCacheV111/srm/disk/srm
+SRM_PROXIES=/home/timur/cvs/Sandbox/Java/diskCacheV111/srm/disk/proxies
+SRM_PORT=12345
+if [ ! -f $SRM_PATH/dcache.jar ]
+then
+  echo cannot find $SRM_PATH/dcache.jar
+  exit 1
+fi
+
+# SRM CLASS PATH :
+SRM_CP=$SRM_PATH/dcache.jar
+SRM_CP=$SRM_CP:$SRM_PATH/glue/GLUE-STD.jar
+SRM_CP=$SRM_CP:$SRM_PATH/glue/dom.jar
+SRM_CP=$SRM_CP:$SRM_PATH/glue/servlet.jar
+SRM_CP=$SRM_CP:$SRM_PATH/glue/jnet.jar
+SRM_CP=$SRM_CP:$SRM_PATH/glue/jsse.jar
+SRM_CP=$SRM_CP:$SRM_PATH/glue/jcert.jar
+
+# globus cog jars
+SRM_CP=$SRM_CP:$SRM_PATH/globus/cog.jar:$SRM_PATH/globus/iaik_javax_crypto.jar
+SRM_CP=$SRM_CP:$SRM_PATH/globus/iaik_jce_full.jar:$SRM_PATH/globus/iaik_ssl.jar
+SRM_CP=$SRM_CP:$SRM_PATH/globus/log4j-core.jar
+
+
+if [ $DEBUG = "true" ]
+then
+  OPTIONS="-Delectric.logging=SOAP,HTTP -Djava.protocol.handler.pkgs=org.globus.net.protocol"
+else
+  OPTIONS=-Djava.protocol.handler.pkgs=org.globus.net.protocol 
+fi
+cd $SRM_PATH/../srm/disk
+# can-access  get-turl  globus-url-copy  list-protocols  rundisksrm  srm.kpwd  stat
+ARGS="-debug -port=$SRM_PORT -kpwd=$SCRIPTS_DIR/srm.kpwd -srmroot=$SRM_ROOT"
+ARGS="$ARGS -stat=$SCRIPTS_DIR/stat"
+ARGS="$ARGS -can-access=$SCRIPTS_DIR/can-access"
+ARGS="$ARGS -supported-protocols=$SCRIPTS_DIR/list-protocols"
+ARGS="$ARGS -get-turl=$SCRIPTS_DIR/get-turl"
+ARGS="$ARGS -globus-url-copy=$SCRIPTS_DIR/globus-url-copy"
+
+echo java -cp $SRM_CP $OPTIONS diskCacheV111.srm.disk.Storage $ARGS
+java -cp $SRM_CP $OPTIONS diskCacheV111.srm.disk.Storage $ARGS

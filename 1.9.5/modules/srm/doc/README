@@ -1,0 +1,98 @@
+Subject:  How to deploy the Fermilab SRM, and test it by calling the srm-ls function
+Author:  Leo Heska; leoheska@fnal.gov
+Revision:  0.8
+Revision:  June 10, 2005
+
+The Fermilab Storage Resource Manager (SRM) works with files stored in dCache.  It is powered by Apache Axis, which runs on top of Apache Tomcat.
+
+Before running SRM, you will need to have dCache, Apache Tomcat, and Apache Axis all installed and working.  Installation instructions for these three products are beyond the scope of this document.  Note that of these, both dCache and Apache Axis are non-trivial to install and get working.
+
+This version of this document was written based on a working SRM, installed along with the following versions of these tools:
+
+Tomcat:  Jakarta Tomcat version 5.5.9 - see http://jakarta.apache.org/tomcat/
+Axis:  Apache Axis version 1.1 - see http://ws.apache.org/axis/
+dCache - see http://www.dcache.org
+
+You will be ready to carry out these instructions if you have:
+
+ - installed and configured Apache Tomcat and Apache Axis;
+ - written and deployed and a "toy" Axis web service, and gotten it working;
+ - (optional, but quite helpful) carried out the steps (compilation, deployment) needed to get the Apache Axis SOAPMonitor applet working (refer to the Apache axis documentation).
+
+After you've done all the above, and gotten everything working for your "toy" web service, you are ready to start working on srm-ls.
+
+Installing and running Fermi SRM:
+
+When you installed dCache, the rpms provided you with the following files.  Their location will depend on where you installed dCache:
+
+   Deployment file you will need in a later step:  
+   
+      deploy.wsdd
+
+   dCache and srm jars you will need to copy, so that Tomcat/Axis will be able to run SRM:
+   
+      dcache.jar
+      srm.jar
+
+   Other jars you will also need to copy:
+
+   113853 Jun 13  2003 wsdl4j.jar
+    18501 Jun 13  2003 saaj.jar
+    35759 Jun 13  2003 jaxrpc.jar
+    31605 Jun 13  2003 commons-logging.jar
+    71442 Jun 13  2003 commons-discovery.jar
+  1235721 Jun 13  2003 axis.jar
+   385010 Jun 13  2003 axis-ant.jar
+   191314 Mar 14 04:17 puretls.jar
+   352668 Mar 14 04:17 log4j-1.2.8.jar
+   121070 Mar 14 04:17 junit.jar
+   463471 Mar 14 04:17 jsse.jar
+     3098 Mar 14 04:17 jnet.jar
+     6663 Mar 14 04:17 jgss.jar
+     7637 Mar 14 04:17 jcert.jar
+  1017024 Mar 14 04:17 jce-jdk13-125.jar
+   633873 Mar 14 04:17 GLUE-STD.jar
+    13407 Mar 14 04:17 dom.jar
+  2243527 Mar 14 04:17 derby.jar
+     3608 Mar 14 04:17 cryptix.jar
+    80392 Mar 14 04:17 cryptix-asn1.jar
+   366255 Mar 14 04:17 cryptix32.jar
+   259265 Mar 14 04:17 collections.jar
+     3124 Mar 14 04:17 cog-url.jar
+    20160 Mar 14 04:17 cog-tomcat.jar
+   645375 Mar 14 04:17 cog-jglobus.jar
+    12586 Mar 14 04:17 cog-axis.jar
+    14976 Apr 23 18:10 gplazmalite-services-suite-0.1.jar
+    24643 May 23 11:27 javatunnel.jar
+   330717 May 25 10:49 postgresql-8.0-311.jdbc3.jar
+
+[Note:  The purpose of each of these jars is beyond the scope of this document.  Some of them may not even be needed; this is just a snapshot list of what's on my machine.]
+
+Copy the above jars from wherever you have them to where they need to go:
+
+     cp -p srm.jar $CATALINA_HOME/webapps/axis/WEB-INF/lib
+     cp -p dcache.jar $CATALINA_HOME/webapps/axis/WEB-INF/lib
+
+
+- Now, deploy the web service.  First, make sure that Tomcat and Axis are running.  Next, go to wherever you have the file deploy.wsdd and execute the following:
+     
+     java org.apache.axis.client.AdminClient deploy.wsdd
+     
+You should get a success message.  The entire response you get should look like this:
+
+   Processing file deploy.wsdd
+   <Admin>Done processing</Admin>
+
+Go to the following URI:
+
+     http://localhost:8080/axis/servlet/AxisServlet
+    
+and verify that the "srm" web service is there.
+
+To verify that (at least part of) your new SRM installation actually works, you may call the srm-ls function.  The srm.jar you got contains a simple web service caller called SRMLsCaller.  Go to the directory containing srm.jar and issue a command like the following:
+      
+   java -classpath $CLASSPATH:srm.jar org.dcache.srm.client.SRMLsCaller leoheska 8080 /pnfs/dhcp.fnal.gov/data/scratch/junk.c1.txt 0
+
+Of course you will need to modify the above command, to make it work.  Your machine is very unlikely to be named "leoheska", so you will need to change the machine name to the real name of the machine on which you're running Apache Axis/SRM.  If you are not running Axis on port 8080, you will need to change "8080" to the real port number.  The file named /pnfs/dhcp.fnal.gov/data/scratch/junk.c1.txt is very likely to not exist on your machine; you will need to specify the name of a file or directory that really exists.  And lastly, the trailing "0" in the above command tells SRM not to recurse, that is, to provide information only about the particular file or directory you named.
+
+That's all!

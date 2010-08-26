@@ -1,0 +1,26 @@
+#
+#    Location Manager Domain
+#
+set printout default 2
+set printout CellGlue none
+#
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorPort
+#
+#   The LocationManager Part
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorPort} -strict=no -noclient -setup=${ourHomeDir}/config/lm.config"
+#

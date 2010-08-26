@@ -1,0 +1,2 @@
+ upd addproduct -c -f NULL -r `pwd` -M`pwd`/ups -m srmcp.table srmcp v1_0
+

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+  <!-- appender name="FileAppender" class="org.apache.log4j.FileAppender" -->
+  <appender name="detailed" class="org.apache.log4j.ConsoleAppender">
+    <!-- param name="Threshold" value="INFO"/ -->
+    <!-- param name="File" value="Indentify-Log.txt"/ -->
+    <!-- param name="Append" value="false"/ -->
+    <!-- param name="MaxFileSize" value="500KB"/ -->
+    <!-- param name="MaxBackupIndex" value="1"/ --> 
+    
+    <!-- layout class="org.apache.log4j.SimpleLayout"/ -->
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %X{srm.session} %x %l %p - %m%n"/>
+      <!-- param name="ConversionPattern" value="%d [%t] %p - %m%n"/ -->
+    </layout>
+  </appender>
+
+  <appender name="LessDetailed" class="org.apache.log4j.ConsoleAppender">
+    <param name="Threshold" value="INFO"/>
+    <!-- param name="File" value="Indentify-Log.txt"/ -->
+    <!-- param name="Append" value="false"/ -->
+    <!-- param name="MaxFileSize" value="500KB"/ -->
+    <!-- param name="MaxBackupIndex" value="1"/ --> 
+    
+    <!-- layout class="org.apache.log4j.SimpleLayout"/ -->
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %X{srm.session} %C{1} %p %M %F %L - %m%n"/>
+      <!-- param name="ConversionPattern" value="%d [%t] %p - %m%n"/ -->
+    </layout>
+  </appender>
+
+
+  <!-- The below filters out too-detailed and too many messages from NSStack. -->
+  <category name="org.apache.axis.utils.NSStack">
+    <priority value="INFO"/>
+  </category> 
+
+  <!-- The below filters out too-detailed and too many messages from all axis stuff. -->
+  <category name="org.apache.axis">
+    <priority value="INFO"/>
+  </category> 
+
+  <!-- The below filters out too-detailed and too many messages from glite. -->
+  <category name="org.glite.security">
+    <priority value="INFO"/>
+  </category>
+
+  <root>
+    <priority value ="INFO" />
+    <appender-ref ref="detailed"/>
+  </root>
+
+</log4j:configuration>
+

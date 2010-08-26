@@ -1,0 +1,25 @@
+#
+# $Id: dir.batch,v 1.4 2007-03-21 14:11:42 radicke Exp $
+#
+
+set printout default 2
+set printout CellGlue none
+
+onerror shutdown 
+
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext 
+
+#
+#  Cell communication
+#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+create diskCacheV111.pools.DirectoryLookUpPool dirLookupPool "-export"

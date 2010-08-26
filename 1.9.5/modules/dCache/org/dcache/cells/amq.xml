@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           http://activemq.apache.org/schema/core 
+           http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+  </bean>
+
+  <amq:connectionFactory id="jmsFactory" brokerURL="${amqUrl}"/>
+
+  <bean id="tunnel" class="org.dcache.cells.JMSTunnel"
+        destroy-method="kill">
+    <description>JMS Gateway</description>
+    <constructor-arg value="RoutingMgr"/>
+    <constructor-arg ref="jmsFactory"/>
+  </bean>
+
+</beans>

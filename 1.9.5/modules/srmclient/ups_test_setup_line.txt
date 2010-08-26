@@ -1,0 +1,1 @@
+setup srmcp -r ~timur/cvs/srm/ups_release -M ~timur/cvs/srm/ups_release/ups -m srmcp.table -f v1_1 -q NULL

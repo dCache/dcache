@@ -1,0 +1,85 @@
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong dCapGsiPort
+
+# Cell communication
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
+
+# Permission configuration
+exec -run -shell file:${ourHomeDir}/config/permission.fragment
+
+#
+#
+onerror continue
+set context -c useGPlazmaAuthorizationModule  false
+set context -c useGPlazmaAuthorizationCell    true
+set context -c gplazmaPolicy               ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c gsidcapIoQueue              ""
+set context -c gsidcapIoQueueOverwrite     denied
+set context -c gsidcapMaxLogin             1500
+
+#
+#  ----  Usage of Srm Space Manager
+#
+#   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
+#   as both poolManager and poolProxy
+#
+onerror continue
+set context -c srmSpaceManagerEnabled no
+define env srmSpaceManagerOn.exe endExe
+  set env -c doorPoolManager      "SrmSpaceManager"
+endExe
+eval ${srmSpaceManagerEnabled} yes ==
+set env srmSpaceManagerIsOn ${rc}
+exec env srmSpaceManagerOn.exe -run -ifok=srmSpaceManagerIsOn
+set context -c doorPoolManager              "PoolManager"
+
+onerror shutdown
+#
+#
+#
+create dmg.cells.services.login.LoginManager DCap-gsi-${thisHostname} \
+             "${dCapGsiPort} \
+              diskCacheV111.doors.DCapDoor \
+              -export \
+              -prot=telnet -localOk \
+              -maxLogin=${gsidcapMaxLogin} \
+              -poolManager=${doorPoolManager}  \
+              -loginBroker=LoginBroker \
+              -brokerUpdateTime=120 \
+              -protocolFamily=gsidcap \
+              -protocolVersion=1.3.0 \
+              -authorization=strong \
+              -poolProxy=PoolManager \
+              -permission-handler=${permissionHandler} \
+              -aclTable=${aclTable} \
+              -aclConnDriver=${aclConnDriver} \
+              -aclConnUrl=${aclConnUrl} \
+              -aclConnUser=${aclConnUser} \
+              -aclConnPswd=${aclConnPswd} \
+              -stageConfigurationFilePath=${stageConfigurationFilePath} \
+              -io-queue=${gsidcapIoQueue} \
+              -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
+              -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
+              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
+              -gplazma-authorization-module-policy=${gplazmaPolicy} \
+              -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy"
+
+#
+#

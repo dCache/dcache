@@ -1,0 +1,126 @@
+##############################################################################
+# Copyright (c) Members of the EGEE Collaboration. 2004. 
+# See http://www.eu-egee.org/partners/ for details on the copyright 
+# holders.  
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# you may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at 
+#
+#    http://www.apache.org/licenses/LICENSE-2.0 
+#
+# Unless required by applicable law or agreed to in writing, software 
+# distributed under the License is distributed on an "AS IS" BASIS, 
+# WITHOUT WARRANTIES OR CONDITIONS 
+# OF ANY KIND, either express or implied. 
+# See the License for the specific language governing permissions and 
+# limitations under the License.
+##############################################################################
+#
+# NAME :        config_gip_only
+#
+# DESCRIPTION : This function configures the GIP.
+#
+# AUTHORS :     Laurence.Field@cern.ch
+#
+# NOTES :      
+#
+# YAIM MODULE:  glite-yaim-core
+#                 
+##############################################################################
+
+config_gip_only () {
+
+GIP_RESPONSE=${GIP_RESPONSE:=5}
+GIP_FRESHNESS=${GIP_FRESHNESS:=60}
+GIP_CACHE_TTL=${GIP_CACHE_TTL:=300}
+GIP_TIMEOUT=${GIP_TIMEOUT:=150}
+
+for variable in GIP_RESPONSE GIP_FRESHNESS GIP_CACHE_TTL GIP_TIMEOUT; do
+    if [ "${!variable}" -lt 0 ]; then
+    	echo "ERROR: bad ${variable}: ${!variable}"
+    	exit 1	
+    fi		
+done
+
+INSTALL_ROOT=${INSTALL_ROOT:-/opt}
+
+# create infosys group
+if [ x`grep infosys /etc/group` == 'x' ]; then
+    groupadd infosys
+    gpasswd -a edginfo infosys
+    gpasswd -a edguser infosys
+# removed bdiiuser for 3.1 BDII configuration
+#    gpasswd -a bdiiuser infosys
+    gpasswd -a rgma infosys
+fi
+
+# modify ownership and permissions for infosys group
+# NOTE: This part of the function should be removed at some point
+# when all the info providers start using GLITE_LOCATION_VAR
+directories="$INSTALL_ROOT/glite/var/tmp/gip \
+    $INSTALL_ROOT/glite/var/cache/gip \
+    $INSTALL_ROOT/glite/var/lock/gip/"
+
+for directory in ${directories}; do
+   mkdir -p ${directory}
+   chown -R edguser.infosys ${directory}
+   chmod 775 ${directory}	
+    
+done
+
+# modify ownership and permissions for infosys group
+directories="${GLITE_LOCATION_VAR}/tmp/gip \
+    ${GLITE_LOCATION_VAR}/cache/gip \
+    ${GLITE_LOCATION_VAR}/lock/gip/"
+
+for directory in ${directories}; do
+   mkdir -p ${directory}
+   chown -R edguser.infosys ${directory}
+   chmod 775 ${directory}
+
+done
+
+
+
+# Modify the GIP configuration file
+gip_conf=$INSTALL_ROOT/glite/etc/gip/glite-info-generic.conf
+tmp_conf=$gip_conf.tmp
+
+sed "
+    s/^\(freshness *= *\).*/\1$GIP_FRESHNESS/
+    s/^\(cache_ttl *= *\).*/\1$GIP_CACHE_TTL/
+    s/^\(response *= *\).*/\1$GIP_RESPONSE/
+    s/^\(timeout *= *\).*/\1$GIP_TIMEOUT/
+" $gip_conf > $tmp_conf 
+mv -f $tmp_conf $gip_conf 
+
+# Create the GIP wrapper script
+if [ ! -d "$INSTALL_ROOT/glite/libexec" ]; then
+    mkdir -p $INSTALL_ROOT/glite/libexec
+fi
+
+cat << EOF > $INSTALL_ROOT/glite/libexec/glite-info-wrapper
+#!/bin/sh
+
+export LANG=C
+$INSTALL_ROOT/glite/libexec/glite-info-generic $gip_conf
+
+EOF
+
+chmod a+x $INSTALL_ROOT/glite/libexec/glite-info-wrapper
+
+# Make stubs (ldap nodes)
+
+# Temporary workaround for removing the wrong file, this line can be remove after 01/01/08
+rm -f ${INSTALL_ROOT}/glite/etc/gip/ldif/sub-resource.ldif
+
+cat << EOF > ${INSTALL_ROOT}/glite/etc/gip/ldif/stub-resource.ldif
+dn: mds-vo-name=resource,o=grid
+objectClass: GlueTop
+mds-vo-name: resource
+EOF
+
+return 0
+}
+

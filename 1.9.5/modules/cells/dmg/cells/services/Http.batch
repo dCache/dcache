@@ -1,0 +1,16 @@
+# set printout default  3
+# set printout CellGlue  none
+#
+create dmg.cells.network.TopoCell topo "xxx -update=10"
+#
+define context HttpServerSetup endDefine
+set alias images directory /home/patrick/cells/docs/images
+set alias text   directory /tmp
+set alias class  class     dmg.cells.examples.HttpEngineExample
+set alias system  class     dmg.cells.services.HttpSystemService
+set alias <home>  directory /tmp
+set alias same    file      /tmp/hallo.html
+endDefine
+#
+create dmg.cells.services.HttpServiceCell HttpServer  "22080"  
+set printout HttpServer all

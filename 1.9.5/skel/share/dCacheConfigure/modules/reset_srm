@@ -1,0 +1,26 @@
+#!/bin/sh
+# Note this is only for Dcache 1.7
+
+
+reset_srm_check() 
+{
+  return 0
+}
+
+
+reset_srm_run()
+{
+  /opt/d-cache/bin/dcache-srm stop
+  /opt/d-cache/jobs/utility stop
+  dropdb -U srmdcache dcache
+  su - postgres -c "createdb -O srmdcache dcache"
+  /opt/d-cache/jobs/utility start
+  /opt/d-cache/bin/dcache-srm start
+  return 0
+}
+
+
+reset_srm()
+{
+  return 0
+}

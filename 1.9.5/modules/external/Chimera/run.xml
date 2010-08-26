@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!-- $Id: build.xml,v 1.36 2006/11/29 14:58:34 tigran Exp $      -->
+
+<project name="Chimera Early Access" default="help" basedir=".">
+
+
+    <property name="dCacheHome" value="/opt/d-cache" />
+    <property name="lib" value="/opt/d-cache/classes/chimera" />
+    <property name="config" value="/opt/d-cache/config" />
+
+	<!--
+		Runtime environment
+	-->
+	<path id="chimera.runtime.classpath">
+		<pathelement location="classes/log4j/log4j-1.2.8.jar"/>
+		<pathelement location="classes/dbcp/c3p0-0.9.1.2.jar"/>
+		<pathelement location="classes/jdbc-drivers/postgresql-8.1-405.jdbc3.jar"/>
+		<pathelement location="classes/chimera/chimera-core.jar" />
+		<pathelement location="classes/chimera/chimera-nfs.jar" />
+		<pathelement location="classes/chimera/oncrpc.jar" />
+		<pathelement location="classes/chimera/portmap.jar" />
+	</path>
+
+	<!--
+		NFSv3 frontend for Chimera
+	-->
+	<target name="run_nfs3" description="run NFSv3 frontend">
+		<java classname="org.dcache.chimera.nfs.v3.Main2" fork="true">
+			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
+			<jvmarg value="-Xmx512M" />
+			<classpath refid="chimera.runtime.classpath" />
+			<arg value="config/chimera-config.xml" />
+		</java>
+	</target>
+
+	<!--
+		NFSv4 frontend for Chimera
+	-->
+
+	<target name="run_nfs4" description="run NFSv4 frontend">
+		<java classname="org.dcache.chimera.nfs.v4.HimeraNFS4Server" fork="true">
+			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
+			<classpath refid="chimera.runtime.classpath" />
+			<arg value="config/chimera-config.xml" />
+		</java>
+	</target>
+
+	<!--
+		Himera BuiltIn shell
+	-->
+
+	<target name="run_shell">
+		<java classname="org.dcache.chimera.FsShell" fork="true">
+			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
+			<classpath refid="chimera.runtime.classpath" />
+			<arg value="config/chimera-config.xml" />
+		</java>
+	</target>
+
+
+	<!--
+		File Browser frontend for Himera
+	-->
+
+    <target name="run_browser">
+        <java classname="org.dcache.chimera.examples.filebrowser.TreeTableExample0" fork="true">
+            <jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
+			<classpath refid="chimera.runtime.classpath" />
+            <arg value="config/chimera-config.xml" />
+        </java>
+    </target>
+
+	<!--
+		Help, default target
+	-->
+
+	<target name="help" description=":)">
+		<echo message="run_shell    : run Chimera core shell (back door :) " />
+		<echo message="run_nfs3     : run Chimera NFSv3 interface " />
+		<echo message="run_nfs4     : run Chimera NFSv4 interface " />
+		<echo message="run_browser  : run Chimera FileBrowser interface " />
+	</target>
+
+</project>

@@ -1,0 +1,173 @@
+<html>
+<head><title>The Java Cells Login</title></head>
+<body bgcolor=white>
+<center><h1>The Java Cells Login</h1></center>
+<p>
+<h1>The LoginManager</h1>
+The login manager essentially listens on a tcp port.
+On a connection requests it talks one of the
+specified protocols with the connecting client, using
+a customizable authentication scheme and on sucess
+it forks a specified cell, the LoginCell.
+<p><strong>dmg.cells.services.login.LoginManager</strong><br>
+<blockquote>
+The LoginManager takes 2 mandetory arguments and
+two options. The residual arguments and the options
+are passed to the LoginCell and the Authentication modules.<br>
+The arguments are :
+<blockquote>
+<table border=0>
+<tr><th>portNumber</th>
+    <td>The tcp listen port</td>
+</tr>
+<tr><th>loginCellClass</th>
+    <td>The cell class which has to
+        be started, if the authetication protocol was sucessful.
+</tr>
+</table>
+</blockquote>
+The options are :
+<blockquote>
+<table border=0>
+<tr><th>-prot=</th>
+    <td>the protocol the client is assumed to
+        talk. Currently <em>telnet, ssh and raw</em> are supported.
+    </td>
+</tr>
+<tr><th>-auth=</th>
+    <td>the class which is used to authenticate the client.</td>
+</tr>
+</table>
+</blockquote>
+Because of the fact, that different protocols may need
+different information, there is no standard interface which is 
+valid for all supported protocol types.
+<table border=1>
+<tr><th>Protocol</th>
+    <th>Authenticaton module must implement</th>
+    <th>Default Authentication module</th>
+</tr>
+<tr><td>raw</td>
+    <td>-</td>
+    <td>-</td>
+</tr>
+<tr><td>telnet</td>
+    <td>TelnetServerAuthentication</td>
+    <td>dmg.cells.services.login.TelnetSAuth_A</td>
+</tr>
+<tr><td>ssh</td>
+    <td>SshServerAuthentication</td>
+    <td>dmg.cells.services.login.SshSAuth_A</td>
+</tr>
+</table>
+</blockquote>
+<hr>
+<h1>The Authentication Module</h1>
+The authentication module is responsible for getting all the information
+needed by the protocol engine to authenticate the connecting
+client. 
+<p><strong>dmg.cells.services.login.TelnetSAuth_A</strong>
+<blockquote>
+The TelnetSAuth_A authentication module is responsible for 
+authenticating clients talking the telnet protocol.
+The module supports several authentication modes.
+<ul>
+<li><strong>-localOk</strong> Neither a username nor a password
+    is requested by the module. <strong>DEBUG only</strong>.
+<li><strong>default</strong>  In default mode the module 
+    asks for the username and a password. The user can
+    be arbitrary but the password has to be 'elch'.
+    <strong>DEBUG only</strong>.
+<li><strong>-password=&lt;password&gt;</strong> The user can
+    be arbitrary but the password has to be '&lt;password&gt;'.
+    <strong>DEBUG only</strong>.
+<li><strong>-acm=&lt;AccessControlModule&gt;</strong> The module
+    sends standard 'acm' requests to the specified 'acm' cell to
+    check the 'user' 'password' pair and if the
+    authenticated user has 'exec:shell:*' permission.
+<li><strong>-pswdfile=&lt;Unix like passwd file&gt;</strong> The module
+    checks user and password against the file specified. The file
+    must be identical to /etc/passwd or /etc/shadow. Permissions
+    are not checked.
+</li>
+</ul>
+If more than one of the above options are specified, the
+result is unpredictable.
+</blockquote>
+<p><strong>dmg.cells.services.login.SshSAuth_A</strong>
+<blockquote>
+The SshSAuth_A authentication module is responsible for 
+authenticating clients talking the ssh (version I) protocol.
+The module requires a set of context variables to be available
+to work properly.
+<table border=1>
+<tr><th>Context</th>
+    <th>Class</th>
+    <th>Purpose</th>
+</tr>
+<tr><td>Ssh:hostIdentity (*)</td>
+    <td>SshRsaKey(private)</td>
+    <td>The hosts public key ( 1024 bit rsa private key )</td>
+</tr>
+<tr><td>Ssh:serverIdentity (*)</td>
+    <td>SshRsaKey(private)</td>
+    <td>The servers public key ( 768 bit rsa private key )</td>
+</tr>
+<tr><td>Ssh:userPasswords (*)</td>
+    <td>Hashtable</td>
+    <td>Contains user password pairs (plain text)</td>
+</tr>
+<tr><td>Ssh:userPasswords (*)</td>
+    <td>String</td>
+    <td>Contains the name of an 'acm'</td>
+</tr>
+<tr><td>Ssh:knownUsers</td>
+    <td>SshRsaKey(public)</td>
+    <td>known users keys ( rsa public keys)</td>
+</tr>
+<tr><td>Ssh:knownHost</td>
+    <td>SshRsaKey(public)</td>
+    <td>known hosts keys ( rsa public keys)</td>
+</tr>
+</table>
+<p>
+The marked (*) variables are mandetory. Only one of 
+<em>Ssh:userPasswords</em> is required. 
+<p>
+<strong>
+Generally an SshKeyManager Cell is responsible for setting 
+these context variables. See <em>dmg.cells.services.SshKeyManager</em>.
+</strong>
+</blockquote>
+<hr>
+<h1>The Login Cell</h1>
+The Login Cell is forked if the authentication/authorisation could be
+finished sucessfully. The specified class is checked for the
+following constructors in exactly this order.
+<p>
+<table border=1>
+<tr><td>String <strong>cellName</strong> ,  
+       dmg.util.StreamEngine <strong>engine</strong></td>
+</tr>
+<tr><td>String <strong>cellName</strong>,  
+        dmg.util.StreamEngine <strong>engine</strong>,
+        dmg.util.Args <strong>args</strong></td>
+</tr>
+</table>
+<p>
+<ul>
+<li><strong>cellName</strong> is the name the new cell is required to have.
+<li><strong>engine</strong> is the stream engine which 
+    provides the Input/Output Streams or the PrintWriter/BufferedReader 
+    and the name of the user, logged in.
+<li><strong>args</strong> contains the arguments of the LoginManager after
+    a args.shift(2) and all specified options.    
+</ul>
+<p>If the newly started cell provides the <em>setPrintoutLevel</em>
+method, it is called with the current printoutvalue of the <em>LoginManager</em>.
+<p><strong>dmg.cells.services.StreamLoginCell</strong>
+<blockquote>
+</blockquote>
+</body>
+</html>
+ 

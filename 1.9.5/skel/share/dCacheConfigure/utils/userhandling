@@ -1,0 +1,340 @@
+
+# For users file
+#  UID = user ID
+# LOGIN = login name
+# GID1 = primary group ID
+# GID2 = secondary group ID
+# GROUP1 = primary group
+# GROUP2 = secondary group
+# VO = virtual organization
+# FLAG = string to identify special users, further described below 
+#  sgm - sgm user (with write permission on the shared software area)
+# prd - prd user (with production manager privileges, if needed)
+# dpm - dpmmgr (the server account owning files written under "/dpm") 
+
+
+#For groups file
+
+
+# Example usage
+# 
+# . /root/site-info.def
+# .  utils/yaimlog 
+# 
+# users_NameGetsLine dteam001
+# echo users_NameGetsLine=$RET
+# users_NameGetsLine sgmdtm59
+# echo users_NameGetsLine=$RET
+# users_NameGetsUid  sgmdtm59
+# echo users_NameGetsUid=$RET
+# users_NameGetsGid  sgmdtm59
+# echo users_NameGetsGid=$RET
+# users_NameGetsGroup  sgmdtm59
+# echo users_NameGetsGroup=$RET
+# users_NameGetsVo sgmdtm59
+# echo users_NameGetsVo=$RET
+# users_NameGetsFlags sgmdtm59
+# echo users_NameGetsFlags=$RET
+# 
+# users_NameGetsFlag 
+# echo users_NameGetsFlag=$RET
+# users_VoFlagGetsNames dteam
+# echo users_VoGetsNames=$RET
+# users_VoFlagGetsNames dteam prd
+# echo users_VoGetsNames=$RET
+# first=`echo "$RET" | head -1`
+# echo fred=$first
+#
+# users_VoGetsUid dteam
+# echo users_VoGetsUid=$RET
+#
+# users_VoGetsGid dteam
+# echo users_VoGetsGid=$RET
+
+
+users_confFileGet()
+{
+  RET=""
+  if [ -z "${USERS_CONF}" ] ; then
+    yaimlog ERROR "\${USERS_CONF} is not defined."
+    return 1
+  fi
+  if [ ! -f "${USERS_CONF}" ] ; then
+    yaimlog ERROR "\${USERS_CONF} is not found at:${USERS_CONF}"
+    return 1
+  fi
+  RET=${USERS_CONF}
+  return 0
+}
+
+
+# Find all Details for a Name
+# Takes 1 Parameter
+# Name is mandatory
+users_NameGetsLine()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_NameGetsLine requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Uid For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$2==localname {print $0}' localname=${Name} "${UserFile}"`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data from the function users_NameGetsLine \"${Name}\""
+    return 1
+  fi  
+  return 0
+}
+
+# Find all Uids for a Name
+# Takes 1 Parameter
+# Name is mandatory
+users_NameGetsUid()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_NameGetsUid requires an argument"
+    return 1
+  fi  
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Uid For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$2==localname {print $1}' localname=${Name} "${UserFile}"`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data from the function users_NameGetsUid \"${Name}\""
+    return 1
+  fi   
+  return 0
+}
+
+# Find all Gids for a Name
+# Takes 1 Parameter
+# Name is mandatory
+users_NameGetsGid()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_NameGetsGid requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Gid's For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$2==localname {print $3}' localname=${Name} "${UserFile}"`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data from the function users_NameGetsGid \"${Name}\""
+    return 1
+  fi 
+  return 0
+}
+
+# Find all Groups for a Name
+# Takes 1 Parameter
+# Name is mandatory
+users_NameGetsGroup()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_NameGetsGroup requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Groups For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$2==localname {print $4}' localname=${Name} "${UserFile}"`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data from the function users_NameGetsGroup \"${Name}\""
+    return 1
+  fi 
+  return 0
+}
+
+# Find all Vo's for a Name
+# Takes 1 Parameter
+# Name is mandatory
+users_NameGetsVo()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_NameGetsVo requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Vo For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$2==localname {print $5}' localname=${Name} "${UserFile}"`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data from the function users_NameGetsVo ${Name}"
+    return 1
+  fi 
+  return 0
+}
+
+# Find all Flags for a Name
+# Takes 1 Parameter
+# Name is mandatory
+users_NameGetsFlags()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_NameGetsFlags requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Flags For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$2==localname {print $5}' localname=${Name} "${UserFile}"`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data from the function users_NameGetsFlags \"${Name}\""
+    return 1
+  fi
+  return 0
+}
+
+############################################
+
+
+# Find all Names in a VO
+# Takes 2 parameters VO Flag
+# Vo is mandatory
+# Flag is optional
+# If flag is omited the Flag is set to ""
+# Only members of a VO that match the the 
+# flags exactly
+
+users_VoFlagGetsNames()
+{
+  local foundUserFile
+  local ThisVo
+  local ThisFlag
+  ThisVo=$1
+  ThisFlag=$2
+  if [ -z "${ThisVo}" ] ; then
+    yaimlog ERROR "Programming Error users_VoGetsNames requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Uid For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$6==Flag && $5==virtorg {print $2}' virtorg=${ThisVo} Flag=${ThisFlag} "${UserFile}" | sort | uniq`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data users_VoFlagGetsNames \"${ThisVo}\" \"${ThisFlag}\" "    
+  fi
+  return 0
+}
+
+users_VoGetsFlags()
+{
+  local foundUserFile
+  local ThisVo
+  local ThisFlag
+  ThisVo=$1
+  if [ -z "${ThisVo}" ] ; then
+    yaimlog ERROR "Programming Error users_VoGetsFlags requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Uid For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$5==virtorg {print $6}' virtorg=${ThisVo} "${UserFile}" | sort | uniq`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data users_VoGetsFlags \"${ThisVo}\""
+  fi
+  return 0
+}
+
+users_VoGetsUid()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_VoGetsUID requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Uid's For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$5==vo {print $1}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data users_VoGetsUid \"${Name}\""
+    return 1
+  fi 
+  return 0
+}
+
+
+users_VoGetsGid()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_VoGetsGID requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Gid's For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$5==vo {print $3}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data users_VoGetsGid \"${Name}\""
+    return 1
+  fi 
+  return 0
+}

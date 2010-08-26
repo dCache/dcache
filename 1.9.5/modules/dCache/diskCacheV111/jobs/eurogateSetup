@@ -1,0 +1,15 @@
+databaseRoot=/home/patrick/sim/db
+javaClasses=/home/patrick/sim/cells.jar:/home/patrick/sim/eurogate.jar:/home/patrick/sim
+pnfsMountpoint=/pnfs/local/fs
+debugTelnetPort=23123
+spyPort=23222
+pvlDbPort=23124
+#
+#   the diskcache stuff
+#
+cacheRoot=/home/patrick/sim
+poolbase=${cacheRoot}/pools
+hsmCommand=${cacheRoot}/jobs/hsmcp.sh
+ftpPort=55125
+dcacheTelnet=55123
+hsmsim=${cacheRoot}/hsm_sim

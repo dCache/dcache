@@ -1,0 +1,93 @@
+<!-- $Id: cells-build.xml,v 1.0 2008-09-19 13:52:15 tdh Exp $ -->
+
+<project name="dcache-common" default="help" basedir=".">
+
+    <property name="dcache-common.build.dir" location="${buildDir}/dcache-common" />
+    <!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for gPlazma
+    -->
+
+    <!-- Output Files
+       For each of these jar files there are targets below -->
+
+    <property name="dcache-common.jar" location="${classesDir}/dcache-common.jar" />
+
+    <!--
+        check is jar file up to date
+    -->
+    <target name="-isUptodate.dcache-common.jar">
+        <condition property="dcache-common.jar.upToDate">
+            <and>
+                <available file="${dcache-common.jar}" type="file" />
+                <uptodate targetfile="${dcache-common.jar}">
+                    <srcfiles dir="${dcache-common.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+
+    <!-- Packages for dcache-common.jar -->
+
+<!--    <selector id="dcache-common.selector">
+        <or>
+            <filename name="dcache-common/**" />
+        </or>
+    </selector> -->
+
+    <!-- Classpath for dcache-common.jar. -->
+
+    <path id="dcache-common.classpath">
+      <!--  <fileset dir="${axis.untared}" includes="**/*.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
+        <fileset dir="${glite.untarred}" includes="**/*.jar" />
+        <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
+        <fileset dir="${libDir}/dcache-common" includes="**/*.jar" /> -->
+        <fileset dir="${libDir}/log4j" includes="*.jar" />
+        <fileset dir="${libDir}/rrd4j" includes="**/*.jar" />
+    </path>
+
+
+    <!--
+        compile sources
+    -->
+
+    <target name="-dcache-common.compile" unless="-dcache-common.jar.upToDate">
+
+        <mkdir dir="${dcache-common.build.dir}" />
+
+        <javac destdir="${dcache-common.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="dcache-common.classpath" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${dcache-common.src}" />
+            <and>
+                <filename name="**/*.java" />
+            </and>
+        </javac>
+
+    </target>
+
+    <!--
+        build dcache-common jar
+    -->
+    <target name="-dcache-common.jar" depends="-isUptodate.dcache-common.jar,-dcache-common.compile" unless="dcache-common.jar.upToDate">
+
+        <jar jarfile="${dcache-common.jar}">
+            <fileset dir="${dcache-common.build.dir}">
+                <and>
+                    <!-- <selector refid="dcache-common.selector" />-->
+                    <filename name="**/*.class" />
+                </and>
+            </fileset>
+        </jar>
+
+    </target>
+
+    <!-- For deployment -->
+    <target name="-dcache-common.bin" depends="-dcache-common.jar">
+        <!-- <mkdir dir="${server.bin.dir}/classes/dcache-common" /> -->
+        <copy file="${classesDir}/dcache-common.jar" todir="${server.bin.dir}/classes" />
+    </target>
+
+</project>

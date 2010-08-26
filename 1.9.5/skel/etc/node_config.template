@@ -1,0 +1,66 @@
+#
+# $Id: node_config.template,v 1.6 2007-06-19 10:04:10 tigran Exp $
+#
+
+#  ----  Overall configuration
+#
+DCACHE_HOME=/opt/d-cache
+POOL_PATH=/opt/d-cache/etc
+NUMBER_OF_MOVERS=100
+
+#  ----  Name Space configuration
+#
+#  The supported name space implementations are Chimera and PNFS.
+#
+#  Possible values for the NAMESPACE variable are chimera or pnfs.
+#  If nothing is specified or the value is invalid then pnfs is used.
+#
+NAMESPACE=pnfs
+PNFS_ROOT=/pnfs
+PNFS_INSTALL_DIR=/opt/pnfs
+PNFS_START=yes
+PNFS_OVERWRITE=no
+
+# SERVER_ID defaults to `hostname -d`
+#SERVER_ID=domain.name 
+
+
+#  ----  Name Space Node
+#
+#  The name space node is the node that exports the name space 
+#  through NFS. For PNFS this will be the node running the PNFS 
+#  daemons. For Chimera this will be any node running the Chimera 
+#  NFSv3 daemon.
+#    
+#  This variable was formally known as the "ADMIN_NODE" and now 
+#  has been renamed.
+#
+#NAMESPACE_NODE=myNameSpaceNode
+
+
+#  ---- Service groups to be started on this node
+#
+#  Service groups to start on this host. Legitimate values are:
+#
+#   admin
+#
+#     Starts the following services in addition to what is specified
+#     in the SERVICES parameter: lm, dCache, chimera or pnfs, dir,
+#     admin, httpd, utility and gPlazma.
+#
+NODE_TYPE=
+
+#  ---- Custom services to be started on this node 
+#
+#  White space separated list of services or domains to start on this
+#  host.  Legitimate service names are
+#
+#    dcap, gPlazma, xrootd, gridftp, gsidcap, srm, admin, infoProvider,
+#    chimera, pnfs, httpd, utility, dir, info, statistics, lm,
+#    dCache, replica, kerberosdcap, kerberosftp, weakftp
+#
+#  or any domain name prefix. These services are started in addition
+#  to the services selected by the NODE_TYPE parameter.
+#
+SERVICES=
+

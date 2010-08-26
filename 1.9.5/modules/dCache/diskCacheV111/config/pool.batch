@@ -1,0 +1,95 @@
+set printout default 2
+set printout CellGlue none
+
+onerror shutdown
+
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+
+#
+#  Don't continue if the pool list file is not known
+#
+check -strong pool
+
+#
+#  Cell communication
+#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+
+#
+onerror continue
+
+  set context -c poolIoQueue ""
+  set context -c checkRepository        true
+  set context -c waitForRepositoryReady false
+  set context -c gsiftpAllowPassivePool true
+  set context -c gsiftpAllowMmap        false
+  set context -c metaDataRepository     org.dcache.pool.repository.meta.file.FileMetaDataRepository
+  set context -c metaDataRepositoryImport org.dcache.pool.repository.meta.EmptyMetaDataStore
+  set context -c gsiftpReadAhead        16777216
+  set context -c allowCleaningPreciousFiles false
+  set context -c pnfsmanager            PnfsManager
+  set context -c flushMessageTarget     broadcast
+  set context -c sweeper                org.dcache.pool.classic.SpaceSweeper2
+  set context -c poolupDestination      broadcast
+  set context -c xrootdMoverDiskThreads 20
+  set context -c xrootdMoverSocketThreads ""
+  set context -c xrootdMoverMaxMemoryPerConnection 16777216
+  set context -c xrootdMoverMaxMemory 67108864
+  set context -c xrootdMoverMaxFrameSize 2097152
+onerror shutdown
+
+#
+# NIO ftp mover
+#
+define context MoverMap endDefine
+   movermap define DCap-3  org.dcache.pool.movers.DCapProtocol_3_nio
+   movermap define GFtp-1  org.dcache.pool.movers.GFtpProtocol_2_nio
+   movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
+   movermap define NFS4-4  org.dcache.chimera.nfsv41.mover.NFSv41ProtocolMover
+   movermap define Xrootd-2  org.dcache.xrootd2.pool.XrootdProtocol_3
+endDefine
+
+# This defines how to instantiate the pool code.
+#
+# Notice that most of the following arguments are redundant, since
+# the values will be picked up from the context if not defined as
+# an option.
+###############################################
+define context startPools endDefine
+  create org.dcache.cells.UniversalSpringCell ${0} \
+    "!MoverMap classpath:org/dcache/pool/classic/pool.xml \
+    -export -cellClass=Pool -poolname=${0} -pooldir=${1} \
+    -setupClass=pool -setupFile=${1}/setup \
+    -poolIoQueue=${poolIoQueue} \
+    -checkRepository=${checkRepository} \
+    -allowPassivePool=${gsiftpAllowPassivePool} \
+    -allowMmap=${gsiftpAllowMmap} \
+    -metaDataRepository=${metaDataRepository} \
+    -metaDataRepositoryImport=${metaDataRepositoryImport} \
+    -gsiftpReadAhead=${gsiftpReadAhead} \
+    -allowCleaningPreciousFiles=${allowCleaningPreciousFiles} \
+    -poolupDestination=${poolupDestination} \
+    -pnfsmanager=${pnfsmanager} \
+    -flushMessageTarget=${flushMessageTarget} \
+    -sweeper=${sweeper} \
+    -xrootd-mover-disk-threads=${xrootdMoverDiskThreads} \
+    -xrootd-mover-socket-threads=${xrootdMoverSocketThreads} \
+    -xrootd-mover-max-memory-per-connection=${xrootdMoverMaxMemoryPerConnection} \
+    -xrootd-mover-max-memory=${xrootdMoverMaxMemory} \
+    -xrootd-mover-max-frame-size=${xrootdMoverMaxFrameSize} \
+    -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
+endDefine
+
+copy file:${pool} context:poolList
+exec -run -loop=poolList context startPools
+
+

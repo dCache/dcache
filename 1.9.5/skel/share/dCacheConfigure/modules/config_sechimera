@@ -1,0 +1,486 @@
+# New Yaim Configuration and setup for D-Cache 1.6.6-X 1.7.0, 1.7.1, and 1.8.0
+# Maintained by Owen Synge on behalf of Dcache
+# Based upon work by 
+# M Litmaath, M de Riese, J Mencak, J Novak,L Poncent, O Keeble, L Field and M Aart
+# which based thier work upon d-cache configuration adapted 
+# from package d-cache-lcg
+
+# GridPP's testing has been very useful
+
+# This script is based upon earlier work by LHC
+
+
+# Used variables
+# Obligatory: DCACHE_ADMIN=admin_host
+#             DCACHE_POOLS="pool_node1:[size:]/pool_path1 pool_node2:[size:]/pool_path2"
+#             <size> ::= [0-9]*
+# Optional:   DCACHE_PNFS_SERVER=pnfs_host
+# Optional:   DCACHE_PORT_RANGE="20000,25000"
+# Optional:   DCACHE_DOOR_SRM="pool_node1[:port]"
+#          Defaults to Admin nodes
+# Optional:   DCACHE_DOOR_GSIFTP="pool_node1[:port] pool_node2[:port]"
+#          Defaults to Door nodes
+# Optional:   DCACHE_DOOR_GSIDCAP="pool_node1[:port] pool_node2[:port]"
+#          Defaults to Door nodes
+# Optional:   DCACHE_DOOR_DCAP="pool_node1[:port] pool_node2[:port]"
+#          Defaults to Door nodes
+
+
+# Set this to wipe the postgres databases
+# Optional:RESET_DCACHE_RDBMS=yes
+#
+# Set this to reset the PNFS server
+# Optional:RESET_DCACHE_PNFS=yes
+#
+# Set this to reset the D-cache configuration
+# Optional:RESET_DCACHE_CONFIGURATION=yes
+
+
+# Structure of this script
+
+# Yaim utility functions come first in this script, these are placed 
+# here to avoid dependacy issues as these are functions that will be 
+# Needed by many components, D-Cache in particular makes use of 
+# these utilities
+
+
+
+# functions starting yaim_query_conf
+
+# This script was always designed as a way to make modification easy
+# To this end set up questions are placed at the top of the file. This
+# is intended to make porting Yaim to debconf or any other cluster wide 
+# management system easy. These functions are queries that could in 
+# practice be queries to an interactive installer or a cluster 
+# management system
+
+#
+# functions starting yaim_state
+
+# These functions are to establish the state of the install and direct 
+# what components are to be installed. They do not change the state 
+# of uninstalled/installed components
+
+
+# functions starting yaim_config
+
+
+
+## Start of yaim query functions
+
+# Chimera command line processing.
+
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Ls /pnfs/desy.de/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Mkdir /pnfs/desy.de/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Lstag /pnfs/desy.de/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Readtag /pnfs/desy.de/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Writetag /pnfs/desy.de/data/owen
+
+# need permisions commands.
+
+
+
+yaim_query_conf_node_dcache_chimera()
+{
+    # Returns 0 when node is not a chimeraserver node
+    # Returns 1 when node is a chimeraserver node
+    local result
+    local isANameServer
+    yaimlog DEBUG "function yaim_query_conf_node_dcache_chimera start"
+    result=0
+    yaim_query_conf_node_dcache_name_server
+    isANameServer=$?
+    if [ "1" == "${isANameServer}" ] ; then
+        result=1
+        if [ -n "${DCACHE_PNFS_SERVER}" ] ; then
+            result=0
+        fi
+        
+    fi
+    yaimlog DEBUG "function yaim_query_conf_node_dcache_chimera stop"
+    return ${result}
+}
+
+# Returns List of chimera servers. 
+# This should only ever be one host, but is a "list" to be consistent
+yaim_query_conf_node_dcache_chimeraserver_list()
+{
+    local result
+    local thishost
+    RET=""
+    if [ -z "${DCACHE_PNFS_SERVER}${DCACHE_CHIMERA_SERVER}${DCACHE_NAME_SERVER}" ] ; then
+        RET=${DCACHE_ADMIN}
+    else
+        if [ -n "${DCACHE_PNFS_SERVER}" ] ; then
+            RET=""
+        fi
+        if [ -n "${DCACHE_NAME_SERVER}" ] ; then
+            RET="${DCACHE_NAME_SERVER}"
+        fi
+        if [ -n "${DCACHE_CHIMERA_SERVER}" ] ; then
+            RET="${DCACHE_CHIMERA_SERVER}"
+        fi
+    fi
+    return 0
+}
+
+
+path_dcache_chimera_cli()
+{
+  local output
+  if [ ! -f "/opt/d-cache/libexec/chimera/chimera-cli.sh" ] ;  then
+    yaimlog ERROR "No chimera cli found at location '/opt/d-cache/libexec/chimera/chimera-cli.sh'"
+  fi
+  if [ ! -x "/opt/d-cache/libexec/chimera/chimera-cli.sh" ] ;  then
+    chmod 700 /opt/d-cache/libexec/chimera/chimera-cli.sh
+    chown root /opt/d-cache/libexec/chimera/chimera-cli.sh
+  fi
+  RET=/opt/d-cache/libexec/chimera/chimera-cli.sh
+}
+
+yaim_query_conf_node_dcache_chimera_reset()
+{
+  local result
+  result=0
+  if [ "${RESET_DCACHE_CHIMERA}" == "yes" ] ; then
+    result=1
+  fi
+  return $result
+}
+
+
+
+
+yaim_query_conf_node_dcache_domain()
+{
+  RET=`hostname -d`
+}
+
+config_dcache_chimera_vo_dir_get()
+{
+  if [ -z "$DCACHE_PNFS_VO_DIR" ] ; then
+    RET="/pnfs/${MY_DOMAIN}/data"
+  else
+    RET=${DCACHE_PNFS_VO_DIR}
+  fi
+}
+
+yaim_query_chimera_init_script()
+{
+  RET="/etc/init.d/dcacheChimeraNfs"
+}
+
+chimera_pgdb_create()
+{
+  yaim_state_postgresql_database_installed
+  pginstalledrdbms=${RET}
+  INSTALLED=$(echo ${pginstalledrdbms} |  grep "chimera" )
+  if [ "X" = "X${INSTALLED}" ] ; then
+    createdb -U postgres chimera
+    psql -U postgres chimera < /opt/d-cache/libexec/chimera/sql/create.sql
+    createlang -U postgres plpgsql chimera
+    psql -U postgres chimera < /opt/d-cache/libexec/chimera/sql/pgsql-procedures.sql
+  fi
+}
+
+chimera_pgdb_drop()
+{
+  dropdb -U postgres chimera
+}
+
+
+
+chimera_create_link()
+{
+  yaimlog DEBUG "function chimera_create_link start"
+  local target
+  local script
+  script=/opt/d-cache/libexec/chimera/chimera-nfs-run.sh
+  if [ -f "${script}" ]
+  then
+    if [ ! -x "${script}" ]
+    then
+      chmod 770 ${script}
+    fi
+  else
+    yaimlog ERROR "File '${script}' does not exist."
+    exit 1
+  fi
+  yaim_query_chimera_init_script
+  target=$RET
+  if [ ! -h "${target}" ] 
+  then
+    ln -s ${script} ${target}
+  fi
+  targetShortName=`basename ${target}`
+  
+  chkconfig --add "${targetShortName}"
+  chkconfig "${targetShortName}" on
+  yaimlog DEBUG "function chimera_create_link stop"
+}
+
+chimera_create_nfs_start()
+{
+  yaimlog DEBUG "function chimera_create_nfs_start start"
+  yaim_query_conf_node_dcache_chimera
+  tmptrue=$?
+  if [ "x${tmptrue}" == "x1" ] ;then
+    yaim_query_chimera_init_script
+    $RET start
+  fi
+  yaimlog DEBUG "function chimera_create_nfs_start stop"
+}
+
+chimera_create_nfs_stop()
+{
+  yaimlog DEBUG "function chimera_create_nfs_stop start"
+  yaim_query_conf_node_dcache_chimera
+  tmptrue=$?  
+  if [ "x${tmptrue}" == "x1" ] ;then  
+    yaim_query_chimera_init_script
+    $RET stop
+  fi  
+  yaimlog DEBUG "function chimera_create_nfs_stop stop"
+}
+
+
+chimera_create_mount_points_UNIX()
+{
+  yaimlog DEBUG "function chimera_create_mount_points start"
+  if [ ! -d /mnt/tmp ] ; then
+    mkdir /mnt/tmp
+  fi
+  mounts=`mount | grep /mnt/tmp`
+  #echo mounts=$mounts
+  if [ "${mounts}" != "" ] ; then
+    umount /mnt/tmp
+  fi
+  mount localhost:/ /mnt/tmp
+  mountResults=$?
+  if [ "$mountResults" != "0" ] ; then
+    echo Exiting as failed to mount chimera.
+    exit 1
+  fi
+  
+  config_dcache_chimera_vo_dir_get
+  vopath=$RET
+  mkdir -p /mnt/tmp/${vopath}
+  mkdirResults=$?
+  if [ "${mkdirResults}" != "0" ] ; then
+    exit 1
+  fi
+  echo "chimera" > /mnt/tmp/${vopath}/'.(tag)(sGroup)'
+  echo "StoreName sql" > /mnt/tmp/${vopath}/'.(tag)(OSMTemplate)'
+  mounts=`mount | grep /mnt/tmp`
+  if [ "${mounts}" != "" ] ; then
+    umount /mnt/tmp
+  fi
+  yaimlog DEBUG "function chimera_create_mount_points stop"
+}
+
+chimera_create_mount_points_api()
+{
+  yaimlog DEBUG "function chimera_create_mount_points_api start"
+  local vopath
+  config_dcache_chimera_vo_dir_get
+  vopath=$RET
+  path_dcache_chimera_cli
+  chimeracli=$RET
+  currentPath="/"
+  for i in `echo ${vopath} | sed "s#/# #g"`; do
+    currentPath=${currentPath}/$i
+    $chimeracli Ls ${currentPath} 2> /dev/null
+    directoryExists=$?
+    if [ "${directoryExists}" != "0" ] ; then
+      yaimlog INFO "Directory ${currentPath} does not exist creating"
+      cmd="$chimeracli Mkdir ${currentPath} "
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 2>1 1> /dev/null
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+    fi
+  done
+  for thisvo in ${VOS}
+  do
+    $chimeracli Ls "${currentPath}/${thisvo}"
+    directoryExists=$?
+    if [ "${directoryExists}" != "0" ] ; then
+      yaimlog INFO "Directory ${currentPath}/${thisvo} does not exist creating"
+      cmd="$chimeracli Mkdir ${currentPath}/${thisvo}"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      users_VoGetsUid ${thisvo}
+      users_VoGetsUidrc=$?
+      VoUID=${RET}
+      if [ "${users_VoGetsUidrc}" != "0" ] ; then
+        yaimlog ERROR "users_VoGetsGid returned an error exiting"
+        exit 4
+      fi
+      yaimlog INFO "Directory ${currentPath}/${thisvo} setting the directory owner"
+      cmd="$chimeracli Chown ${currentPath}/${thisvo} ${VoUID}"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      users_VoGetsGid ${thisvo}
+      users_VoGetsGidrc=$?
+      VoGID=${RET}
+      if [ "${users_VoGetsGidrc}" != "0" ] ; then
+        yaimlog ERROR "users_VoGetsGid returned an error exiting"
+        exit 4
+      fi
+      yaimlog INFO "Directory ${currentPath}/${thisvo} setting the permisions"
+      cmd="$chimeracli Chgrp ${currentPath}/${thisvo} ${VoGID}"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      cmd="$chimeracli Chmod ${currentPath}/${thisvo} 775"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      cmd="$chimeracli Lstag ${currentPath}/${thisvo}"
+      yaimlog DEBUG "Running $cmd"
+      CurrentTags=` ${cmd} | sed "1,2d" `
+      if [ -n "$(echo CurrentTags | grep sGroup)" ] ; then
+        cmd="$chimeracli Readtag ${currentPath}/${thisvo} sGroup"
+        yaimlog DEBUG "Running $cmd"
+        CurrentSgroup=` ${cmd} | sed "1,1d" `
+      else
+        CurrentSgroup=""
+      fi
+      if [ "${CurrentSgroup}" != "STATIC" ] ;  then
+        yaimlog DEBUG "Adding tag STATIC to directory ${currentPath}/${thisvo}"
+        echo "STATIC" | $chimeracli Writetag ${currentPath}/${thisvo} sGroup
+      fi
+      if [ -n "$(echo CurrentTags | grep OSMTemplate)" ] ; then
+        cmd="$chimeracli Readtag ${currentPath}/${thisvo} OSMTemplate"
+        yaimlog DEBUG "Running $cmd"
+        CurrentOSMTemplate=` ${cmd} | sed "1,1d" `
+      else
+        CurrentOSMTemplate=""
+      fi
+      if [ "${CurrentOSMTemplate}" != "StoreName" ] ;  then
+        yaimlog DEBUG "Adding tag OSMTemplate to directory ${currentPath}/${thisvo}"
+        echo "StoreName ${thisvo}" | $chimeracli Writetag ${currentPath}/${thisvo} OSMTemplate
+      fi
+    fi
+  done
+  yaimlog DEBUG "function chimera_create_mount_points_api stop"
+}
+
+chimeraReset()
+{
+  local mounts
+  yaimlog DEBUG "function chimeraReset start"
+  mounts=`mount | grep /mnt/tmp`
+  if [ "${mounts}" != "" ] ; then
+    umount /mnt/tmp
+  fi
+  mounts=`mount | grep /pnfs`
+  if [ "${mounts}" != "" ] ; then
+    umount /pnfs
+  fi
+  chimera_create_nfs_stop
+  chimera_pgdb_drop
+  yaimlog DEBUG "function chimeraReset stop"
+}
+
+yaim_configure_exports()
+{
+  local filename
+  local HasRootMountPoint
+  local HasPnfsMountPoint
+  yaimlog DEBUG "function yaim_configure_exports start"
+  filename=$1
+  if [ ! -f "${filename}" ] ; then
+    echo "# Exports file created for Chimera by the dCache admin scripts" >> ${filename}
+  fi
+  yaim_config_file_update_prepare ${filename}
+  file2update=$RET
+  HasRootMountPoint=$(sed -n '/^\/ .*$/p' "${file2update}" )
+  if [ "X${HasRootMountPoint}" == "X" ] ; then
+    echo "/ " >> "${file2update}"
+  fi
+  HasPnfsMountPoint=$(sed -n '/^\/pnfs .*$/p' "${file2update}" )
+  if [ "X${HasPnfsMountPoint}" == "X" ] ; then
+    echo "/pnfs " >> "${file2update}"
+  fi
+  yaim_config_file_update_done ${filename}
+  if [ $? == 1 ] ; then 
+    yaimlog WARNING "Changed the file ${dcacheVoms2GplasmaConf}"
+  fi
+  yaimlog DEBUG "function yaim_configure_exports stop"
+}
+
+
+yaim_config_sechimera()
+{
+  local resetChimera
+  yaimlog DEBUG "function yaim_config_sechimera start"
+  
+  
+  yaim_query_conf_node_dcache_chimera
+  rcchimeraserver=$?
+  if [ "${rcchimeraserver}" == "1" ] ; then
+    yaimlog INFO "configuring chimera"    
+    chimera_create_nfs_stop
+    yaim_query_conf_node_dcache_chimera_reset
+    resetChimera=$?
+    if [ "${resetChimera}" == "1" ] ; then
+      sleep 2
+      chimeraReset
+    fi
+    yaim_configure_exports /etc/exports
+    chimera_pgdb_create
+    chimera_create_link
+    chimera_create_mount_points_api
+    chimera_create_nfs_start
+    yaim_state_service_restart_needed chimera
+  else
+    yaimlog INFO "This node does not need chimera configured"
+  fi 
+  
+  
+  yaimlog DEBUG "function yaim_config_sechimera stop"
+}
+
+
+config_sechimera_check()
+{
+  return 0
+}
+
+config_sechimera_run()
+{
+   yaim_config_sechimera
+}
+
+
+
+config_sechimera()
+{
+  yaimlog DEBUG "function config_sechimera start"
+  if [ "yes" == "$DESYOVERRIDE" ] ; then
+    return 0
+  fi
+  yaimlog DEBUG "function config_sechimera stop"
+}

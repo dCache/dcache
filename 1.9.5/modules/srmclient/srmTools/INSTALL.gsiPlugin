@@ -1,0 +1,74 @@
+GSI plugin for gSOAP Toolkit
+
+This software has been developed in the context of the GridLab project (http://www.gridlab.org)
+Support for GSI has been added by:
+
+Massimo Cafaro & Daniele Lezzi
+High Performance Computing Center
+University of Lecce, Italy
+massimo.cafaro@unile.it, daniele.lezzi@unile.it
+
+and
+
+Robert Van Engelen
+Florida State University, USA
+engelen@cs.fsu.edu
+
+You will find in this directory gsi enabled example client and servers (calc) that show how to use mutual authentication/authorization (with a globus callback)i and how to use connection caching;
+there are also example client and servers (submit) using delegation to submit a batch job.
+
+REQUIREMENTS: 
+
+1) autoconf 2.57
+2) automake 1.7.2
+3) Globus Toolkit 2.4 or alpha 3 version of Globus Toolkit 3.0
+4) gSOAP Toolkit, v2.2.3d available on the gSOAP web site,
+http://www.cs.fsu.edu/~engelen/soap
+
+Please note that the latest gSOAP release is available from
+http://sourceforge.net/project/showfiles.php?group_id=52781
+
+WARNING: the code has been tested only on linux kernel 2.4.x, however it should work on other platforms as well, may be after modifying a little bit the source code to make happy your compiler
+
+INTEROPERABILITY WITH ALPHA 3 VERSION of Globus Toolkit 3.0
+
+This software needs to be linked against the GSI library available in Globus Toolkit version 2.4, or against the GSI library available in the alpha 3 version of Globus Toolkit 3.0 in order to provide full interoperability. This is because Globus Toolkit 2.4 and 3.0 use a different proxy format than v2.2.x 
+
+If you want to compile the code using ALPHA 3 VERSION of Globus Toolkit 3.0:
+you need to use the provided Makefile-gt3-alpha3.am
+
+cp Makefile-gt3-alpha3.am Makefile.am
+
+now you can compile both the GSI plugin and the example server and client (calc-gsi-server-fork.c and calc-gsi-client.c) following the INSTALLATION INSTRUCTIONS below. To compile the code using Globus 2.4 just do
+
+cp Makefile.am.bck Makefile.am before starting again the build.
+
+
+
+INSTALLATION INSTRUCTIONS
+
+Get a copy of gSOAP 2.2.3d and put the files stdsoap2.h stdsoap2.c soapcpp2 in this directory.
+
+You begin modifying the Makefile.conf file to reflect your Globus installation:
+
+1) edit Makefile.conf and modify Globus related variables according to your installation
+
+Now you build everything as follows:
+
+
+2) autoreconf --force
+3) configure --prefix=<your installation directory>
+4) make init
+5) make
+
+When the build is complete you can install the software:
+
+6) make install
+
+See the README file for details about the software.
+
+DISCLAIMER:
+
+The software is provided "as is", without any warranty.
+We welcome your feedback.
+Massimo Cafaro, Daniele Lezzi & Robert Van Engelen

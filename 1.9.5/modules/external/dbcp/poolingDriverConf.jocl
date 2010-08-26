@@ -1,0 +1,39 @@
+<!--
+   The PoolingDriver expects PoolableConnectionFactory to be the root of the JOCL document.
+ -->
+<object class="org.apache.commons.dbcp.PoolableConnectionFactory" xmlns="http://apache.org/xml/xmlns/jakarta/commons/jocl">
+   <!--
+      The first argument to PoolableConnectionFactory is a ConnectionFactory.
+      We'll use a DriverManagerConnectionFactory, passing in the appropriate
+      connect string for the underlying driver.
+    -->
+   <object class="org.apache.commons.dbcp.DriverManagerConnectionFactory">
+     <string value="jdbc:postgresql://fndca2a.fnal.gov:5432/dcache?user=enstore&amp;password=enstore&amp;loglevel=1"/>
+     <object class="java.util.Properties" null="true"/>
+   </object>
+   <!--
+      The next argument is the pool to use.  We'll use a StackObjectPool,
+      although any implementation of ObjectPool should suffice.
+    -->
+   <object class="org.apache.commons.pool.impl.StackObjectPool">
+     <int value="15"/> <!-- maxIdle             -->
+     <int value="5" /> <!-- initIdleCapacity    -->
+   </object>
+   <!--
+      The next argument is the KeyedObjectPoolFactory to use to create pools
+      for storing PreparedStatements.  This functionality is optional, we'll
+      just use null.
+    -->
+   <object class="org.apache.commons.pool.KeyedObjectPoolFactory" null="true"/>
+   <!--
+      The next argument is the query to use to validate that a Connection is
+      still up and running.  It should return at least one row.
+      This functionality is optional. We'll just set it to null.
+    -->
+   <string value="SELECT 1"/>
+   <!-- The default "read only" value for Connections. -->
+   <boolean value="false"/>
+   <!-- The default "auto commit" value for Connections. -->
+   <boolean value="false"/>
+</object>
+

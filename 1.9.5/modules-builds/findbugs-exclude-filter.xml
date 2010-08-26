@@ -1,0 +1,7 @@
+<FindBugsFilter>
+     <Match>
+       <Package name="org.dcache.srm.v2_1" />
+       <Package name="org.dcache.srm.v2_2" />
+     </Match>
+</FindBugsFilter>
+

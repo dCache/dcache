@@ -1,0 +1,57 @@
+#
+# $Id: Makefile.sun,v 1.40 2006-03-28 11:42:49 tigran Exp $
+#
+
+#
+#  Makefile for Sun Solaris 2.x
+#
+
+
+
+IO_SYM = -DOPEN_SYM=\"open\" -DCLOSE_SYM=\"close\" \
+	-DREAD_SYM=\"read\" -DWRITE_SYM=\"write\" \
+	-DLSEEK_SYM=\"lseek\" -DPREAD_SYM=\"pread\" \
+	-DPWRITE_SYM=\"pwrite\" -DSTAT_SYM=\"stat\" \
+	-DSTAT64_SYM=\"stat64\" -DFSTAT64_SYM=\"fstat64\" \
+	-DLSTAT_SYM=\"lstat\" -DLSTAT64_SYM=\"lstat64\" \
+	-DFSTAT_SYM=\"fstat\" -DFSYNC_SYM=\"fsync\" \
+	-DPWRITE64_SYM=\"pwrite64\" -DPREAD64_SYM=\"pread64\" \
+	-DLSEEK64_SYM=\"lseek64\" \
+	-DDUP_SYM=\"dup\" \
+	-DOPENDIR_SYM=\"_opendir\" -DCLOSEDIR_SYM=\"_closedir\" \
+	-DREADDIR_SYM=\"_readdir\" -DREADDIR64_SYM=\"_readdir64\" \
+	-DTELLDIR_SYM=\"_telldir\" -DSEEKDIR_SYM=\"_seekdir\" \
+	-DUNLINK_SYM=\"unlink\" -DRMDIR_SYM=\"rmdir\" -DMKDIR_SYM=\"mkdir\" \
+	-DCHMOD_SYM=\"chmod\" -DACCESS_SYM=\"access\" -DRENAME_SYM=\"rename\" \
+	-DCHOWN_SYM=\"chown\" -DWRITEV_SYM=\"writev\"  -DREADV_SYM=\"readv\"
+
+
+CC = /opt/SUNWspro/bin/cc
+CFLAGS = -v -g -I. -Xa -KPIC -D_REENTRANT -DLIBC_SYSCALLS $(IO_SYM)
+
+MAKEDEP = $(CC) -xM1
+
+
+SO_EXT = .so
+A_EXT = .a
+EXE_EXT =
+
+RANLIB = ranlib
+ARFLAGS = rv
+
+#MAP = -M mapfile
+
+CPP = $(CC) -E
+
+# for gcc
+
+# CC = gcc
+# CFLAGS = -Wall -pedantic -g -I. -O0 -D_REENTRANT -DBSD_SYSCALLS
+# MAKEDEP = $(CC) -M
+
+
+LIBS = -ldl -lnsl -lsocket -lresolv -lthread
+LDFLAGS = -G
+
+
+include Makefile.inc

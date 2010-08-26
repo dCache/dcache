@@ -1,0 +1,37 @@
+#bird_small
+{
+  float: left;
+}
+
+#bird_large
+{
+  display: none;
+}
+
+#main
+{
+  width: 90%;
+}
+
+h1, h2
+{
+  text-align: center;
+  color: blue;
+}
+
+h1
+{
+  margin-bottom: 50px;
+}
+
+tr.error
+{
+  background: orangered;
+  color: white;
+}
+
+tr.odd.error
+{
+  background: orange;
+  color: white;
+}

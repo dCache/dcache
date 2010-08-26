@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>XPathRule xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../apidocs/net/sourceforge/pmd/rules/XPathRule.html">View Javadoc</a></div><pre>
+
+<a name="1" href="#1">1</a>   <em>/**</em>
+<a name="2" href="#2">2</a>   <em> * BSD-style license; for more info see <a href="http://pmd.sourceforge.net/license.html" target="alexandria_uri">http://pmd.sourceforge.net/license.html</a></em>
+<a name="3" href="#3">3</a>   <em> */</em>
+<a name="4" href="#4">4</a>   <strong>package</strong> net.sourceforge.pmd.rules;
+<a name="5" href="#5">5</a>   
+<a name="6" href="#6">6</a>   <strong>import</strong> java.util.ArrayList;
+<a name="7" href="#7">7</a>   <strong>import</strong> java.util.HashMap;
+<a name="8" href="#8">8</a>   <strong>import</strong> java.util.Iterator;
+<a name="9" href="#9">9</a>   <strong>import</strong> java.util.List;
+<a name="10" href="#10">10</a>  <strong>import</strong> java.util.Map;
+<a name="11" href="#11">11</a>  <strong>import</strong> java.util.Stack;
+<a name="12" href="#12">12</a>  <strong>import</strong> java.util.Map.Entry;
+<a name="13" href="#13">13</a>  
+<a name="14" href="#14">14</a>  <strong>import</strong> net.sourceforge.pmd.AbstractJavaRule;
+<a name="15" href="#15">15</a>  <strong>import</strong> net.sourceforge.pmd.RuleContext;
+<a name="16" href="#16">16</a>  <strong>import</strong> net.sourceforge.pmd.ast.ASTVariableDeclaratorId;
+<a name="17" href="#17">17</a>  <strong>import</strong> net.sourceforge.pmd.ast.Node;
+<a name="18" href="#18">18</a>  <strong>import</strong> net.sourceforge.pmd.ast.SimpleNode;
+<a name="19" href="#19">19</a>  <strong>import</strong> net.sourceforge.pmd.jaxen.DocumentNavigator;
+<a name="20" href="#20">20</a>  <strong>import</strong> net.sourceforge.pmd.jaxen.MatchesFunction;
+<a name="21" href="#21">21</a>  <strong>import</strong> net.sourceforge.pmd.jaxen.TypeOfFunction;
+<a name="22" href="#22">22</a>  
+<a name="23" href="#23">23</a>  <strong>import</strong> org.jaxen.BaseXPath;
+<a name="24" href="#24">24</a>  <strong>import</strong> org.jaxen.JaxenException;
+<a name="25" href="#25">25</a>  <strong>import</strong> org.jaxen.SimpleVariableContext;
+<a name="26" href="#26">26</a>  <strong>import</strong> org.jaxen.XPath;
+<a name="27" href="#27">27</a>  <strong>import</strong> org.jaxen.expr.AllNodeStep;
+<a name="28" href="#28">28</a>  <strong>import</strong> org.jaxen.expr.DefaultXPathFactory;
+<a name="29" href="#29">29</a>  <strong>import</strong> org.jaxen.expr.Expr;
+<a name="30" href="#30">30</a>  <strong>import</strong> org.jaxen.expr.LocationPath;
+<a name="31" href="#31">31</a>  <strong>import</strong> org.jaxen.expr.NameStep;
+<a name="32" href="#32">32</a>  <strong>import</strong> org.jaxen.expr.Predicate;
+<a name="33" href="#33">33</a>  <strong>import</strong> org.jaxen.expr.Step;
+<a name="34" href="#34">34</a>  <strong>import</strong> org.jaxen.expr.UnionExpr;
+<a name="35" href="#35">35</a>  <strong>import</strong> org.jaxen.expr.XPathFactory;
+<a name="36" href="#36">36</a>  <strong>import</strong> org.jaxen.saxpath.Axis;
+<a name="37" href="#37">37</a>  
+<a name="38" href="#38">38</a>  <em>/**</em>
+<a name="39" href="#39">39</a>  <em> * Rule that tries to match an XPath expression against a DOM</em>
+<a name="40" href="#40">40</a>  <em> * view of the AST of a "compilation unit".</em>
+<a name="41" href="#41">41</a>  <em> * &lt;p/></em>
+<a name="42" href="#42">42</a>  <em> * This rule needs a property "xpath".</em>
+<a name="43" href="#43">43</a>  <em> */</em>
+<a name="44" href="#44">44</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../net/sourceforge/pmd/rules/XPathRule.html">XPathRule</a> <strong>extends</strong> <a href="../../../../net/sourceforge/pmd/AbstractJavaRule.html">AbstractJavaRule</a> {
+<a name="45" href="#45">45</a>  
+<a name="46" href="#46">46</a>      <em class="comment">// Mapping from Node name to applicable XPath queries</em>
+<a name="47" href="#47">47</a>      <strong>private</strong> Map&lt;String, List&lt;XPath>> nodeNameToXPaths;
+<a name="48" href="#48">48</a>      <strong>private</strong> <strong>boolean</strong> regexpFunctionRegistered;
+<a name="49" href="#49">49</a>      <strong>private</strong> <strong>boolean</strong> typeofFunctionRegistered;
+<a name="50" href="#50">50</a>  
+<a name="51" href="#51">51</a>      <strong>private</strong> <strong>static</strong> <strong>final</strong> String AST_ROOT = <span class="string">"_AST_ROOT_"</span>;
+<a name="52" href="#52">52</a>  
+<a name="53" href="#53">53</a>      <em>/**</em>
+<a name="54" href="#54">54</a>  <em>     * Evaluate the AST with compilationUnit as root-node, against</em>
+<a name="55" href="#55">55</a>  <em>     * the XPath expression found as property with name "xpath".</em>
+<a name="56" href="#56">56</a>  <em>     * All matches are reported as violations.</em>
+<a name="57" href="#57">57</a>  <em>     *</em>
+<a name="58" href="#58">58</a>  <em>     * @param compilationUnit the Node that is the root of the AST to be checked</em>
+<a name="59" href="#59">59</a>  <em>     * @param data</em>
+<a name="60" href="#60">60</a>  <em>     */</em>
+<a name="61" href="#61">61</a>      <strong>public</strong> <strong>void</strong> evaluate(<a href="../../../../net/sourceforge/pmd/ast/Node.html">Node</a> compilationUnit, <a href="../../../../net/sourceforge/pmd/RuleContext.html">RuleContext</a> data) {
+<a name="62" href="#62">62</a>          <strong>try</strong> {
+<a name="63" href="#63">63</a>              initializeXPathExpression();
+<a name="64" href="#64">64</a>              List&lt;XPath> xpaths = nodeNameToXPaths.get(compilationUnit.toString());
+<a name="65" href="#65">65</a>              <strong>if</strong> (xpaths == <strong>null</strong>) {
+<a name="66" href="#66">66</a>                  xpaths = nodeNameToXPaths.get(AST_ROOT);
+<a name="67" href="#67">67</a>              }
+<a name="68" href="#68">68</a>              <strong>for</strong> (XPath xpath: xpaths) {
+<a name="69" href="#69">69</a>                  List results = xpath.selectNodes(compilationUnit);
+<a name="70" href="#70">70</a>                  <strong>for</strong> (Iterator j = results.iterator(); j.hasNext();) {
+<a name="71" href="#71">71</a>                      <a href="../../../../net/sourceforge/pmd/ast/SimpleNode.html">SimpleNode</a> n = (SimpleNode) j.next();
+<a name="72" href="#72">72</a>                      <em class="comment">// FUTURE Figure out a way to make adding a violation be AST independent, so XPathRule can be used on AST for any language.</em>
+<a name="73" href="#73">73</a>                      <strong>if</strong> (n instanceof ASTVariableDeclaratorId &amp;&amp; getBooleanProperty(<span class="string">"pluginname"</span>)) {
+<a name="74" href="#74">74</a>                          addViolation(data, n, n.getImage());
+<a name="75" href="#75">75</a>                      } <strong>else</strong> {
+<a name="76" href="#76">76</a>                          addViolation(data, n, getMessage());
+<a name="77" href="#77">77</a>                      }
+<a name="78" href="#78">78</a>                  }
+<a name="79" href="#79">79</a>              }
+<a name="80" href="#80">80</a>          } <strong>catch</strong> (JaxenException ex) {
+<a name="81" href="#81">81</a>              <strong>throw</strong> <strong>new</strong> RuntimeException(ex);
+<a name="82" href="#82">82</a>          }
+<a name="83" href="#83">83</a>      }
+<a name="84" href="#84">84</a>  
+<a name="85" href="#85">85</a>      <strong>public</strong> List&lt;String> getRuleChainVisits() {
+<a name="86" href="#86">86</a>          <strong>try</strong> {
+<a name="87" href="#87">87</a>              initializeXPathExpression();
+<a name="88" href="#88">88</a>              <strong>return</strong> <strong>super</strong>.getRuleChainVisits();
+<a name="89" href="#89">89</a>          } <strong>catch</strong> (JaxenException ex) {
+<a name="90" href="#90">90</a>              <strong>throw</strong> <strong>new</strong> RuntimeException(ex);
+<a name="91" href="#91">91</a>          }
+<a name="92" href="#92">92</a>      }
+<a name="93" href="#93">93</a>  
+<a name="94" href="#94">94</a>      <strong>private</strong> <strong>void</strong> initializeXPathExpression() throws JaxenException {
+<a name="95" href="#95">95</a>          <strong>if</strong> (nodeNameToXPaths != <strong>null</strong>) {
+<a name="96" href="#96">96</a>              <strong>return</strong>;
+<a name="97" href="#97">97</a>          }
+<a name="98" href="#98">98</a>  
+<a name="99" href="#99">99</a>          <strong>if</strong> (!regexpFunctionRegistered) {
+<a name="100" href="#100">100</a>             MatchesFunction.registerSelfInSimpleContext();
+<a name="101" href="#101">101</a>             regexpFunctionRegistered = <strong>true</strong>;
+<a name="102" href="#102">102</a>         }
+<a name="103" href="#103">103</a> 
+<a name="104" href="#104">104</a>         <strong>if</strong> (!typeofFunctionRegistered) {
+<a name="105" href="#105">105</a>             TypeOfFunction.registerSelfInSimpleContext();
+<a name="106" href="#106">106</a>             typeofFunctionRegistered = <strong>true</strong>;
+<a name="107" href="#107">107</a>         }
+<a name="108" href="#108">108</a> 
+<a name="109" href="#109">109</a>         <em class="comment">//</em>
+<a name="110" href="#110">110</a>         <em class="comment">// Attempt to use the RuleChain with this XPath query.  To do so, the queries</em>
+<a name="111" href="#111">111</a>         <em class="comment">// should generally look like //TypeA or //TypeA | //TypeB.  We will look at the</em>
+<a name="112" href="#112">112</a>         <em class="comment">// parsed XPath AST using the Jaxen APIs to make this determination.</em>
+<a name="113" href="#113">113</a>         <em class="comment">// If the query is not exactly what we are looking for, do not use the RuleChain.</em>
+<a name="114" href="#114">114</a>         <em class="comment">//</em>
+<a name="115" href="#115">115</a>         nodeNameToXPaths = <strong>new</strong> HashMap&lt;String, List&lt;XPath>>();
+<a name="116" href="#116">116</a> 
+<a name="117" href="#117">117</a>         BaseXPath originalXPath = createXPath(getStringProperty(<span class="string">"xpath"</span>));
+<a name="118" href="#118">118</a>         indexXPath(originalXPath, AST_ROOT);
+<a name="119" href="#119">119</a> 
+<a name="120" href="#120">120</a>         <strong>boolean</strong> useRuleChain = <strong>true</strong>;
+<a name="121" href="#121">121</a>         Stack&lt;Expr> pending = <strong>new</strong> Stack&lt;Expr>();
+<a name="122" href="#122">122</a>         pending.push(originalXPath.getRootExpr());
+<a name="123" href="#123">123</a>         <strong>while</strong> (!pending.isEmpty()) {
+<a name="124" href="#124">124</a>             Expr node = pending.pop();
+<a name="125" href="#125">125</a> 
+<a name="126" href="#126">126</a>             <em class="comment">// Need to prove we can handle this part of the query</em>
+<a name="127" href="#127">127</a>             <strong>boolean</strong> valid = false;
+<a name="128" href="#128">128</a> 
+<a name="129" href="#129">129</a>             <em class="comment">// Must be a LocationPath... that is something like //Type</em>
+<a name="130" href="#130">130</a>             <strong>if</strong> (node instanceof LocationPath) {
+<a name="131" href="#131">131</a>                 LocationPath locationPath = (LocationPath)node;
+<a name="132" href="#132">132</a>                 <strong>if</strong> (locationPath.isAbsolute()) {
+<a name="133" href="#133">133</a>                     <em class="comment">// Should be at least two steps</em>
+<a name="134" href="#134">134</a>                     List steps = locationPath.getSteps();
+<a name="135" href="#135">135</a>                     <strong>if</strong> (steps.size() >= 2) {
+<a name="136" href="#136">136</a>                         Step step1 = (Step)steps.get(0);
+<a name="137" href="#137">137</a>                         Step step2 = (Step)steps.get(1);
+<a name="138" href="#138">138</a>                         <em class="comment">// First step should be an AllNodeStep using the descendant or self axis</em>
+<a name="139" href="#139">139</a>                         <strong>if</strong> (step1 instanceof AllNodeStep &amp;&amp; ((AllNodeStep)step1).getAxis() == Axis.DESCENDANT_OR_SELF) {
+<a name="140" href="#140">140</a>                             <em class="comment">// Second step should be a NameStep using the child axis.</em>
+<a name="141" href="#141">141</a>                             <strong>if</strong> (step2 instanceof NameStep &amp;&amp; ((NameStep)step2).getAxis() == Axis.CHILD) {
+<a name="142" href="#142">142</a>                                 <em class="comment">// Construct a new expression that is appropriate for RuleChain use</em>
+<a name="143" href="#143">143</a>                                 XPathFactory xpathFactory = <strong>new</strong> DefaultXPathFactory();
+<a name="144" href="#144">144</a> 
+<a name="145" href="#145">145</a>                                 <em class="comment">// Instead of an absolute location path, we'll be using a relative path</em>
+<a name="146" href="#146">146</a>                                 LocationPath relativeLocationPath = xpathFactory.createRelativeLocationPath();
+<a name="147" href="#147">147</a>                                 <em class="comment">// The first step will be along the self axis</em>
+<a name="148" href="#148">148</a>                                 Step allNodeStep = xpathFactory.createAllNodeStep(Axis.SELF);
+<a name="149" href="#149">149</a>                                 <em class="comment">// Retain all predicates from the original name step</em>
+<a name="150" href="#150">150</a>                                 <strong>for</strong> (Iterator i = step2.getPredicates().iterator(); i.hasNext();) {
+<a name="151" href="#151">151</a>                                     allNodeStep.addPredicate((Predicate)i.next());
+<a name="152" href="#152">152</a>                                 }
+<a name="153" href="#153">153</a>                                 relativeLocationPath.addStep(allNodeStep);
+<a name="154" href="#154">154</a> 
+<a name="155" href="#155">155</a>                                 <em class="comment">// Retain the remaining steps from the original location path</em>
+<a name="156" href="#156">156</a>                                 <strong>for</strong> (<strong>int</strong> i = 2; i &lt; steps.size(); i++) {
+<a name="157" href="#157">157</a>                                     relativeLocationPath.addStep((Step)steps.get(i));
+<a name="158" href="#158">158</a>                                 }
+<a name="159" href="#159">159</a> 
+<a name="160" href="#160">160</a>                                 BaseXPath xpath = createXPath(relativeLocationPath.getText());
+<a name="161" href="#161">161</a>                                 indexXPath(xpath, ((NameStep)step2).getLocalName());
+<a name="162" href="#162">162</a>                                 valid = <strong>true</strong>;
+<a name="163" href="#163">163</a>                             }
+<a name="164" href="#164">164</a>                         }
+<a name="165" href="#165">165</a>                     }
+<a name="166" href="#166">166</a>                 }
+<a name="167" href="#167">167</a>             } <strong>else</strong> <strong>if</strong> (node instanceof UnionExpr) { <em class="comment">// Or a UnionExpr, that is something like //TypeA | //TypeB</em>
+<a name="168" href="#168">168</a>                 UnionExpr unionExpr = (UnionExpr)node;
+<a name="169" href="#169">169</a>                 pending.push(unionExpr.getLHS());
+<a name="170" href="#170">170</a>                 pending.push(unionExpr.getRHS());
+<a name="171" href="#171">171</a>                 valid = <strong>true</strong>;
+<a name="172" href="#172">172</a>             }
+<a name="173" href="#173">173</a>             <strong>if</strong> (!valid) {
+<a name="174" href="#174">174</a>                 useRuleChain = false;
+<a name="175" href="#175">175</a>                 <strong>break</strong>;
+<a name="176" href="#176">176</a>             }
+<a name="177" href="#177">177</a>         }
+<a name="178" href="#178">178</a> 
+<a name="179" href="#179">179</a>         <strong>if</strong> (useRuleChain) {
+<a name="180" href="#180">180</a>             <em class="comment">// Use the RuleChain for all the nodes extracted from the xpath queries</em>
+<a name="181" href="#181">181</a>             <strong>for</strong> (String s: nodeNameToXPaths.keySet()) {
+<a name="182" href="#182">182</a>                 addRuleChainVisit(s);
+<a name="183" href="#183">183</a>             }
+<a name="184" href="#184">184</a>         } <strong>else</strong> { <em class="comment">// Use original XPath if we cannot use the rulechain</em>
+<a name="185" href="#185">185</a>             nodeNameToXPaths.clear();
+<a name="186" href="#186">186</a>             indexXPath(originalXPath, AST_ROOT);
+<a name="187" href="#187">187</a>             <em class="comment">//System.err.println("Unable to use RuleChain for " + this.getName() + " for XPath: " + getStringProperty("xpath"));</em>
+<a name="188" href="#188">188</a>         }
+<a name="189" href="#189">189</a>     }
+<a name="190" href="#190">190</a> 
+<a name="191" href="#191">191</a>     <strong>private</strong> <strong>void</strong> indexXPath(XPath xpath, String nodeName) {
+<a name="192" href="#192">192</a>         List&lt;XPath> xpaths = nodeNameToXPaths.get(nodeName);
+<a name="193" href="#193">193</a>         <strong>if</strong> (xpaths == <strong>null</strong>) {
+<a name="194" href="#194">194</a>             xpaths = <strong>new</strong> ArrayList&lt;XPath>();
+<a name="195" href="#195">195</a>             nodeNameToXPaths.put(nodeName, xpaths);
+<a name="196" href="#196">196</a>         }
+<a name="197" href="#197">197</a>         xpaths.add(xpath);
+<a name="198" href="#198">198</a>     }
+<a name="199" href="#199">199</a> 
+<a name="200" href="#200">200</a>     <strong>private</strong> BaseXPath createXPath(String xpathQueryString) throws JaxenException {
+<a name="201" href="#201">201</a>         <em class="comment">// TODO As of Jaxen 1.1, LiteralExpr which contain " or ' characters</em>
+<a name="202" href="#202">202</a>         <em class="comment">// are not escaped properly.  The following is fix for the known</em>
+<a name="203" href="#203">203</a>         <em class="comment">// XPath queries built into PMD.  It will not necessarily work for</em>
+<a name="204" href="#204">204</a>         <em class="comment">// arbitrary XPath queries users of PMD will create.  JAXEN-177 is</em>
+<a name="205" href="#205">205</a>         <em class="comment">// about this problem: http://jira.codehaus.org/browse/JAXEN-177</em>
+<a name="206" href="#206">206</a>         <em class="comment">// PMD should upgrade to the next Jaxen release containing this fix.</em>
+<a name="207" href="#207">207</a>         xpathQueryString = xpathQueryString.replaceAll(<span class="string">"\&quot;\&quot;\&quot;"</span>, <span class="string">"'\&quot;'"</span>);
+<a name="208" href="#208">208</a> 
+<a name="209" href="#209">209</a>         BaseXPath xpath = <strong>new</strong> BaseXPath(xpathQueryString, <strong>new</strong> <a href="../../../../net/sourceforge/pmd/jaxen/DocumentNavigator.html">DocumentNavigator</a>());
+<a name="210" href="#210">210</a>         <strong>if</strong> (getProperties().size() > 1) {
+<a name="211" href="#211">211</a>             SimpleVariableContext vc = <strong>new</strong> SimpleVariableContext();
+<a name="212" href="#212">212</a>             <strong>for</strong> (Entry e: getProperties().entrySet()) {
+<a name="213" href="#213">213</a>                 <strong>if</strong> (!<span class="string">"xpath"</span>.equals(e.getKey())) {
+<a name="214" href="#214">214</a>                     vc.setVariableValue((String) e.getKey(), e.getValue());
+<a name="215" href="#215">215</a>                 }
+<a name="216" href="#216">216</a>             }
+<a name="217" href="#217">217</a>             xpath.setVariableContext(vc);
+<a name="218" href="#218">218</a>         }
+<a name="219" href="#219">219</a>         <strong>return</strong> xpath;
+<a name="220" href="#220">220</a>     }
+<a name="221" href="#221">221</a> 
+<a name="222" href="#222">222</a>     <em>/**</em>
+<a name="223" href="#223">223</a> <em>     * Apply the rule to all compilation units.</em>
+<a name="224" href="#224">224</a> <em>     */</em>
+<a name="225" href="#225">225</a>     <strong>public</strong> <strong>void</strong> apply(List astCompilationUnits, <a href="../../../../net/sourceforge/pmd/RuleContext.html">RuleContext</a> ctx) {
+<a name="226" href="#226">226</a>         <strong>for</strong> (Iterator i = astCompilationUnits.iterator(); i.hasNext();) {
+<a name="227" href="#227">227</a>             evaluate((Node) i.next(), ctx);
+<a name="228" href="#228">228</a>         }
+<a name="229" href="#229">229</a>     }
+<a name="230" href="#230">230</a> }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

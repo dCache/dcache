@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>VariableAccessVisitor xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/net/sourceforge/pmd/dfa/variableaccess/VariableAccessVisitor.html">View Javadoc</a></div><pre>
+
+<a name="1" href="#1">1</a>   <em class="comment">/*</em>
+<a name="2" href="#2">2</a>   <em class="comment"> * Created on 14.07.2004</em>
+<a name="3" href="#3">3</a>   <em class="comment"> */</em>
+<a name="4" href="#4">4</a>   <strong>package</strong> net.sourceforge.pmd.dfa.variableaccess;
+<a name="5" href="#5">5</a>   
+<a name="6" href="#6">6</a>   <strong>import</strong> net.sourceforge.pmd.ast.ASTClassOrInterfaceBodyDeclaration;
+<a name="7" href="#7">7</a>   <strong>import</strong> net.sourceforge.pmd.ast.ASTConstructorDeclaration;
+<a name="8" href="#8">8</a>   <strong>import</strong> net.sourceforge.pmd.ast.ASTFormalParameter;
+<a name="9" href="#9">9</a>   <strong>import</strong> net.sourceforge.pmd.ast.ASTMethodDeclaration;
+<a name="10" href="#10">10</a>  <strong>import</strong> net.sourceforge.pmd.ast.ASTVariableInitializer;
+<a name="11" href="#11">11</a>  <strong>import</strong> net.sourceforge.pmd.ast.JavaParserVisitorAdapter;
+<a name="12" href="#12">12</a>  <strong>import</strong> net.sourceforge.pmd.ast.SimpleNode;
+<a name="13" href="#13">13</a>  <strong>import</strong> net.sourceforge.pmd.dfa.IDataFlowNode;
+<a name="14" href="#14">14</a>  <strong>import</strong> net.sourceforge.pmd.dfa.StartOrEndDataFlowNode;
+<a name="15" href="#15">15</a>  <strong>import</strong> net.sourceforge.pmd.symboltable.NameOccurrence;
+<a name="16" href="#16">16</a>  <strong>import</strong> net.sourceforge.pmd.symboltable.VariableNameDeclaration;
+<a name="17" href="#17">17</a>  
+<a name="18" href="#18">18</a>  <strong>import</strong> java.util.ArrayList;
+<a name="19" href="#19">19</a>  <strong>import</strong> java.util.HashSet;
+<a name="20" href="#20">20</a>  <strong>import</strong> java.util.List;
+<a name="21" href="#21">21</a>  <strong>import</strong> java.util.Map;
+<a name="22" href="#22">22</a>  <strong>import</strong> java.util.Set;
+<a name="23" href="#23">23</a>  
+<a name="24" href="#24">24</a>  <em>/**</em>
+<a name="25" href="#25">25</a>  <em> * @author raik, Sven Jacob</em>
+<a name="26" href="#26">26</a>  <em> *         &lt;p/></em>
+<a name="27" href="#27">27</a>  <em> *         Searches for special nodes and computes based on the sequence, the type of</em>
+<a name="28" href="#28">28</a>  <em> *         access of a variable.</em>
+<a name="29" href="#29">29</a>  <em> */</em>
+<a name="30" href="#30">30</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../../net/sourceforge/pmd/dfa/variableaccess/VariableAccessVisitor.html">VariableAccessVisitor</a> <strong>extends</strong> <a href="../../../../../net/sourceforge/pmd/ast/JavaParserVisitorAdapter.html">JavaParserVisitorAdapter</a> {
+<a name="31" href="#31">31</a>  
+<a name="32" href="#32">32</a>      <strong>public</strong> <strong>void</strong> compute(<a href="../../../../../net/sourceforge/pmd/ast/ASTMethodDeclaration.html">ASTMethodDeclaration</a> node) {
+<a name="33" href="#33">33</a>          <strong>if</strong> (node.jjtGetParent() instanceof ASTClassOrInterfaceBodyDeclaration) {
+<a name="34" href="#34">34</a>              <strong>this</strong>.computeNow(node);
+<a name="35" href="#35">35</a>          }
+<a name="36" href="#36">36</a>      }
+<a name="37" href="#37">37</a>  
+<a name="38" href="#38">38</a>      <strong>public</strong> <strong>void</strong> compute(<a href="../../../../../net/sourceforge/pmd/ast/ASTConstructorDeclaration.html">ASTConstructorDeclaration</a> node) {
+<a name="39" href="#39">39</a>          <strong>this</strong>.computeNow(node);
+<a name="40" href="#40">40</a>      }
+<a name="41" href="#41">41</a>  
+<a name="42" href="#42">42</a>      <strong>private</strong> <strong>void</strong> computeNow(<a href="../../../../../net/sourceforge/pmd/ast/SimpleNode.html">SimpleNode</a> node) {
+<a name="43" href="#43">43</a>          <a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> inode = node.getDataFlowNode();
+<a name="44" href="#44">44</a>  
+<a name="45" href="#45">45</a>          List&lt;VariableAccess> undefinitions = markUsages(inode);
+<a name="46" href="#46">46</a>  
+<a name="47" href="#47">47</a>          <em class="comment">// all variables are first in state undefinition </em>
+<a name="48" href="#48">48</a>          <a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> firstINode = inode.getFlow().get(0);
+<a name="49" href="#49">49</a>          firstINode.setVariableAccess(undefinitions);
+<a name="50" href="#50">50</a>  
+<a name="51" href="#51">51</a>          <em class="comment">// all variables are getting undefined when leaving scope</em>
+<a name="52" href="#52">52</a>          <a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> lastINode = inode.getFlow().get(inode.getFlow().size() - 1);
+<a name="53" href="#53">53</a>          lastINode.setVariableAccess(undefinitions);
+<a name="54" href="#54">54</a>      }
+<a name="55" href="#55">55</a>  
+<a name="56" href="#56">56</a>      <strong>private</strong> List&lt;VariableAccess> markUsages(<a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> inode) {
+<a name="57" href="#57">57</a>          <em class="comment">// undefinitions was once a field... seems like it works fine as a local</em>
+<a name="58" href="#58">58</a>          List&lt;VariableAccess> undefinitions = <strong>new</strong> ArrayList&lt;VariableAccess>();
+<a name="59" href="#59">59</a>          Set&lt;Map&lt;VariableNameDeclaration, List&lt;NameOccurrence>>> variableDeclarations = collectDeclarations(inode);
+<a name="60" href="#60">60</a>          <strong>for</strong> (Map&lt;VariableNameDeclaration, List&lt;NameOccurrence>> declarations: variableDeclarations) {
+<a name="61" href="#61">61</a>              <strong>for</strong> (Map.Entry&lt;VariableNameDeclaration, List&lt;NameOccurrence>> entry: declarations.entrySet()) {
+<a name="62" href="#62">62</a>                  <a href="../../../../../net/sourceforge/pmd/symboltable/VariableNameDeclaration.html">VariableNameDeclaration</a> vnd = entry.getKey();
+<a name="63" href="#63">63</a>  
+<a name="64" href="#64">64</a>                  <strong>if</strong> (vnd.getAccessNodeParent() instanceof ASTFormalParameter) {
+<a name="65" href="#65">65</a>                      <em class="comment">// no definition/undefinition/references for parameters</em>
+<a name="66" href="#66">66</a>                      <strong>continue</strong>;
+<a name="67" href="#67">67</a>                  } <strong>else</strong> <strong>if</strong> (vnd.getAccessNodeParent().getFirstChildOfType(ASTVariableInitializer.<strong>class</strong>) != <strong>null</strong>) {
+<a name="68" href="#68">68</a>                      <em class="comment">// add definition for initialized variables</em>
+<a name="69" href="#69">69</a>                      addVariableAccess(
+<a name="70" href="#70">70</a>                              vnd.getNode(), 
+<a name="71" href="#71">71</a>                              <strong>new</strong> <a href="../../../../../net/sourceforge/pmd/dfa/variableaccess/VariableAccess.html">VariableAccess</a>(VariableAccess.DEFINITION, vnd.getImage()), 
+<a name="72" href="#72">72</a>                              inode.getFlow());                    
+<a name="73" href="#73">73</a>                  }
+<a name="74" href="#74">74</a>                  undefinitions.add(<strong>new</strong> <a href="../../../../../net/sourceforge/pmd/dfa/variableaccess/VariableAccess.html">VariableAccess</a>(VariableAccess.UNDEFINITION, vnd.getImage()));
+<a name="75" href="#75">75</a>  
+<a name="76" href="#76">76</a>                  <strong>for</strong> (NameOccurrence occurrence: entry.getValue()) {
+<a name="77" href="#77">77</a>                      addAccess(occurrence, inode);
+<a name="78" href="#78">78</a>                  }
+<a name="79" href="#79">79</a>              }
+<a name="80" href="#80">80</a>          }
+<a name="81" href="#81">81</a>          <strong>return</strong> undefinitions;
+<a name="82" href="#82">82</a>      }
+<a name="83" href="#83">83</a>  
+<a name="84" href="#84">84</a>      <strong>private</strong> Set&lt;Map&lt;VariableNameDeclaration, List&lt;NameOccurrence>>> collectDeclarations(<a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> inode) {
+<a name="85" href="#85">85</a>          Set&lt;Map&lt;VariableNameDeclaration, List&lt;NameOccurrence>>> decls = <strong>new</strong> HashSet&lt;Map&lt;VariableNameDeclaration, List&lt;NameOccurrence>>>();
+<a name="86" href="#86">86</a>          Map&lt;VariableNameDeclaration, List&lt;NameOccurrence>> varDecls;
+<a name="87" href="#87">87</a>          <strong>for</strong> (<strong>int</strong> i = 0; i &lt; inode.getFlow().size(); i++) {
+<a name="88" href="#88">88</a>              <a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> n = inode.getFlow().get(i);
+<a name="89" href="#89">89</a>              <strong>if</strong> (n instanceof StartOrEndDataFlowNode) {
+<a name="90" href="#90">90</a>                  <strong>continue</strong>;
+<a name="91" href="#91">91</a>              }
+<a name="92" href="#92">92</a>              varDecls = n.getSimpleNode().getScope().getVariableDeclarations();
+<a name="93" href="#93">93</a>              <strong>if</strong> (!decls.contains(varDecls)) {
+<a name="94" href="#94">94</a>                  decls.add(varDecls);
+<a name="95" href="#95">95</a>              }
+<a name="96" href="#96">96</a>          }
+<a name="97" href="#97">97</a>          <strong>return</strong> decls;
+<a name="98" href="#98">98</a>      }
+<a name="99" href="#99">99</a>  
+<a name="100" href="#100">100</a>     <strong>private</strong> <strong>void</strong> addAccess(<a href="../../../../../net/sourceforge/pmd/symboltable/NameOccurrence.html">NameOccurrence</a> occurrence, <a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> inode) {
+<a name="101" href="#101">101</a>         <strong>if</strong> (occurrence.isOnLeftHandSide()) {
+<a name="102" href="#102">102</a>             <strong>this</strong>.addVariableAccess(occurrence.getLocation(), <strong>new</strong> VariableAccess(VariableAccess.DEFINITION, occurrence.getImage()), inode.getFlow());
+<a name="103" href="#103">103</a>         } <strong>else</strong> <strong>if</strong> (occurrence.isOnRightHandSide() || (!occurrence.isOnLeftHandSide() &amp;&amp; !occurrence.isOnRightHandSide())) {
+<a name="104" href="#104">104</a>             <strong>this</strong>.addVariableAccess(occurrence.getLocation(), <strong>new</strong> VariableAccess(VariableAccess.REFERENCING, occurrence.getImage()), inode.getFlow());
+<a name="105" href="#105">105</a>         }
+<a name="106" href="#106">106</a>     }
+<a name="107" href="#107">107</a> 
+<a name="108" href="#108">108</a>     <em>/**</em>
+<a name="109" href="#109">109</a> <em>     * Adds a VariableAccess to a dataflow node.</em>
+<a name="110" href="#110">110</a> <em>     * @param node location of the access of a variable</em>
+<a name="111" href="#111">111</a> <em>     * @param va variable access to add</em>
+<a name="112" href="#112">112</a> <em>     * @param flow dataflownodes that can contain the node. </em>
+<a name="113" href="#113">113</a> <em>     */</em>
+<a name="114" href="#114">114</a>     <strong>private</strong> <strong>void</strong> addVariableAccess(<a href="../../../../../net/sourceforge/pmd/ast/SimpleNode.html">SimpleNode</a> node, <a href="../../../../../net/sourceforge/pmd/dfa/variableaccess/VariableAccess.html">VariableAccess</a> va, List flow) {
+<a name="115" href="#115">115</a>         <em class="comment">// backwards to find the right inode (not a method declaration) </em>
+<a name="116" href="#116">116</a>         <strong>for</strong> (<strong>int</strong> i = flow.size()-1; i > 0; i--) { 
+<a name="117" href="#117">117</a>             <a href="../../../../../net/sourceforge/pmd/dfa/IDataFlowNode.html">IDataFlowNode</a> inode = (IDataFlowNode) flow.get(i);
+<a name="118" href="#118">118</a>             <strong>if</strong> (inode.getSimpleNode() == <strong>null</strong>) {
+<a name="119" href="#119">119</a>                 <strong>continue</strong>;
+<a name="120" href="#120">120</a>             }
+<a name="121" href="#121">121</a> 
+<a name="122" href="#122">122</a>             List&lt;? <strong>extends</strong> SimpleNode> children = inode.getSimpleNode().findChildrenOfType(node.getClass());
+<a name="123" href="#123">123</a>             <strong>for</strong> (SimpleNode n: children) {
+<a name="124" href="#124">124</a>                 <strong>if</strong> (node.equals(n)) { 
+<a name="125" href="#125">125</a>                     List&lt;VariableAccess> v = <strong>new</strong> ArrayList&lt;VariableAccess>();
+<a name="126" href="#126">126</a>                     v.add(va);
+<a name="127" href="#127">127</a>                     inode.setVariableAccess(v);     
+<a name="128" href="#128">128</a>                     <strong>return</strong>;
+<a name="129" href="#129">129</a>                 }
+<a name="130" href="#130">130</a>             }
+<a name="131" href="#131">131</a>         }
+<a name="132" href="#132">132</a>     }
+<a name="133" href="#133">133</a> 
+<a name="134" href="#134">134</a> }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

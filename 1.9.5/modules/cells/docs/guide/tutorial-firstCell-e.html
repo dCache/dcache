@@ -1,0 +1,60 @@
+<html>
+<head><title>Tutorial : MyFirstCell Example</title></head>
+<body bgcolor=white>
+<pre>
+import dmg.cells.nucleus.* ;
+import java.io.PrintWriter ;
+import java.util.Date ;
+
+public class      FooCell 
+       extends    CellAdapter 
+       implements Runnable {
+
+   private Date _creationDate = new Date() ;
+   
+   public FooCell( String name , String args )  {
+      super( name , args ) ;
+      
+      new Thread( this ).start() ;
+      
+      setPrintoutLevel( CellNucleus.PRINT_CELL ) ;
+      
+      say( "Constructor finished" ) ;
+   }
+   public String toString(){
+      return "Hello World created : "+ _creationDate ;
+   }
+   public void getInfo( PrintWriter pw ){
+       super.getInfo( pw ) ;
+       pw.println( " Created   : "+_creationDate  )  ;
+   }
+   public void cleanUp(){
+      //
+      // delay the removal of the cell to 
+      // simulate complicated clean up procedures.
+      //
+      say(" Clean up called ... " ) ;
+      try{
+          Thread.currentThread().sleep( 2000 ) ;
+      }catch( InterruptedException ie ){
+      
+      }
+      say( " Done" ) ;
+   }
+   //
+   // runnable interface
+   //
+   public void run(){
+      try{
+          Thread.currentThread().sleep( 20000 ) ;
+      }catch( InterruptedException ie ){
+      
+      }
+      
+      kill() ;
+   }
+
+}
+</pre>
+</body>
+</html>

@@ -1,0 +1,208 @@
+package diskCacheV111.hsmControl ;
+
+import java.util.* ;
+
+import java.io.* ;
+import java.text.* ;
+import java.lang.reflect.*;
+import dmg.util.* ;
+import dmg.cells.nucleus.* ;
+
+import diskCacheV111.vehicles.hsmControl.* ;
+import diskCacheV111.vehicles.Message ;
+import diskCacheV111.vehicles.StorageInfo ;
+import diskCacheV111.vehicles.OSMStorageInfo ;
+import diskCacheV111.util.* ;
+
+public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
+    private CellNucleus _nucleus ;
+    private Args        _args ;
+    private int         _requests  = 0 ;
+    private int         _failed    = 0 ;
+    private int         _outstandingRequests = 0 ;
+    private File        _database  = null ;
+    private SyncFifo2   _fifo = new SyncFifo2() ;
+    private SimpleDateFormat formatter
+         = new SimpleDateFormat ("MM.dd hh:mm:ss");
+
+    public HsmControlOsm( String name , String  args ) throws Exception {
+       super( name , args , false ) ;
+       _nucleus = getNucleus() ;
+       _args    = getArgs() ;
+       try{
+          if( _args.argc() < 1 )
+            throw new
+            IllegalArgumentException("Usage : ... <database>") ;
+
+          _database = new File( _args.argv(0) ) ;
+          if( ! _database.isDirectory() )
+             throw new
+             IllegalArgumentException( "Not a directory : "+_database);
+       }catch(Exception e){
+          start() ;
+          kill() ;
+          throw e ;
+       }
+       useInterpreter( true );
+       _nucleus.newThread( this , "queueWatch").start() ;
+       start();
+       export();
+    }
+
+    public void getInfo( PrintWriter pw ){
+       pw.println("HsmControlOsm : [$Id: HsmControlOsm.java,v 1.4 2005-01-17 16:21:33 patrick Exp $]" ) ;
+       pw.println("Requests    : "+_requests ) ;
+       pw.println("Failed      : "+_failed ) ;
+       pw.println("Outstanding : "+_fifo.size() ) ;
+    }
+    private int _maxQueueSize = 100 ;
+    public void messageArrived( CellMessage msg ){
+       Object obj = msg.getMessageObject() ;
+       _requests ++ ;
+       String error = "" ;
+        if( ! ( obj instanceof Message ) ){
+            error = "Illegal dCache message class : "+obj.getClass().getName();
+        }else if( _fifo.size() > _maxQueueSize ){
+            error = "Queue size exceeded "+_maxQueueSize+", Request rejected";
+       }else{
+          _fifo.push( msg ) ;
+          return ;
+       }
+       _failed ++ ;
+       esay(error);
+       ((Message)obj).setFailed( 33 , error ) ;
+       msg.revertDirection() ;
+       try{
+          sendMessage( msg ) ;
+       }catch(Exception ee ){
+          esay("Problem replying : "+ee ) ;
+       }
+    }
+    public void run(){
+        // HsmControlGetBfDetailsMsg
+        say("Starting working thread");
+        try{
+            while( true ){
+                CellMessage msg = (CellMessage)_fifo.pop() ;
+                if( msg == null ){
+                    esay("fifo empty");
+                    break ;
+                }
+                Message request = (Message)msg.getMessageObject() ;
+                try{
+
+                    if( request instanceof HsmControlGetBfDetailsMsg ){
+                        getBfDetails( ((HsmControlGetBfDetailsMsg)request).getStorageInfo() );
+                    }else{
+                        throw new
+                        IllegalArgumentException("Not supported "+request.getClass().getName());
+                    }
+                   request.setSucceeded() ;
+                   msg.revertDirection() ;
+                   try{
+                      sendMessage( msg ) ;
+                   }catch(Exception ee ){
+                      esay("Problem replying : "+ee ) ;
+                   }
+                }catch(Exception eee ){
+                   _failed ++ ;
+                   esay(eee);
+                   request.setFailed( 34 , eee.toString() ) ;
+                   msg.revertDirection() ;
+                   try{
+                      sendMessage( msg ) ;
+                   }catch(Exception ee ){
+                      esay("Problem replying : "+ee ) ;
+                   }
+                }
+            }
+        }catch(Exception ee ){
+            esay("Got exception from run while : "+ee);
+        }finally{
+            say("Working thread finished");
+        }
+    }
+    private Map _driverMap = new HashMap() ;
+    public String hh_check_osm = "<store> <bfid>";
+    public String ac_check_osm_$_2( Args args )throws Exception {
+       String store = args.argv(0);
+       String bfid  = args.argv(1);
+       StorageInfo si = new OSMStorageInfo( store , "" , bfid ) ;
+
+       getBfDetails( si ) ;
+
+       String result = si.getKey("hsm.details");
+
+       return result == null ? "No Details" : result ;
+    }
+    public String hh_define_driver = "<hsm> <driverClass> [<options>]";
+    public String ac_define_driver_$_2( Args args ) throws Exception {
+
+        String hsm    = args.argv(0);
+        String driver = args.argv(1);
+        Class  c = Class.forName(driver);
+        Class  [] classArgs  = { dmg.util.Args.class,dmg.util.Args.class , dmg.util.Logable.class } ;
+        Object [] objectArgs = { getArgs() , args ,  this } ;
+
+        Constructor con = c.getConstructor( classArgs ) ;
+        Object [] values = new Object[3];
+        try{
+            values[0] = driver ;
+            values[1] = con.newInstance( objectArgs ) ;
+            values[2] = args ;
+        }catch(InvocationTargetException ite ){
+            throw (Exception)ite.getTargetException();
+        }
+        if( ! ( values[1] instanceof HsmControllable ) )
+          throw new
+          IllegalArgumentException("Not a HsmControllable : ("+hsm+") "+driver);
+
+        _driverMap.put( hsm , values ) ;
+        return hsm+" "+driver+" "+values[1].toString();
+    }
+    public String hh_ls_driver = "";
+    public String ac_ls_driver( Args args ){
+         StringBuffer sb = new StringBuffer() ;
+         Iterator i = _driverMap.entrySet().iterator();
+         while( i.hasNext() ){
+            Map.Entry e = (Map.Entry)i.next() ;
+            String hsm = (String)e.getKey() ;
+            Object [] obj = (Object [])e.getValue() ;
+
+            sb.append(hsm).append(" ").
+               append(obj[0].toString()).append(" ").
+               append(obj[1].toString()).append("\n");
+
+         }
+         return sb.toString();
+    }
+    private void getBfDetails( StorageInfo storageInfo ) throws Exception {
+        String hsm = storageInfo.getHsm() ;
+        if( ( hsm == null ) || ( hsm.equals("") ) )
+           throw new
+           IllegalArgumentException("Hsm not specified");
+
+        Object [] values = (Object [])_driverMap.get( hsm ) ;
+        if( values == null )
+            throw new
+            IllegalArgumentException("Driver not found for hsm="+hsm);
+
+        HsmControllable hc = (HsmControllable)values[1] ;
+        say("Controller found for "+hsm+" -> "+values[0]);
+        hc.getBfDetails( storageInfo );
+
+    }
+
+    public void elog(String message) {
+        esay(message);
+    }
+
+    public void log(String message) {
+        say(message);
+    }
+
+    public void plog(String message) {
+        esay(message);
+    }
+
+}

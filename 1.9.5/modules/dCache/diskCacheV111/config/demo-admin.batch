@@ -1,0 +1,241 @@
+#
+set printout default 3
+set printout CellGlue none
+onerror shutdown
+#
+# read the setup file into the setup context.
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#  check necessary variable for existence.
+#
+check -strong setupFile
+check -strong dCapPort 
+check -strong ftpPort  ftpBase  
+check -strong httpdPort
+check -strong images
+check -strong billingDb
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorPort serviceLocatorHost 
+check -strong adminPort
+#
+set env     AccessControlCell acm
+set context userPasswordFile  cell:pam
+#
+#
+#   The LocationManager Part
+#
+#
+create dmg.cells.services.LocationManager lm-master \
+       "${serviceLocatorPort} 
+       -strict=no \
+       -noclient \
+       -setup=${ourHomeDir}/config/lm.config"
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+create dmg.cells.services.RoutingManager  RoutingMgr
+#
+#   Admin Login Manager
+#
+create dmg.cells.services.login.LoginManager alm \
+      "${adminPort}  \
+       dmg.cells.services.login.StreamObjectCell \
+       -prot=telnet -auth=dmg.cells.services.login.TelnetSAuth_A \
+       diskCacheV111.admin.UserAdminShell"     
+#
+#   Access Contol Handler
+#
+create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
+       "${keyBase}/users"
+#
+#   The filesystem (Pnfs) Handler
+#
+create diskCacheV111.cells.PnfsManager2 PnfsManager \
+        "diskCacheV111.util.GenericInfoExtractor \
+	 -threads=4  \
+	 -default=${defaultPnfsServer} \
+	 -pnfs=${pnfs}"
+#
+#   The 'remove' handler (informs the dCache about pfns removes)
+#
+create diskCacheV111.cells.CleanerV2 cleaner \
+        "default \
+         -refresh=120 \
+         -db=${config}/cleaner"
+#
+#  The PoolManager
+#
+create diskCacheV111.poolManager.PoolManagerV5 PoolManager \
+        "${config}/PoolManager.conf  \
+         -costModule=diskCacheV111.poolManager.CostModuleV1 \
+         -replyObject"
+#
+#
+#   The prestager
+#
+create diskCacheV111.hsmControl.DummyStager Prestager "/"
+#
+#   The door (dcap)
+#
+create dmg.cells.services.login.LoginManager DCap \
+            "${dCapPort} \
+             diskCacheV111.doors.DCapDoor \
+             -prot=telnet \
+             -localOk \
+             -interpreter=diskCacheV111.doors.DCapDoorInterpreterV3 \
+             -maxLogin=2000 \
+             -brokerUpdateTime=30 \
+             -protocolFamily=dcap \
+             -protocolVersion=3.0 \
+             -loginBroker=LoginBroker \
+             -poolProxy=PoolManager \
+             -check=strict"
+#
+#    F t p    D o o r(s)
+#
+create dmg.cells.services.login.LoginManager FtpV3 \
+            "${ftpPort} \
+             diskCacheV111.doors.FtpDoorV3 \
+             -prot=raw \
+             -root=${ftpBase} \
+             -export \
+             -brokerUpdateTime=30 \
+             -protocolFamily=ftp \
+             -protocolVersion=1.0 \
+             -loginBroker=LoginBroker"
+#
+#
+#   T h e   I n f o r m a t i o n  C o l l e c t e r (s)
+#
+#
+#   The LoginBroker (srm needs it)
+#
+create dmg.cells.services.login.LoginBroker LoginBroker
+#
+create diskCacheV111.cells.BillingCell billing ${billingDb}
+#
+create diskCacheV111.cells.TransferObserverV1 TransferObserver \
+              "default \
+               -loginBroker=LoginBroker \
+               -update=60 \
+               -fieldMap=diskCacheV111.util.MapInfoFields \
+               -mapFile=/etc/passwd"
+#
+create diskCacheV111.cells.WebCollectorV3 collector \
+               "PnfsManager \
+                PoolManager  \
+                -replyObject"
+#
+#
+#   The web server part
+#
+define context httpdSetup endDefine
+   set alias <home> context home.html
+   set alias images directory ${images}
+   set alias offline context offline.html
+   set alias context context *
+   set alias <default> context home.html
+   set alias cellInfo context cellInfoTable.html -onError=offline
+   set alias usageInfo context poolUsageTable.html -onError=offline
+   set alias queueInfo context poolQueueTable.html -onError=offline
+   set alias transfers context transfers.html -onError=offline
+   set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3
+   set alias billing class diskCacheV111.cells.HttpBillingEngine
+endDefine
+#
+#
+define context offline.html endDefine
+<html>
+<head><title>dCache OFFLINE</title></head>
+<body bgcolor=blue >
+<center><img src="/images/eagle_logo.gif"></center>
+<p>
+<center>
+<table border=0 width="80%">
+<tr>
+<td align=right width="50%"><img src="/images/trudey.gif"></td>
+<td align=left width="50%"><img src="/images/sorry.gif"></td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+endDefine
+#
+define context home.html endDefine
+<html>
+<head><title>Online dCache Home (Demo Version)</title></head>
+<body background="/images/bg.jpg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
+
+<br><br><br>
+
+<center>
+<table border="1" width="40%">
+<tr>
+<td align="center" valign="middle" >
+<br><br>
+<img src="/images/eagle-main.gif"><br><br>
+
+<table>
+<tr>
+<td>
+
+<a href="/cellInfo"><h1>Cell Services</h1></a>
+<a href="/usageInfo"><h1>Pool (Space) Usage</h1></a>
+<a href="/queueInfo"><h1>Pool Request Queues</h1></a>
+<a href="/poolInfo"><h1>Pools</h1></a>
+<a href="/billing/"><h1>Actions Log</h1></a>
+<a href="/poolInfo/restoreHandler/*"><h1>Restore Queue</h1></a>
+<a href="/poolInfo/restoreHandler/lazy"><h1>Lazy Restore Queue</h1></a>
+<a href="/transfers"><h1>Transfers</h1></h1></a>
+<a href="/context/transfers.html"><h1>Active Doors</h1></h1></a>
+
+</td></tr>
+</table>
+<br>
+
+</td></tr>
+</table>
+
+</center>
+<br><br><br>
+<hr>
+
+</body>
+</html>
+endDefine
+#
+define context online.html endDefine
+<html>
+<head><title>dCache OFFLINE</title></head>
+<body bgcolor=blue >
+<center><img src="/images/eagle_logo.gif"></center>
+<p>
+<center>
+<table border=0 width="90%" cellspacing=0 cellpadding=6>
+<tr>
+<td bgcolor=yellow align=left width="50%">Pool : poolA</td>
+<td bgcolor=yellow align=right width="50%">4/5/2001</td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+endDefine
+#
+create dmg.cells.services.HttpServiceCell  httpd   ${httpdPort}
+

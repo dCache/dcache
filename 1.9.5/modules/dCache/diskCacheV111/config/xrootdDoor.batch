@@ -1,0 +1,43 @@
+#
+# $Id: xrootdDoor.batch,v 1.8 2007-05-09 12:29:07 radicke Exp $
+#
+set printout default 2 
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong xrootdPort
+
+#
+#  Cell communication
+#
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+#
+#
+onerror continue
+#  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.TokenAuthorizationFactory
+  set context -c xrootdIsReadOnly true
+  set context -c xrootdAllowedPaths ""
+  set context -c xrootdIoQueue ""
+  set context -c xrootdAuthzPlugin org.dcache.xrootd2.security.plugins.tokenauthz.NoAuthorizationFactory
+  set context -c xrootdAuthzKeystore /opt/d-cache/etc/keystore
+  set context -c xrootdMaxLogin 50
+  set context -c xrootdMaxOpenFilesPerConnection 5000
+onerror shutdown
+#
+#
+create org.dcache.cells.UniversalSpringCell Xrootd-${thisHostname} \
+       "classpath:org/dcache/xrootd2/door/xrootd.xml -export \
+        -cellClass=XrootdDoor"
+

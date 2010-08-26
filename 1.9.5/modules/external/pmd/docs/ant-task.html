@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head><title>PMD - Ant Task</title><style type="text/css" media="all">
+          @import url("./style/maven-base.css");
+          
+          @import url("./style/maven-theme.css");</style><link rel="stylesheet" href="./style/print.css" type="text/css" media="print"></link><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></meta><meta name="author" content="David Dixon-Peugh"></meta><meta name="email" content="dpeugh@users.sourceforge.net"></meta><meta name="author" content="Tom Copeland"></meta><meta name="email" content="tom@infoether.com"></meta></head><body class="composite"><div id="banner"><a href="http://pmd.sourceforge.net/" id="organizationLogo"><img alt="InfoEther" src="http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5"></img></a><a href="http://pmd.sourceforge.net/" id="projectLogo"><img alt="PMD" src="./images/pmd_logo_small.jpg"></img></a><div class="clear"><hr></hr></div></div><div id="breadcrumbs"><div class="xleft"></div><div class="xright">
+        
+        <a href="http://pmdapplied.com/" class="externalLink" title="External Link">**** Get the book! ****</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net/projects/pmd" class="externalLink" title="External Link">SourceForge.net Project Page</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net" class="externalLink" title="External Link">Hosted by SourceForge</a>
+      </div><div class="clear"><hr></hr></div></div><div id="leftColumn"><div id="navcolumn"><div id="menuOverview"><h5>Overview</h5><ul><li class="none"><a href="http://sourceforge.net/project/showfiles.php?group_id=56262&amp;package_id=51441&amp;release_id=632850" class="externalLink" title="External Link">Download PMD 4.2.5</a></li><li class="none"><a href="http://sourceforge.net/project/shownotes.php?release_id=632850&amp;group_id=56262" class="externalLink" title="External Link">What's new in PMD 4.2.5</a></li><li class="none"><a href="news.html">PMD in the news</a></li><li class="none"><a href="products.html">PMD-related products and books</a></li><li class="none"><a href="bestpractices.html">Best practices</a></li><li class="none"><a href="future.html">Future directions</a></li><li class="none"><a href="similar-projects.html">Similar projects</a></li><li class="none"><a href="credits.html">Credits</a></li><li class="none"><a href="license.html">License</a></li><li class="none"><a href="meaning.html">What does 'PMD' mean?</a></li></ul></div><div id="menuUsage"><h5>Usage</h5><ul><li class="none"><a href="installing.html">Installation</a></li><li class="none"><a href="running.html">Command line usage</a></li><li class="none"><strong><a href="ant-task.html">Ant task usage</a></strong></li><li class="none"><a href="maven-plugin.html">Maven plugin usage</a></li><li class="none"><a href="mvn-plugin.html">Mvn plugin usage</a></li><li class="none"><a href="integrations.html">IDE plugin usage</a></li><li class="none"><a href="suppressing.html">Suppressing warnings</a></li><li class="none"><a href="cpd.html">Finding duplicated code</a></li><li class="none"><a href="jspsupport.html">JSP support</a></li></ul></div><div id="menuCustomizing_PMD"><h5>Customizing PMD</h5><ul><li class="none"><a href="compiling.html">Compiling PMD</a></li><li class="none"><a href="howtowritearule.html">How to write a rule</a></li><li class="none"><a href="xpathruletutorial.html">Writing XPath rules</a></li><li class="none"><a href="howtomakearuleset.html">How to make a rule set</a></li><li class="none"><a href="howitworks.html">How it works</a></li><li class="none"><a href="rule-guidelines.html">Rule guidelines</a></li></ul></div><div id="menuFor_example"><h5>For example</h5><ul><li class="none"><a href="scoreboard.html">Run PMD on a Sourceforge project</a></li></ul></div><div id="menuRule_Sets"><h5>Rule Sets</h5><ul><li class="none"><a href="rules/index.html">Index</a></li><li class="none"><a href="rules/android.html">Android</a></li><li class="none"><a href="rules/basic.html">Basic</a></li><li class="none"><a href="rules/braces.html">Braces</a></li><li class="none"><a href="rules/codesize.html">Code Size</a></li><li class="none"><a href="rules/clone.html">Clone</a></li><li class="none"><a href="rules/controversial.html">Controversial</a></li><li class="none"><a href="rules/coupling.html">Coupling</a></li><li class="none"><a href="rules/design.html">Design</a></li><li class="none"><a href="rules/finalizers.html">Finalizers</a></li><li class="none"><a href="rules/imports.html">Import Statements</a></li><li class="none"><a href="rules/j2ee.html">J2EE</a></li><li class="none"><a href="rules/javabeans.html">Javabeans</a></li><li class="none"><a href="rules/junit.html">JUnit Tests</a></li><li class="none"><a href="rules/logging-java.html">Logging (Java)</a></li><li class="none"><a href="rules/logging-jakarta-commons.html">Logging (Jakarta)</a></li><li class="none"><a href="rules/migrating.html">Migrating</a></li><li class="none"><a href="rules/naming.html">Naming</a></li><li class="none"><a href="rules/optimizations.html">Optimizations</a></li><li class="none"><a href="rules/strictexception.html">Strict Exceptions</a></li><li class="none"><a href="rules/strings.html">Strings</a></li><li class="none"><a href="rules/sunsecure.html">Sun Security</a></li><li class="none"><a href="rules/unusedcode.html">Unused Code</a></li><li class="none"><a href="rules/basic-jsp.html">Java Server Pages</a></li><li class="none"><a href="rules/basic-jsf.html">Java Server Faces</a></li></ul></div><div id="menuProject_Documentation"><h5>Project Documentation</h5><ul><li class="none"><a href="index.html">About</a></li><li class="collapsed"><a href="project-info.html">Project Info</a></li><li class="collapsed"><a href="maven-reports.html">Project Reports</a></li><li class="none"><a href="development-process.html">Development Process</a></li></ul></div><div id="legend"><h5>Legend</h5><ul><li class="externalLink">External Link</li><li class="newWindow">Opens in a new window</li></ul></div><a href="http://maven.apache.org/" title="Built by Maven" id="poweredBy"><img alt="Built by Maven" src="./images/logos/mavenlogo_builtby_w.png"></img></a></div></div><div id="bodyColumn"><div class="contentBox"><div class="section"><a name="PMD"></a><h2>PMD</h2>
+      <div class="subsection"><a name="Description"></a><h3>Description</h3>
+        <p>Runs a set of static code analysis rules on some Java source code files and generates a list of problems found.</p>
+      </div>
+      <div class="subsection"><a name="Parameters"></a><h3>Parameters</h3>
+<table class="bodyTable">
+  <tr class="a">
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr class="b">
+    <td valign="top">rulesetfiles</td>
+    <td valign="top">A comma delimited list of ruleset files ('rulesets/basic.xml,rulesets/design.xml').  If you write
+    your own ruleset files, you can put them on the classpath and plug them in here.</td>
+    <td valign="top" align="center">Yes, unless the ruleset nested element is used</td>
+  </tr>
+  <tr class="a">
+    <td valign="top">failonerror</td>
+    <td valign="top">Whether or not to fail the build if any errors occur while processing the files</td>
+    <td valign="top" align="center">No</td>
+  </tr>
+    <tr class="b">
+      <td valign="top">failOnRuleViolation</td>
+      <td valign="top">Whether or not to fail the build if PMD finds any problems</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="a">
+      <td valign="top">minimumPriority</td>
+      <td valign="top">The rule priority threshold; rules with lower priority than they will not be used</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="b">
+      <td valign="top">shortFilenames</td>
+      <td valign="top">Places truncated filenames in the report.  This can reduce your report file size by 15%-20%.</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="a">
+      <td valign="top">targetjdk</td>
+      <td valign="top">Target JDK 1.3, 1.4, 1.5, 1.6, or jsp.  "1.5" is the default.</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="b">
+      <td valign="top">failuresPropertyName</td>
+      <td valign="top">A property name to plug the number of rule violations into when the task finishes</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="a">
+      <td valign="top">encoding</td>
+      <td valign="top">The character set encoding (i.e., UTF-8) to use when reading the source code files</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="b">
+      <td valign="top">excludemarker</td>
+      <td valign="top">The series of characters to use to tell PMD to skip lines - the default is NOPMD.</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+    <tr class="a">
+      <td valign="top">maxRuleViolations</td>
+      <td valign="top">Whether or not to fail the build if PMD finds more than the value of this attribute. Note that setting this attribute does not require to set the failOnRuleViolation to true.</td>
+      <td valign="top" align="center">No</td>
+    </tr>
+</table>
+
+          <p><code>formatter</code> nested element - specifies the format of and the files to which the report is written.</p>
+   <table class="bodyTable">
+       <tr class="b"><th>Name</th><th>Values</th></tr>
+ <tr class="a">
+     <td>format</td>
+     <td>xml,html,text,csv,papari,summaryhtml</td>
+ </tr>
+       <tr class="b">
+         <td>showSuppressed</td>
+         <td>Whether to show suppressed warnings; "false" is the default.</td>
+       </tr>
+       <tr class="a">
+           <td>filename</td>
+           <td>A filename to which to write the report</td>
+       </tr>
+       <tr class="b">
+           <td>linkPrefix</td>
+           <td>Used for linking to online HTMLized source (like <a href="http://pmd.sourceforge.net/xref/index.html">this</a>).  See example below.</td>
+       </tr>
+       <tr class="a">
+           <td>linePrefix</td>
+           <td>Used for linking to online HTMLized source (like <a href="http://pmd.sourceforge.net/xref/index.html#line102">this</a>).  See example below.</td>
+       </tr>
+ </table>
+
+     <p><code>classpath</code> nested element - useful for specifying custom rule.  More details on the <code>classpath</code>
+     element are in the Ant documentation <a href="http://ant.apache.org/manual/using.html#path" class="externalLink" title="External Link">here</a> and there's
+     an example below.</p>
+
+     <p><code>auxclasspath</code> nested element - extra classpath used for Type Resolution rules.</p>
+
+     <p><code>ruleset</code> nested element - another way to specify rulesets.  Here's an example:</p>
+          
+    <div class="source"><pre>
+
+&lt;target name="pmd"&gt;
+ &lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+ &lt;pmd shortFilenames="true"&gt;
+  &lt;ruleset&gt;rulesets/favorites.xml&lt;/ruleset&gt;
+  &lt;ruleset&gt;basic&lt;/ruleset&gt;
+  &lt;formatter type="html" toFile="pmd_report.html" linkPrefix="http://pmd.sourceforge.net/xref/"/&gt;
+  &lt;fileset dir="/usr/local/j2sdk1.4.1_01/src/"&gt;
+   &lt;include name="java/lang/*.java"/&gt;
+  &lt;/fileset&gt;
+ &lt;/pmd&gt;
+&lt;/target&gt;
+
+      </pre></div>
+  
+
+
+        </div>
+
+    <div class="subsection"><a name="Postprocessing_the_report_file_with_XSLT"></a><h3>Postprocessing the report file with XSLT</h3>
+        <p>Several folks (most recently, Wouter Zelle) have written XSLT scripts
+        which you can use to transform the XML report into nifty HTML.  To do this,
+        make sure you use the XML formatter in the PMD task invocation, i.e.:
+        </p>
+        
+    <div class="source"><pre>
+
+&lt;formatter type="xml" toFile="${tempbuild}/$report_pmd.xml"/&gt;
+
+        </pre></div>
+  
+        <p>Then, after the end of the PMD task, do this:</p>
+        
+    <div class="source"><pre>
+
+&lt;xslt in="${tempbuild}/$report_pmd.xml" style="${pmdConfig}/wz-pmd-report.xslt" out="${pmdOutput}/$report_pmd.html" /&gt;
+
+        </pre></div>
+  
+    </div>
+
+      <div class="subsection"><a name="Examples"></a><h3>Examples</h3>
+
+<p>Running one ruleset to produce a HTML report (and printing the report to the console as well)</p>
+
+    <div class="source"><pre>
+
+&lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+
+&lt;target name="pmd"&gt;
+    &lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+    &lt;pmd rulesetfiles="imports"&gt;
+        &lt;formatter type="html" toFile="pmd_report.html" toConsole="true"/&gt;
+        &lt;fileset dir="C:\j2sdk1.4.1_01\src\java\lang\"&gt;
+            &lt;include name="**/*.java"/&gt;
+        &lt;/fileset&gt;
+    &lt;/pmd&gt;
+&lt;/target&gt;
+
+</pre></div>
+  
+
+<p>Running multiple rulesets to produce an XML report</p>
+
+    <div class="source"><pre>
+
+&lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+
+&lt;target name="pmd"&gt;
+    &lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+    &lt;pmd rulesetfiles="imports.xml,unusedcode"&gt;
+        &lt;formatter type="xml" toFile="c:\pmd_report.xml"/&gt;
+        &lt;fileset dir="C:\j2sdk1.4.1_01\src\java\lang\"&gt;
+            &lt;include name="**/*.java"/&gt;
+        &lt;/fileset&gt;
+    &lt;/pmd&gt;
+&lt;/target&gt;
+
+</pre></div>
+  
+
+<p>Using a custom renderer</p>
+
+    <div class="source"><pre>
+
+&lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+
+&lt;target name="pmd"&gt;
+    &lt;pmd rulesetfiles="rulesets/favorites.xml"&gt;
+        &lt;formatter type="com.mycompany.MyRenderer" toFile="foo.html"/&gt;
+        &lt;fileset dir="/path/to/java/src"&gt;
+            &lt;include name="**/*.java"/&gt;
+        &lt;/fileset&gt;
+    &lt;/pmd&gt;
+&lt;/target&gt;
+
+</pre></div>
+  
+
+<p>Using a classpath reference in the taskdef</p>
+
+    <div class="source"><pre>
+
+&lt;path id="pmd.classpath"&gt;
+    &lt;pathelement location="${build}"/&gt;
+    &lt;fileset dir="/path/to/my/pmd/lib/"&gt;
+        &lt;include name="*.jar"/&gt;
+    &lt;/fileset&gt;
+&lt;/path&gt;
+
+&lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/&gt;
+
+&lt;target name="pmd"&gt;
+      &lt;pmd rulesetfiles="rulesets/favorites.xml"&gt;
+          &lt;formatter type="net.sourceforge.pmd.renderers.HTMLRenderer" toFile="foo.html"/&gt;
+          &lt;fileset dir="/path/to/java/src"&gt;
+              &lt;include name="**/*.java"/&gt;
+          &lt;/fileset&gt;
+      &lt;/pmd&gt;
+  &lt;/target&gt;
+
+</pre></div>
+  
+
+<p>Getting verbose output</p>
+
+    <div class="source"><pre>
+
+[tom@hal bin]$ ant -v pmd
+Apache Ant version 1.6.2 compiled on July 16 2004
+Buildfile: build.xml
+Detected Java version: 1.4 in: /usr/local/j2sdk1.4.2_03/jre
+Detected OS: Linux
+parsing buildfile build.xml with URI = file:/home/tom/data/pmd/pmd/bin/build.xml
+Project base dir set to: /home/tom/data/pmd/pmd
+Build sequence for target `pmd' is [pmd]
+Complete build sequence is [pmd, copy, cppjavacc, cpd, delete,
+ compile, clean, jar, dist, cpdjnlp, jjtree, javadoc, test, tomserver]
+
+pmd:
+      [pmd] Using the normal ClassLoader
+      [pmd] Using these rulesets: rulesets/imports.xml
+      [pmd] Using rule DontImportJavaLang
+      [pmd] Using rule UnusedImports
+      [pmd] Using rule ImportFromSamePackage
+      [pmd] Using rule DuplicateImports
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/Finalizer.java
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/FinalReference.java
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/PhantomReference.java
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/Reference.java
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/ReferenceQueue.java
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/SoftReference.java
+      [pmd] Processing file /usr/local/java/src/java/lang/ref/WeakReference.java
+      [pmd] 0 problems found
+
+BUILD SUCCESSFUL
+Total time: 2 seconds
+[tom@hal bin]$
+
+</pre></div>
+  
+
+<p>An HTML report with the "linkPrefix" gizmo</p>
+
+    <div class="source"><pre>
+
+&lt;target name="pmd"&gt;
+ &lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+ &lt;pmd rulesetfiles="basic" shortFilenames="true"&gt;
+  &lt;formatter type="html" toFile="pmd_report.html" linkPrefix="http://pmd.sourceforge.net/xref/"/&gt;
+  &lt;fileset dir="/usr/local/j2sdk1.4.1_01/src/"&gt;
+   &lt;include name="java/lang/*.java"/&gt;
+  &lt;/fileset&gt;
+ &lt;/pmd&gt;
+&lt;/target&gt;
+
+</pre></div>
+  
+
+<p>An HTML report with the "linePrefix" gizmo</p>
+
+    <div class="source"><pre>
+
+&lt;target name="pmd"&gt;
+ &lt;taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask"/&gt;
+ &lt;pmd rulesetfiles="basic" shortFilenames="true"&gt;
+  &lt;formatter type="html" toFile="pmd_report.html" linePrefix=".line"/&gt;
+  &lt;fileset dir="/usr/local/j2sdk1.4.1_01/src/"&gt;
+   &lt;include name="java/lang/*.java"/&gt;
+  &lt;/fileset&gt;
+ &lt;/pmd&gt;
+&lt;/target&gt;
+
+</pre></div>
+  
+
+      </div>
+      <div class="subsection"><a name="Memory_Usage"></a><h3>Memory Usage</h3>
+      <p>On quite large project ( generally more than 500 classes ), the Ant task may fail with a OutOfMemoryError. There is a very easy
+      to fix this :
+      On Windows:
+      
+    <div class="source"><pre>
+      	
+      		  set ANT_OPTS=-Xmx1024m -Xms512m
+      	
+      </pre></div>
+  
+      On Linux
+      
+    <div class="source"><pre>
+      	
+      		export ANT_OPTS="-Xmx1024m -Xms512m"
+      	
+      </pre></div>
+  
+      Of course, you should adjust the size according to your available memory.
+      </p>
+      </div>
+   </div></div></div><div class="clear"><hr></hr></div><div id="footer"><div class="xright">© 2002-2009, InfoEther</div><div class="clear"><hr></hr></div></div></body></html>

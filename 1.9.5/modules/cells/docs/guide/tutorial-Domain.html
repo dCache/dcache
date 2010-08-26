@@ -1,0 +1,147 @@
+<html>
+<head><title>Tutorial : The dmg.cells.services.Domain</title></head>
+<body bgcolor=white>
+<center><h1>The dmg.cells.services.Domain</h1></center>
+<h4>Starting the dmg.cells.services.Domain</h4>
+<blockquote>
+A virtual machine becomes a <em>Cell Domain</em>
+as soon as the <em>SystemCell</em> is created.
+The <em>SystemCell</em> must be the first cell
+which comes into live. There must be only on <em>SystemCell</em>
+in a virtual machine.
+<p>
+There is a set of actions which are in common to 
+generic <em>Cell Domains</em>, like 
+<ul>
+<li>creating the <em>SystemCell</em>
+<li>creating a telnet or ssh login possiblity,
+<li>listening for other <em>Cell Domains</em> throu a tunnel port,
+<li>connecting to other <em>Cell Domains</em>,
+<li>executing a batch file.
+</ul>
+Most of these activities are combined in the
+<em>dmg.cells.services.Domain</em> class.
+It contains a static main method and can be started
+directly from the OS command line.
+It contains a set of options which determine the 
+services, the <em>Domain</em> will provide.
+<pre>
+<strong>java dmg.cells.services.Domain</strong>
+
+USAGE : &lt;domainName> [options]/cells/docs/guide > java dmg.cells.services.Domain
+         -telnet  &lt;telnetPort&gt; [dummy]
+         -tunnel  &lt;tunnelPort&gt;
+         -connect &lt;host&gt; &lt;port&gt;
+         -routed
+         -batch &lt;fileName&gt;
+         -boot  &lt;bootDomain&gt;
+         -spy   &lt;spyListenPort&gt;
+         -ic    &lt;interruptHandlerClass&gt;
+         -param &lt;key&gt;=&lt;value&gt; [...]
+</pre> 
+<h4>-telnet &lt;telnetPort&gt;</h4>
+<blockquote>
+This option starts a TelnetCell which listens on port &lt;telnetPort&gt; for telnet
+connections. It uses a dummy login where the user
+can by arbitrary and the passwork is <strong>elch</strong>.
+If sucessfully authenticated the user is assiged to
+a <a href=tutorial-CellShell.html>CellShell</a>. It provides a small set of 
+commands to administer the Domain.
+</blockquote>
+<h4>-tunnel &lt;tunnelPort&gt;</h4>
+<blockquote>
+This option starts a TunnelListener which listens on port &lt;tunnelPort&gt; for
+tunnel connections from other Domains.
+</blockquote>
+<h4>-connect &lt;host&gt; &lt;port&gt;</h4>
+<blockquote>
+This option starts a TunnelConnector which tries to connect to host 
+&lt;host&gt; and port &lt;port>&gt;. 
+</blockquote>
+<h4>-batch &lt;fileName&gt;</h4>
+<blockquote>
+This option starts a BatchCell which reads a file &lt;fileName&gt;
+and executes one line after the other within a <em>CellShell</em>.
+The <em>CellShell</em> is identical to the Shell whic is used
+for the telnet login. 
+</blockquote>
+<h4>-param &lt;key&gt;=&lt;value&gt; [...]</h4>
+<blockquote>
+This option sets <a href=tutorial-env.html>environment parameters</a>
+ which are accessable by all
+Cells within this Domain including the telnet and batch <em>CellShell</em>.
+</blockquote>
+<hr>
+<h4>Examples</h4>
+<pre>
+<strong>
+java dmg.cells.services.Domain MyFirstDomain -telnet 22123
+</strong>
+</pre>
+<blockquote>
+A domain <em>MyFirstDomain</em> is created with a telnetCell listening
+on port <em>22123</em>.
+Use telnet and connect to the telnet shell.
+<pre>
+telnet localhost 22123
+</pre>
+Use your name and the password <em>elch</em> to login.
+The <em>help</em> command will give you an overview of 
+possible shell commands.
+<p>
+<pre>
+<strong>tn-patrick-100 &gt; ps -a</strong>
+  Cell List
+------------------
+tlm            Active    0   TelnetLoginManager  P=22123;C=dmg.cells.services.StreamLoginCell
+System         Active    0   SystemCell          MyFirstCell:R=0;A=0;F=0;R=0;X=0
+tn-patrick-100 Active    0   StreamLoginCell     patrick@localhost/127.0.0.1
+</pre>
+</blockquote>
+<pre>
+<strong>
+java dmg.cells.services.Domain Galactica -telnet 22123 -tunnel 22124 &
+java dmg.cells.services.Domain Voyager   -connect localhost 22124 &
+</strong>
+</pre>
+<blockquote>
+Two domains are created and connected by a <em>Tunnel</em>.
+Log into <em>Galactica</em>.
+<pre>
+<strong>tn-patrick-100 &gt; ps -a</strong>
+  Cell List
+------------------
+tlm            Active    0   TelnetLoginManager  P=22123;C=dmg.cells.services.StreamLoginCell
+System         Active    0   SystemCell          Galactica:R=0;A=0;F=0;R=0;X=0
+down-100       Active    0   RetryTunnel         M=Accepted;S=&lt;send_ready&gt;;P=Voyager
+down           Active    0   GNLCell             Network Listener Cell (port=22124;Class=RetryTunnel)
+tn-patrick-101 Active    0   StreamLoginCell     patrick@localhost/127.0.0.1
+</pre>
+The name of the tunnel listening cell is <em>down</em> and the
+instance which is responsible for the connection from <em>Voyager</em> is
+called <em>down-100</em>.
+<p>
+Throu the tunnel it's possible to inspect <em>Voyager</em> as well.
+Type 'exit' once in your telnet shell. You will end up in the
+so called <em>.. shell</em>.
+Set the destination to <em>System@Voyager</em>.
+<pre>
+set dest System@Voyager
+</pre>
+From now on, whatever you type is send to the SystemCell at 
+the Domain Voyager. The SystemCell as well contains the
+CellShell. So a 'ps -a' is send throu the tunnel to the
+Voyager Domain and interpreted by the CellShell provided 
+by the SystemCell.
+<pre>
+<strong>System@Voyager &gt; ps -a</strong>
+  Cell List
+------------------
+System         Active    0   SystemCell          Voyager:R=1;A=0;F=0;R=0;X=0
+up0            Active    0   RetryTunnel         M=Connection;S=<send_ready>;P=Galactica
+</pre>
+</blockquote>
+
+</blockquote>
+</body>
+</html>

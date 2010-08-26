@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd" version="1.0">
+
+    <!-- Tutorial "unit" -->
+    <persistence-unit name="AuthRecordPersistenceUnit">
+       <provider>oracle.toplink.essentials.ejb.cmp3.EntityManagerFactoryProvider</provider>
+		<mapping-file>org/dcache/auth/AuthRecordORM.xml</mapping-file>
+        <class>org.dcache.auth.AuthorizationRecord</class>
+        <class>org.dcache.auth.GroupList</class>
+        <class>org.dcache.auth.Group</class>
+        <properties>
+<property name="toplink.jdbc.user" value="srmdcache"/>
+      <property name="toplink.jdbc.password" value=""/>
+      <property name="toplink.jdbc.url" value="jdbc:postgresql://localhost/dcache"/>
+      <property name="toplink.jdbc.driver" value="org.postgresql.Driver"/>
+      <property name="toplink.ddl-generation" value="create-tables"/>
+      <!--
+        It appears that toplink treats toplink.create-ddl-jdbc-file-name
+        and toplink.drop-ddl-jdbc-file-name as relative to CWD, even if the values
+        contain path prefix starting with "/".
+        SRM startup scripts changes CWD to /opt/d-cache, 
+        so the .jdbc files are created in /opt/d-cache/etc 
+        direcotory
+      -->
+      <property name="toplink.create-ddl-jdbc-file-name" value="/etc/createDDL.jdbc"/>
+      <property name="toplink.drop-ddl-jdbc-file-name" value="/etc/dropDDL.jdbc"/>
+<!--            <property name="javax.jdo.option.ConnectionDriverName" value="org.postgresql.Driver"/>
+            <property name="javax.jdo.option.ConnectionURL" value="jdbc:postgresql://localhost/dcache"/>
+            <property name="javax.jdo.option.ConnectionUserName" value="srmdcache"/>
+            <property name="javax.jdo.option.ConnectionPassword" value=""/>
+            <property name="org.jpox.autoCreateSchema" value="true"/>
+            <property name="org.jpox.validateTables" value="false"/>
+            <property name="org.jpox.validateConstraints" value="false"/> -->
+        </properties>
+    </persistence-unit>
+
+</persistence>

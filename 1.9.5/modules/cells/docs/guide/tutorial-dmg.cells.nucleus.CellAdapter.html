@@ -1,0 +1,109 @@
+<html>
+<head><title>Tutorial : MyFirstCell</title></head>
+<body>
+<center><h1>MyFirstCell</h1></center>
+<h1>Creating a cell class</h1>
+<h4>The Constructor</h4>
+<blockquote>
+The easiest way to create a cell class is to
+<em>extend</em> an arbitrary class by 
+<a href=../api/dmg/cells/nucleus/CellAdapter.html>
+dmg.cells.nucleus.CellAdapter
+</a>. The constructor of <em>CellAdapter</em> needs at least the
+name of the cell which you want to create. The more sophisticated
+version of the constructor allows to specify a <em>java.lang.String</em>
+containing a set of arguments and a boolean value which determines the
+startup behaviour of the <em>cells</em>.
+<pre>
+   import dmg.cells.nucleus.* ;
+   
+   public class FooCell <strong>extends CellAdapter</strong> {
+   
+       public FooCell( String name , String arguments ){
+       
+          <strong>super( name , arguments  , false )</strong>
+          
+          ...
+          
+          <strong>start() ;</strong>
+       }
+   }
+</pre>
+The CellAdapter tries to create the cell with the specified name.
+If the name is already in use by another cell, 
+the constructor throws an <em>java.lang.IllegalArgumentException</em> with 
+the message "Name Mismatch".
+<br>
+The second argument is forwarded to the helper class 
+<a href=../api/dmg/util/Args.html>dmg.util.Args</a>.
+<em>Args</em> tokenizes the argument string. 
+The tokendelimiter is one or more blank characters.
+Some arguments may have specific meanings for the
+<em>CellAdapter</em>. See <strong>Arguments for the  CellAdapter</strong>
+for more information. The residual arguments are available throu :
+<pre>
+import dmg.utils.* ;
+//
+// get the arguments
+//
+Args args = <strong>getArgs()</strong> ;
+//
+// print the standard arguments
+//
+for( int i = 0 ; i < <strong>args.argc()</strong> ; i++ ){
+   say( "Argument "+i+" : "+<strong>args.argv(i)</strong> ) ;
+}
+//
+// print the options (whatever start with a '-' )
+//
+for( int i = 0 ; i < <strong>args.optc()</strong> ; i++ ){
+   say( "Option "+i+" : "+<strong>args.optv(i)</strong> ) ;
+}
+</pre>
+The <strong>say</strong> method is part of the <em>CellAdapter</em>.
+It tries to send the message to the standard output if possible.
+It may be configured differently.
+<br>
+The third argument of the <em>CellAdapter</em> constructor
+is a boolean value which determines if the intrinsic cell
+services should start immediately or after the <strong>start()</strong>
+method has been issued. Sometimes it might be necessary to delay
+the startup of the cell services because some variables 
+are not yet initialized while the <em>CellAdapter</em> constructor
+is executing.
+<p>
+<strong>NOTE : </strong> Caused by a BUG in the current implementation,
+leaving the cell constructor with an exception needs 
+some special attention if the startup is delayed ( third argument is 
+<em>false</em>).
+In this case the cell must be started first and then stopped 
+before the exception can be thrown or forwarded.
+<pre>
+  import dmg.cells.nucleus.* ;
+  
+  public class FooCell extends CellAdapter {
+  
+     public FooCell( String name ) throws Exception {
+     
+        <strong>super( name , "" , false ) ;</strong>
+        
+        try{
+            
+            ...
+
+        }catch( Exception e ){
+            <strong>
+            start() ;
+            stop() ;
+            </strong>
+            throw e ;
+        }
+        <strong>
+        start() ;
+        </strong>
+     }   
+  } 
+</pre>
+</blockquote>
+</body>
+</html> 

@@ -1,0 +1,232 @@
+%{
+// 
+%}
+
+
+%class Companion
+%package org.dcache.pool.p2p
+%access package
+%import diskCacheV111.vehicles.Message
+%import diskCacheV111.vehicles.DoorTransferFinishedMessage
+
+%start FSM::Init
+%map FSM
+%%
+Init
+{
+        start
+                [ !ctxt.hasStorageInfo() ]
+                GettingStorageInfo
+                {
+                }
+        start
+                [ ctxt.hasStorageInfo() ]
+                CreatingMover
+                {
+                }
+}
+
+GettingStorageInfo
+Entry
+{
+        getStorageInfo();
+}
+{
+        timeout
+                Failed
+                {
+                        setError("Failed to get storage info (timeout)");
+                }
+        noroute
+                Failed
+                {
+                        setError("Failed to get storage info (no route to cell)");
+                }
+        failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Failed to get storage info (" + cause + ")");
+                }
+        success()
+                CreatingMover
+                {
+                }
+}
+
+CreatingMover
+Entry
+{
+        sendDeliveryRequest();
+}
+{
+        success
+                WaitingForConnection
+                {
+                }
+        connected
+                Connected
+                {
+                }
+        failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Source pool failed (" + cause + ")");
+                }
+        timeout
+                Failed
+                {
+                        setError("Source pool failed (no response)");
+                }
+        noroute
+                Failed
+                {
+                        setError("Source pool failed (no route to cell)");
+                }
+}
+
+WaitingForConnection
+Entry
+{
+        startTimer(ctxt.getPingPeriod());
+}
+Exit
+{
+        stopTimer();
+}
+{
+        timer
+                nil
+                {
+                        ping();
+                }
+        success
+                nil
+                {
+                        startTimer(ctxt.getPingPeriod());
+                }
+        timeout
+                Failed
+                {
+                        setError("Ping failed (no response)");
+                }
+        noroute
+                Failed
+                {
+                        setError("Ping failed (no route to cell)");
+                }
+        failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Ping failed (" + cause + ")");
+                }
+        connected
+                Connected
+                {
+                }
+}
+
+Connected
+{
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() == 0]
+                DoorFinished
+                {
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Cancelling
+                {
+                        setError(message.getErrorObject());
+                }
+        disconnected(error: Object)
+                [ error == null ]
+                Done
+                {
+                }
+        cancel(error: Object)
+                Cancelling
+                { 
+                        setError(error);
+                }
+}
+
+// Remote end of the transfer is closed
+DoorFinished
+{
+        disconnected(error: Object)
+                [ error == null ]
+                Done
+                {
+                }
+        cancel(error: Object)
+                Cancelling
+                {
+                        setError(error);
+                }
+}
+
+Cancelling
+Entry
+{
+        interrupt();
+}
+{
+        disconnected(error: Object)
+                [ error == null ]
+                Done
+                {
+                        clearError();
+                }
+}
+
+Failed
+Entry
+{
+        done();
+}
+{
+}
+
+Done
+Entry
+{
+        done();
+}
+{
+}
+
+Default
+{
+        createEntryFailed
+                Failed
+                {
+                        setError("Replica already exists");
+                }
+        cancel(error: Object)
+                Failed
+                {
+                        setError(error);
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Failed
+                {
+                        setError(message.getErrorObject());
+                }
+        disconnected(error: Object)
+                [ error != null ]
+                Failed
+                {
+                        setError(error);
+                }
+        Default
+                nil
+                {
+                        // A number of events are irrelevant
+                        // at various points. To keep the rest
+                        // of the state machine simple we simply 
+                        // ignore them here.
+                }
+}
+
+%%

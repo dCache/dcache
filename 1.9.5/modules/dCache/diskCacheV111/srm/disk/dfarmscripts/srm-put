@@ -1,0 +1,12 @@
+#!/bin/sh -f
+#
+# Usage: srm-put <local path> <vfs path> 
+
+. /local/ups/etc/setups.sh
+setup dfarm
+
+vfspath=$2
+localpath=$1
+
+dfarm put $localpath $vfspath
+

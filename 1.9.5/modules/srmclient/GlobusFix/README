@@ -1,0 +1,2 @@
+This is fix for globus 2.4 globus_debug.h file
+which does not compile with C++ becouse EXTERN_C_BEGIN is missing.

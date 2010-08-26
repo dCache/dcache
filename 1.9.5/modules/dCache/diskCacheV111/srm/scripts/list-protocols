@@ -1,0 +1,12 @@
+#!/bin/sh
+if [ "$1" = "get" ]
+then
+	echo "file"
+	exit 0
+fi
+if [ "$1" = "put" ]
+then
+	echo "file"
+	exit 0
+fi
+exit 1

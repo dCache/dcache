@@ -1,0 +1,50 @@
+function requires () {
+
+unset must_set
+
+for var in "$@"; do
+
+if [ ${var/__//} != ${var} ]; then
+
+    # We have a loop variable
+
+    case $var in
+    VO__*) looplist=VOS;;
+    BDII__*) looplist=BDII_REGIONS;;
+    CE_CLOSE__*) looplist=CE_CLOSE_SE;;
+    *) return 1;;
+    esac
+
+    prefix=${var/__*/}
+    suffix=${var/*__/}
+
+    if [ "x`eval echo '$'$looplist`" = "x" ]; then
+	echo "$looplist not set"
+	must_set="${must_set} $looplist"
+    fi
+
+    for loop in `eval echo '$'$looplist | tr [:lower:] [:upper:]`; do
+	if [ "x`eval echo '$'${prefix}_${loop}_${suffix}`" = "x" ]; then
+	    echo "${prefix}_${loop}_${suffix} not set"
+	    must_set="${must_set} \$${prefix}_${loop}_${suffix}"
+	fi
+    done
+
+else
+
+    if [ "x`eval echo '$'$var`" = "x" ]; then
+	echo "$var not set"
+	must_set="${must_set} $var"
+    fi
+
+fi
+
+done
+
+if [ -z "$must_set" ]; then
+    return 0
+else
+    exit 1
+fi
+
+}

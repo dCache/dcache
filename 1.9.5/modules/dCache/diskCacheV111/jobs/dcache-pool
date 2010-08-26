@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+#  $Id: dcache-pool,v 1.2 2002-03-20 13:52:56 cvs Exp $
+#
+
+
+echonl()
+{
+	case `uname -s` in
+	SunOS)
+		echo "$* \c"
+		;;
+	Linux)
+		echo -n "$* "
+		;;
+	IRIX*)
+		echo -n "$* "
+		;;
+	*)
+		echo "$* "
+		;;
+	esac
+}
+
+
+case $1 in
+
+	start|stop)
+
+		test -f /etc/dcache.conf || exit 1
+
+		. /etc/dcache.conf
+
+
+		if [ ! -f $DCACHE_HOME/config/`hostname`.domains ]; then
+			echo "`basename $1`: $DCACHE_HOME/config/`hostname`.domains file missing"
+			exit 1;
+		fi
+
+		cd $DCACHE_HOME/jobs
+		domains=$DCACHE_HOME/config/`hostname`.domains
+		action=`echo $1 | tr s S`ing
+
+		for p in `cat $domains`
+		do
+			
+			echonl "$action dCache Pools"
+			(./pool -pool=$p $1 >/dev/null 2>&1 && echo "Done.") || echo "Fial"
+			
+		done
+		;;
+	*)
+		echo "Usage `basename $1` [start | stop]".
+		;;
+esac

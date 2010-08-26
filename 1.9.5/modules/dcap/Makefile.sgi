@@ -1,0 +1,43 @@
+#
+# $Id: Makefile.sgi,v 1.23 2005-01-31 09:49:33 tigran Exp $
+#
+
+#
+# Makefile for SGI IRIX
+#
+
+IO_SYM = -DOPEN_SYM=\"open\" -DCLOSE_SYM=\"close\" \
+	-DREAD_SYM=\"read\" -DWRITE_SYM=\"write\" \
+	-DLSEEK_SYM=\"lseek\" -DPREAD_SYM=\"pread\" \
+	-DPWRITE_SYM=\"pwrite\" -DSTAT_SYM=\"stat\" \
+	-DSTAT64_SYM=\"stat64\" -DFSTAT64_SYM=\"fstat64\" \
+	-DLSTAT_SYM=\"lstat\" -DLSTAT64_SYM=\"lstat64\" \
+	-DFSTAT_SYM=\"fstat\" -DFSYNC_SYM=\"fsync\" \
+	-DDUP_SYM=\"dup\" \
+	-DOPENDIR_SYM=\"_opendir\" -DCLOSEDIR_SYM=\"_closedir\" \
+	-DREADDIR_SYM=\"_readdir\" -DREADDIR64_SYM=\"_readdir64\" \
+	-DTELLDIR_SYM=\"_telldir\" -DSEEKDIR_SYM=\"_seekdir\" \
+	-DUNLINK_SYM=\"unlink\" -DRMDIR_SYM=\"rmdir\" -DMKDIR_SYM=\"mkdir\" \
+	-DCHMOD_SYM=\"chmod\" -DACCESS_SYM=\"access\" -DRENAME_SYM=\"rename\"
+
+
+#CC = 
+CFLAGS = -g -mips3 -n32 -I. -D_REENTRANT -DLIBC_SYSCALLS $(IO_SYM) -DLIBC=\"libc.so\"
+
+SO_EXT = .so
+A_EXT = .a
+EXE_EXT =
+
+RANLIB = true
+ARFLAGS = rv
+
+
+MAKEDEP = $(CC) -M
+
+
+LIBS = -lpthread
+LDFLAGS = -shared
+SO_INIT =
+EXE_INIT =
+
+include Makefile.inc

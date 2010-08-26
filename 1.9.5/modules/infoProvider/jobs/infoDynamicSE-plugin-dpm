@@ -1,0 +1,7 @@
+#!/bin/sh
+
+${JAVA_HOME}/bin/java -jar ${LCG_LOCATION}/libexec/infoDynamicSE.jar  \
+		-mode=plugin                                                  \
+		-ldif=${LCG_LOCATION_VAR}/gip/lcg-info-static.ldif            \
+		-type=dpm                                                     \
+		-qry=${LCG_LOCATION}/bin/dpm-qryconf

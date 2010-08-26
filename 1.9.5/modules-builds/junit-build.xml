@@ -1,0 +1,74 @@
+<!-- $Id: junit-build.xml,v 1.4 2007-10-25 14:05:31 tigran Exp $ -->
+
+<project name="junit" basedir=".">
+
+    <property name="unittest.build.dir" location="${buildDir}/junit" />
+
+    <!-- JUnit test suite -->
+
+    <path id="junit.classpath">
+        <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/dcache.jar" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${classesDir}/xrootd-tokenauthz.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-core.jar" />
+        <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
+        <pathelement location="${libDir}/Chimera/oncrpc.jar" />
+        <pathelement location="${libDir}/Chimera/hsqldb.jar" />
+        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
+        <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
+        <pathelement location="${libDir}/log4j/log4j-1.2.15.jar" />
+        <fileset dir="${libDir}/slf4j/" includes="*.jar" />
+        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
+        <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />
+        <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+        <pathelement location="${libDir}/netty/netty-3.1.2.GA.jar" />
+        <pathelement location="${unittest.build.dir}" />
+        <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
+    </path>
+
+
+    <!--
+        compile junit tests
+    -->
+    <target name="-compile.junit">
+
+        <mkdir dir="${unittest.build.dir}" />
+        <javac classpathref="junit.classpath" destdir="${unittest.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}" encoding="${javac.encoding}" deprecation="on">
+            <src path="${unittest.src}" />
+        </javac>
+
+    </target>
+
+
+    <!--
+        run all avalible tests
+           exclude files with name *Helper and all inner classes
+    -->
+    <target name="-run.junit" depends="-compile.junit">
+
+        <property name="tests.report.home" location="${buildDir}/junit-reports" />
+        <mkdir dir="${tests.report.home}" />
+
+        <junit fork="true">
+            <classpath refid="junit.classpath" />
+            <formatter type="xml" usefile="true" />
+            <formatter type="brief" usefile="false" />
+            <test name="${testcase}" if="testcase" todir="${tests.report.home}" />
+            <batchtest todir="${tests.report.home}" haltonfailure="no" unless="testcase">
+                <fileset dir="${unittest.build.dir}">
+                    <!--include only Classes ending with Test or Tests - -->
+                    <!--only these are valid testclasses, everything else are helpers -->
+                    <include name="**/*Test.class" />
+                    <include name="**/*Tests.class" />
+                    <!--exclude PinManagerTest as it only works if the local environment is set up correctly -->
+                    <exclude name="org/dcache/tests/pinmanager/PinManagerTest.class" />
+                </fileset>
+            </batchtest>
+        </junit>
+
+    </target>
+
+</project>

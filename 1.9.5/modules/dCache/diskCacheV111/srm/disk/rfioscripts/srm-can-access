@@ -1,0 +1,139 @@
+#!/bin/sh -f
+#
+# Usage: srm-can-access (get|put) <path> [<user>]
+
+access=$1
+path=$2
+path=`echo $2| sed "s/^\/*/\//"`
+user=$3
+
+
+answer="false"
+#sample output of rfstat
+#Device          : 0
+#Inode number    : 1
+#Protection      : -rw-r--r-- (100644)
+#Hard Links      : 1
+#Uid             : 2640 (lucotte)
+#Gid             : 182 (d0)
+#Size (bytes)    : 7634944
+#Last access     : Mon Jul  9 17:54:43 2001
+#Last modify     : Mon Jul  9 11:23:26 2001
+#Last stat. mod. : Mon Aug 27 16:24:14 2001
+
+stat=`\
+rfstat cchpssd0.in2p3.fr:${path} | awk \
+  'BEGIN { RS = "" ; FS = "\n" } \
+   {  \
+      protection=$3;\
+      sub(/.*: /,"",protection);\
+      directory=(substr(protection,1,1)!="-");\
+      user_read=(substr(protection,2,1)!="-");\
+      user_write=(substr(protection,3,1)!="-");\
+      user_exec=(substr(protection,4,1)!="-");\
+      group_read=(substr(protection,5,1)!="-");\
+      group_write=(substr(protection,6,1)!="-");\
+      group_exec=(substr(protection,7,1)!="-");\
+      other_read=(substr(protection,8,1)!="-");\
+      other_write=(substr(protection,9,1)!="-");\
+      other_exec=(substr(protection,10,1)!="-");\
+      file_user=$5 ;\
+      sub(/.*\(/,"",file_user);\
+      sub(/\).*/,"",file_user);\
+      file_group=$6;\
+      sub(/.*\(/,"",file_group);\
+      sub(/\).*/,"",file_group);\
+      file_size=$7;\
+      sub(/.*: /,"",file_size);\
+      print directory,user_read,user_write,user_exec,\
+            group_read,group_write,group_exec,other_read,\
+            other_write,other_exec,file_user,file_group,\
+            file_size \
+   }' \
+`
+RC=$?
+if [ "$RC" != "0" ]
+then
+  echo file does not exist >&2
+  exit 1
+fi
+isdirectory=`echo $stat | awk '{ print $1 }'`
+user_can_read=`echo $stat | awk '{ print $2 }'`
+user_can_write=`echo $stat | awk '{ print $3 }'`
+user_can_execute=`echo $stat | awk '{ print $4 }'`
+group_can_read=`echo $stat | awk '{ print $5 }'`
+group_can_write=`echo $stat | awk '{ print $6 }'`
+group_can_execute=`echo $stat | awk '{ print $7 }'`
+other_can_read=`echo $stat | awk '{ print $8 }'`
+other_can_write=`echo $stat | awk '{ print $9 }'`
+other_can_execute=`echo $stat | awk '{ print $10 }'`
+file_user=`echo $stat | awk '{ print $11 }'`
+file_group=`echo $stat | awk '{ print $12 }'`
+file_size=`echo $stat | awk '{ print $13 }'`
+if [ "$access" = "put" ]
+then
+   if [ "$isdirectory" = "1" ]
+   then
+      if [ "$other_can_write" = "1" -a "$other_can_execute" = "1" ]
+      then
+         answer="true"
+      fi
+
+      if [ "$user" = "$file_user" ]
+      then
+	 if [ "$user_can_write" = "1" -a "$user_can_execute" = "1" ]
+	 then
+	    answer="true"
+	 fi
+       fi
+    else
+      if [ "$other_can_write" = "1" ] 
+      then
+         answer="true"
+      fi
+
+      if [ "$user" = "$file_user" ]
+      then
+	 if [ "$user_can_write" = "1" ] 
+	 then
+	    answer="true"
+	 fi
+       fi
+     fi
+else
+   if [ "$isdirectory" = "1" ]
+   then
+      if [ "$other_can_read" = "1" -a "$other_can_execute" = "1" ]
+      then
+         answer="true"
+      fi
+
+      if [ "$user" = "$file_user" ]
+      then
+	 if [ "$user_can_read" = "1" -a "$user_can_execute" = "1" ]
+	 then
+	    answer="true"
+	 fi
+       fi
+    else
+      if [ "$other_can_read" = "1" ] 
+      then
+         answer="true"
+      fi
+
+      if [ "$user" = "$file_user" ]
+      then
+	 if [ "$user_can_read" = "1" ] 
+	 then
+	    answer="true"
+	 fi
+       fi
+     fi
+fi
+
+echo $answer
+if [ "$answer" = "false" ]
+then 
+  exit 1
+fi
+exit 0

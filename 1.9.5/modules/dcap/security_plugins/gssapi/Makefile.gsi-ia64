@@ -1,0 +1,79 @@
+#
+#  $Id: Makefile.gsi-ia64,v 1.2.10.1 2006-11-27 22:58:15 podstvkv Exp $
+#
+
+.PHONY: libgssTunnel.so client server
+
+# Your compiler/linker options here
+
+CFLAGS = -g -DGSIGSS
+LDFLAGS = -shared
+SYS_LIBS = -lcrypt -lresolv -lc
+
+
+
+GSI  = /opt/globus
+SSL = /products/ssl
+
+CFLAGS  += -fPIC -I$(GSI)/include/gcc64dbg -DGLOBUS_BUG
+#LIBS = -static -L$(GSI)/lib \
+#	-lglobus_gss_assist_gcc64dbg -lglobus_gssapi_gsi_gcc64dbg \
+#	-lglobus_gsi_cert_utils_gcc64dbg \
+#	-lglobus_gsi_credential_gcc64dbg -lglobus_openssl_error_gcc64dbg\
+#	-lglobus_gsi_callback_gcc64dbg -lglobus_gsi_sysconfig_gcc64dbg \
+#	-lglobus_gsi_proxy_core_gcc64dbg -lglobus_oldgaa_gcc64dbg \
+#	-lglobus_proxy_ssl_gcc64dbg -lglobus_openssl_gcc64dbg \
+#	-lglobus_common_gcc64dbg \
+#	-lltdl_gcc64dbg \
+#        -Bdynamic \
+#	-L$(SSL)/lib \
+#	-lssl -lcrypto $(SYS_LIBS)
+
+
+
+LIBS = -static -L$(GSI)/lib  \
+	-lglobus_gssapi_gsi_gcc64dbg \
+	-lglobus_gsi_callback_gcc64dbg \
+	-lglobus_gsi_cert_utils_gcc64dbg \
+	-lglobus_gsi_proxy_core_gcc64dbg \
+	-lglobus_gsi_credential_gcc64dbg \
+	-lglobus_openssl_gcc64dbg \
+	-lglobus_gsi_sysconfig_gcc64dbg \
+	-lglobus_openssl_error_gcc64dbg \
+	-lglobus_oldgaa_gcc64dbg \
+	-lglobus_proxy_ssl_gcc64dbg \
+	-lssl_gcc64dbg \
+	-lcrypto_gcc64dbg \
+	-lglobus_common_gcc64dbg \
+	-lltdl_gcc64dbg \
+        -Bdynamic \
+	-ldl \
+	-L$(SSL)/lib \
+	$(SYS_LIBS)
+#	-lssl -lcrypto $(SYS_LIBS)
+
+PLUGIN = libgsiTunnel.so
+		
+OBJS = base64.o gssIoTunnel.o util.o tunnelQueue.o
+
+
+all: $(PLUGIN)
+
+
+$(PLUGIN): $(OBJS) Makefile.gsi
+	$(LD) $(LDFLAGS) -o $(PLUGIN) $(OBJS) $(LIBS)
+
+$(OBJS): Makefile
+
+
+client: $(PLUGIN) client.o
+	$(CC) -o client client.o $(OBJS) $(LIBS)
+
+server: $(PLUGIN) server.o
+	$(CC) -o server server.o $(OBJS) $(LIBS)
+
+clean:
+	@rm -f *.o core client server $(PLUGIN) *\~ *.BAK
+
+.c.o:
+	$(CC) -c $(CFLAGS) $<

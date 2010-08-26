@@ -1,0 +1,17 @@
+function run () {
+        echo "Configuring $1"
+        if [ -f $FUNCTIONS_DIR/local/$1 ]; then
+	    echo "Using locally defined function $FUNCTIONS_DIR/local/$1"
+	    . $FUNCTIONS_DIR/local/$1
+        elif [ -f $FUNCTIONS_DIR/$1 ]; then
+            . $FUNCTIONS_DIR/$1
+        else
+            echo "Couldn't find a function called $1"
+            return 1
+        fi
+        $1
+        if [ ! $? -eq 0 ]; then
+                echo "Error configuring $1"
+                return 1
+        fi
+}

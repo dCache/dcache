@@ -1,0 +1,146 @@
+#bird_small
+{
+  float: left;
+}
+
+#bird_large
+{
+  display: none;
+} 
+
+h1
+{
+  text-align: center;
+}
+
+h2, h3
+{
+  clear: left;
+}
+
+table.menu
+{
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+table.menu td
+{
+  width: 25%;
+  background-color: #dddddd;
+  padding: 0px;
+}
+
+table.menu a:visited
+{ 
+  text-decoration: none;
+  color: green;
+}
+
+table.menu a:link
+{
+  text-decoration: none;
+  color: green;
+}
+
+table.menu .active a:visited 
+{
+  text-decoration: none;
+  color: red; 
+}
+
+table.menu .active a:link 
+{
+  text-decoration: none;
+  color: red;
+}
+
+/* Pool info */
+
+span.layout_precious
+{
+  color: red;
+}
+
+span.layout_used
+{
+  color: green;
+}
+
+span.layout_free
+{
+  color: yellow;
+}
+
+td.layout > div
+{
+  margin-left: auto;
+  margin-right: auto;
+  width: 300px;
+  height: 10px;
+}
+
+div.layout_precious
+{
+  float: left;
+  background: red;
+  height: 10px;
+}
+
+div.layout_rest
+{
+  float: left;
+  background: #ff00ff;
+  height: 10px;
+}
+
+div.layout_used
+{
+  float: left;
+  background: green;
+  height: 10px;
+}
+
+div.layout_free
+{
+  float: left;
+  background: yellow; 
+  height: 10px;
+}
+
+.errorcode, .errormessage
+{ 
+  color: red;
+}
+
+/* Queue info */
+th
+{
+  font-weight: normal;
+}
+
+th.active, th.max
+{
+  background: #0099FF;
+}
+
+th.queued
+{
+  background: #00bbFF; 
+}
+
+td.idle
+{
+  color: #008080;
+}
+
+td.queued
+{
+  color: red;
+}
+
+tr.total th, tr.total td
+{
+  background: #0000FF;
+  color: white;
+}

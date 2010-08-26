@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <description>Imported configuration data</description>
+        <property name="location" value="domaincontext:"/>
+        <property name="properties">
+            <value>
+                poolManager=PoolManager
+                poolManagerTimeout=28000
+                pnfsManager=PnfsManager
+                pnfsManagerTimeout=28000
+                chimeraConfig=${ourHomeDir}/config/chimera-config.xml
+            </value>
+        </property>
+    </bean>
+
+    <bean id="poolManagerStub" class="org.dcache.cells.CellStub">
+        <description>Pool manager cell stub</description>
+        <property name="timeout" value="${poolManagerTimeout}"/>
+        <property name="destination" value="${poolManager}"/>
+    </bean>
+
+    <bean id="chimeraXmlConfig" class="java.io.File">
+        <description>Chimera XML config File</description>
+        <constructor-arg value="${chimeraConfig}"/>
+    </bean>
+
+    <bean id="fileSystem" class="org.dcache.chimera.JdbcFs">
+        <description>Chimera Filesystem</description>
+        <constructor-arg>
+            <bean class="org.dcache.chimera.XMLconfig">
+                <constructor-arg ref="chimeraXmlConfig"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="export" class="org.dcache.chimera.nfs.ExportFile">
+        <description>NFS export file</description>
+        <constructor-arg>
+            <bean class="java.io.File">
+                <constructor-arg value="/etc/exports"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+        <description>PNFS manager client module</description>
+        <constructor-arg>
+            <bean class="dmg.cells.nucleus.CellPath">
+                <constructor-arg value="${pnfsManager}"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
+        init-method="init">
+        <description>dCache implementation of NFSv4.1 MDS (door)</description>
+        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="pnfsHandler" ref="pnfs"/>
+        <property name="fileSystemProvider" ref="fileSystem"/>
+        <property name="exportFile" ref="export" />
+    </bean>
+
+</beans>

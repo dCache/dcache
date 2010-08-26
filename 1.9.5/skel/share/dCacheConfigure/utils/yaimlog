@@ -1,0 +1,37 @@
+# YAIM logging function
+# Possible values are: NONE, ABORT, ERROR, WARNING, INFO, DEBUG
+
+# Default YAIM_LOGGING_LEVEL is INFO
+YAIM_LOGGING_LEVEL=${YAIM_LOGGING_LEVEL:-INFO}
+YAIM_LOG=${YAIM_LOG:-/var/log/yaimlog}
+ 
+function yaimlog () {
+    if [ $# -ne 2 ] && [ $# -ne 1 ]; then
+       return 0
+    fi
+    level=0
+    for loglevel in ABORT ERROR WARNING INFO DEBUG; do
+       if [ "x$1" = "x$loglevel" ]; then
+         if [ $# -eq 2 ]; then
+           echo "   $loglevel: $2"
+         else
+           echo "   $loglevel:"
+           while read logline
+             do
+               echo "        | $logline"
+             done
+         fi
+       fi
+       if [ "$loglevel" = "$YAIM_LOGGING_LEVEL" ]; then
+         return 0
+       fi
+    done
+}
+
+# Some guidline:
+#   NONE    - Quiet mode
+#   ABORT   - Explains only the exit reason
+#   ERROR   - Shows the errors occured
+#   WARNING - Shows information which ones - under certain cirumstances - can could cause error
+#   INFO    - Wheter forecast, birhtdays, etc...
+#   DEBUG   - Useful information for debugging, everything what you don't shame.

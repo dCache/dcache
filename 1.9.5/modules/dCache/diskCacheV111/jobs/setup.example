@@ -1,0 +1,3 @@
+storage_group = "any"
+max_disk = 10240
+high_water = 8000

@@ -1,0 +1,193 @@
+#!/bin/sh
+########################################################################
+# Script: srmcp-prepare_package  major_version  minor_version release_number
+#
+# REQUIRES: run this from the base directory of CVS checkouts,
+#           not from the package directory where this scripts resides in CVS
+#
+# REQUIRES: CVS rtag be of the form SRM_CLIENT_V<majorv>_<minorv>
+########################################################################
+
+#=======================================================================
+# Check that JAVA_HOME is defined.
+# REQUIRES: Java to be setup
+#=======================================================================
+if [ -z ${JAVA_HOME} ]
+then
+  echo "srmcp-prepare-and-make-in-user-space: ERROR: JAVA_HOME is not defined. Exiting."
+  exit 1
+fi
+
+#=======================================================================
+# Process arguments
+# REQUIRES: major version and minor version as arguments
+#=======================================================================
+if [ "$#" != 3 ]
+then
+  echo "srmcp-prepare-and-make-in-user-space: USAGE: Must supply exactly three integer arguments."
+  echo 'Usage:  srmcp-prepare-and-make-in-user-space  major_version  minor_version release_number'
+  exit 2
+fi
+
+#=======================================================================
+# Define version-dependent names
+#=======================================================================
+majorv="${1}"
+minorv="${2}"
+release="${3}"
+version="$majorv"_"$minorv"
+versdot="$majorv"."$minorv"
+package=srmcp-"$versdot"
+tarball=srmcp_v"$version"_NULL.tar
+srmtags=SRM_CLIENT_V"$version"
+rendom_num=$$${RANDOM}
+tmpdir=/tmp/${rendom_num}
+startdir=${PWD}
+#=======================================================================
+# Setup the CVS environment
+# REQUIRES: ssh1 script to execute "ssh -1 $*"
+#=======================================================================
+export CVSROOT="$USER"@cvs-dcache.desy.de:/home/cvs/cvs-root
+export CVS_RSH=ssh1
+
+#=======================================================================
+# Check out what is needed
+#=======================================================================
+mkdir ${tmpdir}
+if [ $? != 0 ] ; then
+    echo  "could not create temp directory $tmpdir" >&2
+    exit 1
+fi
+
+#======================================================================
+# Cleanup function
+#======================================================================
+restore_rpmmacros=false
+restore_rpmdir=false
+rpmmacros=${HOME}/.rpmmacros
+rpmdir=${HOME}/rpmbuild
+rpmmacrossave=${HOME}/.rpmmacros.${rendom_num}
+rpmdirsave=${HOME}/rpmbuild.${rendom_num}
+
+cleanup() {
+  rm -rf $tmpdir 
+    if [ "$restore_rpmmacros" = "true" ] ; then
+      rm -f ${rpmmacros}
+      mv  $rpmmacrossave ${rpmmacros}
+    fi    
+    if [ "$restore_rpmdir" = "true" ] ; then
+      rm -rf ${rpmdir}
+      mv ${rpmdirsave} ${rpmdir}
+    fi
+  
+}
+# add cleanup
+trap cleanup 0
+trap "exit 1" 1 2 3 15
+
+cd ${tmpdir}
+
+cvs co -r $srmtags srm srmclient
+
+#=======================================================================
+# Build the srm first
+#=======================================================================
+cd srm
+./makeUnixfsSRM.sh
+cd ..
+
+#=======================================================================
+# Build the srm client package last
+#=======================================================================
+cd srmclient
+cp ../srm/lib/srm.jar lib
+
+# Do this for now, until this is removed from CVS
+rm -rf ./lib/glue
+
+cp -r ../srm/lib/glue  lib
+cp -r ../srm/lib/globus lib
+cp -r ../srm/lib/axis   lib
+export SRM_PATH=`pwd`
+./sbin/make_release.sh v"$version"
+mv ups_release/"$tarball" ..
+cd ..
+
+#=======================================================================
+# Adapt the UPS-oriented tarball to an RPM-oriented directory tree
+#=======================================================================
+mkdir "$package"
+mv "$tarball" "$package"
+cd "$package"
+tar -xvof "$tarball"
+mv "$tarball" ${startdir}
+rm -rf srmclient/ups
+mv srmclient/* .
+rmdir srmclient
+
+#=======================================================================
+# Add some sym-links for alternative names to commands
+#=======================================================================
+cd bin
+ln -s ./adler32                  adler32sum
+ln -s ./gridftpcopy              gridftp-cp
+ln -s ./gridftplist              gridftp-ls
+ln -s ./srmcp                    srm-cp
+ln -s ./srm-storage-element-info srm-get-storage-element-info
+cd ../..
+#======================================================================
+# save original .rpmmacros and populate the new one
+#======================================================================
+if [ -e ${rpmmacros} ] ; then
+  mv ${rpmmacros} ${rpmmacrossave}
+  restore_rpmmacros=true
+fi
+echo '%_topdir               %(echo $HOME)/rpmbuild' >${rpmmacros}
+echo '%debug_package         %{nil}' >>${rpmmacros}
+
+#======================================================================
+# save original rpmbuild and populate the new one
+#======================================================================
+if [ -e ${rpmdir} ] ; then
+  mv ${rpmdir} ${rpmdirsave}
+  restore_rpmdir=true
+fi
+mkdir -p  ${rpmdir}/{SOURCES,SPECS,BUILD,SRPMS,RPMS/{i386,i586,i686,athlon,noarc}}
+rpmbase=${rpmdir}
+specbase=srmcp-base.spec
+specfile=srmcp-"$versdot".spec
+
+#=======================================================================
+# Populate the redhat RPM area with srmcp for a binary build
+#=======================================================================
+mkdir -p $rpmbase/BUILD/"$package"/opt
+cp -r "$package" $rpmbase/BUILD/"$package"/opt
+
+#=======================================================================
+# Create the spec file on the fly, to include the version numbers
+#=======================================================================
+rm -f $rpmbase/SPECS/"${specfile}" 
+echo "%define MajVersion ${majorv}"  > $rpmbase/SPECS/"${specfile}"
+echo "%define MinVersion ${minorv}"  >> $rpmbase/SPECS/"${specfile}"
+echo "Release: ${release}" >> $rpmbase/SPECS/"${specfile}"
+cat srmclient/conf/"${specbase}" >> $rpmbase/SPECS/"${specfile}"
+
+#=======================================================================
+# Clean out any old RPMs for this package
+#=======================================================================
+rm -f $rpmbase/RPMS/i386/"$package"-*.i386.rpm
+
+#=======================================================================
+# Do the binary build, copy back the result to original user area
+#=======================================================================
+rpmbuild -bb -vv $rpmbase/SPECS/"$package".spec
+cp $rpmbase/RPMS/i386/"$package"-"$release".i386.rpm ${startdir}
+
+#=======================================================================
+# Clean-up? will be cause by exit (trap 0)
+#=======================================================================
+
+
+########################################################################
+# The End
+########################################################################

@@ -1,0 +1,32 @@
+set printout default errors
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorHost serviceLocatorPort httpdPort config
+#
+create dmg.cells.services.RoutingManager  RoutingMgr
+#
+#   The LocationManager Part
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorHost} ${serviceLocatorPort} "
+#
+check -strong billingDb
+create diskCacheV111.cells.BillingCell billing "${billingDb} -useSQL -replyObject \
+ -jdbcUrl=jdbc:apache:commons:dbcp:/poolingDriverConf \
+ -jdbcDriver=org.postgresql.Driver \
+ -dbCommitNumber=100 \
+ -dbCommitTime=300000 \
+ -dbUser=enstore -dbPass=enstore"
+###  -jdbcUrl=jdbc:postgresql://fndca2a.fnal.gov/dcache \

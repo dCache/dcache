@@ -1,0 +1,2624 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="StorageResourceManager" targetNamespace="http://srm.lbl.gov/StorageResourceManager" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://srm.lbl.gov/StorageResourceManager" xmlns:intf="http://srm.lbl.gov/StorageResourceManager" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<wsdl:documentation>
+
+    srm.v2.2.wsdl
+
+    Wed Sep 27 08:22:41 PDT 2006
+    Mon Jul  3 09:49:53 PDT 2006
+    Tue Jun 20 07:21:54 PDT 2006  - FINALIZED
+    Mon Jun 19 09:45:38 PDT 2006
+
+    Created by Junmin Gu, Alex Sim
+    Lawrence Berkeley National Laboratory 
+
+    on basis of the Storage Resource Manager Interface Specification v2.2
+    published at http://sdm.lbl.gov/srm-wg
+
+ </wsdl:documentation>
+ <wsdl:types>
+  <schema targetNamespace="http://srm.lbl.gov/StorageResourceManager" xmlns="http://www.w3.org/2001/XMLSchema">
+   <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+
+   <simpleType name="TFileStorageType">
+    <restriction base="xsd:string">
+     <enumeration value="VOLATILE"/>
+     <enumeration value="DURABLE"/>
+     <enumeration value="PERMANENT"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TFileType">
+    <restriction base="xsd:string">
+     <enumeration value="FILE"/>
+     <enumeration value="DIRECTORY"/>
+     <enumeration value="LINK"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TRetentionPolicy">
+    <restriction base="xsd:string">
+     <enumeration value="REPLICA"/>
+     <enumeration value="OUTPUT"/>
+     <enumeration value="CUSTODIAL"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TAccessLatency">
+    <restriction base="xsd:string">
+     <enumeration value="ONLINE"/>
+     <enumeration value="NEARLINE"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TPermissionMode">
+    <restriction base="xsd:string">
+     <enumeration value="NONE"/>
+     <enumeration value="X"/>
+     <enumeration value="W"/>
+     <enumeration value="WX"/>
+     <enumeration value="R"/>
+     <enumeration value="RX"/>
+     <enumeration value="RW"/>
+     <enumeration value="RWX"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TPermissionType">
+    <restriction base="xsd:string">
+     <enumeration value="ADD"/>
+     <enumeration value="REMOVE"/>
+     <enumeration value="CHANGE"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TRequestType">
+    <restriction base="xsd:string">
+     <enumeration value="PREPARE_TO_GET"/>
+     <enumeration value="PREPARE_TO_PUT"/>
+     <enumeration value="COPY"/>
+     <enumeration value="BRING_ONLINE"/>
+     <enumeration value="RESERVE_SPACE"/>
+     <enumeration value="UPDATE_SPACE"/>
+     <enumeration value="CHANGE_SPACE_FOR_FILES"/>
+     <enumeration value="LS"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TOverwriteMode">
+    <restriction base="xsd:string">
+     <enumeration value="NEVER"/>
+     <enumeration value="ALWAYS"/>
+     <enumeration value="WHEN_FILES_ARE_DIFFERENT"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TFileLocality">
+    <restriction base="xsd:string">
+     <enumeration value="ONLINE"/>
+     <enumeration value="NEARLINE"/>
+     <enumeration value="ONLINE_AND_NEARLINE"/>
+     <enumeration value="LOST"/>
+     <enumeration value="NONE"/>
+     <enumeration value="UNAVAILABLE"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TAccessPattern">
+    <restriction base="xsd:string">
+     <enumeration value="TRANSFER_MODE"/>
+     <enumeration value="PROCESSING_MODE"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TConnectionType">
+    <restriction base="xsd:string">
+     <enumeration value="WAN"/>
+     <enumeration value="LAN"/>
+    </restriction>
+   </simpleType>
+   <simpleType name="TStatusCode">
+    <restriction base="xsd:string">
+     <enumeration value="SRM_SUCCESS"/>
+     <enumeration value="SRM_FAILURE"/>
+     <enumeration value="SRM_AUTHENTICATION_FAILURE"/>
+     <enumeration value="SRM_AUTHORIZATION_FAILURE"/>
+     <enumeration value="SRM_INVALID_REQUEST"/>
+     <enumeration value="SRM_INVALID_PATH"/>
+     <enumeration value="SRM_FILE_LIFETIME_EXPIRED"/>
+     <enumeration value="SRM_SPACE_LIFETIME_EXPIRED"/>
+     <enumeration value="SRM_EXCEED_ALLOCATION"/>
+     <enumeration value="SRM_NO_USER_SPACE"/>
+     <enumeration value="SRM_NO_FREE_SPACE"/>
+     <enumeration value="SRM_DUPLICATION_ERROR"/>
+     <enumeration value="SRM_NON_EMPTY_DIRECTORY"/>
+     <enumeration value="SRM_TOO_MANY_RESULTS"/>
+     <enumeration value="SRM_INTERNAL_ERROR"/>
+     <enumeration value="SRM_FATAL_INTERNAL_ERROR"/>
+     <enumeration value="SRM_NOT_SUPPORTED"/>
+     <enumeration value="SRM_REQUEST_QUEUED"/>
+     <enumeration value="SRM_REQUEST_INPROGRESS"/>
+     <enumeration value="SRM_REQUEST_SUSPENDED"/>
+     <enumeration value="SRM_ABORTED"/>
+     <enumeration value="SRM_RELEASED"/>
+     <enumeration value="SRM_FILE_PINNED"/>
+     <enumeration value="SRM_FILE_IN_CACHE"/>
+     <enumeration value="SRM_SPACE_AVAILABLE"/>
+     <enumeration value="SRM_LOWER_SPACE_GRANTED"/>
+     <enumeration value="SRM_DONE"/>
+     <enumeration value="SRM_PARTIAL_SUCCESS"/>
+     <enumeration value="SRM_REQUEST_TIMED_OUT"/>
+     <enumeration value="SRM_LAST_COPY"/>
+     <enumeration value="SRM_FILE_BUSY"/>
+     <enumeration value="SRM_FILE_LOST"/>
+     <enumeration value="SRM_FILE_UNAVAILABLE"/>
+     <enumeration value="SRM_CUSTOM_STATUS"/>
+    </restriction>
+   </simpleType>
+
+
+   <complexType name="TRetentionPolicyInfo">
+    <sequence>
+     <element name="retentionPolicy" type="impl:TRetentionPolicy"/>
+     <element name="accessLatency" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TAccessLatency"/>
+    </sequence>
+   </complexType>
+   <complexType name="TUserPermission">
+    <sequence>
+     <element name="userID" type="xsd:string"/>
+     <element name="mode" type="impl:TPermissionMode"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTUserPermission">
+    <sequence>
+     <element maxOccurs="unbounded" name="userPermissionArray" nillable="true" type="impl:TUserPermission"/>
+    </sequence>
+   </complexType>
+   <complexType name="TGroupPermission">
+    <sequence>
+     <element name="groupID" type="xsd:string"/>
+     <element name="mode" type="impl:TPermissionMode"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTGroupPermission">
+    <sequence>
+     <element maxOccurs="unbounded" name="groupPermissionArray" nillable="true" type="impl:TGroupPermission"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfUnsignedLong">
+    <sequence>
+     <element maxOccurs="unbounded" name="unsignedLongArray" nillable="true" type="xsd:unsignedLong"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfString">
+    <sequence>
+     <element maxOccurs="unbounded" name="stringArray" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="TReturnStatus">
+    <sequence>
+     <element name="statusCode" type="impl:TStatusCode"/>
+     <element name="explanation" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="TSURLReturnStatus">
+    <sequence>
+     <element name="surl" type="xsd:anyURI"/>
+     <element name="status" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTSURLReturnStatus">
+    <sequence>
+     <element maxOccurs="unbounded" name="statusArray" nillable="true" type="impl:TSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="TSURLLifetimeReturnStatus">
+    <sequence>
+     <element name="surl" type="xsd:anyURI"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="fileLifetime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="pinLifetime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTSURLLifetimeReturnStatus">
+    <sequence>
+     <element maxOccurs="unbounded" name="statusArray" nillable="true" type="impl:TSURLLifetimeReturnStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="TMetaDataPathDetail">
+    <sequence>
+     <element name="path" type="xsd:string"/>
+     <element name="status" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TReturnStatus"/>
+     <element name="size" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="createdAtTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:dateTime"/>
+     <element name="lastModificationTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:dateTime"/>
+     <element name="fileStorageType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileStorageType"/>
+     <element name="retentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="fileLocality" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileLocality"/>
+     <element name="arrayOfSpaceTokens" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfString"/>
+     <element name="type" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileType"/>
+     <element name="lifetimeAssigned" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="lifetimeLeft" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="ownerPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TUserPermission"/>
+     <element name="groupPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TGroupPermission"/>
+     <element name="otherPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TPermissionMode"/>
+     <element name="checkSumType" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="checkSumValue" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSubPaths" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTMetaDataPathDetail"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTMetaDataPathDetail">
+    <sequence>
+     <element maxOccurs="unbounded" name="pathDetailArray" nillable="true" type="impl:TMetaDataPathDetail"/>
+    </sequence>
+   </complexType>
+   <complexType name="TMetaDataSpace">
+    <sequence>
+     <element name="spaceToken" type="xsd:string"/>
+     <element name="status" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TReturnStatus"/>
+     <element name="retentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="owner" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="totalSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="guaranteedSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="unusedSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="lifetimeAssigned" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="lifetimeLeft" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTMetaDataSpace">
+    <sequence>
+     <element maxOccurs="unbounded" name="spaceDataArray" nillable="true" type="impl:TMetaDataSpace"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="TDirOption">
+    <sequence>
+     <element name="isSourceADirectory" type="xsd:boolean"/>
+     <element name="allLevelRecursive" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:boolean"/>
+     <element name="numOfLevels" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="TExtraInfo">
+    <sequence>
+     <element name="key" type="xsd:string"/>
+     <element name="value" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTExtraInfo">
+    <sequence>
+     <element maxOccurs="unbounded" name="extraInfoArray" nillable="true" type="impl:TExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfAnyURI">
+    <sequence>
+     <element maxOccurs="unbounded" name="urlArray" nillable="true" type="xsd:anyURI"/>
+    </sequence>
+   </complexType>
+   <complexType name="TTransferParameters">
+    <sequence>
+     <element name="accessPattern" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TAccessPattern"/>
+     <element name="connectionType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TConnectionType"/>
+     <element name="arrayOfClientNetworks" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfString"/>
+     <element name="arrayOfTransferProtocols" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfString"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="TGetFileRequest">
+    <sequence>
+     <element name="sourceSURL" type="xsd:anyURI"/>
+     <element name="dirOption" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TDirOption"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTGetFileRequest">
+    <sequence>
+     <element maxOccurs="unbounded" name="requestArray" nillable="true" type="impl:TGetFileRequest"/>
+    </sequence>
+   </complexType>
+   <complexType name="TPutFileRequest">
+    <sequence>
+     <element name="targetSURL" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:anyURI"/>
+     <element name="expectedFileSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTPutFileRequest">
+    <sequence>
+     <element maxOccurs="unbounded" name="requestArray" nillable="true" type="impl:TPutFileRequest"/>
+    </sequence>
+   </complexType>
+   <complexType name="TCopyFileRequest">
+    <sequence>
+     <element name="sourceSURL" type="xsd:anyURI"/>
+     <element name="targetSURL" type="xsd:anyURI"/>
+     <element name="dirOption" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TDirOption"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTCopyFileRequest">
+    <sequence>
+     <element maxOccurs="unbounded" name="requestArray" nillable="true" type="impl:TCopyFileRequest"/>
+    </sequence>
+   </complexType>
+   <complexType name="TGetRequestFileStatus">
+    <sequence>
+     <element name="sourceSURL" type="xsd:anyURI"/>
+     <element name="fileSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="estimatedWaitTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingPinTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="transferURL" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:anyURI"/>
+     <element name="transferProtocolInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTGetRequestFileStatus">
+    <sequence>
+     <element maxOccurs="unbounded" name="statusArray" nillable="true" type="impl:TGetRequestFileStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="TBringOnlineRequestFileStatus">
+    <sequence>
+     <element name="sourceSURL" type="xsd:anyURI"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="fileSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="estimatedWaitTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingPinTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTBringOnlineRequestFileStatus">
+    <sequence>
+     <element maxOccurs="unbounded" name="statusArray" nillable="true" type="impl:TBringOnlineRequestFileStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="TPutRequestFileStatus">
+    <sequence>
+     <element name="SURL" type="xsd:anyURI"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="fileSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="estimatedWaitTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingPinLifetime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingFileLifetime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="transferURL" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:anyURI"/>
+     <element name="transferProtocolInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTPutRequestFileStatus">
+    <sequence>
+     <element maxOccurs="unbounded" name="statusArray" type="impl:TPutRequestFileStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="TCopyRequestFileStatus">
+    <sequence>
+     <element name="sourceSURL" type="xsd:anyURI"/>
+     <element name="targetSURL" type="xsd:anyURI"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="fileSize" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="estimatedWaitTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingFileLifetime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTCopyRequestFileStatus">
+    <sequence>
+     <element maxOccurs="unbounded" name="statusArray" type="impl:TCopyRequestFileStatus"/>
+    </sequence>
+   </complexType>
+   <complexType name="TRequestSummary">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="requestType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRequestType"/>
+     <element name="totalNumFilesInRequest" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="numOfCompletedFiles" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="numOfWaitingFiles" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="numOfFailedFiles" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTRequestSummary">
+    <sequence>
+     <element maxOccurs="unbounded" name="summaryArray" nillable="true" type="impl:TRequestSummary"/>
+    </sequence>
+   </complexType>
+   <complexType name="TSURLPermissionReturn">
+    <sequence>
+     <element name="surl" type="xsd:anyURI"/>
+     <element name="status" type="impl:TReturnStatus"/>
+     <element name="permission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TPermissionMode"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTSURLPermissionReturn">
+    <sequence>
+     <element maxOccurs="unbounded" name="surlPermissionArray" type="impl:TSURLPermissionReturn"/>
+    </sequence>
+   </complexType>
+   <complexType name="TPermissionReturn">
+    <sequence>
+     <element name="surl" type="xsd:anyURI"/>
+     <element name="status" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TReturnStatus"/>
+     <element name="owner" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="ownerPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TPermissionMode"/>
+     <element name="arrayOfUserPermissions" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTUserPermission"/>
+     <element name="arrayOfGroupPermissions" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTGroupPermission"/>
+     <element name="otherPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TPermissionMode"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTPermissionReturn">
+    <sequence>
+     <element maxOccurs="unbounded" name="permissionArray" nillable="true" type="impl:TPermissionReturn"/>
+    </sequence>
+   </complexType>
+   <complexType name="TRequestTokenReturn">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="createdAtTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:dateTime"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTRequestTokenReturn">
+    <sequence>
+     <element maxOccurs="unbounded" name="tokenArray" nillable="true" type="impl:TRequestTokenReturn"/>
+    </sequence>
+   </complexType>
+   <complexType name="TSupportedTransferProtocol">
+    <sequence>
+     <element name="transferProtocol" type="xsd:string"/>
+     <element name="attributes" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfTSupportedTransferProtocol">
+    <sequence>
+     <element maxOccurs="unbounded" name="protocolArray" nillable="true" type="impl:TSupportedTransferProtocol"/>
+    </sequence>
+   </complexType>
+
+
+   <complexType name="srmReserveSpaceRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="userSpaceTokenDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="retentionPolicyInfo" type="impl:TRetentionPolicyInfo"/>
+     <element name="desiredSizeOfTotalSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="desiredSizeOfGuaranteedSpace" type="xsd:unsignedLong"/>
+     <element name="desiredLifetimeOfReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="arrayOfExpectedFileSizes" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfUnsignedLong"/>
+     <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="transferParameters" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TTransferParameters"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmReserveSpaceResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="estimatedProcessingTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="retentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="sizeOfTotalReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="sizeOfGuaranteedReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="lifetimeOfReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="spaceToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfReserveSpaceRequestRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="requestToken" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfReserveSpaceRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="estimatedProcessingTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="retentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="sizeOfTotalReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="sizeOfGuaranteedReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="lifetimeOfReservedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="spaceToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmReleaseSpaceRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="spaceToken" type="xsd:string"/>
+     <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="forceFileRelease" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmReleaseSpaceResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmUpdateSpaceRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="spaceToken" type="xsd:string"/>
+     <element name="newSizeOfTotalSpaceDesired" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="newSizeOfGuaranteedSpaceDesired" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="newLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmUpdateSpaceResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="sizeOfTotalSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="sizeOfGuaranteedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="lifetimeGranted" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfUpdateSpaceRequestRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="requestToken" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfUpdateSpaceRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="sizeOfTotalSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="sizeOfGuaranteedSpace" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:unsignedLong"/>
+     <element name="lifetimeGranted" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmGetSpaceMetaDataRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSpaceTokens" type="impl:ArrayOfString"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmGetSpaceMetaDataResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfSpaceDetails" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTMetaDataSpace"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmChangeSpaceForFilesRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+     <element name="targetSpaceToken" type="xsd:string"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmChangeSpaceForFilesResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="estimatedProcessingTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfChangeSpaceForFilesRequestRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="requestToken" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfChangeSpaceForFilesRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="estimatedProcessingTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmExtendFileLifeTimeInSpaceRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="spaceToken" type="xsd:string"/>
+     <element name="arrayOfSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+     <element name="newLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmExtendFileLifeTimeInSpaceResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLLifetimeReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmPurgeFromSpaceRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+     <element name="spaceToken" type="xsd:string"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmPurgeFromSpaceResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmGetSpaceTokensRequest">
+    <sequence>
+     <element name="userSpaceTokenDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmGetSpaceTokensResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfSpaceTokens" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfString"/>
+    </sequence>
+   </complexType>
+
+
+   <complexType name="srmSetPermissionRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="SURL" type="xsd:anyURI"/>
+     <element name="permissionType" type="impl:TPermissionType"/>
+     <element name="ownerPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TPermissionMode"/>
+     <element name="arrayOfUserPermissions" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTUserPermission"/>
+     <element name="arrayOfGroupPermissions" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTGroupPermission"/>
+     <element name="otherPermission" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TPermissionMode"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmSetPermissionResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmCheckPermissionRequest">
+    <sequence>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmCheckPermissionResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfPermissions" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLPermissionReturn"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmGetPermissionRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmGetPermissionResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfPermissionReturns" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTPermissionReturn"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmMkdirRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="SURL" type="xsd:anyURI"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmMkdirResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmRmdirRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="SURL" type="xsd:anyURI"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="recursive" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmRmdirResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmRmRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmRmResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmLsRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+     <element name="storageSystemInfo" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="fileStorageType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileStorageType"/>
+     <element name="fullDetailedList" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:boolean"/>
+     <element name="allLevelRecursive" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:boolean"/>
+     <element name="numOfLevels" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="offset" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="count" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmLsResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="details" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTMetaDataPathDetail"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfLsRequestRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="offset" minOccurs="0" maxOccurs="1" type="xsd:int"/>
+     <element name="count" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfLsRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="details"  minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTMetaDataPathDetail"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmMvRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="fromSURL" type="xsd:anyURI"/>
+     <element name="toSURL" type="xsd:anyURI"/>
+	 <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmMvResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+
+   <complexType name="srmPrepareToGetRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileRequests" type="impl:ArrayOfTGetFileRequest"/>
+     <element name="userRequestDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="desiredFileStorageType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileStorageType"/>
+     <element name="desiredTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="desiredPinLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="targetSpaceToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="targetFileRetentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="transferParameters" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TTransferParameters"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmPrepareToGetResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTGetRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfGetRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSourceSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfGetRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTGetRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmBringOnlineRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileRequests" type="impl:ArrayOfTGetFileRequest"/>
+     <element name="userRequestDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="desiredFileStorageType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileStorageType"/>
+     <element name="desiredTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="desiredLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="targetSpaceToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="targetFileRetentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="transferParameters" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TTransferParameters"/>
+     <element name="deferredStartTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmBringOnlineResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTBringOnlineRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingDeferredStartTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfBringOnlineRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSourceSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfBringOnlineRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTBringOnlineRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="remainingDeferredStartTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmPrepareToPutRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileRequests" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTPutFileRequest"/>
+     <element name="userRequestDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="overwriteOption" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TOverwriteMode"/>
+     <element name="storageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="desiredTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="desiredPinLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="desiredFileLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="desiredFileStorageType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileStorageType"/>
+     <element name="targetSpaceToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="targetFileRetentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="transferParameters" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TTransferParameters"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmPrepareToPutResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTPutRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfPutRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfTargetSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfPutRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTPutRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmCopyRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileRequests" type="impl:ArrayOfTCopyFileRequest"/>
+     <element name="userRequestDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="overwriteOption" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TOverwriteMode"/>
+     <element name="desiredTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="desiredTargetSURLLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="targetFileStorageType" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TFileStorageType"/>
+     <element name="targetSpaceToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="targetFileRetentionPolicyInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:TRetentionPolicyInfo"/>
+     <element name="sourceStorageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+     <element name="targetStorageSystemInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmCopyResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTCopyRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmStatusOfCopyRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSourceSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+     <element name="arrayOfTargetSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmStatusOfCopyRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTCopyRequestFileStatus"/>
+     <element name="remainingTotalRequestTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmReleaseFilesRequest">
+    <sequence>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfAnyURI"/>
+     <element name="doRemove" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:boolean"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmReleaseFilesResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmPutDoneRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmPutDoneResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmAbortRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmAbortRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmAbortFilesRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmAbortFilesResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmSuspendRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmSuspendRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmResumeRequestRequest">
+    <sequence>
+     <element name="requestToken" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmResumeRequestResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmGetRequestSummaryRequest">
+    <sequence>
+     <element name="arrayOfRequestTokens" type="impl:ArrayOfString"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmGetRequestSummaryResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfRequestSummaries" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTRequestSummary"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmExtendFileLifeTimeRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="requestToken" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="arrayOfSURLs" type="impl:ArrayOfAnyURI"/>
+     <element name="newFileLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+     <element name="newPinLifeTime" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:int"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmExtendFileLifeTimeResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfFileStatuses" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSURLLifetimeReturnStatus"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmGetRequestTokensRequest">
+    <sequence>
+     <element name="userRequestDescription" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmGetRequestTokensResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="arrayOfRequestTokens" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTRequestTokenReturn"/>
+    </sequence>
+   </complexType>
+
+
+   <complexType name="srmGetTransferProtocolsRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmGetTransferProtocolsResponse">
+    <sequence>
+     <element name="returnStatus" type="impl:TReturnStatus"/>
+     <element name="protocolInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTSupportedTransferProtocol"/>
+    </sequence>
+   </complexType>
+
+   <complexType name="srmPingRequest">
+    <sequence>
+     <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="srmPingResponse">
+    <sequence>
+     <element name="versionInfo" type="xsd:string"/>
+     <element name="otherInfo" minOccurs="0" maxOccurs="1" nillable="true" type="impl:ArrayOfTExtraInfo"/>
+    </sequence>
+   </complexType>
+  </schema>
+ </wsdl:types>
+
+
+   <wsdl:message name="srmReserveSpaceRequest">
+
+      <wsdl:part name="srmReserveSpaceRequest" type="impl:srmReserveSpaceRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmReserveSpaceResponse">
+
+      <wsdl:part name="srmReserveSpaceResponse" type="impl:srmReserveSpaceResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfReserveSpaceRequestRequest">
+
+      <wsdl:part name="srmStatusOfReserveSpaceRequestRequest" type="impl:srmStatusOfReserveSpaceRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfReserveSpaceRequestResponse">
+
+      <wsdl:part name="srmStatusOfReserveSpaceRequestResponse" type="impl:srmStatusOfReserveSpaceRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmReleaseSpaceRequest">
+
+      <wsdl:part name="srmReleaseSpaceRequest" type="impl:srmReleaseSpaceRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmReleaseSpaceResponse">
+
+      <wsdl:part name="srmReleaseSpaceResponse" type="impl:srmReleaseSpaceResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmUpdateSpaceRequest">
+
+      <wsdl:part name="srmUpdateSpaceRequest" type="impl:srmUpdateSpaceRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmUpdateSpaceResponse">
+
+      <wsdl:part name="srmUpdateSpaceResponse" type="impl:srmUpdateSpaceResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfUpdateSpaceRequestRequest">
+
+      <wsdl:part name="srmStatusOfUpdateSpaceRequestRequest" type="impl:srmStatusOfUpdateSpaceRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfUpdateSpaceRequestResponse">
+
+      <wsdl:part name="srmStatusOfUpdateSpaceRequestResponse" type="impl:srmStatusOfUpdateSpaceRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetSpaceMetaDataRequest">
+
+      <wsdl:part name="srmGetSpaceMetaDataRequest" type="impl:srmGetSpaceMetaDataRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetSpaceMetaDataResponse">
+
+      <wsdl:part name="srmGetSpaceMetaDataResponse" type="impl:srmGetSpaceMetaDataResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmChangeSpaceForFilesRequest">
+
+      <wsdl:part name="srmChangeSpaceForFilesRequest" type="impl:srmChangeSpaceForFilesRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmChangeSpaceForFilesResponse">
+
+      <wsdl:part name="srmChangeSpaceForFilesResponse" type="impl:srmChangeSpaceForFilesResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfChangeSpaceForFilesRequestRequest">
+
+      <wsdl:part name="srmStatusOfChangeSpaceForFilesRequestRequest" type="impl:srmStatusOfChangeSpaceForFilesRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfChangeSpaceForFilesRequestResponse">
+
+      <wsdl:part name="srmStatusOfChangeSpaceForFilesRequestResponse" type="impl:srmStatusOfChangeSpaceForFilesRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmExtendFileLifeTimeInSpaceRequest">
+
+      <wsdl:part name="srmExtendFileLifeTimeInSpaceRequest" type="impl:srmExtendFileLifeTimeInSpaceRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmExtendFileLifeTimeInSpaceResponse">
+
+      <wsdl:part name="srmExtendFileLifeTimeInSpaceResponse" type="impl:srmExtendFileLifeTimeInSpaceResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPurgeFromSpaceRequest">
+
+      <wsdl:part name="srmPurgeFromSpaceRequest" type="impl:srmPurgeFromSpaceRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPurgeFromSpaceResponse">
+
+      <wsdl:part name="srmPurgeFromSpaceResponse" type="impl:srmPurgeFromSpaceResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetSpaceTokensRequest">
+
+      <wsdl:part name="srmGetSpaceTokensRequest" type="impl:srmGetSpaceTokensRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetSpaceTokensResponse">
+
+      <wsdl:part name="srmGetSpaceTokensResponse" type="impl:srmGetSpaceTokensResponse"/>
+
+   </wsdl:message>
+
+
+
+   <wsdl:message name="srmSetPermissionRequest">
+
+      <wsdl:part name="srmSetPermissionRequest" type="impl:srmSetPermissionRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmSetPermissionResponse">
+
+      <wsdl:part name="srmSetPermissionResponse" type="impl:srmSetPermissionResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmCheckPermissionRequest">
+
+      <wsdl:part name="srmCheckPermissionRequest" type="impl:srmCheckPermissionRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmCheckPermissionResponse">
+
+      <wsdl:part name="srmCheckPermissionResponse" type="impl:srmCheckPermissionResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetPermissionRequest">
+
+      <wsdl:part name="srmGetPermissionRequest" type="impl:srmGetPermissionRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetPermissionResponse">
+
+      <wsdl:part name="srmGetPermissionResponse" type="impl:srmGetPermissionResponse"/>
+
+   </wsdl:message>
+
+
+
+   <wsdl:message name="srmMkdirRequest">
+
+      <wsdl:part name="srmMkdirRequest" type="impl:srmMkdirRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmMkdirResponse">
+
+      <wsdl:part name="srmMkdirResponse" type="impl:srmMkdirResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmRmdirRequest">
+
+      <wsdl:part name="srmRmdirRequest" type="impl:srmRmdirRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmRmdirResponse">
+
+      <wsdl:part name="srmRmdirResponse" type="impl:srmRmdirResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmRmRequest">
+
+      <wsdl:part name="srmRmRequest" type="impl:srmRmRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmRmResponse">
+
+      <wsdl:part name="srmRmResponse" type="impl:srmRmResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmLsRequest">
+
+      <wsdl:part name="srmLsRequest" type="impl:srmLsRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmLsResponse">
+
+      <wsdl:part name="srmLsResponse" type="impl:srmLsResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfLsRequestRequest">
+
+      <wsdl:part name="srmStatusOfLsRequestRequest" type="impl:srmStatusOfLsRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfLsRequestResponse">
+
+      <wsdl:part name="srmStatusOfLsRequestResponse" type="impl:srmStatusOfLsRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmMvRequest">
+
+      <wsdl:part name="srmMvRequest" type="impl:srmMvRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmMvResponse">
+
+      <wsdl:part name="srmMvResponse" type="impl:srmMvResponse"/>
+
+   </wsdl:message>
+
+
+
+   <wsdl:message name="srmPrepareToGetRequest">
+
+      <wsdl:part name="srmPrepareToGetRequest" type="impl:srmPrepareToGetRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPrepareToGetResponse">
+
+      <wsdl:part name="srmPrepareToGetResponse" type="impl:srmPrepareToGetResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfGetRequestRequest">
+
+      <wsdl:part name="srmStatusOfGetRequestRequest" type="impl:srmStatusOfGetRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfGetRequestResponse">
+
+      <wsdl:part name="srmStatusOfGetRequestResponse" type="impl:srmStatusOfGetRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmBringOnlineRequest">
+
+      <wsdl:part name="srmBringOnlineRequest" type="impl:srmBringOnlineRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmBringOnlineResponse">
+
+      <wsdl:part name="srmBringOnlineResponse" type="impl:srmBringOnlineResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfBringOnlineRequestRequest">
+
+      <wsdl:part name="srmStatusOfBringOnlineRequestRequest" type="impl:srmStatusOfBringOnlineRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfBringOnlineRequestResponse">
+
+      <wsdl:part name="srmStatusOfBringOnlineRequestResponse" type="impl:srmStatusOfBringOnlineRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPrepareToPutRequest">
+
+      <wsdl:part name="srmPrepareToPutRequest" type="impl:srmPrepareToPutRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPrepareToPutResponse">
+
+      <wsdl:part name="srmPrepareToPutResponse" type="impl:srmPrepareToPutResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfPutRequestRequest">
+
+      <wsdl:part name="srmStatusOfPutRequestRequest" type="impl:srmStatusOfPutRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfPutRequestResponse">
+
+      <wsdl:part name="srmStatusOfPutRequestResponse" type="impl:srmStatusOfPutRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmCopyRequest">
+
+      <wsdl:part name="srmCopyRequest" type="impl:srmCopyRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmCopyResponse">
+
+      <wsdl:part name="srmCopyResponse" type="impl:srmCopyResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfCopyRequestRequest">
+
+      <wsdl:part name="srmStatusOfCopyRequestRequest" type="impl:srmStatusOfCopyRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmStatusOfCopyRequestResponse">
+
+      <wsdl:part name="srmStatusOfCopyRequestResponse" type="impl:srmStatusOfCopyRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmReleaseFilesRequest">
+
+      <wsdl:part name="srmReleaseFilesRequest" type="impl:srmReleaseFilesRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmReleaseFilesResponse">
+
+      <wsdl:part name="srmReleaseFilesResponse" type="impl:srmReleaseFilesResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPutDoneRequest">
+
+      <wsdl:part name="srmPutDoneRequest" type="impl:srmPutDoneRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPutDoneResponse">
+
+      <wsdl:part name="srmPutDoneResponse" type="impl:srmPutDoneResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmAbortRequestRequest">
+
+      <wsdl:part name="srmAbortRequestRequest" type="impl:srmAbortRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmAbortRequestResponse">
+
+      <wsdl:part name="srmAbortRequestResponse" type="impl:srmAbortRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmAbortFilesRequest">
+
+      <wsdl:part name="srmAbortFilesRequest" type="impl:srmAbortFilesRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmAbortFilesResponse">
+
+      <wsdl:part name="srmAbortFilesResponse" type="impl:srmAbortFilesResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmSuspendRequestRequest">
+
+      <wsdl:part name="srmSuspendRequestRequest" type="impl:srmSuspendRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmSuspendRequestResponse">
+
+      <wsdl:part name="srmSuspendRequestResponse" type="impl:srmSuspendRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmResumeRequestRequest">
+
+      <wsdl:part name="srmResumeRequestRequest" type="impl:srmResumeRequestRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmResumeRequestResponse">
+
+      <wsdl:part name="srmResumeRequestResponse" type="impl:srmResumeRequestResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetRequestSummaryRequest">
+
+      <wsdl:part name="srmGetRequestSummaryRequest" type="impl:srmGetRequestSummaryRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetRequestSummaryResponse">
+
+      <wsdl:part name="srmGetRequestSummaryResponse" type="impl:srmGetRequestSummaryResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmExtendFileLifeTimeRequest">
+
+      <wsdl:part name="srmExtendFileLifeTimeRequest" type="impl:srmExtendFileLifeTimeRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmExtendFileLifeTimeResponse">
+
+      <wsdl:part name="srmExtendFileLifeTimeResponse" type="impl:srmExtendFileLifeTimeResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetRequestTokensRequest">
+
+      <wsdl:part name="srmGetRequestTokensRequest" type="impl:srmGetRequestTokensRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetRequestTokensResponse">
+
+      <wsdl:part name="srmGetRequestTokensResponse" type="impl:srmGetRequestTokensResponse"/>
+
+   </wsdl:message>
+
+
+
+   <wsdl:message name="srmGetTransferProtocolsRequest">
+
+      <wsdl:part name="srmGetTransferProtocolsRequest" type="impl:srmGetTransferProtocolsRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmGetTransferProtocolsResponse">
+
+      <wsdl:part name="srmGetTransferProtocolsResponse" type="impl:srmGetTransferProtocolsResponse"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPingRequest">
+
+      <wsdl:part name="srmPingRequest" type="impl:srmPingRequest"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="srmPingResponse">
+
+      <wsdl:part name="srmPingResponse" type="impl:srmPingResponse"/>
+
+   </wsdl:message>
+
+
+
+   <wsdl:portType name="ISRM">
+
+      <wsdl:operation name="srmReserveSpace">
+
+         <wsdl:input message="impl:srmReserveSpaceRequest" name="srmReserveSpaceRequest"/>
+
+         <wsdl:output message="impl:srmReserveSpaceResponse" name="srmReserveSpaceResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfReserveSpaceRequest">
+
+         <wsdl:input message="impl:srmStatusOfReserveSpaceRequestRequest" name="srmStatusOfReserveSpaceRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfReserveSpaceRequestResponse" name="srmStatusOfReserveSpaceRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmReleaseSpace">
+
+         <wsdl:input message="impl:srmReleaseSpaceRequest" name="srmReleaseSpaceRequest"/>
+
+         <wsdl:output message="impl:srmReleaseSpaceResponse" name="srmReleaseSpaceResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmUpdateSpace">
+
+         <wsdl:input message="impl:srmUpdateSpaceRequest" name="srmUpdateSpaceRequest"/>
+
+         <wsdl:output message="impl:srmUpdateSpaceResponse" name="srmUpdateSpaceResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfUpdateSpaceRequest">
+
+         <wsdl:input message="impl:srmStatusOfUpdateSpaceRequestRequest" name="srmStatusOfUpdateSpaceRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfUpdateSpaceRequestResponse" name="srmStatusOfUpdateSpaceRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetSpaceMetaData">
+
+         <wsdl:input message="impl:srmGetSpaceMetaDataRequest" name="srmGetSpaceMetaDataRequest"/>
+
+         <wsdl:output message="impl:srmGetSpaceMetaDataResponse" name="srmGetSpaceMetaDataResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmChangeSpaceForFiles">
+
+         <wsdl:input message="impl:srmChangeSpaceForFilesRequest" name="srmChangeSpaceForFilesRequest"/>
+
+         <wsdl:output message="impl:srmChangeSpaceForFilesResponse" name="srmChangeSpaceForFilesResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfChangeSpaceForFilesRequest">
+
+         <wsdl:input message="impl:srmStatusOfChangeSpaceForFilesRequestRequest" name="srmStatusOfChangeSpaceForFilesRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfChangeSpaceForFilesRequestResponse" name="srmStatusOfChangeSpaceForFilesRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmExtendFileLifeTimeInSpace">
+
+         <wsdl:input message="impl:srmExtendFileLifeTimeInSpaceRequest" name="srmExtendFileLifeTimeInSpaceRequest"/>
+
+         <wsdl:output message="impl:srmExtendFileLifeTimeInSpaceResponse" name="srmExtendFileLifeTimeInSpaceResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPurgeFromSpace">
+
+         <wsdl:input message="impl:srmPurgeFromSpaceRequest" name="srmPurgeFromSpaceRequest"/>
+
+         <wsdl:output message="impl:srmPurgeFromSpaceResponse" name="srmPurgeFromSpaceResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetSpaceTokens">
+
+         <wsdl:input message="impl:srmGetSpaceTokensRequest" name="srmGetSpaceTokensRequest"/>
+
+         <wsdl:output message="impl:srmGetSpaceTokensResponse" name="srmGetSpaceTokensResponse"/>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmSetPermission">
+
+         <wsdl:input message="impl:srmSetPermissionRequest" name="srmSetPermissionRequest"/>
+
+         <wsdl:output message="impl:srmSetPermissionResponse" name="srmSetPermissionResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmCheckPermission">
+
+         <wsdl:input message="impl:srmCheckPermissionRequest" name="srmCheckPermissionRequest"/>
+
+         <wsdl:output message="impl:srmCheckPermissionResponse" name="srmCheckPermissionResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetPermission">
+
+         <wsdl:input message="impl:srmGetPermissionRequest" name="srmGetPermissionRequest"/>
+
+         <wsdl:output message="impl:srmGetPermissionResponse" name="srmGetPermissionResponse"/>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmMkdir">
+
+         <wsdl:input message="impl:srmMkdirRequest" name="srmMkdirRequest"/>
+
+         <wsdl:output message="impl:srmMkdirResponse" name="srmMkdirResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmRmdir">
+
+         <wsdl:input message="impl:srmRmdirRequest" name="srmRmdirRequest"/>
+
+         <wsdl:output message="impl:srmRmdirResponse" name="srmRmdirResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmRm">
+
+         <wsdl:input message="impl:srmRmRequest" name="srmRmRequest"/>
+
+         <wsdl:output message="impl:srmRmResponse" name="srmRmResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmLs">
+
+         <wsdl:input message="impl:srmLsRequest" name="srmLsRequest"/>
+
+         <wsdl:output message="impl:srmLsResponse" name="srmLsResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfLsRequest">
+
+         <wsdl:input message="impl:srmStatusOfLsRequestRequest" name="srmStatusOfLsRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfLsRequestResponse" name="srmStatusOfLsRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmMv">
+
+         <wsdl:input message="impl:srmMvRequest" name="srmMvRequest"/>
+
+         <wsdl:output message="impl:srmMvResponse" name="srmMvResponse"/>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmPrepareToGet">
+
+         <wsdl:input message="impl:srmPrepareToGetRequest" name="srmPrepareToGetRequest"/>
+
+         <wsdl:output message="impl:srmPrepareToGetResponse" name="srmPrepareToGetResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfGetRequest">
+
+         <wsdl:input message="impl:srmStatusOfGetRequestRequest" name="srmStatusOfGetRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfGetRequestResponse" name="srmStatusOfGetRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmBringOnline">
+
+         <wsdl:input message="impl:srmBringOnlineRequest" name="srmBringOnlineRequest"/>
+
+         <wsdl:output message="impl:srmBringOnlineResponse" name="srmBringOnlineResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfBringOnlineRequest">
+
+         <wsdl:input message="impl:srmStatusOfBringOnlineRequestRequest" name="srmStatusOfBringOnlineRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfBringOnlineRequestResponse" name="srmStatusOfBringOnlineRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPrepareToPut">
+
+         <wsdl:input message="impl:srmPrepareToPutRequest" name="srmPrepareToPutRequest"/>
+
+         <wsdl:output message="impl:srmPrepareToPutResponse" name="srmPrepareToPutResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfPutRequest">
+
+         <wsdl:input message="impl:srmStatusOfPutRequestRequest" name="srmStatusOfPutRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfPutRequestResponse" name="srmStatusOfPutRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmCopy">
+
+         <wsdl:input message="impl:srmCopyRequest" name="srmCopyRequest"/>
+
+         <wsdl:output message="impl:srmCopyResponse" name="srmCopyResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfCopyRequest">
+
+         <wsdl:input message="impl:srmStatusOfCopyRequestRequest" name="srmStatusOfCopyRequestRequest"/>
+
+         <wsdl:output message="impl:srmStatusOfCopyRequestResponse" name="srmStatusOfCopyRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmReleaseFiles">
+
+         <wsdl:input message="impl:srmReleaseFilesRequest" name="srmReleaseFilesRequest"/>
+
+         <wsdl:output message="impl:srmReleaseFilesResponse" name="srmReleaseFilesResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPutDone">
+
+         <wsdl:input message="impl:srmPutDoneRequest" name="srmPutDoneRequest"/>
+
+         <wsdl:output message="impl:srmPutDoneResponse" name="srmPutDoneResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmAbortRequest">
+
+         <wsdl:input message="impl:srmAbortRequestRequest" name="srmAbortRequestRequest"/>
+
+         <wsdl:output message="impl:srmAbortRequestResponse" name="srmAbortRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmAbortFiles">
+
+         <wsdl:input message="impl:srmAbortFilesRequest" name="srmAbortFilesRequest"/>
+
+         <wsdl:output message="impl:srmAbortFilesResponse" name="srmAbortFilesResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmSuspendRequest">
+
+         <wsdl:input message="impl:srmSuspendRequestRequest" name="srmSuspendRequestRequest"/>
+
+         <wsdl:output message="impl:srmSuspendRequestResponse" name="srmSuspendRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmResumeRequest">
+
+         <wsdl:input message="impl:srmResumeRequestRequest" name="srmResumeRequestRequest"/>
+
+         <wsdl:output message="impl:srmResumeRequestResponse" name="srmResumeRequestResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetRequestSummary">
+
+         <wsdl:input message="impl:srmGetRequestSummaryRequest" name="srmGetRequestSummaryRequest"/>
+
+         <wsdl:output message="impl:srmGetRequestSummaryResponse" name="srmGetRequestSummaryResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmExtendFileLifeTime">
+
+         <wsdl:input message="impl:srmExtendFileLifeTimeRequest" name="srmExtendFileLifeTimeRequest"/>
+
+         <wsdl:output message="impl:srmExtendFileLifeTimeResponse" name="srmExtendFileLifeTimeResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetRequestTokens">
+
+         <wsdl:input message="impl:srmGetRequestTokensRequest" name="srmGetRequestTokensRequest"/>
+
+         <wsdl:output message="impl:srmGetRequestTokensResponse" name="srmGetRequestTokensResponse"/>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmGetTransferProtocols">
+
+         <wsdl:input message="impl:srmGetTransferProtocolsRequest" name="srmGetTransferProtocolsRequest"/>
+
+         <wsdl:output message="impl:srmGetTransferProtocolsResponse" name="srmGetTransferProtocolsResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPing">
+
+         <wsdl:input message="impl:srmPingRequest" name="srmPingRequest"/>
+
+         <wsdl:output message="impl:srmPingResponse" name="srmPingResponse"/>
+
+      </wsdl:operation>
+
+   </wsdl:portType>
+
+
+
+   <wsdl:binding name="srmSoapBinding" type="impl:ISRM">
+
+      <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+      <wsdl:operation name="srmReserveSpace">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmReserveSpaceRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmReserveSpaceResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfReserveSpaceRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfReserveSpaceRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfReserveSpaceRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmReleaseSpace">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmReleaseSpaceRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmReleaseSpaceResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmUpdateSpace">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmUpdateSpaceRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmUpdateSpaceResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfUpdateSpaceRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfUpdateSpaceRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfUpdateSpaceRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetSpaceMetaData">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmGetSpaceMetaDataRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmGetSpaceMetaDataResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmChangeSpaceForFiles">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmChangeSpaceForFilesRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmChangeSpaceForFilesResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfChangeSpaceForFilesRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfChangeSpaceForFilesRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfChangeSpaceForFilesRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmExtendFileLifeTimeInSpace">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmExtendFileLifeTimeInSpaceRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmExtendFileLifeTimeInSpaceResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPurgeFromSpace">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmPurgeFromSpaceRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmPurgeFromSpaceResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetSpaceTokens">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmGetSpaceTokensRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmGetSpaceTokensResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmSetPermission">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmSetPermissionRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmSetPermissionResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmCheckPermission">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmCheckPermissionRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmCheckPermissionResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetPermission">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmGetPermissionRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmGetPermissionResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmMkdir">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmMkdirRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmMkdirResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmRmdir">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmRmdirRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmRmdirResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmRm">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmRmRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmRmResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmLs">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmLsRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmLsResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfLsRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfLsRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfLsRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmMv">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmMvRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmMvResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmPrepareToGet">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmPrepareToGetRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmPrepareToGetResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfGetRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfGetRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfGetRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmBringOnline">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmBringOnlineRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmBringOnlineResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfBringOnlineRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfBringOnlineRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfBringOnlineRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPrepareToPut">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmPrepareToPutRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmPrepareToPutResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfPutRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfPutRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfPutRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmCopy">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmCopyRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmCopyResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmStatusOfCopyRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmStatusOfCopyRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmStatusOfCopyRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmReleaseFiles">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmReleaseFilesRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmReleaseFilesResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPutDone">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmPutDoneRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmPutDoneResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmAbortRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmAbortRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmAbortRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmAbortFiles">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmAbortFilesRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmAbortFilesResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmSuspendRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmSuspendRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmSuspendRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmResumeRequest">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmResumeRequestRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmResumeRequestResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetRequestSummary">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmGetRequestSummaryRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmGetRequestSummaryResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmExtendFileLifeTime">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmExtendFileLifeTimeRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmExtendFileLifeTimeResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmGetRequestTokens">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmGetRequestTokensRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmGetRequestTokensResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+
+
+      <wsdl:operation name="srmGetTransferProtocols">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmGetTransferProtocolsRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmGetTransferProtocolsResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="srmPing">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="srmPingRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="srmPingResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://srm.lbl.gov/StorageResourceManager" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+   </wsdl:binding>
+
+
+
+   <wsdl:service name="SRMService">
+
+      <wsdl:port name="srm" binding="impl:srmSoapBinding">
+
+         <wsdl:documentation>
+               the following location of the service is specific to the 
+               particular deployment and is not part of the specification
+         </wsdl:documentation>
+
+         <wsdlsoap:address location="https://localhost:8443/ogsa/services/srm"/>
+
+      </wsdl:port>
+
+   </wsdl:service>
+
+</wsdl:definitions>

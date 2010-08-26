@@ -1,0 +1,10 @@
+PKG="dCache"
+NAME="dCache Server"
+ARCH="all"
+VERSION="@VERSION@"
+CATEGORY="application"
+VENDOR="@VENDOR@"
+EMAIL="support@dcache.org"
+PSTAMP="@VENDOR@"
+BASEDIR=/
+CLASSES="none"

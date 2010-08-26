@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<srm-configuration>
+
+	<!-- true or false-->
+	<debug> true </debug>
+
+	<!-- path to srmcp home directory -->
+	<srmcphome> /home/aik/srm </srmcphome>
+
+	<!-- "globus-url-copy" or "kftp"-->
+	<gsiftpclient> globus-url-copy </gsiftpclient>
+
+	<!--true if use http over gsi over ssl for SOAP invocations 
+	or false to use plain http (no authentication or encryption)-->
+	<gsissl> false </gsissl>
+
+	<!-- OBSOLETE: path to the "glue" mapfile -->
+	<mapfile> /home/aik/srm/conf/SRMServerV1.map </mapfile>
+
+	<!-- path to the  in the srm webservices server,
+	srm/managerv1.wsdl" in case of srm in dcache-->
+	<webservice_path> srm/managerv1 </webservice_path>
+
+	<!-- this could be http or https-->
+	<webservice_protocol> http </webservice_protocol>
+
+	<!-- path to the urlcopy script -->
+	<urlcopy> /home/aik/srm/bin/url-copy.sh </urlcopy>
+
+	<!--nonnegative integer, 2048 by default-->
+	<buffer_size> 2048 </buffer_size>
+
+	<!--integer, 0 by default (which means do not set tcp_buffer_size at all)-->
+	<tcp_buffer_size> 0 </tcp_buffer_size>
+
+	<!-- list of protocol names, one protocol per entry, NO COMMAS !!! -->
+	<protocols> gsiftp </protocols>
+
+	<!-- true for pushmode and false for pullmode, false by default-->
+	<pushmode> false </pushmode>
+
+	<!-- true to use user proxy or false to use
+	 certificates directly, true by default-->
+	<useproxy> true </useproxy>
+
+	<!--absolute path to user proxy-->
+	<x509_user_proxy> /home/aik/k5-ca-proxy.pem </x509_user_proxy>
+
+	<!--absolute path to user (or host) private key-->
+	<x509_user_key> /home/aik/k5-ca-proxy.pem </x509_user_key>
+
+	<!--absolute path to user (or host) certificate-->
+	<x509_user_cert> /home/aik/k5-ca-proxy.pem </x509_user_cert>
+
+	<!--absolute path to the trusted certificates directory-->
+	<x509_user_trusted_certificates> /home/aik/.globus/certificates </x509_user_trusted_certificates>
+</srm-configuration>

@@ -1,0 +1,1132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head><title>PMD - Rule Set: Controversial Rules</title><style type="text/css" media="all">
+          @import url("../style/maven-base.css");
+          
+          @import url("../style/maven-theme.css");</style><link rel="stylesheet" href="../style/print.css" type="text/css" media="print"></link><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"></meta><meta name="author" content="Tom Copeland"></meta><meta name="email" content="tom@infoether.com"></meta></head><body class="composite"><div id="banner"><a href="http://pmd.sourceforge.net/" id="organizationLogo"><img alt="InfoEther" src="http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5"></img></a><a href="http://pmd.sourceforge.net/" id="projectLogo"><img alt="PMD" src="../images/pmd_logo_small.jpg"></img></a><div class="clear"><hr></hr></div></div><div id="breadcrumbs"><div class="xleft"></div><div class="xright">
+        
+        <a href="http://pmdapplied.com/" class="externalLink" title="External Link">**** Get the book! ****</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net/projects/pmd" class="externalLink" title="External Link">SourceForge.net Project Page</a>
+      
+        
+          
+            <span class="separator">|</span>
+          
+        
+        <a href="http://sourceforge.net" class="externalLink" title="External Link">Hosted by SourceForge</a>
+      </div><div class="clear"><hr></hr></div></div><div id="leftColumn"><div id="navcolumn"><div id="menuOverview"><h5>Overview</h5><ul><li class="none"><a href="http://sourceforge.net/project/showfiles.php?group_id=56262&amp;package_id=51441&amp;release_id=632850" class="externalLink" title="External Link">Download PMD 4.2.5</a></li><li class="none"><a href="http://sourceforge.net/project/shownotes.php?release_id=632850&amp;group_id=56262" class="externalLink" title="External Link">What's new in PMD 4.2.5</a></li><li class="none"><a href="../news.html">PMD in the news</a></li><li class="none"><a href="../products.html">PMD-related products and books</a></li><li class="none"><a href="../bestpractices.html">Best practices</a></li><li class="none"><a href="../future.html">Future directions</a></li><li class="none"><a href="../similar-projects.html">Similar projects</a></li><li class="none"><a href="../credits.html">Credits</a></li><li class="none"><a href="../license.html">License</a></li><li class="none"><a href="../meaning.html">What does 'PMD' mean?</a></li></ul></div><div id="menuUsage"><h5>Usage</h5><ul><li class="none"><a href="../installing.html">Installation</a></li><li class="none"><a href="../running.html">Command line usage</a></li><li class="none"><a href="../ant-task.html">Ant task usage</a></li><li class="none"><a href="../maven-plugin.html">Maven plugin usage</a></li><li class="none"><a href="../mvn-plugin.html">Mvn plugin usage</a></li><li class="none"><a href="../integrations.html">IDE plugin usage</a></li><li class="none"><a href="../suppressing.html">Suppressing warnings</a></li><li class="none"><a href="../cpd.html">Finding duplicated code</a></li><li class="none"><a href="../jspsupport.html">JSP support</a></li></ul></div><div id="menuCustomizing_PMD"><h5>Customizing PMD</h5><ul><li class="none"><a href="../compiling.html">Compiling PMD</a></li><li class="none"><a href="../howtowritearule.html">How to write a rule</a></li><li class="none"><a href="../xpathruletutorial.html">Writing XPath rules</a></li><li class="none"><a href="../howtomakearuleset.html">How to make a rule set</a></li><li class="none"><a href="../howitworks.html">How it works</a></li><li class="none"><a href="../rule-guidelines.html">Rule guidelines</a></li></ul></div><div id="menuFor_example"><h5>For example</h5><ul><li class="none"><a href="../scoreboard.html">Run PMD on a Sourceforge project</a></li></ul></div><div id="menuRule_Sets"><h5>Rule Sets</h5><ul><li class="none"><a href="../rules/index.html">Index</a></li><li class="none"><a href="../rules/android.html">Android</a></li><li class="none"><a href="../rules/basic.html">Basic</a></li><li class="none"><a href="../rules/braces.html">Braces</a></li><li class="none"><a href="../rules/codesize.html">Code Size</a></li><li class="none"><a href="../rules/clone.html">Clone</a></li><li class="none"><strong><a href="../rules/controversial.html">Controversial</a></strong></li><li class="none"><a href="../rules/coupling.html">Coupling</a></li><li class="none"><a href="../rules/design.html">Design</a></li><li class="none"><a href="../rules/finalizers.html">Finalizers</a></li><li class="none"><a href="../rules/imports.html">Import Statements</a></li><li class="none"><a href="../rules/j2ee.html">J2EE</a></li><li class="none"><a href="../rules/javabeans.html">Javabeans</a></li><li class="none"><a href="../rules/junit.html">JUnit Tests</a></li><li class="none"><a href="../rules/logging-java.html">Logging (Java)</a></li><li class="none"><a href="../rules/logging-jakarta-commons.html">Logging (Jakarta)</a></li><li class="none"><a href="../rules/migrating.html">Migrating</a></li><li class="none"><a href="../rules/naming.html">Naming</a></li><li class="none"><a href="../rules/optimizations.html">Optimizations</a></li><li class="none"><a href="../rules/strictexception.html">Strict Exceptions</a></li><li class="none"><a href="../rules/strings.html">Strings</a></li><li class="none"><a href="../rules/sunsecure.html">Sun Security</a></li><li class="none"><a href="../rules/unusedcode.html">Unused Code</a></li><li class="none"><a href="../rules/basic-jsp.html">Java Server Pages</a></li><li class="none"><a href="../rules/basic-jsf.html">Java Server Faces</a></li></ul></div><div id="menuProject_Documentation"><h5>Project Documentation</h5><ul><li class="none"><a href="../index.html">About</a></li><li class="collapsed"><a href="../project-info.html">Project Info</a></li><li class="collapsed"><a href="../maven-reports.html">Project Reports</a></li><li class="none"><a href="../development-process.html">Development Process</a></li></ul></div><div id="legend"><h5>Legend</h5><ul><li class="externalLink">External Link</li><li class="newWindow">Opens in a new window</li></ul></div><a href="http://maven.apache.org/" title="Built by Maven" id="poweredBy"><img alt="Built by Maven" src="../images/logos/mavenlogo_builtby_w.png"></img></a></div></div><div id="bodyColumn"><div class="contentBox"><div class="section"><a name="Controversial_Rules"></a><h2>Controversial Rules</h2>
+				
+
+  
+The Controversial Ruleset contains rules that, for whatever reason, are considered controversial.  They
+are separated out here to allow people to include as they see fit via custom rulesets.  This ruleset was
+initially created in response to discussions over UnnecessaryConstructorRule which Tom likes but
+most people really dislike :-)
+  
+
+    
+	
+	<div class="subsection"><a name="UnnecessaryConstructor"></a><h3>UnnecessaryConstructor</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+This rule detects when a constructor is not necessary; i.e., when there's only one constructor,
+it's public, has an empty body, and takes no arguments.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+//ClassOrInterfaceBody[count(ClassOrInterfaceBodyDeclaration/ConstructorDeclaration)=1]
+/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration
+[@Public='true']
+[not(FormalParameters/*)]
+[not(BlockStatement)]
+[not(NameList)]
+[count(ExplicitConstructorInvocation/Arguments/ArgumentList/Expression)=0]
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo {
+ public Foo() {}
+}
+  
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+
+    
+	
+	<div class="subsection"><a name="NullAssignment"></a><h3>NullAssignment</h3>
+		<p>Since: PMD 1.02</p>
+		<p>
+ Assigning a "null" to a variable (outside of its declaration) is usually
+ bad form.  Some times, the assignment is an indication that the programmer doesn't
+ completely understand what is going on in the code.  NOTE: This sort of assignment
+ may in rare cases be useful to encourage garbage collection.  If that's what you're using
+ it for, by all means, disregard this rule :-)
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/NullAssignmentRule.html">net.sourceforge.pmd.rules.design.NullAssignmentRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+ 
+ public class Foo {
+   public void bar() {
+     Object x = null; // This is OK.
+     x = new Object();
+     // Big, complex piece of code here.
+     x = null; // This is BAD.
+     // Big, complex piece of code here.
+   }
+ }
+
+ 
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="OnlyOneReturn"></a><h3>OnlyOneReturn</h3>
+		<p>Since: PMD 1.0</p>
+		<p>
+A method should have only one exit point, and that should be the last statement in the method.
+     </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/design/OnlyOneReturnRule.html">net.sourceforge.pmd.rules.design.OnlyOneReturnRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+ 
+ public class OneReturnOnly1 {
+  public void foo(int x) {
+   if (x &gt; 0) {
+    return "hey";   // oops, multiple exit points!
+   }
+   return "hi";
+  }
+ }
+ 
+     
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UnusedModifier"></a><h3>UnusedModifier</h3>
+		<p>Since: PMD 1.02</p>
+		<p>
+ Fields in interfaces are automatically public static final, and
+ methods are public abstract.
+ Classes or interfaces nested in an interface are automatically public
+ and static (all nested interfaces are automatically static).
+ For historical reasons, modifiers which are implied by the context
+ are accepted by the compiler, but are superfluous.
+     </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/UnusedModifier.html">net.sourceforge.pmd.rules.UnusedModifier</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+ 
+public interface Foo {
+ public abstract void bar(); // both abstract and public are ignored by the compiler
+ public static final int X = 0; // public, static, and final all ignored
+ public static class Bar {} // public, static ignored
+ public static interface Baz {} // ditto
+}
+public class Bar {
+ public static interface Baz {} // static ignored
+}
+ 
+     
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AssignmentInOperand"></a><h3>AssignmentInOperand</h3>
+		<p>Since: PMD 1.03</p>
+		<p>
+Avoid assignments in operands; this can make code more complicated and harder to read.
+  </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/AssignmentInOperand.html">net.sourceforge.pmd.rules.AssignmentInOperand</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo {
+ public void bar() {
+  int x = 2;
+  if ((x = getX()) == 3) {
+   System.out.println("3!");
+  }
+ }
+ private int getX() {
+  return 3;
+ }
+}
+  
+  
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="AtLeastOneConstructor"></a><h3>AtLeastOneConstructor</h3>
+		<p>Since: PMD 1.04</p>
+		<p>
+Each class should declare at least one constructor.
+  </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+              
+//ClassOrInterfaceDeclaration[
+	not(ClassOrInterfaceBody/ClassOrInterfaceBodyDeclaration/ConstructorDeclaration)
+	and
+	(@Static = 'false')
+	and
+	(count(./descendant::MethodDeclaration[@Static]) &amp;lt; 1)
+]
+	[@Interface='false']
+
+          </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo {
+ // no constructor!  not good!
+}
+  
+  
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="DontImportSun"></a><h3>DontImportSun</h3>
+		<p>Since: PMD 1.5</p>
+		<p>
+Avoid importing anything from the 'sun.*' packages.  These packages are not portable and are likely to change.
+       </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/imports/DontImportSun.html">net.sourceforge.pmd.rules.imports.DontImportSun</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+import sun.misc.foo;
+public class Foo {}
+
+       
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="SuspiciousOctalEscape"></a><h3>SuspiciousOctalEscape</h3>
+		<p>Since: PMD 1.5</p>
+		<p>
+A suspicious octal escape sequence was found inside a String literal.
+The Java language specification (section 3.10.6) says an octal
+escape sequence inside a literal String shall consist of a backslash
+followed by:
+
+   OctalDigit | OctalDigit OctalDigit | ZeroToThree OctalDigit OctalDigit
+
+Any octal escape sequence followed by non-octal digits can be confusing,
+e.g. "\038" is interpreted as the octal escape sequence "\03" followed by
+the literal character "8".
+      </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/rules/SuspiciousOctalEscape.html">net.sourceforge.pmd.rules.SuspiciousOctalEscape</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+ public void foo() {
+  // interpreted as octal 12, followed by character '8'
+  System.out.println("suspicious: \128");
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="CallSuperInConstructor"></a><h3>CallSuperInConstructor</h3>
+		<p>Since: PMD 3.0</p>
+		<p>
+It is a good practice to call super() in a constructor. If super() is not called but
+ another constructor (such as an overloaded constructor) is called, this rule will not report it.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//ClassOrInterfaceDeclaration[ count (ExtendsList/*) &amp;gt; 0 ]
+/ClassOrInterfaceBody
+ /ClassOrInterfaceBodyDeclaration
+ /ConstructorDeclaration[ count (.//ExplicitConstructorInvocation)=0 ]
+    
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo extends Bar{
+ public Foo() {
+  // call the constructor of Bar
+  super();
+ }
+ public Foo(int code) {
+  // do something with code
+  this();
+  // no problem with this
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="UnnecessaryParentheses"></a><h3>UnnecessaryParentheses</h3>
+		<p>Since: PMD 3.1</p>
+		<p>
+Sometimes expressions are wrapped in unnecessary parentheses,
+making them look like a function call.
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                  
+          //Expression
+           /PrimaryExpression
+            /PrimaryPrefix
+             /Expression[count(*)=1]
+              /PrimaryExpression
+              /PrimaryPrefix
+              </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  public class Foo {
+      boolean bar() {
+          return (true);
+      }
+  }
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="DefaultPackage"></a><h3>DefaultPackage</h3>
+		<p>Since: PMD 3.4</p>
+		<p>
+Use explicit scoping instead of the default package private level.
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+//ClassOrInterfaceDeclaration[@Interface='false']
+/ClassOrInterfaceBody
+/ClassOrInterfaceBodyDeclaration
+[
+FieldDeclaration[@PackagePrivate='true']
+or MethodDeclaration[@PackagePrivate='true']
+]
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="BooleanInversion"></a><h3>BooleanInversion</h3>
+		<p>Since: PMD 3.5</p>
+		<p>
+Use bitwise inversion to invert boolean values - it's the fastest way to do this.
+See http://www.javaspecialists.co.za/archive/newsletter.do?issue=042&amp;locale=en_US for specific details
+      </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+    
+//AssignmentOperator[@Image="="]/../Expression/UnaryExpressionNotPlusMinus[@Image="!"]
+
+             </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+  
+public class Foo {
+ public void main(bar) {
+  boolean b = true;
+  b = !b; // slow
+  b ^= true; // fast
+ }
+}
+
+      
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+    
+	
+	<div class="subsection"><a name="DataflowAnomalyAnalysis"></a><h3>DataflowAnomalyAnalysis</h3>
+		<p>Since: PMD 3.9</p>
+		<p>The dataflow analysis tracks local definitions, undefinitions and references to variables on different paths on the data flow.
+From those informations there can be found various problems.
+
+1. UR - Anomaly: There is a reference to a variable that was not defined before. This is a bug and leads to an error.
+2. DU - Anomaly: A recently defined variable is undefined. These anomalies may appear in normal source text.
+3. DD - Anomaly: A recently defined variable is redefined. This is ominous but don't have to be a bug.
+          </p>
+		
+		
+		    
+		    
+    		    
+    		    
+    		    
+
+    		    <p>This rule is defined by the following Java class:
+    		    <a href="../xref/net/sourceforge/pmd/dfa/DaaRule.html">net.sourceforge.pmd.dfa.DaaRule</a>
+    		    </p>
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+
+public class Foo {
+    public void foo() {
+	 int buz = 5;
+	 buz = 6; // redefinition of buz -&gt; dd-anomaly
+	 foo(buz);
+	 buz = 2;
+    } // buz is undefined when leaving scope -&gt; du-anomaly
+}
+
+          
+            </pre></div>
+  
+        
+
+        
+        
+            
+                <p>This rule has the following properties:</p>
+                <table class="bodyTable"><th>Name</th><th>Default value</th><th>Description</th>
+                
+                
+                    <tr class="a">
+                    <td>maxviolations</td>
+                    <td>100</td>
+                    <td>The maximum number of violations per class.</td>
+                    </tr>
+                
+                    <tr class="b">
+                    <td>maxpaths</td>
+                    <td>1000</td>
+                    <td>The maximum number of checked paths per method. A lower value will increase the performance of the rule but may decrease the number of found anomalies.</td>
+                    </tr>
+                
+                </table>
+            
+        
+
+	</div>
+
+
+	
+	
+	<div class="subsection"><a name="AvoidFinalLocalVariable"></a><h3>AvoidFinalLocalVariable</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+Avoid using final local variables, turn them into fields.
+         </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+//LocalVariableDeclaration[
+	@Final = 'true' 
+	and
+	(
+		(count(VariableDeclarator/VariableInitializer) = 0) 
+		or
+		(VariableDeclarator/VariableInitializer/Expression/PrimaryExpression/PrimaryPrefix/Literal)
+	)
+]
+			</pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+public class MyClass {
+    public void foo() {
+        final String finalLocalVariable;
+    }
+}
+	     
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+	
+	
+	<div class="subsection"><a name="AvoidUsingShortType"></a><h3>AvoidUsingShortType</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+            
+            Java uses the 'short' type to reduce memory usage, not to optimize calculation. In fact, the jvm does not have any
+            arithmetic capabilities for the short type: the jvm must convert the short into an int, do the proper caculation
+            and convert the int back to a short. So, the use of the 'short' type may have a greater impact than memory usage.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+            //PrimitiveType[@Image = 'short']
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+            
+    public class UsingShort
+    {
+        private short doNotUseShort = 0;
+
+		public UsingShort() {
+			short shouldNotBeUsed = 1;
+			doNotUseShort += shouldNotBeUsed;
+		}
+ 	}
+ 			
+ 		
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+	
+	
+	<div class="subsection"><a name="AvoidUsingVolatile"></a><h3>AvoidUsingVolatile</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+            
+Use of the keyword 'volatile' is general used to fine tune a Java application, and therefore, requires
+a good expertise of the Java Memory Model. Moreover, its range of action is somewhat misknown. Therefore,
+the volatile keyword should not be used for maintenance purpose and portability.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+                        //FieldDeclaration[
+                                contains(@Volatile,'true')
+                        ]
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+			
+				public class ThrDeux {
+					private volatile String var;
+
+				}
+			
+		
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+	
+	
+	<div class="subsection"><a name="AvoidUsingNativeCode"></a><h3>AvoidUsingNativeCode</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+            
+                As JVM and Java language offer already many help in creating application, it should be
+                very rare to have to rely on non-java code. Even though, it is rare to actually have to
+                use Java Native Interface (JNI). As the use of JNI make application less portable, and
+                harder to maintain, it is not recommended.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+                        //Name[starts-with(@Image,'System.loadLibrary')]
+                    
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+            
+                public class SomeJNIClass {
+                        public SomeJNIClass() {
+                                System.loadLibrary("nativelib");
+                        }
+
+                        static {
+                             System.loadLibrary("nativelib");
+                        }
+
+                        public void invalidCallsInMethod() throws SecurityException, NoSuchMethodException {
+                                System.loadLibrary("nativelib");
+                        }
+                }
+            
+        
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+	
+	
+	<div class="subsection"><a name="AvoidAccessibilityAlteration"></a><h3>AvoidAccessibilityAlteration</h3>
+		<p>Since: PMD 4.1</p>
+		<p>
+            
+            Methods such as getDeclaredConstructors(), getDeclaredConstructor(Class[]) and setAccessible(),
+            as the interface PrivilegedAction, allow to alter, at runtime, the visilibilty of variable, classes, or
+            methods, even if they are private. Obviously, no one should do so, as such behavior is against everything
+            encapsulation principal stands for.
+            
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                   
+                        //PrimaryExpression[
+                        (
+                        (PrimarySuffix[
+                                ends-with(@Image,'getDeclaredConstructors')
+                                        or
+                                ends-with(@Image,'getDeclaredConstructor')
+                                        or
+                                ends-with(@Image,'setAccessible')
+                                ])
+                        or
+                        (PrimaryPrefix/Name[
+                                ends-with(@Image,'getDeclaredConstructor')
+                                or
+                                ends-with(@Image,'getDeclaredConstructors')
+                                or
+                                starts-with(@Image,'AccessibleObject.setAccessible')
+                                ])
+                        )
+                        and
+                        (//ImportDeclaration/Name[
+                                contains(@Image,'java.security.PrivilegedAction')])
+                ]
+                
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+            
+
+			import java.lang.reflect.AccessibleObject;
+			import java.lang.reflect.Method;
+			import java.security.PrivilegedAction;
+
+			public class Violation {
+				public void invalidCallsInMethod() throws SecurityException, NoSuchMethodException {
+					// Possible call to forbidden getDeclaredConstructors
+					Class[] arrayOfClass = new Class[1];
+					this.getClass().getDeclaredConstructors();
+					this.getClass().getDeclaredConstructor(arrayOfClass);
+					Class clazz = this.getClass();
+					clazz.getDeclaredConstructor(arrayOfClass);
+					clazz.getDeclaredConstructors();
+
+					// Possible call to forbidden setAccessible
+					clazz.getMethod("", arrayOfClass).setAccessible(false);
+					AccessibleObject.setAccessible(null, false);
+					Method.setAccessible(null, false);
+					Method[] methodsArray = clazz.getMethods();
+					int nbMethod;
+					for ( nbMethod = 0; nbMethod &lt; methodsArray.length; nbMethod++ ) {
+						methodsArray[nbMethod].setAccessible(false);
+					}
+
+					// Possible call to forbidden PrivilegedAction
+					PrivilegedAction priv = (PrivilegedAction) new Object(); priv.run();
+				}
+			}
+					
+			
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+		
+	
+	<div class="subsection"><a name="DoNotCallGarbageCollectionExplicitly"></a><h3>DoNotCallGarbageCollectionExplicitly</h3>
+		<p>Since: PMD 4.2</p>
+		<p>
+	        
+		        Calls to System.gc(), Runtime.getRuntime().gc(), and System.runFinalization() are not advised. Code should have the
+		        same behavior whether the garbage collection is disabled using the option -Xdisableexplicitgc or not.
+		        Moreover, "modern" jvms do a very good job handling garbage collections. If memory usage issues unrelated to memory
+			leaks develop within an application, it should be dealt with JVM options rather than within the code itself.
+			
+        </p>
+		
+		
+		    
+    			<p>This rule is defined by the following XPath expression:</p>
+    			
+    			
+    <div class="source"><pre>
+                    
+//Name[
+(starts-with(@Image, 'System.') and
+(starts-with(@Image, 'System.gc') or
+starts-with(@Image, 'System.runFinalization'))) or
+(
+starts-with(@Image,'Runtime.getRuntime') and
+../../PrimarySuffix[ends-with(@Image,'gc')]
+)
+]
+
+                </pre></div>
+  
+		    
+		    
+	    
+	    
+        
+        
+        <p>Example:</p>
+            
+    <div class="source"><pre>
+                
+            
+            public class GCCall
+            {
+     	public GCCall()
+                	{
+                        // Explicit gc call !
+                        System.gc();
+                	}
+	public void doSomething()
+	 {
+		// Explicit gc call !
+		Runtime.getRuntime().gc();
+	}
+
+public explicitGCcall() { // Explicit gc call ! System.gc(); }
+
+public void doSomething() { // Explicit gc call ! Runtime.getRuntime().gc(); } }
+
+
+			
+		
+            </pre></div>
+  
+        
+
+        
+        
+            
+        
+
+	</div>
+
+
+
+			</div></div></div><div class="clear"><hr></hr></div><div id="footer"><div class="xright">© 2002-2009, InfoEther</div><div class="clear"><hr></hr></div></div></body></html>

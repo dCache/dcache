@@ -1,0 +1,82 @@
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile ourHomeDir
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+
+# Cell communication
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment PoolManager
+
+#
+#
+create org.dcache.cells.UniversalSpringCell PoolManager \
+   "classpath:diskCacheV111/poolManager/poolmanager.xml \
+    -setupFile=${config}/PoolManager.conf \
+    -export \
+    -cellClass=PoolManager \
+    -replyObject"
+#
+create diskCacheV111.hsmControl.DummyStager Prestager "${config}"
+
+#  -----------------------------------------------------------------------
+#          Broadcast Cell
+#  -----------------------------------------------------------------------
+
+#
+#  ----  Registration of the Replica Manager
+#
+#   If replicaManager is on, it needs some messages broadcasted:
+#   It is off by default
+onerror continue
+set context -c replicaManager no
+define env replicaManagerOn.exe endExe
+  set env -c broadcastSetupReplicaManager1 "register diskCacheV111.vehicles.PoolStatusChangedMessage       replicaManager"
+  set env -c broadcastSetupReplicaManager2 "register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage replicaManager"
+  set env -c broadcastSetupReplicaManager3 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         replicaManager"
+endExe
+eval ${replicaManager} yes ==
+set env replicaManagerIsOn ${rc}
+exec env replicaManagerOn.exe -run -ifok=replicaManagerIsOn
+set env -c broadcastSetupReplicaManager1 ""
+set env -c broadcastSetupReplicaManager2 ""
+set env -c broadcastSetupReplicaManager3 ""
+onerror shutdown
+
+#
+#  ----  The broadcast Setup
+#
+define context broadcastSetup endDefine
+
+   ${broadcastSetupReplicaManager1}
+   ${broadcastSetupReplicaManager2}
+   ${broadcastSetupReplicaManager3}
+
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
+
+   register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         PinManager
+   register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolManager
+endDefine
+
+#
+#  ----  Startup
+#
+create dmg.cells.services.multicaster.BroadcastCell broadcast  \
+          "default -export"
+#
+#  --- LoginBroker startup. It is used by SRM for discovery of
+#      available doors and their loads
+#
+create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
+#

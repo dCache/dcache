@@ -1,0 +1,48 @@
+#
+#   Configure cell communication
+#
+check -strong serviceLocatorHost serviceLocatorPort
+
+set context -c messageBroker cells
+set context -c amqPort 11112
+set context -c amqSSLPort 11113
+set context -c amqHost ${serviceLocatorHost}
+set context -c amqUrl failover:tcp://${amqHost}:${amqPort}
+set context -c amqSpool /var/spool/d-cache/amq
+set context -c jmsTunnel classpath:org/dcache/cells/amq.xml
+set context -c jmsEmbeddedTunnel classpath:org/dcache/cells/amq-embedded.xml
+
+# Connect to JMS broker
+define env tunnel-jms.exe end
+  create org.dcache.cells.UniversalSpringCell JMS \
+        "-cellType=System -cellClass=JMS ${jmsTunnel}"
+end
+
+# Start embedded JMS broker and cells-JMS gateway
+define env tunnel-jms-broker.exe end
+  create org.dcache.cells.UniversalSpringCell JMS \
+        "-cellType=System -cellClass=JMS ${jmsEmbeddedTunnel}"
+  create dmg.cells.services.LocationManager lm \
+        "${serviceLocatorHost} ${serviceLocatorPort}"
+end
+
+# Use the classic cells tunnel 
+define env tunnel-cells.exe end
+  create dmg.cells.services.RoutingManager  RoutingMgr
+  create dmg.cells.services.LocationManager lm \
+        "${serviceLocatorHost} ${serviceLocatorPort}"
+end
+
+# Start embedded broker in dCacheDomain 
+define env tunnel-embedded-jms.exe end
+  eval ${thisDomain} dCacheDomain ==
+  exec env tunnel-jms-broker.exe -run -ifok
+
+  eval ${thisDomain} dCacheDomain !=
+  exec env tunnel-jms.exe -run -ifok
+end
+
+onerror continue
+exec env tunnel-${messageBroker}.exe -run
+onerror shutdown
+

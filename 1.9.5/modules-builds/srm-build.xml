@@ -1,0 +1,211 @@
+<!-- $Id: srm-build.xml,v 1.10 2007-04-24 09:43:18 tigran Exp $ -->
+
+<project name="SRM" default="help" basedir=".">
+
+    <property name="srm.build.dir" location="${buildDir}/srm" />
+
+
+    <!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for Cells
+    -->
+
+    <!-- Output Files
+       For each of these jar files there are targets below -->
+
+    <property name="srm.jar" location="${classesDir}/srm.jar" />
+    <property name="srm-tomcat.jar" location="${classesDir}/srm-tomcat.jar" />
+
+    <target name="-isUptodate.srm.jar">
+        <condition property="srm.jar.upToDate">
+            <and>
+                <available file="${srm.jar}" type="file" />
+                <uptodate targetfile="${srm.jar}">
+                    <srcfiles dir="${srm.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+
+
+    <target name="-isUptodate.srm-tomcat.jar">
+        <condition property="srm-tomcat.jar.upToDate">
+            <and>
+                <available file="${srm-tomcat.jar}" type="file" />
+                <uptodate targetfile="${srm-tomcat.jar}">
+                    <srcfiles dir="${srm.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
+
+    <!-- Packages for srm.jar -->
+
+    <selector id="srm.selector">
+        <not>
+            <filename name="**/*Tomcat*" />
+        </not>
+    </selector>
+
+    <!-- Packages for srm-tomcat.jar -->
+
+    <selector id="srm-tomcat.selector">
+        <filename name="**/*Tomcat*" />
+    </selector>
+
+    <!-- Classpath for srm.jar and srm-tomcat.jar -->
+
+    <path id="srm.classpath">
+        <fileset dir="${axis.untared}" includes="**/*.jar" excludes="**/log4j-*.jar"/>
+        <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" />
+        <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${libDir}/security" includes="**/*.jar" />
+        <fileset dir="${glite.untarred}" includes="**/*.jar" />
+        <fileset dir="${libDir}/terapaths" includes="*.jar" />
+        <fileset dir="${libDir}/log4j" includes="*.jar" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
+        <pathelement location="${libDir}/jdom/jdom.jar" />
+        <pathelement location="${glue.untared}/GLUE-STD.jar" />
+        <pathelement location="${glue.untared}/dom.jar" />
+        <pathelement location="${glue.untared}/jnet.jar" />
+        <pathelement location="${glue.untared}/jsse.jar" />
+        <pathelement location="${glue.untared}/jcert.jar" />
+        <pathelement location="${glue.untared}/servlet.jar" />
+        <pathelement location="${classesDir}/cells.jar" />
+	<pathelement location="${classesDir}/gplazma.jar" />
+    </path>
+
+    <!--       =======
+             TARGETS
+             =======          -->
+
+    <!--
+        compile srm code
+    -->
+    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar,-lib.glue.untar">
+
+        <mkdir dir="${srm.build.dir}" />
+        <javac destdir="${srm.build.dir}" classpathref="srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${srm.src}" />
+            <and>
+                <selector refid="srm.selector" />
+                <filename name="**/*.java" />
+            </and>
+        </javac>
+
+    </target>
+
+    <!--
+        generate srm jar
+    -->
+    <target name="-srm.jar" depends="-isUptodate.srm.jar,-srm.compile" unless="srm.jar.upToDate">
+
+        <jar jarfile="${srm.jar}">
+            <fileset dir="${srm.build.dir}">
+                <and>
+                    <selector refid="srm.selector" />
+                    <filename name="**/*.class" />
+                </and>
+            </fileset>
+        </jar>
+
+    </target>
+
+    <!--
+             Targets for srm-tomcat.jar
+    -->
+
+    <!--
+        compile tomcat specific code
+    -->
+    <target name="-srm-tomcat.compile" unless="isUptodate.srm-tomcat.jar" depends="-prepare,-lib.tomcat.untar,-lib.axis.untar,-lib.glue.untar">
+
+        <mkdir dir="${srm.build.dir}" />
+        <javac destdir="${srm.build.dir}" classpathref="srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${srm.src}" />
+            <and>
+                <selector refid="srm-tomcat.selector" />
+                <filename name="**/*.java" />
+            </and>
+        </javac>
+
+    </target>
+
+    <!--
+        build a jar file with tomcat specific code
+    -->
+    <target name="-srm-tomcat.jar" depends="-isUptodate.srm-tomcat.jar,-srm-tomcat.compile" unless="isUptodate.srm-tomcat.jar">
+
+        <jar jarfile="${srm-tomcat.jar}">
+            <fileset dir="${srm.build.dir}">
+                <and>
+                    <selector refid="srm-tomcat.selector" />
+                    <filename name="**/*.class" />
+                </and>
+            </fileset>
+        </jar>
+
+    </target>
+
+    <!--
+          Generate Doc
+    -->
+
+    <target name="docs" depends="-prepare" description="Generate Javadoc in ${distDir}/doc/javadoc">
+
+        <javadoc destdir="${distDir}/doc/javadoc" sourcepath="${srm.src}" packagenames="org.dcache.srm.*" linksource="true" />
+
+    </target>
+
+    <target name="docs.clean">
+
+        <delete dir="${distDir}/doc" />
+
+    </target>
+
+
+
+    <target name="-srm.bin" depends="-srm.jar,-srm-tomcat.jar">
+
+        <!-- directory layout :
+
+        <dCache home>-|
+                      |-classes
+                      |-jobs
+                      |-config
+                      |-etc
+                      |-install
+    -->
+
+        <mkdir dir="${server.bin.dir}/classes" />
+        <mkdir dir="${server.bin.dir}/jobs" />
+        <mkdir dir="${server.bin.dir}/config" />
+        <mkdir dir="${server.bin.dir}/libexec" />
+
+        <!-- jar file  -->
+        <copy file="${classesDir}/srm.jar" todir="${server.bin.dir}/classes" />
+        <copy file="${classesDir}/srm-tomcat.jar" todir="${server.bin.dir}/classes" />
+
+        <!-- SRMv2 needs tomcat server -->
+        <mkdir dir="${server.bin.dir}/external" />
+        <copy file="${libDir}/tomcat/apache-tomcat-5.5.20.tar.gz" todir="${server.bin.dir}/external" />
+        <!-- SRM deploy script  depends on names -->
+        <copy file="${libDir}/axis/axis-bin-1_3.tar.gz" tofile="${server.bin.dir}/external/axis-1_3.tar.gz" />
+
+        <mkdir dir="${server.bin.dir}/etc" />
+        <mkdir dir="${server.bin.dir}/install" />
+        <copy file="${srm.src}/sbin/srmv1-deploy.wsdd" todir="${server.bin.dir}/etc" />
+        <copy file="${srm.src}/sbin/srmv2.2-deploy.wsdd" todir="${server.bin.dir}/etc" />
+        <copy file="${srm.src}/sbin/deploy_srmv2.sh" todir="${server.bin.dir}/install" />
+        <copy file="${srm.src}/sbin/upgrade_space_manager_schema.sh" todir="${server.bin.dir}/install" />
+
+    </target>
+
+
+
+</project>

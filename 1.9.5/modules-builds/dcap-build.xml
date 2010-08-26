@@ -1,0 +1,233 @@
+<!-- $Id: dcap-build.xml,v 1.9 2007-04-24 09:43:18 tigran Exp $ -->
+
+<project name="dCap" default="help" basedir=".">
+
+    <property name="javatunnel.build.dir" location="${buildDir}/javatunnel" />
+    <property name="dcap32.build.dir" location="${buildDir}/dcap32" />
+    <property name="dcap64.build.dir" location="${buildDir}/dcap64" />
+
+    <!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for dCap
+    -->
+
+    <!-- Output Files
+       For each of these jar files there are targets below -->
+
+    <property name="javatunnel.jar" location="${classesDir}/javatunnel.jar" />
+
+    <!-- Classpath for javatunnel.jar -->
+
+    <path id="javatunnel.classpath">
+        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${glite.untarred}" includes="**/*.jar" />
+        <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
+        <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${libDir}/log4j/log4j-1.2.15.jar" />
+    </path>
+
+    <!--       =======
+             TARGETS
+             =======          -->
+
+    <!-- globus C libs for gsi tunnel -->
+
+    <property name="globus.libDir" value="${libDir}/globus" />
+
+    <!-- TODO: This property has to depend on OS and CPU -->
+    <property name="globus.tar32Name" value="${globus.libDir}/globus-4.0.3-Linux-2.6-i686.tgz" />
+    <!-- A pattern uniquely identifying one tar file -->
+    <property name="globus.tar64Name" value="${globus.libDir}/globus-4.0.3-Linux-2.6-x86_64.tgz" />
+    <!-- A pattern uniquely identifying one tar file -->
+    <property name="globus32.untared" location="${unpackTop}/i386/globus-4.0.3" />
+    <!-- This is the dir the tar will create         -->
+    <property name="globus64.untared" location="${unpackTop}/x64/globus-4.0.3" />
+    <!-- This is the dir the tar will create         -->
+
+    <uptodate property="lib.globus32.uptodate" targetfile="${globus32.untared}">
+        <srcfiles dir="${globus.libDir}" includes="${globus.tar32Name}" />
+    </uptodate>
+
+    <uptodate property="lib.globus64.uptodate" targetfile="${globus64.untared}">
+        <srcfiles dir="${globus.libDir}" includes="${globus.tar64Name}" />
+    </uptodate>
+
+    <target name="-lib.globus32.untar" unless="lib.globus32.uptodate">
+
+        <echo>Unpacking to ${globus32.untared}</echo>
+        <untar src="${globus.tar32Name}" dest="${unpackTop}/i386" compression="gzip" />
+
+    </target>
+
+    <target name="-lib.globus64.untar" unless="lib.globus64.uptodate">
+
+        <echo>Unpacking to ${globus64.untared}</echo>
+        <untar src="${globus.tar64Name}" dest="${unpackTop}/x64" compression="gzip" />
+
+    </target>
+
+    <!-- heimdal C libs for gss tunnel -->
+
+    <property name="heimdal.libDir" value="${libDir}/heimdal" />
+    <property name="heimdal.tarName" value="${heimdal.libDir}/heimdal-20060830-devel.tgz" />
+    <!-- A pattern uniquely identifying one tar file -->
+    <property name="heimdal.untared" value="${unpackTop}/heimdal" />
+    <!-- This is the dir the tar will create -->
+
+    <uptodate property="lib.heimdal.uptodate" targetfile="${heimdal.untared}">
+        <srcfiles dir="${heimdal.libDir}" includes="${heimdal.tarName}" />
+    </uptodate>
+
+    <target name="-lib.heimdal.untar" unless="lib.heimdal.uptodate">
+
+        <echo>Unpacking to ${heimdal.untared}</echo>
+        <untar src="${heimdal.tarName}" dest="${unpackTop}" compression="gzip" />
+
+    </target>
+
+
+    <!--
+             Targets for javatunnel.jar
+    -->
+
+    <!--     
+        Compile dcap door side security tunnel
+    -->
+
+    <target name="-javatunnel.compile">
+
+        <mkdir dir="${javatunnel.build.dir}" />
+
+        <javac destdir="${javatunnel.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${javatunnel.src}" />
+
+            <classpath refid="javatunnel.classpath" />
+
+        </javac>
+
+    </target>
+
+    <!--
+        build the jar, compile if required
+    -->
+
+    <target name="-javatunnel.jar" depends="-javatunnel.compile">
+
+        <jar jarfile="${javatunnel.jar}">
+            <fileset dir="${javatunnel.build.dir}" includes="**/*.class" />
+        </jar>
+
+    </target>
+
+
+    <!--
+        'install' into  ${server.bin.dir}/classes
+    -->
+    <target name="-javatunnel.bin" depends="-javatunnel.jar">
+
+        <mkdir dir="${server.bin.dir}/classes" />
+        <copy file="${javatunnel.jar}" todir="${server.bin.dir}/classes" />
+
+    </target>
+
+
+    <!--
+        compile dCap client libraries 32 bit
+    -->
+    <target name="-dcap32.compile" depends="-lib.globus32.untar,-lib.heimdal.untar">
+
+        <mkdir dir="${dcap32.build.dir}" />
+
+        <!-- make install == make cleanall; make all; cp output to BIN_PATH -->
+        <echo>make install BIN_PATH=${dcapclient.bin.dir}</echo>
+        <exec executable="make" dir="${dcap.src}" failonerror="true">
+            <arg value="install" />
+            <arg value="BIN_PATH=${dcapclient.bin.dir}" />
+        </exec>
+
+        <echo>cd security_plugins/gssapi make -f Makefile.gsi clean</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/gssapi" failonerror="true">
+            <arg value="-f" />
+            <arg value="Makefile.gsi" />
+            <arg value="clean" />
+        </exec>
+
+        <echo>cd security_plugins/gssapi make -f Makefile.gsi GSI=${globus32.untared}</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/gssapi" failonerror="true">
+            <arg value="-f" />
+            <arg value="Makefile.gsi" />
+            <arg value="GSI=${globus32.untared}" />
+
+        </exec>
+
+
+        <echo>cd security_plugins/telnet make -f Makefile clean</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/telnet" failonerror="true">
+            <arg value="-f" />
+            <arg value="Makefile" />
+            <arg value="clean" />
+        </exec>
+
+        <echo>cd security_plugins/telnet make -f Makefile</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/telnet" failonerror="true">
+            <arg value="-f" />
+            <arg value="Makefile" />
+
+        </exec>
+
+        <copy file="${dcap.src}/security_plugins/gssapi/libgsiTunnel.so" todir="${dcapclient.bin.dir}/lib" />
+        <copy file="${dcap.src}/security_plugins/telnet/libtelnetTunnel.so" todir="${dcapclient.bin.dir}/lib" />
+
+    </target>
+
+
+    <!--
+        compile dCap client libraries 64 bit
+    -->
+    <target name="-dcap64.compile" depends="-lib.globus64.untar">
+
+        <mkdir dir="${dcap64.build.dir}" />
+
+        <!-- make install == make cleanall; make all; cp output to BIN_PATH -->
+        <echo>make install BIN_PATH=${distDir}</echo>
+        <exec executable="make" dir="${dcap.src}" failonerror="true" append="true">
+            <arg value="install" />
+            <arg value="BIN_PATH=${dcapclient.bin.dir}" />
+        </exec>
+
+        <echo>cd security_plugins/gssapi  make -f Makefile.gsi clean</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true">
+            <arg value="-f" />
+            <arg value="Makefile.gsi" />
+            <arg value="clean" />
+        </exec>
+
+        <echo>cd security_plugins/gssapi  make -f Makefile.gsi-ia64 GSI=${globus64.untared}</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true">
+            <arg value="-f" />
+            <arg value="Makefile.gsi-ia64" />
+            <arg value="GSI=${globus64.untared}" />
+        </exec>
+
+        <echo>cd security_plugins/telnet make -f Makefile clean</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true">
+            <arg value="-f" />
+            <arg value="Makefile" />
+            <arg value="clean" />
+        </exec>
+
+        <echo>cd security_plugins/telnet make -f Makefile</echo>
+        <exec executable="make" dir="${dcap.src}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true">
+            <arg value="-f" />
+            <arg value="Makefile" />
+
+        </exec>
+
+        <copy file="${dcap.src}/security_plugins/gssapi/libgsiTunnel.so" todir="${dcapclient.bin.dir}/lib" />
+        <copy file="${dcap.src}/security_plugins/telnet/libtelnetTunnel.so" todir="${dcapclient.bin.dir}/lib" />
+
+    </target>
+
+
+</project>

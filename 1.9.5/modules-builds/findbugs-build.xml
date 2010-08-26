@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="fingbugs">
+
+    <!--
+          Find Bugs
+    -->
+
+    <property name="findbugs.home" value="${libDir}/findbugs" />
+    <property name="findbugs.jvmargs" value="-Xmx512M" />
+    
+    <target name="findbugs" depends="-srm.bin,-infoProvider.bin,-xrootd-tokenauthz.bin,-javatunnel.bin" description="bug hunting">
+        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar" />
+        <findbugs home="${findbugs.home}"
+            output="html" outputFile="${distDir}/findbugs.html"
+            jvmargs="${findbugs.jvmargs}"
+            timeout="3600000"
+            omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods"
+            excludeFilter="modules-builds/findbugs-exclude-filter.xml" >
+            <auxClasspath path="" />
+            <class location="${classesDir}/cells.jar" />
+            <class location="${classesDir}/dcache.jar" />
+            <class location="${classesDir}/srm.jar" />
+            <class location="${classesDir}/srm-tomcat.jar" />
+            <class location="${classesDir}/javatunnel.jar" />
+            <class location="${classesDir}/infoDynamicSE.jar" />
+            <class location="${classesDir}/xrootd-tokenauthz.jar" />
+        </findbugs>
+    </target>
+
+    <target name="findbugs-testbuild" depends="-srm.bin,dcache,-infoProvider.bin,-xrootd-tokenauthz.bin,-javatunnel.bin" description="bug hunting">
+        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar" />
+        <findbugs home="${findbugs.home}"
+            output="xml:withMessages"
+            outputFile="${distDir}/findbugs.xml"
+            jvmargs="${findbugs.jvmargs}"
+            timeout="36000000" omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods"
+            excludeFilter="modules-builds/findbugs-exclude-filter.xml" >
+            <auxClasspath path="" />
+            <class location="${classesDir}/cells.jar" />
+            <class location="${classesDir}/dcache.jar" />
+            <class location="${classesDir}/srm.jar" />
+            <class location="${classesDir}/srm-tomcat.jar" />
+            <class location="${classesDir}/javatunnel.jar" />
+            <class location="${classesDir}/infoDynamicSE.jar" />
+            <class location="${classesDir}/xrootd-tokenauthz.jar" />
+            <sourcePath path="modules/cells" />
+            <sourcePath path="modules/dCache" />
+            <sourcePath path="modules/srm/src" />
+            <sourcePath path="modules/srmclient" />
+
+        </findbugs>
+    </target>
+
+</project>

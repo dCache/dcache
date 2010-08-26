@@ -1,0 +1,241 @@
+.TH DCACHE 8 "July 2007" "" ""
+
+.SH NAME
+dcache \- The dCache distributed storage resource manager
+
+.SH SYNOPSIS
+
+\fBdcache\fR [OPTION]... COMMAND
+
+.SH DESCRIPTION
+
+This is an init and management script for dCache hosts. For a full
+description of dCache and its configuration, please visit the dCache
+webpage at http://www.dcache.org.
+
+This script only manages services running on the local host, i.e., all
+commands only affect the local host. The script is not intended for
+central management of a distributed dCache installation.
+
+.SH OPTIONS
+
+.TP
+\fB-d\fR=PATH 
+where dCache is installed. If not provided, the value from the
+environment variable DCACHE_HOME is used. If DCACHE_HOME is not
+defined, then /opt/d-cache/ is used.
+
+.SH STARTUP COMMANDS
+
+.TP
+.B start [SERVICE|DOMAIN]...
+Starts configured dCache services. If one or more services or domains
+are specified, only those services or domains are started. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.TP
+.B stop [SERVICE|DOMAIN]...
+Stops running services. If one or more services or domains are
+specified, only those services or domains are stopped. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.TP
+.B restart [SERVICE|DOMAIN]...
+Restarts configured services. If one or more services or domains
+are specified, only those services or domains are restarted. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.TP
+.B condrestart [SERVICE|DOMAIN]...
+Restarts running services.  If one or more services or domains are
+specified, only those services or domains are restarted. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.SH MONITORING COMMANDS
+
+.TP
+.B status
+
+Reports the status of all configured domains. This includes the
+service type provided by the domain, whether the domain is running,
+and the current PID of the domain.
+
+.TP
+.B services
+Provides a list of configured domains, the service type provided by
+each domain and the corresponding log file.
+
+.Tp
+.B version
+Shows the dCache version number.
+
+.SH POOL MANAGEMENTS COMMANDS
+
+.TP
+.B pool ls
+Provides a list of all configured pools. This list includes the path
+to the pool, the pool name, the domain hosting the pool, the size of the
+pool and the amount of free space on the file system containing the pool.
+
+.TP
+.B pool create SIZE PATH
+
+Creates a new pool in the specified directory. The directory must not
+exist. It is verified that the file system has enough free space to
+host a pool of the given size.
+
+The size is specified in bytes or with an optional suffix of K, M, G
+or T for kibibytes, mebibytes, gibibytes and tebibytes,
+respectively. The size is rounded down to the nearest integer of
+gibibytes.
+
+The directory will be created and populated with the necessary files
+to host a pool, however the pool will not be added to the dCache
+configuration. A separate invocation using the \fBpool add\fR command
+is needed to do so.
+
+.TP
+.B pool add [--fqdn] [--domain=DOMAIN] [--lfs=MODE] NAME PATH
+Adds the pool created in PATH to the dCache configuration. The NAME
+must be a unique pool name. The script verifies that neither the pool
+name nor the pool path is already configured on the local host.
+
+If no domain is specified, the pool is added to the default pool
+domain. The default pool domain name is generated from the hostname. A
+custom domain name may be specified, however the domain must not be
+used by any other service and the name must have the suffix
+\fBDomain\fR. If the domain is not previously defined, it will be
+after this call.
+
+A pool is always tagged with a host identifier. This tag is used by
+dCache to identify whether two pools run on the same host. By default,
+the hostname is chosen as the identifier. If the \fBfqdn\fR option is
+specified, the fully qualified domain name will be used instead. This
+is useful if a dCache installation is distributed over multible DNS
+domains.
+
+The \fBlfs\fR option determines the large file store modeof the
+pool. The default is \fBprecious\fR. Possible values are \fBnone\fR,
+\fBprecious\fR, \fBhsm\fR, \fBvolatile\fR, and \fBtransient\fR. In
+most deployments \fBprecious\fR is used for a disk-only pool and
+\fBnone\fR for a tape attached pool.
+
+Notice that dCache cannot verify that the pool name is unique
+throughout the whole dCache installation. It is the responsibility of
+the user to ensure that the name is indeed unique for the whole
+installation.
+
+.TP
+.B pool reconstruct POOL DESTINATION
+Reconstructs the Berkeley DB database containing pool meta data. POOL
+is the name of a pool. DESTINATION is the directory in which the
+reconstructed database will be stored. DESTINATION must not exist
+prior to calling this command.
+
+The operation is only relevant for pools using the Berkeley DB meta
+data backend. Pools using the classic control directory cannot be
+reconstructed.
+
+Although the Berkeley DB backend deploys a log structured database, it
+can break in case the files get corrupted. This could happen due to OS
+failures or hardware failures. In such cases reconstructing the
+database is often able to recover most if not all data.
+
+Notice that the command creates the database in a new directory. One
+has to manually replace the content of the meta directory of the pool
+with the reconstructed database. It is recommended to keep a copy of
+the old database.
+
+.TP
+.B pool remove NAME
+Removes the pool with the given name from the dCache
+configuration. The pool is \fBnot\fR physically deleted from the file
+system. If a the domain hosting the pool becomes empty, that domain is
+removed from the configuration.
+
+.SH DEBUGGING COMMANDS
+
+.TP
+.B dump heap [--force] DOMAIN FILE
+Dumps the Java heap of DOMAIN to FILE. The file will contain
+information about all objects and can be analysed with the Java
+\fBjhat(1)\fR utility. Notice that the file might contain confidential
+information, such as host keys.
+
+If the domain hangs, then the dump may fail. In those cases the
+\fBforce\fR option can force the dump, however the dump will not be
+quite as useful, as it will also contain objects that are no longer in
+use.
+
+This feature requires that the Java 6 JDK is installed.
+
+.TP
+.B dump threads [SERVICE|DOMAIN] ...
+Dumps the Java stack traces of all running threads in DOMAIN or
+SERVICE. If no services or domains are specified, stack traces of all
+running domains will be dumped. The information is written to the log
+files of the respective domains.
+
+.SH DEFINITIONS
+
+.PP
+The following definitions are used throughout this document:
+
+.TP
+.B cell
+A component of dCache. dCache consists of many cells. A cell must have
+a name which is unique within the domain hosting the cell.
+.TP
+.B domain
+A container hosting one or more dCache cells. A domain runs within its
+own process. A domain must have a name which is unique throughout the
+dCache instance.
+.TP
+.B well known cell
+A cell which name is published to other domains. Well known cells can
+be addressed without knowing the domain hosting the cell. Well known
+cells must have a name which is unique throughout the dCache instance.
+.TP
+.B service
+The type of a domain. A service defines the cells running within the
+domain.
+.TP
+.B pool
+A cell providing physical data storage services.
+
+.SH WHAT IS DCACHE
+
+The core part of the dCache has proven to combine heterogenous disk
+storage systems in the order of several hundred tera bytes and let its
+data repository appear under a single filesystem tree. It takes care
+of data hot spots, failing hardware and makes sure, if configured,
+that at least a minimum number of copies of each dataset resides
+within the system to ensure full data availability in case of disk
+server maintainance or failure. Furthermore, dCache supports a large
+set of standard access protocols to the data repository and its
+namespace.
+
+If dCache is connected to a Tertiary Storage System, it optimizes
+access to such a system by various techniques. Currently Enstore, the
+Open Storage Manager (OSM), the High Performance Storage System (HPSS)
+and the Tivoli Storage Manager (TSM) are supported by the dCache
+middleware.
+
+Moreover, dCache/SRM supports all interfaces of the LCG storage
+element definition.
+
+.SH PROJECT PARTNERS
+
+dCache is a joint venture between the Deutsches Elektronen-Synchrotron
+(DESY) and the Fermi National Accelerator Laboratory (FNAL). Since
+January 2007, the Nordic Data Grid Facility (NDGF) is contributing
+significantly to this project.
+
+.SH AUTHORS
+
+This man page and the dcache script was written by
+Gerd Behrmann <behrmann@ndgf.org>.

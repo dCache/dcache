@@ -1,0 +1,49 @@
+#
+# $Id: Makefile.linux,v 1.52 2006-09-26 07:41:11 tigran Exp $
+#
+
+#
+# Makefile for Linux
+#
+
+CC = gcc
+
+#
+# libc dynamic symbols for simple IO operations
+#
+IO_SYM = -DOPEN_SYM=\"open\" -DCLOSE_SYM=\"close\" \
+	-DREAD_SYM=\"read\" -DWRITE_SYM=\"write\" \
+	-DLSEEK_SYM=\"lseek\" -DLSEEK64_SYM=\"lseek64\" \
+	-DPREAD_SYM=\"pread\" -DPREAD64_SYM=\"pread64\" \
+	-DPWRITE_SYM=\"pwrite\" -DPWRITE64_SYM=\"pwrite64\" -DSTAT_SYM=\"__xstat\" \
+	-DSTAT64_SYM=\"__xstat64\" -DFSTAT64_SYM=\"__fxstat64\" \
+	-DLSTAT_SYM=\"__lxstat\" -DLSTAT64_SYM=\"__lxstat64\" \
+	-DFSTAT_SYM=\"__fxstat\" -DFSYNC_SYM=\"fsync\" \
+	-DDUP_SYM=\"dup\" \
+	-DOPENDIR_SYM=\"opendir\" -DCLOSEDIR_SYM=\"closedir\" \
+	-DREADDIR_SYM=\"readdir\" -DREADDIR64_SYM=\"readdir64\" \
+	-DTELLDIR_SYM=\"telldir\" -DSEEKDIR_SYM=\"seekdir\" \
+	-DUNLINK_SYM=\"unlink\" -DRMDIR_SYM=\"rmdir\" -DMKDIR_SYM=\"mkdir\" \
+	-DCHMOD_SYM=\"chmod\" -DACCESS_SYM=\"access\" -DRENAME_SYM=\"rename\" \
+	-DCHOWN_SYM=\"chown\" -DWRITEV_SYM=\"writev\" -DREADV_SYM=\"readv\"
+
+CFLAGS = -g -I. -fPIC -Wall -pedantic -pipe -D_REENTRANT -DLIBC_SYSCALLS  $(IO_SYM) -D_GNU_SOURCE
+
+CPP = cpp
+
+
+SO_EXT = .so
+A_EXT = .a
+EXE_EXT =
+
+
+RANLIB = ranlib
+ARFLAGS = rv
+
+MAKEDEP = $(CC) -M -I.
+#MAP = --version-script=mapfile
+LIBS = -ldl -lpthread -lc
+LDFLAGS = -shared
+
+include Makefile.inc
+

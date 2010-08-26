@@ -1,0 +1,185 @@
+#!/bin/sh
+
+command=`which $0`
+commanddir=`dirname $command`
+OUR_PATH=`dirname $commanddir`
+
+if [ "$SRM_PATH" != "" -a "$SRM_PATH" != "${OUR_PATH}" ]
+    then
+    echo "WARNING: SRM_PATH is defined, but does not point to the expected place " 2>&1
+    echo "WARNING: a wrong version of srm client may be executed " 2>&1
+    echo "WARNING: SRM_PATH=$SRM_PATH " 2>&1
+    echo "WARNING: expected path ${OUR_PATH} " 2>&1
+elif [ "$SRM_PATH" = "" ]
+    then
+    SRM_PATH=${OUR_PATH}
+    export SRM_PATH
+fi
+
+if [ ! -x $SRM_PATH/sbin/srm ]
+    then
+    echo "cannot determine path to srm product, please define and export SRM_PATH enviroment variable" 1>&1
+    exit 1
+fi
+
+args=$* 
+
+error() {
+    echo "Can't copy from \"${1}\" protocol to \"${2}\"  protocol"
+    exit 1
+}
+
+check_protocols() {
+    case "$1" in 
+	gsiftp)
+	    ;;
+	enstore)
+	    ;;
+	dcap)
+	    ;;
+	file)
+	    ;;
+	*)
+	    echo "Unsupported protocol: \"$1\""
+	    exit 1
+    esac
+}
+
+skip=0
+i=0
+fargs=
+
+for arg in $args;
+  do
+  case "${arg}" in
+      -help|-version|--help|-copyjobfile*)
+	  skip=1
+	  continue
+	  ;; 
+      srm:*|gsiftp:*|gridftp:*|file:*)
+	  skip=1
+	  continue
+	  ;;
+      *=*|-*)
+	  continue
+	  ;;
+  esac
+  fargs[i]=${arg}
+  i=$((${i}+1))
+done
+
+
+#
+# if any of the input args contain srm or help - fall through to standard java call
+#
+
+length=${#fargs[*]}
+last=$((${length}-1))
+first=${#fargs[0]}
+
+cmd=""
+if [ "${skip}" -eq 0 ]
+    then
+    if [ ${length} -lt 2 ]
+	then
+	$SRM_PATH/sbin/srm -copy $*
+	exit 1
+    else
+	i=0
+	src_protocols=
+	src_files=
+	while [ $i -lt ${last} ] 
+	do
+	  src_protocols[$i]=`echo ${fargs[$i]} | grep ":" | cut -d":" -f1`
+	  i=$((${i}+1))
+	done
+	n_src_protocols=`echo  ${src_protocols[@]} | tr A-Z a-z | tr ' ' '\012' | sort | uniq | wc -l`
+	if [  ${n_src_protocols} -ne 1 ] 
+	    then
+	    echo "Wrong number of input protocols:  ${n_src_protocols}"
+	    echo "    0 - check validity of URL spelling"
+	    echo "   >1 - mixture of protocols is not supported "
+	    exit 1
+	else
+	    src_protocol=${src_protocols[0]}
+	    dst_protocol=`echo ${fargs[${last}]} | grep ":" | cut -d":" -f1`
+	    check_protocols ${src_protocol}
+	    check_protocols ${dst_protocol}
+	    if [ "${src_protocol}" = "${dst_protocol}" ] 
+		then
+		case "${src_protocol}" in 
+		    gsiftp)
+			cmd="globus-url-copy ${fargs[*]}"
+			;;
+		    file)
+			cmd="cp `echo ${fargs[*]} | sed -e "s/${src_protocol}://g"`"
+			;;
+		    *)
+			error ${src_protocol}  ${dst_protocol} 
+		esac
+	    else
+
+		if [ "${src_protocol}" = "gsiftp" -o "${dst_protocol}" = "gsiftp" ] 
+		    then
+		    cmd="globus-url-copy ${fargs[*]}"
+		fi
+
+		if [ "${src_protocol}" = "enstore" -o "${dst_protocol}" = "enstore" ] 
+		    then
+		    cmd="encp `echo ${fargs[*]} | sed -e "s/${src_protocol}://g" | sed -e "s/${dst_protocol}://g"`"
+		fi
+
+
+		if [ "${src_protocol}" = "dcap" -o  "${dst_protocol}" = "dcap" ]
+		    then
+		    if [ "${src_protocol}" = "file" ] 
+			then
+			cmd="dccp `echo ${fargs[*]:0:${last}} | sed -e "s/${src_protocol}://g"` ${fargs[*]:${last}}"
+		    else
+			cmd="dccp `echo ${fargs[*]:0:${last}}` `echo ${fargs[*]:${last}} | sed -e "s/${dst_protocol}://g"`"
+		    fi
+		fi
+
+		#
+		# all bad cases go here
+		#
+
+		if [ "${src_protocol}" = "gsiftp" -a "${dst_protocol}" = "enstore" ] 
+		    then
+		    error ${src_protocol} ${dst_protocol}
+		fi
+
+		if [ "${dst_protocol}" = "gsiftp" -a "${src_protocol}" = "enstore" ]
+		    then
+		    error ${src_protocol} ${dst_protocol}
+		fi
+		
+
+		if [ "${src_protocol}" = "dcap" -a "${dst_protocol}" = "gsiftp" ]
+		    then
+		    error ${src_protocol} ${dst_protocol}
+		fi
+
+		if [ "${dst_protocol}" = "dcap" -a "${src_protocol}" = "gsiftp" ]
+		    then
+		    error ${src_protocol} ${dst_protocol}
+		fi
+
+		if [ "${src_protocol}" = "dcap" -a "${dst_protocol}" = "enstore" ]
+		    then
+		    error ${src_protocol} ${dst_protocol}
+		fi
+
+		if [ "${dst_protocol}" = "dcap" -a "${src_protocol}" = "enstore" ]
+		    then
+		    error ${src_protocol} ${dst_protocol}
+		fi
+	    fi
+	    $cmd
+	    rc=$?
+	    exit $rc
+	fi
+    fi
+else 
+    $SRM_PATH/sbin/srm -copy $*
+fi

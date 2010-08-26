@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="null" lang="null">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" /><title>TextPadRenderer xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../apidocs/net/sourceforge/pmd/renderers/TextPadRenderer.html">View Javadoc</a></div><pre>
+
+<a name="1" href="#1">1</a>   <em>/**</em>
+<a name="2" href="#2">2</a>   <em> * BSD-style license; for more info see <a href="http://pmd.sourceforge.net/license.html" target="alexandria_uri">http://pmd.sourceforge.net/license.html</a></em>
+<a name="3" href="#3">3</a>   <em> */</em>
+<a name="4" href="#4">4</a>   <strong>package</strong> net.sourceforge.pmd.renderers;
+<a name="5" href="#5">5</a>   
+<a name="6" href="#6">6</a>   <strong>import</strong> net.sourceforge.pmd.IRuleViolation;
+<a name="7" href="#7">7</a>   <strong>import</strong> net.sourceforge.pmd.PMD;
+<a name="8" href="#8">8</a>   
+<a name="9" href="#9">9</a>   <strong>import</strong> java.io.IOException;
+<a name="10" href="#10">10</a>  <strong>import</strong> java.io.Writer;
+<a name="11" href="#11">11</a>  <strong>import</strong> java.util.Iterator;
+<a name="12" href="#12">12</a>  
+<a name="13" href="#13">13</a>  <em>/**</em>
+<a name="14" href="#14">14</a>  <em> * &lt;P>A Renderer for running PMD via a TextPad 'tool'.  &lt;a href="<a href="http://www.textpad.com" target="alexandria_uri">http://www.textpad.com</a>">TextPad&lt;/a> is a text editor by Helios Software Solutions.&lt;/P></em>
+<a name="15" href="#15">15</a>  <em> * &lt;p/></em>
+<a name="16" href="#16">16</a>  <em> * &lt;P>Output lines are in the form:&lt;/P></em>
+<a name="17" href="#17">17</a>  <em> * &lt;p/></em>
+<a name="18" href="#18">18</a>  <em> * &lt;P>&lt;CODE>pathtojavafile(line#, NameOfRule):&amp;nbsp; Specific rule violation message&lt;/CODE>&lt;/P></em>
+<a name="19" href="#19">19</a>  <em> * &lt;p/></em>
+<a name="20" href="#20">20</a>  <em> * &lt;P>For example:&lt;/P></em>
+<a name="21" href="#21">21</a>  <em> * &lt;p/></em>
+<a name="22" href="#22">22</a>  <em> * &lt;P>&lt;CODE>D:\java\pmd\src\src\net\sourceforge\pmd\renderers\TextPadRenderer.java(24, AtLeastOneConstructor):&amp;nbsp; Each class should declare at least one constructor</em>
+<a name="23" href="#23">23</a>  <em> * &lt;br>D:\java\pmd\src\src\net\sourceforge\pmd\renderers\TextPadRenderer.java(26, VariableNamingConventionsRule):&amp;nbsp; Variables should start with a lowercase character</em>
+<a name="24" href="#24">24</a>  <em> * &lt;br>D:\java\pmd\src\src\net\sourceforge\pmd\renderers\TextPadRenderer.java(31, ShortVariable):&amp;nbsp; Avoid variables with short names&lt;/CODE>&lt;/P></em>
+<a name="25" href="#25">25</a>  <em> *</em>
+<a name="26" href="#26">26</a>  <em> * @author Jeff Epstein, based upon &lt;a href="EmacsRenderer.html">EmacsRenderer&lt;/a>, Tuesday, September 23, 2003</em>
+<a name="27" href="#27">27</a>  <em> */</em>
+<a name="28" href="#28">28</a>  <strong>public</strong> <strong>class</strong> <a href="../../../../net/sourceforge/pmd/renderers/TextPadRenderer.html">TextPadRenderer</a> <strong>extends</strong> <a href="../../../../net/sourceforge/pmd/renderers/OnTheFlyRenderer.html">OnTheFlyRenderer</a> {
+<a name="29" href="#29">29</a>  
+<a name="30" href="#30">30</a>      <strong>public</strong> <strong>void</strong> start() throws IOException {}
+<a name="31" href="#31">31</a>  
+<a name="32" href="#32">32</a>      <strong>public</strong> <strong>void</strong> renderFileViolations(Iterator&lt;IRuleViolation> violations) throws IOException {
+<a name="33" href="#33">33</a>          Writer writer = getWriter();
+<a name="34" href="#34">34</a>          StringBuffer buf = <strong>new</strong> StringBuffer();
+<a name="35" href="#35">35</a>          <strong>while</strong> (violations.hasNext()) {
+<a name="36" href="#36">36</a>              <a href="../../../../net/sourceforge/pmd/IRuleViolation.html">IRuleViolation</a> rv = violations.next();
+<a name="37" href="#37">37</a>              buf.setLength(0);
+<a name="38" href="#38">38</a>              <em class="comment">//Filename</em>
+<a name="39" href="#39">39</a>              buf.append(PMD.EOL).append(rv.getFilename() + <span class="string">"("</span>);
+<a name="40" href="#40">40</a>              <em class="comment">//Line number</em>
+<a name="41" href="#41">41</a>              buf.append(Integer.toString(rv.getBeginLine())).append(<span class="string">",  "</span>);
+<a name="42" href="#42">42</a>              <em class="comment">//Name of violated rule</em>
+<a name="43" href="#43">43</a>              buf.append(rv.getRule().getName()).append(<span class="string">"):  "</span>);
+<a name="44" href="#44">44</a>              <em class="comment">//Specific violation message</em>
+<a name="45" href="#45">45</a>              buf.append(rv.getDescription());
+<a name="46" href="#46">46</a>              writer.write(buf.toString());
+<a name="47" href="#47">47</a>          }
+<a name="48" href="#48">48</a>      }
+<a name="49" href="#49">49</a>  
+<a name="50" href="#50">50</a>      <strong>public</strong> <strong>void</strong> end() throws IOException {}
+<a name="51" href="#51">51</a>  }
+</pre>
+<hr/><div id="footer">This page was automatically generated by <a href="http://maven.apache.org/">Maven</a></div></body>
+</html>
+

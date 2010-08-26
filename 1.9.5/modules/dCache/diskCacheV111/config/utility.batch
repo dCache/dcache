@@ -1,0 +1,94 @@
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+# check -strong dCapPort sshPort ftpPort srmPort
+
+# Cell communication
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+
+# Stage protection
+exec -run -shell file:${ourHomeDir}/config/stage.fragment doors
+
+#
+#
+#
+create diskCacheV111.admin.PAMAuthentificator gsi-pam \
+             " -users=class:diskCacheV111.admin.UserMetaDataProviderFnal \
+               -kpwd-file=${kpwdFile}"
+#
+#
+# ----------------------------------------------------------------------
+#           Default Setup 
+# ----------------------------------------------------------------------
+#
+onerror continue
+
+   set context -c srmDbHost localhost
+   set context -c srmDbName          dcache
+   set context -c srmDbUser          srmdcache
+   set context -c srmDbPassword      srmdcache
+   set context -c srmPasswordFile    ""
+
+   set context -c spaceManagerDatabaseHost  ${srmDbHost}
+
+   set context -c pinManagerDbHost ${srmDbHost}
+   set context -c pinManagerDbName ${srmDbName}
+   set context -c pinManagerDbUser ${srmDbUser}
+   set context -c pinManagerDbPassword ${srmDbPassword}
+
+#  ----- Tape Protection
+   set context -c pinManagerPasswordFile "${srmPasswordFile}"
+
+# in seconds, -1 for infinite 
+   set context -c pinManagerMaxPinDuration "-1"
+
+   set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+   set context -c pinManagerMaxActiveJdbcConnections    50
+   set context -c pinManagerMaxJdbcConnectionsWaitSec   180
+   set context -c pinManagerMaxIdleJdbcConnections      10
+
+onerror shutdown
+
+#
+#
+#
+#
+create diskCacheV111.util.ThreadManager ThreadManager \
+       "default \
+       -num-threads=100 \
+       -thread-timeout=15 \
+"
+
+# ----------------------------------------------------------------------
+#           Pin Manager Cell
+# ----------------------------------------------------------------------
+#
+#
+create org.dcache.services.pinmanager1.PinManager PinManager \
+       "default \
+        -export  \
+        -jdbcDriver=org.postgresql.Driver \
+        -jdbcUrl=jdbc:postgresql://${pinManagerDbHost}/${pinManagerDbName} \
+        -dbUser=${pinManagerDbUser} \
+        -dbPass=${pinManagerDbPassword} \
+        -pgPass=${pinManagerPasswordFile} \
+        -maxPinDuration=${pinManagerMaxPinDuration} \
+        -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
+        -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
+        -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
+        -stageConfigurationFilePath=${stageConfigurationFilePath} \
+       "
+#
+#
