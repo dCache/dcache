@@ -628,7 +628,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _downloads.remove(transfer.getSessionId());
+            _downloads.remove((int) transfer.getSessionId());
             _transfers.remove(transfer);
         }
     }
