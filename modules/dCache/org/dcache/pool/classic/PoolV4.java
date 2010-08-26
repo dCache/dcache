@@ -396,7 +396,7 @@ public class PoolV4
 
         String ioQueues = _args.getOpt("io-queues");
         String queues[];
-        if(ioQueues != null || !ioQueues.isEmpty()) {
+        if(ioQueues != null && !ioQueues.isEmpty()) {
             queues = ioQueues.split(",");
         }else{
             queues = new String[0];
