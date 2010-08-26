@@ -60,11 +60,11 @@ public class HttpProtocol_1 implements MoverProtocol
     }
 
     private void say(String str) {
-        _log.info(str.toString());
+        _log.info(str);
     }
 
     private void esay(String str) {
-        _log.error(str.toString());
+        _log.error(str);
     }
 
     private HttpConnectionHandler httpconnection = null;
@@ -199,14 +199,6 @@ public class HttpProtocol_1 implements MoverProtocol
         return httpconnection.getLast_transfer_time();
     }
 
-    private synchronized void setTimeoutTime(long t)
-    {
-        timeout_time = t;
-    }
-    private synchronized long  getTimeoutTime()
-    {
-        return timeout_time;
-    }
     public void setAttribute(String name, Object attribute)
     {
     }

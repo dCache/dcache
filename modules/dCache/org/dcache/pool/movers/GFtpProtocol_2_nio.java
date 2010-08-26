@@ -267,12 +267,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Utility method for logging. */
     public void say(String str) {
-        _log.info(str.toString());
+        _log.info(str);
     }
 
     /** Utility method for reporting errors. */
     public void esay(String str) {
-        _log.error(str.toString());
+        _log.error(str);
     }
 
     /** Utility method for reporting errors. */
@@ -280,6 +280,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _log.error(t.toString());
     }
 
+    @Override
     public String toString() {
 	return "SU=" + _spaceUsed + ";SA=" + _reservedSpace + ";S=" + _status;
     }
