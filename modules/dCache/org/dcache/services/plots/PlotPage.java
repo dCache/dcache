@@ -28,7 +28,7 @@ public class PlotPage {
     protected final static String NAV_PAGE = "navigation";
     protected final static String CUSTOMIZED_PAGE = "customized";
     protected final static String SHOW_FRAME = "showframe";
-    protected static String imageDir = System.getProperty("org.dcache.services.plots.imagedir", "/tmp/img");
+    protected final static String imageDir = System.getProperty("org.dcache.services.plots.imagedir", "/tmp/img");
     protected final static String imgFormat = "png";
 
     public void setRequest(HttpRequest request) {
