@@ -38,8 +38,9 @@ findJava()
 }
 
 if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
-    fail 1 "Could not find usable Java VM. Please set JAVA_HOME to
-            the path to Java 6 or newer."
+    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 6"
+    echo "or newer."
+    exit 1
 fi
 
 DCACHE_SETUP="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
