@@ -138,6 +138,7 @@
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/logback-config" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
@@ -268,9 +269,8 @@
         </taskdef>
 
         <!-- enhance -->
-        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${dcache.build.dir}" verbose="true" api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
-            <sysproperty key="log4j.configuration" value="file:/home/timur/cvs/dCacheBuild/log4j.properties" />
-        </enhancer>
+        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${dcache.build.dir}"
+                  api="JPA" persistenceUnit="AuthRecordPersistenceUnit"/>
     </target>
 
     <!--
