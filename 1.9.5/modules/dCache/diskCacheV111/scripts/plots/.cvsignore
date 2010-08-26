@@ -1,8 +1,0 @@
-billing-200*
-.billing-200*
-completed_transfers.log
-dcache_plots.log
-*.class
-*.eps
-*.png
-*.pre
