@@ -535,7 +535,7 @@ public final class CopyFileRequest extends FileRequest {
 		if(from ==null || to == null) {
 			String error = "could not resolve either source or destination"+
 				" from = "+from+" to = "+to;
-			logger.error(error.toString());
+			logger.error(error);
 			throw new SRMException(error);
 		}
 		logger.debug("calling scriptCopy("+from.getURL()+","+to.getURL()+")");
@@ -744,7 +744,7 @@ public final class CopyFileRequest extends FileRequest {
             setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
 			if(getSpaceReservationId() != null) {
-				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().getURL(), getLocal_to_path(), getUser(), credential.getId(), getSpaceReservationId().toString(), size, copycallbacks));
+				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().getURL(), getLocal_to_path(), getUser(), credential.getId(), getSpaceReservationId(), size, copycallbacks));
 
 			}
 			else {

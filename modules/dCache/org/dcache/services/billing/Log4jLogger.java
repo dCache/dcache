@@ -14,6 +14,6 @@ public class Log4jLogger extends TextLogger
 
     protected void log(Date date, String output)
     {
-        _logger.info(output.toString());
+        _logger.info(output);
     }
 }

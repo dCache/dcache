@@ -240,7 +240,7 @@ public abstract class FileRequest extends Job {
                 }
                 else {
                     String error =  "Can't set Status to "+status;
-                    logger.error(error.toString());
+                    logger.error(error);
                     throw new SRMException(error);
 
                 }

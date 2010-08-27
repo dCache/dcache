@@ -137,9 +137,9 @@ public class SrmExtendFileLifeTime {
                 failuresCount++;
                 String error = "surl="+surls[i] +"lifetime can't extended:"+e;
                 if(logger.isDebugEnabled()) {
-                    logger.debug(error.toString(), e);
+                    logger.debug(error, e);
                 } else {
-                    logger.warn(error.toString());
+                    logger.warn(error);
                 }
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_FAILURE,e.toString()));
@@ -215,7 +215,7 @@ public class SrmExtendFileLifeTime {
             } catch (Exception e) {
                 String error = "request for requestToken \""+
                     token+"\" for surl="+surls[i] +"can't be found:"+e;
-                logger.warn(error.toString(),e);
+                logger.warn(error,e);
                 failuresCount++;
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_INVALID_PATH,error));
@@ -224,7 +224,7 @@ public class SrmExtendFileLifeTime {
             if(fileRequest == null) {
                 String err = "fileRequest for surl="+surls[i] +
                         "is not found in request with id = "+token;
-                logger.warn(err.toString());
+                logger.warn(err);
                 failuresCount++;
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_INVALID_PATH,err));

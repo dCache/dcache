@@ -304,7 +304,7 @@ class PinManagerDatabase
                 "SELECT PinRequestId, PnfsId, Expiration FROM "
                 + TABLE_OLDPINREQUEST;
             Statement stmt = con.createStatement();
-            _logger.debug(SelectEverythingFromOldPinRewquestTable.toString());
+            _logger.debug(SelectEverythingFromOldPinRewquestTable);
 
             PreparedStatement pinsInsertStmt =
                 con.prepareStatement(InsertIntoPinsTable);
@@ -370,7 +370,7 @@ class PinManagerDatabase
             PreparedStatement pinReqsInsertStmt =
                 con.prepareStatement(InsertIntoPinRequestsTable);
             Statement stmt = con.createStatement();
-            _logger.debug(SelectAllV2Requests.toString());
+            _logger.debug(SelectAllV2Requests);
             ResultSet rs = stmt.executeQuery(SelectAllV2Requests);
             while (rs.next()) {
                 long pinId = rs.getLong(1);
@@ -550,7 +550,7 @@ class PinManagerDatabase
             try {
                 stSelectNextPinRequestIdForUpdate =
                     _con.prepareStatement(SelectNextPinRequestIdForUpdate);
-                _logger.debug(SelectNextPinRequestIdForUpdate.toString());
+                _logger.debug(SelectNextPinRequestIdForUpdate);
                 rsSelectNextPinRequestIdForUpdate = stSelectNextPinRequestIdForUpdate.executeQuery();
                 if (!rsSelectNextPinRequestIdForUpdate.next()) {
                     throw new SQLException("Table " + PinManagerNextRequestIdTableName + " is empty.");
@@ -558,7 +558,7 @@ class PinManagerDatabase
                 nextLongBase = rsSelectNextPinRequestIdForUpdate.getLong("NEXTLONG");
                 _logger.debug("nextLongBase=" + nextLongBase);
                 stIncreasePinRequestId = _con.prepareStatement(IncreasePinRequestId);
-                _logger.debug(IncreasePinRequestId.toString());
+                _logger.debug(IncreasePinRequestId);
                 stIncreasePinRequestId.executeUpdate();
             } catch (SQLException e) {
                 _logger.error("Failed to obtain ID sequence: " + e.toString());

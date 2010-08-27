@@ -520,7 +520,7 @@ public abstract class TransferManager extends AbstractCell {
 				for(Iterator i = activeTransfersIDs.iterator(); i.hasNext();) {
 					Long longid = (Long)i.next();
 					String stringid=longid.toString();
-					Matcher m = p.matcher(stringid.toString());
+					Matcher m = p.matcher(stringid);
 					if( m.matches()) {
 						log.debug("pattern: \""+args.argv(0)+"\" matches id=\""+stringid+"\"");
 						TransferManagerHandler transferHandler =

@@ -51,7 +51,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
              "  <env-entry-type>java.lang.String</env-entry-type>\n"+
              " </env-entry>";
 
-             log.error(error.toString());
+             log.error(error);
              log.error(error_details);
              throw new java.rmi.RemoteException(error );
          }

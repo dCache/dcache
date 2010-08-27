@@ -494,7 +494,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     }else{
 
                         String errmsg = "WRITE denied (not allowed)";
-                        _log.error(errmsg.toString());
+                        _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 

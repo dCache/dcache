@@ -836,7 +836,7 @@ public class GridftpClient
             if(timedout ||interrupted ) {
                 _runner.interrupt();
                 String error = "transfer timedout or interrupted";
-                logger.error(error.toString());
+                logger.error(error);
                 throw new InterruptedException(error);
             }
 
@@ -975,7 +975,7 @@ public class GridftpClient
             throws IOException {
             if(_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                logger.error(error.toString());
+                logger.error(error);
                 throw new IllegalStateException(error);
             }
 
@@ -1025,7 +1025,7 @@ public class GridftpClient
         public synchronized Buffer read() throws IOException {
             if(!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                logger.error(error.toString());
+                logger.error(error);
                 throw new IllegalStateException(error);
             }
 

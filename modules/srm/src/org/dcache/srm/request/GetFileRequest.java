@@ -297,7 +297,7 @@ public final class GetFileRequest extends FileRequest {
                 }
                 catch(SRMAuthorizationException srmae) {
                     String error =srmae.getMessage();
-                    logger.error(error.toString());
+                    logger.error(error);
                     try {
                         setStateAndStatusCode(
                                 State.FAILED,
@@ -508,7 +508,7 @@ public final class GetFileRequest extends FileRequest {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
-                        logger.error(error.toString());
+                        logger.error(error);
                         throw new FatalJobFailure(error);
                     }
                 }

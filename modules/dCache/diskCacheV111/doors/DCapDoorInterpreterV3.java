@@ -8,13 +8,11 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.*;
-
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -31,15 +29,11 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.cells.CellStub;
-
 import diskCacheV111.util.PnfsHandler;
 import java.security.Principal;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.enums.AccessMask;
-
 import javax.security.auth.Subject;
-import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.Origin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +41,6 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
-import org.globus.gsi.jaas.GlobusPrincipal;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class DCapDoorInterpreterV3 implements KeepAliveListener,
@@ -463,7 +456,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         ( ( _maxClientVersion != null ) && ( version.compareTo( _maxClientVersion ) > 0 ) )  ){
 
             String error = "Client version rejected : "+version ;
-            _log.error(error.toString());
+            _log.error(error);
             throw new
             CommandExitException(error , 1 );
         }
@@ -877,7 +870,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             String reply = ""+_sessionId+" 1 "+
             _vargs.getName()+" "+comment ;
             println( reply ) ;
-            _log.debug(reply.toString()) ;
+            _log.debug(reply) ;
         }
         public void keepAlive(){
             _log.debug("Keep alived called for : {}", this);
@@ -2587,7 +2580,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int errorCode, String errorMessage) {
         String problem = String.format("%d %d %s failed %d \"internalError : %s\"",
                 sessionId, commandId, name, errorCode, errorMessage);
-        _log.debug(problem.toString());
+        _log.debug(problem);
         return problem;
     }
 
@@ -2595,7 +2588,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int errorCode, String errorMessage) {
         String problem= String.format("%d %d %s failed %d \"protocolViolation : %s\"",
                 sessionId, commandId, name, errorCode, errorMessage);
-        _log.debug(problem.toString());
+        _log.debug(problem);
         return problem;
     }
 

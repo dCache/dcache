@@ -50,7 +50,7 @@ public class MiltonHandler
     {
         CDC.setCellsContext(_cellName, _domainName);
         CDC.createSession();
-        NDC.push(CDC.getSession().toString());
+        NDC.push(CDC.getSession());
         try {
             ServletRequest req = new ServletRequest(request) {
                     @Override

@@ -84,12 +84,12 @@ public class Pgpass {
                 _port = r1[1];
             } else if (r1.length > 2) {
                 String error = "illegal jdbc url format: "+url+legalFormats;
-                _logger.error(error.toString());
+                _logger.error(error);
                 throw new SQLException(error);
             }
         } else {
                 String error = "illegal jdbc url format: "+url+legalFormats;
-                _logger.error(error.toString());
+                _logger.error(error);
                 throw new SQLException(error);
         }
     }
@@ -151,7 +151,7 @@ public class Pgpass {
                 String error = String.format("could not get password from '%s' "+
                     "for  hostname: '%s' ,port: %s ,database: '%s' " +
                     "and username: '%s' ",_pwdfile,hostname,port,database,username);
-                _logger.error(error.toString());
+                _logger.error(error);
                 throw new SQLException(error);
             }
             return r;

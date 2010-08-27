@@ -350,7 +350,7 @@ public final class PutCompanion implements MessageCallback<PnfsMessage>
                 else {
                     String error = "path does not exist and user has no " +
                             "permissions to create it";
-                    _log.warn(error.toString());
+                    _log.warn(error);
                     unregisterAndFailCreator(error);
                     callbacks.InvalidPathError(error);
                     return;

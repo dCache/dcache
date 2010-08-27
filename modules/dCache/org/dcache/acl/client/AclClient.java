@@ -37,9 +37,9 @@ public class AclClient {
 
     private void exitHelp(Options opts, int exitValue, String message) {
         if ( exitValue == 0 )
-            logger.info(message.toString());
+            logger.info(message);
         else
-            logger.error(message.toString());
+            logger.error(message);
         exitHelp(opts, exitValue);
     }
 

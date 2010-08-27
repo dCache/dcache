@@ -197,7 +197,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                         "  <env-entry-type>java.lang.String</env-entry-type>\n"+
                         " </env-entry>";
 
-                log.error(error.toString());
+                log.error(error);
                 log.error(error_details);
                 throw new java.rmi.RemoteException(error );
             }

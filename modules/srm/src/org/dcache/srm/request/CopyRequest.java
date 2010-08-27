@@ -340,7 +340,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 ! (from_urls[i].getPort() == from_urls[0].getPort()) ) {
                     String err = "source url #"+i+" "+from_urls[i].getURL()+" and "+
                     "source url #0"+from_urls[0].getURL()+" are not compartible";
-                    logger.error(err.toString());
+                    logger.error(err);
                     throw new IOException(err);
                 }
 
@@ -350,7 +350,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 ! (to_urls[i].getPort() == to_urls[0].getPort()) ) {
                     String err = "dest url #"+i+" "+to_urls[i].getURL()+" and "+
                     "dest url #0"+to_urls[0].getURL()+" are not compartible";
-                    logger.error(err.toString());
+                    logger.error(err);
                     throw new IOException(err);
                 }
 
@@ -748,7 +748,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     else {
                         error = "retrieval of \"to\" TURL failed with error "+reason;
                     }
-                    logger.error(error.toString());
+                    logger.error(error);
                     cfr.setState(State.FAILED,error);
                 }
                 catch(IllegalStateTransition ist) {
@@ -783,7 +783,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                         else {
                             error = "retrieval of \"to\" TURL failed with error "+reason;
                         }
-                        logger.error(error.toString());
+                        logger.error(error);
                         cfr.setState(State.FAILED,error);
                     }
                     catch(IllegalStateTransition ist) {

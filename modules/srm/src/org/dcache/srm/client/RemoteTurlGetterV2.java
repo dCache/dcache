@@ -258,7 +258,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         String error ="retreval of surl "+surl_string+
                                 " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
-                        logger.error(error.toString());
+                        logger.error(error);
                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).
                                intValue();
                         notifyOfFailure(SURLs[indx], error, requestToken, null);

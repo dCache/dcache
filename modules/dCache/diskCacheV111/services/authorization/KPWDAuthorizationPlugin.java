@@ -9,8 +9,6 @@
 
 package diskCacheV111.services.authorization;
 
-import java.util.*;
-import java.lang.*;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
 
@@ -24,7 +22,6 @@ import org.dcache.auth.UserAuthRecord;
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.AuthorizationConfig;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
-import gplazma.authz.plugins.RecordMappingPlugin;
 import gplazma.authz.plugins.CachingPlugin;
 
 
@@ -111,7 +108,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             logger.info("dcache.kpwd service returned Username: " + user_name);
 			if (user_name == null) {
 				String denied = DENIED_MESSAGE + ": Cannot determine Username for DN " + subjectDN;
-                logger.warn(denied.toString());
+                logger.warn(denied);
                 throw new AuthorizationException(denied);
 			}	
 		}

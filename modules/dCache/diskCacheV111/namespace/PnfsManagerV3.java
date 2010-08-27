@@ -1790,9 +1790,9 @@ public class PnfsManagerV3 extends CellAdapter
         long duration = System.currentTimeMillis() - ctime;
         String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
         if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold)
-            _log.warn(logMsg.toString());
+            _log.warn(logMsg);
         else
-            _log.info(logMsg.toString());
+            _log.info(logMsg);
 
 
         if (! ((Message)pnfsMessage).getReplyRequired() ){

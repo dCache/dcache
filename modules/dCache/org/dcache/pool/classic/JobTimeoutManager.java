@@ -2,18 +2,13 @@ package org.dcache.pool.classic;
 
 import java.io.PrintWriter;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.AbstractCellComponent;
 import dmg.util.Args;
-import dmg.cells.nucleus.CellInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,12 +197,12 @@ public class JobTimeoutManager
 
     private void say(String str)
     {
-        _log.info(str.toString());
+        _log.info(str);
     }
 
     private void esay(String str)
     {
-        _log.error(str.toString());
+        _log.error(str);
     }
 
     public void run()

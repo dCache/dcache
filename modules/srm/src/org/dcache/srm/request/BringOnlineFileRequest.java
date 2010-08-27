@@ -373,7 +373,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
                         String error ="surl is not local : "+getSurl().getURL();
-                        logger.error(error.toString());
+                        logger.error(error);
                         throw new FatalJobFailure(error);
                     }
                 }

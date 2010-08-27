@@ -5,12 +5,10 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.IOException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -19,7 +17,6 @@ import java.util.TimerTask;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.UOID;
@@ -30,7 +27,6 @@ import dmg.cells.nucleus.CellEndpoint;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
 
 /**
  * Abstract cell implementation providing features needed by many
@@ -391,7 +387,7 @@ public class AbstractCell extends CellAdapter
 
     public void debug(String str)
     {
-        _logger.debug(str.toString());
+        _logger.debug(str);
     }
 
     public void debug(Throwable t)
@@ -400,23 +396,23 @@ public class AbstractCell extends CellAdapter
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.debug(s.toString());
+            _logger.debug(s);
         }
     }
 
     public void info(String str)
     {
-        _logger.info(str.toString());
+        _logger.info(str);
     }
 
     public void warn(String str)
     {
-        _logger.warn(str.toString());
+        _logger.warn(str);
     }
 
     public void error(String str)
     {
-        _logger.error(str.toString());
+        _logger.error(str);
     }
 
     public void error(Throwable t)
@@ -425,7 +421,7 @@ public class AbstractCell extends CellAdapter
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.error(s.toString());
+            _logger.error(s);
         }
     }
 
@@ -440,7 +436,7 @@ public class AbstractCell extends CellAdapter
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.error(s.toString());
+            _logger.error(s);
         }
     }
 

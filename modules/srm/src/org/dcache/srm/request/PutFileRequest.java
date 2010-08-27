@@ -318,7 +318,7 @@ public final class PutFileRequest extends FileRequest {
                 }
             catch(SRMAuthorizationException srme) {
                 String error =srme.getMessage();
-                logger.error(error.toString());
+                logger.error(error);
                 try {
                     setStateAndStatusCode(State.FAILED,
                             error,

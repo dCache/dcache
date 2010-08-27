@@ -444,7 +444,7 @@ public class SRM {
         public void AdvisoryDeleteFailed(String reason) {
             error = " advisoryDelete(" + user + "," + path + ") AdvisoryDeleteFailed: " + reason;
             success = false;
-            logger.error(error.toString());
+            logger.error(error);
             done();
         }
 
@@ -455,14 +455,14 @@ public class SRM {
 
         public void Exception(Exception e) {
             error = " advisoryDelete(" + user + "," + path + ") Exception :" + e;
-            logger.error(error.toString());
+            logger.error(error);
             success = false;
             done();
         }
 
         public void Timeout() {
             error = " advisoryDelete(" + user + "," + path + ") Timeout ";
-            logger.error(error.toString());
+            logger.error(error);
             success = false;
             done();
         }
@@ -509,7 +509,7 @@ public class SRM {
         if (user == null) {
             String error = "advisoryDelete: user is unknown," +
                     " user needs authorization to delete ";
-            logger.error(error.toString());
+            logger.error(error);
             throw new IllegalArgumentException(error);
         }
 
@@ -519,7 +519,7 @@ public class SRM {
                 if (!Tools.sameHost(configuration.getSrmHosts(),
                         gurl.getHost())) {
                     String error = "advisoryDelete: surl is not local : " + gurl.getURL();
-                    logger.error(error.toString());
+                    logger.error(error);
                     throw new IllegalArgumentException(error);
                 }
             } catch (RuntimeException re) {
@@ -606,7 +606,7 @@ public class SRM {
             if (srcSURLS == null || srcSURLS.length == 0 ||
                     destSURLS == null || destSURLS.length == 0) {
                 String error = " number of source or destination SURLs is zero";
-                logger.error(error.toString());
+                logger.error(error);
                 return createFailedRequestStatus(error);
 
             }
@@ -797,7 +797,7 @@ public class SRM {
                 if (!Tools.sameHost(configuration.getSrmHosts(),
                         url.getHost())) {
                     String error = "getFileMetaData: surl is not local : " + url.getURL();
-                    logger.error(error.toString());
+                    logger.error(error);
                     throw new IllegalArgumentException(error);
                 }
 

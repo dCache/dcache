@@ -70,31 +70,25 @@ package diskCacheV111.doors;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 import java.util.Date;
 import java.util.Queue;
-import java.util.List;
 import java.util.LinkedList;
 import java.util.TimerTask;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
-import java.io.FilenameFilter;
-import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.InputStreamReader;
@@ -104,9 +98,7 @@ import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -124,30 +116,17 @@ import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.GFtpTransferStartedMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
-import diskCacheV111.vehicles.PnfsSetLengthMessage;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-import diskCacheV111.vehicles.PoolIoFileMessage;
-import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.FileExistsCacheException;
-import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FsPath;
@@ -156,12 +135,8 @@ import diskCacheV111.util.SocketAdapter;
 import diskCacheV111.util.ActiveAdapter;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsHandler;
-
 import org.dcache.namespace.FileType;
-import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.UserAuthBase;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.attributes.LoginAttribute;
@@ -172,21 +147,16 @@ import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.cells.CellStub;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.acl.enums.AccessMask;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsListDirectoryMessage;
-import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.util.list.DirectoryListSource;
 import org.dcache.util.list.DirectoryListPrinter;
 import org.dcache.util.list.ListDirectoryHandler;
-import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.Glob;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
-import org.globus.gsi.jaas.GlobusPrincipal;
 
 import dmg.cells.nucleus.CDC;
 
@@ -194,7 +164,6 @@ import org.dcache.commons.util.NDC;
 
 import javax.security.auth.Subject;
 
-import diskCacheV111.poolManager.RequestContainerV5;
 import org.dcache.auth.Origin;
 
 import static org.dcache.namespace.FileAttribute.*;
@@ -1407,7 +1376,7 @@ public abstract class AbstractFtpDoorV1
      */
     public void run()
     {
-        NDC.push(CDC.getSession().toString());
+        NDC.push(CDC.getSession());
         try {
             try {
                 /* Notice that we do not close the input stream, as
