@@ -1,7 +1,6 @@
 package dmg.cells.services ;
 
 import   dmg.cells.nucleus.* ;
-import   dmg.cells.network.* ;
 import   dmg.util.* ;
 
 import java.util.* ;
@@ -90,7 +89,11 @@ public class      ObjectLoginCell
    public void   cleanUp(){
 
      _log.info( "Clean up called" ) ;
-     try{ _out.close() ; }catch(Exception ee){}
+    try {
+        _out.close();
+     } catch (Exception ee) {
+        _log.warn("ignoring exception on PrintWriter.close {}", ee.toString());
+     }
      _readyGate.check() ;
      _log.info( "finished" ) ;
 

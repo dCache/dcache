@@ -105,16 +105,28 @@ public class TelnetShell implements Cell, Runnable   {
       return true ;
    }
    public void println( String str ){
-     try{ _telnetOutput.write( str + "\n" ) ;
-     }catch( Exception ee ){}
+       try {
+           _telnetOutput.write(str + "\n");
+       } catch (Exception ee) {
+           _log.warn("ignoring exception on telnetoutputstream.write {}",
+                   ee.toString());
+       }
    }
    public void print( String str ){
-     try{ _telnetOutput.write( str ) ;
-     }catch( Exception ee ){}
+       try {
+           _telnetOutput.write(str);
+       } catch (Exception ee) {
+           _log.warn("ignoring exception on telnetoutputstream.write {}",
+                   ee.toString());
+       }
    }
    public void sendControl( byte [] d ){
-     try{ _telnetOutput.write( d ) ;
-     }catch( Exception ee ){}
+       try {
+           _telnetOutput.write(d);
+       } catch (Exception ee) {
+           _log.warn("ignoring exception on telnetoutputstream.write {}",
+                   ee.toString());
+       }
    }
    public String shell( String str ) throws CommandExitException {
      return _cellShell.command( str ) ;
@@ -289,8 +301,13 @@ public class TelnetShell implements Cell, Runnable   {
       finish();
    }
    public void finish(){
-         try{_telnetOutput.close() ;}catch(Exception e){}
-         _nucleus.kill();
+       try {
+           _telnetOutput.close();
+       } catch (Exception e) {
+           _log.warn("ignoring exception on telnetoutputstream.close {}",
+                   e.toString());
+       }
+       _nucleus.kill();
    }
    public void run(){
       if( Thread.currentThread() == _telnetReceiver ){

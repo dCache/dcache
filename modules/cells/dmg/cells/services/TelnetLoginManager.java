@@ -7,7 +7,6 @@ import java.util.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.telnet.* ;
-import javax.security.auth.Subject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,11 +91,13 @@ public class      TelnetLoginManager
        start() ;
   }
   public void cleanUp(){
-     try{
-        _log.info( "Trying to close serverSocket" ) ;
-        _serverSocket.close() ;
-        _log.info( "Trying serverSocket close" ) ;
-     }catch( Exception ee ){}
+      try {
+          _log.info("Trying to close serverSocket");
+          _serverSocket.close();
+          _log.info("Trying serverSocket close returned");
+      } catch (Exception ee) {
+          _log.warn("ignoring exception on telnetoutputstream.write {}", ee.toString());
+      }
   }
   private void acceptConnections(){
          //

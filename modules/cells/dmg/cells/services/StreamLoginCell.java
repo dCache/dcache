@@ -1,11 +1,9 @@
 package dmg.cells.services ;
 
 import   dmg.cells.nucleus.* ;
-import   dmg.cells.network.* ;
 import   dmg.util.* ;
 import   dmg.protocols.ssh.* ;
 import   dmg.cells.services.login.* ;
-import java.util.* ;
 import java.io.* ;
 import java.net.* ;
 import javax.security.auth.Subject;
@@ -92,11 +90,15 @@ public class      StreamLoginCell
 
     }
   }
-   public void   cleanUp(){
+  public void cleanUp() {
 
-     _log.info( "Clean up called" ) ;
-     println("");
-     try{ _out.close() ; }catch(Exception ee){}
+    _log.info("Clean up called");
+    println("");
+    try {
+        _out.close();
+     } catch (Exception ee) {
+        _log.warn("ignoring exception on PrintWriter.close {}", ee.toString());
+     }
      _workerThread.interrupt() ;
      try {
          if (!_engine.getSocket().isClosed()) {
