@@ -36,12 +36,25 @@ public class PoolAdminBean implements Comparable<PoolAdminBean>, Serializable {
     }
 
     @Override
-    public int compareTo(PoolAdminBean other) {
-        if (other == null) {
-            throw new NullPointerException();
+    public int hashCode() {
+        return getGroupName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
         }
+        if (!(other instanceof PoolAdminBean)) {
+            return false;
+        }
+        PoolAdminBean otherBean = (PoolAdminBean) other;
 
-        return this.getGroupName().compareTo(other.getGroupName());
+        return getGroupName().equals(otherBean.getGroupName());
+    }
 
+    @Override
+    public int compareTo(PoolAdminBean other) {
+        return getGroupName().compareTo(other.getGroupName());
     }
 }

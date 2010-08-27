@@ -78,13 +78,13 @@ public class PoolGroupView extends BasePage implements AuthenticatedWebPage {
             protected void populateItem(ListItem<PoolGroupBean> item) {
                 final PoolGroupBean poolGroup = item.getModelObject();
                 item.add(createLink(poolGroup));
-                item.add(new Label("enabled", new Boolean(
+                item.add(new Label("enabled", Boolean.valueOf(
                         poolGroup.isEnabled()).toString()));
-                item.add(new Label("totalSpace", new Long(
+                item.add(new Label("totalSpace", Long.valueOf(
                         poolGroup.getTotalSpace()).toString()));
-                item.add(new Label("freeSpace", new Long(
+                item.add(new Label("freeSpace", Long.valueOf(
                         poolGroup.getFreeSpace()).toString()));
-                item.add(new Label("preciousSpace", new Long(
+                item.add(new Label("preciousSpace", Long.valueOf(
                         poolGroup.getPreciousSpace()).toString()));
                 item.add(new LayoutItemPanel("layoutItemPanel",
                         poolGroup.getPercentagePrecious(), poolGroup.getPercentageUsed(),

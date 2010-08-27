@@ -101,7 +101,7 @@ public abstract class XMLProcessor {
     }
 
     protected Boolean getBooleanFromXpath(String xpathExpression, Document document) {
-        Boolean result = new Boolean(false);
+        Boolean result = Boolean.valueOf(false);
         try {
             result = (Boolean) _xpath.evaluate(xpathExpression, document,
                     XPathConstants.BOOLEAN);

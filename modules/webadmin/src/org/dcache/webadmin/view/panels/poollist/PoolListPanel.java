@@ -52,13 +52,13 @@ public class PoolListPanel extends BasePanel {
             item.add(new Label("PoolPanel.domainName",
                     poolBean.getDomainName()));
             item.add(new Label("PoolPanel.enabled",
-                    new Boolean(poolBean.isEnabled()).toString()));
+                    Boolean.valueOf(poolBean.isEnabled()).toString()));
             item.add(new Label("PoolPanel.totalSpace",
-                    new Long(poolBean.getTotalSpace()).toString()));
+                    Long.valueOf(poolBean.getTotalSpace()).toString()));
             item.add(new Label("PoolPanel.freeSpace",
-                    new Long(poolBean.getFreeSpace()).toString()));
+                    Long.valueOf(poolBean.getFreeSpace()).toString()));
             item.add(new Label("PoolPanel.preciousSpace",
-                    new Long(poolBean.getPreciousSpace()).toString()));
+                    Long.valueOf(poolBean.getPreciousSpace()).toString()));
             item.add(new LayoutItemPanel("PoolPanel.layoutItemPanel",
                     poolBean.getPercentagePrecious(), poolBean.getPercentageUsed(),
                     poolBean.getPercentageFree()));

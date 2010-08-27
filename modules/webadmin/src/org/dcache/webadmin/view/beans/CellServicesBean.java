@@ -74,11 +74,26 @@ public class CellServicesBean implements Comparable<CellServicesBean>,
     }
 
     @Override
-    public int compareTo(CellServicesBean other) {
+    public int hashCode() {
+        return getName().hashCode() ^ getDomainName().hashCode();
+    }
 
-        if (other == null) {
-            throw new NullPointerException();
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
         }
-        return this.getName().compareTo(other.getName());
+        if (!(other instanceof CellServicesBean)) {
+            return false;
+        }
+        CellServicesBean otherBean = (CellServicesBean) other;
+        return (getName().equals(otherBean.getName()) &&
+                getDomainName().equals(otherBean.getDomainName()));
+    }
+
+    @Override
+    public int compareTo(CellServicesBean other) {
+        return (getName().compareTo(other.getName()) +
+                getDomainName().compareTo(other.getDomainName()));
     }
 }

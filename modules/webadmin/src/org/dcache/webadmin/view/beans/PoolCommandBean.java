@@ -37,12 +37,27 @@ public class PoolCommandBean implements Comparable<PoolCommandBean>, Serializabl
     }
 
     @Override
-    public int compareTo(PoolCommandBean other) {
-        if (other == null) {
-            throw new NullPointerException();
+    public int hashCode() {
+        return getName().hashCode() ^ getDomain().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
         }
+        if (!(other instanceof PoolCommandBean)) {
+            return false;
+        }
+        PoolCommandBean otherBean = (PoolCommandBean) other;
 
-        return this.getName().compareTo(other.getName());
+        return (getName().equals(otherBean.getName()) &&
+                getDomain().equals(otherBean.getDomain()));
+    }
 
+    @Override
+    public int compareTo(PoolCommandBean other) {
+        return (getName().compareTo(other.getName()) +
+                getDomain().compareTo(other.getDomain()));
     }
 }

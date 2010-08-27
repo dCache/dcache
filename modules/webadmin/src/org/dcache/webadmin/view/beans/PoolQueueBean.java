@@ -50,11 +50,27 @@ public class PoolQueueBean implements Comparable<PoolQueueBean>, Serializable {
     }
 
     @Override
-    public int compareTo(PoolQueueBean other) {
-        if (other == null) {
-            throw new NullPointerException();
-        }
+    public int hashCode() {
+        return getName().hashCode() ^ getDomainName().hashCode();
+    }
 
-        return this.getName().compareTo(other.getName());
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+        if (!(other instanceof PoolQueueBean)) {
+            return false;
+        }
+        PoolQueueBean otherBean = (PoolQueueBean) other;
+
+        return (getName().equals(otherBean.getName()) &&
+                getDomainName().equals(otherBean.getDomainName()));
+    }
+
+    @Override
+    public int compareTo(PoolQueueBean other) {
+        return (getName().compareTo(other.getName()) +
+                getDomainName().compareTo(other.getDomainName()));
     }
 }
