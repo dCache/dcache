@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 				ra_buffer_size = atol(optarg);
 				break;
 			case 'X':
-				sprintf(extraOption, "%s %s", extraOption, optarg);
+				dc_snaprintf(extraOption, sizeof(extraOption), " %s", optarg);
 				break;
 			case 'u':
 				unsafeWrite = 1;
@@ -222,9 +222,11 @@ int main(int argc, char *argv[])
 			mode = sbuf.st_mode & 0777;
 			/* tell to pool how many bytes we want to write */
 #ifdef WIN32
-			sprintf(allocSpaceOption, "%s -alloc-size=%lld",allocSpaceOption, (__int64)sbuf.st_size);
+			dc_snaprintf(allocSpaceOption, sizeof(allocSpaceOption),
+			             " -alloc-size=%lld", (__int64)sbuf.st_size);
 #else
-			sprintf(allocSpaceOption, "%s -alloc-size=%lld",allocSpaceOption, (long long)sbuf.st_size);
+			dc_snaprintf(allocSpaceOption, sizeof(allocSpaceOption),
+			             " -alloc-size=%lld", (long long)sbuf.st_size);
 #endif
 		}
 	}

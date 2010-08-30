@@ -50,6 +50,7 @@
 #include "dcap_protocol.h"
 #include "dcap_poll.h"
 #include "dcap_mqueue.h"
+#include "dcap_str_util.h"
 #include "array.h"
 #include "pnfs.h"
 #include "io.h"
@@ -864,6 +865,8 @@ create_data_socket(int *dataFd, unsigned short *cbPort)
 
 }
 
+#define APPEND_TO_OPENSTR(STRING) dc_safe_strncat(openStr, DCAP_CMD_SIZE, STRING)
+
 int
 ascii_open_conversation(struct vsp_node * node)
 {
@@ -889,7 +892,7 @@ ascii_open_conversation(struct vsp_node * node)
 
 	sprintf(openStr, "%d 0 client %s \"%s\"", node->queueID,
 	                                          asciiCommand(node->asciiCommand),
-											  node->asciiCommand == DCAP_CMD_TRUNC ? node->ipc : node->pnfsId );
+	                                          node->asciiCommand == DCAP_CMD_TRUNC ? node->ipc : node->pnfsId );
 
 	switch( node->asciiCommand ) {
 		case DCAP_CMD_OPEN:
@@ -900,26 +903,29 @@ ascii_open_conversation(struct vsp_node * node)
 			if( node->flags == O_RDONLY) {
 #endif /* WIN32 */
 
-				sprintf(openStr, "%s r", openStr);
+				APPEND_TO_OPENSTR(" r");
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
-					sprintf(openStr, "%s -path=%s/%s", openStr, node->directory, node->file_name );
+					dc_snaprintf( openStr, DCAP_CMD_SIZE,
+					              " -path=%s/%s", node->directory, node->file_name);
 				}
 			}
 
 			if (node->flags & O_WRONLY) {
-				sprintf(openStr, "%s w", openStr);
+				APPEND_TO_OPENSTR(" w");
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
-					sprintf(openStr, "%s -path=%s/%s", openStr, node->directory, node->file_name );
+					dc_snaprintf( openStr, DCAP_CMD_SIZE,
+					              " -path=%s/%s", node->directory, node->file_name);
 				}
 			}
 
 			if (node->flags & O_RDWR) {
-				sprintf(openStr, "%s rw", openStr);
+				APPEND_TO_OPENSTR(" rw");
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
-					sprintf(openStr, "%s -path=%s/%s", openStr, node->directory, node->file_name );
+					dc_snaprintf( openStr, DCAP_CMD_SIZE,
+					              " -path=%s/%s", node->directory, node->file_name);
 				}
 			}
 
@@ -928,54 +934,70 @@ ascii_open_conversation(struct vsp_node * node)
 			 *  send file permissions in case of create with URL syntax
 			 */
 			if( (node->flags & O_CREAT) && (node->url != NULL) ) {
-				sprintf(openStr, "%s -mode=0%o", openStr, node->mode);
+				dc_snaprintf(openStr, DCAP_CMD_SIZE,
+				             " -mode=0%o", node->mode);
 			}
 
 			if ( node->asciiCommand == DCAP_CMD_TRUNC ) {
 				if( node->url == NULL ) {
-					sprintf(openStr, "%s -truncate=\"%s\"", openStr, node->pnfsId);
+					dc_snaprintf(openStr, DCAP_CMD_SIZE,
+						     " -truncate=\"%s\"", node->pnfsId);
 				}else{
-					sprintf(openStr, "%s -truncate", openStr);
+				        APPEND_TO_OPENSTR(" -truncate");
 				}
 			}
 
-			sprintf(openStr, "%s %s %u", openStr, hostName, node->data_port);
-			sprintf(openStr, "%s -timeout=%ld", openStr, openTimeOut);
+			dc_snaprintf(openStr, DCAP_CMD_SIZE,
+			             " %s %u -timeout=%ld",
+				     hostName, node->data_port, openTimeOut);
 
-			if(onError != onErrorDefault) {
-				sprintf(openStr, "%s -onerror=%s", openStr, onError == onErrorFail? "fail" : "retry");
-			}else{
-				sprintf(openStr, "%s -onerror=%s", openStr, "default");
+			switch( onError) {
+			case onErrorFail:
+				APPEND_TO_OPENSTR(" -onerror=fail");
+				break;
+			case onErrorDefault:
+				APPEND_TO_OPENSTR(" -onerror=default");
+				break;
+			default:
+			case onErrorRetry:
+				APPEND_TO_OPENSTR(" -onerror=retry");
+				break;
 			}
 
 			if( rqReceiveBuffer != 0 ) {
-				sprintf(openStr, "%s -send=%d", openStr, rqReceiveBuffer );
+				dc_snaprintf(openStr, DCAP_CMD_SIZE,
+				             " -send=%d", rqReceiveBuffer);
 			}
 
 			if( rqSendBuffer!= 0 ) {
-				sprintf(openStr, "%s -receive=%d", openStr,  rqSendBuffer);
+				dc_snaprintf(openStr, DCAP_CMD_SIZE,
+					     " -receive=%d", rqSendBuffer);
 			}
 
 
 			if( isActive() ) {
-				sprintf(openStr, "%s -passive", openStr);
+				APPEND_TO_OPENSTR(" -passive");
 			}
 
 			break;
 		case DCAP_CMD_STAGE:
 		case DCAP_CMD_CHECK:
-			sprintf(openStr, "%s -stagetime=%ld", openStr, node->atime);
-			sprintf(openStr, "%s -location=%s", openStr,
-				node->stagelocation == NULL ? hostName : node->stagelocation);
+			dc_snaprintf(openStr, DCAP_CMD_SIZE,
+			             " -stagetime=%ld -location=%s",
+			             node->atime,
+			             node->stagelocation == NULL ? hostName : node->stagelocation);
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_MKDIR:
 		case DCAP_CMD_CHMOD:
-			sprintf(openStr, "%s -mode=%d", openStr, node->mode);
+			dc_snaprintf(openStr, DCAP_CMD_SIZE,
+			             " -mode=%d", node->mode);
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_CHOWN:
-			sprintf(openStr, "%s -owner=%d:%d", openStr, node->uid, node->gid);
+			dc_snaprintf(openStr, DCAP_CMD_SIZE,
+			             " -owner=%d:%d",
+			             node->uid, node->gid);
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_STAT:
@@ -986,11 +1008,14 @@ ascii_open_conversation(struct vsp_node * node)
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_OPENDIR:
-			sprintf(openStr, "%s %s %u", openStr, hostName, node->data_port);
+			dc_snaprintf(openStr, DCAP_CMD_SIZE,
+			             " %s %u",
+			             hostName, node->data_port);
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_RENAME:
-			sprintf(openStr, "%s %s", openStr, node->ipc);
+			dc_snaprintf(openStr, DCAP_CMD_SIZE,
+			             " %s", node->ipc);
 			invalid_flag = 0;
 			break;
 		default:
@@ -1005,13 +1030,16 @@ ascii_open_conversation(struct vsp_node * node)
 	}
 
 	if(extraOption != NULL) {
-		sprintf(openStr, "%s %s", openStr, extraOption);
+		dc_snaprintf(openStr, DCAP_CMD_SIZE,
+		             " %s", extraOption);
 		free(extraOption);
 		extraOption = NULL;
 	}
 
-	len = sprintf(openStr, "%s -uid=%d\n", openStr, uid);
+	dc_snaprintf(openStr, DCAP_CMD_SIZE,
+	             " -uid=%d\n", uid);
 
+	len = strlen( openStr);
 	sendControlMessage(node->fd, openStr, len, node->tunnel);
 	/* getControlMessage(MAYBE, NULL); */
 	free(openStr);

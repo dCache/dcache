@@ -45,6 +45,7 @@ dcap_rename.c  \
 dcap_signal.c  \
 dcap_stat.c  \
 dcap_stream.c  \
+dcap_str_util.c  \
 dcap_unlink.c  \
 dcap_url.c  \
 dcap_version.c  \
@@ -91,6 +92,7 @@ dcap_command.h \
 input_parser.h \
 dcap_interpreter.h \
 dcap_signal.h \
+dcap_str_util.h  \
 dcap_debug.h
 
 p_loadsrc = dcap_preload.c \

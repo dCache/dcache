@@ -37,6 +37,7 @@
 #include "input_parser.h"
 #include "dcap_interpreter.h"
 #include "dcap_shared.h"
+#include "dcap_str_util.h"
 
 static          MUTEX(gLock);
 static          MUTEX(controlLock);
@@ -51,62 +52,60 @@ static void messageDestroy( char ** );
 #define POLL_CONTROL 0
 #define POLL_DATA 1
 
+#define APPEND_TO(TARGET,STRING) dc_safe_strncat(TARGET, sizeof(TARGET), STRING);
 
 const char *pevent2str(int event )
 {
-	static char m[256];
+    static char m[256];
     int ok = 0;
 
-	m[0] = '\0';
+    m[0] = '\0';
 
-	if( (event & POLLIN) == POLLIN ) {
-		sprintf(m, "%s POLLIN", m);
-		ok = 1;
+    if( (event & POLLIN) == POLLIN ) {
+        APPEND_TO(m, " POLLIN");
+        ok = 1;
     }
     if( (event & POLLOUT) == POLLOUT) {
-        sprintf(m, "%s POLLOUT", m);
+        APPEND_TO(m, " POLLOUT");
+        ok = 1;
     }
     if( (event & POLLPRI) == POLLPRI ) {
-        sprintf(m, "%s POLLPRI", m);
-		ok = 1;
+        APPEND_TO(m, " POLLPRI");
+        ok = 1;
     }
     if( (event & POLLERR)  == POLLERR ) {
-        sprintf(m, "%s POLLERR", m);
-		ok = 1;
+        APPEND_TO(m, " POLLERR");
+        ok = 1;
     }
     if( (event & POLLHUP)  == POLLHUP) {
-        sprintf(m, "%s POLLHUP", m);
-		ok = 1;
+        APPEND_TO(m, " POLLHUP");
+        ok = 1;
     }
     if( (event & POLLNVAL)  == POLLNVAL ) {
-        sprintf(m, "%s POLLNVAL", m);
-		ok = 1;
+        APPEND_TO(m, " POLLNVAL");
+        ok = 1;
     }
 #ifdef POLLMSG
     if( (event & POLLMSG)  == POLLMSG ) {
-        sprintf(m, "%s POLLMSG", m);
-		ok = 1;
+        APPEND_TO(m, " POLLMSG");
+        ok = 1;
     }
 #endif /* POLLMSG */
     if( (event & POLLRDNORM) == POLLRDNORM) {
-        sprintf(m, "%s POLLRDNORM", m);
-		ok = 1;
+        APPEND_TO(m, " POLLRDNORM");
+        ok = 1;
     }
     if( (event & POLLWRBAND)  == POLLWRBAND ) {
-        sprintf(m, "%s POLLWRBAND", m);
-		ok = 1;
+        APPEND_TO(m, " POLLWRBAND");
+        ok = 1;
     }
     if( (event & POLLRDBAND) == POLLRDBAND ) {
-        sprintf(m, "%s POLLRDBAND", m);
-		ok = 1;
-    }
-    if( (event & POLLRDBAND)  == POLLRDBAND ) {
-        sprintf(m, "%s POLLRDBAND", m);
-		ok = 1;
+        APPEND_TO(m, " POLLRDBAND");
+        ok = 1;
     }
 
-	if( !ok ) {
-		sprintf(m, "UNKNOWN (%d)", event);
+    if( !ok ) {
+        dc_snaprintf( m, sizeof(m), " UNKNOWN (%d)", event);
     }
 
     return m;

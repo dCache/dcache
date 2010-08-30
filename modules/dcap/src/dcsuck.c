@@ -34,6 +34,7 @@ extern int getopt(int, char * const *, const char *);
 #endif
 
 #include "dcap.h"
+#include "dcap_str_util.h"
 
 #define DEFAULT_BUFFER 1048570L /* 1Mb */
 
@@ -67,7 +68,8 @@ int main(int argc, char *argv[])
 				dc_setStrDebugLevel(optarg);
 				break;
 			case 'X':
-				sprintf(extraOption, "%s %s", extraOption, optarg);
+				dc_snaprintf(extraOption, sizeof(extraOption),
+				             " %s", optarg);
 				break;
 		}
 	}
