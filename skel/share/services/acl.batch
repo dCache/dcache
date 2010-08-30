@@ -8,12 +8,5 @@ check -strong aclConnUrl
 check -strong aclConnUser
 check aclConnPswd
 
-create org.dcache.acl.AclCell acladmin \
-        "-export \
-         -aclEnabled=${aclEnabled} \
-         -aclTable=${aclTable} \
-         -aclConnDriver=${aclConnDriver} \
-         -aclConnUrl=${aclConnUrl} \
-         -aclConnUser=${aclConnUser} \
-         -aclConnPswd=${aclConnPswd} \
-         "
+create org.dcache.cells.UniversalSpringCell acladmin \
+        "classpath:org/dcache/acl/acl.xml"

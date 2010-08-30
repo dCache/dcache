@@ -2,17 +2,11 @@ package org.dcache.acl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.EnumSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.acl.ACE;
-import org.dcache.acl.ACL;
-import org.dcache.acl.ACLException;
-import org.dcache.acl.config.AclConfig;
 import org.dcache.acl.enums.RsType;
-import org.dcache.acl.handler.DefaultACLHandler;
 import org.dcache.acl.parser.ACEParser;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
@@ -21,10 +15,11 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
+import org.dcache.acl.handler.ACLHandler;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellInfoProvider;
 
 /**
  * This Cell provides administration tool to manage ACLs (commands for setting and getting ACL of files/directories).
@@ -44,60 +39,28 @@ import dmg.util.Args;
  * @version 16 Dec 2008
  *
  */
-public class AclCell extends CellAdapter {
+public class AclCell  extends AbstractCellComponent
+    implements CellCommandListener, CellInfoProvider {
 
-    private final String _cellName;
-    private final CellNucleus _nucleus;
-    private final Args _args;
-    private final PnfsHandler _pnfs;
-    private final DefaultACLHandler _aclHandler;
+    private PnfsHandler _pnfs;
+    private ACLHandler _aclHandler;
 
     public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-
-    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     final static int ACE_MIN_format2 = 2;
     final static int ACE_MAX_format2 = 5;
 
     public static final String OPTION_HELP = "h";
 
-    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization.adminACL." + AclCell.class.getName());
+    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization.adminACL." + AclCell.class);
 
-    public AclCell(String cellName, String args) throws Exception {
-
-        super(cellName, AclCell.class.getName(), args, false);
-
-        _cellName = cellName;
-        _args = getArgs();
-        _nucleus = getNucleus();
-
-        _pnfs = new PnfsHandler(this, new CellPath("PnfsManager"));
-        Properties aclProperties = getAclProperties();
-        _aclHandler = new DefaultACLHandler(new AclConfig(aclProperties));
-        useInterpreter(true);
-        start();
+    public void setAclHandler(ACLHandler aclHandler) {
+        _aclHandler = aclHandler;
     }
 
-    private  Properties getAclProperties() {
-        Properties props = new Properties();
-
-        getAclProperty("aclEnabled", props);
-        getAclProperty("aclTable", props);
-        getAclProperty("aclConnDriver", props);
-        getAclProperty("aclConnUrl", props);
-        getAclProperty("aclConnUser", props);
-        getAclProperty("aclConnPswd", props);
-
-        return props;
+    public void setPnfsHandler(PnfsHandler pnfs) {
+        _pnfs = pnfs;
     }
-
-     private void getAclProperty(String key, Properties props) {
-         String value = _args.getOpt(key);
-         if (value != null) {
-              props.setProperty(key, value);
-         }
-     }
-
      /**
       * Command for getting ACL
       * Examples :
@@ -147,7 +110,7 @@ public class AclCell extends CellAdapter {
         acl = _aclHandler.getACL(rsId);
 
         if ( acl != null ) {
-            _logger.info("getfacl Response: " + acl.toString());
+            _logger.info("getfacl Response: {}", acl);
             return acl.toExtraFormat();
         } else
             return "ACL for the object rsId = " + rsId + "  does not exist.";
@@ -310,13 +273,8 @@ public class AclCell extends CellAdapter {
             aces.add(ace);
         }
 
-        // compose new ACL
         ACL newACL = new ACL(rsId, rsType, aces);
-        if ( newACL == null )
-            throw new RuntimeException("Set ACL failure.");
-        if ( _logger.isDebugEnabled()) {
-            _logger.debug("New ACL: " + newACL.toString());
-        }
+        _logger.debug("New ACL: {}", newACL);
 
         // get old ACL
         ACL oldACL = _aclHandler.getACL(rsId);
