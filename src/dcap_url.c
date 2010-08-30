@@ -177,14 +177,14 @@ dcap_url* dc_getURL( const char *path )
 	return url;
 }
 
-char * url2config(char *configLine, size_t configLineSize,  dcap_url *url)
+char * url2config(char *configLine, size_t configLineSize, dcap_url *url)
 {
-	configLine[0] = '\0';
 
-	sprintf(configLine, "%s", url->host);
+	snprintf(configLine, configLineSize, "%s", url->host);
+	configLine[configLineSize-1] = '\0';
 
 	if ( url->prefix != NULL ) {
-		sprintf(configLine, "%s:lib%sTunnel.so", configLine, url->prefix );
+		dc_snaprintf(configLine, configLineSize, ":lib%sTunnel.so", url->prefix );
 	}
 
 	return configLine;
