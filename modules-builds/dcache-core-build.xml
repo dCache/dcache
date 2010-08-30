@@ -87,7 +87,6 @@
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
-        <fileset dir="${libDir}/spring/" includes="*.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/activemq/" includes="*.jar" />
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />
@@ -481,14 +480,6 @@
           <fileset dir="${libDir}/activemq/">
             <include name="*.jar" />
           </fileset>
-        </copy>
-
-        <!-- Spring -->
-        <mkdir dir="${server.bin.dir}/classes/spring/" />
-        <copy todir="${server.bin.dir}/classes/spring">
-            <fileset dir="${libDir}/spring/">
-                <include name="*.jar" />
-            </fileset>
         </copy>
 
         <!-- Jetty -->

@@ -31,12 +31,26 @@
     </tstamp>
 
     <!-- external dependencies -->
-    <artifact:dependencies pathId="dependency.classpath" filesetId="dependency.fileset">
+    <artifact:dependencies pathId="dependency.classpath" filesetId="dependency.fileset" useScope="runtime">
         <!-- Remote repositories -->
         <remoteRepository id="glassfish.repository" url="http://download.java.net/maven/glassfish/" />
 
+        <!-- Suppress some dependencies: Dependencies with scope
+             'provided' are not included in the runtime classpath. We
+             use this to suppress jars we don't really need or get
+             through other means.
+        -->
+        <dependency groupId="commons-logging" artifactId="commons-logging" version="1.1.1" scope="provided"/>
+
         <!-- external dependencies -->
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
+        <dependency groupId="org.springframework" artifactId="spring-beans" version="3.0.4.RELEASE"/>
+        <dependency groupId="org.springframework" artifactId="spring-context" version="3.0.4.RELEASE"/>
+        <dependency groupId="org.springframework" artifactId="spring-core" version="3.0.4.RELEASE"/>
+        <dependency groupId="org.springframework" artifactId="spring-expression" version="3.0.4.RELEASE"/>
+        <dependency groupId="org.springframework" artifactId="spring-jdbc" version="3.0.4.RELEASE"/>
+        <!--dependency groupId="org.springframework" artifactId="spring-tx" version="3.0.4.RELEASE"/-->
+        <dependency groupId="org.springframework" artifactId="spring-web" version="3.0.4.RELEASE"/>
     </artifact:dependencies>
     <!--
         Untar axis, glite, cog, glue
