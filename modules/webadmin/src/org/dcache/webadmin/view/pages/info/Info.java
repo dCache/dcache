@@ -27,9 +27,10 @@ public class Info extends BasePage {
             setCorrectedStatepath(parameters.getString("statepath"));
             _log.debug("calls Info with: {}", _statepath);
             CharSequence export = getInfoService().getXmlForStatepath(_statepath);
+//            to get the legacy behaviour the filename is not set - this
+//            way the firefox browser opens this directly with no download popup
             ResourceStreamRequestTarget target = new ResourceStreamRequestTarget(
                     new StringResourceStream(export, "text/xml"));
-            target.setFileName("info.xml");
             RequestCycle.get().setRequestTarget(target);
         } catch (InfoServiceException ex) {
             _log.error("Info-Service-Exception: {}", ex.getMessage());
