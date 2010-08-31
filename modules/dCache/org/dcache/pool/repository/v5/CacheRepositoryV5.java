@@ -63,10 +63,28 @@ import dmg.util.Args;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+/**
+ * Implementation of Repository interface.
+ *
+ * The class is thread-safe.
+ */
 public class CacheRepositoryV5
     extends AbstractCellComponent
     implements Repository, CellCommandListener
 {
+    /* Implementation note
+     * -------------------
+     *
+     * The following order must be observed when synchronizing:
+     *
+     *  - this
+     *  - entries (only one)
+     *  - _account
+     *
+     */
+
+
     /**
     * time in millisecs added to each sticky expiration task
     * We schedule the task later than the expiration time to account
@@ -97,7 +115,8 @@ public class CacheRepositoryV5
     /**
      * Collection of removable entries.
      */
-    private final Set<PnfsId> _removable = new HashSet();
+    private final Set<PnfsId> _removable =
+        Collections.newSetFromMap(new ConcurrentHashMap<PnfsId,Boolean>());
 
     /** Executor for periodic tasks. */
     private ScheduledExecutorService _executor;
@@ -218,6 +237,7 @@ public class CacheRepositoryV5
      */
     public synchronized void setVolatile(boolean value)
     {
+        assertNotInitialised();
         _volatile = value;
     }
 
@@ -451,16 +471,18 @@ public class CacheRepositoryV5
             }
 
             MetaDataRecord entry = createMetaDataRecord(id);
-            entry.setStorageInfo(info);
-            _allEntries.put(id, entry);
-            setState(entry, transferState);
+            synchronized (entry) {
+                entry.setStorageInfo(info);
+                _allEntries.put(id, entry);
+                setState(entry, transferState);
 
-            return new WriteHandleImpl(this,
-                                       _allocator,
-                                       _pnfs,
-                                       entry,
-                                       targetState,
-                                       stickyRecords);
+                return new WriteHandleImpl(this,
+                                           _allocator,
+                                           _pnfs,
+                                           entry,
+                                           targetState,
+                                           stickyRecords);
+            }
         } catch (FileInCacheException e) {
             throw e;
         } catch (CacheException e) {
@@ -487,34 +509,35 @@ public class CacheRepositoryV5
      * @throws FileNotInCacheException if file not found or in a state
      * in which it cannot be opened
      */
-    public synchronized ReadHandle openEntry(PnfsId id)
+    public ReadHandle openEntry(PnfsId id)
         throws FileNotInCacheException
     {
         assertInitialised();
         try {
             MetaDataRecord entry = getMetaDataRecord(id);
+            synchronized (entry) {
+                /* REVISIT: Is using FileNotInCacheException appropriate?
+                 */
+                switch (entry.getState()) {
+                case NEW:
+                case FROM_CLIENT:
+                case FROM_STORE:
+                case FROM_POOL:
+                    throw new FileNotInCacheException("File is incomplete");
+                case BROKEN:
+                    throw new FileNotInCacheException("File is broken");
+                case DESTROYED:
+                    throw new FileNotInCacheException("File has been removed");
+                case PRECIOUS:
+                case CACHED:
+                case REMOVED:
+                    break;
+                }
 
-            /* REVISIT: Is using FileNotInCacheException appropriate?
-             */
-            switch (entry.getState()) {
-            case NEW:
-            case FROM_CLIENT:
-            case FROM_STORE:
-            case FROM_POOL:
-                throw new FileNotInCacheException("File is incomplete");
-            case BROKEN:
-                throw new FileNotInCacheException("File is broken");
-            case DESTROYED:
-                throw new FileNotInCacheException("File has been removed");
-            case PRECIOUS:
-            case CACHED:
-            case REMOVED:
-                break;
+                entry.touch();
+                accessTimeChanged(entry);
+                return new ReadHandleImpl(this, entry);
             }
-
-            entry.touch();
-            accessTimeChanged(entry);
-            return new ReadHandleImpl(this, entry);
         } catch (FileNotInCacheException e) {
             /* Somebody got the idea that we have the file, so we make
              * sure to remove any stray pointers.
@@ -563,8 +586,8 @@ public class CacheRepositoryV5
      * <code>owner</code> are null or when <code>lifetime</code> is
      * smaller than -1.
      */
-    public synchronized void setSticky(PnfsId id, String owner,
-                                       long expire, boolean overwrite)
+    public void setSticky(PnfsId id, String owner,
+                          long expire, boolean overwrite)
         throws IllegalArgumentException,
                FileNotInCacheException
     {
@@ -572,22 +595,24 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("Null argument not allowed");
 
         MetaDataRecord entry = getMetaDataRecord(id);
-        switch (entry.getState()) {
-        case NEW:
-        case FROM_CLIENT:
-        case FROM_STORE:
-        case FROM_POOL:
-            throw new FileNotInCacheException("File is incomplete");
-        case REMOVED:
-        case DESTROYED:
-            throw new FileNotInCacheException("File has been removed");
-        case BROKEN:
-        case PRECIOUS:
-        case CACHED:
-            break;
-        }
+        synchronized (entry) {
+            switch (entry.getState()) {
+            case NEW:
+            case FROM_CLIENT:
+            case FROM_STORE:
+            case FROM_POOL:
+                throw new FileNotInCacheException("File is incomplete");
+            case REMOVED:
+            case DESTROYED:
+                throw new FileNotInCacheException("File has been removed");
+            case BROKEN:
+            case PRECIOUS:
+            case CACHED:
+                break;
+            }
 
-        setSticky(entry, owner, expire, overwrite);
+            setSticky(entry, owner, expire, overwrite);
+        }
     }
 
     /**
@@ -621,42 +646,45 @@ public class CacheRepositoryV5
      * @throws IllegalTransitionException if the transition is illegal.
      * @throws IllegalArgumentException if <code>id</code> is null.
      */
-    public synchronized void setState(PnfsId id, EntryState state)
+    public void setState(PnfsId id, EntryState state)
         throws IllegalTransitionException, IllegalArgumentException
     {
         if (id == null)
             throw new IllegalArgumentException("id is null");
 
         try {
-            EntryState source = getState(id);
-            switch (source) {
-            case NEW:
-            case REMOVED:
-            case DESTROYED:
-                if (state == EntryState.REMOVED) {
-                    /* File doesn't exist or is already
-                     * deleted. That's all we care about.
-                     */
-                    return;
-                }
-                break;
-            case PRECIOUS:
-            case CACHED:
-            case BROKEN:
-                switch (state) {
+            MetaDataRecord entry = getMetaDataRecord(id);
+            synchronized (entry) {
+                EntryState source = entry.getState();
+                switch (source) {
+                case NEW:
                 case REMOVED:
-                case CACHED:
+                case DESTROYED:
+                    if (state == EntryState.REMOVED) {
+                        /* File doesn't exist or is already
+                         * deleted. That's all we care about.
+                         */
+                        return;
+                    }
+                    break;
                 case PRECIOUS:
+                case CACHED:
                 case BROKEN:
-                    setState(getMetaDataRecord(id), state);
-                    return;
+                    switch (state) {
+                    case REMOVED:
+                    case CACHED:
+                    case PRECIOUS:
+                    case BROKEN:
+                        setState(entry, state);
+                        return;
+                    default:
+                        break;
+                    }
                 default:
                     break;
                 }
-            default:
-                break;
+                throw new IllegalTransitionException(id, source, state);
             }
-            throw new IllegalTransitionException(id, source, state);
         } catch (FileNotInCacheException e) {
             /* File disappeared before we could change the
              * state. That's okay if we wanted to remove it, otherwise
@@ -772,14 +800,16 @@ public class CacheRepositoryV5
 
     protected void updateRemovable(MetaDataRecord entry)
     {
-        PnfsId id = entry.getPnfsId();
-        if (_sweeper.isRemovable(entry)) {
-            if (_removable.add(id)) {
-                _account.adjustRemovable(entry.getSize());
-            }
-        } else {
-            if (_removable.remove(id)) {
-                _account.adjustRemovable(-entry.getSize());
+        synchronized (entry) {
+            PnfsId id = entry.getPnfsId();
+            if (_sweeper.isRemovable(entry)) {
+                if (_removable.add(id)) {
+                    _account.adjustRemovable(entry.getSize());
+                }
+            } else {
+                if (_removable.remove(id)) {
+                    _account.adjustRemovable(-entry.getSize());
+                }
             }
         }
     }
@@ -791,16 +821,18 @@ public class CacheRepositoryV5
                                 EntryState oldState, EntryState newState)
     {
         try {
-            updateRemovable(entry);
-            StateChangeEvent event =
-                new StateChangeEvent(new CacheEntryImpl(entry),
-                                     oldState, newState);
-            _stateChangeListeners.stateChanged(event);
+            synchronized (entry) {
+                updateRemovable(entry);
+                StateChangeEvent event =
+                    new StateChangeEvent(new CacheEntryImpl(entry),
+                                         oldState, newState);
+                _stateChangeListeners.stateChanged(event);
 
-            if (oldState != PRECIOUS && newState == PRECIOUS) {
-                _account.adjustPrecious(entry.getSize());
-            } else if (oldState == PRECIOUS && newState != PRECIOUS) {
-                _account.adjustPrecious(-entry.getSize());
+                if (oldState != PRECIOUS && newState == PRECIOUS) {
+                    _account.adjustPrecious(entry.getSize());
+                } else if (oldState == PRECIOUS && newState != PRECIOUS) {
+                    _account.adjustPrecious(-entry.getSize());
+                }
             }
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
@@ -814,10 +846,12 @@ public class CacheRepositoryV5
     protected void accessTimeChanged(MetaDataRecord entry)
     {
         try {
-            updateRemovable(entry);
-            EntryChangeEvent event =
-                new EntryChangeEvent(new CacheEntryImpl(entry));
-            _stateChangeListeners.accessTimeChanged(event);
+            synchronized (entry) {
+                updateRemovable(entry);
+                EntryChangeEvent event =
+                    new EntryChangeEvent(new CacheEntryImpl(entry));
+                _stateChangeListeners.accessTimeChanged(event);
+            }
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
@@ -832,10 +866,12 @@ public class CacheRepositoryV5
                                  StickyRecord record)
     {
         try {
-            updateRemovable(entry);
-            StickyChangeEvent event =
-                new StickyChangeEvent(new CacheEntryImpl(entry), record);
-            _stateChangeListeners.stickyChanged(event);
+            synchronized (entry) {
+                updateRemovable(entry);
+                StickyChangeEvent event =
+                    new StickyChangeEvent(new CacheEntryImpl(entry), record);
+                _stateChangeListeners.stickyChanged(event);
+            }
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
@@ -848,54 +884,60 @@ public class CacheRepositoryV5
      * @param entry a repository entry
      * @param state an entry state
      */
-    synchronized void setState(MetaDataRecord entry, EntryState state)
+    void setState(MetaDataRecord entry, EntryState state)
     {
-        EntryState oldState = entry.getState();
-        if (oldState == state)
-            return;
-
-        try {
-            entry.setState(state);
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
-        }
-
-        stateChanged(entry, oldState, state);
-
-        if (state == REMOVED) {
-            if (_log.isInfoEnabled()) {
-                _log.info("remove entry for: " + entry.getPnfsId().toString());
+        synchronized (entry) {
+            EntryState oldState = entry.getState();
+            if (oldState == state) {
+                return;
             }
 
-            PnfsId id = entry.getPnfsId();
-            _pnfs.clearCacheLocation(id, _volatile);
+            try {
+                entry.setState(state);
+            } catch (CacheException e) {
+                fail(FaultAction.READONLY, "Internal repository error", e);
+                throw new RuntimeException("Internal repository error", e);
+            }
 
-            ScheduledFuture oldTask = _tasks.remove(id);
-            if (oldTask != null) {
-                oldTask.cancel(false);
+            stateChanged(entry, oldState, state);
+
+            if (state == REMOVED) {
+                if (_log.isInfoEnabled()) {
+                    _log.info("remove entry for: " + entry.getPnfsId().toString());
+                }
+
+                PnfsId id = entry.getPnfsId();
+                _pnfs.clearCacheLocation(id, _volatile);
+
+                ScheduledFuture oldTask = _tasks.remove(id);
+                if (oldTask != null) {
+                    oldTask.cancel(false);
+                }
             }
         }
-
         destroyWhenRemovedAndUnused(entry);
     }
 
     /**
      * Package local method for changing sticky records of an entry.
      */
-    synchronized void setSticky(MetaDataRecord entry, String owner,
-                                long expire, boolean overwrite)
+    void setSticky(MetaDataRecord entry, String owner,
+                   long expire, boolean overwrite)
         throws IllegalArgumentException
     {
         try {
-            if (entry == null || owner == null)
+            if (entry == null || owner == null) {
                 throw new IllegalArgumentException("Null argument not allowed");
-            if (expire < -1)
+            }
+            if (expire < -1) {
                 throw new IllegalArgumentException("Expiration time must be -1 or non-negative");
+            }
 
-            if (entry.setSticky(owner, expire, overwrite)) {
-                stickyChanged(entry, new StickyRecord(owner, expire));
-                scheduleExpirationTask(entry);
+            synchronized (entry) {
+                if (entry.setSticky(owner, expire, overwrite)) {
+                    stickyChanged(entry, new StickyRecord(owner, expire));
+                    scheduleExpirationTask(entry);
+                }
             }
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
@@ -977,60 +1019,66 @@ public class CacheRepositoryV5
      */
     synchronized void destroyWhenRemovedAndUnused(MetaDataRecord entry)
     {
-        EntryState state = entry.getState();
-        PnfsId id = entry.getPnfsId();
-        if (entry.getLinkCount() == 0 && state == EntryState.REMOVED
-            && _allEntries.containsKey(id)) {
-            _account.free(entry.getSize());
-            stateChanged(entry, state, DESTROYED);
-            _allEntries.remove(id);
-            _store.remove(id);
+        synchronized (entry) {
+            EntryState state = entry.getState();
+            PnfsId id = entry.getPnfsId();
+            if (entry.getLinkCount() == 0 && state == EntryState.REMOVED
+                && _allEntries.containsKey(id)) {
+                _account.free(entry.getSize());
+                stateChanged(entry, state, DESTROYED);
+                _store.remove(id);
+                _allEntries.remove(id);
+            }
         }
     }
 
     /**
      * Removes all expired sticky flags of entry.
      */
-    private synchronized void removeExpiredStickyFlags(MetaDataRecord entry)
+    private void removeExpiredStickyFlags(MetaDataRecord entry)
     {
-        List<StickyRecord> removed = entry.removeExpiredStickyFlags();
-        for (StickyRecord record: removed) {
-            stickyChanged(entry, record);
+        synchronized (entry) {
+            List<StickyRecord> removed = entry.removeExpiredStickyFlags();
+            for (StickyRecord record: removed) {
+                stickyChanged(entry, record);
+            }
+            scheduleExpirationTask(entry);
         }
-        scheduleExpirationTask(entry);
     }
 
     /**
      * Schedules an expiration task for a sticky entry.
      */
-    private synchronized void scheduleExpirationTask(MetaDataRecord entry)
+    private void scheduleExpirationTask(MetaDataRecord entry)
     {
-        /* Cancel previous task.
-         */
-        PnfsId pnfsId = entry.getPnfsId();
-        ScheduledFuture future = _tasks.remove(pnfsId);
-        if (future != null) {
-            future.cancel(false);
-        }
-
-        /* Find next sticky flag to expire.
-         */
-        long expire = Long.MAX_VALUE;
-        for (StickyRecord record: entry.stickyRecords()) {
-            if (record.expire() > -1) {
-                expire = Math.min(expire, record.expire());
+        synchronized (entry) {
+            /* Cancel previous task.
+             */
+            PnfsId pnfsId = entry.getPnfsId();
+            ScheduledFuture future = _tasks.remove(pnfsId);
+            if (future != null) {
+                future.cancel(false);
             }
-        }
 
-        /* Schedule a new task. Notice that we schedule an expiration
-         * task even if expire is in the past. This guarantees that we
-         * also remove records that already have expired.
-        */
-        if (expire != Long.MAX_VALUE) {
-            ExpirationTask task = new ExpirationTask(entry);
-            future = _executor.schedule(task, expire - System.currentTimeMillis()
-                    + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
-            _tasks.put(pnfsId, future);
+            /* Find next sticky flag to expire.
+             */
+            long expire = Long.MAX_VALUE;
+            for (StickyRecord record: entry.stickyRecords()) {
+                if (record.expire() > -1) {
+                    expire = Math.min(expire, record.expire());
+                }
+            }
+
+            /* Schedule a new task. Notice that we schedule an expiration
+             * task even if expire is in the past. This guarantees that we
+             * also remove records that already have expired.
+             */
+            if (expire != Long.MAX_VALUE) {
+                ExpirationTask task = new ExpirationTask(entry);
+                future = _executor.schedule(task, expire - System.currentTimeMillis()
+                                            + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
+                _tasks.put(pnfsId, future);
+            }
         }
     }
 
@@ -1043,8 +1091,9 @@ public class CacheRepositoryV5
     {
         FaultEvent event =
             new FaultEvent("repository", action, message, cause);
-        for (FaultListener listener : _faultListeners)
+        for (FaultListener listener : _faultListeners) {
             listener.faultOccurred(event);
+        }
     }
 
     /**
@@ -1092,7 +1141,7 @@ public class CacheRepositoryV5
         "executed. If inf is specified, then the pool will return to the\n" +
         "size configured in the configuration file, or no maximum if such a\n" +
         "size is not defined.";
-    public String ac_set_max_diskspace_$_1(Args args)
+    public synchronized String ac_set_max_diskspace_$_1(Args args)
     {
         long size = UnitInteger.parseUnitLong(args.argv(0));
         if (size < 0) {
@@ -1112,7 +1161,7 @@ public class CacheRepositoryV5
         }
     }
 
-    private long getConfiguredMaxSize()
+    private synchronized long getConfiguredMaxSize()
     {
         if (_runtimeMaxSize < Long.MAX_VALUE) {
             return _runtimeMaxSize;
@@ -1144,7 +1193,7 @@ public class CacheRepositoryV5
      * periodic health check will adjust the pool size when a more
      * accurate limit can be determined.
      */
-    private void updateAccountSize()
+    private synchronized void updateAccountSize()
     {
         assertInitialised();
 
