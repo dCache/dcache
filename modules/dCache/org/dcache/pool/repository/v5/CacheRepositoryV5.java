@@ -188,7 +188,7 @@ public class CacheRepositoryV5
     private synchronized void assertInitialised()
     {
         if (!_initialised) {
-            new IllegalStateException("Repository has not been initialized");
+            throw new IllegalStateException("Repository has not been initialized");
         }
     }
 
