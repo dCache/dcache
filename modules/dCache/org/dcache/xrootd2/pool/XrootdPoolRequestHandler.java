@@ -39,6 +39,8 @@ import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.handler.timeout.IdleState;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +85,12 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     private AbstractResponseMessage _block;
 
     /**
+     * Use for timeout handling - a handler is always newly instantiated in
+     * the Netty ChannelPipeline, so okay to store stateful information.
+     */
+    private boolean _hasOpenedFiles = false;
+
+    /**
      * @throws IOException opening a server socket to handle the connection
      *                     fails
      */
@@ -92,6 +100,25 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         throws IOException
     {
         XrootdProtocol_3.incrementEndpointsToggleServer();
+    }
+
+    @Override
+    public void channelIdle(ChannelHandlerContext ctx,
+                            IdleStateEvent event)
+    {
+        if (event.getState() == IdleState.ALL_IDLE) {
+            if (!_hasOpenedFiles) {
+
+                if (_log.isInfoEnabled()) {
+                    long idleTime = System.currentTimeMillis() -
+                        event.getLastActivityTimeMillis();
+                    _log.info("Closing idling connection without opened files." +
+                              " Connection has been idle for {} ms.", idleTime);
+                }
+
+                ctx.getChannel().close();
+            }
+        }
     }
 
     /**
@@ -217,6 +244,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                                          null,
                                          stat));
                 descriptor = null;
+                _hasOpenedFiles = true;
             } finally {
                 if (descriptor != null) {
                     descriptor.close();
@@ -247,10 +275,10 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     }
 
     @Override
-    protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent e,
+    protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent event,
                              StatxRequest msg)
     {
-        unsupported(ctx, e, msg);
+        unsupported(ctx, event, msg);
     }
 
     /**
@@ -503,9 +531,9 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
 
     @Override
     protected void doOnProtocolRequest(ChannelHandlerContext ctx,
-                                       MessageEvent e, ProtocolRequest msg)
+                                       MessageEvent event, ProtocolRequest msg)
     {
-        unsupported(ctx, e, msg);
+        unsupported(ctx, event, msg);
     }
 
     /**

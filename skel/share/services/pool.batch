@@ -81,6 +81,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -xrootd-mover-max-memory-per-connection=\"${xrootdMoverMaxMemoryPerConnection}\" \
     -xrootd-mover-max-memory=\"${xrootdMoverMaxMemory}\" \
     -xrootd-mover-max-frame-size=\"${xrootdMoverMaxFrameSize}\" \
+    -xrootd-mover-idle-client-timeout=\"${xrootd.mover.timeout.idle}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \
     -replicateOnArrival=\"${replicateOnArrival}\" \
