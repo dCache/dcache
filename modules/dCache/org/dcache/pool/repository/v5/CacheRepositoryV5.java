@@ -45,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -84,13 +85,14 @@ public class CacheRepositoryV5
     /**
      * Map of all entries.
      */
-    private final Map<PnfsId, MetaDataRecord> _allEntries = new HashMap();
+    private final Map<PnfsId,MetaDataRecord> _allEntries =
+        new ConcurrentHashMap<PnfsId,MetaDataRecord>();
 
     /**
      * Sticky bit expiration tasks.
      */
     private final Map<PnfsId,ScheduledFuture> _tasks =
-        Collections.synchronizedMap(new HashMap());
+        new ConcurrentHashMap<PnfsId,ScheduledFuture>();
 
     /**
      * Collection of removable entries.
@@ -150,12 +152,25 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Throws an IllegalStateException if the object has been initialised.
+     * Throws an IllegalStateException if the object has been
+     * initialised.
      */
     private synchronized void assertNotInitialised()
     {
-        if (_initialised)
+        if (_initialised) {
             throw new IllegalStateException("Cannot be changed after initialisation");
+        }
+    }
+
+    /**
+     * Throws an IllegalStateException if the object has not been
+     * initialised.
+     */
+    private synchronized void assertInitialised()
+    {
+        if (!_initialised) {
+            new IllegalStateException("Repository has not been initialized");
+        }
     }
 
     /**
@@ -270,8 +285,6 @@ public class CacheRepositoryV5
         try {
             if (_initialised)
                 throw new IllegalStateException("Can only load repository once.");
-            _initialised = true;
-
             _log.warn("Reading inventory from " + _store);
 
             List<PnfsId> ids = new ArrayList(_store.list());
@@ -358,6 +371,8 @@ public class CacheRepositoryV5
                 _runningInventory = false;
             }
 
+            _initialised = true;
+
             _log.info("Done generating inventory");
 
             if (_checkRepository) {
@@ -374,13 +389,10 @@ public class CacheRepositoryV5
     /**
      * Returns the list of PNFS IDs of entries in the repository.
      */
-    public synchronized Iterator<PnfsId> iterator()
+    public Iterator<PnfsId> iterator()
     {
-        if (!_initialised)
-            throw new IllegalStateException("Repository has not been initialized");
-
-        List<PnfsId> allEntries = new ArrayList<PnfsId>(_allEntries.keySet());
-        return allEntries.iterator();
+        assertInitialised();
+        return Collections.unmodifiableSet(_allEntries.keySet()).iterator();
     }
 
     /**
@@ -419,9 +431,7 @@ public class CacheRepositoryV5
                 throw new IllegalArgumentException("StorageInfo must not be null");
             }
 
-            if (!_initialised) {
-                throw new IllegalStateException("Repository has not been initialized");
-            }
+            assertInitialised();
 
             switch (transferState) {
             case FROM_CLIENT:
@@ -480,8 +490,7 @@ public class CacheRepositoryV5
     public synchronized ReadHandle openEntry(PnfsId id)
         throws FileNotInCacheException
     {
-        if (!_initialised)
-            throw new IllegalStateException("Repository has not been initialized");
+        assertInitialised();
         try {
             MetaDataRecord entry = getMetaDataRecord(id);
 
@@ -523,11 +532,11 @@ public class CacheRepositoryV5
      * <code>getEntry</code> on a read handle, but avoid the cost of
      * creating a read handle.
      */
-    public synchronized CacheEntry getEntry(PnfsId id)
+    public CacheEntry getEntry(PnfsId id)
         throws FileNotInCacheException
     {
-        if (!_initialised)
-            throw new IllegalStateException("Repository has not been initialized");
+        assertInitialised();
+
         try {
             return new CacheEntryImpl(getMetaDataRecord(id));
         } catch (FileNotInCacheException e) {
@@ -921,7 +930,7 @@ public class CacheRepositoryV5
      * @throw FileNotInCacheException in case file is not in
      *        repository
      */
-    private synchronized MetaDataRecord getMetaDataRecord(PnfsId pnfsId)
+    private MetaDataRecord getMetaDataRecord(PnfsId pnfsId)
         throws FileNotInCacheException
     {
         MetaDataRecord entry = _allEntries.get(pnfsId);
@@ -1137,9 +1146,7 @@ public class CacheRepositoryV5
      */
     private void updateAccountSize()
     {
-        if (!_initialised) {
-            throw new IllegalStateException("Pool is not yet initialized");
-        }
+        assertInitialised();
 
         synchronized (_account) {
             long configuredMaxSize = getConfiguredMaxSize();

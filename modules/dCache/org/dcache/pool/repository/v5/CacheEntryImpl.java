@@ -26,15 +26,17 @@ public class CacheEntryImpl implements CacheEntry
     public CacheEntryImpl(MetaDataRecord entry)
         throws CacheException
     {
-        _id = entry.getPnfsId();
-        _size = entry.getSize();
-        _info = entry.getStorageInfo();
-        _created_at = entry.getCreationTime();
-        _accessed_at = entry.getLastAccessTime();
-        _linkCount = entry.getLinkCount();
-        _isSticky = entry.isSticky();
-        _sticky = entry.stickyRecords();
-        _state = entry.getState();
+        synchronized (entry) {
+            _id = entry.getPnfsId();
+            _size = entry.getSize();
+            _info = entry.getStorageInfo();
+            _created_at = entry.getCreationTime();
+            _accessed_at = entry.getLastAccessTime();
+            _linkCount = entry.getLinkCount();
+            _isSticky = entry.isSticky();
+            _sticky = entry.stickyRecords();
+            _state = entry.getState();
+        }
     }
 
     /**

@@ -7,6 +7,12 @@ import diskCacheV111.vehicles.StorageInfo;
 import java.io.File;
 import java.util.List;
 
+/**
+ * Implementations provide access to meta data for replicas.
+ *
+ * Implementations should be thread safe. Callers may synchronize on
+ * the object to prevent modifications.
+ */
 public interface MetaDataRecord
 {
     /**
