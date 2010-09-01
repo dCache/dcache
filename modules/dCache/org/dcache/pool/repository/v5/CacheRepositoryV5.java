@@ -25,13 +25,11 @@ import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.MetaDataLRUOrder;
-import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
-import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.util.CacheExceptionFactory;
@@ -39,24 +37,17 @@ import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.io.File;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Collections;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Date;
 
 import dmg.util.Args;
 
@@ -1195,8 +1186,6 @@ public class CacheRepositoryV5
      */
     private synchronized void updateAccountSize()
     {
-        assertInitialised();
-
         synchronized (_account) {
             long configuredMaxSize = getConfiguredMaxSize();
             long fileSystemMaxSize = getFileSystemMaxSize();
