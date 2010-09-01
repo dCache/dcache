@@ -152,7 +152,7 @@ CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
 dnl Should not be needed but becasue globus libraries
 dnl linking is soem what problematic this is needed.
-LD_LIBRARY_PATH=${_ldlibpath}
+export LD_LIBRARY_PATH=${_ldlibpath}
 
 
 
@@ -174,7 +174,7 @@ AC_SUBST(SSL_LIBS)
 
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
-LD_LIBRARY_PATH=${_ldlibpath}
+export LD_LIBRARY_PATH=${_ldlibpath}
 
 dnl === Thinks that should be in macros already ===
 AC_CACHE_CHECK([for off64_t],
@@ -201,9 +201,9 @@ if test "X${withval}" != "X" ; then
 GLOBUS_LIB_DIR=$withval
 LDFLAGS="${LDFLAGS} -L$withval"
 if test "X${LD_LIBRARY_PATH}" = "X" ; then
-LD_LIBRARY_PATH="${withval}"
+export LD_LIBRARY_PATH="${withval}"
 else
-LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${withval}"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${withval}"
 fi
 fi
 ])
@@ -617,7 +617,7 @@ dnl restore the compile flags to what they where before checking for globus.
 
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
-LD_LIBRARY_PATH=${_ldlibpath}
+export LD_LIBRARY_PATH=${_ldlibpath}
 
 
 
@@ -674,7 +674,7 @@ AC_SUBST(KRB_LIBS)
 
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
-LD_LIBRARY_PATH=${_ldlibpath}
+export LD_LIBRARY_PATH=${_ldlibpath}
 
 dnl ====================
 dnl Check and set Prefix
