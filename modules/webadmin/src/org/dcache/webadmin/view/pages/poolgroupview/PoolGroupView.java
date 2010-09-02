@@ -18,7 +18,6 @@ import org.dcache.webadmin.controller.exceptions.PoolGroupServiceException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
-import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
@@ -33,7 +32,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author jans
  */
-public class PoolGroupView extends BasePage implements AuthenticatedWebPage {
+public class PoolGroupView extends BasePage {
 
     private Panel EMPTY_PANEL = new EmptyPanel("specialPoolGroupPanel");
     private String SPECIAL_POOLGROUP_HEADER = "specialPoolGroup.header";

@@ -11,7 +11,6 @@ import org.apache.wicket.request.target.resource.ResourceStreamRequestTarget;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.exceptions.InfoServiceException;
-import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * provide a possibility to download the xml via this.
  * @author jans
  */
-public class InfoXml extends BasePage implements AuthenticatedWebPage {
+public class InfoXml extends BasePage {
 
     private static final Logger _log = LoggerFactory.getLogger(InfoXml.class);
     private TextField _statepathField;

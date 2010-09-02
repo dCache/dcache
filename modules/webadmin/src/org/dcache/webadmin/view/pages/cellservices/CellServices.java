@@ -6,7 +6,6 @@ import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.exceptions.CellsServiceException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
-import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.cellservices.CellServicesPanel;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,7 @@ import org.slf4j.Logger;
  * The CellServices Webpage
  * @author jans
  */
-public class CellServices extends BasePage implements AuthenticatedWebPage {
+public class CellServices extends BasePage {
 
     private List<CellServicesBean> _cellBeans;
     private static final Logger _log = LoggerFactory.getLogger(CellServices.class);

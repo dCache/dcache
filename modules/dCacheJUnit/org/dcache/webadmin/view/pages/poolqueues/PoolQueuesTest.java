@@ -33,4 +33,14 @@ public class PoolQueuesTest {
     public void testBasicRender() {
         _tester.assertRenderedPage(PoolQueues.class);
     }
+
+    @Test
+    public void testNoRedirect() {
+        WebAdminInterface notAuthenticatedWebApp =
+                ApplicationFactoryHelper.createNotSignedInApplication();
+        notAuthenticatedWebApp.setPoolQueuesService(_poolQueuesService);
+        WicketTester redirectTester = new WicketTester(notAuthenticatedWebApp);
+        redirectTester.startPage(PoolQueues.class);
+        redirectTester.assertRenderedPage(PoolQueues.class);
+    }
 }

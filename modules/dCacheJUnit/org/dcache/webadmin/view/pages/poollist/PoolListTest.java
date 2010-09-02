@@ -99,10 +99,12 @@ public class PoolListTest {
     }
 
     @Test
-    public void testLogInRedirect() {
-        WicketTester redirectTester = new WicketTester(
-                ApplicationFactoryHelper.createNotSignedInApplication());
+    public void testNoRedirect() {
+        WebAdminInterface notAuthenticatedWebApp =
+                ApplicationFactoryHelper.createNotSignedInApplication();
+        notAuthenticatedWebApp.setPoolSpaceService(_poolSpaceService);
+        WicketTester redirectTester = new WicketTester(notAuthenticatedWebApp);
         redirectTester.startPage(PoolList.class);
-        redirectTester.assertRenderedPage(LogIn.class);
+        redirectTester.assertRenderedPage(PoolList.class);
     }
 }

@@ -33,4 +33,14 @@ public class CellServicesTest {
     public void testBasicRender() {
         _tester.assertRenderedPage(CellServices.class);
     }
+
+    @Test
+    public void testNoRedirect() {
+        WebAdminInterface notAuthenticatedWebApp =
+                ApplicationFactoryHelper.createNotSignedInApplication();
+        notAuthenticatedWebApp.setCellsService(_cellsService);
+        WicketTester redirectTester = new WicketTester(notAuthenticatedWebApp);
+        redirectTester.startPage(CellServices.class);
+        redirectTester.assertRenderedPage(CellServices.class);
+    }
 }

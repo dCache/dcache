@@ -9,6 +9,7 @@ import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.impl.StandardCellAdminService;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
+import org.dcache.webadmin.view.pages.login.LogIn;
 
 /**
  *
@@ -33,5 +34,13 @@ public class CellAdminTest {
     @Test
     public void testBasicRender() {
         _tester.assertRenderedPage(CellAdmin.class);
+    }
+
+    @Test
+    public void testLogInRedirect() {
+        WicketTester redirectTester = new WicketTester(
+                ApplicationFactoryHelper.createNotSignedInApplication());
+        redirectTester.startPage(CellAdmin.class);
+        redirectTester.assertRenderedPage(LogIn.class);
     }
 }

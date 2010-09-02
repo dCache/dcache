@@ -15,7 +15,6 @@ import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.SelectOption;
-import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
 import org.dcache.webadmin.view.util.Role;
@@ -26,7 +25,7 @@ import org.slf4j.Logger;
  * The PoolUsage Webpage
  * @author jans
  */
-public class PoolList extends BasePage implements AuthenticatedWebPage {
+public class PoolList extends BasePage {
 
     private static final int DEFAULT_DROP_DOWN_CHOICE = 0;
     private List<PoolSpaceBean> _poolBeans;

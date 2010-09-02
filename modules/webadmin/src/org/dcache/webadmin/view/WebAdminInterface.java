@@ -1,5 +1,9 @@
 package org.dcache.webadmin.view;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.apache.wicket.Page;
 import org.apache.wicket.Session;
 import org.apache.wicket.Request;
@@ -21,6 +25,7 @@ import org.dcache.webadmin.view.pages.login.LogIn;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
+import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.InfoService;
@@ -36,6 +41,7 @@ import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
+import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,14 +63,21 @@ public class WebAdminInterface extends WebApplication {
     private int _httpPort;
     private int _httpsPort;
     private String _dcacheName;
+    private static final List<Class> ADMIN_PAGES = new ArrayList<Class>(Arrays.asList(
+            PoolAdmin.class, CellAdmin.class));
     private static final Logger _log = LoggerFactory.getLogger(WebAdminInterface.class);
 
     @Override
     protected void init() {
         super.init();
         setAuthorizationStrategies();
-//      warning changes in the pagenames here may affect LegacyForwardHandler in
-//      Jettycell always doublecheck when making changes
+        mountBookmarkablePages();
+        markAdminOnlyPages();
+    }
+
+    private void mountBookmarkablePages() {
+//      warning changes in the pagenames/urls here may affect
+//      LegacyForwardHandler in Jettycell - always doublecheck when making changes
         mountBookmarkablePage("login", LogIn.class);
         mountBookmarkablePage("info", Info.class);
         mountBookmarkablePage("cellinfo", CellServices.class);
@@ -74,6 +87,16 @@ public class WebAdminInterface extends WebApplication {
         mountBookmarkablePage("pooladmin", PoolAdmin.class);
         mountBookmarkablePage("celladmin", CellAdmin.class);
         mountBookmarkablePage("infoxml", InfoXml.class);
+    }
+
+    private void markAdminOnlyPages() {
+        for (Class adminPage : ADMIN_PAGES) {
+            MetaDataRoleAuthorizationStrategy.authorize(adminPage, Role.ADMIN);
+        }
+    }
+
+    public List<Class> getAdminOnlyPages() {
+        return Collections.unmodifiableList(ADMIN_PAGES);
     }
 
     @Override

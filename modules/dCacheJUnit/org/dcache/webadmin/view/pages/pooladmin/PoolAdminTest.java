@@ -6,6 +6,7 @@ import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
+import org.dcache.webadmin.view.pages.login.LogIn;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,5 +33,13 @@ public class PoolAdminTest {
     @Test
     public void testBasicRender() {
         _tester.assertRenderedPage(PoolAdmin.class);
+    }
+
+    @Test
+    public void testLogInRedirect() {
+        WicketTester redirectTester = new WicketTester(
+                ApplicationFactoryHelper.createNotSignedInApplication());
+        redirectTester.startPage(PoolAdmin.class);
+        redirectTester.assertRenderedPage(LogIn.class);
     }
 }

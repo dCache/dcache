@@ -2,7 +2,6 @@ package org.dcache.webadmin.view.pages.dcacheservices;
 
 import org.apache.wicket.util.tester.WicketTester;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
-import org.dcache.webadmin.view.pages.login.LogIn;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,10 +21,10 @@ public class DCacheServicesTest {
     }
 
     @Test
-    public void testLogInRedirect() {
+    public void testNoRedirect() {
         WicketTester redirectTester = new WicketTester(
                 ApplicationFactoryHelper.createNotSignedInApplication());
         redirectTester.startPage(DCacheServices.class);
-        redirectTester.assertRenderedPage(LogIn.class);
+        redirectTester.assertRenderedPage(DCacheServices.class);
     }
 }

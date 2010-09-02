@@ -44,4 +44,14 @@ public class PoolGroupViewTest {
         _tester.clickLink(SPACEUSAGE_LINK_ID);
         _tester.clickLink(MOVERVIEW_LINK_ID);
     }
+
+    @Test
+    public void testNoRedirect() {
+        WebAdminInterface notAuthenticatedWebApp =
+                ApplicationFactoryHelper.createNotSignedInApplication();
+        notAuthenticatedWebApp.setPoolGroupService(_poolGroupService);
+        WicketTester redirectTester = new WicketTester(notAuthenticatedWebApp);
+        redirectTester.startPage(PoolGroupView.class);
+        redirectTester.assertRenderedPage(PoolGroupView.class);
+    }
 }
