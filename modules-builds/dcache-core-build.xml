@@ -88,7 +88,6 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
-        <fileset dir="${libDir}/activemq/" includes="*.jar" />
         <fileset dir="${libDir}/slf4j/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
@@ -472,14 +471,6 @@
             <fileset dir="${libDir}/servlet-api/">
                 <include name="*.jar" />
             </fileset>
-        </copy>
-
-        <!-- ActiveMQ -->
-        <mkdir dir="${server.bin.dir}/classes/activemq/" />
-        <copy todir="${server.bin.dir}/classes/activemq">
-          <fileset dir="${libDir}/activemq/">
-            <include name="*.jar" />
-          </fileset>
         </copy>
 
         <!-- Jetty -->
