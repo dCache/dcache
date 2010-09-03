@@ -92,7 +92,7 @@ public class MigrationModuleServer
     }
 
     public Message messageArrived(PoolMigrationUpdateReplicaMessage message)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         if (message.isReply()) {
             return null;
@@ -160,7 +160,7 @@ public class MigrationModuleServer
 
     public Message
         messageArrived(CellMessage envelope, PoolMigrationCopyReplicaMessage message)
-        throws LockedCacheException, IOException
+        throws CacheException, IOException, InterruptedException
     {
         if (message.isReply()) {
             return null;
@@ -272,7 +272,7 @@ public class MigrationModuleServer
         }
 
         public synchronized void start()
-            throws IOException
+            throws IOException, CacheException, InterruptedException
         {
             EntryState state = _repository.getState(_pnfsId);
             if (state == EntryState.NEW) {

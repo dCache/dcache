@@ -298,12 +298,16 @@ public class RepositorySubsystemTest
             }
         } catch (FileNotInCacheException e) {
             fail("Expected entry " + id + " not found");
+        } catch (CacheException e) {
+            fail("Failed to open " + id + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            fail("Failed to open " + id + ": " + e.getMessage());
         }
     }
 
     @Test(expected=IllegalStateException.class)
     public void testInitTwiceFails()
-        throws IOException, RepositoryException
+        throws IOException, CacheException, InterruptedException
     {
         repository.init();
     }
@@ -338,7 +342,7 @@ public class RepositorySubsystemTest
             }
 
             protected void run()
-                throws FileNotInCacheException
+                throws CacheException, InterruptedException
             {
                 repository.openEntry(id4);
             }
@@ -347,7 +351,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testSetState()
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         assertCanOpen(id1, size1, PRECIOUS);
         repository.setState(id1, CACHED);
@@ -361,28 +365,28 @@ public class RepositorySubsystemTest
 
     @Test(expected=IllegalTransitionException.class)
     public void testSetStateFileNotFound()
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         repository.setState(id4, CACHED);
     }
 
     @Test(expected=IllegalTransitionException.class)
     public void testSetStateToNew()
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         repository.setState(id1, NEW);
     }
 
     @Test(expected=IllegalTransitionException.class)
     public void testSetStateToDestroyed()
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         repository.setState(id1, DESTROYED);
     }
 
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleClose()
-        throws FileNotInCacheException
+        throws CacheException, InterruptedException
     {
         ReadHandle handle = repository.openEntry(id1);
         handle.close();
@@ -391,7 +395,7 @@ public class RepositorySubsystemTest
 
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleGetFile()
-        throws FileNotInCacheException
+        throws CacheException, InterruptedException
     {
         ReadHandle handle = repository.openEntry(id1);
         handle.close();
@@ -400,7 +404,7 @@ public class RepositorySubsystemTest
 
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleGetEntry()
-        throws FileNotInCacheException
+        throws CacheException, InterruptedException
     {
         ReadHandle handle = repository.openEntry(id1);
         handle.close();
@@ -433,7 +437,8 @@ public class RepositorySubsystemTest
             }
 
             protected void run()
-                throws IllegalTransitionException
+                throws IllegalTransitionException,
+                       CacheException, InterruptedException
             {
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
@@ -457,7 +462,8 @@ public class RepositorySubsystemTest
             }
 
             protected void run()
-                throws FileNotInCacheException, IllegalTransitionException
+                throws CacheException, InterruptedException,
+                       IllegalTransitionException
             {
                 ReadHandle handle1 = repository.openEntry(id1);
                 repository.setState(id1, REMOVED);
@@ -488,7 +494,8 @@ public class RepositorySubsystemTest
             }
 
             protected void run()
-                throws FileNotInCacheException, IllegalTransitionException
+                throws CacheException, InterruptedException,
+                       IllegalTransitionException
             {
                 ReadHandle h1 = repository.openEntry(id1);
                 repository.setState(id1, REMOVED);
@@ -663,7 +670,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testStickyExpiration()
-        throws FileNotInCacheException, InterruptedException
+        throws CacheException, InterruptedException
     {
         long now = System.currentTimeMillis();
         assertFalse(repository.getEntry(id2).isSticky());
@@ -675,7 +682,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testStickyClear()
-        throws FileNotInCacheException
+        throws CacheException, InterruptedException
     {
         long now = System.currentTimeMillis();
 
@@ -688,7 +695,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testDoubleAccountingOnCache()
-        throws IllegalTransitionException
+        throws CacheException, InterruptedException, IllegalTransitionException
     {
         assertSpaceRecord(5120, 2048, 1024, 1024);
         repository.setState(id1, CACHED);
@@ -699,7 +706,7 @@ public class RepositorySubsystemTest
 
     @Test
     public void testDoubleAccountingOnPrecious()
-        throws IllegalTransitionException
+        throws CacheException, InterruptedException, IllegalTransitionException
     {
         assertSpaceRecord(5120, 2048, 1024, 1024);
         repository.setState(id2, PRECIOUS);

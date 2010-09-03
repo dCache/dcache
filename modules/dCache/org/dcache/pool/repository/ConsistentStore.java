@@ -19,6 +19,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -31,6 +32,9 @@ import diskCacheV111.vehicles.GenericStorageInfo;
  * Wrapper for a MetaDataStore which encapsulates the logic for
  * recovering MetaDataRecord objects from PnfsManager in case they are
  * missing or broken in a MetaDataStore.
+ *
+ * Warning: The class is only thread-safe as long as its methods are
+ * not invoked concurrently on the same PNFS ID.
  */
 public class ConsistentStore
     implements MetaDataStore
@@ -104,7 +108,7 @@ public class ConsistentStore
      * redundant meta data entries in the process.
      */
     @Override
-    public Collection<PnfsId> list()
+    public synchronized Collection<PnfsId> list()
     {
         Collection<PnfsId> files = _fileStore.list();
         Collection<PnfsId> records = _metaDataStore.list();
@@ -123,7 +127,7 @@ public class ConsistentStore
      */
     @Override
     public MetaDataRecord get(PnfsId id)
-        throws IllegalArgumentException, CacheException
+        throws IllegalArgumentException, CacheException, InterruptedException
     {
         File file = _fileStore.get(id);
         if (!file.isFile()) {
@@ -263,12 +267,8 @@ public class ConsistentStore
                     entry.setState(targetState);
                     _log.warn(String.format(MARKED_MSG, id, targetState));
                 }
-            } catch (InterruptedException e) {
-                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                          "Healer was interrupted");
             } catch (IOException e) {
-                throw new CacheException(CacheException.ERROR_IO_DISK,
-                                         "I/O error in healer: " + e.getMessage());
+                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage());
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:

@@ -199,7 +199,7 @@ public class P2PClient
                                          EntryState targetState,
                                          List<StickyRecord> stickyRecords,
                                          CacheFileAvailable callback)
-        throws IOException
+        throws IOException, CacheException, InterruptedException
     {
         if (getCellEndpoint() == null)
             throw new IllegalStateException("Endpoint not initialized");
@@ -325,7 +325,7 @@ public class P2PClient
 
     public static final String hh_pp_get_file = "<pnfsId> <pool>";
     public synchronized String ac_pp_get_file_$_2(Args args)
-        throws CacheException, IOException
+        throws CacheException, IOException, InterruptedException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         String pool = args.argv(1);

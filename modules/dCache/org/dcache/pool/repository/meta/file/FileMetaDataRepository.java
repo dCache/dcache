@@ -16,6 +16,7 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 /**
@@ -122,8 +123,7 @@ public class FileMetaDataRepository
                 return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
             }
         } catch (IOException e) {
-            throw new CacheException(CacheException.ERROR_IO_DISK,
-                                     "Failed to read meta data for " + id);
+            throw new DiskErrorCacheException("Failed to read meta data for " + id);
         }
         return null;
     }
@@ -138,7 +138,7 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public boolean isOk()
+    public synchronized boolean isOk()
     {
         File tmp = new File(_metadir, ".repository_is_ok");
         try {

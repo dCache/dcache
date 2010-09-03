@@ -28,7 +28,7 @@ public class PoolIOReadTransfer
                               StorageInfo storageInfo,
                               MoverProtocol mover,
                               Repository repository)
-        throws FileNotInCacheException
+        throws CacheException, InterruptedException
     {
         super(pnfsId, protocolInfo, storageInfo, mover);
         _handle = repository.openEntry(pnfsId);

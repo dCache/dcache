@@ -46,6 +46,7 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.HsmSet;
@@ -530,6 +531,9 @@ public class PoolV4
                     } catch (CacheException e) {
                         _log.error("Error adding " + id + " to flush queue: "
                                    + e.getMessage());
+                    } catch (InterruptedException e) {
+                        _log.error("Error adding " + id + " to flush queue: "
+                                   + e.getMessage());
                     }
                 }
             } else if (from == EntryState.PRECIOUS) {
@@ -873,6 +877,9 @@ public class PoolV4
                 return;
             try {
                 _initiateReplication(_repository.getEntry(id), source);
+            } catch (InterruptedException e) {
+                _log.error("Problem in sending replication request: " + e);
+                Thread.currentThread().interrupt();
             } catch (CacheException e) {
                 _log.error("Problem in sending replication request: " + e);
             } catch (NoRouteToCellException e) {
@@ -983,6 +990,10 @@ public class PoolV4
                      */
                     try {
                         _repository.setState(pnfsId, EntryState.REMOVED);
+                    } catch (InterruptedException e) {
+                        _log.warn("Failed to remove replica: " + e.getMessage());
+                    } catch (CacheException e) {
+                        _log.warn("Failed to remove replica: " + e.getMessage());
                     } catch (IllegalTransitionException e) {
                         /* Most likely indicates that the file was
                          * removed before we could do it. Log the
@@ -1005,7 +1016,7 @@ public class PoolV4
     }
 
     private void checkFile(PoolFileCheckable poolMessage)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         PnfsId id = poolMessage.getPnfsId();
         switch (_repository.getState(id)) {
@@ -1106,7 +1117,7 @@ public class PoolV4
     }
 
     public DelayedReply messageArrived(Pool2PoolTransferMsg msg)
-        throws CacheException, IOException
+        throws CacheException, IOException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
             _log.warn("Pool2PoolTransferMsg request rejected due to "
@@ -1198,7 +1209,7 @@ public class PoolV4
     }
 
     public Message messageArrived(Message msg)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         if (msg instanceof PoolCheckable) {
             if (msg instanceof PoolFileCheckable) {
@@ -1220,7 +1231,7 @@ public class PoolV4
     }
 
     public PoolRemoveFilesMessage messageArrived(PoolRemoveFilesMessage msg)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
             _log.warn("PoolRemoveFilesMessage request rejected due to "
@@ -1320,7 +1331,7 @@ public class PoolV4
     }
 
     public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         try {
             _repository.setSticky(msg.getPnfsId(),
@@ -1337,12 +1348,14 @@ public class PoolV4
     }
 
     public PoolQueryRepositoryMsg messageArrived(PoolQueryRepositoryMsg msg)
+        throws CacheException, InterruptedException
     {
         msg.setReply(new RepositoryCookie(), getRepositoryListing());
         return msg;
     }
 
     private List<CacheRepositoryEntryInfo> getRepositoryListing()
+        throws CacheException, InterruptedException
     {
         List<CacheRepositoryEntryInfo> listing = new ArrayList();
         for (PnfsId pnfsid : _repository) {
@@ -1540,19 +1553,23 @@ public class PoolV4
         {
             try {
                 _pnfs.addCacheLocation(id);
-            } catch (CacheException e) {
-                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                    try {
-                        _repository.setState(id, EntryState.REMOVED);
-                        _log.info("File not found in PNFS; removed " + id);
-                    } catch (IllegalTransitionException f) {
-                        _log.error("File not found in PNFS, but failed to remove "
-                                   + id + ": " + f);
-                    }
-                } else {
-                    _log.error("Cache location was not registered for "
-                               + id + ": " + e.getMessage());
+            } catch (FileNotFoundCacheException e) {
+                try {
+                    _repository.setState(id, EntryState.REMOVED);
+                    _log.info("File not found in PNFS; removed " + id);
+                } catch (InterruptedException f) {
+                    _log.error("File not found in PNFS, but failed to remove "
+                               + id + ": " + f);
+                } catch (CacheException f) {
+                    _log.error("File not found in PNFS, but failed to remove "
+                               + id + ": " + f);
+                } catch (IllegalTransitionException f) {
+                    _log.error("File not found in PNFS, but failed to remove "
+                               + id + ": " + f);
                 }
+            } catch (CacheException e) {
+                _log.error("Cache location was not registered for "
+                           + id + ": " + e.getMessage());
             }
         }
 
@@ -1576,18 +1593,24 @@ public class PoolV4
             for (PnfsId pnfsid : _repository) {
                 if (Thread.interrupted())
                     break;
-                switch (_repository.getState(pnfsid)) {
-                case PRECIOUS:
-                case CACHED:
-                case BROKEN:
-                    _hybridCurrent++;
-                    if (_activate) {
-                        addCacheLocation(pnfsid);
-                    } else {
-                        clearCacheLocation(pnfsid);
+                try {
+                    switch (_repository.getState(pnfsid)) {
+                    case PRECIOUS:
+                    case CACHED:
+                    case BROKEN:
+                        _hybridCurrent++;
+                        if (_activate) {
+                            addCacheLocation(pnfsid);
+                        } else {
+                            clearCacheLocation(pnfsid);
+                        }
+                        break;
+                    default:
+                        break;
                     }
-                    break;
-                default:
+                } catch (CacheException e) {
+                    _log.warn(e.getMessage());
+                } catch (InterruptedException e) {
                     break;
                 }
             }
@@ -1865,7 +1888,7 @@ public class PoolV4
 
     public String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid";
     public String ac_flush_pnfsid_$_1(Args args)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         _storageHandler.store(new PnfsId(args.argv(0)), null);
         return "Flush Initiated";

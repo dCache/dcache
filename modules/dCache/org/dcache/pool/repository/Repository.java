@@ -23,10 +23,12 @@ public interface Repository
      *
      * @throws IllegalStateException if called multiple times
      * @throws IOException if an io error occurs
-     * @throws RepositoryException in case of other internal errors
+     * @throws CacheException in case of other errors
+     * @throws InterruptedException if thread was interrupted
      */
     void init()
-        throws IOException, RepositoryException, IllegalStateException;
+        throws IOException, InterruptedException,
+               CacheException, IllegalStateException;
 
     /**
      * Creates entry in the repository. Returns a write handle for the
@@ -70,11 +72,14 @@ public interface Repository
      *
      * @param id the PNFS ID of the entry to open
      * @return IO descriptor
+     * @throws InterruptedException if thread was interrupted
      * @throws FileNotInCacheException if file not found or in a state
      * in which it cannot be opened
+     * @throws CacheException in case of other errors
      */
     ReadHandle openEntry(PnfsId id)
-        throws FileNotInCacheException;
+        throws CacheException,
+               InterruptedException;
 
     /**
      * Returns information about an entry. Equivalent to calling
@@ -82,11 +87,14 @@ public interface Repository
      * creating a read handle.
      *
      * @param id the PNFS ID of the entry to open
+     * @throws InterruptedException if thread was interrupted
      * @throws FileNotInCacheException if file not found or in a state
      * in which it cannot be opened
+     * @throws CacheException in case of other errors
      */
     CacheEntry getEntry(PnfsId id)
-        throws FileNotInCacheException;
+        throws CacheException,
+               InterruptedException;
 
     /**
      * Sets the lifetime of a named sticky flag. If expiration time is
@@ -98,15 +106,18 @@ public interface Repository
      * @param expire expiration time in milliseconds since the epoch
      * @param overwrite replace existing flag when true, extend
      *                  lifetime if false
+     * @throws InterruptedException if thread was interrupted
      * @throws FileNotInCacheException when an entry with the given id
      * is not found in the repository
+     * @throws CacheException in case of other errors
      * @throws IllegalArgumentException when <code>id</code> or
      * <code>owner</code> are null or when <code>lifetime</code> is
      * smaller than -1.
      */
     void setSticky(PnfsId id, String owner, long expire, boolean overwrite)
         throws IllegalArgumentException,
-               FileNotInCacheException;
+               InterruptedException,
+               CacheException;
 
     /**
      * Returns information about the size and space usage of the
@@ -120,8 +131,12 @@ public interface Repository
      * Returns the state of an entry.
      *
      * @param id the PNFS ID of an entry
+     * @throws InterruptedException if thread was interrupted
+     * @throws CacheException in case of other errors
      */
-    EntryState getState(PnfsId id);
+    EntryState getState(PnfsId id)
+        throws InterruptedException,
+               CacheException;
 
     /**
      * Sets the state of an entry. Only the following transitions are
@@ -136,9 +151,12 @@ public interface Repository
      * @param state an entry state
      * @throws IllegalTransitionException if the transition is illegal.
      * @throws IllegalArgumentException if <code>id</code> is null.
+     * @throws InterruptedException if thread was interrupted
+     * @throws CacheException in case of other errors
      */
     void setState(PnfsId id, EntryState state)
-        throws IllegalTransitionException, IllegalArgumentException;
+        throws IllegalTransitionException, IllegalArgumentException,
+               InterruptedException, CacheException;
 
     /**
      * Adds a state change listener.

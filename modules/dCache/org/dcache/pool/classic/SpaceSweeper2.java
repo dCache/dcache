@@ -108,6 +108,8 @@ public class SpaceSweeper2
                 return 0;
 
             return _repository.getEntry(id).getLastAccessTime();
+        } catch (InterruptedException e) {
+            return 0L;
         } catch (CacheException e) {
             return 0L;
         }
@@ -194,7 +196,10 @@ public class SpaceSweeper2
         new Thread("sweeper-free") {
             public void run()
             {
-                reclaim(toFree);
+                try {
+                    reclaim(toFree);
+                } catch (InterruptedException e) {
+                }
             }
         }.start();
         return String.format("Reclaiming %d bytes", toFree);
@@ -208,7 +213,10 @@ public class SpaceSweeper2
         new Thread("sweeper-free") {
             public void run()
             {
-                reclaim(toFree);
+                try {
+                    reclaim(toFree);
+                } catch (InterruptedException e) {
+                }
             }
         }.start();
 
@@ -217,7 +225,7 @@ public class SpaceSweeper2
 
     public String hh_sweeper_ls = " [-l] [-s]";
     public String ac_sweeper_ls(Args args)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         StringBuilder sb = new StringBuilder();
         boolean l = args.getOpt("l") != null;
@@ -284,6 +292,7 @@ public class SpaceSweeper2
     }
 
     private long reclaim(long amount)
+        throws InterruptedException
     {
         List<CacheEntry> tmpList = new ArrayList();
 
@@ -338,6 +347,8 @@ public class SpaceSweeper2
                 _log.info("trying to remove " + id);
                 _repository.setState(id, EntryState.REMOVED);
                 deleted += size;
+            } catch (CacheException e) {
+                _log.error(e.getMessage());
             } catch (IllegalTransitionException e) {
                 _log.warn(e.toString());
             }

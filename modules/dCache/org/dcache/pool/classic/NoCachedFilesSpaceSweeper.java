@@ -3,6 +3,7 @@ package org.dcache.pool.classic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 
@@ -76,6 +77,10 @@ public class NoCachedFilesSpaceSweeper
                     _log.debug(entry.getPnfsId() + " : removed.");
                 }
             }
+        } catch (InterruptedException e) {
+            _log.warn("Failed to remove entry from repository: " + e.getMessage() );
+        } catch (CacheException e) {
+            _log.warn("Failed to remove entry from repository: " + e.getMessage() );
         } catch (IllegalTransitionException e) {
             _log.warn("Failed to remove entry from repository: " + e.getMessage() );
         }

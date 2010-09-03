@@ -29,9 +29,10 @@ public interface MetaDataStore
      * @param id PNFS id for which to retrieve the entry.
      * @return The entry or null if the entry does not exist.
      * @throws CacheException if looking up the entry failed.
+     * @throws InterruptedException if the thread is interrupted.
      */
     MetaDataRecord get(PnfsId id)
-        throws CacheException;
+        throws CacheException, InterruptedException;
 
     /**
      * Creates a new entry. The entry must not exist prior to this

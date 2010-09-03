@@ -2,6 +2,7 @@ package org.dcache.pool.migration;
 
 import java.util.Comparator;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
@@ -26,6 +27,10 @@ class CacheEntryOrder implements Comparator<PnfsId>
             return _comparator.compare(entry1, entry2);
         } catch (FileNotInCacheException e) {
             return id1.compareTo(id2);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Thread got interupted", e);
+        } catch (CacheException e) {
+            throw new RuntimeException("Repository failed: " + e.getMessage(), e);
         }
     }
 }
