@@ -23,6 +23,11 @@ usage()
 
 }
 
+loadConfig()
+{
+    . ${DCACHE_HOME}/share/lib/loadConfig.sh "$@"
+}
+
 logmessage()
 {
   local ThisLogLevel
@@ -125,10 +130,10 @@ getCanonicalPath() # $1 = path
 dcacheCheckSshKeys()
 {
     logmessage DEBUG "dcacheInstallSshKeys.start"
-    if [ ! -f ${DCACHE_HOME}/config/server_key ]; then
+    if [ ! -f ${DCACHE_CONFIG}/server_key ]; then
         logmessage INFO "No SSH keys found. To use the admin service on this host generate the SSH keys like this:"
-        logmessage INFO "ssh-keygen -b 768 -t rsa1 -f ${DCACHE_HOME}/config/server_key -N \"\""
-        logmessage INFO "ssh-keygen -b 1024 -t rsa1 -f ${DCACHE_HOME}/config/host_key -N \"\""
+        logmessage INFO "ssh-keygen -b 768 -t rsa1 -f ${DCACHE_CONFIG}/server_key -N \"\""
+        logmessage INFO "ssh-keygen -b 1024 -t rsa1 -f ${DCACHE_CONFIG}/host_key -N \"\""
         logmessage INFO "Please note that this message may not apply if the keyBase property has"
         logmessage INFO "been changed in the dCache configuration."
     fi
@@ -139,21 +144,21 @@ dcacheInstallInitConfig()
 {
     logmessage DEBUG "dcacheInstallInitConfig.start"
 
-    if [ ! -d ${DCACHE_HOME}/config ] ; then
+    if [ ! -d ${DCACHE_CONFIG} ] ; then
         echo "Cannot find 'config' directory" >&2
         exit 5
     fi
-    cd ${DCACHE_HOME}/config
+    cd ${DCACHE_CONFIG}
 
     printf " Checking Users database .... "
     if [ ! -d users ]  ; then
         mkdir users >/dev/null 2>&1
         if [ $? -ne 0 ] ; then
-            echo " Failed : can't create ..../config/users"
+            echo " Failed : can't create ${DCACHE_CONFIG}/users"
         else
             mkdir  users/acls users/meta users/relations >/dev/null 2>&1
             if [ $? -ne 0 ] ; then
-                echo " Failed : can't create ..../config/users/acls|meta|relations"
+                echo " Failed : can't create ${DCACHE_CONFIG}/users/acls|meta|relations"
             else
                 echo " Created"
             fi
@@ -164,7 +169,7 @@ dcacheInstallInitConfig()
             if [ ! -d $c ] ; then
                 mkdir $c >/dev/null 2>/dev/null
                 if [ $? -ne 0 ] ; then
-                    echo " Failed : can't create .../config/users/$c"
+                    echo " Failed : can't create ${DCACHE_CONFIG}/users/$c"
                     isok=1
                     break
                 fi
@@ -217,5 +222,6 @@ if [ ! -d "$DCACHE_HOME" ]; then
     exit 2
 fi
 
+loadConfig
 dcacheCheckSshKeys
 dcacheInstallInitConfig
