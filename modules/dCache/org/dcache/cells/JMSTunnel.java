@@ -83,7 +83,7 @@ public class JMSTunnel
     /** Domain to well known cells in that domain. */
     private final Map<String,Set<String>> _domains = new HashMap();
 
-    private final Timer _timer = new Timer(true);
+    private Timer _timer;
 
     private final CellNucleus  _nucleus;
     private final ConnectionFactory _factory;
@@ -105,6 +105,8 @@ public class JMSTunnel
     protected void init()
         throws JMSException
     {
+        _timer = new Timer(getCellName() + " Timeout Timer", true);
+
         addCellEventListener();
 
         /* Setting the default route to this cell ensures that it gets
