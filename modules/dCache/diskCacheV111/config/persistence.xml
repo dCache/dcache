@@ -16,16 +16,8 @@
       <property name="toplink.jdbc.url" value="jdbc:postgresql://localhost/dcache"/>
       <property name="toplink.jdbc.driver" value="org.postgresql.Driver"/>
       <property name="toplink.ddl-generation" value="create-tables"/>
-      <!--
-        It appears that toplink treats toplink.create-ddl-jdbc-file-name
-        and toplink.drop-ddl-jdbc-file-name as relative to CWD, even if the values
-        contain path prefix starting with "/".
-        SRM startup scripts changes CWD to /opt/d-cache, 
-        so the .jdbc files are created in /opt/d-cache/etc 
-        direcotory
-      -->
-      <property name="toplink.create-ddl-jdbc-file-name" value="/etc/createDDL.jdbc"/>
-      <property name="toplink.drop-ddl-jdbc-file-name" value="/etc/dropDDL.jdbc"/>
+      <property name="toplink.create-ddl-jdbc-file-name" value="createDDL.jdbc"/>
+      <property name="toplink.drop-ddl-jdbc-file-name" value="dropDDL.jdbc"/>
 <!--            <property name="javax.jdo.option.ConnectionDriverName" value="org.postgresql.Driver"/>
             <property name="javax.jdo.option.ConnectionURL" value="jdbc:postgresql://localhost/dcache"/>
             <property name="javax.jdo.option.ConnectionUserName" value="srmdcache"/>
