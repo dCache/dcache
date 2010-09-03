@@ -43,12 +43,12 @@
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
 	<pathelement location="${classesDir}/gplazma.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
+        <path refid="dependency.classpath" />
     </path>
 
     <!--       =======

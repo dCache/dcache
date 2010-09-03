@@ -24,7 +24,7 @@
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j/" includes="*.jar" />
+        <path refid="dependency.classpath" />
     </path>
 
 

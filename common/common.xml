@@ -52,6 +52,10 @@
         <dependency groupId="org.springframework" artifactId="spring-web" version="3.0.4.RELEASE"/>
         <dependency groupId="org.apache.xbean" artifactId="xbean-spring" version="3.7"/>
         <dependency groupId="org.apache.activemq" artifactId="activemq-all" version="5.4.0"/>
+        <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>
+        <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
+        <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
+
     </artifact:dependencies>
     <!--
         Untar axis, glite, cog, glue

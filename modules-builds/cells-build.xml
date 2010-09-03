@@ -104,9 +104,9 @@
     <path id="cells.classpath">
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <fileset dir="${libDir}/jline" includes="jline*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
+        <path refid="dependency.classpath" />
     </path>
 
     <!--

@@ -88,7 +88,6 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j/" includes="*.jar" />
         <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/jetty/" includes="*.jar" />
@@ -138,9 +137,9 @@
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/logback-config" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement path="${dcache.build.dir}" />
+        <path refid="dependency.classpath" />
     </path>
 
     <!-- Classpath for xrootd-tokenauthz.jar -->
@@ -238,10 +237,10 @@
         <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement location="${dcache.build.dir}" />
+        <path refid="dependency.classpath" />
     </path>
 
     <target name="-dcache-auth.check.enhanced">
@@ -456,14 +455,6 @@
         <!-- BerkeleyDB -->
         <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
         <copy file="${libDir}/berkeleyDB/je-4.0.71.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
-
-        <!-- slf4j -->
-        <mkdir dir="${server.bin.dir}/classes/slf4j/" />
-        <copy todir="${server.bin.dir}/classes/slf4j">
-          <fileset dir="${libDir}/slf4j/">
-            <include name="*.jar" />
-          </fileset>
-        </copy>
 
         <!-- Servlet API -->
         <mkdir dir="${server.bin.dir}/classes/servlet-api/" />
