@@ -1,0 +1,39 @@
+Plotting Module in dCache
+
+This document is a documentation and the summery of the plotting module developed in summer 2010 in Fermi Lab.
+
+Introduction:
+This plotting module was intended for replacing existing Laszlo Application. The main reason in doing so is the reduction in external dependencies and simplify build and distribute process. This plotting module is intended for plotting data from billing database.
+
+The modules is primarily divided into two parts:
+1. DAO (data access objects) for accessing data, currently only JDBC DAO is implemented;
+2. Renderer, for rendering data from DAO, supported formats include SVG, PNG and JPEG. The behavior of Renderer is first generating an SVG document, then convert it to other format as specified.
+These two parts are part of PlotRequest, which is processed by PlotManager. Upon successful completion, a PlotReply is returned. Otherwise, a PlotException is thrown.
+Both DAO and Renderer make extensive use of Spring Framework. The xml bean file is located at etc/PlotConfiguration.xml, which defines a set of DAO and Renderer typical for billing database.
+
+Typical usage and interface:
+PlotRequest: is a practically a Set<PlotParameter>, and required PlotParameter’s include:
+ParamDaoID, which is a String representation of DAO’s in etc/PlotConfiguration.xml. If more than one DAO’s are specified, use “:” as sperator.
+
+ParamOutputFileName: a file path on the file system where the plot will be saved. This include full path and the plot name, but not the extension, e.g. “/tmp/img/weekly_report”. It’s Renderer’s responsibility to attached the missing extension. Final url to the file will be given in PlotReply.
+
+ParamRendererID: Renderer’s ID in String representation. Only one Renderer may be specified.
+
+ParamStartDate, ParamEndDatem ParamBinSize are requred by JDBC to determine the final output of plot.
+
+DAO
+Data access Objects supply data for Renderer. A DaoJdbc connects to a local or remote psql for accessing data. A typical DAO returns a TupleList, which is a container for Tuple (x, y) value. As for billing plots, typical x will be date and y will be some numeric type. Parameters particular to JDBC connectivity are located through system property “org.dcache.commons.plot.dao.SpringPlotDaoFactory.configuration”, which defaults to etc/PlotConfiguration.
+
+Renderer
+Renderer are configured similarly to DAO. A system property “org.dcache.commons.plot.renderer.SpringRendererFactory” points to the location of Renderer configuration file, which defaults to etc/PlotConfiguration.
+Current implementation of Renderer include RectRenderer, which renders data of type <Date, Number> into a 2d plot in SVG format and BatikRenderer which transforms an SVG file into PNG, JPEG file.
+Render layout can be configured through setting parameters in RectRenderer. Parameters particular to this Renderer are not exposed to general plot parameters but set by Spring Framework. User can change configuration in the xml file to achieve certain layout.
+
+BillingPlotsHttpEngine
+This module supports web-based rendering. Current implementation uses cached images for serving http request. Images are cached on the server for a certain amount of time and regenerated when out of date. Typical cache time length range from an hour to a week, depending of the plots. Cached images are saved to a location specified by a system property “org.dcache.services.plots.imagedir”, which defaults to “/tmp/img”. Certain security measures have been applied so that files on parent directory and not of images types are prohibited from being served.
+
+Currently, transfer rate, hit info and connection time have been tested and a page for customized plots (up to four DAO plotted on the same image) is also tested.
+
+
+Tao Long (longarch@gmail.com)
+summer 2010
