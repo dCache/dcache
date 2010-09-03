@@ -29,6 +29,7 @@ import dmg.cells.nucleus.CellExceptionMessage;
 import dmg.cells.nucleus.CellTunnel;
 import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CDC;
 import dmg.util.Args;
 
 import org.slf4j.Logger;
@@ -502,6 +503,8 @@ public class JMSTunnel
         /** Called by JMS on ARP reply. */
         synchronized public void onMessage(Message message)
         {
+            CDC cdc = new CDC();
+            CDC.setCellsContext(_nucleus);
             try {
                 Lookup lookup = _lookups.remove(message.getJMSCorrelationID());
                 if (lookup != null && lookup.cancel()) {
@@ -529,6 +532,8 @@ public class JMSTunnel
             } catch (JMSException e) {
                 _log.error("Error while resolving well known cell: "
                            + e.getMessage());
+            } finally {
+                cdc.apply();
             }
         }
 
@@ -650,6 +655,8 @@ public class JMSTunnel
          */
         synchronized public void onMessage(Message message)
         {
+            CDC cdc = new CDC();
+            CDC.setCellsContext(_nucleus);
             try {
                 ObjectMessage objectMessage = (ObjectMessage) message;
                 Object object = objectMessage.getObject();
@@ -665,6 +672,8 @@ public class JMSTunnel
                 _log.warn("Dropping unknown message: " + message);
             } catch (JMSException e) {
                 _log.error("Failed to retrieve object from JMS message: " + e);
+            } finally {
+                cdc.apply();
             }
         }
 
@@ -696,7 +705,7 @@ public class JMSTunnel
      * Implements the ARP server. The ARP server responds to ARP
      * lookups on locally exported cells.
      */
-    static class ArpServer
+    class ArpServer
         implements MessageListener,
                    CellEventListener
     {
@@ -728,6 +737,8 @@ public class JMSTunnel
          */
         synchronized public void onMessage(Message message)
         {
+            CDC cdc = new CDC();
+            CDC.setCellsContext(_nucleus);
             try {
                 TextMessage textMessage = (TextMessage) message;
                 String name = textMessage.getText();
@@ -741,6 +752,8 @@ public class JMSTunnel
                 _log.warn("Dropping unknown message: " + message);
             } catch (JMSException e) {
                 _log.error("JMS failure in cell name resolver: " + e);
+            } finally {
+                cdc.apply();
             }
         }
 
