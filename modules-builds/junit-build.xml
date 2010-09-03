@@ -21,7 +21,6 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
         <fileset dir="${libDir}/logback/" includes="*.jar" />
-        <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/netty/netty-3.1.2.GA.jar" />

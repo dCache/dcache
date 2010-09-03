@@ -33,7 +33,10 @@
     <!-- external dependencies -->
     <artifact:dependencies pathId="dependency.classpath" filesetId="dependency.fileset" useScope="runtime">
         <!-- Remote repositories -->
-        <remoteRepository id="glassfish.repository" url="http://download.java.net/maven/glassfish/" />
+        <remoteRepository id="glassfish.repository"
+                          url="http://download.java.net/maven/glassfish/" />
+        <remoteRepository id="berkeleydb-je.repository"
+                          url="http://download.oracle.com/maven/"/>
 
         <!-- Suppress some dependencies: Dependencies with scope
              'provided' are not included in the runtime classpath. We
@@ -62,6 +65,7 @@
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-plus" version="7.1.6.v20100715"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-security" version="7.1.6.v20100715"/>
         <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
+        <dependency groupId="com.sleepycat" artifactId="je" version="4.0.103"/>
     </artifact:dependencies>
     <!--
         Untar axis, glite, cog, glue

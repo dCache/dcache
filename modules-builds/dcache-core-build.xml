@@ -86,7 +86,6 @@
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-        <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/jexl/" includes="*.jar" />
@@ -449,10 +448,6 @@
             <include name="*.jar" />
           </fileset>
         </copy>
-
-        <!-- BerkeleyDB -->
-        <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
-        <copy file="${libDir}/berkeleyDB/je-4.0.71.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
 
         <!-- JEXL -->
         <mkdir dir="${server.bin.dir}/classes/jexl/" />
