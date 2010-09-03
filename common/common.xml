@@ -55,7 +55,13 @@
         <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
-
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-server" version="7.1.6.v20100715"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-deploy" version="7.1.6.v20100715"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-webapp" version="7.1.6.v20100715"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-servlets" version="7.1.6.v20100715"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-plus" version="7.1.6.v20100715"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-security" version="7.1.6.v20100715"/>
+        <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
     </artifact:dependencies>
     <!--
         Untar axis, glite, cog, glue

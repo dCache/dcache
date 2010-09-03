@@ -13,7 +13,6 @@
         <pathelement location="${buildDir}/classes/dcache-common.jar" />
         <fileset dir="${libDir}/logback/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
-        <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <path refid="dependency.classpath" />
     </path>
 

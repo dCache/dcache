@@ -59,7 +59,7 @@
         <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
-
+        <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
     </artifact:dependencies>
 
     <path id="srmclient.classpath">
@@ -76,7 +76,6 @@
 	<fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
-        <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <path refid="srmclient.maven.classpath" />
     </path>
 

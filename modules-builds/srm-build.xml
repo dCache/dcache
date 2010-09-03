@@ -47,7 +47,6 @@
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
 	<pathelement location="${classesDir}/gplazma.jar" />
-        <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <path refid="dependency.classpath" />
     </path>
 

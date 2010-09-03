@@ -88,9 +88,7 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
-        <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
-        <fileset dir="${libDir}/jetty/" includes="*.jar" />
         <fileset dir="${libDir}/jexl/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
@@ -455,22 +453,6 @@
         <!-- BerkeleyDB -->
         <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
         <copy file="${libDir}/berkeleyDB/je-4.0.71.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
-
-        <!-- Servlet API -->
-        <mkdir dir="${server.bin.dir}/classes/servlet-api/" />
-        <copy todir="${server.bin.dir}/classes/servlet-api">
-            <fileset dir="${libDir}/servlet-api/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
-        <!-- Jetty -->
-        <mkdir dir="${server.bin.dir}/classes/jetty/" />
-        <copy todir="${server.bin.dir}/classes/jetty">
-            <fileset dir="${libDir}/jetty/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
 
         <!-- JEXL -->
         <mkdir dir="${server.bin.dir}/classes/jexl/" />
