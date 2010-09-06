@@ -188,10 +188,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
                 transfer =
                     _door.write(remoteAddress, authPath, checksum, uuid,
-                                createDir, overwrite);
+                                createDir, overwrite, localAddress);
             } else {
                 transfer =
-                    _door.read(remoteAddress, authPath, checksum, uuid);
+                    _door.read(remoteAddress, authPath, checksum, uuid, localAddress);
             }
 
             // ok, open was successful

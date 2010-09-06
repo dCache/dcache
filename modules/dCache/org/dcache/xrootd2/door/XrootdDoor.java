@@ -406,7 +406,7 @@ public class XrootdDoor
 
     private XrootdTransfer
         createTransfer(InetSocketAddress client, FsPath path, long checksum,
-                       UUID uuid)
+                       UUID uuid, InetSocketAddress local)
     {
         Subject subject = createSubject(client.getAddress());
         XrootdTransfer transfer =
@@ -419,12 +419,14 @@ public class XrootdDoor
         transfer.setClientAddress(client);
         transfer.setChecksum(checksum);
         transfer.setUUID(uuid);
+        transfer.setDoorAddress(local);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         return transfer;
     }
 
     public XrootdTransfer
-        read(InetSocketAddress client, String path, long checksum, UUID uuid)
+        read(InetSocketAddress client, String path, long checksum, UUID uuid,
+             InetSocketAddress local)
         throws CacheException, InterruptedException
     {
         FsPath fullPath = createFullPath(path);
@@ -434,7 +436,7 @@ public class XrootdDoor
         }
 
         XrootdTransfer transfer = createTransfer(client, fullPath, checksum,
-                                                 uuid);
+                                                 uuid, local);
         int handle = transfer.getFileHandle();
 
         InetSocketAddress address = null;
@@ -478,7 +480,8 @@ public class XrootdDoor
 
     public XrootdTransfer
         write(InetSocketAddress client, String path, long checksum, UUID uuid,
-              boolean createDir, boolean overwrite)
+              boolean createDir, boolean overwrite,
+              InetSocketAddress local)
         throws CacheException, InterruptedException
     {
         FsPath fullPath = createFullPath(path);
@@ -492,7 +495,7 @@ public class XrootdDoor
         }
 
         XrootdTransfer transfer = createTransfer(client, fullPath, checksum,
-                                                 uuid);
+                                                 uuid, local);
         transfer.setOverwriteAllowed(overwrite);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;

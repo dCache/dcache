@@ -16,6 +16,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 {
     private long _checksum;
     private UUID _uuid;
+    private InetSocketAddress _doorAddress;
     private int _fileHandle;
     private boolean _uuidSupported;
 
@@ -39,6 +40,10 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
         _uuid = uuid;
     }
 
+    public synchronized void setDoorAddress(InetSocketAddress doorAddress) {
+        _doorAddress = doorAddress;
+    }
+
     public synchronized void setUUIDSupported(boolean uuidSupported) {
         _uuidSupported = uuidSupported;
     }
@@ -59,7 +64,8 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
                                    getPnfsId(),
                                    _fileHandle,
                                    _checksum,
-                                   _uuid);
+                                   _uuid,
+                                   _doorAddress);
         protocolInfo.setPath(_path.toString());
         return protocolInfo;
     }

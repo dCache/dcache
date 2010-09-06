@@ -220,6 +220,7 @@ public class XrootdProtocol_3
      * Protocol specific information provided by the door.
      */
     private XrootdProtocolInfo _protocolInfo;
+    private volatile InetSocketAddress _doorAddress;
 
     /**
      * Space allocator provided by the pool.
@@ -407,6 +408,7 @@ public class XrootdProtocol_3
         throws Exception
     {
         _protocolInfo = (XrootdProtocolInfo) protocol;
+        _doorAddress = _protocolInfo.getDoorAddress();
 
         UUID uuid = _protocolInfo.getUUID();
         _log.debug("Received opaque information {}", uuid);
@@ -673,6 +675,16 @@ public class XrootdProtocol_3
                               _file.length(),
                               DEFAULT_FILESTATUS_FLAGS,
                               DEFAULT_FILESTATUS_MODTIME);
+    }
+
+    /**
+     * Return the InetAddress of the door, as it was received as a part of
+     * the protocol-info.
+     * @return The InetAddress of the door
+     */
+    InetSocketAddress getDoorAddress()
+    {
+        return _doorAddress;
     }
 
     /**

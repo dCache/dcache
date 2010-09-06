@@ -4,6 +4,7 @@ import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import org.dcache.xrootd2.protocol.messages.ProtocolRequest;
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
 import org.dcache.xrootd2.protocol.messages.ReadResponse;
 import org.dcache.xrootd2.protocol.messages.ReadVRequest;
+import org.dcache.xrootd2.protocol.messages.RedirectResponse;
 import org.dcache.xrootd2.protocol.messages.StatRequest;
 import org.dcache.xrootd2.protocol.messages.StatxRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
@@ -89,6 +91,11 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
      * the Netty ChannelPipeline, so okay to store stateful information.
      */
     private boolean _hasOpenedFiles = false;
+    /**
+     * Address of the door. Enables us to redirect the client back if an
+     * operation should better be performed at the door.
+     */
+    private InetSocketAddress _redirectingDoor = null;
 
     /**
      * @throws IOException opening a server socket to handle the connection
@@ -245,6 +252,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                                          stat));
                 descriptor = null;
                 _hasOpenedFiles = true;
+                _redirectingDoor = mover.getDoorAddress();
             } finally {
                 if (descriptor != null) {
                     descriptor.close();
@@ -271,14 +279,28 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     protected void doOnStat(ChannelHandlerContext ctx, MessageEvent event,
                             StatRequest msg)
     {
-        unsupported(ctx, event, msg);
+        if (_redirectingDoor == null) {
+            unsupported(ctx, event, msg);
+        } else {
+            respond(ctx, event,
+                    new RedirectResponse(msg.getStreamID(),
+                                         _redirectingDoor.getHostName(),
+                                         _redirectingDoor.getPort()));
+        }
     }
 
     @Override
     protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent event,
                              StatxRequest msg)
     {
-        unsupported(ctx, event, msg);
+        if (_redirectingDoor == null) {
+            unsupported(ctx, event, msg);
+        } else {
+            respond(ctx, event,
+                    new RedirectResponse(msg.getStreamID(),
+                                         _redirectingDoor.getHostName(),
+                                         _redirectingDoor.getPort()));
+        }
     }
 
     /**
@@ -533,7 +555,14 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     protected void doOnProtocolRequest(ChannelHandlerContext ctx,
                                        MessageEvent event, ProtocolRequest msg)
     {
-        unsupported(ctx, event, msg);
+        if (_redirectingDoor == null) {
+            unsupported(ctx, event, msg);
+        } else {
+            respond(ctx, event,
+                    new RedirectResponse(msg.getStreamID(),
+                                         _redirectingDoor.getHostName(),
+                                         _redirectingDoor.getPort()));
+        }
     }
 
     /**
