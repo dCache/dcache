@@ -36,6 +36,14 @@
         <property name="destination" value="billing"/>
     </bean>
 
+    <bean id="scheduled-thread-pool"
+        class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool"
+        destroy-method="shutdown">
+        <description>Thread pool for scheduled activities</description>
+        <constructor-arg value="1"/>
+    </bean>
+
     <bean id="poolManagerAdapter" class="org.dcache.poolmanager.PoolManagerAdapterProxy">
         <constructor-arg ref="poolManagerStub"/>
         <constructor-arg ref="pool-stub"/>
@@ -85,4 +93,21 @@
         <property name="exportFile" ref="export" />
     </bean>
 
+    <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+        init-method="start"
+        destroy-method="stop">
+        <description>Notifies LoginBroker </description>
+        <property name="executor" ref="scheduled-thread-pool"/>
+        <property name="updateTime" value="${loginBrokerUpdateTime}"/>
+        <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+        <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
+        <property name="protocolVersion" value="4.1"/>
+        <property name="protocolFamily" value="nfs"/>
+        <property name="port" value="2049"/>
+        <property name="loginBroker">
+            <bean class="dmg.cells.nucleus.CellPath">
+                <constructor-arg value="${loginBroker}"/>
+            </bean>
+        </property>
+    </bean>
 </beans>

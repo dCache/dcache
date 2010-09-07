@@ -41,6 +41,8 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
@@ -49,6 +51,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
 import java.nio.ByteBuffer;
 import org.acplt.oncrpc.OncRpcPortmapClient;
@@ -588,5 +591,39 @@ public class NFSv41Door extends AbstractCellComponent implements
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+    }
+
+    /**
+     * To allow the transfer monitoring in the httpd cell to recognize us
+     * as a door, we have to emulate LoginManager.  To emulate
+     * LoginManager we list ourselves as our child.
+     */
+    public final static String hh_get_children = "[-binary]";
+
+    public Object ac_get_children(Args args) {
+        boolean binary = args.getOpt("binary") != null;
+        if (binary) {
+            String[] childrens = new String[]{this.getCellName()};
+            return new LoginManagerChildrenInfo(this.getCellName(), this.getCellDomainName(), childrens);
+        } else {
+            return this.getCellName();
+        }
+    }
+    public final static String hh_get_door_info = "[-binary]";
+    public final static String fh_get_door_info =
+            "Provides information about the door and current transfers";
+
+    public Object ac_get_door_info(Args args) {
+        List<IoDoorEntry> entries = new ArrayList<IoDoorEntry>();
+        for (Transfer transfer : _ioMessages.values()) {
+            entries.add(transfer.getIoDoorEntry());
+        }
+
+        IoDoorInfo doorInfo = new IoDoorInfo(this.getCellName(), this.getCellDomainName());
+        doorInfo.setProtocol("NFSV4.1", "0");
+        doorInfo.setOwner("");
+        doorInfo.setProcess("");
+        doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
+        return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
     }
 }

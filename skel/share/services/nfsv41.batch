@@ -3,4 +3,8 @@
 #
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv41.xml"
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv41.xml \
+       -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
+       -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
+       -loginBroker=${loginBroker} \
+"
