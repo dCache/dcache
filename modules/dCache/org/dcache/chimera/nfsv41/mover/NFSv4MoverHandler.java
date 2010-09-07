@@ -69,7 +69,7 @@ public class NFSv4MoverHandler {
                 org.dcache.xdr.OncRpcException,
                 ChimeraFsException {
 
-        _embededDS = new NFSServerV41(_operationFactory, new DeviceManager(), _fs, null);
+        _embededDS = new NFSServerV41(_operationFactory, new DeviceManager(), null, _fs, null);
 
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
         programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
@@ -176,7 +176,7 @@ public class NFSv4MoverHandler {
                 case nfs_opnum4.OP_DESTROY_SESSION:
                     return new OperationDESTROY_SESSION(op);
                 case nfs_opnum4.OP_SEQUENCE:
-                    return new OperationSEQUENCE(op, false);
+                    return new OperationSEQUENCE(op);
                 case nfs_opnum4.OP_ILLEGAL:
             }
 

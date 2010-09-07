@@ -38,6 +38,9 @@
         <remoteRepository id="berkeleydb-je.repository"
                           url="http://download.oracle.com/maven/"/>
 
+        <remoteRepository id="dcache.repository"
+                          url="http://www.dcache.org/nexus/content/groups/public" />
+
         <!-- Suppress some dependencies: Dependencies with scope
              'provided' are not included in the runtime classpath. We
              use this to suppress jars we don't really need or get
@@ -47,6 +50,7 @@
 
         <!-- external dependencies -->
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
+        <dependency groupId="org.dcache.chimera" artifactId="grizzly-rpc" version="0.0.2"/>
         <dependency groupId="org.springframework" artifactId="spring-beans" version="3.0.4.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-context" version="3.0.4.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-core" version="3.0.4.RELEASE"/>
