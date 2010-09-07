@@ -37,14 +37,20 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.util.Interval;
 import org.dcache.util.Glob;
 
+import org.dcache.util.expression.Token;
+import org.dcache.util.expression.Type;
+import org.dcache.util.expression.Expression;
+import org.dcache.util.expression.ExpressionParser;
+import org.dcache.util.expression.UnknownIdentifierException;
+import org.dcache.util.expression.TypeMismatchException;
+
+import org.parboiled.Parboiled;
+import org.parboiled.ReportingParseRunner;
+import org.parboiled.support.ParsingResult;
+import static org.parboiled.errors.ErrorUtils.printParseErrors;
+
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
-
-import org.apache.commons.jexl2.Expression;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.JexlContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,19 +131,16 @@ public class MigrationModule
     private final Map<Integer,Job> _jobs = new HashMap();
     private final Map<Job,String> _commands = new HashMap();
     private final MigrationContext _context = new MigrationContext();
-    private final JexlEngine _jexl = new JexlEngine() {
-            @Override
-            protected Object doCreateInstance(Object clazz, Object...args)
-            {
-                throw new JexlException(debugInfo(),
-                                        "Object creation is not supported");
-            }
-        };
 
-    private final Expression TRUE_EXPRESSION =
-        _jexl.createExpression("true");
-    private final Expression FALSE_EXPRESSION =
-        _jexl.createExpression("false");
+    private final static Expression TRUE_EXPRESSION =
+        new Expression(Token.TRUE);
+    private final static Expression FALSE_EXPRESSION =
+        new Expression(Token.FALSE);
+
+    static {
+        TRUE_EXPRESSION.setType(Type.BOOLEAN);
+        FALSE_EXPRESSION.setType(Type.BOOLEAN);
+    }
 
     private int _counter = 1;
 
@@ -369,59 +372,53 @@ public class MigrationModule
         }
     }
 
-    /**
-     * Checks that a JEXL expression evaluates to a boolean within a
-     * given context. If the expression has side effects, then the
-     * context will be updated.
-     *
-     * @throw JexlException if the expression cannot be evaluated
-     * @throw IllegalArgumentException if the expression does not
-     *                                 evaluate to a boolean
-     */
-    private void assertExpressionEvaluatesToBoolean(Expression expression,
-                                                    JexlContext context)
-        throws JexlException
-    {
-        Object result = expression.evaluate(context);
-        if (!(result instanceof Boolean)) {
-            throw new IllegalArgumentException(expression.getExpression() +
-                                               ": The expression does not evaluate to a boolean");
-        }
-    }
-
-    private Expression createPredicate(String s, Expression ifNull, JexlContext context)
+    private Expression createPredicate(String s, Expression ifNull,
+                                       SymbolTable symbols)
     {
         try {
             if (s == null) {
                 return ifNull;
             }
 
-            Expression expression = _jexl.createExpression(s);
+            ExpressionParser parser =
+                Parboiled.createParser(ExpressionParser.class);
+            ParsingResult<Expression> result =
+                ReportingParseRunner.run(parser.Top(), s);
 
-            assertExpressionEvaluatesToBoolean(expression, context);
+            if (result.hasErrors()) {
+                throw new IllegalArgumentException("Invalid expression: " +
+                                                   printParseErrors(result));
+            }
+
+            Expression expression = result.resultValue;
+            if (expression.check(symbols) != Type.BOOLEAN) {
+                throw new IllegalArgumentException("Expression does not evaluate to a boolean");
+            }
 
             return expression;
-        } catch (JexlException e) {
-            throw new IllegalArgumentException(s + ": " + e.getMessage(), e);
+        } catch (UnknownIdentifierException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        } catch (TypeMismatchException e) {
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
     private Expression createPoolPredicate(String s, Expression ifNull)
     {
-        MapContextWithConstants context = new MapContextWithConstants();
-        context.addConstant(CONSTANT_SOURCE, new PoolValues(DUMMY_POOL));
-        context.addConstant(CONSTANT_TARGET, new PoolValues(DUMMY_POOL));
-        return createPredicate(s, ifNull, context);
+        SymbolTable symbols = new SymbolTable();
+        symbols.put("source", DUMMY_POOL);
+        symbols.put("target", DUMMY_POOL);
+        return createPredicate(s, ifNull, symbols);
     }
 
     private Expression createLifetimePredicate(String s)
     {
-        MapContextWithConstants context = new MapContextWithConstants();
-        context.addConstant(CONSTANT_SOURCE, new PoolValues(DUMMY_POOL));
-        context.addConstant(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
-        context.addConstant(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
-        context.addConstant(CONSTANT_TARGETS, NO_TARGETS);
-        return createPredicate(s, null, context);
+        SymbolTable symbols = new SymbolTable();
+        symbols.put("source", DUMMY_POOL);
+        symbols.put(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
+        symbols.put(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
+        symbols.put(CONSTANT_TARGETS, NO_TARGETS);
+        return createPredicate(s, null, symbols);
     }
 
     private Set<Pattern> createPatterns(String globs)
@@ -624,9 +621,8 @@ public class MigrationModule
         "criteria - also replicas that have been copied before.\n\n" +
 
         "Several options allow an expression to be specified. The following\n" +
-        "operators are recognized: <, <=, ==, !=, >=, >, lt, le, eq, ne, ge,\n" +
-        "gt, ~=, !~, +, -, *, /, %, div, mod, |, &, ^, ~, &&, ||, !, and, or,\n" +
-        "not, ?:, =. Literals may be integer literals, floating point literals,\n" +
+        "operators are recognized: <, <=, ==, !=, >=, >, ~=, !~, +, -, *, /,\n" +
+        "**, %, and, or, not, ?:. Literals may be floating point literals,\n" +
         "single or double quoted string literals, and boolean true and false.\n" +
         "Depending on the context, the expression may refer to constants.\n\n" +
 

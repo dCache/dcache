@@ -35,7 +35,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.io.PrintWriter;
 
-import org.apache.commons.jexl2.Expression;
+import org.dcache.util.expression.Expression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -714,26 +714,16 @@ public class Job
             throw new RuntimeException("Bug detected: Source pool information was unavailable");
         }
 
-        MapContextWithConstants context = new MapContextWithConstants();
-        context.addConstant(MigrationModule.CONSTANT_SOURCE,
-                            new PoolValues(sourceInformation.get(0)));
-        context.addConstant(MigrationModule.CONSTANT_QUEUE_FILES,
-                            _queued.size());
-        context.addConstant(MigrationModule.CONSTANT_QUEUE_BYTES,
-                            _statistics.getTotal() - _statistics.getCompleted());
-        context.addConstant(MigrationModule.CONSTANT_TARGETS,
-                            _definition.poolList.getPools().size());
-
-        Object result = expression.evaluate(context);
-        if (result == null || !result.getClass().equals(Boolean.class)) {
-            /* We ought to fail the job, but that's not so easy within
-             * the current structure. REVISIT
-             */
-            _log.error(expression.getExpression() +
-                       ": The expression does not evaluate to a boolean");
-        }
-
-        return !Boolean.FALSE.equals(result);
+        SymbolTable symbols = new SymbolTable();
+        symbols.put(MigrationModule.CONSTANT_SOURCE,
+                    sourceInformation.get(0));
+        symbols.put(MigrationModule.CONSTANT_QUEUE_FILES,
+                    _queued.size());
+        symbols.put(MigrationModule.CONSTANT_QUEUE_BYTES,
+                    _statistics.getTotal() - _statistics.getCompleted());
+        symbols.put(MigrationModule.CONSTANT_TARGETS,
+                    _definition.poolList.getPools().size());
+        return expression.evaluateBoolean(symbols);
     }
 
     protected class LoggingTask implements Runnable

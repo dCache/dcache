@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 import org.dcache.pool.repository.CacheEntry;
-import org.apache.commons.jexl2.Expression;
+import org.dcache.util.expression.Expression;
 
 /**
  * Immutable record class holding the parameters that define a job.

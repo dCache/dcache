@@ -87,9 +87,9 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
-        <fileset dir="${libDir}/jexl/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
+        <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
         <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
@@ -446,14 +446,6 @@
           </fileset>
         </copy>
 
-        <!-- JEXL -->
-        <mkdir dir="${server.bin.dir}/classes/jexl/" />
-        <copy todir="${server.bin.dir}/classes/jexl">
-            <fileset dir="${libDir}/jexl/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
         <!-- Wicket -->
         <mkdir dir="${server.bin.dir}/classes/wicket" />
 	<copy todir="${server.bin.dir}/classes/wicket">
@@ -481,6 +473,14 @@
         <!-- SMC -->
         <mkdir dir="${server.bin.dir}/classes/smc/" />
         <copy file="${libDir}/smc/statemap.jar" todir="${server.bin.dir}/classes/smc/" />
+
+        <!-- Parboiled -->
+        <mkdir dir="${server.bin.dir}/classes/parboiled4j/" />
+        <copy todir="${server.bin.dir}/classes/parboiled4j">
+            <fileset dir="${libDir}/parboiled4j/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
 
         <!-- JDBC -->
         <mkdir dir="${server.bin.dir}/classes/jdbc-drivers" />
