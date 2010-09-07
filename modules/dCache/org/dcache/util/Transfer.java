@@ -27,6 +27,8 @@ import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -42,7 +44,6 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -569,6 +570,14 @@ public abstract class Transfer implements Comparable<Transfer>
      * Selects a pool suitable for the transfer.
      */
     public void selectPool()
+            throws CacheException, InterruptedException {
+        selectPool(_poolManager.getTimeout());
+    }
+
+    /**
+     * Selects a pool suitable for the transfer.
+     */
+    private void selectPool(long timeout)
         throws CacheException, InterruptedException
     {
         PnfsId pnfsId = getPnfsId();
@@ -607,7 +616,7 @@ public abstract class Transfer implements Comparable<Transfer>
             request.setSubject(_subject);
             request.setPnfsPath(_path.toString());
 
-            PoolMgrSelectPoolMsg reply = _poolManager.sendAndWait(request);
+            PoolMgrSelectPoolMsg reply = _poolManager.sendAndWait(request, timeout);
             setPool(reply.getPoolName());
             setStorageInfo(reply.getStorageInfo());
         } catch (IOException e) {
@@ -624,6 +633,17 @@ public abstract class Transfer implements Comparable<Transfer>
      * @param queue The mover queue of the transfer; may be null
      */
     public void startMover(String queue)
+            throws CacheException, InterruptedException
+    {
+        startMover(queue, _poolManager.getTimeout());
+    }
+
+    /**
+     * Creates a mover for the transfer.
+     *
+     * @param queue The mover queue of the transfer; may be null
+     */
+    private void startMover(String queue, long timeout)
         throws CacheException, InterruptedException
     {
         PnfsId pnfsId = getPnfsId();
@@ -658,7 +678,7 @@ public abstract class Transfer implements Comparable<Transfer>
                 (CellPath) _poolManager.getDestinationPath().clone();
             poolPath.add(pool);
 
-            setMoverId(_pool.sendAndWait(poolPath, message).getMoverId());
+            setMoverId(_pool.sendAndWait(poolPath, message, timeout).getMoverId());
         } finally {
             setStatus(null);
         }
@@ -790,6 +810,54 @@ public abstract class Transfer implements Comparable<Transfer>
         } catch (NoRouteToCellException e) {
             _log.error("Failed to register transfer in billing: " +
                        e.getMessage());
+        }
+    }
+
+    /**
+     * Select a pool and start a mover in defined queue. Failed attempts are handled
+     * according specified {@link TransferRetryPolicy}. Note, that there will be
+     * no retries on uploads.
+     *
+     * @param queue where mover should started.
+     * @param policy to handle error cases
+     * @throws CacheException
+     * @throws InterruptedException
+     */
+    public synchronized void selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
+            throws CacheException, InterruptedException {
+
+        long deadLine = System.currentTimeMillis() + policy.getTotalTimeOut();
+        long retryCount = policy.getRetryCount();
+
+        do {
+
+            --retryCount;
+            try {
+                selectPool(deadLine - System.currentTimeMillis());
+            } catch (TimeoutCacheException e) {
+                // we managet timeouts our selfs
+            }
+
+            if(getPool() != null) {
+                try {
+                    startMover(queue,Math.min(deadLine - System.currentTimeMillis(),
+                            policy.getMoverStartTimeout()) );
+                    /*
+                     * handeling the timeout for the reply from Pool.
+                     * The request could be retried if the time is left.
+                     */
+                } catch (FileNotInCacheException ex) {
+                    _log.info("File not in cache: {}", ex);
+                } catch (TimeoutCacheException e) {
+                    // we managet timeouts our selfs
+                }
+            }
+
+        } while (!hasMover() && !isWrite() && retryCount > 0
+                    && deadLine - System.currentTimeMillis() > 0 );
+
+        if (!hasMover()) {
+            throw new TimeoutCacheException("Internal server timeout ");
         }
     }
 }
