@@ -3,14 +3,6 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
-import com.sun.grizzly.BaseSelectionKeyHandler;
-import com.sun.grizzly.Controller;
-import com.sun.grizzly.DefaultProtocolChain;
-import com.sun.grizzly.DefaultProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolChain;
-import com.sun.grizzly.ProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolFilter;
-import com.sun.grizzly.TCPSelectorHandler;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -59,6 +51,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import java.nio.ByteBuffer;
 import org.acplt.oncrpc.OncRpcPortmapClient;
+import org.acplt.oncrpc.OncRpcProtocols;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
@@ -72,10 +65,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.chimera.nfsv41.Utils;
 import org.dcache.poolmanager.PoolManagerAdapter;
 import org.dcache.xdr.OncRpcProgram;
-import org.dcache.xdr.RpcDispatchable;
-import org.dcache.xdr.RpcDispatcher;
-import org.dcache.xdr.RpcParserProtocolFilter;
-import org.dcache.xdr.RpcProtocolFilter;
+import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrDecodingStream;
 
@@ -84,6 +74,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         CellMessageReceiver, CellInfoProvider {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
+
+    static final int DEFAULT_PORT = 2049;
 
     /** dCache-friendly NFS device id to pool name mapping */
     private Map<String, NFS4IoDevice> _poolNameToIpMap = new HashMap<String, NFS4IoDevice>();
@@ -123,9 +115,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     private PnfsHandler _pnfsHandler;
 
     /**
-     * Grizzly thread controller
+     * RPC service
      */
-    private Controller _controller;
+    private  OncRpcSvc _rpcService;
 
     public void setPoolManagerStub(CellStub stub)
     {
@@ -156,83 +148,42 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         final NFSv41DeviceManager _dm = this;
 
-        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
+        _rpcService = new OncRpcSvc(DEFAULT_PORT);
 
-        new Thread("NFSv4.1 Door Thread") {
-            @Override
-            public void run() {
-                try {
-                    NFSServerV41 nfs4 = new NFSServerV41( new MDSOperationFactory(),
-                            _dm, _fileFileSystemProvider, _exportFile );
+        NFSServerV41 nfs4 = new NFSServerV41(new MDSOperationFactory(),
+                _dm, _fileFileSystemProvider, _exportFile);
+        MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
-                    new OncRpcEmbeddedPortmap(2000);
+        OncRpcPortmapClient portmap = new OncRpcPortmapClient(InetAddress.getByName("127.0.0.1"));
+        portmap.getOncRpcClient().setTimeout(2000);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv1 service within portmap.");
+        }
 
-                    OncRpcPortmapClient portmap = new OncRpcPortmapClient(InetAddress.getByName("127.0.0.1"));
-                    portmap.getOncRpcClient().setTimeout(2000);
-                    portmap.setPort(100005, 3, 6, 2049);
-                    portmap.setPort(100005, 1, 6, 2049);
-                    portmap.setPort(100003, 4, 6, 2049);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3, OncRpcProtocols.ONCRPC_UDP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv1 service within portmap.");
+        }
 
-                    MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V1, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv3 service within portmap.");
+        }
 
-                    programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), nfs4);
-                    programs.put(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V1, OncRpcProtocols.ONCRPC_UDP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv3 service within portmap.");
+        }
 
-                    final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
-                    final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
-                    final ProtocolFilter rpcDispatcher = new RpcDispatcher(programs);
+        if (!portmap.setPort(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
+            _log.error("Failed to register NFSv4 service within portmap.");
+        }
 
-                    _controller = new Controller();
-                    final TCPSelectorHandler tcp_handler = new TCPSelectorHandler();
-                    tcp_handler.setPort(2049);
-                    tcp_handler.setSelectionKeyHandler(new BaseSelectionKeyHandler());
+        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), nfs4);
+        _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+        _rpcService.start();
 
-                    _controller.addSelectorHandler(tcp_handler);
-                    _controller.setReadThreadsCount(5);
+    }
 
-                    final ProtocolChain protocolChain = new DefaultProtocolChain();
-                    protocolChain.addFilter(rpcFilter);
-                    protocolChain.addFilter(rpcProcessor);
-                    protocolChain.addFilter(rpcDispatcher);
-
-                    ((DefaultProtocolChain) protocolChain).setContinuousExecution(true);
-
-                    ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
-
-                        @Override
-                        public ProtocolChain poll() {
-                            return protocolChain;
-                        }
-
-                        @Override
-                        public boolean offer(ProtocolChain pc) {
-                            return false;
-                        }
-                    };
-
-                    _controller.setProtocolChainInstanceHandler(pciHandler);
-
-                    try {
-                        _controller.start();
-                    } catch (IOException e) {
-                        _log.error("Exception in controller...", e);
-                    }
-
-                } catch (org.acplt.oncrpc.OncRpcException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                } catch (OncRpcException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                } catch (IOException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                }
-
-            }
-
-        }.start();
-
+    public void destroy() {
+        _rpcService.stop();
     }
 
     /*
@@ -524,8 +475,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void getInfo(PrintWriter pw) {
 
         pw.println("NFSv4.1 door (MDS):");
-        pw.println( String.format("  Concurrent Thread number : %d", _controller.getReadThreadsCount() ));
-        pw.println( String.format("  Thread pool              : %s", _controller.getThreadPool() ));
+        pw.println( String.format("  Concurrent Thread number : %d", _rpcService.getThreadCount() ));
         pw.println("  Known pools (DS):\n");
         for(Map.Entry<String, NFS4IoDevice> ioDevice: _poolNameToIpMap.entrySet()) {
             pw.println( String.format("    %s : %s", ioDevice.getKey(),ioDevice.getValue() ));
@@ -558,7 +508,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public static final String hh_set_thread_count = " <count> # set number of threads for processing NFS requests";
     public String ac_set_thread_count_$_1(Args args) throws Exception {
-        _controller.setReadThreadsCount(Integer.valueOf(args.argv(0)));
-        return "Thread count: " + _controller.getReadThreadsCount();
+        _rpcService.setThreadCount(Integer.valueOf(args.argv(0)));
+        return "Thread count: " + _rpcService.getThreadCount();
     }
 }
