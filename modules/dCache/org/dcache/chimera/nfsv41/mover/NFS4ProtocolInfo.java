@@ -12,60 +12,55 @@ import dmg.cells.nucleus.CellPath;
 
 public class NFS4ProtocolInfo implements IpProtocolInfo {
 
-	private static final long serialVersionUID = -2283394435195441798L;
+    private static final long serialVersionUID = -2283394435195441798L;
+    private static final String _protocolName = "NFS4";
+    private static final int _minor = 1;
+    private static final int _major = 4;
+    private final InetAddress _clientIp;
+    private final stateid4 _stateId;
+    private String[] _knownNames = null;
+    private CellPath _door = null;
 
+    public NFS4ProtocolInfo(InetAddress clientIp, stateid4 stateId) {
+        _clientIp = clientIp;
+        _stateId = stateId;
+    }
 
-	private static final String _protocolName = "NFS4";
-	private static final int _minor = 1;
-	private static final int _major = 4;
-	private final InetAddress _clientIp;
-	private final stateid4 _stateId;
+    public String[] getHosts() {
 
-	private String[] _knownNames = null;
+        if (_knownNames == null) {
+            _knownNames = new String[1];
+            _knownNames[0] = _clientIp.getHostName();
+        }
+        return _knownNames;
+    }
 
-	private CellPath _door = null;
+    public int getPort() {
+        return 0;
+    }
 
+    //
+    // the ProtocolInfo interface
+    //
+    public String getProtocol() {
+        return _protocolName;
+    }
 
-	public NFS4ProtocolInfo(InetAddress clientIp, stateid4 stateId) {
-		_clientIp = clientIp;
-		_stateId = stateId;
-	}
+    public int getMinorVersion() {
+        return _minor;
+    }
 
-	public String[] getHosts() {
+    public int getMajorVersion() {
+        return _major;
+    }
 
-		if( _knownNames == null ) {
-			_knownNames = new String[1];
-			_knownNames[0] = _clientIp.getHostName();
-		}
-		return _knownNames;
-	}
+    public String getVersionString() {
+        return _protocolName + "-" + _major + "." + _minor;
+    }
 
-	public int getPort() {
-		return 0;
-	}
-
-	//
-	// the ProtocolInfo interface
-	//
-	public String getProtocol() {
-		return _protocolName;
-	}
-
-	public int getMinorVersion() {
-		return _minor;
-	}
-
-	public int getMajorVersion() {
-		return _major;
-	}
-
-	public String getVersionString() {
-		return _protocolName + "-" + _major + "." + _minor;
-	}
-
-	public boolean isFileCheckRequired() {
-		return false;
-	}
+    public boolean isFileCheckRequired() {
+        return false;
+    }
 
     public CellPath door() {
         return _door;
@@ -79,5 +74,11 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
         return _stateId;
     }
 
-}
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getVersionString()).append(":").append(_clientIp);
 
+        return sb.toString();
+    }
+}

@@ -31,6 +31,11 @@
         <property name="timeout" value="${poolTimeout}"/>
     </bean>
 
+    <bean id="billing-stub" class="org.dcache.cells.CellStub">
+        <description>Billing communication stub</description>
+        <property name="destination" value="billing"/>
+    </bean>
+
     <bean id="poolManagerAdapter" class="org.dcache.poolmanager.PoolManagerAdapterProxy">
         <constructor-arg ref="poolManagerStub"/>
         <constructor-arg ref="pool-stub"/>
@@ -74,6 +79,7 @@
         <description>dCache implementation of NFSv4.1 MDS (door)</description>
         <property name="poolManagerStub" ref="poolManagerStub"/>
         <property name="poolManagerAdapter" ref="poolManagerAdapter"/>
+        <property name="billingStub" ref="billing-stub"/>
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="fileSystemProvider" ref="fileSystem"/>
         <property name="exportFile" ref="export" />

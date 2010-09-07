@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.security.auth.Subject;
 
 import org.dcache.xdr.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
@@ -36,12 +37,14 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
@@ -50,6 +53,7 @@ import dmg.util.Args;
 import java.nio.ByteBuffer;
 import org.acplt.oncrpc.OncRpcPortmapClient;
 import org.acplt.oncrpc.OncRpcProtocols;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
@@ -65,6 +69,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.poolmanager.PoolManagerAdapter;
+import org.dcache.util.Transfer;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
@@ -91,7 +96,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private static final deviceid4 MDS_ID = deviceidOf(0);
 
-    private final Map<stateid4, PoolIoFileMessage> _ioMessages = new ConcurrentHashMap<stateid4, PoolIoFileMessage>();
+    private final Map<stateid4, Transfer> _ioMessages = new ConcurrentHashMap<stateid4, Transfer>();
 
     /**
      * The usual timeout for NFS ops. is 30s.
@@ -110,6 +115,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Cell communication helper.
      */
     private CellStub _poolManagerStub;
+    private CellStub _billingStub;
 
     /**
      * Communication with the PoolManager.
@@ -243,6 +249,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             stateid.xdrDecode(xdr);
             xdr.endDecoding();
 
+            Transfer transfer = _ioMessages.get(stateid);
+            transfer.setPool(poolName);
             synchronized (_requestReplyMap) {
                 _requestReplyMap.put(stateid, device);
                 _requestReplyMap.notifyAll();
@@ -264,7 +272,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
-        _ioMessages.remove(protocolInfo.stateId());
+        Transfer transfer = _ioMessages.remove(protocolInfo.stateId());
+        if(transfer != null) {
+            transfer.finished(transferFinishedMessage);
+            transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
+        }
     }
 
     private int nextDeviceID() {
@@ -330,7 +342,17 @@ public class NFSv41Door extends AbstractCellComponent implements
                         new NFS4ProtocolInfo(client.getRemoteAddress().getAddress(), stateid);
                 protocolInfo.door(new CellPath(this.getCellName(), this.getCellDomainName()));
 
-                PoolDS ds = getPool(pnfsId, storageInfo, protocolInfo, ioMode);
+                Transfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"));
+                transfer.setCellName(this.getCellName());
+                transfer.setDomainName(this.getCellDomainName());
+                transfer.setBillingStub(_billingStub);
+                transfer.setPoolStub(_poolManagerStub);
+                transfer.setPnfsId(pnfsId);
+                transfer.setStorageInfo(storageInfo);
+                transfer.setClientAddress(client.getRemoteAddress());
+                _ioMessages.put(protocolInfo.stateId(), transfer);
+
+                PoolDS ds = getPool(transfer, protocolInfo, ioMode);
                 deviceid = ds.getDeviceId();
             }
 
@@ -351,20 +373,23 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     }
 
-    private PoolDS getPool(PnfsId pnfsId, StorageInfo storageInfo,
-            NFS4ProtocolInfo protocolInfo, int iomode) throws InterruptedException, IOException {
+    private PoolDS getPool(Transfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
+            throws InterruptedException, IOException {
 
-        PoolIoFileMessage poolIOMessage = null;
+        PoolIoFileMessage poolIOMessage;
         try {
 
-            if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly()) {
-                _log.debug("looking for read pool for {}", pnfsId);
-                poolIOMessage = _poolManagerAdapter.readFile(pnfsId, storageInfo, protocolInfo, _poolManagerStub.getTimeout());
+            if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
+                _log.debug("looking for read pool for {}", transfer.getPnfsId());
+                poolIOMessage = _poolManagerAdapter.readFile(transfer.getPnfsId(),
+                        transfer.getStorageInfo(), protocolInfo, _poolManagerStub.getTimeout());
             } else {
-                _log.debug("looking for write pool for {}", pnfsId);
-                poolIOMessage = _poolManagerAdapter.writeFile(pnfsId, storageInfo, protocolInfo, _poolManagerStub.getTimeout());
+                _log.debug("looking for write pool for {}", transfer.getPnfsId());
+                poolIOMessage = _poolManagerAdapter.writeFile(transfer.getPnfsId(),
+                        transfer.getStorageInfo(), protocolInfo, _poolManagerStub.getTimeout());
             }
 
+            transfer.setMoverId(poolIOMessage.getMoverId());
         } catch (NoRouteToCellException ex) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_RESOURCE, ex.getMessage());
 
@@ -373,7 +398,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
         _log.debug("mover ready: pool={} moverid={}", poolIOMessage.getPoolName(),
                 poolIOMessage.getMoverId());
-        _ioMessages.put( protocolInfo.stateId(), poolIOMessage);
+
 
             /*
              * FIXME;
@@ -424,23 +449,13 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         _log.debug("Releasing device by stateid: {}", stateid);
 
-        PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
-        if (poolIoFileMessage != null) {
+        Transfer transfer = _ioMessages.get(stateid);
+        if (transfer != null) {
 
-            PoolMoverKillMessage message =
-                    new PoolMoverKillMessage(poolIoFileMessage.getPoolName(),
-                    poolIoFileMessage.getMoverId());
+            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(),
+                transfer.getPool() );
 
-            _log.debug("Sending KILL to {}@{}", poolIoFileMessage.getMoverId(),
-                poolIoFileMessage.getPoolName() );
-
-            try {
-                _poolManagerStub.send(new CellPath(poolIoFileMessage.getPoolName()),
-                                      message);
-            } catch (NoRouteToCellException e) {
-                _log.error("Failed to kill mover: {}", e.getMessage());
-            }
-
+            transfer.killMover(5000);
         }else{
             _log.warn("Can't find mover by stateid: {}", stateid);
         }
@@ -463,6 +478,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         this._poolManagerAdapter = poolManagerAdapter;
     }
 
+    public void setBillingStub(CellStub stub) {
+        _billingStub = stub;
+    }
+
     /*
      * Cell specific
      */
@@ -478,8 +497,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         pw.println();
         pw.println("  Known movers (layouts):");
-        for(PoolIoFileMessage io: _ioMessages.values()) {
-            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPoolName() ));
+        for(Transfer io: _ioMessages.values()) {
+            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPool() ));
         }
 
         pw.println();
@@ -551,5 +570,23 @@ public class NFSv41Door extends AbstractCellComponent implements
             return String.format("DS: %s, InetAddress: %s",
                     _deviceId, _socketAddress);
         }
+    }
+
+    private static class NfsTransfer extends Transfer {
+
+        public NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
+            super(pnfs, subject, path);
+        }
+
+        @Override
+        protected ProtocolInfo createProtocolInfoForPoolManager() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        protected ProtocolInfo createProtocolInfoForPool() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
     }
 }
