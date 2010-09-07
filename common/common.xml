@@ -139,20 +139,105 @@
         generate dcache run-time classpath.
     -->
     <target name="-dcache-classpath">
-        <path id="dcache.jars">
-            <fileset dir="${server.bin.dir}/classes" includes="**/*.jar"/>
-        </path>
+      <echo>Generating runtime classpath...</echo>
 
-        <!--
-            replace absolute path with path property
-        -->
-        <pathconvert property="dcache.classpath" targetos="unix" refid="dcache.jars">
-            <map from="${server.bin.dir}/classes" to="${dcache.paths.classes}" />
-        </pathconvert>
-        <echo>Generating runtime classpath...</echo>
-        <echo file="${server.bin.dir}/share/defaults/classpath.properties" append="no">dcache.paths.classpath=$${dcache.java.classpath}:${dcache.classpath}</echo>
+      <!-- First, define some patterns. -->
+
+      <!-- dcache.jar is needed independently of other compiled code -->
+      <patternset id="pattern.dcache.jars.only-dcache">
+	<include name="dcache.jar"/>
+      </patternset>
+
+      <!-- all compiled jar files excluding dcache.jar -->
+      <patternset id="pattern.dcache.jars.all-compiled-code-except-dcache">
+	<include name="dcache-common.jar"/>
+	<include name="cells.jar"/>
+	<include name="cells-protocols.jar"/>
+	<include name="javatunnel.jar"/>
+	<include name="srm.jar"/>
+	<include name="xrootd-tokenauthz.jar"/>
+      </patternset>
+
+      <!-- all other jar files are external libraries -->
+      <patternset id="pattern.dcache.jars.packaged-external">
+	<include name="**/*.jar"/>
+	<invert>
+	  <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
+	  <patternset refid="pattern.dcache.jars.only-dcache"/>
+	</invert>
+      </patternset>
+
+
+      <!-- Second, make (configurable) paths by finding matching jar files in
+	   deployed directory and replacing the path up to "classes" path-element
+	   with the ${dcache.paths.classes} property  -->
+      <pathconvert property="dcache.jars.dcache" targetos="unix">
+	<map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+	<path>
+	  <fileset dir="${server.bin.dir}/classes">
+	    <patternset refid="pattern.dcache.jars.only-dcache"/>
+	  </fileset>
+	</path>
+      </pathconvert>
+
+      <pathconvert property="dcache.jars.all-compiled-code-except-dcache" targetos="unix">
+	<map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+	<path>
+	  <fileset dir="${server.bin.dir}/classes">
+	    <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
+	  </fileset>
+	</path>
+      </pathconvert>
+
+      <pathconvert property="dcache.jars.packaged-external" targetos="unix">
+	<map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+	<path>
+	  <fileset dir="${server.bin.dir}/classes">
+	    <patternset refid="pattern.dcache.jars.packaged-external"/>
+	  </fileset>
+	</path>
+      </pathconvert>
+
+      <!-- Finally, generate the classpath.properties file -->
+      <property name="classpath.properties" value="${server.bin.dir}/share/defaults/classpath.properties"/>
+
+      <echo file="${classpath.properties}">#  -----------------------------------------------------------------------
+#       Location of jar files
+#  -----------------------------------------------------------------------
+#   dCache startup scripts need to identify where are all the required jar
+#   files.  To do this, various properties take default values from this
+#   file.
+#
+#   The defaults in this file are declared relative to the
+#   dcache.paths.classes property.  Please see the paths.properties file
+#   for this property's default value.
+#
+#   To include additional jar files, simply define the dcache.java.classpath
+#   property, either in dcache.conf or in the layout file.  Its value should
+#   be a colon-separated list of (absolute) paths to the required additional
+#   jar files.  Most sites will not have to do this.
+#
+#
+#   A list of all external dependencies that are delivered with dCache.
+dcache.paths.classpath.packaged-external=${dcache.jars.packaged-external}
+#
+#   Location of the dcache.jar file.
+dcache.paths.classpath.dcache=${dcache.jars.dcache}
+#
+#   Location of all dCache code jar files excluding the dcache.jar file.
+dcache.path.classpath.compiled-not-dcache=${dcache.jars.all-compiled-code-except-dcache}
+#
+#   Location of all dCache code
+dcache.paths.classpath.all-compiled-code=$${dcache.paths.classpath.dcache}:$${dcache.path.classpath.compiled-not-dcache}
+#
+#   All external jar files, including any included by the site-admin.
+dcache.paths.classpath.all-external=$${dcache.java.classpath}:$${dcache.paths.classpath.packaged-external}
+#
+#   The classpath used by dCache.
+dcache.paths.classpath=$${dcache.paths.classpath.all-compiled-code}:$${dcache.paths.classpath.all-external}
+</echo>
+
     </target>
-
     <!--
         Generate eclipse project files
     -->
