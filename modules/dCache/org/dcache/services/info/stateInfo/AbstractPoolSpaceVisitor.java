@@ -16,8 +16,8 @@ import org.dcache.services.info.base.StatePath;
  */
 public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 
-	// This is protected to allow inheriting classes to limit the scope of the visitor
-	protected static StatePath POOLS_PATH = new StatePath( "pools");
+
+	private static final StatePath POOLS_PATH = new StatePath( "pools");
 
 	private static Logger _log = LoggerFactory.getLogger( AbstractPoolSpaceVisitor.class);
 
