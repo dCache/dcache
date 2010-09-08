@@ -72,7 +72,6 @@
     <path id="chimera.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/Chimera/chimera-core.jar" />
-        <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/Chimera/portmap.jar" />
     </path>
@@ -88,9 +87,9 @@
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
-        <fileset dir="${libDir}/jexl/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
+        <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
         <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
@@ -110,7 +109,6 @@
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
-        <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
     </path>
 
 
@@ -131,6 +129,7 @@
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/logback-config" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement path="${dcache.build.dir}" />
@@ -261,9 +260,8 @@
         </taskdef>
 
         <!-- enhance -->
-        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${dcache.build.dir}" verbose="true" api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
-            <sysproperty key="log4j.configuration" value="file:/home/timur/cvs/dCacheBuild/log4j.properties" />
-        </enhancer>
+        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${dcache.build.dir}"
+                  api="JPA" persistenceUnit="AuthRecordPersistenceUnit"/>
     </target>
 
     <!--
@@ -413,7 +411,6 @@
         <copy file="${libDir}/Chimera/chimera-config.xml" todir="${server.bin.dir}/config" />
         <copy file="${libDir}/Chimera/oncrpc.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/portmap.jar" todir="${server.bin.dir}/classes/chimera" />
-        <copy file="${libDir}/Chimera/grizzly-rpc.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/dbcp/c3p0.properties" todir="${server.bin.dir}/config" />
         <copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${server.bin.dir}/classes/dbcp" />
@@ -448,14 +445,6 @@
           </fileset>
         </copy>
 
-        <!-- JEXL -->
-        <mkdir dir="${server.bin.dir}/classes/jexl/" />
-        <copy todir="${server.bin.dir}/classes/jexl">
-            <fileset dir="${libDir}/jexl/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
         <!-- Wicket -->
         <mkdir dir="${server.bin.dir}/classes/wicket" />
 	<copy todir="${server.bin.dir}/classes/wicket">
@@ -483,6 +472,14 @@
         <!-- SMC -->
         <mkdir dir="${server.bin.dir}/classes/smc/" />
         <copy file="${libDir}/smc/statemap.jar" todir="${server.bin.dir}/classes/smc/" />
+
+        <!-- Parboiled -->
+        <mkdir dir="${server.bin.dir}/classes/parboiled4j/" />
+        <copy todir="${server.bin.dir}/classes/parboiled4j">
+            <fileset dir="${libDir}/parboiled4j/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
 
         <!-- JDBC -->
         <mkdir dir="${server.bin.dir}/classes/jdbc-drivers" />

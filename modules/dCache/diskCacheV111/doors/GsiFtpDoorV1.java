@@ -81,44 +81,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         Args args = getArgs();
         _gssFlavor = "gsi";
 
-        // Grid FTP Performance Markers options:
-        String arg_string = args.getOpt("usePerfMarkers");
-        if (arg_string != null) {
-            if ( arg_string.equalsIgnoreCase("true") )
-                _perfMarkerConf.use = true;
-            else if ( arg_string.equalsIgnoreCase("false") )
-                _perfMarkerConf.use = false;
-            else {
-                String msg = "GsiFtpDoor: illegal command option value in " +
-                             "usePerfMarkers='" + arg_string +
-                             "'. It must be 'true' or 'false'.";
-                fatal(msg);
-                throw new RuntimeException(msg);
-            }
-        }
-
-        arg_string = args.getOpt("perfMarkerPeriod");
-        if ( ( arg_string != null ) && ( ! arg_string.equals("") ) ){
-            try {
-                int period = Integer.parseInt(arg_string) ;
-                if (period <= 0) {
-                    _perfMarkerConf.period = 0;
-                    _perfMarkerConf.use    = false;
-                } else {
-                   _perfMarkerConf.period = period * 1000;
-                   _perfMarkerConf.use    = true;
-                }
-            } catch (NumberFormatException ex) {
-                String msg = "GsiFtpDoor: error in -perfMarkerPeriod " +
-                             "argument: '" + arg_string +
-                             "' is not an integer.";
-                fatal(msg);
-                throw new RuntimeException(msg);
-            }
-        }
-        info("GsiFtpDoor: Performance Markers : " + _perfMarkerConf.use +
-             " Period : " + _perfMarkerConf.period ) ;
-
         ftpDoorName="GSI FTP";
     }
 

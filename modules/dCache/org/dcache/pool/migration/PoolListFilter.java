@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.util.ImmutableList;
 
-import org.apache.commons.jexl2.Expression;
+import org.dcache.util.expression.Expression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,20 +122,10 @@ public class PoolListFilter implements RefreshablePoolList
     private boolean evaluate(Expression expression,
                              PoolManagerPoolInformation pool)
     {
-        MapContextWithConstants context = new MapContextWithConstants();
-        context.addConstant(MigrationModule.CONSTANT_TARGET,
-                            new PoolValues(pool));
-        context.addConstant(MigrationModule.CONSTANT_SOURCE,
-                            new PoolValues(getSource()));
-
-        Object result = expression.evaluate(context);
-        if (!(result instanceof Boolean)) {
-            _log.error(expression.getExpression() +
-                       ": The expression does not evaluate to a boolean");
-            return false;
-        }
-
-        return (Boolean) result;
+        SymbolTable symbols = new SymbolTable();
+        symbols.put(MigrationModule.CONSTANT_TARGET, pool);
+        symbols.put(MigrationModule.CONSTANT_SOURCE, getSource());
+        return expression.evaluateBoolean(symbols);
     }
 
     @Override

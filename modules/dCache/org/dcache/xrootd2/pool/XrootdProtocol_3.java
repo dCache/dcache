@@ -41,24 +41,17 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
 
-import org.dcache.xrootd2.core.XrootdEncoder;
-import org.dcache.xrootd2.core.XrootdDecoder;
-import org.dcache.xrootd2.core.XrootdHandshakeHandler;
-import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.*;
 import org.dcache.xrootd2.util.FileStatus;
 
-import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
-import org.jboss.netty.handler.logging.LoggingHandler;
-import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
 import org.slf4j.Logger;
@@ -128,8 +121,10 @@ import org.dcache.util.PortRange;
 public class XrootdProtocol_3
     implements MoverProtocol
 {
+    private static final long DEFAULT_CLIENT_IDLE_TIMEOUT =
+        TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
+
     private static final int DEFAULT_DISK_THREAD_POOL_SIZE = 20;
-    private static final int DEFAULT_SOCKET_THREAD_POOL_SIZE = 5;
     private static final int DEFAULT_PER_CHANNEL_LIMIT = 16 * (1 << 20);
     private static final int DEFAULT_TOTAL_LIMIT = 64 * (1 << 20);
     private static final int DEFAULT_FILESTATUS_ID = 0;
@@ -147,7 +142,8 @@ public class XrootdProtocol_3
      * the mover. We can conveniently use the _lastTransferred property for
      * that.
      */
-    private static final long CONNECT_TIMEOUT = 300000; // 5 min
+    private static final long CONNECT_TIMEOUT =
+        TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
     /**
      * The minimum number of bytes to increment the space
@@ -182,6 +178,12 @@ public class XrootdProtocol_3
      * Shared thread pool performing blocking disk IO.
      */
     private static Executor _diskExecutor;
+
+    /**
+     * Used to generate channel-idle events for the pool handler
+     */
+    private static Timer _timer;
+    private static long _clientIdleTimeout;
 
     /**
      * Shared Netty channel factory.
@@ -368,6 +370,25 @@ public class XrootdProtocol_3
                                                       _socketExecutor);
             }
         }
+
+        if (_timer == null) {
+            String s = endpoint.getArgs().getOpt("xrootd-mover-idle-client-timeout");
+
+            if (s != null && !s.isEmpty()) {
+
+                try {
+                    _clientIdleTimeout = Long.parseLong(s);
+                } catch (NumberFormatException nfex) {
+                    _log.warn("xrootd-mover-client-idle-timeout contains invalid " +
+                              "value: {}", nfex);
+                    _clientIdleTimeout = DEFAULT_CLIENT_IDLE_TIMEOUT;
+                }
+            } else {
+                _clientIdleTimeout = DEFAULT_CLIENT_IDLE_TIMEOUT;
+            }
+
+            _timer = new HashedWheelTimer();
+        }
     }
 
     public XrootdProtocol_3(CellEndpoint endpoint)
@@ -458,23 +479,10 @@ public class XrootdProtocol_3
         ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
         bootstrap.setOption("child.tcpNoDelay", false);
         bootstrap.setOption("child.keepAlive", true);
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-            public ChannelPipeline getPipeline()
-            {
-                ChannelPipeline pipeline = pipeline();
-                pipeline.addLast("encoder", new XrootdEncoder());
-                pipeline.addLast("decoder", new XrootdDecoder());
-                if (_log.isDebugEnabled()) {
-                    pipeline.addLast("logger",
-                                     new LoggingHandler(XrootdProtocol_3.class));
-                }
-                pipeline.addLast("handshake",
-                                 new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
-                pipeline.addLast("executor", new ExecutionHandler(_diskExecutor));
-                pipeline.addLast("transfer", new XrootdPoolRequestHandler());
-                return pipeline;
-            }
-            });
+
+        bootstrap.setPipelineFactory(new XrootdPoolPipelineFactory(_timer,
+                                                                   _diskExecutor,
+                                                                   _clientIdleTimeout));
 
         _serverChannel= range.bind(bootstrap);
     }

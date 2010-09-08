@@ -289,11 +289,6 @@ public abstract class AbstractFtpDoorV1
     }
 
     /**
-     * Used for generating session IDs unique to this domain.
-     */
-    private static long   __counter = 10000;
-
-    /**
      * Feature strings returned when the client sends the FEAT
      * command.
      */
@@ -323,31 +318,6 @@ public abstract class AbstractFtpDoorV1
         }
 
         return result.substring(0, result.length() - mod);
-    }
-
-    /**
-     * This reports an internal error as a fatal error to the log file and
-     * then throws a RuntimeException to stop the program.
-     * @param methodName The name of the method where the bug was detected.
-     * @param message A message indicating the nature of the bug.
-     * @param exc An exception that may have been caught that indicated the bug.
-     *          This can be null if no exception was involved.
-     * @throws RuntimeException This is always thrown to terminate the process.
-     */
-    protected void reportBug(String methodName,
-                             String message,
-                             Throwable exc)
-        throws RuntimeException
-    {
-        String text = "BUG: " + getNucleus().getCellName() + "@" +
-                       getNucleus().getCellDomainName() + ":" +
-                       getClass().getName() + "::" + methodName +
-                       ": " + message;
-        fatal(text);
-        if (exc != null) {
-            fatal(exc);
-        }
-        throw new RuntimeException(text, exc);
     }
 
     /**
@@ -568,6 +538,14 @@ public abstract class AbstractFtpDoorV1
     )
     protected int _defaultStreamsPerClient;
 
+    @Option(
+        name = "perfMarkerPeriod",
+        description = "Performance marker period",
+        defaultValue = "90",
+        unit = "seconds"
+    )
+    protected long _performanceMarkerPeriod;
+
     protected final int _sleepAfterMoverKill = 1; // seconds
 
     protected final int _spaceManagerTimeout = 5 * 60;
@@ -646,23 +624,6 @@ public abstract class AbstractFtpDoorV1
     protected Set<Fact> _currentFacts =
         new HashSet(Arrays.asList(new Fact[] {
                     Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE }));
-
-    /**
-     * Configuration parameters related to performance markers.
-     */
-    protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
-
-    protected static class PerfMarkerConf
-    {
-        protected boolean use;
-        protected long    period;
-
-        PerfMarkerConf()
-        {
-            use    = false;
-            period = 3 * 60 * 1000L; // default - 3 minutes
-        }
-    }
 
     /**
      * Encapsulation of an FTP transfer.
@@ -752,7 +713,7 @@ public abstract class AbstractFtpDoorV1
             switch (_mode) {
             case PASSIVE:
                 if (_reply127) {
-                    info("Creating adapter for passive mode");
+                    _logger.info("Creating adapter for passive mode");
                     ServerSocketChannel serverChannel =
                         ServerSocketChannel.open();
                     _passiveModePortRange.bind(serverChannel.socket());
@@ -770,7 +731,7 @@ public abstract class AbstractFtpDoorV1
 
             case ACTIVE:
                 if (_isProxyRequiredOnActive) {
-                    info("Creating adapter for active mode");
+                    _logger.info("Creating adapter for active mode");
                     _adapter =
                         new ActiveAdapter(_passiveModePortRange,
                                           _client.getAddress().getHostAddress(),
@@ -890,7 +851,7 @@ public abstract class AbstractFtpDoorV1
         public void createTransactionLog()
         {
             if (_tLogRoot != null) {
-                info("Door will log ftp transactions to " + _tLogRoot);
+                _logger.info("Door will log ftp transactions to {}", _tLogRoot);
                 _tLog = new FTPTransactionLog(_tLogRoot);
                 startTlog(_tLog, _path.toString(), isWrite() ? "write" : "read");
             }
@@ -920,14 +881,12 @@ public abstract class AbstractFtpDoorV1
 
             reply("150 Opening BINARY data connection for " + _path, false);
 
-            if (isWrite() && _perfMarkerConf.use && _xferMode.equals("E")) {
+            if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
+                long period = _performanceMarkerPeriod * 1000;
+                long timeout = period / 2;
                 _perfMarkerTask =
-                    new PerfMarkerTask(getPool(),
-                                       getMoverId(),
-                                       _perfMarkerConf.period / 2);
-                _timer.schedule(_perfMarkerTask,
-                                _perfMarkerConf.period,
-                                _perfMarkerConf.period);
+                    new PerfMarkerTask(getPool(), getMoverId(), timeout);
+                _timer.schedule(_perfMarkerTask, period, period);
             }
         }
 
@@ -984,7 +943,7 @@ public abstract class AbstractFtpDoorV1
 
                     reply127PORT(message.getPoolAddress());
 
-                    info("Closing adapter");
+                    _logger.info("Closing adapter");
                     _adapter.close();
                     _adapter = null;
                 } else if (_reply127) {
@@ -1027,7 +986,7 @@ public abstract class AbstractFtpDoorV1
                 /* Wait for adapter to shut down.
                  */
                 if (_adapter != null) {
-                    info("Waiting for adapter to finish.");
+                    _logger.info("Waiting for adapter to finish.");
                     _adapter.join(300000); // 5 minutes
                     if (_adapter.isAlive()) {
                         throw new FTPCommandException(426, "FTP proxy did not shut down");
@@ -1035,7 +994,7 @@ public abstract class AbstractFtpDoorV1
                         throw new FTPCommandException(426, "FTP proxy failed: " + _adapter.getError());
                     }
 
-                    debug("Closing adapter");
+                    _logger.debug("Closing adapter");
                     _adapter.close();
                 }
 
@@ -1084,14 +1043,6 @@ public abstract class AbstractFtpDoorV1
          * bugs). Communication errors and the like should not be
          * logged with an exception.
          *
-         * In case the caller knows that an exception is certainly a
-         * bug, <code>reportBug</code> should be called. That method
-         * logs the exception as fatal, meaning it will always be
-         * added to the log. In most cases <code>reportBug</code>
-         * should be called instead of <code>abort</code>, since the
-         * former will throw a <code>RuntimeException</code>, which in
-         * turn causes <code>abort</code> to be called.
-         *
          * @param replyCode reply code to send the the client
          * @param replyMsg error message to send back to the client
          * @param exception exception to log or null
@@ -1138,11 +1089,10 @@ public abstract class AbstractFtpDoorV1
                 _tLog = null;
             }
             if (exception == null) {
-                error("Transfer error: " + msg);
+                _logger.error("Transfer error: {}", msg);
             } else {
-                error("Transfer error: " + msg
-                      + " (" + exception.getMessage() + ")");
-                debug(exception);
+                _logger.error("Transfer error: {} ({})", msg, exception.getMessage());
+                _logger.debug(exception.toString(), exception);
             }
             reply(msg);
             _aborted = true;
@@ -1162,11 +1112,6 @@ public abstract class AbstractFtpDoorV1
                 _methodDict.put(name.substring(3), method);
             }
         }
-    }
-
-    private synchronized static long nextSessionId()
-    {
-        return __counter++ ;
     }
 
     public static CellVersion getStaticCellVersion()
@@ -1205,7 +1150,7 @@ public abstract class AbstractFtpDoorV1
         _out      = new PrintWriter(_engine.getWriter());
         _client_data_host = _engine.getInetAddress().getHostName();
 
-        debug("FTP Door: client hostname = " + _client_data_host);
+        _logger.debug("Client hostname = {}", _client_data_host);
 
         if (_local_host == null)
             _local_host = _engine.getLocalAddress().getHostName();
@@ -1217,8 +1162,8 @@ public abstract class AbstractFtpDoorV1
             if ((_kpwdFilePath == null) ||
                 (_kpwdFilePath.length() == 0) ||
                 (!new File(_kpwdFilePath).exists())) {
-                String s = "FTP Door: -kpwd-file file argument wasn't specified";
-                error(s);
+                String s = "-kpwd-file file argument wasn't specified";
+                _logger.error(s);
                 throw new IllegalArgumentException(s);
             }
         }
@@ -1360,10 +1305,10 @@ public abstract class AbstractFtpDoorV1
         // commands need special handling
         if (cmd.equals("mic" ) || cmd.equals("conf") || cmd.equals("enc") ||
             cmd.equals("adat") || cmd.equals("pass")) {
-            info("ftpcommand <" + cmd + " ... >");
+            _logger.info("ftpcommand <{} ...>", cmd);
         } else {
             _lastCommand = cmdline;
-            info("ftpcommand <" + cmdline + ">");
+            _logger.info("ftpcommand <{}>", cmdline);
         }
 
         // If a transfer is in progress, only permit ABORT and a few
@@ -1386,9 +1331,6 @@ public abstract class AbstractFtpDoorV1
 
         Method m = _methodDict.get(cmd);
         try {
-            // Most of this info is printed above.
-            // Uncomment the next line for debugging.
-            // debug("Going to invoke:" + m.getName() +"("+arg+")");
             m.invoke(this, args);
             if (!cmd.equals("rest"))
                 _skipBytes = 0;
@@ -1409,12 +1351,10 @@ public abstract class AbstractFtpDoorV1
              * messages being generated. Just log the exception as
              * fatal and continue.
              */
-            fatal("FTP door: ftp command '" + cmd +
-                  "' got exception: " + te.getMessage());
-            fatal(te);
+            _logger.error("FTP command '{}' got exception", cmd, te);
             _skipBytes = 0;
         } catch (IllegalAccessException e) {
-            reportBug("ftpcommand", "got illegal access exception", e);
+            _logger.error("This is a bug. Please report it.", e);
         }
     }
 
@@ -1425,8 +1365,8 @@ public abstract class AbstractFtpDoorV1
             if (!socket.isClosed() && !socket.isInputShutdown())
                 socket.shutdownInput();
         } catch (IOException e) {
-            warn("FTP Door failed to shut down input stream of the " +
-                 "control channel: " + e.getMessage());
+            _logger.warn("Failed to shut down input stream of the " +
+                         "control channel: {}", e.getMessage());
         }
     }
 
@@ -1483,7 +1423,7 @@ public abstract class AbstractFtpDoorV1
                     s = in.readLine();
                 }
             } catch (IOException e) {
-                error("FTP Door: got error reading data: " + e.getMessage());
+                _logger.error("Got error reading data: {}", e.getMessage());
             } finally {
                 /* This will block until command processing has
                  * finished.
@@ -1491,8 +1431,8 @@ public abstract class AbstractFtpDoorV1
                 try {
                     _commandQueue.stop();
                 } catch (InterruptedException e) {
-                    error("FTP Door: failed to shut down command processing: "
-                          + e.getMessage());
+                    _logger.error("Failed to shut down command processing: {}",
+                                  e.getMessage());
                 }
 
                 /* In case of failure, we may have a transfer hanging
@@ -1505,7 +1445,7 @@ public abstract class AbstractFtpDoorV1
 
                 closePassiveModeServerSocket();
 
-                debug("FTP Door: end of stream encountered");
+                _logger.debug("End of stream encountered");
             }
         } finally {
             /* cleanUp() waits for us to open the gate.
@@ -1554,7 +1494,7 @@ public abstract class AbstractFtpDoorV1
              * interrupt the cell thread, but if it does happen then
              * we better log it.
              */
-            error("FTP Door: got interrupted exception shutting down input stream");
+            _logger.error("Got interrupted exception shutting down input stream");
         }
 
         try {
@@ -1564,8 +1504,8 @@ public abstract class AbstractFtpDoorV1
              */
             _engine.getSocket().close();
         } catch (IOException e) {
-            error("FTP Door: got I/O exception closing socket: " +
-                  e.getMessage());
+            _logger.error("Got I/O exception closing socket: {}",
+                          e.getMessage());
         }
 
         super.cleanUp();
@@ -1575,18 +1515,6 @@ public abstract class AbstractFtpDoorV1
     {
         synchronized (_out) {
             _out.println(str + "\r");
-            _out.flush();
-        }
-        // This prints everything including encoded replies and
-        // is not needed for normal logging.
-        // It can be uncommented for debugging.
-        //debug( "TO CLIENT : " + str ) ;
-    }
-
-    public void print(String str)
-    {
-        synchronized (_out) {
-            _out.print(str);
             _out.flush();
         }
     }
@@ -1656,9 +1584,11 @@ public abstract class AbstractFtpDoorV1
     protected void reply(String answer, boolean resetReply)
     {
         if (answer.startsWith("335 ADAT=")) {
-            info("REPLY(reset=" + resetReply + " GReplyType=" + _gReplyType + "): <335 ADAT=...>");
+            _logger.info("REPLY(reset={} GReplyType={}): <335 ADAT=...>",
+                         resetReply, _gReplyType);
         } else {
-            info("REPLY(reset=" + resetReply + " GReplyType=" + _gReplyType + "): <" + answer + ">");
+            _logger.info("REPLY(reset={} GReplyType={}): <{}>",
+                         new Object[] { resetReply,_gReplyType, answer });
         }
         if (_gReplyType.equals("clear"))
             println(answer);
@@ -1780,7 +1710,7 @@ public abstract class AbstractFtpDoorV1
         if (_currentFacts.isEmpty()) {
             reply("200 MLST");
         } else {
-            StringBuffer s = new StringBuffer("200 MLST ");
+            StringBuilder s = new StringBuilder("200 MLST ");
             for (Fact fact: _currentFacts) {
                 s.append(fact).append(';');
             }
@@ -1827,7 +1757,7 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied");
             return;
         } catch (CacheException e) {
-            error("FTP Door: DELE got CacheException: " + e.getMessage());
+            _logger.error("DELE got CacheException: {}", e.getMessage());
             reply("550 Permission denied, reason: " + e);
             return;
         }
@@ -1911,10 +1841,10 @@ public abstract class AbstractFtpDoorV1
         String rootPath = absolutePath.toString();
         absolutePath.add("./" + relativeToRootPath.toString());
         String absolutePathStr = absolutePath.toString();
-        debug("Absolute Path is \"" + absolutePathStr +
-              "\", root is " + _pathRoot);
+        _logger.debug("Absolute Path is \"{}\", root is {}",
+                      absolutePathStr, _pathRoot);
         if (!absolutePathStr.startsWith(rootPath)) {
-            debug("AbsolutePath didn't start with root");
+            _logger.debug("AbsolutePath didn't start with root");
             return null;
         }
         return absolutePathStr;
@@ -2079,7 +2009,7 @@ public abstract class AbstractFtpDoorV1
             reply("550 File not found");
         } catch (CacheException e) {
             reply("451 CWD failed: " + e.getMessage());
-            error("Error in CWD: " + e);
+            _logger.error("Error in CWD: {}", e);
         }
     }
 
@@ -2117,7 +2047,7 @@ public abstract class AbstractFtpDoorV1
     {
         try {
             closePassiveModeServerSocket();
-            info("FTP Door creating adapter for passive mode");
+            _logger.info("Opening server socket for passive mode");
             _passiveModeServerSocket = ServerSocketChannel.open();
             int port =
                 _passiveModePortRange.bind(_passiveModeServerSocket.socket());
@@ -2395,8 +2325,7 @@ public abstract class AbstractFtpDoorV1
         if (_methodDict.containsKey(cmd)) {
             Method m = _methodDict.get(cmd);
             try {
-                info("FTP Door: error return invoking:" + m.getName() +
-                     "(" + arg + ")");
+                _logger.info("Error return invoking: {}({})", m.getName(), arg);
                 m.invoke(this, args);
             } catch (IllegalAccessException e) {
                 reply("500 " + e.toString());
@@ -2425,8 +2354,7 @@ public abstract class AbstractFtpDoorV1
         if (_methodDict.containsKey(cmd)) {
             Method m = _methodDict.get(cmd);
             try {
-                info("FTP Door: esto invoking:" + m.getName() +
-                     "(" + arg + ")");
+                _logger.info("Esto invoking: {} ({})", m.getName(), arg);
                 m.invoke(this, args);
             } catch (IllegalAccessException e) {
                 reply("500 " + e.toString());
@@ -2467,7 +2395,7 @@ public abstract class AbstractFtpDoorV1
             asm_offset = Long.parseLong(offset);
         } catch (NumberFormatException e) {
             String err = "501 ESTO Adjusted Store Mode: invalid offset " + offset;
-            error("FTP Door: " + err);
+            _logger.error(err);
             reply(err);
             return;
         }
@@ -2475,7 +2403,7 @@ public abstract class AbstractFtpDoorV1
             reply("504 ESTO Adjusted Store Mode does not work with nonzero offset: " + offset);
             return;
         }
-        info("FTP Door: performing esto in \"a\" mode with offset = " + offset);
+        _logger.info("Performing esto in \"a\" mode with offset = {}", offset);
         ac_stor(filename);
     }
 
@@ -2504,7 +2432,7 @@ public abstract class AbstractFtpDoorV1
             prm_offset = Long.parseLong(offset);
         } catch (NumberFormatException e) {
             String err = "501 ERET Partial Retrieve Mode: invalid offset " + offset;
-            error("FTP Door: " + err);
+            _logger.error(err);
             reply(err);
             return;
         }
@@ -2512,12 +2440,12 @@ public abstract class AbstractFtpDoorV1
             prm_size = Long.parseLong(size);
         } catch (NumberFormatException e) {
             String err = "501 ERET Partial Retrieve Mode: invalid size " + offset;
-            error("FTP Door: " + err);
+            _logger.error(err);
             reply(err);
             return;
         }
-        info("FTP Door: Performing eret in \"p\" mode " +
-             "with offset = " + offset + " size = " + size);
+        _logger.info("Performing eret in \"p\" mode with offset = {} size = {}",
+                     offset, size);
         ac_retr(filename);
     }
 
@@ -2611,8 +2539,8 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
             }
 
-            info("retrieve user=" + getUser());
-            info("retrieve addr=" + _engine.getInetAddress().toString());
+            _logger.info("retrieve user={}", getUser());
+            _logger.info("retrieve addr={}", _engine.getInetAddress());
 
             transfer.readNameSpaceEntry();
             transfer.createTransactionLog();
@@ -2633,14 +2561,14 @@ public abstract class AbstractFtpDoorV1
                         transfer.startMover(_ioQueueName);
                         break;
                     } catch (CacheException e) {
-                        error("Failed to create mover: " + e.getMessage());
+                        _logger.error("Failed to create mover: {}", e.getMessage());
                     }
                     retry++;
                     if (retry >= _maxRetries) {
                         throw new FTPCommandException(425, "Cannot open port: No pools available", "No pools available");
                     }
                     Thread.sleep(_retryWait*1000);
-                    info("retrieve retry attempt " + retry);
+                    _logger.info("retrieve retry attempt {}", retry);
                 }  //end of retry loop
             } finally {
                 _commandQueue.disableInterrupt();
@@ -2676,26 +2604,6 @@ public abstract class AbstractFtpDoorV1
             _checkSumFactory = null;
             _checkSum = null;
             _allo = 0;
-        }
-    }
-
-    private void setLength(PnfsId pnfsId, long length)
-    {
-        CellPath pnfsCellPath;
-        CellMessage pnfsCellMessage;
-        PnfsSetLengthMessage pnfsMessage;
-
-        pnfsCellPath = new CellPath(_pnfsManager);
-        pnfsMessage = new PnfsSetLengthMessage(pnfsId,length);
-        pnfsCellMessage = new CellMessage(pnfsCellPath, pnfsMessage);
-
-        debug("FTP Door: setLength setting length of file " + pnfsId +
-              " to " + length);
-
-        try {
-            sendMessage(pnfsCellMessage);
-        } catch (NoRouteToCellException e) {
-            error("FTP Door: setLength cannot send message " + e.getMessage());
         }
     }
 
@@ -2775,7 +2683,7 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(504, "Cannot use passive X mode");
             }
 
-            info("store receiving with mode " + xferMode);
+            _logger.info("store receiving with mode {}", xferMode);
 
             transfer.createNameSpaceEntry();
             transfer.createTransactionLog();
@@ -2892,11 +2800,11 @@ public abstract class AbstractFtpDoorV1
                 break;
             case CacheException.TIMEOUT:
                 reply("451 Internal timeout");
-                warn("Timeout in MDTM: " + e);
+                _logger.warn("Timeout in MDTM: {}", e);
                 break;
             default:
                 reply("451 Internal failure: " + e.getMessage());
-                error("Error in MDTM: " + e);
+                _logger.error("Error in MDTM: {}", e);
             }
         }
     }
@@ -2921,8 +2829,8 @@ public abstract class AbstractFtpDoorV1
             try {
                 socket.close();
             } catch (IOException e) {
-                warn("FTP Door: got I/O exception closing socket: " +
-                     e.getMessage());
+                _logger.warn("Got I/O exception closing socket: {}",
+                             e.getMessage());
             }
             _dataSocket = null;
         }
@@ -2949,7 +2857,7 @@ public abstract class AbstractFtpDoorV1
         File f = new File(absolutepath);
 
         try {
-
+            _commandQueue.enableInterrupt();
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -3000,12 +2908,14 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied");
         } catch (CacheException e){
             reply("451 Local error in processing");
-            warn("Error in LIST: " + e.getMessage());
+            _logger.warn("Error in LIST: {}", e.getMessage());
         } catch (EOFException e) {
             reply("426 Connection closed; transfer aborted");
         } catch (IOException e) {
             reply("451 Local error in processing");
-            warn("Error in LIST: " + e.getMessage());
+            _logger.warn("Error in LIST: {}", e.getMessage());
+        } finally {
+            _commandQueue.disableInterrupt();
         }
     }
 
@@ -3016,6 +2926,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
+            _commandQueue.enableInterrupt();
+
             /* 550 is not a valid reply for NLST. However other FTP
              * servers use this return code for NLST. Gerd and Timur
              * decided to follow their example and violate the spec.
@@ -3063,12 +2975,14 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied");
         } catch (CacheException e) {
             reply("451 Local error in processing");
-            warn("Error in NLST: " + e.getMessage());
+            _logger.warn("Error in NLST: {}", e.getMessage());
         } catch (EOFException e) {
             reply("426 Connection closed; transfer aborted");
         } catch (IOException e) {
             reply("451 Local error in processing");
-            warn("Error in NLST: " + e.getMessage());
+            _logger.warn("Error in NLST: {}", e.getMessage());
+        } finally {
+            _commandQueue.disableInterrupt();
         }
     }
 
@@ -3111,7 +3025,7 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied");
         } catch (CacheException e) {
             reply("451 Local error in processing");
-            warn("Error in MLST: " + e.getMessage());
+            _logger.warn("Error in MLST: {}", e.getMessage());
         }
     }
 
@@ -3123,6 +3037,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
+            _commandQueue.enableInterrupt();
+
             String path;
             if (arg.length() == 0) {
                 path = absolutePath(".") + "/";
@@ -3172,12 +3088,14 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied");
         } catch (CacheException e) {
             reply("451 Local error in processing");
-            warn("Error in MLSD: " + e.getMessage());
+            _logger.warn("Error in MLSD: {}", e.getMessage());
         } catch (EOFException e) {
             reply("426 Connection closed; transfer aborted");
         } catch (IOException e) {
             reply("451 Local error in processing");
-            warn("Error in MLSD: " + e.getMessage());
+            _logger.warn("Error in MLSD: {}", e.getMessage());
+        } finally {
+            _commandQueue.disableInterrupt();
         }
     }
 
@@ -3378,8 +3296,8 @@ public abstract class AbstractFtpDoorV1
                  */
                 sendMarker();
             } else {
-                error("FTP Door: PerfMarkerEngine got exception " +
-                      exception.getMessage());
+                _logger.error("PerfMarkerEngine got exception {}",
+                              exception.getMessage());
             }
         }
 
@@ -3407,21 +3325,20 @@ public abstract class AbstractFtpDoorV1
                 } else if (status.equals("W")) {
                     sendMarker();
                 } else {
-                    error("FTP Door: performance marker engine " +
-                          "received unexcepted status from mover: " + status);
+                    _logger.error("Performance marker engine received unexcepted status from mover: {}",
+                                  status);
                 }
             } else if (msg instanceof Exception) {
-                warn("FTP Door: performance marker engine: "
-                     + ((Exception)msg).getMessage());
+                _logger.warn("Performance marker engine: {}",
+                             ((Exception) msg).getMessage());
             } else if (msg instanceof String) {
                 /* Typically this is just an error message saying the
                  * mover is gone.
                  */
-                info("FTP Door: performance marker engine: "
-                     + msg.toString());
+                _logger.info("Performance marker engine: {}", msg);
             } else {
-                error("FTP Door: performance marker engine: "
-                      + msg.getClass().getName());
+                _logger.error("Performance marker engine: {}",
+                              msg.getClass().getName());
             }
         }
     }
@@ -3786,8 +3703,8 @@ public abstract class AbstractFtpDoorV1
 
             _billingStub.send(infoRemove);
         } catch (NoRouteToCellException e) {
-            error("Can't send remove message to " +
-                  "billing database: " + e.getMessage());
+            _logger.error("Can't send remove message to billing database: {}",
+                          e.getMessage());
         }
      }
 
@@ -4026,7 +3943,7 @@ public abstract class AbstractFtpDoorV1
          */
         private void printPermFact(FileAttributes parentAttr, FileAttributes attr)
         {
-            StringBuffer s = new StringBuffer();
+            StringBuilder s = new StringBuilder();
             if (attr.getFileType() == FileType.DIR) {
                 if (_pdp.canCreateFile(_subject, attr) == AccessType.ACCESS_ALLOWED) {
                     s.append('c');

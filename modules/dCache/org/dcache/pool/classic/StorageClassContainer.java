@@ -156,7 +156,7 @@ public class StorageClassContainer
      *  adds a CacheEntry to the list of HSM storage requests.
      */
     public synchronized boolean addCacheEntry(PnfsId id)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         CacheEntry entry = _repository.getEntry(id);
         String storageClass = entry.getStorageInfo().getStorageClass();
@@ -305,7 +305,8 @@ public class StorageClassContainer
     }
 
     public String hh_queue_ls_queue = " [-l]";
-    public String ac_queue_ls_queue(Args args) throws CacheException
+    public String ac_queue_ls_queue(Args args)
+        throws CacheException, InterruptedException
     {
         StringBuilder sb = new StringBuilder();
         boolean l = args.getOpt("l") != null;

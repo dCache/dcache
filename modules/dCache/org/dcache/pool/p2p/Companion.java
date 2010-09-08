@@ -342,8 +342,9 @@ class Companion
             challengeSize -= in.skipBytes(challengeSize);
         }
 
-        if (filesize != getFileSize(out, in)) {
-            throw new IOException("Remote file has incorrect size");
+        long remoteSize = getFileSize(out, in);
+        if (filesize != remoteSize) {
+            throw new IOException("Remote file has incorrect size [expected=" + filesize + ";actual=" + remoteSize + "]");
         }
 
         RandomAccessFile dataFile = new RandomAccessFile(file, "rw");

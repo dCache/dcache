@@ -36,7 +36,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     private final CellEndpoint   cell;
     private RemoteHttpDataTransferProtocolInfo remoteHttpProtocolInfo;
     private long starttime;
-    private long timeout_time;
     private URL remoteURL;
     private volatile long transfered  = 0;
     private boolean changed;
@@ -48,11 +47,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
     }
 
     private void say(String str){
-        _log.info(str.toString());
-    }
-
-    private void esay(String str){
-        _log.error(str.toString());
+        _log.info(str);
     }
 
     public void runIO(RandomAccessFile diskFile,
@@ -134,14 +129,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         return last_transfer_time;
     }
 
-    private synchronized void setTimeoutTime(long t)
-    {
-        timeout_time = t;
-    }
-    private synchronized long  getTimeoutTime()
-    {
-        return timeout_time;
-    }
     public void setAttribute(String name, Object attribute)
     {
     }

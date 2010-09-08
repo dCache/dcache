@@ -91,8 +91,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -512,7 +510,7 @@ public class RemoteGsiftpTransferProtocol_1
         {
             if (_source) {
                 String error = "DiskDataSourceSink is source and write is called";
-                _log.error(error.toString());
+                _log.error(error);
                 throw new IllegalStateException(error);
             }
 
@@ -568,7 +566,7 @@ public class RemoteGsiftpTransferProtocol_1
         {
             if (!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
-                _log.error(error.toString());
+                _log.error(error);
                 throw new IllegalStateException(error);
             }
 

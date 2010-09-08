@@ -774,7 +774,7 @@ public class HsmStorageHandler2
     }
 
     public synchronized boolean store(PnfsId pnfsId, CacheFileAvailable callback)
-        throws CacheException
+        throws CacheException, InterruptedException
     {
         assertInitialized();
 

@@ -43,7 +43,8 @@ public class RepositoryInterpreter
 
     public String hh_rep_set_sticky =
         "[-o=<owner>] [-l=<lifetime in ms>] <pnfsid> on|off";
-    public String ac_rep_set_sticky_$_2(Args args) throws CacheException
+    public String ac_rep_set_sticky_$_2(Args args)
+        throws CacheException, InterruptedException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         String state = args.argv(1);
@@ -70,7 +71,8 @@ public class RepositoryInterpreter
     }
 
     public String hh_rep_sticky_ls = "<pnfsid>";
-    public String ac_rep_sticky_ls_$_1(Args args) throws CacheException
+    public String ac_rep_sticky_ls_$_1(Args args)
+        throws CacheException, InterruptedException
     {
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         CacheEntry entry = _repository.getEntry(pnfsId);
@@ -132,18 +134,30 @@ public class RepositoryInterpreter
         final DelayedReply reply = new DelayedReply();
         Thread task = new Thread() {
                 void reply(Object o)
+                    throws InterruptedException
                 {
                     try {
                         reply.send(o);
                     } catch (NoRouteToCellException e) {
                         _log.error("Failed to send reply for 'rep ls': " + e);
-                    } catch (InterruptedException e) {
-                        _log.warn("Interrupted while sending reply: " + e);
-                        Thread.currentThread().interrupt();
                     }
                 }
 
                 public void run()
+                {
+                    try {
+                        try {
+                            reply(list());
+                        } catch (CacheException e) {
+                            reply(e);
+                        }
+                    } catch (InterruptedException e) {
+                        _log.warn("Interrupted while listing: " + e);
+                    }
+                }
+
+                private Object list()
+                    throws CacheException, InterruptedException
                 {
                     StringBuilder sb = new StringBuilder();
                     String stat = args.getOpt("s");
@@ -214,8 +228,7 @@ public class RepositoryInterpreter
                                 ex[1]  = map.get(ex[0]);
                                 result[i] = ex;
                             }
-                            reply(result);
-                            return;
+                            return result;
                         }
 
                         while (e2.hasNext()) {
@@ -269,7 +282,7 @@ public class RepositoryInterpreter
                             }
                         }
                     }
-                    reply(sb.toString());
+                    return sb.toString();
                 }
             };
         task.start();
@@ -297,6 +310,12 @@ public class RepositoryInterpreter
                             // File was deleted - no problem
                         } catch (IllegalTransitionException e) {
                             // File is transient - no problem
+                        } catch (CacheException e) {
+                            _log.error("File removal failed: " + e.getMessage());
+                        } catch (InterruptedException e) {
+                            _log.warn("File removal was interrupted: " +
+                                      e.getMessage());
+                            break;
                         }
                     }
                 }
@@ -332,7 +351,7 @@ public class RepositoryInterpreter
 
     public String hh_rep_set_precious = "<pnfsId>";
     public String ac_rep_set_precious_$_1(Args args)
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         _repository.setState(pnfsId, EntryState.PRECIOUS);
@@ -341,7 +360,7 @@ public class RepositoryInterpreter
 
     public String hh_rep_set_cached = "<pnfsId> # DON'T USE, Potentially dangerous";
     public String ac_rep_set_cached_$_1(Args args)
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         _repository.setState(pnfsId, EntryState.CACHED);
@@ -350,7 +369,7 @@ public class RepositoryInterpreter
 
     public String hh_rep_set_broken = "<pnfsid>";
     public String ac_rep_set_broken_$_1(Args args)
-        throws IllegalTransitionException
+        throws IllegalTransitionException, CacheException, InterruptedException
     {
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         _repository.setState(pnfsId, EntryState.BROKEN);

@@ -31,6 +31,19 @@
         <property name="timeout" value="${poolTimeout}"/>
     </bean>
 
+    <bean id="billing-stub" class="org.dcache.cells.CellStub">
+        <description>Billing communication stub</description>
+        <property name="destination" value="billing"/>
+    </bean>
+
+    <bean id="scheduled-thread-pool"
+        class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool"
+        destroy-method="shutdown">
+        <description>Thread pool for scheduled activities</description>
+        <constructor-arg value="1"/>
+    </bean>
+
     <bean id="poolManagerAdapter" class="org.dcache.poolmanager.PoolManagerAdapterProxy">
         <constructor-arg ref="poolManagerStub"/>
         <constructor-arg ref="pool-stub"/>
@@ -70,13 +83,31 @@
     </bean>
 
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
-        init-method="init">
+        init-method="init" destroy-method="destroy">
         <description>dCache implementation of NFSv4.1 MDS (door)</description>
         <property name="poolManagerStub" ref="poolManagerStub"/>
         <property name="poolManagerAdapter" ref="poolManagerAdapter"/>
+        <property name="billingStub" ref="billing-stub"/>
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="fileSystemProvider" ref="fileSystem"/>
         <property name="exportFile" ref="export" />
     </bean>
 
+    <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
+        init-method="start"
+        destroy-method="stop">
+        <description>Notifies LoginBroker </description>
+        <property name="executor" ref="scheduled-thread-pool"/>
+        <property name="updateTime" value="${loginBrokerUpdateTime}"/>
+        <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
+        <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
+        <property name="protocolVersion" value="4.1"/>
+        <property name="protocolFamily" value="nfs"/>
+        <property name="port" value="2049"/>
+        <property name="loginBroker">
+            <bean class="dmg.cells.nucleus.CellPath">
+                <constructor-arg value="${loginBroker}"/>
+            </bean>
+        </property>
+    </bean>
 </beans>

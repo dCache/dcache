@@ -112,7 +112,7 @@ public class       AclCell
               else if( command.equals( "get-metainfo" ) )
                   answer  =  acl_get_metainfo( request ) ;
               else
-                  new Exception( "Command not found : "+command ) ;
+                  throw new Exception( "Command not found : "+command ) ;
             }catch( Exception xe ){
                throw new Exception( "Problem : "+xe ) ;
             }

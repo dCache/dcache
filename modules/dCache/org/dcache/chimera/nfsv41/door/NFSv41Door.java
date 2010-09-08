@@ -3,14 +3,6 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
-import com.sun.grizzly.BaseSelectionKeyHandler;
-import com.sun.grizzly.Controller;
-import com.sun.grizzly.DefaultProtocolChain;
-import com.sun.grizzly.DefaultProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolChain;
-import com.sun.grizzly.ProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolFilter;
-import com.sun.grizzly.TCPSelectorHandler;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -22,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.security.auth.Subject;
 
 import org.dcache.xdr.OncRpcException;
 import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
@@ -30,14 +23,12 @@ import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.ExportFile;
-import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFS4Client;
 import org.dcache.chimera.nfs.v4.NFSv4StateHandler;
-import org.dcache.chimera.nfs.v4.NFS4IoDevice;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
 import org.dcache.chimera.nfs.v4.xdr.device_addr4;
 import org.dcache.chimera.nfs.v4.xdr.layoutiomode4;
@@ -46,36 +37,44 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
 import java.nio.ByteBuffer;
 import org.acplt.oncrpc.OncRpcPortmapClient;
+import org.acplt.oncrpc.OncRpcProtocols;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
+import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
+import org.dcache.chimera.nfs.v4.Layout;
 import org.dcache.chimera.nfs.v4.MDSOperationFactory;
-import org.dcache.chimera.nfs.v4.xdr.layouttype4;
+import org.dcache.chimera.nfs.v4.xdr.deviceid4;
+import org.dcache.chimera.nfs.v4.xdr.layout4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
-import org.dcache.chimera.nfsv41.Utils;
+import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
+import org.dcache.chimera.posix.AclHandler;
 import org.dcache.poolmanager.PoolManagerAdapter;
+import org.dcache.util.Transfer;
 import org.dcache.xdr.OncRpcProgram;
-import org.dcache.xdr.RpcDispatchable;
-import org.dcache.xdr.RpcDispatcher;
-import org.dcache.xdr.RpcParserProtocolFilter;
-import org.dcache.xdr.RpcProtocolFilter;
+import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrDecodingStream;
 
@@ -85,16 +84,22 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
+    static final int DEFAULT_PORT = 2049;
+
     /** dCache-friendly NFS device id to pool name mapping */
-    private Map<String, NFS4IoDevice> _poolNameToIpMap = new HashMap<String, NFS4IoDevice>();
+    private Map<String, PoolDS> _poolNameToIpMap = new HashMap<String, PoolDS>();
 
     /** All known devices */
-    private Map<DeviceID, NFS4IoDevice> _deviceMap = new HashMap<DeviceID, NFS4IoDevice>();
+    private Map<deviceid4, PoolDS> _deviceMap = new HashMap<deviceid4, PoolDS>();
 
     /** next device id, 0 reserved for MDS */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
+    /*
+     * reserved device for IO through MDS (for pnfs dot files)
+     */
+    private static final deviceid4 MDS_ID = deviceidOf(0);
 
-    private final Map<stateid4, PoolIoFileMessage> _ioMessages = new ConcurrentHashMap<stateid4, PoolIoFileMessage>();
+    private final Map<stateid4, Transfer> _ioMessages = new ConcurrentHashMap<stateid4, Transfer>();
 
     /**
      * The usual timeout for NFS ops. is 30s.
@@ -107,12 +112,13 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     /** request/reply mapping */
-    private final Map<stateid4, NFS4IoDevice> _requestReplyMap = new HashMap<stateid4, NFS4IoDevice>();
+    private final Map<stateid4, PoolDS> _requestReplyMap = new HashMap<stateid4, PoolDS>();
 
     /**
      * Cell communication helper.
      */
     private CellStub _poolManagerStub;
+    private CellStub _billingStub;
 
     /**
      * Communication with the PoolManager.
@@ -122,10 +128,15 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private PnfsHandler _pnfsHandler;
 
-    /**
-     * Grizzly thread controller
+    /*
+     * FIXME: The acl handler have to be initialize in spring xml file
      */
-    private Controller _controller;
+    private final AclHandler _aclHandler = org.dcache.chimera.posix.UnixPermissionHandler.getInstance();
+
+    /**
+     * RPC service
+     */
+    private  OncRpcSvc _rpcService;
 
     public void setPoolManagerStub(CellStub stub)
     {
@@ -156,83 +167,42 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         final NFSv41DeviceManager _dm = this;
 
-        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
+        _rpcService = new OncRpcSvc(DEFAULT_PORT);
 
-        new Thread("NFSv4.1 Door Thread") {
-            @Override
-            public void run() {
-                try {
-                    NFSServerV41 nfs4 = new NFSServerV41( new MDSOperationFactory(),
-                            _dm, _fileFileSystemProvider, _exportFile );
+        NFSServerV41 nfs4 = new NFSServerV41(new MDSOperationFactory(),
+                _dm, _aclHandler, _fileFileSystemProvider, _exportFile);
+        MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
-                    new OncRpcEmbeddedPortmap(2000);
+        OncRpcPortmapClient portmap = new OncRpcPortmapClient(InetAddress.getByName("127.0.0.1"));
+        portmap.getOncRpcClient().setTimeout(2000);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv1 service within portmap.");
+        }
 
-                    OncRpcPortmapClient portmap = new OncRpcPortmapClient(InetAddress.getByName("127.0.0.1"));
-                    portmap.getOncRpcClient().setTimeout(2000);
-                    portmap.setPort(100005, 3, 6, 2049);
-                    portmap.setPort(100005, 1, 6, 2049);
-                    portmap.setPort(100003, 4, 6, 2049);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3, OncRpcProtocols.ONCRPC_UDP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv1 service within portmap.");
+        }
 
-                    MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V1, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv3 service within portmap.");
+        }
 
-                    programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), nfs4);
-                    programs.put(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V1, OncRpcProtocols.ONCRPC_UDP, DEFAULT_PORT)) {
+            _log.error("Failed to register mountv3 service within portmap.");
+        }
 
-                    final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
-                    final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
-                    final ProtocolFilter rpcDispatcher = new RpcDispatcher(programs);
+        if (!portmap.setPort(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
+            _log.error("Failed to register NFSv4 service within portmap.");
+        }
 
-                    _controller = new Controller();
-                    final TCPSelectorHandler tcp_handler = new TCPSelectorHandler();
-                    tcp_handler.setPort(2049);
-                    tcp_handler.setSelectionKeyHandler(new BaseSelectionKeyHandler());
+        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), nfs4);
+        _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+        _rpcService.start();
 
-                    _controller.addSelectorHandler(tcp_handler);
-                    _controller.setReadThreadsCount(5);
+    }
 
-                    final ProtocolChain protocolChain = new DefaultProtocolChain();
-                    protocolChain.addFilter(rpcFilter);
-                    protocolChain.addFilter(rpcProcessor);
-                    protocolChain.addFilter(rpcDispatcher);
-
-                    ((DefaultProtocolChain) protocolChain).setContinuousExecution(true);
-
-                    ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
-
-                        @Override
-                        public ProtocolChain poll() {
-                            return protocolChain;
-                        }
-
-                        @Override
-                        public boolean offer(ProtocolChain pc) {
-                            return false;
-                        }
-                    };
-
-                    _controller.setProtocolChainInstanceHandler(pciHandler);
-
-                    try {
-                        _controller.start();
-                    } catch (IOException e) {
-                        _log.error("Exception in controller...", e);
-                    }
-
-                } catch (org.acplt.oncrpc.OncRpcException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                } catch (OncRpcException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                } catch (IOException e) {
-                    // TODO: kill the cell
-                    _log.error(e.toString());
-                }
-
-            }
-
-        }.start();
-
+    public void destroy() {
+        _rpcService.stop();
     }
 
     /*
@@ -249,10 +219,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         _log.debug("NFS mover ready: {}", poolName);
 
         InetSocketAddress poolAddress = message.socketAddress();
-        NFS4IoDevice device = _poolNameToIpMap.get(poolName);
+        PoolDS device = _poolNameToIpMap.get(poolName);
 
         try {
-            if (device == null || !getSocketAddress(device).equals(poolAddress)) {
+            if (device == null || !device.getInetSocketAddress().equals(poolAddress)) {
                 /* pool is unknown yet or has been restarted so create new device and device-id */
                 int id = this.nextDeviceID();
 
@@ -260,27 +230,19 @@ public class NFSv41Door extends AbstractCellComponent implements
                     /*
                      * clean stale entry
                      */
-                    DeviceID oldId = device.getDeviceId();
+                    deviceid4 oldId = device.getDeviceId();
                     _deviceMap.remove(oldId);
                 }
                 /*
                  * TODO: the PoolPassiveIoFileMessage have to be adopted to send list
                  * of all interfaces
                  */
-                InetSocketAddress[] addresses = new InetSocketAddress[1];
-                addresses[0] = poolAddress;
-                device_addr4 deviceAddr = DeviceManager.deviceAddrOf(addresses);
-                DeviceID deviceID = DeviceID.valueOf(id);
-                device = new NFS4IoDevice(deviceID, deviceAddr);
+                deviceid4 deviceid = deviceidOf(id);
+                device = new PoolDS(deviceidOf(id), poolAddress);
+
                 _poolNameToIpMap.put(poolName, device);
-                _deviceMap.put(deviceID, device);
-                _log.debug("pool {} mapped to deviceid {} {} inet: {}",
-                        new Object[]{
-                            poolName,
-                            deviceID,
-                            message.getId(),
-                            poolAddress
-                        });
+                _deviceMap.put(deviceid, device);
+                _log.debug("new mapping: {}", device);
             }
 
             XdrDecodingStream xdr = new XdrBuffer(ByteBuffer.wrap(message.challange()));
@@ -290,6 +252,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             stateid.xdrDecode(xdr);
             xdr.endDecoding();
 
+            Transfer transfer = _ioMessages.get(stateid);
+            transfer.setPool(poolName);
             synchronized (_requestReplyMap) {
                 _requestReplyMap.put(stateid, device);
                 _requestReplyMap.notifyAll();
@@ -311,7 +275,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
-        _ioMessages.remove(protocolInfo.stateId());
+        Transfer transfer = _ioMessages.remove(protocolInfo.stateId());
+        if(transfer != null) {
+            transfer.finished(transferFinishedMessage);
+            transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
+        }
     }
 
     private int nextDeviceID() {
@@ -336,10 +304,17 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     @Override
-    public NFS4IoDevice getIoDevice(DeviceID deviceId) {
+    public device_addr4 getDeviceInfo(NFS4Client client, deviceid4 deviceId) {
+        /* in case of MDS access we return the same interface which client already connected to */
+        if (deviceId.equals(MDS_ID)) {
+            return DeviceManager.deviceAddrOf(client.getLocalAddress());
+        }
 
-        return _deviceMap.get(deviceId);
-
+        PoolDS ds = _deviceMap.get(deviceId);
+        if( ds == null) {
+            return null;
+        }
+        return ds.getDeviceAddr();
     }
 
     /**
@@ -352,18 +327,45 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @throws IOException in case of any other errors
      */
     @Override
-    public NFS4IoDevice getIoDevice(FsInode inode, int ioMode, InetAddress clientIp, stateid4 stateid)
+    public Layout layoutGet(FsInode inode, int ioMode, NFS4Client client, stateid4 stateid)
             throws IOException {
 
         try {
-            PnfsId pnfsId = new PnfsId(inode.toString());
-            StorageInfo storageInfo = _pnfsHandler.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
+            deviceid4 deviceid;
+            if (inode.type() != FsInodeType.INODE) {
+                /*
+                 * all non regular files ( AKA pnfs dot files ) provided by door itself.
+                 */
+                deviceid = MDS_ID;
+            } else {
+                PnfsId pnfsId = new PnfsId(inode.toString());
+                StorageInfo storageInfo = _pnfsHandler.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
 
-            NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(clientIp, stateid);
-            protocolInfo.door(new CellPath(this.getCellName(), this
-                    .getCellDomainName()));
+                NFS4ProtocolInfo protocolInfo =
+                        new NFS4ProtocolInfo(client.getRemoteAddress().getAddress(), stateid);
+                protocolInfo.door(new CellPath(this.getCellName(), this.getCellDomainName()));
 
-            return getNFSMover(pnfsId, storageInfo, protocolInfo, ioMode);
+                Transfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"));
+                transfer.setCellName(this.getCellName());
+                transfer.setDomainName(this.getCellDomainName());
+                transfer.setBillingStub(_billingStub);
+                transfer.setPoolStub(_poolManagerStub);
+                transfer.setPnfsId(pnfsId);
+                transfer.setStorageInfo(storageInfo);
+                transfer.setClientAddress(client.getRemoteAddress());
+                _ioMessages.put(protocolInfo.stateId(), transfer);
+
+                PoolDS ds = getPool(transfer, protocolInfo, ioMode);
+                deviceid = ds.getDeviceId();
+            }
+
+            nfs_fh4 fh = new nfs_fh4(inode.toFullString().getBytes());
+
+            //  -1 is special value, which means entire file
+            layout4 layout = Layout.getLayoutSegment(deviceid, fh, ioMode,
+                    0, nfs4_prot.NFS4_UINT64_MAX);
+
+            return new Layout(true, stateid, new layout4[]{layout});
 
         } catch (InterruptedException e) {
             throw new IOException(e.getMessage());
@@ -374,20 +376,23 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     }
 
-    private NFS4IoDevice getNFSMover(PnfsId pnfsId, StorageInfo storageInfo,
-            NFS4ProtocolInfo protocolInfo, int iomode) throws InterruptedException, IOException {
+    private PoolDS getPool(Transfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
+            throws InterruptedException, IOException {
 
-        PoolIoFileMessage poolIOMessage = null;
+        PoolIoFileMessage poolIOMessage;
         try {
 
-            if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !storageInfo.isCreatedOnly()) {
-                _log.debug("looking for read pool for {}", pnfsId);
-                poolIOMessage = _poolManagerAdapter.readFile(pnfsId, storageInfo, protocolInfo, _poolManagerStub.getTimeout());
+            if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
+                _log.debug("looking for read pool for {}", transfer.getPnfsId());
+                poolIOMessage = _poolManagerAdapter.readFile(transfer.getPnfsId(),
+                        transfer.getStorageInfo(), protocolInfo, _poolManagerStub.getTimeout());
             } else {
-                _log.debug("looking for write pool for {}", pnfsId);
-                poolIOMessage = _poolManagerAdapter.writeFile(pnfsId, storageInfo, protocolInfo, _poolManagerStub.getTimeout());
+                _log.debug("looking for write pool for {}", transfer.getPnfsId());
+                poolIOMessage = _poolManagerAdapter.writeFile(transfer.getPnfsId(),
+                        transfer.getStorageInfo(), protocolInfo, _poolManagerStub.getTimeout());
             }
 
+            transfer.setMoverId(poolIOMessage.getMoverId());
         } catch (NoRouteToCellException ex) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_RESOURCE, ex.getMessage());
 
@@ -396,7 +401,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
         _log.debug("mover ready: pool={} moverid={}", poolIOMessage.getPoolName(),
                 poolIOMessage.getMoverId());
-        _ioMessages.put( protocolInfo.stateId(), poolIOMessage);
+
 
             /*
              * FIXME;
@@ -406,7 +411,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * or GRACE.
              *
              */
-        NFS4IoDevice device;
+        PoolDS device;
         stateid4 stateid = protocolInfo.stateId();
         int timeToWait = NFS_REPLY_TIMEOUT;
         synchronized (_requestReplyMap) {
@@ -424,28 +429,18 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         _log.debug("request: {} : received device: {}", stateid, device.getDeviceId());
-
         return device;
     }
 
     @Override
-    public List<NFS4IoDevice> getIoDeviceList() {
-        List<NFS4IoDevice> knownDevices = new ArrayList<NFS4IoDevice>();
+    public List<deviceid4> getDeviceList(NFS4Client client) {
+        List<deviceid4> knownDevices = new ArrayList<deviceid4>();
 
-        knownDevices.addAll(_deviceMap.values());
+        knownDevices.addAll(_deviceMap.keySet());
 
         return knownDevices;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#addIoDevice(NFS4IoDevice device, int ioMode)
-     */
-    @Override
-    public void addIoDevice(NFS4IoDevice device, int ioMode) {
-        _deviceMap.put(device.getDeviceId(), device);
-    }
 
     /*
      * (non-Javadoc)
@@ -453,53 +448,22 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @see org.dcache.chimera.nfsv4.NFSv41DeviceManager#releaseDevice(stateid4 stateid)
      */
     @Override
-    public void releaseDevice(stateid4 stateid) {
+    public void  layoutReturn(NFS4Client client, stateid4 stateid) {
 
         _log.debug("Releasing device by stateid: {}", stateid);
 
-        PoolIoFileMessage poolIoFileMessage = _ioMessages.remove(stateid);
-        if (poolIoFileMessage != null) {
+        Transfer transfer = _ioMessages.get(stateid);
+        if (transfer != null) {
 
-            PoolMoverKillMessage message =
-                    new PoolMoverKillMessage(poolIoFileMessage.getPoolName(),
-                    poolIoFileMessage.getMoverId());
+            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(),
+                transfer.getPool() );
 
-            _log.debug("Sending KILL to {}@{}", poolIoFileMessage.getMoverId(),
-                poolIoFileMessage.getPoolName() );
-
-            try {
-                _poolManagerStub.send(new CellPath(poolIoFileMessage.getPoolName()),
-                                      message);
-            } catch (NoRouteToCellException e) {
-                _log.error("Failed to kill mover: {}", e.getMessage());
-            }
-
+            transfer.killMover(5000);
         }else{
             _log.warn("Can't find mover by stateid: {}", stateid);
         }
     }
 
-    /**
-     * Get {@link InetSocketAddress} connected to particular device.
-     * TODO: this code have to go back into NFSv4.1 server code
-     * @param device
-     * @return address of the device
-     * @throws UnknownHostException
-     * @throws OncRpcException
-     * @throws IOException
-     * @throws IllegalArgumentException if device type is not NfsFileLyaout type
-     */
-    InetSocketAddress getSocketAddress(NFS4IoDevice device) throws UnknownHostException, OncRpcException, IOException {
-
-        device_addr4 addr = device.getDeviceAddr();
-        if( addr.da_layout_type != layouttype4.LAYOUT4_NFSV4_1_FILES ) {
-            throw new IllegalArgumentException("Unsupported layout type: " +addr.da_layout_type );
-        }
-
-        nfsv4_1_file_layout_ds_addr4 file_layout = Utils.decodeFileDevice(device.getDeviceAddr().da_addr_body);
-        return Utils.device2Address(file_layout.nflda_multipath_ds_list[0].value[0].na_r_addr);
-
-    }
 
     /**
      * Gets the generic PoolManagerAdapter to handle read and write request
@@ -517,6 +481,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         this._poolManagerAdapter = poolManagerAdapter;
     }
 
+    public void setBillingStub(CellStub stub) {
+        _billingStub = stub;
+    }
+
     /*
      * Cell specific
      */
@@ -524,17 +492,16 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void getInfo(PrintWriter pw) {
 
         pw.println("NFSv4.1 door (MDS):");
-        pw.println( String.format("  Concurrent Thread number : %d", _controller.getReadThreadsCount() ));
-        pw.println( String.format("  Thread pool              : %s", _controller.getThreadPool() ));
+        pw.println( String.format("  Concurrent Thread number : %d", _rpcService.getThreadCount() ));
         pw.println("  Known pools (DS):\n");
-        for(Map.Entry<String, NFS4IoDevice> ioDevice: _poolNameToIpMap.entrySet()) {
+        for(Map.Entry<String, PoolDS> ioDevice: _poolNameToIpMap.entrySet()) {
             pw.println( String.format("    %s : %s", ioDevice.getKey(),ioDevice.getValue() ));
         }
 
         pw.println();
         pw.println("  Known movers (layouts):");
-        for(PoolIoFileMessage io: _ioMessages.values()) {
-            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPoolName() ));
+        for(Transfer io: _ioMessages.values()) {
+            pw.println( String.format("    %s : %s@%s", io.getPnfsId(), io.getMoverId(), io.getPool() ));
         }
 
         pw.println();
@@ -558,7 +525,105 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public static final String hh_set_thread_count = " <count> # set number of threads for processing NFS requests";
     public String ac_set_thread_count_$_1(Args args) throws Exception {
-        _controller.setReadThreadsCount(Integer.valueOf(args.argv(0)));
-        return "Thread count: " + _controller.getReadThreadsCount();
+        _rpcService.setThreadCount(Integer.valueOf(args.argv(0)));
+        return "Thread count: " + _rpcService.getThreadCount();
+    }
+
+    private static deviceid4 deviceidOf(int id) {
+        return new deviceid4(id2deviceid(id));
+    }
+
+    private static byte[] id2deviceid(int id) {
+
+        byte[] buf = Integer.toString(id).getBytes();
+        byte[] devData = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
+
+        int len = Math.min(buf.length, nfs4_prot.NFS4_DEVICEID4_SIZE);
+        System.arraycopy(buf, 0, devData, 0, len);
+
+        return devData;
+    }
+
+    private static class PoolDS {
+
+        private final deviceid4 _deviceId;
+        private final InetSocketAddress _socketAddress;
+        private final device_addr4 _deviceAddr;
+
+        public PoolDS(deviceid4 deviceId, InetSocketAddress ip) {
+            _deviceId = deviceId;
+            _socketAddress = ip;
+            _deviceAddr = DeviceManager.deviceAddrOf(ip);
+        }
+
+        public deviceid4 getDeviceId() {
+            return _deviceId;
+        }
+
+        public InetSocketAddress getInetSocketAddress() {
+            return _socketAddress;
+        }
+
+        public device_addr4 getDeviceAddr() {
+            return _deviceAddr;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("DS: %s, InetAddress: %s",
+                    _deviceId, _socketAddress);
+        }
+    }
+
+    private static class NfsTransfer extends Transfer {
+
+        public NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
+            super(pnfs, subject, path);
+        }
+
+        @Override
+        protected ProtocolInfo createProtocolInfoForPoolManager() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        protected ProtocolInfo createProtocolInfoForPool() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+    }
+
+    /**
+     * To allow the transfer monitoring in the httpd cell to recognize us
+     * as a door, we have to emulate LoginManager.  To emulate
+     * LoginManager we list ourselves as our child.
+     */
+    public final static String hh_get_children = "[-binary]";
+
+    public Object ac_get_children(Args args) {
+        boolean binary = args.getOpt("binary") != null;
+        if (binary) {
+            String[] childrens = new String[]{this.getCellName()};
+            return new LoginManagerChildrenInfo(this.getCellName(), this.getCellDomainName(), childrens);
+        } else {
+            return this.getCellName();
+        }
+    }
+    public final static String hh_get_door_info = "[-binary]";
+    public final static String fh_get_door_info =
+            "Provides information about the door and current transfers";
+
+    public Object ac_get_door_info(Args args) {
+        List<IoDoorEntry> entries = new ArrayList<IoDoorEntry>();
+        for (Transfer transfer : _ioMessages.values()) {
+            entries.add(transfer.getIoDoorEntry());
+        }
+
+        IoDoorInfo doorInfo = new IoDoorInfo(this.getCellName(), this.getCellDomainName());
+        doorInfo.setProtocol("NFSV4.1", "0");
+        doorInfo.setOwner("");
+        doorInfo.setProcess("");
+        doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
+        return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
     }
 }

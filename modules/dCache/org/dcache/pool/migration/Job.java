@@ -10,6 +10,7 @@ import org.dcache.pool.repository.StickyRecord;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
@@ -34,7 +35,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.io.PrintWriter;
 
-import org.apache.commons.jexl2.Expression;
+import org.dcache.util.expression.Expression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,6 +125,8 @@ public class Job
                         _context.getRepository().addListener(Job.this);
                         populate();
                         state = State.RUNNING;
+                    } catch (InterruptedException e) {
+                        _log.error("Migration job was interrupted");
                     } finally {
                         setState(state);
                     }
@@ -215,6 +218,7 @@ public class Job
      * the job.
      */
     private void populate()
+        throws InterruptedException
     {
         try {
             Repository repository = _context.getRepository();
@@ -242,6 +246,8 @@ public class Job
                 } catch (FileNotInCacheException e) {
                     // File was removed before we got to it - not a
                     // problem.
+                } catch (CacheException e) {
+                    _log.error("Failed to load entry: " + e.getMessage());
                 }
             }
         } catch (IllegalStateException e) {
@@ -448,6 +454,16 @@ public class Job
                     task.run();
                 } catch (FileNotInCacheException e) {
                     continue;
+                } catch (CacheException e) {
+                    _log.error("Migration job failed to read entry: " +
+                               e.getMessage());
+                    setState(State.FAILED);
+                    break;
+                } catch (InterruptedException e) {
+                    _log.error("Migration job was interrupted: " +
+                               e.getMessage());
+                    setState(State.FAILED);
+                    break;
                 }
             }
         }
@@ -509,19 +525,15 @@ public class Job
         if (event.getNewState() == EntryState.REMOVED) {
             remove(pnfsId);
         } else {
-            try {
-                CacheEntry entry = repository.getEntry(pnfsId);
-                if (!accept(entry)) {
-                    synchronized (this) {
-                        if (!_running.containsKey(pnfsId)) {
-                            remove(pnfsId);
-                        }
+            CacheEntry entry = event.getEntry();
+            if (!accept(entry)) {
+                synchronized (this) {
+                    if (!_running.containsKey(pnfsId)) {
+                        remove(pnfsId);
                     }
-                } else if (_definition.isPermanent) {
-                    add(entry);
                 }
-            } catch (FileNotInCacheException e) {
-                remove(pnfsId);
+            } else if (_definition.isPermanent) {
+                add(entry);
             }
         }
     }
@@ -594,13 +606,13 @@ public class Job
 
     /** Apply sticky flags to file. */
     private void applySticky(PnfsId pnfsId, List<StickyRecord> records)
-        throws FileNotInCacheException
+        throws CacheException, InterruptedException
     {
         for (StickyRecord record: records) {
             _context.getRepository().setSticky(pnfsId,
-                                                     record.owner(),
-                                                     record.expire(),
-                                                     true);
+                                               record.owner(),
+                                               record.expire(),
+                                               true);
         }
     }
 
@@ -682,8 +694,15 @@ public class Job
             }
         } catch (FileNotInCacheException e) {
             // File got remove before we could update it. TODO: log it
+        } catch (CacheException e) {
+            _log.error("Migration job failed to update source mode: " +
+                       e.getMessage());
+            setState(State.FAILED);
         } catch (IllegalTransitionException e) {
             // File is likely about to be removed. TODO: log it
+        } catch (InterruptedException e) {
+            _log.error("Migration job was interrupted");
+            setState(State.FAILED);
         }
     }
 
@@ -695,26 +714,16 @@ public class Job
             throw new RuntimeException("Bug detected: Source pool information was unavailable");
         }
 
-        MapContextWithConstants context = new MapContextWithConstants();
-        context.addConstant(MigrationModule.CONSTANT_SOURCE,
-                            new PoolValues(sourceInformation.get(0)));
-        context.addConstant(MigrationModule.CONSTANT_QUEUE_FILES,
-                            _queued.size());
-        context.addConstant(MigrationModule.CONSTANT_QUEUE_BYTES,
-                            _statistics.getTotal() - _statistics.getCompleted());
-        context.addConstant(MigrationModule.CONSTANT_TARGETS,
-                            _definition.poolList.getPools().size());
-
-        Object result = expression.evaluate(context);
-        if (result == null || !result.getClass().equals(Boolean.class)) {
-            /* We ought to fail the job, but that's not so easy within
-             * the current structure. REVISIT
-             */
-            _log.error(expression.getExpression() +
-                       ": The expression does not evaluate to a boolean");
-        }
-
-        return !Boolean.FALSE.equals(result);
+        SymbolTable symbols = new SymbolTable();
+        symbols.put(MigrationModule.CONSTANT_SOURCE,
+                    sourceInformation.get(0));
+        symbols.put(MigrationModule.CONSTANT_QUEUE_FILES,
+                    _queued.size());
+        symbols.put(MigrationModule.CONSTANT_QUEUE_BYTES,
+                    _statistics.getTotal() - _statistics.getCompleted());
+        symbols.put(MigrationModule.CONSTANT_TARGETS,
+                    _definition.poolList.getPools().size());
+        return expression.evaluateBoolean(symbols);
     }
 
     protected class LoggingTask implements Runnable

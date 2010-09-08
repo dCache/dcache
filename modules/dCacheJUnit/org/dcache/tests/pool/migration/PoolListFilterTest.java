@@ -1,6 +1,7 @@
 package org.dcache.tests.pool.migration;
 
 import org.junit.Test;
+import org.junit.Before;
 import static org.junit.Assert.*;
 
 import org.dcache.pool.migration.PoolListFilter;
@@ -18,13 +19,18 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.Expression;
+import org.parboiled.Parboiled;
+import org.parboiled.BasicParseRunner;
+import org.parboiled.support.ParsingResult;
+
+import org.dcache.util.expression.Expression;
+import org.dcache.util.expression.ExpressionParser;
+import org.dcache.util.expression.TypeMismatchException;
+import org.dcache.util.expression.UnknownIdentifierException;
+import org.dcache.pool.migration.SymbolTable;
 
 public class PoolListFilterTest
 {
-    private final static JexlEngine jexl = new JexlEngine();
-
     private final PoolManagerPoolInformation POOL1 =
         createPool("pool1", 0.5, 0.5);
     private final PoolManagerPoolInformation POOL2 =
@@ -34,6 +40,16 @@ public class PoolListFilterTest
 
     private final PoolManagerPoolInformation SOURCE =
         createPool("source", 0.5, 0.5);
+
+    private SymbolTable symbols;
+
+    @Before
+    public void setup()
+    {
+        symbols = new SymbolTable();
+        symbols.put("source", POOL1);
+        symbols.put("target", POOL1);
+    }
 
     @Test
     public void testExclude()
@@ -170,9 +186,24 @@ public class PoolListFilterTest
         assertDoesNotContainPool(POOL3, result);
     }
 
-    private static Expression createExpression(String s)
+    private Expression createExpression(String s)
     {
-        return (s == null) ? null : jexl.createExpression(s);
+        if (s == null) {
+            return null;
+        }
+
+        ExpressionParser parser =
+            Parboiled.createParser(ExpressionParser.class);
+        ParsingResult<Expression> result =
+            BasicParseRunner.run(parser.Top(), s);
+        try {
+            result.resultValue.check(symbols);
+        } catch (TypeMismatchException e) {
+            fail(e.toString());
+        } catch (UnknownIdentifierException e) {
+            fail(e.toString());
+        }
+        return result.resultValue;
     }
 
     private static PoolManagerPoolInformation
@@ -194,7 +225,7 @@ public class PoolListFilterTest
         return patterns;
     }
 
-    private static PoolListFilter
+    private PoolListFilter
         createFilter(RefreshablePoolList list,
                      String exclude, String excludeWhen,
                      String include, String includeWhen,

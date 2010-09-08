@@ -1,12 +1,11 @@
 package org.dcache.xrootd2.core;
 
-import org.jboss.netty.channel.SimpleChannelHandler;
-
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 
 import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
@@ -22,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * may override handler methods to implement request handling.
  */
 @ChannelPipelineCoverage("all")
-public class XrootdRequestHandler extends SimpleChannelHandler
+public class XrootdRequestHandler extends IdleStateAwareChannelHandler
 {
     private final static Logger _log =
         LoggerFactory.getLogger(XrootdRequestHandler.class);
