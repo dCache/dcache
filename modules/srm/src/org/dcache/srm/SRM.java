@@ -104,6 +104,8 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.request.sql.DatabaseJobStorageFactory;
+import org.dcache.srm.scheduler.FinalStateOnlyJobStorageFactoryDecorator;
+import org.dcache.srm.scheduler.NoopJobStorageFactory;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.request.RequestCredential;
@@ -285,18 +287,30 @@ public class SRM {
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
         SchedulerFactory.initSchedulerFactory(config, name);
+        if(configuration.isJdbcEnabled()) {
+            if(configuration.isJdbcSaveCompletedRequestsOnly()) {
+                JobStorageFactory.initJobStorageFactory(
+                        new FinalStateOnlyJobStorageFactoryDecorator (
+                            new DatabaseJobStorageFactory(configuration)));
 
-         JobStorageFactory.initJobStorageFactory(
-                  new DatabaseJobStorageFactory(configuration));
+            } else {
+                JobStorageFactory.initJobStorageFactory(
+                          new DatabaseJobStorageFactory(configuration));
+            }
 
-        if (configuration.isVacuum()) {
-            logger.debug("starting vacuum thread");
-            org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
-                    configuration.getJdbcClass(), configuration.getJdbcUser(),
-                    configuration.getJdbcPass());
-            pool.startVacuumThread(configuration.getVacuum_period_sec() * 1000);
+            if (configuration.isVacuum()) {
+                logger.debug("starting vacuum thread");
+                org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
+                        configuration.getJdbcClass(), configuration.getJdbcUser(),
+                        configuration.getJdbcPass());
+                pool.startVacuumThread(configuration.getVacuum_period_sec() * 1000);
+            }
+
+        } else {
+             JobStorageFactory.initJobStorageFactory(
+                     new NoopJobStorageFactory());
+
         }
-
         host = java.net.InetAddress.getLocalHost();
 
         configuration.addSrmHost(host.getCanonicalHostName());

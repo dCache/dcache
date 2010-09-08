@@ -241,6 +241,7 @@ public class Configuration {
     private boolean removeDirectory=false;
     private boolean removeFile=false;
     private boolean saveMemory=false;
+    private boolean jdbcEnabled=true;
     private String jdbcUrl;
     private String jdbcClass;
     private String jdbcUser;
@@ -277,6 +278,7 @@ public class Configuration {
     private String gaugeRrdDirectory = null;
     private String srmCounterRrdDirectory = null;
     private String srmGaugeRrdDirectory = null;
+    private boolean jdbcSaveCompletedRequestsOnly = false;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1317,9 +1319,11 @@ public class Configuration {
         sb.append("\n\tuseHttpForSrmCopy=").append(this.useHttpForSrmCopy);
         sb.append("\n\tuseDcapForSrmCopy=").append(this.useDcapForSrmCopy);
         sb.append("\n\tuseFtpForSrmCopy=").append(this.useFtpForSrmCopy);
+        sb.append("\n\tjdbcEnabled=").append(this.jdbcEnabled);
         sb.append("\n\tjdbcUrl=").append(this.jdbcUrl);
         sb.append("\n\tjdbcClass=").append(this.jdbcClass);
         sb.append("\n\tjdbcUser=").append(this.jdbcUser);
+        sb.append("\n\tjdbcSaveCompletedRequestsOnly=").append(this.jdbcSaveCompletedRequestsOnly);
         for(int i = 0; i<this.protocols.length; ++i) {
             sb.append("\n\tprotocols["+i+"]=").append(this.protocols[i]);
         }
@@ -2798,6 +2802,34 @@ public class Configuration {
      */
     public void setSrmHost(String srmHost) {
         this.srmHost = srmHost;
+    }
+
+    /**
+     * @return the jdbcSaveCompletedRequestsOnly
+     */
+    public boolean isJdbcSaveCompletedRequestsOnly() {
+        return jdbcSaveCompletedRequestsOnly;
+    }
+
+    /**
+     * @param jdbcSaveCompletedReqeustsOnly the jdbcSaveCompletedRequestsOnly to set
+     */
+    public void setJdbcSaveCompletedRequestsOnly(boolean jdbcSaveCompletedReqeustsOnly) {
+        this.jdbcSaveCompletedRequestsOnly = jdbcSaveCompletedReqeustsOnly;
+    }
+
+    /**
+     * @return the jdbcEnabled
+     */
+    public boolean isJdbcEnabled() {
+        return jdbcEnabled;
+    }
+
+    /**
+     * @param jdbcEnabled the jdbcEnabled to set
+     */
+    public void setJdbcEnabled(boolean jdbcEnabled) {
+        this.jdbcEnabled = jdbcEnabled;
     }
 
 

@@ -715,6 +715,13 @@ public final class Storage
         config.setSrmCounterRrdDirectory(getOption("srmCounterRrdDirectory",config.getSrmCounterRrdDirectory()));
         config.setSrmGaugeRrdDirectory(getOption("srmGaugeRrdDirectory",config.getSrmGaugeRrdDirectory()));
 
+        config.setJdbcSaveCompletedRequestsOnly(
+                isOptionSetToTrueOrYes("jdbc-save-completed-requests-only",
+                config.isJdbcSaveCompletedRequestsOnly()));
+
+        config.setJdbcEnabled(
+                isOptionSetToTrueOrYes("jdbc-enabled",
+                config.isJdbcEnabled()));
 
         _log.info("scheduler parameter read, starting");
 

@@ -161,7 +161,10 @@
       -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
       -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
       -ls-request-switch-to-asynchronous-mode-delay=${srmLsRequestSwitchToAsynchronousModeDelay}
-      -client-dns-lookup=${srmClientDNSLookup}"/>
+      -client-dns-lookup=${srmClientDNSLookup}
+      -jdbc-save-completed-requests-only=${srmJdbcSaveCompletedRequestsOnly}
+      -jdbc-enabled=${srmJdbcEnabled}
+"/>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>
   </bean>

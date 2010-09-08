@@ -187,6 +187,8 @@ set context -c srmJdbcMonitoringLogEnabled false
 # length of the queue
 set context -c srmJdbcExecutionThreadNum 5
 set context -c srmMaxNumberOfJdbcTasksInQueue 1000
+set context -c srmJdbcSaveCompletedRequestsOnly false
+set context -c srmJdbcEnabled true
 
 
 # if the srm is restarted and there are pending requests
@@ -329,6 +331,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmOldRequestRemovalPeriodSeconds=${srmOldRequestRemovalPeriodSeconds} \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
+        -jdbc-save-completed-requests-only=${srmJdbcSaveCompletedRequestsOnly} \
         -useLoginService=${useLoginService} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
