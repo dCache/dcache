@@ -1,7 +1,7 @@
 onerror continue
 
 eval ${domain.name} ${broker.domain} ==
-exec file:${dcache.home}/share/cells/lmd.fragment -ifok
+exec file:${dcache.paths.share}/cells/lmd.fragment -ifok
 
 onerror shutdown
 

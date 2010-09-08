@@ -1,7 +1,7 @@
 
 # Defaults
 onerror continue
-set context -c kpwdFile          ${dcache.home}/etc/dcache.kpwd
+set context -c kpwdFile ${dcache.paths.etc}/dcache.kpwd
 onerror shutdown
 
 #

@@ -2,8 +2,8 @@
 #           Pin Manager Cell
 # ----------------------------------------------------------------------
 
-exec file:${dcache.home}/share/cells/stage.fragment doors
-exec file:${dcache.home}/share/cells/threadmanager.fragment
+exec file:${dcache.paths.share}/cells/stage.fragment doors
+exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
 # Defaults
 onerror continue

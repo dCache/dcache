@@ -1,7 +1,7 @@
 # Creates the PoolManager
 
 # External settings
-exec -shell file:${dcache.home}/share/cells/stage.fragment PoolManager
+exec -shell file:${dcache.paths.share}/cells/stage.fragment PoolManager
 
 # default configuration for selection unit:
 #     all pools added into default pool group

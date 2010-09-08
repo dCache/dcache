@@ -108,20 +108,20 @@
           Server package
     -->
 
-    <target name="install-server"
-              depends="dcache,
-                       xrootd-tokenauthz,javatunnel,-dcache-classpath"
-                description="build deploy-ready server package">
-
+    <target name="-dcache-copy-skel">
         <!-- rpm directory structure with some defaults scripts -->
         <copy todir="${server.bin.dir}">
             <fileset dir="${skelDir}" />
         </copy>
+    </target>
 
+    <target name="install-server"
+            depends="dcache,xrootd-tokenauthz,javatunnel,
+                     -dcache-copy-skel,-dcache-classpath"
+            description="build deploy-ready server package">
         <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
         <chmod dir="${server.bin.dir}/install" includes="**/*" perm="ugo+rx" />
         <chmod dir="${server.bin.dir}/jobs"    includes="**/*" perm="ugo+rx" />
-
     </target>
 
     <!--

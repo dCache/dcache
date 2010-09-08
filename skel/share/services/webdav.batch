@@ -50,7 +50,7 @@ define env verify-https.exe enddefine
 enddefine
 
 exec env verify-${webdavProtocol}.exe
-exec file:${dcache.home}/share/cells/embedded-gPlazma.fragment
+exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 ###########################################################################
 # If srmSpaceManagerEnabled is on we need to use SrmSpaceManager as

@@ -1,0 +1,101 @@
+.TH DCACHE-BOOTLOADER 8 "August 2010" "" ""
+
+.SH NAME
+BootLoader \- Boot loader for dCache
+
+.SH SYNOPSIS
+
+\fBjava\fR org.dcache.util.BootLoader [OPTION]... COMMAND [ARGS]
+
+.SH DESCRIPTION
+
+The low level boot loader of dCache. It is used by the init script to
+start domains and to parse configuration files. There is usually no
+need to invoke the boot loader directly.
+
+.SH OPTIONS
+
+.TP
+\fB-q\fR
+Do not emit warnings if configuration assigns values to deprecated or
+obsolete properties.
+
+.TP
+\fB-f\fR=PATH[:PATH]...
+Paths to the dCache setup files.  Each supplied PATH is is either a
+file or a directory.  If PATH is a file then it is read as a dCache
+configuration file.  If PATH is a directory then all files in that
+directory that end \fB.properties\fR are parsed as configuration
+files. The ordering is significant as the paths are scanned in the
+order specified and the last declaration of a configuration parameter
+will be used.
+
+.SH COMMANDS
+
+.TP
+.B start DOMAIN
+start a domain. DOMAIN is the name of the domain to start. The layout
+file is scanned and the batch files of services defined for this
+domain are executed.
+
+.TP
+.B compile
+generates a shell function that can provide any configuration property
+of any configured domain.
+
+.SH CONFIGURATION PROPERTIES
+
+Most properties are interpreted by services. A few properties are
+however used by the boot loader directly. These are described below.
+
+.TP
+.B dcache.layout.uri
+The URI to the layout file. The boot loader scans the layout file to
+determine the domains and services specified for this dCache host.
+
+.TP
+.B domain.service.uri
+The URI to a service batch file. For each service the boot loader
+executes this batch file to instantiate that service.
+
+.TP
+.B domain.preload
+The URI to a batch file executed during domain startup before any
+services are started.
+
+.TP
+.B dcache.log.configuration
+The URI to the log configuration file.
+
+.P
+In addition to the above properties, all Java system properties are
+available. A summary of the standard properties is available at
+\fBhttp://download-llnw.oracle.com/javase/6/docs/api/java/lang/System.html#getProperties%28%29\fR
+
+
+.SH IMPLICIT CONFIGURATION PROPERTIES
+
+Some properties are injected into the configuration by the boot loader
+and cannot be defined in configuration files. Configuration files may
+however make use of these properties to define other properties.
+
+.TP
+.B host.name
+The host name of this host.
+
+.TP
+.B host.fqdn
+The fully qualified domain name of this host.
+
+.TP
+.B domain.name
+The name of the current domain as defined in the layout file.
+
+.TP
+.B domain.service
+The name of the current service as defined in the layout file.
+
+.TP
+.B dcache.domains
+White space separated list of all names of domain on this host.
+

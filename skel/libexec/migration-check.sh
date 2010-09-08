@@ -36,14 +36,12 @@ default_home=/opt/d-cache
 BASE_DIR=$(cd $(dirname $0); pwd)
 
 #  Ask dCache for the externalLibsClassPath.
-export ourHomeDir=${DCACHE_HOME:=$default_home}
-. $DCACHE_HOME/classes/extern.classpath
+${DCACHE_HOME:=$default_home}
+. $DCACHE_HOME/share/lib/loadConfig.sh -q
 
-LOG4J_FILE=${DCACHE_HOME}/config/log4j.properties
-
-DCACHE_JAR=$DCACHE_HOME/classes/dcache.jar
+LOG4J_FILE=${DCACHE_CONFIG}/log4j.properties
 
 COMPARATOR=org.dcache.chimera.migration.Comparator
 JVM_OPTIONS=-Dlog4j.configuration=file:$LOG4J_FILE
 
-java -cp $DCACHE_JAR:$externalLibsClassPath $JVM_OPTIONS $COMPARATOR "$*"
+java -cp $(getProperty dcache.paths.classpath) $JVM_OPTIONS $COMPARATOR "$*"

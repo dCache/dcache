@@ -3,13 +3,24 @@
 # script that updates SRM space manager schema 
 #
 
-ourHomeDir=/opt/d-cache
-if [ -r ${ourHomeDir}/etc/srm_setup.env ] ; then
-  . ${ourHomeDir}/etc/srm_setup.env
+# Initialize environment. /etc/default/ is the normal place for this
+# on several Linux variants. For other systems we provide
+# /etc/dcache.env. Those files will typically declare JAVA_HOME and
+# DCACHE_HOME and nothing else.
+[ -f /etc/default/dcache ] && . /etc/default/dcache
+[ -f /etc/dcache.env ] && . /etc/dcache.env
+
+# Set home path
+if [ -z "$DCACHE_HOME" ]; then
+    DCACHE_HOME="/opt/d-cache"
 fi
-export JAVA_HOME
-for jar in `find ${ourHomeDir}/classes/ -name '*jar'`; do  CLASSPATH=${CLASSPATH}:${jar}; done
-export CLASSPATH
-$JAVA_HOME/bin/java diskCacheV111.services.space.Manager $*
-rc=$?
-exit $rc
+if [ ! -d "$DCACHE_HOME" ]; then
+    echo "$DCACHE_HOME is not a directory"
+    exit 2
+fi
+
+${DCACHE_HOME}/share/lib/loadConfig.sh -q
+
+CLASSPATH="$(getProperty dcache.paths.classpath)" \
+    ${JAVA} $(getProperty dcache.java.options) \
+    diskCacheV111.services.space.Manager $*

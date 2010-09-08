@@ -2,7 +2,7 @@
 # SRM Space Manager
 #
 
-exec file:${dcache.home}/share/cells/threadmanager.fragment
+exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
 # Defaults
 onerror continue

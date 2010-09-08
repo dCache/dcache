@@ -13,12 +13,12 @@ usage() # $1 = exit status
     exit $1
 }
 
-ourHomeDir="/opt/d-cache"
+DCACHE_HOME="/opt/d-cache"
 
 # Parse options
 while getopts d: opt "$@"; do
     case $opt in
-        d) ourHomeDir="$OPTARG";;
+        d) DCACHE_HOME="$OPTARG";;
     esac
 done
 shift `expr $OPTIND - 1`
@@ -28,23 +28,9 @@ if [ $# -ne 1 ]; then
     usage 1
 fi
 
-# Generate class path
-if [ -r ${ourHomeDir}/classes/extern.classpath ]; then
-    .  ${ourHomeDir}/classes/extern.classpath
-fi
+. ${DCACHE_HOME}/share/lib/loadConfig.sh -q
 
-CLASSPATH=${ourHomeDir}/classes/cells.jar:${ourHomeDir}/classes/dcache.jar:${externalLibsClassPath}
-
-# Find Java
-if [ -n "$JAVA_HOME" ]; then
-    JAVA="$JAVA_HOME/bin/java"
-else
-    JAVA="$(which java)"
-fi
-if [ ! -x "$JAVA" ]; then
-    echo "java not found; please define JAVA_HOME"
-    exit 1
-fi
+CLASSPATH="$(getProperty dcache.paths.classpath)"
 
 # Dump to yaml
 "${JAVA}" -cp "${CLASSPATH}" org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository "$1"

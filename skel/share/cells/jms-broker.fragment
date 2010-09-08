@@ -1,4 +1,4 @@
-exec file:${dcache.home}/share/cells/lmd.fragment
+exec file:${dcache.paths.share}/cells/lmd.fragment
 
 create org.dcache.cells.UniversalSpringCell JMS \
   "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml"

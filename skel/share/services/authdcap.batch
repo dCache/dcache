@@ -10,7 +10,7 @@ onerror continue
    set context -c dcapPasswdFile       "/opt/d-cache/etc/passwd4dCapDoor"
 onerror shutdown
 
-exec file:${dcache.home}/share/cells/stage.fragment doors
+exec file:${dcache.paths.share}/cells/stage.fragment doors
 
 # Define required variables
 check -strong port

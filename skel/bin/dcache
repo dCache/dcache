@@ -192,14 +192,12 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    "$JAVA" -jar ${DCACHE_HOME}/classes/dcache.jar
+    "$JAVA" -jar "$(getProperty dcache.paths.classes)/dcache.jar"
 }
 
-
-loadDomainConfiguration() # $1 = domain
+loadConfig()
 {
-    DOMAIN="$1"
-    loadConfig "dcache.*"
+    . ${DCACHE_HOME}/share/lib/loadConfig.sh "$@"
 }
 
 # Parse global options
@@ -229,128 +227,90 @@ if [ ! -d "$DCACHE_HOME" ]; then
     exit 2
 fi
 
-ourHomeDir="${DCACHE_HOME}"   # We still use ourHomeDir in some places
-
-# Load libraries
-. ${DCACHE_HOME}/share/lib/paths.sh
-. ${DCACHE_LIB}/utils.sh
-. ${DCACHE_LIB}/services.sh
-. ${DCACHE_LIB}/pool.sh
-
-# Check prerequisites
-require awk df egrep grep sed cat hostname wc dirname basename mount mv tr which
-
-# Check for java
-if ! findJavaTool java || [ ! -x "${java}" ] || ! "$java" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
-    fail 1 "Could not find usable Java VM. Please set JAVA_HOME to
-            the path to Java 6 or newer."
-fi
-JAVA="$java"
-
-determineHostName
-
 case "$1" in
     start)
         shift
-        setBootLoaderNoisy
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
-        setBootLoaderQuiet
-
         for domain in $domains; do
-	    (
-		loadDomainConfiguration "$domain"
-                domainStart || :
-	    )
+            domainStart $domain || :
         done
 
-        touch $DCACHE_LOCK 2> /dev/null || :
+        touch "$(getProperty dcache.paths.lock.file)" 2> /dev/null || :
         ;;
 
     stop)
         shift
-        setBootLoaderQuiet
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
-
         reverse domains_backward $domains
         for domain in $domains_backward; do
-	    (
-		loadDomainConfiguration "$domain"
-		if pid=$(printDaemonPid); then
-                    domainStop || :
-		fi
-            )
+            domainStop $domain || :
         done
 
-        rm -f $DCACHE_LOCK
+        rm -f "$(getProperty dcache.paths.lock.file)"
         ;;
 
     restart)
         shift
-        setBootLoaderNoisy
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
-        setBootLoaderQuiet
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-	    (
-		loadDomainConfiguration "$domain"
-                if pid=$(printDaemonPid); then
-                    domainStop || :
-		fi
-	    )
+            domainStop "$domain" || :
         done
 
         for domain in $domains; do
-	    (
-		loadDomainConfiguration "$domain"
-                domainStart || :
-            )
+            domainStart "$domain" || :
         done
         ;;
 
     condrestart)
         shift
-        setBootLoaderNoisy
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "$@")
-        setBootLoaderQuiet
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-	    (
-		loadDomainConfiguration "$domain"
-		if pid=$(printDaemonPid); then
-		    running_domains="$running_domains $domain"
-                    domainStop
-		fi
-	    )
+	    if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
+		running_domains="$running_domains $domain"
+                domainStop "$domain"
+	    fi
         done
 
         reverse domains_to_start $running_domains
         for domain in $domains_to_start; do
-	    (
-		loadDomainConfiguration "$domain"
-		domainStart
-            )
+	    domainStart "$domain"
         done
         ;;
 
     status)
-        setBootLoaderQuiet
+        shift
+        loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
         domains=$(printDomains "*")
         maxWidth width $domains
         format="%-${width}s %-10s %5s\n"
         printf "$format" "Domain" "Status" "PID"
         for domain in $domains; do
-	    (
-		loadDomainConfiguration "$domain"
-		status=$(printDomainStatus)
-		pid=$(printJavaPid) || :
-		printf "$format" "$domain" "$status" "$pid"
-            )
+	    status=$(printDomainStatus "$domain")
+	    pid=$(printJavaPid "$domain") || :
+	    printf "$format" "$domain" "$status" "$pid"
         done
         ;;
 
     version)
+        loadConfig -q
         showVersion
 	;;
 
@@ -360,6 +320,10 @@ case "$1" in
         if [ $# -eq 0 ]; then
             usage
         fi
+
+        loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/pool.sh
 
         command=$1
         shift
@@ -414,6 +378,10 @@ case "$1" in
             usage
         fi
 
+        loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/services.sh
+
         command=$1
         shift
 
@@ -423,57 +391,52 @@ case "$1" in
 
                 [ $# -ne 2 ] && usage
 
-                (
-		    loadDomainConfiguration "$1"
+                domain="$1"
+                file="$2"
 
-                    file=$2
+                findJavaTool jmap ||
+                fail 1 "Could not find the jmap command, part of the Java 6
+                        JDK. This command is required for producing a heap
+                        dump. Please ensure that either jmap is in the path
+                        or update JAVA_HOME."
 
-                    findJavaTool jmap ||
-                    fail 1 "Could not find the jmap command, part of the Java 6
-                            JDK. This command is required for producing a heap
-                            dump. Please ensure that either jmap is in the path
-                            or update JAVA_HOME."
+                if [ -f ${file} ]; then
+                    fail 1 "${file} already exists. Heap not dumped."
+                fi
 
-                    if [ -f ${file} ]; then
-                        fail 1 "${file} already exists. Heap not dumped."
-                    fi
+                if ! pid=$(printJavaPid "$domain"); then
+                    fail 1 "Domain ${domain} is not running."
+                fi
 
-                    if ! pid=$(printJavaPid); then
-                        fail 1 "Domain ${DOMAIN} is not running."
-                    fi
+                if [ -z "$opt_force" ]; then
+                    dumpHeap "" "live" "$file" "$pid" \
+                        "Failed to dump the heap; please consult
+                         the previous error message for possible
+                         reasons. The dump might succeed when using
+                         the --force option."
+                else
+                    dumpHeap "force" "" "$file" "$pid" \
+                        "Failed to dump the heap; please consult
+                         the previous error message for possible
+                         reasons."
+                fi
 
-                    if [ -z "$opt_force" ]; then
-                        dumpHeap "" "live" "$file" "$pid" \
-                            "Failed to dump the heap; please consult
-                             the previous error message for possible
-                             reasons. The dump might succeed when using
-                             the --force option."
-                    else
-                        dumpHeap "force" "" "$file" "$pid" \
-                            "Failed to dump the heap; please consult
-                             the previous error message for possible
-                             reasons."
-                    fi
-
-                    printp "The heap of domain ${DOMAIN} has been written to
-                            ${file}. Notice that the file might contain
-                            confidential information."
-                )
+                printp "The heap of domain ${domain} has been written to
+                        ${file}. Notice that the file might contain
+                        confidential information."
                 ;;
 
             threads)
                 for domain in $(printDomains "$@"); do
-	            (
-		        loadDomainConfiguration "$domain"
-                        if pid=$(printJavaPid); then
-                            if ! kill -s QUIT "${pid}"; then
-                                fail 1 "Failed to dump stack traces. Likely
-                                        the current user does not have the
-                                        proper permissions."
-                            fi
-                            printp "Stack traces for $domain have been written to $DCACHE_LOG_FILE."
+                    if pid=$(printJavaPid "$domain"); then
+                        if ! kill -s QUIT "${pid}"; then
+                            fail 1 "Failed to dump stack traces. Likely
+                                    the current user does not have the
+                                    proper permissions."
                         fi
-                    )
+                        LOG_FILE="$(getProperty dcache.log.file "$domain")"
+                        printp "Stack traces for $domain have been written to $LOG_FILE."
+                    fi
                 done
                 ;;
 
@@ -485,10 +448,12 @@ case "$1" in
 
     import)
         shift
-
         if [ $# -eq 0 ]; then
             usage
         fi
+
+        loadConfig -q
+        . ${DCACHE_LIB}/utils.sh
 
         command=$1
         shift
@@ -497,8 +462,8 @@ case "$1" in
             hostcert)
                 require openssl
 
-                opt_password="${DCACHE_KEYSTOREPASSWORD:-dcache}"
-                opt_out="${DCACHE_KEYSTORE:-${DCACHE_HOME}/etc/hostcert.p12}"
+                opt_password="$(getProperty keyStorePassword)"
+                opt_out="$(getProperty keyStore)"
                 opt_hostcert="/etc/grid-security/hostcert.pem"
                 opt_hostkey="/etc/grid-security/hostkey.pem"
 
@@ -517,8 +482,8 @@ case "$1" in
                         JRE. Please ensure that either keytool is in the path
                         or update JAVA_HOME."
 
-                opt_password="${DCACHE_TRUSTSTOREPASSWORD:-dcache}"
-                opt_out="${DCACHE_TRUSTSTORE:-${DCACHE_HOME}/etc/certificates.jks}"
+                opt_password="$(getProperty trustStorePassword)"
+                opt_out="$(getProperty trustStore)"
                 opt_cacerts="/etc/grid-security/certificates"
 
                 parseOptions "out password cacerts" "$@" || shift $?
