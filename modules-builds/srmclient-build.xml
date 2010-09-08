@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<project name="srmclient" default="help">
+<project name="srmclient" default="help"
+         xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
 
     <property name="srmclient.build.dir" location="${buildDir}/srmclient" />
@@ -45,6 +46,21 @@
         </and>
     </selector>
 
+    <!-- external dependencies -->
+    <artifact:dependencies pathId="srmclient.maven.classpath" filesetId="srmclient.maven.fileset" useScope="runtime">
+        <!-- Suppress some dependencies: Dependencies with scope
+             'provided' are not included in the runtime classpath. We
+             use this to suppress jars we don't really need or get
+             through other means.
+        -->
+        <dependency groupId="commons-logging" artifactId="commons-logging" version="1.1.1" scope="provided"/>
+
+        <!-- external dependencies -->
+        <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>
+        <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
+        <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
+        <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
+    </artifact:dependencies>
 
     <path id="srmclient.classpath">
         <pathelement location="${classesDir}/srm.jar" />
@@ -57,11 +73,10 @@
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
 	<fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
-        <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
+        <path refid="srmclient.maven.classpath" />
     </path>
 
     <!--
@@ -315,15 +330,11 @@
         </copy>
 
 	<!-- slf4j -->
-        <mkdir dir="${srmclient.bin.dir}/lib/slf4j/" />
-        <copy todir="${srmclient.bin.dir}/lib/slf4j">
-          <fileset dir="${libDir}/slf4j/">
-            <include name="*.jar" />
-          </fileset>
+        <mkdir dir="${srmclient.bin.dir}/lib" />
+        <copy todir="${srmclient.bin.dir}/lib">
+          <fileset refid="srmclient.maven.fileset"/>
+          <mapper type="flatten" />
         </copy>
-
-
-
     </target>
 
 

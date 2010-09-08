@@ -80,19 +80,14 @@
     <path id="dcache.classpath">
         <path refid="cells.classpath" />
         <path refid="chimera.classpath" />
+        <path refid="dependency.classpath" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-        <pathelement location="${libDir}/berkeleyDB/je-4.0.71.jar" />
-        <fileset dir="${libDir}/spring/" includes="*.jar" />
         <fileset dir="${libDir}/netty/" includes="*.jar" />
-        <fileset dir="${libDir}/activemq/" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j/" includes="*.jar" />
-        <fileset dir="${libDir}/servlet-api/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
-        <fileset dir="${libDir}/jetty/" includes="*.jar" />
         <fileset dir="${libDir}/jexl/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
@@ -116,7 +111,6 @@
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
         <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
-        <pathelement location="${libDir}/grizzly-nio/grizzly-nio-framework-1.9.19-SNAPSHOT.jar" />
     </path>
 
 
@@ -138,9 +132,9 @@
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement path="${dcache.build.dir}" />
+        <path refid="dependency.classpath" />
     </path>
 
     <!-- Classpath for xrootd-tokenauthz.jar -->
@@ -238,10 +232,10 @@
         <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <fileset dir="${libDir}/slf4j" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement location="${dcache.build.dir}" />
+        <path refid="dependency.classpath" />
     </path>
 
     <target name="-dcache-auth.check.enhanced">
@@ -454,50 +448,6 @@
           </fileset>
         </copy>
 
-        <!-- BerkeleyDB -->
-        <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
-        <copy file="${libDir}/berkeleyDB/je-4.0.71.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
-
-        <!-- slf4j -->
-        <mkdir dir="${server.bin.dir}/classes/slf4j/" />
-        <copy todir="${server.bin.dir}/classes/slf4j">
-          <fileset dir="${libDir}/slf4j/">
-            <include name="*.jar" />
-          </fileset>
-        </copy>
-
-        <!-- Servlet API -->
-        <mkdir dir="${server.bin.dir}/classes/servlet-api/" />
-        <copy todir="${server.bin.dir}/classes/servlet-api">
-            <fileset dir="${libDir}/servlet-api/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
-        <!-- ActiveMQ -->
-        <mkdir dir="${server.bin.dir}/classes/activemq/" />
-        <copy todir="${server.bin.dir}/classes/activemq">
-          <fileset dir="${libDir}/activemq/">
-            <include name="*.jar" />
-          </fileset>
-        </copy>
-
-        <!-- Spring -->
-        <mkdir dir="${server.bin.dir}/classes/spring/" />
-        <copy todir="${server.bin.dir}/classes/spring">
-            <fileset dir="${libDir}/spring/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
-        <!-- Jetty -->
-        <mkdir dir="${server.bin.dir}/classes/jetty/" />
-        <copy todir="${server.bin.dir}/classes/jetty">
-            <fileset dir="${libDir}/jetty/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
         <!-- JEXL -->
         <mkdir dir="${server.bin.dir}/classes/jexl/" />
         <copy todir="${server.bin.dir}/classes/jexl">
@@ -644,11 +594,13 @@
 	  </fileset>
 	</copy>
 
-        <!-- grizzly -->
-        <mkdir dir="${server.bin.dir}/classes/grizzly-nio" />
-        <copy file="${libDir}/grizzly-nio/grizzly-nio-framework-1.9.19-SNAPSHOT.jar"
-            todir="${server.bin.dir}/classes/grizzly-nio"
-        />
+        <!-- external libraries -->
+        <mkdir dir="${server.bin.dir}/classes/lib" />
+        <copy todir="${server.bin.dir}/classes/lib">
+            <fileset refid="dependency.fileset" />
+            <!-- This mapper strips off all leading directory information -->
+            <mapper type="flatten" />
+         </copy>
 
     </target>
 

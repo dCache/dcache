@@ -45,7 +45,7 @@ fi
 
 DCACHE_SETUP="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
 
-getProperty=$($JAVA -client -cp "$DCACHE_HOME/classes/*:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/slf4j/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@" compile)
+getProperty=$($JAVA -client -cp "$DCACHE_HOME/classes/*:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/lib/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@" compile)
 eval $getProperty
 
 DCACHE_LIB="$(getProperty dcache.paths.share.lib)"
