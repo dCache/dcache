@@ -19,14 +19,25 @@ public interface Repository
 {
     /**
      * Loads the repository from the on disk state. Must be done
-     * exactly once before any other operation can be performed.
+     * exactly once before any other operation can be
+     * performed. Depending on the implementation, some methods may
+     * not be accesible until after the load method has been called.
+     *
+     * @throws IllegalStateException if called multiple times
+     */
+    void init()
+        throws IllegalStateException;
+
+    /**
+     * Loads the repository from the on disk state. Must be done
+     * exactly once after init was called.
      *
      * @throws IllegalStateException if called multiple times
      * @throws IOException if an io error occurs
      * @throws CacheException in case of other errors
      * @throws InterruptedException if thread was interrupted
      */
-    void init()
+    void load()
         throws IOException, InterruptedException,
                CacheException, IllegalStateException;
 

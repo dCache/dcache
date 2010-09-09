@@ -62,6 +62,10 @@ import org.slf4j.LoggerFactory;
  * Implementation of Repository interface.
  *
  * The class is thread-safe.
+ *
+ * Allows openEntry, getEntry, getState and setSticky to be called
+ * before the load method finishes. Other methods of the Repository
+ * interface will fail until load has completed.
  */
 public class CacheRepositoryV5
     extends AbstractCellComponent
@@ -80,10 +84,10 @@ public class CacheRepositoryV5
 
 
     /**
-    * time in millisecs added to each sticky expiration task
-    * We schedule the task later than the expiration time to account
-    * for small clock shifts.
-    */
+     * Time in millisecs added to each sticky expiration task.  We
+     * schedule the task later than the expiration time to account for
+     * small clock shifts.
+     */
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
     private final static Logger _log =
         LoggerFactory.getLogger(CacheRepositoryV5.class);
@@ -115,15 +119,19 @@ public class CacheRepositoryV5
     private MetaDataStore _store;
 
     /**
-     * True while an inventory is build. During this period we block
-     * event processing.
+     * Current state of the repository.
      */
-    private boolean _runningInventory = false;
+    enum State {
+        UNINITIALIZED,
+        INITIALIZING,
+        INITIALIZED,
+        LOADING,
+        OPEN,
+        FAILED,
+        CLOSED;
+    }
 
-    /**
-     * True if inventory has been build, otherwise false.
-     */
-    private boolean _initialised = false;
+    private State _state = State.UNINITIALIZED;
 
     /**
      * Shared repository account object for tracking space.
@@ -159,24 +167,35 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Throws an IllegalStateException if the object has been
-     * initialised.
+     * Throws an IllegalStateException if the repository has been
+     * initialized.
      */
-    private synchronized void assertNotInitialised()
+    private synchronized void assertUninitialized()
     {
-        if (_initialised) {
-            throw new IllegalStateException("Cannot be changed after initialisation");
+        if (_state != State.UNINITIALIZED) {
+            throw new IllegalStateException("Operation not allowed after initialization");
         }
     }
 
     /**
-     * Throws an IllegalStateException if the object has not been
-     * initialised.
+     * Throws an IllegalStateException if the repository is not open.
      */
-    private synchronized void assertInitialised()
+    private synchronized void assertOpen()
     {
-        if (!_initialised) {
-            throw new IllegalStateException("Repository has not been initialized");
+        if (_state != State.OPEN) {
+            throw new IllegalStateException("Operation not allowed while repository is in state " + _state);
+        }
+    }
+
+    /**
+     * Throws an IllegalStateException if the repository is not in
+     * either INITIALIZED, LOADING or OPEN.
+     */
+    private synchronized void assertInitialized()
+    {
+        if (_state != State.INITIALIZED && _state != State.LOADING &&
+            _state != State.OPEN) {
+            throw new IllegalStateException("Operation not allowed while repository is in state " + _state);
         }
     }
 
@@ -186,7 +205,7 @@ public class CacheRepositoryV5
      */
     public synchronized void setExecutor(ScheduledExecutorService executor)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _executor = executor;
     }
 
@@ -195,7 +214,7 @@ public class CacheRepositoryV5
      */
     public synchronized void setPnfsHandler(PnfsHandler pnfs)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _pnfs = pnfs;
     }
 
@@ -209,7 +228,7 @@ public class CacheRepositoryV5
      */
     public synchronized void setPeriodicChecks(boolean enable)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _checkRepository = enable;
     }
 
@@ -225,7 +244,7 @@ public class CacheRepositoryV5
      */
     public synchronized void setVolatile(boolean value)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _volatile = value;
     }
 
@@ -234,7 +253,7 @@ public class CacheRepositoryV5
      */
     public synchronized void setAccount(Account account)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _account = account;
     }
 
@@ -243,19 +262,19 @@ public class CacheRepositoryV5
      */
     public synchronized void setAllocator(Allocator allocator)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _allocator = allocator;
     }
 
     public synchronized void setMetaDataStore(MetaDataStore store)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _store = store;
     }
 
     public synchronized void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
     {
-        assertNotInitialised();
+        assertUninitialized();
         _sweeper = sweeper;
     }
 
@@ -270,109 +289,129 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("Negative value is not allowed");
         }
         _staticMaxSize = size;
-        if (_initialised) {
+        if (_state == State.OPEN) {
             updateAccountSize();
         }
     }
 
     @Override
-    public synchronized void init()
+    public void init()
+        throws IllegalStateException
+    {
+        synchronized (this) {
+            assert _pnfs != null : "Pnfs handler must be set";
+            assert _account != null : "Account must be set";
+            assert _allocator != null : "Account must be set";
+
+            if (_state != State.UNINITIALIZED) {
+                throw new IllegalStateException("Can only initialize repository once.");
+            }
+
+            _state = State.INITIALIZING;
+        }
+
+        /* Instantiating the cache causes the listing to be
+         * generated to prepopulate the cache. That may take some
+         * time. Therefore we do this outside the synchronization.
+         */
+        _log.warn("Reading inventory from " + _store);
+        MetaDataCache cache = new MetaDataCache(_store);
+
+        synchronized (this) {
+            _store = cache;
+            _state = State.INITIALIZED;
+        }
+    }
+
+    public void load()
         throws IOException, CacheException, IllegalStateException,
                InterruptedException
     {
-        assert _pnfs != null : "Pnfs handler must be set";
-        assert _account != null : "Account must be set";
-        assert _allocator != null : "Account must be set";
-
-        if (_initialised)
-            throw new IllegalStateException("Can only load repository once.");
-        _log.warn("Reading inventory from " + _store);
-
-        _store = new MetaDataCache(_store);
-
-        List<PnfsId> ids = new ArrayList(_store.list());
-        long usedDataSpace = 0L;
-        long removableSpace = 0L;
-
-        _log.info("Found " + ids.size() + " data files");
-
-        /* On some file systems (e.g. GPFS) stat'ing files in
-         * lexicographic order seems to trigger the pre-fetch
-         * mechanism of the file system.
-         */
-        Collections.sort(ids);
-
         try {
+            synchronized (this) {
+                if (_state != State.INITIALIZED) {
+                    throw new IllegalStateException("Can only load repository after initialization and only once.");
+                }
+                _state = State.LOADING;
+            }
+
+            List<PnfsId> ids = new ArrayList(_store.list());
+            _log.info("Found {} data files", ids.size());
+
+            /* On some file systems (e.g. GPFS) stat'ing files in
+             * lexicographic order seems to trigger the pre-fetch
+             * mechanism of the file system.
+             */
+            Collections.sort(ids);
+
             /* Collect all entries.
              */
-            _log.info("Checking meta data for " + ids.size() + " files");
+            _log.info("Checking meta data for {} files", ids.size());
+            long usedDataSpace = 0L;
             List<MetaDataRecord> entries = new ArrayList<MetaDataRecord>();
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
-                if (entry == null)  {
-                    continue;
+                if (entry != null)  {
+                    usedDataSpace += entry.getSize();
+                    _log.debug("{} {}", id, entry.getState());
+                    entries.add(entry);
                 }
-
-                long size = entry.getSize();
-                usedDataSpace += size;
-                if (_sweeper.isRemovable(entry)) {
-                    removableSpace += size;
-                }
-
-                if (_log.isDebugEnabled()) {
-                    _log.debug(id +" " + entry.getState());
-                }
-
-                entries.add(entry);
             }
 
             /* Allocate space.
              */
-            _log.info("Pool contains " + usedDataSpace + " bytes of data");
-            _account.setTotal(usedDataSpace);
-            _account.allocateNow(usedDataSpace);
-
-            /* Register with event listeners in LRU order. The
-             * sweeper relies on the LRU order.
-             */
-            _log.info("Registering files in sweeper");
-            Collections.sort(entries, new MetaDataLRUOrder());
-            for (MetaDataRecord entry: entries) {
-                stateChanged(entry, NEW, entry.getState());
-            }
-
-            if (usedDataSpace != _account.getUsed()) {
-                throw new RuntimeException(String.format("Bug detected: Allocated space is not what we expected (%d vs %d)", usedDataSpace, _account.getUsed()));
-            }
-            if (removableSpace != _account.getRemovable()) {
-                throw new RuntimeException(String.format("Bug detected: Removable space is not what we expected (%d vs %d)", removableSpace, _account.getRemovable()));
-            }
-
-            /* Register sweeper timeouts.
-             */
-            _log.info("Registering sticky bits");
-            for (MetaDataRecord entry: entries) {
-                if (entry.isSticky()) {
-                    scheduleExpirationTask(entry);
-                }
+            _log.info("Pool contains {} bytes of data", usedDataSpace);
+            synchronized (_account) {
+                _account.setTotal(usedDataSpace);
+                _account.allocateNow(usedDataSpace);
             }
 
             updateAccountSize();
 
-            _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
-                                    entries.size(), _account.getTotal(),
-                                    usedDataSpace, _account.getFree()));
+            /* State change notifications are supressed while the
+             * repository is loading. We synchronize to ensure a clean
+             * switch from the LOADING state to the OPEN state.
+             */
+            synchronized (this) {
+                /* Register with event listeners in LRU order. The
+                 * sweeper relies on the LRU order.
+                 */
+                _log.info("Registering files in sweeper");
+                Collections.sort(entries, new MetaDataLRUOrder());
+                for (MetaDataRecord entry: entries) {
+                    stateChanged(entry, NEW, entry.getState());
+                }
+
+                _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
+                                        entries.size(), _account.getTotal(),
+                                        usedDataSpace, _account.getFree()));
+
+                _state = State.OPEN;
+            }
+
+            /* Register sticky timeouts.
+             */
+            _log.info("Registering sticky bits");
+            for (MetaDataRecord entry: entries) {
+                synchronized (entry) {
+                    if (entry.isSticky()) {
+                        scheduleExpirationTask(entry);
+                    }
+                }
+            }
         } catch (IOException e) {
             throw new DiskErrorCacheException("Failed to load repository: " + e);
         } finally {
-            _runningInventory = false;
+            synchronized (this) {
+                if (_state != State.OPEN) {
+                    _state = State.FAILED;
+                }
+            }
         }
-
-        _initialised = true;
 
         _log.info("Done generating inventory");
 
-        if (_checkRepository) {
+        if (getPeriodicChecks()) {
             CheckHealthTask task = new CheckHealthTask(this);
             task.setAccount(_account);
             task.setMetaDataStore(_store);
@@ -383,7 +422,7 @@ public class CacheRepositoryV5
     @Override
     public Iterator<PnfsId> iterator()
     {
-        assertInitialised();
+        assertOpen();
         return Collections.unmodifiableCollection(_store.list()).iterator();
     }
 
@@ -404,7 +443,7 @@ public class CacheRepositoryV5
                 throw new IllegalArgumentException("StorageInfo must not be null");
             }
 
-            assertInitialised();
+            assertOpen();
 
             switch (transferState) {
             case FROM_CLIENT:
@@ -449,11 +488,13 @@ public class CacheRepositoryV5
     {
         /* TODO: Refine the exceptions. Throwing FileNotInCacheException
          * implies that one could create the entry, however this is not
-         * the case for broken or incomplet files.
+         * the case for broken or incomplete files.
          */
+        assertInitialized();
 
-        assertInitialised();
         try {
+            ReadHandle handle;
+
             MetaDataRecord entry = getMetaDataRecord(id);
             synchronized (entry) {
                 /* REVISIT: Is using FileNotInCacheException appropriate?
@@ -473,11 +514,21 @@ public class CacheRepositoryV5
                 case REMOVED:
                     break;
                 }
-
-                entry.touch();
-                accessTimeChanged(entry);
-                return new ReadHandleImpl(this, entry);
+                handle = new ReadHandleImpl(this, entry);
             }
+
+            synchronized (this) {
+                /* Don't notify listeners until we are done loading;
+                 * at the end of the load method listeners are
+                 * informed about all entries.
+                 */
+                entry.touch();
+                if (_state == State.OPEN) {
+                    accessTimeChanged(entry);
+                }
+            }
+
+            return handle;
         } catch (FileNotInCacheException e) {
             /* Somebody got the idea that we have the file, so we make
              * sure to remove any stray pointers.
@@ -494,7 +545,7 @@ public class CacheRepositoryV5
     public CacheEntry getEntry(PnfsId id)
         throws CacheException, InterruptedException
     {
-        assertInitialised();
+        assertInitialized();
 
         try {
             MetaDataRecord entry = getMetaDataRecord(id);
@@ -523,26 +574,32 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("Null argument not allowed");
         }
 
-        assertInitialised();
+        assertInitialized();
 
         MetaDataRecord entry = getMetaDataRecord(id);
-        synchronized (entry) {
-            switch (entry.getState()) {
-            case NEW:
-            case FROM_CLIENT:
-            case FROM_STORE:
-            case FROM_POOL:
-                throw new FileNotInCacheException("File is incomplete");
-            case REMOVED:
-            case DESTROYED:
-                throw new FileNotInCacheException("File has been removed");
-            case BROKEN:
-            case PRECIOUS:
-            case CACHED:
-                break;
-            }
 
-            setSticky(entry, owner, expire, overwrite);
+        /* We synchronize on 'this' because setSticky below is
+         * synchronized; and 'this' has to be locked before entry.
+         */
+        synchronized (this) {
+            synchronized (entry) {
+                switch (entry.getState()) {
+                case NEW:
+                case FROM_CLIENT:
+                case FROM_STORE:
+                case FROM_POOL:
+                    throw new FileNotInCacheException("File is incomplete");
+                case REMOVED:
+                case DESTROYED:
+                    throw new FileNotInCacheException("File has been removed");
+                case BROKEN:
+                case PRECIOUS:
+                case CACHED:
+                    break;
+                }
+
+                setSticky(entry, owner, expire, overwrite);
+            }
         }
     }
 
@@ -567,7 +624,7 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("id is null");
         }
 
-        assertInitialised();
+        assertOpen();
 
         try {
             MetaDataRecord entry = getMetaDataRecord(id);
@@ -656,6 +713,7 @@ public class CacheRepositoryV5
     public EntryState getState(PnfsId id)
         throws CacheException, InterruptedException
     {
+        assertInitialized();
         try {
             return getMetaDataRecord(id).getState();
         } catch (FileNotInCacheException e) {
@@ -666,6 +724,7 @@ public class CacheRepositoryV5
     @Override
     public void getInfo(PrintWriter pw)
     {
+        pw.println("State             : " + _state);
         pw.println("Check Repository  : " + getPeriodicChecks());
 
         SpaceRecord space = getSpaceRecord();
@@ -697,10 +756,11 @@ public class CacheRepositoryV5
         pw.println("    Runtime configured   : " + UnitInteger.toUnitString(_runtimeMaxSize));
     }
 
-    public void shutdown()
+    public synchronized void shutdown()
         throws InterruptedException
     {
         _stateChangeListeners.stop();
+        _state = State.CLOSED;
     }
 
     // Operations on MetaDataRecord ///////////////////////////////////////
@@ -829,10 +889,16 @@ public class CacheRepositoryV5
     /**
      * Package local method for changing sticky records of an entry.
      */
-    void setSticky(MetaDataRecord entry, String owner,
+    synchronized void setSticky(MetaDataRecord entry, String owner,
                    long expire, boolean overwrite)
         throws IllegalArgumentException
     {
+        /* This method is synchronized to avoid conflicts with the
+         * load method; at the end of load method expiration tasks are
+         * scheduled. For that reason this method does not generate
+         * sticky changed notification and does not schedule
+         * expiration tasks if the repository is not OPEN.
+         */
         try {
             if (entry == null || owner == null) {
                 throw new IllegalArgumentException("Null argument not allowed");
@@ -842,7 +908,8 @@ public class CacheRepositoryV5
             }
 
             synchronized (entry) {
-                if (entry.setSticky(owner, expire, overwrite)) {
+                if (entry.setSticky(owner, expire, overwrite) &&
+                    _state == State.OPEN) {
                     stickyChanged(entry, new StickyRecord(owner, expire));
                     scheduleExpirationTask(entry);
                 }
@@ -1031,13 +1098,13 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("Negative value is not allowed");
         }
         _runtimeMaxSize = size;
-        if (_initialised) {
+        if (_state == State.OPEN) {
             updateAccountSize();
         }
         return "";
     }
 
-    public void printSetup(PrintWriter pw)
+    public synchronized void printSetup(PrintWriter pw)
     {
         if (_runtimeMaxSize < Long.MAX_VALUE) {
             pw.println("set max diskspace " + _runtimeMaxSize);

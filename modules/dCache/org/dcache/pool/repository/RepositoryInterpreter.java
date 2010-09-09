@@ -150,6 +150,8 @@ public class RepositoryInterpreter
                             reply(list());
                         } catch (CacheException e) {
                             reply(e);
+                        } catch (RuntimeException e) {
+                            reply(e);
                         }
                     } catch (InterruptedException e) {
                         _log.warn("Interrupted while listing: " + e);

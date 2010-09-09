@@ -415,21 +415,24 @@ public class PoolV4
     public void afterStart()
     {
         assertNotRunning("Cannot initialize several times");
-
         _running = true;
-
-        _log.info("Running repository");
-        try {
-            _repository.init();
-            enablePool();
-            _flushingThread.start();
-        } catch (Throwable e) {
-            _log.error("Repository reported a problem : " + e.getMessage());
-            _log.warn("Pool not enabled " + _poolName);
-            disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                        666, "Init failed: " + e.getMessage());
-        }
-        _log.info("Repository finished");
+        new Thread() {
+            public void run() {
+                try {
+                    _repository.init();
+                    disablePool(PoolV2Mode.DISABLED_RDONLY, 1, "Initializing");
+                    _repository.load();
+                    enablePool();
+                    _flushingThread.start();
+                } catch (Throwable e) {
+                    _log.error("Repository reported a problem : " + e.getMessage());
+                    _log.warn("Pool not enabled " + _poolName);
+                    disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                                666, "Init failed: " + e.getMessage());
+                }
+                _log.info("Repository finished");
+            }
+        }.start();
     }
 
     @Override
@@ -1333,17 +1336,19 @@ public class PoolV4
     public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
         throws CacheException, InterruptedException
     {
-        try {
-            _repository.setSticky(msg.getPnfsId(),
-                                  msg.getOwner(),
-                                  msg.isSticky()
-                                  ? msg.getLifeTime()
-                                  : 0,
-                                  true);
-            msg.setSucceeded();
-        } catch (FileNotInCacheException e) {
-            msg.setFailed(e.getRc(), e);
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)) {
+            _log.warn("PoolSetStickyMessage request rejected due to "
+                      + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
         }
+
+        _repository.setSticky(msg.getPnfsId(),
+                              msg.getOwner(),
+                              msg.isSticky()
+                              ? msg.getLifeTime()
+                              : 0,
+                              true);
+        msg.setSucceeded();
         return msg;
     }
 

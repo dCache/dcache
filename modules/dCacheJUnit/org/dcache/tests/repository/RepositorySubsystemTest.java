@@ -217,6 +217,7 @@ public class RepositorySubsystemTest
          */
         initRepository();
         repository.init();
+        repository.load();
         createEntry(id1, info1, EntryState.PRECIOUS,
                     Arrays.asList(new StickyRecord("system", 0)));
         createEntry(id2, info2, EntryState.CACHED,
@@ -229,11 +230,6 @@ public class RepositorySubsystemTest
         /* Create repository.
          */
         initRepository();
-        repository.init();
-
-        /* Remove scan notifications from queue.
-         */
-        stateChangeEvents.clear();
     }
 
     @After
@@ -310,17 +306,93 @@ public class RepositorySubsystemTest
         throws IOException, CacheException, InterruptedException
     {
         repository.init();
+        repository.init();
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testLoadTwiceFails()
+        throws IOException, CacheException, InterruptedException
+    {
+        repository.init();
+        repository.load();
+        repository.load();
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testLoadBeforeInitFail()
+        throws IOException, CacheException, InterruptedException
+    {
+        repository.load();
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testCreateEntryFailsBeforeLoad() throws Exception
+    {
+        repository.init();
+        List<StickyRecord> stickyRecords = Collections.emptyList();
+        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, stickyRecords);
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testOpenEntryFailsBeforeInit() throws Exception
+    {
+        repository.openEntry(id1);
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testGetEntryFailsBeforeInit() throws Exception
+    {
+        repository.getEntry(id1);
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testSetStickyFailsBeforeInit() throws Exception
+    {
+        repository.setSticky(id2, "system", 0, true);
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testGetStateFailsBeforeInit() throws Exception
+    {
+        repository.getState(id1);
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testSetStateFailsBeforeLoad() throws Exception
+    {
+        repository.init();
+        repository.setState(id1, CACHED);
     }
 
     @Test
     public void testGetSpaceRecord()
+        throws IOException, CacheException, InterruptedException
     {
+        assertSpaceRecord(0, 0, 0, 0);
+        repository.init();
+        assertSpaceRecord(0, 0, 0, 0);
+        repository.load();
         assertSpaceRecord(5120, 2048, 1024, 1024);
     }
 
     @Test
-    public void testOpenEntry()
+    public void testOpenEntryBeforeLoad()
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        stateChangeEvents.clear();
+        assertCanOpen(id1, size1, PRECIOUS);
+        assertCanOpen(id2, size2, CACHED);
+        assertCanOpen(id3, size3, CACHED);
+    }
+
+    @Test
+    public void testOpenEntry()
+        throws IOException, CacheException, InterruptedException
+    {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
         assertCanOpen(id1, size1, PRECIOUS);
         assertCanOpen(id2, size2, CACHED);
         assertCanOpen(id3, size3, CACHED);
@@ -330,6 +402,9 @@ public class RepositorySubsystemTest
     public void testOpenEntryFileNotFound()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
         new CellStubHelper() {
             /* Attempting to open a non-existing entry triggers a
              * clear cache location message.
@@ -351,8 +426,13 @@ public class RepositorySubsystemTest
 
     @Test
     public void testSetState()
-        throws IllegalTransitionException, CacheException, InterruptedException
+        throws IOException, IllegalTransitionException,
+               CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         assertCanOpen(id1, size1, PRECIOUS);
         repository.setState(id1, CACHED);
         expectStateChangeEvent(id1, PRECIOUS, CACHED);
@@ -365,29 +445,48 @@ public class RepositorySubsystemTest
 
     @Test(expected=IllegalTransitionException.class)
     public void testSetStateFileNotFound()
-        throws IllegalTransitionException, CacheException, InterruptedException
+        throws IOException, IllegalTransitionException,
+               CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         repository.setState(id4, CACHED);
     }
 
     @Test(expected=IllegalTransitionException.class)
     public void testSetStateToNew()
-        throws IllegalTransitionException, CacheException, InterruptedException
+        throws IOException, IllegalTransitionException,
+               CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         repository.setState(id1, NEW);
     }
 
     @Test(expected=IllegalTransitionException.class)
     public void testSetStateToDestroyed()
-        throws IllegalTransitionException, CacheException, InterruptedException
+        throws IOException, IllegalTransitionException,
+               CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         repository.setState(id1, DESTROYED);
     }
 
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleClose()
-        throws CacheException, InterruptedException
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         ReadHandle handle = repository.openEntry(id1);
         handle.close();
         handle.close();
@@ -395,8 +494,12 @@ public class RepositorySubsystemTest
 
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleGetFile()
-        throws CacheException, InterruptedException
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         ReadHandle handle = repository.openEntry(id1);
         handle.close();
         handle.getFile();
@@ -404,8 +507,12 @@ public class RepositorySubsystemTest
 
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleGetEntry()
-        throws CacheException, InterruptedException
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         ReadHandle handle = repository.openEntry(id1);
         handle.close();
         handle.getEntry();
@@ -413,14 +520,24 @@ public class RepositorySubsystemTest
 
     @Test
     public void testSetSize()
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         repository.setMaxDiskSpace(3072);
         assertSpaceRecord(3072, 0, 1024, 1024);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetSizeNegative()
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         repository.setMaxDiskSpace(-1);
     }
 
@@ -428,6 +545,10 @@ public class RepositorySubsystemTest
     public void testRemoval()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         new CellStubHelper() {
             @Message(required=true,step=1,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
@@ -453,6 +574,10 @@ public class RepositorySubsystemTest
     public void testRemoveWhileReading()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         new CellStubHelper() {
             @Message(required=true,step=0,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
@@ -485,6 +610,10 @@ public class RepositorySubsystemTest
     public void testRemoveOpenAgain()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         new CellStubHelper() {
             @Message(required=true,step=1,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
@@ -512,8 +641,13 @@ public class RepositorySubsystemTest
 
     @Test(expected=FileInCacheException.class)
     public void testCreateEntryFileExists()
-        throws FileInCacheException
+        throws IOException, CacheException,
+               InterruptedException, FileInCacheException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         List<StickyRecord> stickyRecords = Collections.emptyList();
         repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, stickyRecords);
     }
@@ -600,6 +734,10 @@ public class RepositorySubsystemTest
     public void testCreateEntry()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
@@ -609,6 +747,10 @@ public class RepositorySubsystemTest
     public void testCreateEntrySetAttributesFailed()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         try {
             createEntry4(100, true, false, FROM_CLIENT, PRECIOUS);
         } finally {
@@ -622,6 +764,10 @@ public class RepositorySubsystemTest
     public void testCreateEntryUnderallocation()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         createEntry4(-100, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
@@ -632,6 +778,10 @@ public class RepositorySubsystemTest
     public void testCreateEntryOverallocation()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         createEntry4(100, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
@@ -642,6 +792,10 @@ public class RepositorySubsystemTest
     public void testCreateEntryOverallocationFail()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         createEntry4(100, false, true, FROM_CLIENT, PRECIOUS);
         assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
         assertSpaceRecord(5120, 1024, 1024, 1024);
@@ -652,6 +806,10 @@ public class RepositorySubsystemTest
     public void testCreateEntryNegativeAllocation()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         WriteHandle handle =
             repository.createEntry(id4, info4, FROM_CLIENT, PRECIOUS, null);
         handle.allocate(-1);
@@ -661,6 +819,10 @@ public class RepositorySubsystemTest
     public void testCreateEntryOutOfSpace()
         throws Throwable
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         repository.setMaxDiskSpace(3072);
         createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
@@ -670,8 +832,12 @@ public class RepositorySubsystemTest
 
     @Test
     public void testStickyExpiration()
-        throws CacheException, InterruptedException
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         long now = System.currentTimeMillis();
         assertFalse(repository.getEntry(id2).isSticky());
         repository.setSticky(id2, "system", now + 500, true);
@@ -682,8 +848,12 @@ public class RepositorySubsystemTest
 
     @Test
     public void testStickyClear()
-        throws CacheException, InterruptedException
+        throws IOException, CacheException, InterruptedException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         long now = System.currentTimeMillis();
 
         assertFalse(repository.getEntry(id2).isSticky());
@@ -695,8 +865,13 @@ public class RepositorySubsystemTest
 
     @Test
     public void testDoubleAccountingOnCache()
-        throws CacheException, InterruptedException, IllegalTransitionException
+        throws IOException, CacheException,
+               InterruptedException, IllegalTransitionException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         assertSpaceRecord(5120, 2048, 1024, 1024);
         repository.setState(id1, CACHED);
         assertSpaceRecord(5120, 2048, 0, 2048);
@@ -706,8 +881,13 @@ public class RepositorySubsystemTest
 
     @Test
     public void testDoubleAccountingOnPrecious()
-        throws CacheException, InterruptedException, IllegalTransitionException
+        throws IOException, CacheException,
+               InterruptedException, IllegalTransitionException
     {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
         assertSpaceRecord(5120, 2048, 1024, 1024);
         repository.setState(id2, PRECIOUS);
         assertSpaceRecord(5120, 2048, 2048, 0);
