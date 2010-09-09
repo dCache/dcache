@@ -936,6 +936,8 @@ public class HsmStorageHandler2
                 StorageInfo storageInfo;
                 ReadHandle handle = _repository.openEntry(pnfsId);
                 try {
+                    doChecksum(handle);
+
                     storageInfo = handle.getEntry().getStorageInfo().clone();
                     _infoMsg.setStorageInfo(storageInfo);
                     _infoMsg.setFileSize(storageInfo.getFileSize());
@@ -1084,6 +1086,25 @@ public class HsmStorageHandler2
                 sendBillingInfo();
                 executeCallbacks(excep);
             }
+        }
+
+        private void doChecksum(ReadHandle handle)
+            throws CacheException, IOException, InterruptedException
+        {
+            if (!_checksumModule.checkOnFlush())
+                return;
+
+            File file = handle.getFile();
+            ChecksumFactory factory =
+                _checksumModule.getDefaultChecksumFactory();
+            Checksum checksum =
+                factory.computeChecksum(file);
+
+            /* This will compare the checksum to any known value or
+             * store the checksum if it was not already known.
+             */
+            _checksumModule.setMoverChecksums(getPnfsId(), file,
+                                              factory, null, checksum);
         }
 
         private void notifyFlushMessageTarget(StorageInfo info)

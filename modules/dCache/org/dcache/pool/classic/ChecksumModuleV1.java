@@ -32,6 +32,7 @@ public class ChecksumModuleV1
     private boolean _onRead     = false;
     private boolean _onWrite    = false;
     private boolean _onTransfer = false;
+    private boolean _onFlush    = false;
     private boolean _onRestore  = false;
     private boolean _enforceCRC = false;
     private boolean _updatepnfs = false;
@@ -126,6 +127,7 @@ public class ChecksumModuleV1
         pw.print("csm set policy");
         pw.print(" -onread="); pw.print(_onRead?"on":"off");
         pw.print(" -onwrite="); pw.print(_onWrite?"on":"off");
+        pw.print(" -onflush="); pw.print(_onFlush?"on":"off");
         pw.print(" -onrestore="); pw.print(_onRestore?"on":"off");
         pw.print(" -ontransfer="); pw.print(_onTransfer?"on":"off");
         pw.print(" -enforcecrc="); pw.print(_enforceCRC?"on":"off");
@@ -136,6 +138,11 @@ public class ChecksumModuleV1
     public boolean checkOnRead()
     {
         return _onRead;
+    }
+
+    public boolean checkOnFlush()
+    {
+        return _onFlush;
     }
 
     public boolean checkOnRestore()
@@ -167,6 +174,8 @@ public class ChecksumModuleV1
             pw.print("read ");
         if (_onWrite)
             pw.print("write ");
+        if (_onFlush)
+            pw.print("flush ");
         if (_onRestore)
             pw.print("restore ");
         if (_onTransfer)
@@ -198,6 +207,7 @@ public class ChecksumModuleV1
         sb.append(" Policies :\n").
             append("        on read : ").append(_onRead).append("\n").
             append("       on write : ").append(_onWrite).append("\n").
+            append("       on flush : ").append(_onFlush).append("\n").
             append("     on restore : ").append(_onRestore).append("\n").
             append("    on transfer : ").append(_onTransfer).append("\n").
             append("    enforce crc : ").append(_enforceCRC).append("\n").
@@ -222,6 +232,7 @@ public class ChecksumModuleV1
         "\n"+
         "       -onread          : run check before each open for reading\n"+
         "       -onwrite         : run check after receiving the file from client (on fs)\n"+
+        "       -onflush         : run check before flush to HSM\n"+
         "       -onrestore       : run check after restore from HSM\n"+
         "       -ontransfer      : run check while receiving data from client (on the fly)\n"+
         "       -enforcecrc      : make sure there is at least one crc stored in pnfs\n"+
@@ -233,6 +244,7 @@ public class ChecksumModuleV1
         _frequently = checkBoolean(args, "frequently" , _frequently);
         _onRead     = checkBoolean(args, "onread"     , _onRead);
         _onWrite    = checkBoolean(args, "onwrite"    , _onWrite);
+        _onFlush    = checkBoolean(args, "onflush"    , _onFlush);
         _onRestore  = checkBoolean(args, "onrestore"  , _onRestore);
         _onTransfer = checkBoolean(args, "ontransfer" , _onTransfer);
         _enforceCRC = checkBoolean(args, "enforcecrc" , _enforceCRC);
