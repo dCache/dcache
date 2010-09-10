@@ -60,15 +60,11 @@
         <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
         <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
+        <dependency groupId="axis" artifactId="axis" version="1.3" />
     </artifact:dependencies>
 
     <path id="srmclient.classpath">
         <pathelement location="${classesDir}/srm.jar" />
-        <fileset dir="${axis.untared}">
-          <include name="**/*.jar"/>
-          <exclude name="**/log4j-*.jar"/>
-          <exclude name="**/commons-logging-*.jar"/>
-        </fileset>
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
@@ -290,14 +286,6 @@
 
 
         <!-- external jars -->
-        <!-- axis -->
-        <mkdir dir="${srmclient.bin.dir}/lib/axis" />
-        <copy todir="${srmclient.bin.dir}/lib/axis">
-            <fileset dir="${axis.untared}/lib/">
-                <include name="*.jar" />
-                <exclude name="log4j-*.jar"/>
-            </fileset>
-        </copy>
 
         <!-- logback -->
         <mkdir dir="${srmclient.bin.dir}/lib/logback" />

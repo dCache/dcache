@@ -70,27 +70,12 @@
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-security" version="7.1.6.v20100715"/>
         <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
         <dependency groupId="com.sleepycat" artifactId="je" version="4.0.103"/>
+        <dependency groupId="axis" artifactId="axis" version="1.3" />
     </artifact:dependencies>
     <!--
-        Untar axis, glite, cog, glue
+        Untar glite, cog, glue
     -->
 
-    <property name="axis.libDir" location="${libDir}/axis" />
-    <property name="axis.tarName" location="${axis.libDir}/axis-bin-1_3.tar.gz" />
-    <!-- A pattern uniquely identifying one tar file -->
-    <property name="axis.untared" location="${unpackTop}/axis-1_3" />
-    <!-- This is the dir the tar will create -->
-
-    <target name="-check.lib.axis.uptodate" >
-        <uptodate property="lib.axis.uptodate" targetfile="${axis.untared}">
-            <srcfiles dir="${axis.libDir}" includes="${axis.tarName}" />
-        </uptodate>
-    </target>
-
-    <target name="-lib.axis.untar" depends="-check.lib.axis.uptodate" unless="lib.axis.uptodate">
-        <echo>Unpacking to ${axis.untared}</echo>
-        <untar src="${axis.tarName}" dest="${unpackTop}" compression="gzip" />
-    </target>
 
     <property name="glite.libDir" location="${libDir}/glite" />
     <property name="glite.untarred" location="${unpackTop}/share" />

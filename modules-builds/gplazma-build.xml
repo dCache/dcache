@@ -35,11 +35,6 @@
     <!-- Classpath for gplazma.jar. -->
 
     <path id="gplazma.classpath">
-        <fileset dir="${axis.untared}">
-          <include name="**/*.jar" />
-          <exclude name="**/log4j-*.jar"/>
-          <exclude name="**/commons-logging-*.jar"/>
-        </fileset>
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />

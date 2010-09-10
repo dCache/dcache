@@ -94,11 +94,6 @@
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
         <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
         <path refid="authz.classpath" />
-        <fileset dir="${axis.untared}">
-          <include name="**/*.jar"/>
-          <exclude name="**/log4j-*.jar"/>
-          <exclude name="**/commons-logging-*.jar"/>
-        </fileset>
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
@@ -522,15 +517,6 @@
         <!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
 
         <!-- external jars -->
-        <!-- axis -->
-        <mkdir dir="${server.bin.dir}/classes/axis" />
-        <copy todir="${server.bin.dir}/classes/axis">
-            <fileset dir="${axis.untared}/lib/">
-                <include name="*.jar" />
-                <exclude name="log4j-*.jar"/>
-                <exclude name="commons-logging-*.jar"/>
-            </fileset>
-        </copy>
 
         <!-- cog -->
         <mkdir dir="${server.bin.dir}/classes/cog" />

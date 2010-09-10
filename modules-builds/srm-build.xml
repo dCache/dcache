@@ -33,11 +33,6 @@
     <!-- Classpath for srm.jar -->
 
     <path id="srm.classpath">
-        <fileset dir="${axis.untared}">
-          <include name="**/*.jar"/>
-          <exclude name="**/log4j-*.jar"/>
-          <exclude name="**/commons-logging-*.jar"/>
-        </fileset>
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${glite.untarred}" includes="**/*.jar" />
@@ -57,7 +52,7 @@
     <!--
         compile srm code
     -->
-    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare,-lib.axis.untar,-lib.glite.untar">
+    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare,-lib.glite.untar">
 
         <mkdir dir="${srm.build.dir}" />
         <javac destdir="${srm.build.dir}" classpathref="srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
