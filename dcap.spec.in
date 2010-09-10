@@ -25,6 +25,7 @@ Source: @PACKAGE@-@VERSION@.tar.gz
 License: LGPL
 
 Group: Applications/System
+BuildRequires: zlib-devel
 %description
 dCache is a distributed mass storage system.
 
