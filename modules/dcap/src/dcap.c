@@ -871,15 +871,15 @@ int
 ascii_open_conversation(struct vsp_node * node)
 {
 
-	char           *openStr;
 	int             len;
 	int             uid;
 	short           invalid_flag = 1;
 	asciiMessage   *aM;
+	char_buf_t    *context;
+	char           *outStr;
+	context = dc_char_buf_create();
 
-	openStr = (char *) calloc(DCAP_CMD_SIZE, sizeof(char));
-
-	if (openStr == NULL) {
+	if (context == NULL) {
 		dc_errno = DEMALLOC;
 		return -1;
 	}
@@ -889,10 +889,12 @@ ascii_open_conversation(struct vsp_node * node)
 #else
 	uid = (int)getuid();
 #endif
-
-	sprintf(openStr, "%d 0 client %s \"%s\"", node->queueID,
+	outStr = dc_char_buf_sprintf(context,"%d 0 client %s \"%s\"", node->queueID,
 	                                          asciiCommand(node->asciiCommand),
 	                                          node->asciiCommand == DCAP_CMD_TRUNC ? node->ipc : node->pnfsId );
+	if (outStr == NULL){
+		goto out_of_mem_exit;
+	}
 
 	switch( node->asciiCommand ) {
 		case DCAP_CMD_OPEN:
@@ -903,29 +905,50 @@ ascii_open_conversation(struct vsp_node * node)
 			if( node->flags == O_RDONLY) {
 #endif /* WIN32 */
 
-				APPEND_TO_OPENSTR(" r");
+				outStr = dc_char_buf_sprintf(context,
+					              "%s r", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
-					dc_snaprintf( openStr, DCAP_CMD_SIZE,
-					              " -path=%s/%s", node->directory, node->file_name);
+					outStr = dc_char_buf_sprintf(context,
+					              "%s -path=%s/%s", outStr, node->directory, node->file_name);
+					if (outStr == NULL) {
+						goto out_of_mem_exit;
+					}
 				}
 			}
 
 			if (node->flags & O_WRONLY) {
-				APPEND_TO_OPENSTR(" w");
+				outStr = dc_char_buf_sprintf(context,
+					              "%s w", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
-					dc_snaprintf( openStr, DCAP_CMD_SIZE,
-					              " -path=%s/%s", node->directory, node->file_name);
+					outStr = dc_char_buf_sprintf(context,
+					              "%s -path=%s/%s", outStr, node->directory, node->file_name);
+					if (outStr == NULL) {
+						goto out_of_mem_exit;
+					}
 				}
 			}
 
 			if (node->flags & O_RDWR) {
-				APPEND_TO_OPENSTR(" rw");
+				outStr = dc_char_buf_sprintf(context,
+					              "%s rw", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
-					dc_snaprintf( openStr, DCAP_CMD_SIZE,
-					              " -path=%s/%s", node->directory, node->file_name);
+					outStr = dc_char_buf_sprintf(context,
+					              "%s -path=%s/%s", outStr, node->directory, node->file_name);
+					if (outStr == NULL) {
+						goto out_of_mem_exit;
+					}
 				}
 			}
 
@@ -934,70 +957,109 @@ ascii_open_conversation(struct vsp_node * node)
 			 *  send file permissions in case of create with URL syntax
 			 */
 			if( (node->flags & O_CREAT) && (node->url != NULL) ) {
-				dc_snaprintf(openStr, DCAP_CMD_SIZE,
-				             " -mode=0%o", node->mode);
+				outStr = dc_char_buf_sprintf(context,
+				             "%s -mode=0%o", outStr, node->mode);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 			}
 
 			if ( node->asciiCommand == DCAP_CMD_TRUNC ) {
 				if( node->url == NULL ) {
-					dc_snaprintf(openStr, DCAP_CMD_SIZE,
-						     " -truncate=\"%s\"", node->pnfsId);
+					outStr = dc_char_buf_sprintf(context,
+						     "%s -truncate=\"%s\"", outStr, node->pnfsId);
 				}else{
-				        APPEND_TO_OPENSTR(" -truncate");
+					outStr = dc_char_buf_sprintf(context,
+						     "%s -truncate=\"%s\"", outStr);
+				}
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
 				}
 			}
-
-			dc_snaprintf(openStr, DCAP_CMD_SIZE,
-			             " %s %u -timeout=%ld",
-				     hostName, node->data_port, openTimeOut);
-
+			outStr = dc_char_buf_sprintf(context,
+				"%s %s %u -timeout=%ld",
+					outStr, hostName, node->data_port, openTimeOut);
+			if (outStr == NULL) {
+				goto out_of_mem_exit;
+			}
 			switch( onError) {
 			case onErrorFail:
-				APPEND_TO_OPENSTR(" -onerror=fail");
+				outStr = dc_char_buf_sprintf(context,
+					"%s -onerror=fail", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 				break;
 			case onErrorDefault:
-				APPEND_TO_OPENSTR(" -onerror=default");
+				outStr = dc_char_buf_sprintf(context,
+					"%s -onerror=default", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 				break;
 			default:
 			case onErrorRetry:
-				APPEND_TO_OPENSTR(" -onerror=retry");
+				outStr = dc_char_buf_sprintf(context,
+					"%s -onerror=retry", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 				break;
 			}
 
 			if( rqReceiveBuffer != 0 ) {
-				dc_snaprintf(openStr, DCAP_CMD_SIZE,
-				             " -send=%d", rqReceiveBuffer);
+				outStr = dc_char_buf_sprintf(context,
+					"%s -send=%d", outStr, rqReceiveBuffer);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 			}
 
 			if( rqSendBuffer!= 0 ) {
-				dc_snaprintf(openStr, DCAP_CMD_SIZE,
-					     " -receive=%d", rqSendBuffer);
+				outStr = dc_char_buf_sprintf(context,
+					"%s -receive=%d", outStr, rqSendBuffer);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 			}
 
 
 			if( isActive() ) {
-				APPEND_TO_OPENSTR(" -passive");
+				outStr = dc_char_buf_sprintf(context,
+					"%s -passive", outStr);
+				if (outStr == NULL) {
+					goto out_of_mem_exit;
+				}
 			}
 
 			break;
 		case DCAP_CMD_STAGE:
 		case DCAP_CMD_CHECK:
-			dc_snaprintf(openStr, DCAP_CMD_SIZE,
-			             " -stagetime=%ld -location=%s",
-			             node->atime,
-			             node->stagelocation == NULL ? hostName : node->stagelocation);
+			outStr = dc_char_buf_sprintf(context,
+				"%s -stagetime=%ld -location=%s",
+					outStr,
+					node->atime,
+					node->stagelocation == NULL ? hostName : node->stagelocation);
+			if (outStr == NULL) {
+				goto out_of_mem_exit;
+			}
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_MKDIR:
 		case DCAP_CMD_CHMOD:
-			dc_snaprintf(openStr, DCAP_CMD_SIZE,
-			             " -mode=%d", node->mode);
+			outStr = dc_char_buf_sprintf(context,
+				"%s -mode=%d", outStr, node->mode);
+			if (outStr == NULL) {
+				goto out_of_mem_exit;
+			}
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_CHOWN:
-			dc_snaprintf(openStr, DCAP_CMD_SIZE,
-			             " -owner=%d:%d",
-			             node->uid, node->gid);
+			outStr = dc_char_buf_sprintf(context,
+				"%s -owner=%d:%d", outStr, node->uid, node->gid);
+			if (outStr == NULL) {
+				goto out_of_mem_exit;
+			}
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_STAT:
@@ -1008,14 +1070,19 @@ ascii_open_conversation(struct vsp_node * node)
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_OPENDIR:
-			dc_snaprintf(openStr, DCAP_CMD_SIZE,
-			             " %s %u",
-			             hostName, node->data_port);
+			outStr = dc_char_buf_sprintf(context,
+				"%s %s %u", outStr, hostName, node->data_port);
+			if (outStr == NULL) {
+				goto out_of_mem_exit;
+			}
 			invalid_flag = 0;
 			break;
 		case DCAP_CMD_RENAME:
-			dc_snaprintf(openStr, DCAP_CMD_SIZE,
-			             " %s", node->ipc);
+			outStr = dc_char_buf_sprintf(context,
+				"%s %s", outStr, node->ipc);
+			if (outStr == NULL) {
+				goto out_of_mem_exit;
+			}
 			invalid_flag = 0;
 			break;
 		default:
@@ -1024,25 +1091,29 @@ ascii_open_conversation(struct vsp_node * node)
 	}
 
 	if (invalid_flag) {
+		dc_char_buf_free(context);
 		dc_errno = DEFLAGS;
-		free(openStr);
 		return -1;
 	}
 
 	if(extraOption != NULL) {
-		dc_snaprintf(openStr, DCAP_CMD_SIZE,
-		             " %s", extraOption);
+		outStr = dc_char_buf_sprintf(context,
+				"%s %s", outStr, extraOption);
 		free(extraOption);
 		extraOption = NULL;
+		if (outStr == NULL) {
+			goto out_of_mem_exit;
+		}
 	}
-
-	dc_snaprintf(openStr, DCAP_CMD_SIZE,
-	             " -uid=%d\n", uid);
-
-	len = strlen( openStr);
-	sendControlMessage(node->fd, openStr, len, node->tunnel);
+	outStr = dc_char_buf_sprintf(context,
+				"%s -uid=%d\n", outStr, uid);
+	if (outStr == NULL) {
+		goto out_of_mem_exit;
+	}
+	len = strlen(outStr);
+	sendControlMessage(node->fd, outStr, len, node->tunnel);
 	/* getControlMessage(MAYBE, NULL); */
-	free(openStr);
+	dc_char_buf_free(context);
 
 	if ( (node->asciiCommand == DCAP_CMD_OPEN ) ||
 		(node->asciiCommand == DCAP_CMD_OPENDIR ) ||
@@ -1081,6 +1152,10 @@ ascii_open_conversation(struct vsp_node * node)
 	}
 
 	return 0;
+out_of_mem_exit:
+	dc_char_buf_free(context);
+	dc_errno = DEMALLOC;
+	return -1;
 
 }
 
