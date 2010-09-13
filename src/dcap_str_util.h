@@ -18,8 +18,16 @@
 #ifndef _DCAP_STR_UTIL_H_
 #define _DCAP_STR_UTIL_H_
 
+typedef struct char_buf char_buf_t;
+
+char_buf_t *dc_char_buf_create();
+char *dc_char_buf_sprintf(char_buf_t *context, const char *format, ...);
+void dc_char_buf_free(char_buf_t *context);
+
 char *dc_safe_strncat( char *dest, size_t dest_size, char *src);
-char *dc_snaprintf( char *dest, size_t dest_size, char *format, ...);
+char *dc_snaprintf( char *dest, size_t dest_size, const char *format, ...);
+
+
 
 #endif				/* _DCAP_STR_UTIL_H_ */
 
