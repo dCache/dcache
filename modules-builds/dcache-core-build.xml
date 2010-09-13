@@ -85,7 +85,6 @@
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-        <fileset dir="${libDir}/netty/" includes="*.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
@@ -453,14 +452,6 @@
         <mkdir dir="${server.bin.dir}/classes/milton/" />
         <copy todir="${server.bin.dir}/classes/milton">
             <fileset dir="${libDir}/milton/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
-        <!-- Netty -->
-        <mkdir dir="${server.bin.dir}/classes/netty/" />
-        <copy todir="${server.bin.dir}/classes/netty">
-            <fileset dir="${libDir}/netty/">
                 <include name="*.jar" />
             </fileset>
         </copy>
