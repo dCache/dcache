@@ -49,6 +49,8 @@ public class PoolList extends BasePage {
                 new PropertyModel(this, "_selectedOption"),
                 dropDownChoices, new ChoiceRenderer<SelectOption>("value"));
         setDefaultChoice(dropDownChoices);
+        MetaDataRoleAuthorizationStrategy.authorize(dropDownChoice,
+                RENDER, Role.ADMIN);
         return dropDownChoice;
     }
 
@@ -87,7 +89,7 @@ public class PoolList extends BasePage {
         public PoolUsageForm(String id) {
             super(id);
             Button button = new Button("submit");
-            MetaDataRoleAuthorizationStrategy.authorize(button, ENABLE, Role.ADMIN);
+            MetaDataRoleAuthorizationStrategy.authorize(button, RENDER, Role.ADMIN);
             _log.debug("submit isEnabled : {}", String.valueOf(button.isEnabled()));
             this.add(button);
         }

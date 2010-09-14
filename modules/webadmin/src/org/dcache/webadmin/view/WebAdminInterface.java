@@ -210,6 +210,10 @@ public class WebAdminInterface extends WebApplication {
         _httpsPort = httpsPort;
     }
 
+    public boolean isAuthenticatedMode() {
+        return _authenticatedMode;
+    }
+
     public void setAuthenticatedMode(boolean authenticatedMode) {
         _authenticatedMode = authenticatedMode;
     }
