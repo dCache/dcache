@@ -281,7 +281,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             for(FileRequest fr: fileRequests) {
                 try {
                     logger.debug("changing fr#"+fr.getId()+" to "+state);
-                    fr.setState(state,"changing file state becase requests state changed");
+                    fr.setState(state,"changing file state because request state has changed");
                 }
                 catch(IllegalStateTransition ist) {
                     logger.error("Illegal State Transition : " +ist.getMessage());

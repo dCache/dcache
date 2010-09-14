@@ -265,7 +265,7 @@ public final class GetRequest extends ContainerRequest {
                     {
 
                         logger.debug("changing fr#"+fileRequests[i].getId()+" to "+state);
-                            fr.setState(state,"changing file state becase requests state changed");
+                            fr.setState(state,"changing file state because request state has changed");
                     }
                 }
                 catch(IllegalStateTransition ist) {

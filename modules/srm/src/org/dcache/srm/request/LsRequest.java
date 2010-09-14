@@ -178,7 +178,7 @@ public final class LsRequest extends ContainerRequest {
                                 try {
                                         State fr_state = fr.getState();
                                         if(!State.isFinalState(fr_state)) {
-                                                fr.setState(state,"changing file state becase requests state changed");
+                                                fr.setState(state,"changing file state because request state has changed");
                                         }
                                 }
                                 catch(IllegalStateTransition ist) {
