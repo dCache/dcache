@@ -4,9 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.ServerSocket;
-import java.net.InetAddress;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
@@ -57,15 +56,25 @@ public class JettyGSIConnector
 
     protected static final String MODE_SSL = "ssl";
     protected static final String MODE_GSI = "gsi";
+    private static final long DEFAULT_HOST_CERT_REFRESH_INTERVAL =
+        TimeUnit.MILLISECONDS.convert(12, TimeUnit.HOURS);
+    private static final long DEFAULT_TRUST_ANCHOR_REFRESH_INTERVAL =
+        TimeUnit.MILLISECONDS.convert(4, TimeUnit.HOURS);
 
     private GSSCredential _credentials;
     private TrustedCertificates _trustedCerts;
     private GSSManager _manager;
+
     private String _serverCert;
     private String _serverKey;
     private String _serverProxy;
     private String _caCertDir;
     private boolean _encrypt;
+    private long _hostCertRefreshInterval;
+    private long _trustAnchorRefreshInterval;
+    private long _hostCertRefreshTimestamp = 0;
+    private long _trustAnchorRefreshTimestamp = 0;
+
     private volatile boolean _autoFlush;
     private volatile boolean _requireClientAuth = true;
     private volatile boolean _acceptNoClientCerts = false;
@@ -73,6 +82,15 @@ public class JettyGSIConnector
     private volatile boolean _rejectLimitedProxy = false;
     private volatile Integer _mode = GSIConstants.MODE_SSL;
     private volatile int _handshakeTimeout = 0; // 0 means use maxIdleTime
+
+    /**
+     * Assing default values to the certificate refresh intervals
+     */
+    public JettyGSIConnector()
+    {
+        _hostCertRefreshInterval = DEFAULT_HOST_CERT_REFRESH_INTERVAL;
+        _trustAnchorRefreshInterval = DEFAULT_TRUST_ANCHOR_REFRESH_INTERVAL;
+    }
 
     /**
      * Throws an IllegalStateException if the connector is open.
@@ -282,53 +300,75 @@ public class JettyGSIConnector
     }
 
     /**
-     * Loads the server credentials and opens the server socket.
+     * Read proxy/server certificates and create a credential for the GSI
+     * connection from it.
+     * @throws IOException Loading the credentials fails
      */
-    @Override
-    public void open() throws IOException
-    {
+    private synchronized void loadServerCredentials() throws IOException {
+
+        long timeSinceLastServerRefresh = (System.currentTimeMillis() -
+                _hostCertRefreshTimestamp);
+
         try {
-            _log.info("Loading credentials");
+            if (_credentials == null || _manager == null ||
+               (timeSinceLastServerRefresh >= _hostCertRefreshInterval)) {
+                    _log.info("Time since last server cert refresh {}",
+                              timeSinceLastServerRefresh);
+                    _log.info("Loading server certificates. Current refresh " +
+                              "interval: {} ms",
+                              _hostCertRefreshInterval);
 
-            GlobusCredential cred;
-            if (_serverProxy != null && !_serverProxy.equals("")) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("Server Proxy: " + _serverProxy);
-                }
-                cred = new GlobusCredential(_serverProxy);
-            } else if (_serverCert != null && _serverKey != null) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("Server Certificate: " + _serverCert);
-                    _log.info("Server Key: " + _serverKey);
-                }
-                cred = new GlobusCredential(_serverCert, _serverKey);
-            } else {
-                throw new IllegalStateException("Server credentials have not been configured");
+                    GlobusCredential cred;
+                    if (_serverProxy != null && !_serverProxy.equals("")) {
+                        _log.info("Server Proxy: {}", _serverProxy);
+                        cred = new GlobusCredential(_serverProxy);
+                    } else if (_serverCert != null && _serverKey != null) {
+                        _log.info("Server Certificate: {}", _serverCert);
+                        _log.info("Server Key: {}", _serverKey);
+                        cred = new GlobusCredential(_serverCert, _serverKey);
+                    } else {
+                        throw new IllegalStateException("Server credentials" +
+                                                        "have not been configured");
+                    }
+
+                    _credentials =
+                        new GlobusGSSCredentialImpl(cred, GSSCredential.ACCEPT_ONLY);
+
+
+                    _manager = ExtendedGSSManager.getInstance();
+                    _hostCertRefreshTimestamp = System.currentTimeMillis();
             }
-
-            _credentials =
-                new GlobusGSSCredentialImpl(cred, GSSCredential.ACCEPT_ONLY);
         } catch (GlobusCredentialException e) {
             throw new IOException("Failed to load credentials", e);
         } catch (GSSException e) {
             throw new IOException("Failed to load credentials", e);
         }
-
-        if (_caCertDir != null) {
-            if (_log.isInfoEnabled()) {
-                _log.info("CA certificate directory: " + _caCertDir);
-            }
-
-            _trustedCerts = TrustedCertificates.load(_caCertDir);
-        }
-
-        _manager = ExtendedGSSManager.getInstance();
-
-        super.open();
     }
 
     /**
-     * Accepts and dispatches a new connection.
+     * Reload the trusted certificates from the position specified in
+     * caCertDir
+     */
+    private synchronized void loadTrustAnchors()
+    {
+        long timeSinceLastTARefresh = (System.currentTimeMillis() -
+                _trustAnchorRefreshTimestamp);
+
+        if (_caCertDir != null && (_trustedCerts == null ||
+                (timeSinceLastTARefresh >= _trustAnchorRefreshInterval))) {
+            _log.info("Time since last TA Refresh {}", timeSinceLastTARefresh);
+            _log.info("Loading trust anchors. Current refresh interval: {} ms",
+                   _trustAnchorRefreshInterval);
+            _log.info("CA certificate directory: {}", _caCertDir);
+            _trustedCerts = TrustedCertificates.load(_caCertDir);
+            _trustAnchorRefreshTimestamp = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * Accepts and dispatches a new connection. Loads/reloads the server
+     * credentials and the trusted certificates if they are not
+     * present or the refresh interval has expired.
      */
     @Override
     public void accept(int acceptorID)
@@ -337,6 +377,9 @@ public class JettyGSIConnector
         Socket socket = _serverSocket.accept();
 
         try {
+            loadServerCredentials();
+            loadTrustAnchors();
+
             configure(socket);
 
             GsiSocket gsiSocket = new GsiSocket(socket, createGSSContext());
@@ -468,6 +511,16 @@ public class JettyGSIConnector
         } catch (GSSException e) {
             throw new IOException("Failed to retrieve context properties", e);
         }
+    }
+
+    public void setMillisecBetweenHostCertRefresh(int ms)
+    {
+        _hostCertRefreshInterval = ms;
+    }
+
+    public void setMillisecBetweenTrustAnchorRefresh(int ms)
+    {
+        _trustAnchorRefreshInterval = ms;
     }
 
     public class GsiConnection extends ConnectorEndPoint
