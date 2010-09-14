@@ -6,6 +6,9 @@
 #   Make sure we got what we need.
 #
 check -strong port
+check -strong hostCertificateRefreshPeriod
+check -strong trustAnchorRefreshPeriod
+check -strong srmJettyConnectorType
 
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
@@ -261,7 +264,7 @@ onerror shutdown
 exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-   "classpath:diskCacheV111/srm/jsrm.xml \
+   "classpath:diskCacheV111/srm/srm-${srmJettyConnectorType}.xml \
         -export \
         -srmPort=${port} \
         -srmVersion=${srmVersion}  \
@@ -367,4 +370,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmJettyThreadsMin=${srmJettyThreadsMin}\
         -srmJettyThreadsMaxIdleTime=${srmJettyThreadsMaxIdleTime}\
         -srmJettyThreadsMaxQueued=${srmJettyThreadsMaxQueued}\
-       "
+        -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod}\
+        -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod}"

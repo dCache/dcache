@@ -4,19 +4,6 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-
-  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-    <description>Imported configuration data</description>
-    <property name="location" value="domaincontext:"/>
-    <property name="properties">
-      <value>
-        srmGracefulShutdown=2000
-        loginBrokerUpdateTime=300
-        loginBrokerUpdateThreshold=0.1
-      </value>
-    </property>
-  </bean>
-
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PnfsManager communication stub</description>
     <property name="destination" value="${srmPnfsManager}"/>
@@ -161,10 +148,7 @@
       -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
       -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
       -ls-request-switch-to-asynchronous-mode-delay=${srmLsRequestSwitchToAsynchronousModeDelay}
-      -client-dns-lookup=${srmClientDNSLookup}
-      -jdbc-save-completed-requests-only=${srmJdbcSaveCompletedRequestsOnly}
-      -jdbc-enabled=${srmJdbcEnabled}
-"/>
+      -client-dns-lookup=${srmClientDNSLookup}"/>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>
   </bean>
@@ -195,28 +179,9 @@
     <property name="threadPool" ref="thread-pool"/>
 
     <property name="connectors">
-      <list>
-        <bean id="connector"
-              class="org.dcache.util.JettyGSIConnector">
-          <property name="port" value="${srmPort}"/>
-
-          <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
-          <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>
-          <property name="lowResourceMaxIdleTime"
-                    value="${srmJettyConnectorLowResourceMaxIdleTime}"/>
-          <property name="acceptQueueSize" value="${srmJettyConnectorBackLog}"/>
-
-          <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem"/>
-          <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem"/>
-          <property name="caCertificatePath" value="/etc/grid-security/certificates"/>
-          <property name="autoFlush" value="true"/>
-          <property name="encrypt" value="true"/>
-          <property name="requireClientAuth" value="true"/>
-          <property name="acceptNoClientCerts" value="false"/>
-          <property name="handshakeTimeout" value="10000"/>
-          <property name="gssMode" value="gsi"/>
-        </bean>
-      </list>
+    <list>
+      <ref bean="connector" />
+    </list>
     </property>
 
     <property name="handler">
