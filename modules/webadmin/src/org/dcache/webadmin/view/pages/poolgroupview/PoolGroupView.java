@@ -34,12 +34,10 @@ import org.slf4j.LoggerFactory;
  */
 public class PoolGroupView extends BasePage {
 
-    private Panel EMPTY_PANEL = new EmptyPanel("specialPoolGroupPanel");
     private String SPECIAL_POOLGROUP_HEADER = "specialPoolGroup.header";
     private List<PoolGroupBean> _poolGroups;
     private PoolGroupBean _currentPoolGroup;
     private String _selectedGroup = getStringResource(SPECIAL_POOLGROUP_HEADER);
-    private Panel _shownPanel = EMPTY_PANEL;
     private PoolListPanel _poolListPanel = new PoolListPanel(
             "specialPoolGroupPanel", new PropertyModel<List<PoolSpaceBean>>(
             this, "_currentPoolGroup._poolSpaces"), false);
@@ -49,6 +47,7 @@ public class PoolGroupView extends BasePage {
     private CellServicesPanel _cellServicesPanel = new CellServicesPanel(
             "specialPoolGroupPanel", new PropertyModel<List<CellServicesBean>>(
             this, "_currentPoolGroup._cellStatuses"));
+    private Panel _shownPanel = _poolListPanel;
     private static final Logger _log = LoggerFactory.getLogger(PoolGroupView.class);
 
     public PoolGroupView() {
@@ -130,11 +129,13 @@ public class PoolGroupView extends BasePage {
         private Link _link1;
         private Link _link2;
         private Link _link3;
+        private final String ACTIVE_ATTRIBUTE = "active";
 
         public NavigationFragment(String id) {
             super(id, "navigationFragment", PoolGroupView.this);
             _link1 = addLink("cellViewLink", "cellViewMessage", _cellServicesPanel);
             _link2 = addLink("spaceUsageLink", "spaceUsageMessage", _poolListPanel);
+            addClassAttribute(_link2, ACTIVE_ATTRIBUTE);
             _link3 = addLink("moverViewLink", "moverViewMessage", _poolQueuesPanel);
         }
 
@@ -147,7 +148,7 @@ public class PoolGroupView extends BasePage {
                     removeActiveAttributes();
                     _shownPanel.replaceWith(panelToShow);
                     _shownPanel = panelToShow;
-                    addClassAttribute(this, "active");
+                    addClassAttribute(this, ACTIVE_ATTRIBUTE);
                 }
             };
             link.add(new Label(MessageId,
