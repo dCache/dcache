@@ -118,8 +118,15 @@ public class LogIn extends BasePage {
                     }
                     setGoOnPage();
                 } catch (LogInServiceException ex) {
-                    error(getStringResource("loginError"));
-                    _log.debug("user/pwd sign in error");
+                    String cause = "unknown";
+                    if (ex.getMessage() != null) {
+                        cause = ex.getMessage();
+                    }
+//                  not a very good solution to take the cause and append it,
+//                  because it is not localised this way - but dcache is english
+//                  only anyway...
+                    error(getStringResource("loginError") + " - cause: " + cause);
+                    _log.debug("user/pwd sign in error - cause {}", cause);
                 }
             }
         }
@@ -144,16 +151,14 @@ public class LogIn extends BasePage {
                     }
                     setGoOnPage();
                 } catch (IllegalArgumentException ex) {
-                    error(getStringResource("loginError"));
+                    error(getStringResource("noCertError"));
                     _log.debug("no certificate provided");
                 } catch (LogInServiceException ex) {
                     String cause = "unknown";
-                    if (ex.getCause() != null) {
-                        cause = ex.getCause().getMessage();
+                    if (ex.getMessage() != null) {
+                        cause = ex.getMessage();
                     }
-                    error(getStringResource("loginError") + " " + cause);
-//                    reenable checking of formdata
-                    this.setDefaultFormProcessing(true);
+                    error(getStringResource("loginError"));
                     _log.debug("cert sign in error - cause {}", cause);
                 }
             }
@@ -162,9 +167,9 @@ public class LogIn extends BasePage {
                 ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
                 HttpServletRequest request = servletWebRequest.getHttpServletRequest();
                 Object certificate = request.getAttribute(X509_CERTIFICATE_ATTRIBUTE);
-                _log.debug("Certificate in request: {}", certificate.toString());
                 X509Certificate[] chain = null;
                 if (certificate instanceof X509Certificate[]) {
+                    _log.debug("Certificate in request: {}", certificate.toString());
                     chain = (X509Certificate[]) certificate;
                 } else {
                     throw new IllegalArgumentException();

@@ -50,46 +50,50 @@ public class JettyCell extends AbstractCell {
     description = "path to the .war files with the webapps",
     required = true)
     private String _webappsPath;
+    @Option(name = "authenticated",
+    description = "webapp runs in authenticated mode",
+    required = true)
+    private boolean _authenticatedMode;
     @Option(name = "httpPort",
     description = "Port where Jetty is connectable via http",
     required = true)
     private int _httpPort;
     @Option(name = "httpsPort",
     description = "Port where Jetty is connectable via https",
-    required = true)
+    required = false)
     private int _httpsPort;
     @Option(name = "keystore",
     description = "The keystore for SSL",
-    required = true)
+    required = false)
     private String _keystore;
     @Option(name = "keystoreType",
     description = "The keystoreType for SSL",
-    required = true)
+    required = false)
     private String _keystoreType;
     @Option(name = "keystorePassword",
     description = "The keystore password",
     log = false,
-    required = true)
+    required = false)
     private String _keystorePassword;
     @Option(name = "truststore",
     description = "The truststore for SSL",
-    required = true)
+    required = false)
     private String _truststore;
     @Option(name = "truststorePassword",
     description = "The truststore password",
     log = false,
-    required = true)
+    required = false)
     private String _trustPassword;
 //    the GID a user has to have to be considered an Admin of webadmininterface
     @Option(name = "admin-GID",
     description = "admin GID for webadmininterface",
-    required = true)
+    required = false)
     private int _adminGid;
 //    FIXME with new gplazma this should be known by gplazma and not be needed
 //    anymore
     @Option(name = "kpwd-file",
     description = "path to the kpwd-file",
-    required = true)
+    required = false)
     private String _kpwdFile;
     @Option(name = "dCacheInstanceName",
     description = "The dCache-Instance Name",
@@ -123,7 +127,11 @@ public class JettyCell extends AbstractCell {
     private void createJetty() {
         _server = new Server(_httpPort);
         createAndSetThreadPool();
-        _server.setConnectors(new Connector[]{createSimpleConnector(), createSslConnector()});
+        if (_authenticatedMode) {
+            _server.setConnectors(new Connector[]{createSimpleConnector(), createSslConnector()});
+        } else {
+            _server.setConnectors(new Connector[]{createSimpleConnector()});
+        }
         createAndSetHandlers();
         try {
 //            make the cell known for the webapps
@@ -206,6 +214,10 @@ public class JettyCell extends AbstractCell {
         return _httpsPort;
     }
 
+    public boolean isAuthenticatedMode() {
+        return _authenticatedMode;
+    }
+
     private class LegacyForwardHandler extends AbstractHandler {
 
         private final String INFO_CONTEXT = "/info";
@@ -215,8 +227,8 @@ public class JettyCell extends AbstractCell {
         private final String POOLGROUPS_CONTEXT = "/pools";
         private final String WEBADMIN_INFO_CONTEXT = "/webadmin/info?statepath=";
         private final String WEBADMIN_CELLINFO_CONTEXT = "/webadmin/cellinfo";
-        private final String WEBADMIN_QUEUEINFO_CONTEXT = "/webadmin/queueInfo";
-        private final String WEBADMIN_USAGEINFO_CONTEXT = "/webadmin/usageInfo";
+        private final String WEBADMIN_QUEUEINFO_CONTEXT = "/webadmin/queueinfo";
+        private final String WEBADMIN_USAGEINFO_CONTEXT = "/webadmin/usageinfo";
         private final String WEBADMIN_POOLGROUPS_CONTEXT = "/webadmin/poolgroups";
         private final int CONTEXT_INDEX = 1;
         private Map<String, String> legacyContextToNewContext = new HashMap<String, String>();
@@ -240,10 +252,10 @@ public class JettyCell extends AbstractCell {
         public void handle(String target, Request baseRequest,
                 HttpServletRequest request, HttpServletResponse response) throws
                 IOException, ServletException {
-            String[] splitted = target.split("/");
-            if (isContextLegacyOne(splitted)) {
+            String[] contexts = target.split("/");
+            if (isContextLegacyOne(contexts)) {
                 _log.debug("target: {}", target);
-                String legacyContext = "/" + splitted[CONTEXT_INDEX];
+                String legacyContext = "/" + contexts[CONTEXT_INDEX];
                 String webadminContext = legacyContextToNewContext.get(legacyContext);
                 StringBuffer targetUrl = new StringBuffer(target);
                 int i = targetUrl.indexOf(legacyContext);
@@ -254,8 +266,11 @@ public class JettyCell extends AbstractCell {
             }
         }
 
-        private boolean isContextLegacyOne(String[] splitted) {
-            return legacyContextToNewContext.containsKey("/" + splitted[CONTEXT_INDEX]);
+        private boolean isContextLegacyOne(String[] contexts) {
+            if (contexts.length > CONTEXT_INDEX) {
+                return legacyContextToNewContext.containsKey("/" + contexts[CONTEXT_INDEX]);
+            }
+            return false;
         }
     }
 }

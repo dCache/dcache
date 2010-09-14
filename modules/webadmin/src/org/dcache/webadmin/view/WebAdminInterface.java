@@ -26,6 +26,7 @@ import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationSt
 import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.InfoService;
@@ -62,6 +63,7 @@ public class WebAdminInterface extends WebApplication {
     private CellAdminService _cellAdminService;
     private int _httpPort;
     private int _httpsPort;
+    private boolean _authenticatedMode;
     private String _dcacheName;
     private static final List<Class> ADMIN_PAGES = new ArrayList<Class>(Arrays.asList(
             PoolAdmin.class, CellAdmin.class));
@@ -81,8 +83,8 @@ public class WebAdminInterface extends WebApplication {
         mountBookmarkablePage("login", LogIn.class);
         mountBookmarkablePage("info", Info.class);
         mountBookmarkablePage("cellinfo", CellServices.class);
-        mountBookmarkablePage("queueInfo", PoolQueues.class);
-        mountBookmarkablePage("usageInfo", PoolList.class);
+        mountBookmarkablePage("queueinfo", PoolQueues.class);
+        mountBookmarkablePage("usageinfo", PoolList.class);
         mountBookmarkablePage("poolgroups", PoolGroupView.class);
         mountBookmarkablePage("pooladmin", PoolAdmin.class);
         mountBookmarkablePage("celladmin", CellAdmin.class);
@@ -101,16 +103,21 @@ public class WebAdminInterface extends WebApplication {
 
     @Override
     protected IRequestCycleProcessor newRequestCycleProcessor() {
-        return new HttpsRequestCycleProcessor(new HttpsConfig(_httpPort, _httpsPort)) {
+        if (_authenticatedMode) {
+            return new HttpsRequestCycleProcessor(new HttpsConfig(_httpPort, _httpsPort)) {
 
-            @Override
-            protected IRequestCodingStrategy newRequestCodingStrategy() {
+                @Override
+                protected IRequestCodingStrategy newRequestCodingStrategy() {
 //                This is a request coding strategy which encrypts the URL
 //                and hence makes it impossible for users to guess what is
 //                in the url and rebuild it manually
-                return new CryptedUrlWebRequestCodingStrategy(new WebRequestCodingStrategy());
-            }
-        };
+                    return new CryptedUrlWebRequestCodingStrategy(new WebRequestCodingStrategy());
+                }
+            };
+        } else {
+            return new WebRequestCycleProcessor();
+        }
+
     }
 
     @Override
@@ -201,6 +208,10 @@ public class WebAdminInterface extends WebApplication {
 
     public void setHttpsPort(int httpsPort) {
         _httpsPort = httpsPort;
+    }
+
+    public void setAuthenticatedMode(boolean authenticatedMode) {
+        _authenticatedMode = authenticatedMode;
     }
 
     private void setAuthorizationStrategies() {

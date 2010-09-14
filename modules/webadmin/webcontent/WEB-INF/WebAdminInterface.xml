@@ -36,8 +36,9 @@
             <ref bean="DAOFactory"/>
         </constructor-arg>
     </bean>
-
-    <bean id="LoginStrategy" class="org.dcache.auth.UnionLoginStrategy">
+<!--now done in org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub
+    change back when using gPlazma2 with a decent PW/Username plugin-->
+<!--    <bean id="LoginStrategy" class="org.dcache.auth.UnionLoginStrategy">
         <description>Processes login requests</description>
         <property name="loginStrategies">
             <list>
@@ -69,7 +70,7 @@
                 </property>
             </bean>
         </constructor-arg>
-    </bean>
+    </bean>-->
 
     <bean id="PoolQueuesService" class="org.dcache.webadmin.controller.impl.StandardPoolQueuesService">
         <constructor-arg>
@@ -109,28 +110,40 @@
 
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
-        <property name="logInService" ref="LogInService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
         <property name="poolGroupService" ref="PoolGroupService"/>
         <property name="infoService" ref="InfoService"/>
         <property name="cellsService" ref="CellsService"/>
         <property name="poolAdminService" ref="PoolAdminService"/>
         <property name="cellAdminService" ref="CellAdminService"/>
+        <!--<property name="logInService" ref="LogInService"/>-->
+        <property name="logInService">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="LoginCellStub"/>
+                <property name="propertyPath" value="logInService"/>
+            </bean>
+        </property>
         <property name="httpPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="InfoCellStub"/>
+                <property name="targetBeanName" value="LoginCellStub"/>
                 <property name="propertyPath" value="httpPort"/>
             </bean>
         </property>
         <property name="httpsPort">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="InfoCellStub"/>
+                <property name="targetBeanName" value="LoginCellStub"/>
                 <property name="propertyPath" value="httpsPort"/>
+            </bean>
+        </property>
+        <property name="authenticatedMode">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="LoginCellStub"/>
+                <property name="propertyPath" value="authenticatedMode"/>
             </bean>
         </property>
         <property name="dcacheName">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="InfoCellStub"/>
+                <property name="targetBeanName" value="LoginCellStub"/>
                 <property name="propertyPath" value="dcacheName"/>
             </bean>
         </property>

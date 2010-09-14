@@ -1,5 +1,6 @@
 create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
           "-webappsPath=${webadminWebappsPath}  \
+           -authenticated=${webadminAuthenticated}  \
            -httpPort=${webadminHttpPort}  \
            -httpsPort=${webadminHttpsPort}  \
            -keystore=${keyStore}  \

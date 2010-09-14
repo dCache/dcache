@@ -17,6 +17,16 @@ public class LogInServiceException extends Exception {
     /**
      * Constructor with error message and root cause.
      *
+     * @param msg
+     *            the error message associated with the exception
+     */
+    public LogInServiceException(String msg) {
+        super(msg);
+    }
+
+    /**
+     * Constructor with error message and root cause.
+     *
      * @param cause
      *            the root cause of the exception
      */
