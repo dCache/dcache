@@ -297,11 +297,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private LoginStrategy createLoginStrategy()
     {
-        LoginStrategy gplazma =
-            new RemoteLoginStrategy(new CellStub(_cell, new CellPath("gPlazma"), 30000));
         UnionLoginStrategy union = new UnionLoginStrategy();
-        union.setLoginStrategies(Collections.singletonList(gplazma));
-        if (!_authorizationStrong) {
+
+        if (_authorizationStrong || _authorizationRequired) {
+            LoginStrategy gplazma =
+                    new RemoteLoginStrategy(new CellStub(_cell, new CellPath("gPlazma"), 30000));
+            union.setLoginStrategies(Collections.singletonList(gplazma));
+        }
+
+        if (!_authorizationStrong ) {
             union.setAnonymousAccess(UnionLoginStrategy.AccessLevel.FULL);
         }
         return new CachingLoginStrategy(union);
