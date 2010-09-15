@@ -878,7 +878,6 @@ ascii_open_conversation(struct vsp_node * node)
 	char_buf_t    *context;
 	char           *outStr;
 	context = dc_char_buf_create();
-
 	if (context == NULL) {
 		dc_errno = DEMALLOC;
 		return -1;
@@ -892,10 +891,12 @@ ascii_open_conversation(struct vsp_node * node)
 	outStr = dc_char_buf_sprintf(context,"%d 0 client %s \"%s\"", node->queueID,
 	                                          asciiCommand(node->asciiCommand),
 	                                          node->asciiCommand == DCAP_CMD_TRUNC ? node->ipc : node->pnfsId );
+	
+dc_debug(DC_ERROR, "1=%s",outStr);
 	if (outStr == NULL){
 		goto out_of_mem_exit;
 	}
-
+dc_debug(DC_ERROR, "2=%s",outStr);	
 	switch( node->asciiCommand ) {
 		case DCAP_CMD_OPEN:
 		case DCAP_CMD_TRUNC:
@@ -1111,6 +1112,7 @@ ascii_open_conversation(struct vsp_node * node)
 		goto out_of_mem_exit;
 	}
 	len = strlen(outStr);
+	printf("text=%s'" , outStr);
 	sendControlMessage(node->fd, outStr, len, node->tunnel);
 	/* getControlMessage(MAYBE, NULL); */
 	dc_char_buf_free(context);

@@ -87,12 +87,15 @@ dc_char_buf_sprintf(char_buf_t *context,const char *format, ...){
     if (new_buf_size != context->buf_size) {
         if ((tmp_char_ptr = realloc (context->out_buff, new_buf_size)) == NULL) {
             return NULL;
-        } else {
-            context->out_buff = context->tmp_buff;
-            context->tmp_buff = tmp_char_ptr;
         }
+	else {
+            context->out_buff = tmp_char_ptr;
+	}
         context->buf_size = new_buf_size;
     }
+    tmp_char_ptr = context->out_buff;
+    context->out_buff = context->tmp_buff;
+    context->tmp_buff = tmp_char_ptr;
     return context->out_buff;
 }
 /**
