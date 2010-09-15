@@ -43,12 +43,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
-import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -71,8 +68,9 @@ import org.dcache.chimera.nfs.v4.xdr.layout4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
 import org.dcache.chimera.posix.AclHandler;
-import org.dcache.poolmanager.PoolManagerAdapter;
+import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicy;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
@@ -99,7 +97,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private static final deviceid4 MDS_ID = deviceidOf(0);
 
-    private final Map<stateid4, Transfer> _ioMessages = new ConcurrentHashMap<stateid4, Transfer>();
+    private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<stateid4, NfsTransfer>();
 
     /**
      * The usual timeout for NFS ops. is 30s.
@@ -108,23 +106,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final static int NFS_REPLY_TIMEOUT = 27000;
 
     /**
-     * nfsv4 server engine
-     */
-
-    /** request/reply mapping */
-    private final Map<stateid4, PoolDS> _requestReplyMap = new HashMap<stateid4, PoolDS>();
-
-    /**
      * Cell communication helper.
      */
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
-
-    /**
-     * Communication with the PoolManager.
-     */
-    private PoolManagerAdapter _poolManagerAdapter;
-
 
     private PnfsHandler _pnfsHandler;
 
@@ -137,6 +122,9 @@ public class NFSv41Door extends AbstractCellComponent implements
      * RPC service
      */
     private  OncRpcSvc _rpcService;
+
+    private final static TransferRetryPolicy RETRY_POLICY =
+            new TransferRetryPolicy(Integer.MAX_VALUE, NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
 
     public void setPoolManagerStub(CellStub stub)
     {
@@ -252,12 +240,9 @@ public class NFSv41Door extends AbstractCellComponent implements
             stateid.xdrDecode(xdr);
             xdr.endDecoding();
 
-            Transfer transfer = _ioMessages.get(stateid);
+            NfsTransfer transfer = _ioMessages.get(stateid);
             transfer.setPool(poolName);
-            synchronized (_requestReplyMap) {
-                _requestReplyMap.put(stateid, device);
-                _requestReplyMap.notifyAll();
-            }
+            transfer.redirect(device);
 
         } catch (UnknownHostException ex) {
             _log.error("Invald address returned by {} : {}", poolName, ex.getMessage() );
@@ -341,18 +326,21 @@ public class NFSv41Door extends AbstractCellComponent implements
                 PnfsId pnfsId = new PnfsId(inode.toString());
                 StorageInfo storageInfo = _pnfsHandler.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
 
-                NFS4ProtocolInfo protocolInfo =
-                        new NFS4ProtocolInfo(client.getRemoteAddress().getAddress(), stateid);
+                NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
+                        client.getRemoteAddress().getAddress(), stateid);
+
+                NFS4ProtocolInfo protocolInfo = transfer.createProtocolInfoForPool();
                 protocolInfo.door(new CellPath(this.getCellName(), this.getCellDomainName()));
 
-                Transfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"));
                 transfer.setCellName(this.getCellName());
                 transfer.setDomainName(this.getCellDomainName());
                 transfer.setBillingStub(_billingStub);
                 transfer.setPoolStub(_poolManagerStub);
+                transfer.setPoolManagerStub(_poolManagerStub);
                 transfer.setPnfsId(pnfsId);
                 transfer.setStorageInfo(storageInfo);
                 transfer.setClientAddress(client.getRemoteAddress());
+
                 _ioMessages.put(protocolInfo.stateId(), transfer);
 
                 PoolDS ds = getPool(transfer, protocolInfo, ioMode);
@@ -368,68 +356,40 @@ public class NFSv41Door extends AbstractCellComponent implements
             return new Layout(true, stateid, new layout4[]{layout});
 
         } catch (InterruptedException e) {
-            throw new IOException(e.getMessage());
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER,
+                    e.getMessage());
         } catch (CacheException ce) {
-            // java6 way, throw new IOException(ce.getMessage(), ce);
-            throw new IOException(ce.getMessage());
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER,
+                    ce.getMessage());
         }
 
     }
 
-    private PoolDS getPool(Transfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
-            throws InterruptedException, IOException {
+    private PoolDS getPool(NfsTransfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
+            throws InterruptedException, CacheException, IOException {
 
-        PoolIoFileMessage poolIOMessage;
-        try {
 
-            if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
-                _log.debug("looking for read pool for {}", transfer.getPnfsId());
-                poolIOMessage = _poolManagerAdapter.readFile(transfer.getPnfsId(),
-                        transfer.getStorageInfo(), protocolInfo, _poolManagerStub.getTimeout());
-            } else {
-                _log.debug("looking for write pool for {}", transfer.getPnfsId());
-                poolIOMessage = _poolManagerAdapter.writeFile(transfer.getPnfsId(),
-                        transfer.getStorageInfo(), protocolInfo, _poolManagerStub.getTimeout());
-            }
-
-            transfer.setMoverId(poolIOMessage.getMoverId());
-        } catch (NoRouteToCellException ex) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_RESOURCE, ex.getMessage());
-
-        } catch (CacheException e) {
-            throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER, e.getMessage());
+        if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
+            _log.debug("looking for read pool for {}", transfer.getPnfsId());
+            transfer.setWrite(false);
+        } else {
+            _log.debug("looking for write pool for {}", transfer.getPnfsId());
+            transfer.setWrite(true);
         }
-        _log.debug("mover ready: pool={} moverid={}", poolIOMessage.getPoolName(),
-                poolIOMessage.getMoverId());
+        transfer.selectPoolAndStartMover("", RETRY_POLICY);
 
+        _log.debug("mover ready: pool={} moverid={}", transfer.getPool(),
+                transfer.getMoverId());
 
-            /*
-             * FIXME;
-             *
-             * usually RPC request will timeout in 30s.
-             * We have to handle this cases and return LAYOUTTRYLATER
-             * or GRACE.
-             *
-             */
-        PoolDS device;
-        stateid4 stateid = protocolInfo.stateId();
-        int timeToWait = NFS_REPLY_TIMEOUT;
-        synchronized (_requestReplyMap) {
-            while (!_requestReplyMap.containsKey(stateid) && timeToWait > 0) {
-                long s = System.currentTimeMillis();
-                _requestReplyMap.wait(NFS_REPLY_TIMEOUT);
-                timeToWait -= System.currentTimeMillis() - s;
-            }
-            if( timeToWait <= 0 ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_LAYOUTTRYLATER,
-                        "Mover did not started in time");
-            }
-
-            device = _requestReplyMap.remove(stateid);
-        }
-
-        _log.debug("request: {} : received device: {}", stateid, device.getDeviceId());
-        return device;
+        /*
+         * FIXME;
+         *
+         * usually RPC request will timeout in 30s.
+         * We have to handle this cases and return LAYOUTTRYLATER
+         * or GRACE.
+         *
+         */
+        return transfer.waitForRedirect(NFS_REPLY_TIMEOUT);
     }
 
     @Override
@@ -462,23 +422,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         }else{
             _log.warn("Can't find mover by stateid: {}", stateid);
         }
-    }
-
-
-    /**
-     * Gets the generic PoolManagerAdapter to handle read and write request
-     * @return the _poolManagerAdapter
-     */
-    public PoolManagerAdapter getPoolManagerAdapter() {
-        return _poolManagerAdapter;
-    }
-
-    /**
-     * Sets the generic PoolManagerAdapter to handle read and write request
-     * @param poolManagerAdapter the _poolManagerAdapter to set
-     */
-    public void setPoolManagerAdapter(PoolManagerAdapter poolManagerAdapter) {
-        this._poolManagerAdapter = poolManagerAdapter;
     }
 
     public void setBillingStub(CellStub stub) {
@@ -575,22 +518,30 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    private static class NfsTransfer extends Transfer {
+    private static class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
-        public NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
+        private final stateid4 _stateid;
+        private final InetAddress _client;
+        private PoolDS _dataserver = null;
+        private final NFS4ProtocolInfo _protocolInfo;
+
+        NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path, InetAddress client,
+                stateid4 stateid) {
             super(pnfs, subject, path);
+            _stateid = stateid;
+            _client = client;
+            _protocolInfo = new NFS4ProtocolInfo(_client, _stateid);
         }
 
         @Override
-        protected ProtocolInfo createProtocolInfoForPoolManager() {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected NFS4ProtocolInfo createProtocolInfoForPoolManager() {
+            return _protocolInfo;
         }
 
         @Override
-        protected ProtocolInfo createProtocolInfoForPool() {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected NFS4ProtocolInfo createProtocolInfoForPool() {
+            return _protocolInfo;
         }
-
     }
 
     /**
