@@ -20,10 +20,11 @@ public class XMLDataGathererHelper {
     public static final String POOL1_NAME = "myFirstPool";
     public static final String POOL1_DOMAIN = "myFirstPoolDomain";
     public static final boolean IS_POOL1_ENABLED = true;
-    public static final long POOL1_FREE_SPACE = 2147467538;
+    public static final long POOL1_FREE_SPACE = 2147367538;
     public static final long POOL1_PRECIOUS_SPACE = 16110;
     public static final long POOL1_TOTAL_SPACE = 2147483648L;
-    public static final long POOL1_USED_SPACE = 16110;
+    public static final long POOL1_USED_SPACE = 116110;
+    public static final long POOL1_REMOVABLE_SPACE = 100000;
     public static final MoverQueue POOL1_MOVERS = new MoverQueue("mover", 0, 100, 0);
     public static final MoverQueue POOL1_RESTORES = new MoverQueue("restore", 0, 100, 0);
     public static final MoverQueue POOL1_STORES = new MoverQueue("store", 0, 100, 0);
@@ -81,7 +82,7 @@ public class XMLDataGathererHelper {
             "        <metric name=\"break-even\" type=\"float\">0.7</metric>" +
             "        <metric name=\"LRU-seconds\" type=\"integer\">1255516612</metric>" +
             "        <metric name=\"precious\" type=\"integer\">" + POOL1_PRECIOUS_SPACE + "</metric>" +
-            "        <metric name=\"removable\" type=\"integer\">0</metric>" +
+            "        <metric name=\"removable\" type=\"integer\">" + POOL1_REMOVABLE_SPACE + "</metric>" +
             "        <metric name=\"used\" type=\"integer\">" + POOL1_USED_SPACE + "</metric>" +
             "        <metric name=\"gap\" type=\"integer\">1048576</metric>" +
             "      </space>      <poolgroups>        <poolgroupref name=\"" + POOL1_POOLGROUP1 + "\"/>" +
@@ -1510,6 +1511,7 @@ public class XMLDataGathererHelper {
         pool1.setPreciousSpace(POOL1_PRECIOUS_SPACE);
         pool1.setTotalSpace(POOL1_TOTAL_SPACE);
         pool1.setUsedSpace(POOL1_USED_SPACE);
+        pool1.setRemovableSpace(POOL1_REMOVABLE_SPACE);
         pool1.addMoverQueue(POOL1_STORES);
         pool1.addMoverQueue(POOL1_MOVERS);
         pool1.addMoverQueue(POOL1_RESTORES);

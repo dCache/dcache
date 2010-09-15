@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
 
-    /**   this PoolBean is a representation of the whole Group - so to say the sum of
+    /**   this PoolBeans are a representation of the whole Group - so to say the sum of
      *   all Pools in this Group
      */
     private PoolSpaceBean _poolGroupSpace = new PoolSpaceBean();
@@ -107,8 +107,12 @@ public class PoolGroupBean implements Comparable<PoolGroupBean>, Serializable {
         return _poolGroupSpace.getPercentagePrecious();
     }
 
-    public float getPercentageUsed() {
-        return _poolGroupSpace.getPercentageUsed();
+    public float getPercentageRemovable() {
+        return _poolGroupSpace.getPercentageRemovable();
+    }
+
+    public float getPercentagePinned() {
+        return _poolGroupSpace.getPercentagePinned();
     }
 
     public List<CellServicesBean> getCellStatuses() {

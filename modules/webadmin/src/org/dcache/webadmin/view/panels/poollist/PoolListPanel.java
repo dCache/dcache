@@ -60,7 +60,9 @@ public class PoolListPanel extends BasePanel {
             item.add(new Label("PoolPanel.preciousSpace",
                     Long.valueOf(poolBean.getPreciousSpace()).toString()));
             item.add(new LayoutItemPanel("PoolPanel.layoutItemPanel",
-                    poolBean.getPercentagePrecious(), poolBean.getPercentageUsed(),
+                    poolBean.getPercentagePrecious(),
+                    poolBean.getPercentagePinned(),
+                    poolBean.getPercentageRemovable(),
                     poolBean.getPercentageFree()));
         }
     }

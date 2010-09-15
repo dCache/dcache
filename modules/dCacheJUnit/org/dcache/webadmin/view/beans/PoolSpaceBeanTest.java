@@ -1,6 +1,6 @@
 package org.dcache.webadmin.view.beans;
 
-import org.dcache.webadmin.controller.util.DiskSpaceUnit;
+import org.dcache.webadmin.view.util.DiskSpaceUnit;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,7 +10,8 @@ public class PoolSpaceBeanTest {
 
     private static final int INITIAL_FREE_SPACE = 50000000;
     private static final int INITIAL_PRECIOUS_SPACE = 20000000;
-    private static final int INITIAL_USED_SPACE = 30000000;
+    private static final int INITIAL_USED_SPACE = 50000000;
+    private static final int INITIAL_REMOVABLE_SPACE = 0;
     private static final int INITIAL_TOTAL_SPACE = 100000000;
     private static final float EXPECTED_PERCENTAGE_19_9 = 19.9F;
     private static final float EXPECTED_PERCENTAGE_ZERO = 0.0F;
@@ -73,7 +74,7 @@ public class PoolSpaceBeanTest {
     public void testPercentageCalculationHistory() {
         setPoolBeanToStartingValues();
         assertEquals(EXPECTED_PERCENTAGE_20, _poolBean.getPercentagePrecious(), 0);
-        assertEquals(EXPECTED_PERCENTAGE_30, _poolBean.getPercentageUsed(), 0);
+        assertEquals(EXPECTED_PERCENTAGE_30, _poolBean.getPercentagePinned(), 0);
         assertEquals(EXPECTED_PERCENTAGE_50, _poolBean.getPercentageFree(), 0);
         _poolBean.setTotalSpace(0);
         assertInitialValues();
@@ -81,7 +82,6 @@ public class PoolSpaceBeanTest {
         assertInitialValues();
         _poolBean.setTotalSpace(INITIAL_TOTAL_SPACE);
         assertEquals(EXPECTED_PERCENTAGE_19_9, _poolBean.getPercentagePrecious(), 0);
-        assertEquals(EXPECTED_PERCENTAGE_30, _poolBean.getPercentageUsed(), 0);
         assertEquals(EXPECTED_PERCENTAGE_50, _poolBean.getPercentageFree(), 0);
     }
 
@@ -93,12 +93,14 @@ public class PoolSpaceBeanTest {
         pool.setFreeSpace(INITIAL_FREE_SPACE);
         pool.setPreciousSpace(INITIAL_PRECIOUS_SPACE);
         pool.setUsedSpace(INITIAL_USED_SPACE);
+        pool.setRemovableSpace(INITIAL_REMOVABLE_SPACE);
         pool.setTotalSpace(INITIAL_TOTAL_SPACE);
     }
 
     private void assertInitialValues() {
         assertEquals(EXPECTED_PERCENTAGE_ZERO, _poolBean.getPercentagePrecious(), 0);
-        assertEquals(EXPECTED_PERCENTAGE_ZERO, _poolBean.getPercentageUsed(), 0);
+        assertEquals(EXPECTED_PERCENTAGE_ZERO, _poolBean.getPercentagePinned(), 0);
+        assertEquals(EXPECTED_PERCENTAGE_ZERO, _poolBean.getPercentageRemovable(), 0);
         assertEquals(EXPECTED_PERCENTAGE_100, _poolBean.getPercentageFree(), 0);
     }
 
@@ -153,13 +155,6 @@ public class PoolSpaceBeanTest {
     }
 
     @Test
-    public void testNotEqualsByFree() {
-        PoolSpaceBean otherPool = new PoolSpaceBean();
-        _poolBean.setFreeSpace(10L);
-        assertFalse(_poolBean.equals(otherPool));
-    }
-
-    @Test
     public void testEqualsWithDifferentEnable() {
         PoolSpaceBean otherPool = new PoolSpaceBean();
         otherPool.setEnabled(true);
@@ -172,14 +167,10 @@ public class PoolSpaceBeanTest {
         assertEquals(_poolBean, otherPool);
         assertEquals(_poolBean.hashCode(), otherPool.hashCode());
 
-        _poolBean.setFreeSpace(10L);
         _poolBean.setName(XMLDataGathererHelper.POOL1_NAME);
         assertFalse(_poolBean.equals(otherPool));
 
         otherPool.setName(XMLDataGathererHelper.POOL1_NAME);
-        assertFalse(_poolBean.equals(otherPool));
-
-        otherPool.setFreeSpace(10L);
         assertEquals(_poolBean, otherPool);
     }
 }

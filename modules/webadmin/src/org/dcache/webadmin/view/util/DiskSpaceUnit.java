@@ -1,4 +1,4 @@
-package org.dcache.webadmin.controller.util;
+package org.dcache.webadmin.view.util;
 
 /**
  * Conveniance class for DiskSpaceUnits

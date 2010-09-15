@@ -6,13 +6,13 @@ div.layout_precious {
     height: 10px;
 }
 
-div.layout_rest {
+div.layout_pinned {
     float: left;
     background: #ff00ff;
     height: 10px;
 }
 
-div.layout_used {
+div.layout_removable {
     float: left;
     background: green;
     height: 10px;

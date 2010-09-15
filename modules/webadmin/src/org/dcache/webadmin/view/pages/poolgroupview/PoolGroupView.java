@@ -8,7 +8,6 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -85,7 +84,9 @@ public class PoolGroupView extends BasePage {
                 item.add(new Label("preciousSpace", Long.valueOf(
                         poolGroup.getPreciousSpace()).toString()));
                 item.add(new LayoutItemPanel("layoutItemPanel",
-                        poolGroup.getPercentagePrecious(), poolGroup.getPercentageUsed(),
+                        poolGroup.getPercentagePrecious(),
+                        poolGroup.getPercentagePinned(),
+                        poolGroup.getPercentageRemovable(),
                         poolGroup.getPercentageFree()));
             }
 

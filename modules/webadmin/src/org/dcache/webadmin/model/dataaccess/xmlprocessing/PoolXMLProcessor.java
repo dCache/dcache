@@ -31,6 +31,7 @@ public class PoolXMLProcessor extends XMLProcessor {
     private static final String POOLMEMBER_TOTAL_SPACE = "/space/metric[@name='total']";
     private static final String POOLMEMBER_PRECIOUS_SPACE = "/space/metric[@name='precious']";
     private static final String POOLMEMBER_USED_SPACE = "/space/metric[@name='used']";
+    private static final String POOLMEMBER_REMOVABLE_SPACE = "/space/metric[@name='removable']";
     private static final String QUEUE_ACTIVE_FRAGMENT = "/metric[@name='active']/text()";
     private static final String QUEUE_MAX_FRAGMENT = "/metric[@name='max-active']/text()";
     private static final String QUEUE_QUEUED_FRAGMENT = "/metric[@name='queued']/text()";
@@ -71,6 +72,8 @@ public class PoolXMLProcessor extends XMLProcessor {
                 POOLMEMBER_PRECIOUS_SPACE), document));
         pool.setUsedSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
                 POOLMEMBER_USED_SPACE), document));
+        pool.setRemovableSpace(getLongFromXpath(buildPoolXpathExpression(poolName,
+                POOLMEMBER_REMOVABLE_SPACE), document));
         getPoolMovers(document, pool);
         getPoolGroups(document, pool);
         return pool;

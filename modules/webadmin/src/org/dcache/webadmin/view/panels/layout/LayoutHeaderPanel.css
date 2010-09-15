@@ -4,7 +4,11 @@ span.layout_precious {
     color: red;
 }
 
-span.layout_used {
+span.layout_pinned {
+    color: #ff00ff;
+}
+
+span.layout_removable {
     color: green;
 }
 

@@ -12,17 +12,22 @@ import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 public class LayoutItemPanel extends BasePanel {
 
     public LayoutItemPanel(String id, float percentagePrecious,
-            float percentageUsed, float percentageFree) {
+            float percentagePinned, float percentageRemovable,
+            float percentageFree) {
         super(id);
-        setPercentages(percentagePrecious, percentageUsed, percentageFree);
+        setPercentages(percentagePrecious, percentagePinned,
+                percentageRemovable, percentageFree);
     }
 
     private void setPercentages(float percentagePrecious,
-            float percentageUsed, float percentageFree) {
+            float percentagePinned, float percentageRemovable,
+            float percentageFree) {
         String preciousStyle = buildStyleAttribute(percentagePrecious);
         setStyleAttribute("percentagePrecious", preciousStyle);
-        String usedStyle = buildStyleAttribute(percentageUsed);
-        setStyleAttribute("percentageUsed", usedStyle);
+        String pinnedStyle = buildStyleAttribute(percentagePinned);
+        setStyleAttribute("percentagePinned", pinnedStyle);
+        String removableStyle = buildStyleAttribute(percentageRemovable);
+        setStyleAttribute("percentageRemovable", removableStyle);
         String freeStyle = buildStyleAttribute(percentageFree);
         setStyleAttribute("percentageFree", freeStyle);
     }

@@ -17,6 +17,7 @@ public class Pool implements Serializable {
     private long _totalSpace = 0;
     private long _freeSpace = 0;
     private long _preciousSpace = 0;
+    private long _removableSpace = 0;
     private long _usedSpace = 0;
     private List<MoverQueue> _moverQueues = new ArrayList<MoverQueue>();
     private List<String> _poolGroups = new ArrayList<String>();
@@ -54,6 +55,14 @@ public class Pool implements Serializable {
 
     public void setPreciousSpace(long preciousSpace) {
         _preciousSpace = preciousSpace;
+    }
+
+    public long getRemovableSpace() {
+        return _removableSpace;
+    }
+
+    public void setRemovableSpace(long removableSpace) {
+        _removableSpace = removableSpace;
     }
 
     public long getTotalSpace() {

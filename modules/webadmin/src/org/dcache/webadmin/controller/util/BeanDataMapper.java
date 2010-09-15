@@ -1,6 +1,5 @@
 package org.dcache.webadmin.controller.util;
 
-import java.util.List;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.NamedCell;
@@ -28,11 +27,11 @@ public class BeanDataMapper {
         PoolSpaceBean returnPoolBean = new PoolSpaceBean();
         returnPoolBean.setEnabled(poolBusinessObject.isEnabled());
         returnPoolBean.setFreeSpace(poolBusinessObject.getFreeSpace());
-        returnPoolBean.setFreeSpace(poolBusinessObject.getFreeSpace());
         returnPoolBean.setName(poolBusinessObject.getName());
         returnPoolBean.setPreciousSpace(poolBusinessObject.getPreciousSpace());
-        returnPoolBean.setTotalSpace(poolBusinessObject.getTotalSpace());
         returnPoolBean.setUsedSpace(poolBusinessObject.getUsedSpace());
+        returnPoolBean.setRemovableSpace(poolBusinessObject.getRemovableSpace());
+        returnPoolBean.setTotalSpace(poolBusinessObject.getTotalSpace());
         return returnPoolBean;
     }
 
