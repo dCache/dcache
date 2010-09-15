@@ -19,7 +19,7 @@
   <import resource="srm-shared.xml" />
 
   <bean id="connector"
-        class="org.dcache.util.JettyAsyncGSIConnector">
+        class="org.dcache.util.JettyGSIConnector">
     <property name="port" value="${srmPort}"/>
 
     <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
@@ -36,6 +36,7 @@
     <property name="requireClientAuth" value="true"/>
     <property name="acceptNoClientCerts" value="false"/>
     <property name="gssMode" value="gsi"/>
+    <property name="handshakeTimeout" value="10000" />
     <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
     <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />
   </bean>
