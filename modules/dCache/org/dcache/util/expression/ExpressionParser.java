@@ -105,11 +105,12 @@ public abstract class ExpressionParser extends BaseParser<Expression>
     Rule QualifiedIdentifier() {
         return Sequence(Sequence(Identifier(),
                                  ZeroOrMore(Ch('.'), Identifier())),
-                        push(new Expression(Token.IDENTIFIER, match())));
+                        push(new Expression(Token.IDENTIFIER, match())),
+                        Spacing());
     }
 
     Rule Identifier() {
-        return Sequence(Letter(), ZeroOrMore(LetterOrDigit()), Spacing());
+        return Sequence(Letter(), ZeroOrMore(LetterOrDigit()));
     }
 
     Rule Letter() {

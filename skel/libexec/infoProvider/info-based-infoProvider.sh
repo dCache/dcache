@@ -53,7 +53,7 @@ fi
 xsltProcessor="$(getProperty xsltProcessor)"
 xylophoneConfigurationFile="$(getProperty xylophoneConfigurationFile)"
 xylophoneConfigurationDir="$(getProperty xylophoneConfigurationDir)"
-httpHost="$(getPropety httpHost)"
+httpHost="$(getProperty httpHost)"
 httpPort="$(getProperty httpPort)"
 xylophoneXSLTDir="$(getProperty xylophoneXSLTDir)"
 saxonDir="$(getProperty saxonDir)"
