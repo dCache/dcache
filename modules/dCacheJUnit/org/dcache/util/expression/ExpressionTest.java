@@ -17,12 +17,6 @@ import org.parboiled.Parboiled;
 import org.parboiled.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
 
-import org.dcache.util.expression.Expression;
-import org.dcache.util.expression.ExpressionParser;
-import org.dcache.util.expression.SymbolTable;
-import org.dcache.util.expression.UnknownIdentifierException;
-import org.dcache.util.expression.TypeMismatchException;
-
 public class ExpressionTest
 {
     private SymbolTable symbols;
@@ -31,6 +25,7 @@ public class ExpressionTest
     public void setup()
     {
         symbols = new SymbolTable();
+        symbols.put("number", 1.0);
     }
 
     private Expression createExpression(String s)
@@ -203,5 +198,12 @@ public class ExpressionTest
         throws Exception
     {
         evaluate("1 =~ 2");
+    }
+
+    @Test
+    public void testIdentifierWithTrailingSpace()
+        throws Exception
+    {
+        assertEquals(1.0, evaluate("number "));
     }
 }
