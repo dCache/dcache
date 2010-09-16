@@ -15,6 +15,9 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -91,10 +94,13 @@ public class Job
     private final Map<PnfsId,Task> _running = new HashMap();
     private final Future _refreshTask;
     private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
+    private final Map<PoolMigrationJobCancelMessage,DelayedReply> _cancelRequests =
+        new HashMap<PoolMigrationJobCancelMessage,DelayedReply>();
 
     private final JobStatistics _statistics = new JobStatistics();
     private final MigrationContext _context;
     private final JobDefinition _definition;
+
     private State _state;
     private int _concurrency;
 
@@ -396,6 +402,16 @@ public class Job
                 _sizes.clear();
                 _context.getRepository().removeListener(this);
                 _refreshTask.cancel(false);
+
+                for (Map.Entry<PoolMigrationJobCancelMessage,DelayedReply> entry: _cancelRequests.entrySet()) {
+                    try {
+                        entry.getValue().send(entry.getKey());
+                    } catch (NoRouteToCellException e) {
+                        _log.info(e.toString());
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
                 break;
             }
         }
@@ -590,6 +606,19 @@ public class Job
         schedule();
     }
 
+    public synchronized Object messageArrived(PoolMigrationJobCancelMessage message)
+    {
+        if (_state == State.FINISHED || _state == State.FAILED || _state == State.CANCELLED) {
+            message.setSucceeded();
+            return message;
+        } else {
+            DelayedReply reply = new DelayedReply();
+            _cancelRequests.put(message, reply);
+            cancel(message.isForced());
+            return reply;
+        }
+    }
+
     /** Message handler. Delegates to proper task .*/
     public void
         messageArrived(PoolMigrationCopyFinishedMessage message)
@@ -602,7 +631,6 @@ public class Job
             task.messageArrived(message);
         }
     }
-
 
     /** Apply sticky flags to file. */
     private void applySticky(PnfsId pnfsId, List<StickyRecord> records)

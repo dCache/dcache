@@ -51,6 +51,7 @@ import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,8 +128,7 @@ public class MigrationModule
     public final static int NON_EMPTY_QUEUE = 1;
     public final static int NO_TARGETS = 0;
 
-    private final List<Job> _alive = new ArrayList();
-    private final Map<Integer,Job> _jobs = new HashMap();
+    private final Map<String,Job> _jobs = new HashMap();
     private final Map<Job,String> _commands = new HashMap();
     private final MigrationContext _context = new MigrationContext();
 
@@ -181,7 +181,7 @@ public class MigrationModule
     }
 
     /** Returns the job with the given id. */
-    private synchronized Job getJob(int id)
+    private synchronized Job getJob(String id)
         throws NoSuchElementException
     {
         Job job = _jobs.get(id);
@@ -192,10 +192,10 @@ public class MigrationModule
     }
 
     /** Returns a one line description of a job. */
-    private synchronized String getJobSummary(int id)
+    private synchronized String getJobSummary(String id)
     {
         Job job = getJob(id);
-        return String.format("[%d] %-12s %s", id, job.getState(),
+        return String.format("[%s] %-12s %s", id, job.getState(),
                              _commands.get(job));
     }
 
@@ -406,15 +406,15 @@ public class MigrationModule
     private Expression createPoolPredicate(String s, Expression ifNull)
     {
         SymbolTable symbols = new SymbolTable();
-        symbols.put("source", DUMMY_POOL);
-        symbols.put("target", DUMMY_POOL);
+        symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
+        symbols.put(CONSTANT_TARGET, DUMMY_POOL);
         return createPredicate(s, ifNull, symbols);
     }
 
     private Expression createLifetimePredicate(String s)
     {
         SymbolTable symbols = new SymbolTable();
-        symbols.put("source", DUMMY_POOL);
+        symbols.put(CONSTANT_SOURCE, DUMMY_POOL);
         symbols.put(CONSTANT_QUEUE_FILES, NON_EMPTY_QUEUE);
         symbols.put(CONSTANT_QUEUE_BYTES, NON_EMPTY_QUEUE);
         symbols.put(CONSTANT_TARGETS, NO_TARGETS);
@@ -432,14 +432,14 @@ public class MigrationModule
         return patterns;
     }
 
-    private synchronized int copy(Args args,
-                                  String defaultSelect,
-                                  String defaultTarget,
-                                  String defaultSourceMode,
-                                  String defaultTargetMode,
-                                  String defaultRefresh,
-                                  String defaultPins,
-                                  boolean defaultVerify)
+    private synchronized String copy(Args args,
+                                     String defaultSelect,
+                                     String defaultTarget,
+                                     String defaultSourceMode,
+                                     String defaultTargetMode,
+                                     String defaultRefresh,
+                                     String defaultPins,
+                                     boolean defaultVerify)
         throws IllegalArgumentException, NumberFormatException
     {
         String exclude = args.getOpt("exclude");
@@ -459,6 +459,7 @@ public class MigrationModule
         String order = args.getOpt("order");
         String pauseWhen = args.getOpt("pause-when");
         String stopWhen = args.getOpt("stop-when");
+        String id = args.getOpt("id");
 
         if (permanent) {
             if (order != null) {
@@ -547,12 +548,28 @@ public class MigrationModule
             throw new IllegalArgumentException(targetMode + ": Invalid value");
         }
 
+        if (id == null) {
+            do {
+                id = String.valueOf(_counter++);
+            } while (_jobs.containsKey(id));
+        } else {
+            Job job = _jobs.get(id);
+            if (job != null) {
+                switch (job.getState()) {
+                case FAILED:
+                case CANCELLED:
+                case FINISHED:
+                    break;
+                default:
+                    throw new IllegalArgumentException("Job id is already in use: " + id);
+                }
+            }
+        }
+
         int n = Integer.valueOf(concurrency);
-        int id = _counter++;
         Job job = new Job(_context, definition);
         job.setConcurrency(n);
         _jobs.put(id, job);
-        _alive.add(job);
         return id;
     }
 
@@ -577,7 +594,7 @@ public class MigrationModule
         "Adjusts the concurrency of a job.";
     public String ac_migration_concurrency_$_2(Args args)
     {
-        int id = Integer.valueOf(args.argv(0));
+        String id = args.argv(0);
         int concurrency = Integer.valueOf(args.argv(1));
         Job job = getJob(id);
         job.setConcurrency(concurrency);
@@ -791,7 +808,8 @@ public class MigrationModule
     public synchronized String ac_migration_copy_$_1_99(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
-        int id = copy(args, "proportional", "pool", "same", "same", "300", "keep", false);
+        String id = copy(args, "proportional", "pool", "same", "same",
+                         "300", "keep", false);
         String command = "migration copy " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -805,7 +823,8 @@ public class MigrationModule
     public String ac_migration_move_$_1_99(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
-        int id = copy(args, "proportional", "pool", "delete", "same", "300", "move", true);
+        String id = copy(args, "proportional", "pool", "delete", "same",
+                         "300", "move", true);
         String command = "migration move " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -820,7 +839,8 @@ public class MigrationModule
     public String ac_migration_cache_$_1_99(Args args)
         throws IllegalArgumentException, NumberFormatException
     {
-        int id = copy(args, "proportional", "pool", "same", "cached", "300", "keep", false);
+        String id = copy(args, "proportional", "pool", "same", "cached",
+                         "300", "keep", false);
         String command = "migration cache " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -833,7 +853,7 @@ public class MigrationModule
         "transfers, but is does not start any new transfer.";
     public String ac_migration_suspend_$_1(Args args)
     {
-        int id = Integer.valueOf(args.argv(0));
+        String id = args.argv(0);
         Job job = getJob(id);
         job.suspend();
         return getJobSummary(id);
@@ -845,7 +865,7 @@ public class MigrationModule
         "Resumes a suspended migration job.";
     public String ac_migration_resume_$_1(Args args)
     {
-        int id = Integer.valueOf(args.argv(0));
+        String id = args.argv(0);
         Job job = getJob(id);
         job.resume();
         return getJobSummary(id);
@@ -857,10 +877,10 @@ public class MigrationModule
         "Cancels a migration job.\n\n" +
         "Options:\n" +
         "  -force\n" +
-        "     Kill ongoing transfers.\n";
+        "     Kill ongoing transfers.";
     public String ac_migration_cancel_$_1(Args args)
     {
-        int id = Integer.valueOf(args.argv(0));
+        String id = args.argv(0);
         boolean force = (args.getOpt("force") != null);
         Job job = getJob(id);
         job.cancel(force);
@@ -893,7 +913,7 @@ public class MigrationModule
     public synchronized String ac_migration_ls(Args args)
     {
         StringBuilder s = new StringBuilder();
-        for (int id: _jobs.keySet()) {
+        for (String id: _jobs.keySet()) {
             s.append(getJobSummary(id)).append('\n');
         }
         return s.toString();
@@ -932,7 +952,7 @@ public class MigrationModule
     public synchronized String ac_migration_info_$_1(Args args)
         throws NoSuchElementException
     {
-        int id = Integer.valueOf(args.argv(0));
+        String id = args.argv(0);
         Job job = getJob(id);
         String command = _commands.get(job);
         StringWriter sw = new StringWriter();
@@ -949,26 +969,24 @@ public class MigrationModule
             return;
         }
 
-        /* To avoid callbacks or an extra update thread, we lazily
-         * move jobs out of _alive.
-         */
-        Iterator<Job> i = _alive.iterator();
-        while (i.hasNext()) {
-            Job job = i.next();
-            switch (job.getState()) {
-            case CANCELLED:
-            case FINISHED:
-                i.remove();
-                break;
-            default:
-                job.messageArrived(message);
-            }
+        for (Job job: _jobs.values()) {
+            job.messageArrived(message);
+        }
+    }
+
+    public Object messageArrived(PoolMigrationJobCancelMessage message)
+    {
+        try {
+            return getJob(message.getJobId()).messageArrived(message);
+        } catch (NoSuchElementException e) {
+            message.setSucceeded();
+            return message;
         }
     }
 
     public synchronized void getInfo(PrintWriter pw)
     {
-        for (int id: _jobs.keySet()) {
+        for (String id: _jobs.keySet()) {
             pw.println(getJobSummary(id));
         }
     }
