@@ -95,6 +95,7 @@ import java.io.IOException;
 import java.io.FileWriter;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Arrays;
 import java.sql.SQLException;
 //
 // just testing cvs
@@ -285,11 +286,9 @@ public class Configuration {
 
     }
 
-    public Configuration(String configuration_file) {
-        try {
+    public Configuration(String configuration_file) throws Exception {
+        if (configuration_file != null && !configuration_file.isEmpty()) {
             read(configuration_file);
-        } catch(Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -1139,11 +1138,18 @@ public class Configuration {
         this.gplazmaPolicy = gplazmaPolicy;
     }
 
-    /** Setter for property srm_url_path_prefix.
+    /** Setter for property srm_root.
      * @param srm_root New value of property srm_root.
      */
     public void setSrm_root(String srm_root) {
         this.srm_root = srm_root;
+    }
+
+    /** Getter for property srm_root.
+     * @return Value of property srm_root.
+     */
+    public String getSrm_root() {
+        return srm_root;
     }
 
     /** Getter for property proxies_directory.
@@ -1224,6 +1230,16 @@ public class Configuration {
     public void addSrmHost(java.lang.String srmhost) {
         synchronized(localSrmHosts) {
             localSrmHosts.add(srmhost);
+        }
+    }
+
+    /**
+     * Sets the set of local srm hosts. See addSrmHost for details.
+     */
+    public void setSrmHostsAsArray(String[] hosts) {
+        synchronized(localSrmHosts) {
+            localSrmHosts.clear();
+            localSrmHosts.addAll(Arrays.asList(hosts));
         }
     }
 

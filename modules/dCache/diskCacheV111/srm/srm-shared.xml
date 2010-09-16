@@ -4,19 +4,64 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
+  <bean id="required" class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Pool manager communication stub</description>
+    <property name="destination" value="${srmPoolManager}"/>
+    <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
+  </bean>
+
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+    <description>Pool communication stub</description>
+    <property name="timeout" value="#{ ${srmPoolManagerTimeout} * 1000}"/>
+  </bean>
+
+  <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Space manager communication stub</description>
+    <property name="destination" value="SrmSpaceManager"/>
+    <property name="timeout" value="#{ 3 * 60 * 1000 }"/>
+  </bean>
+
+  <bean id="gridftp-transfer-manager-stub" class="org.dcache.cells.CellStub">
+    <description>GridFTP transfer manager communication stub</description>
+    <property name="destination" value="RemoteGsiftpTransferManager"/>
+    <property name="timeout" value="#{ 24 * 60 * 60 * 1000}"/>
+  </bean>
+
+  <bean id="copy-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Copy manager communication stub</description>
+    <property name="destination" value="CopyManager"/>
+    <property name="timeout" value="#{ 24 * 60 * 60 * 1000}"/>
+  </bean>
+
+  <bean id="pin-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Pin manager communication stub</description>
+    <property name="destination" value="PinManager"/>
+    <property name="timeout" value="#{ 60 * 60 * 1000}"/>
+  </bean>
+
+  <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
+    <description>Login broker communication stub</description>
+    <property name="destination" value="LoginBroker"/>
+    <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
+  </bean>
+
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
-    <description>PnfsManager communication stub</description>
+    <description>PNFS manager communication stub</description>
     <property name="destination" value="${srmPnfsManager}"/>
     <property name="timeout" value="#{ ${srmPnfsTimeout} * 1000 }"/>
+    <property name="retryOnNoRouteToCell" value="true"/>
+  </bean>
+
+  <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+    <description>PNFS manager client module</description>
+    <constructor-arg ref="pnfs-stub"/>
   </bean>
 
   <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
     <description>Client stub for directory listing</description>
-    <constructor-arg>
-      <bean class="diskCacheV111.util.PnfsHandler">
-        <constructor-arg ref="pnfs-stub"/>
-      </bean>
-    </constructor-arg>
+    <constructor-arg ref="pnfs"/>
   </bean>
 
   <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
@@ -33,8 +78,8 @@
     <property name="updateTime" value="${loginBrokerUpdateTime}"/>
     <property name="updateThreshold" value="${loginBrokerUpdateThreshold}"/>
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
-    <property name="protocolVersion" value="0.1"/>
-    <property name="protocolFamily" value="SRM"/>
+    <property name="protocolVersion" value="${protocolVersion}"/>
+    <property name="protocolFamily" value="${protocolFamily}"/>
     <property name="port" value="${srmPort}"/>
     <property name="loginBroker">
       <bean class="dmg.cells.nucleus.CellPath">
@@ -43,114 +88,176 @@
     </property>
   </bean>
 
+  <bean id="auth-persistence-manager"
+        class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
+    <description>Persistence manager for authentication</description>
+    <constructor-arg value="${jdbcUrl}"/>
+    <constructor-arg value="${jdbcDriver}"/>
+    <constructor-arg value="${srmDbUser}"/>
+    <constructor-arg value="${srmDbPassword}"/>
+  </bean>
+
   <bean id="srm" class="diskCacheV111.srm.dcache.Storage"
         init-method="start">
     <description>dCache plugin for SRM</description>
-    <constructor-arg value="
-      -srmport=${srmPort}
-      -export
-      -srmversion=${srmVersion}
-      -timout=${srmTimeout}
-      -pnfsManager=${srmPnfsManager}
-      -pnfs-timeout=${srmPnfsTimeout}
-      -poolManager=${srmPoolManager}
-      -pool-manager-timeout=${srmPoolManagerTimeout}
-      -vacuum=${srmVacuum}
-      -vacuum-period=${srmVacuumPeriod}
-      -pnfs-srm-path=${pnfsSrmPath}
-      -xrootdRootPath=${xrootdRootPath}
-      -httpRootPath=${httpRootPath}
-      -gsissl=true
-      -reserve-space-implicitly=${srmImplicitSpaceManagerEnabled}
-      -space-reservation-strict=${srmSpaceReservationStrict}
-      -credentials-dir=${srmUserCredentialsDirectory}
-      -buffer_size=${srmBufferSize}
-      -tcp_buffer_size=${srmTcpBufferSize}
-      -parallel_streams=${parallelStreams}
-      -debug=${srmDebug}
-      -usekftp=false
-      -get-lifetime=${srmGetLifeTime}
-      -bring-online-lifetime=${srmBringOnlineLifeTime}
-      -put-lifetime=${srmPutLifeTime}
-      -copy-lifetime=${srmCopyLifeTime}
-      -get-req-thread-queue-size=${srmGetReqThreadQueueSize}
-      -get-req-thread-pool-size=${srmGetReqThreadPoolSize}
-      -get-req-max-waiting-requests=${srmGetReqMaxWaitingRequests}
-      -get-req-ready-queue-size=${srmGetReqReadyQueueSize}
-      -get-req-max-ready-requests=${srmGetReqMaxReadyRequests}
-      -get-req-max-number-of-retries=${srmGetReqMaxNumberOfRetries}
-      -get-req-retry-timeout=${srmGetReqRetryTimeout}
-      -get-req-max-num-of-running-by-same-owner=${srmGetReqMaxNumOfRunningBySameOwner}
-      -get-req-switch-to-asynchronous-mode-delay=${srmGetReqSwitchToAsynchronousModeDelay}
-      -bring-online-req-thread-queue-size=${srmBringOnlineReqThreadQueueSize}
-      -bring-online-req-thread-pool-size=${srmBringOnlineReqThreadPoolSize}
-      -bring-online-req-max-waiting-requests=${srmBringOnlineReqMaxWaitingRequests}
-      -bring-online-req-ready-queue-size=${srmBringOnlineReqReadyQueueSize}
-      -bring-online-req-max-ready-requests=${srmBringOnlineReqMaxReadyRequests}
-      -bring-online-req-max-number-of-retries=${srmBringOnlineReqMaxNumberOfRetries}
-      -bring-online-req-retry-timeout=${srmBringOnlineReqRetryTimeout}
-      -bring-online-req-max-num-of-running-by-same-owner=${srmBringOnlineReqMaxNumOfRunningBySameOwner}
-      -bring-online-req-switch-to-asynchronous-mode-delay=${srmBringOnlineReqSwitchToAsynchronousModeDelay}
-      -put-req-thread-queue-size=${srmPutReqThreadQueueSize}
-      -put-req-thread-pool-size=${srmPutReqThreadPoolSize}
-      -put-req-max-waiting-requests=${srmPutReqMaxWaitingRequests}
-      -put-req-ready-queue-size=${srmPutReqReadyQueueSize}
-      -put-req-max-ready-requests=${srmPutReqMaxReadyRequests}
-      -put-req-max-number-of-retries=${srmPutReqMaxNumberOfRetries}
-      -put-req-retry-timeout=${srmPutReqRetryTimeout}
-      -put-req-max-num-of-running-by-same-owner=${srmPutReqMaxNumOfRunningBySameOwner}
-      -put-req-switch-to-asynchronous-mode-delay=${srmPutReqSwitchToAsynchronousModeDelay}
-      -copy-req-thread-queue-size=${srmCopyReqThreadQueueSize}
-      -copy-req-thread-pool-size=${srmCopyReqThreadPoolSize}
-      -copy-req-max-waiting-requests=${srmCopyReqMaxWaitingRequests}
-      -copy-req-max-number-of-retries=${srmCopyReqMaxNumberOfRetries}
-      -copy-req-retry-timeout=${srmCopyReqRetryTimeout}
-      -copy-req-max-num-of-running-by-same-owner=${srmCopyReqMaxNumOfRunningBySameOwner}
-      -recursive-dirs-creation=${RecursiveDirectoryCreation}
-      -advisory-delete=${AdvisoryDelete}
-      -jdbcUrl=${jdbcUrl}
-      -jdbcDriver=${jdbcDriver}
-      -dbUser=${srmDbUser}
-      -dbPass=${srmDbPassword}
-      -pgPass=${srmPasswordFile}
-      -log-request-history-in-db-enabled=${srmJdbcMonitoringLogEnabled}
-      -num-days-history=${srmNumberOfDaysInDatabaseHistory}
-      -old-request-remove-period-secs=${srmOldRequestRemovalPeriodSeconds}
-      -jdbc-execution-thread-num=${srmJdbcExecutionThreadNum}
-      -max-queued-jdbc-tasks-num=${srmMaxNumberOfJdbcTasksInQueue}
-      -use-gplazma-authorization-cell=${useLoginService}
-      -delegate-to-gplazma=false
-      -use-gplazma-authorization-module=false
-      -gplazma-authorization-module-policy=${gplazmaPolicy}
-      -srm-authz-cache-lifetime=${srmAuthzCacheLifetime}
-      -srmLoginBroker=${srmLoginBroker}
-      -protocolFamily=${protocolFamily}
-      -protocolVersion=${protocolVersion}
-      -kpwd-file=${kpwdFile}
-      -start_server=false
-      -login-broker-update-period=${srmLoginBrokerUpdatePeriod}
-      -num-doors-in-rand-selection=${srmNumberOfDoorsInRandomSelection}
-      -overwrite=${overwriteEnabled}
-      -overwrite_by_default=${srmOverwriteByDefault}
-      -custom-get-host-by-addr=${srmCustomGetHostByAddr}
-      -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}
-      -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}
-      -clean-pending-requests-on-restart=${srmCleanPendingRequestsOnRestart}
-      -max-number-of-ls-entries=${srmLsMaxNumberOfEntries}
-      -max-number-of-ls-levels=${srmLsMaxNumberOfLevels}
-      -ls-request-lifetime=${srmLsRequestLifetime}
-      -ls-request-thread-queue-size=${srmLsRequestThreadQueueSize}
-      -ls-request-thread-pool-size=${srmLsRequestThreadPoolSize}
-      -ls-request-max-waiting-requests=${srmLsRequestMaxWaitingRequests}
-      -ls-request-ready-queue-size=${srmLsRequestReadyQueueSize}
-      -ls-request-max-ready-requests=${srmLsRequestMaxReadyRequests}
-      -ls-request-max-number-of-retries=${srmLsRequestMaxNumberOfRetries}
-      -ls-request-retry-timeout=${srmLsRequestRetryTimeout}
-      -ls-request-max-num-of-running-by-same-owner=${srmLsRequestMaxNumberOfRunningBySameOwner}
-      -ls-request-switch-to-asynchronous-mode-delay=${srmLsRequestSwitchToAsynchronousModeDelay}
-      -client-dns-lookup=${srmClientDNSLookup}"/>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerHandler" ref="lb"/>
+    <property name="loginBrokerStub" ref="login-broker-stub"/>
+    <property name="pnfsStub" ref="pnfs-stub"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="poolStub" ref="pool-stub"/>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <property name="spaceManagerStub" ref="space-manager-stub"/>
+    <property name="gridftpTransferManagerStub" ref="gridftp-transfer-manager-stub"/>
+    <property name="copyManagerStub" ref="copy-manager-stub"/>
+    <property name="pinManagerStub" ref="pin-manager-stub"/>
+    <property name="loginBrokerUpdatePeriod"
+              value="${srmLoginBrokerUpdatePeriod}"/>
+    <property name="numberOfDoorsInRandomSelection"
+              value="${srmNumberOfDoorsInRandomSelection}"/>
+    <property name="useCustomGetHostByAddress"
+              value="${srmCustomGetHostByAddr}"/>
+    <property name="ignoreClientProtocolOrder"
+              value="${srmIgnoreClientProtocolOrder}"/>
+    <property name="httpRootPath" value="${httpRootPath}"/>
+    <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
+    <property name="configuration" ref="config"/>
+  </bean>
+
+  <bean id="config" class="org.dcache.srm.util.Configuration">
+    <description>SRM configuration</description>
+    <property name="port" value="${srmPort}"/>
+    <property name="timeout" value="${srmTimeout}"/>
+    <property name="srmHost" value="${srmHost}"/>
+    <property name="srmHostsAsArray" value="${localSrmHosts}"/>
+    <property name="sizeOfSingleRemoveBatch"
+              value="${srmSizeOfSingleRemoveBatch}"/>
+    <property name="maxNumberOfLsEntries"
+              value="${srmLsMaxNumberOfEntries}"/>
+    <property name="maxNumberOfLsLevels"
+              value="${srmLsMaxNumberOfLevels}"/>
+    <property name="kpwdfile" value="${kpwdFile}"/>
+    <property name="useGplazmaAuthzCellFlag" value="${useLoginService}"/>
+    <property name="delegateToGplazmaFlag" value="false"/>
+    <property name="useGplazmaAuthzModuleFlag" value="false"/>
+    <property name="authzCacheLifetime" value="${srmAuthzCacheLifetime}"/>
+    <property name="gplazmaPolicy" value="${gplazmaPolicy}"/>
+    <property name="srm_root" value="${pnfsSrmPath}"/>
+    <property name="buffer_size" value="${srmBufferSize}"/>
+    <property name="tcp_buffer_size" value="${srmTcpBufferSize}"/>
+    <property name="parallel_streams" value="${parallelStreams}"/>
+    <property name="debug" value="${srmDebug}"/>
+    <property name="gsiftpclinet" value="globus-url-copy"/>
+    <property name="getLifetime" value="${srmGetLifeTime}"/>
+    <property name="bringOnlineLifetime" value="${srmBringOnlineLifeTime}"/>
+    <property name="lsLifetime" value="${srmLsRequestLifetime}"/>
+    <property name="putLifetime" value="${srmPutLifeTime}"/>
+    <property name="copyLifetime" value="${srmCopyLifeTime}"/>
+    <property name="recursiveDirectoryCreation"
+              value="${RecursiveDirectoryCreation}"/>
+    <property name="advisoryDelete" value="${AdvisoryDelete}"/>
+    <property name="reserve_space_implicitely"
+              value="${srmImplicitSpaceManagerEnabled}"/>
+    <property name="space_reservation_strict"
+              value="${srmSpaceReservationStrict}"/>
+
+    <property name="jdbcUrl" value="${jdbcUrl}"/>
+    <property name="jdbcClass" value="${jdbcDriver}"/>
+    <property name="jdbcUser" value="${srmDbUser}"/>
+    <property name="jdbcPass" value="${srmDbPassword}"/>
+    <property name="jdbcPwdfile" value="${srmPasswordFile}"/>
+
+    <property name="getReqTQueueSize" value="${srmGetReqThreadQueueSize}"/>
+    <property name="getThreadPoolSize" value="${srmGetReqThreadPoolSize}"/>
+    <property name="getMaxWaitingRequests" value="${srmGetReqMaxWaitingRequests}"/>
+    <property name="getReadyQueueSize" value="${srmGetReqReadyQueueSize}"/>
+    <property name="getMaxReadyJobs" value="${srmGetReqMaxReadyRequests}"/>
+    <property name="getMaxNumOfRetries"
+              value="${srmGetReqMaxNumberOfRetries}"/>
+    <property name="getRetryTimeout" value="${srmGetReqRetryTimeout}"/>
+    <property name="getMaxRunningBySameOwner"
+              value="${srmGetReqMaxNumOfRunningBySameOwner}"/>
+    <property name="getSwitchToAsynchronousModeDelay"
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmGetReqSwitchToAsynchronousModeDelay}')}"/>
+
+    <property name="bringOnlineReqTQueueSize"
+              value="${srmBringOnlineReqThreadQueueSize}"/>
+    <property name="bringOnlineThreadPoolSize"
+              value="${srmBringOnlineReqThreadPoolSize}"/>
+    <property name="bringOnlineMaxWaitingRequests"
+              value="${srmBringOnlineReqMaxWaitingRequests}"/>
+    <property name="bringOnlineReadyQueueSize"
+              value="${srmBringOnlineReqReadyQueueSize}"/>
+    <property name="bringOnlineMaxReadyJobs"
+              value="${srmBringOnlineReqMaxReadyRequests}"/>
+    <property name="bringOnlineMaxNumOfRetries"
+              value="${srmBringOnlineReqMaxNumberOfRetries}"/>
+    <property name="bringOnlineRetryTimeout"
+              value="${srmBringOnlineReqRetryTimeout}"/>
+    <property name="bringOnlineMaxRunningBySameOwner"
+              value="${srmBringOnlineReqMaxNumOfRunningBySameOwner}"/>
+    <property name="bringOnlineSwitchToAsynchronousModeDelay"
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmBringOnlineReqSwitchToAsynchronousModeDelay}')}"/>
+
+    <property name="lsReqTQueueSize" value="${srmLsRequestThreadQueueSize}"/>
+    <property name="lsThreadPoolSize" value="${srmLsRequestThreadPoolSize}"/>
+    <property name="lsMaxWaitingRequests" value="${srmLsRequestMaxWaitingRequests}"/>
+    <property name="lsReadyQueueSize" value="${srmLsRequestReadyQueueSize}"/>
+    <property name="lsMaxReadyJobs" value="${srmLsRequestMaxReadyRequests}"/>
+    <property name="lsMaxNumOfRetries"
+              value="${srmLsRequestMaxNumberOfRetries}"/>
+    <property name="lsRetryTimeout"
+              value="${srmLsRequestRetryTimeout}"/>
+    <property name="lsMaxRunningBySameOwner"
+              value="${srmLsRequestMaxNumberOfRunningBySameOwner}"/>
+    <property name="lsSwitchToAsynchronousModeDelay"
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmLsRequestSwitchToAsynchronousModeDelay}')}"/>
+
+    <property name="putReqTQueueSize" value="${srmPutReqThreadQueueSize}"/>
+    <property name="putThreadPoolSize" value="${srmPutReqThreadPoolSize}"/>
+    <property name="putMaxWaitingRequests" value="${srmPutReqMaxWaitingRequests}"/>
+    <property name="putReadyQueueSize" value="${srmPutReqReadyQueueSize}"/>
+    <property name="putMaxReadyJobs" value="${srmPutReqMaxReadyRequests}"/>
+    <property name="putMaxNumOfRetries" value="${srmPutReqMaxNumberOfRetries}"/>
+    <property name="putRetryTimeout" value="${srmPutReqRetryTimeout}"/>
+    <property name="putMaxRunningBySameOwner" value="${srmPutReqMaxNumOfRunningBySameOwner}"/>
+    <property name="putSwitchToAsynchronousModeDelay"
+              value="#{T(diskCacheV111.srm.dcache.Storage).parseTime('${srmPutReqSwitchToAsynchronousModeDelay}')}"/>
+
+    <property name="copyReqTQueueSize" value="${srmCopyReqThreadQueueSize}"/>
+    <property name="copyThreadPoolSize" value="${srmCopyReqThreadPoolSize}"/>
+    <property name="copyMaxWaitingRequests" value="${srmCopyReqMaxWaitingRequests}"/>
+    <property name="copyMaxNumOfRetries" value="${srmCopyReqMaxNumberOfRetries}"/>
+    <property name="copyRetryTimeout" value="${srmCopyReqRetryTimeout}"/>
+    <property name="copyMaxRunningBySameOwner"
+              value="${srmCopyReqMaxNumOfRunningBySameOwner}"/>
+
+    <property name="vacuum" value="${srmVacuum}"/>
+    <property name="vacuum_period_sec" value="${srmVacuumPeriod}"/>
+    <property name="numDaysHistory"
+              value="${srmNumberOfDaysInDatabaseHistory}"/>
+    <property name="oldRequestRemovePeriodSecs"
+              value="${srmOldRequestRemovalPeriodSeconds}"/>
+    <property name="maxQueuedJdbcTasksNum"
+              value="${srmMaxNumberOfJdbcTasksInQueue}"/>
+    <property name="jdbcExecutionThreadNum"
+              value="${srmJdbcExecutionThreadNum}"/>
+    <property name="credentialsDirectory"
+              value="${srmUserCredentialsDirectory}"/>
+    <property name="jdbcLogRequestHistoryInDBEnabled"
+              value="${srmJdbcMonitoringLogEnabled}"/>
+    <property name="cleanPendingRequestsOnRestart"
+              value="${srmCleanPendingRequestsOnRestart}"/>
+    <property name="overwrite" value="${overwriteEnabled}"/>
+    <property name="overwrite_by_default" value="${srmOverwriteByDefault}"/>
+    <property name="clientDNSLookup" value="${srmClientDNSLookup}"/>
+    <property name="jdbcSaveCompletedRequestsOnly"
+              value="${srmJdbcSaveCompletedRequestsOnly}"/>
+    <property name="jdbcEnabled" value="${srmJdbcEnabled}"/>
+    <property name="gsissl" value="true"/>
+
+    <property name="storage" ref="srm"/>
+    <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
@@ -164,7 +271,7 @@
   </bean>
 
   <bean id="config-file" class="org.eclipse.jetty.plus.jndi.EnvEntry">
-    <description>The SRM config file</description>
+    <description>SRM config file</description>
     <constructor-arg><null/></constructor-arg>
     <constructor-arg value="srmConfigFile"/>
     <constructor-arg value="${dcache.paths.share}/srm-webapp/WEB-INF/srmConfigFile.xml"/>

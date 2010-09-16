@@ -208,6 +208,8 @@ import javax.security.auth.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.annotation.Required;
+
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -236,10 +238,6 @@ public final class Storage
     private static final String[] SRM_PREFERED_PROTOCOLS
         = { "gsiftp", "gsidcap" };
 
-    private String srm_root = "";
-    private Args           _args;
-    private String _poolManagerName;
-    private String _pnfsManagerName;
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
     private CellStub _poolStub;
@@ -250,16 +248,13 @@ public final class Storage
     private CellStub _loginBrokerStub;
 
     private PnfsHandler _pnfs;
-    private PermissionHandler permissionHandler;
-    private int __pnfsTimeout = 60 ;
-    private String loginBrokerName="LoginBroker";
+    private final PermissionHandler permissionHandler =
+            new ChainedPermissionHandler(new ACLPermissionHandler(),
+                                         new PosixPermissionHandler());
+
     private SRM srm;
-    private int __poolManagerTimeout = 60;
-    private String remoteGridftpTransferManagerName =
-        "RemoteGsiftpTransferManager";
-    private final Configuration config = new Configuration();
+    private Configuration config;
     private Thread storageInfoUpdateThread;
-    private static final Object syncObj = new Object();
     private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
 
@@ -325,9 +320,100 @@ public final class Storage
         return srmInstance;
     }
 
-    public Storage(String args)
+    public Storage()
     {
-        _args = new Args(args);
+    }
+
+    @Required
+    public void setLoginBrokerStub(CellStub loginBrokerStub)
+    {
+        _loginBrokerStub = loginBrokerStub;
+    }
+
+    @Required
+    public void setPnfsStub(CellStub pnfsStub)
+    {
+        _pnfsStub = pnfsStub;
+    }
+
+    @Required
+    public void setSpaceManagerStub(CellStub spaceManagerStub)
+    {
+        _spaceManagerStub = spaceManagerStub;
+    }
+
+    @Required
+    public void setPoolStub(CellStub poolStub)
+    {
+        _poolStub = poolStub;
+    }
+
+    @Required
+    public void setPoolManagerStub(CellStub poolManagerStub)
+    {
+        _poolManagerStub = poolManagerStub;
+    }
+
+    @Required
+    public void setGridftpTransferManagerStub(CellStub gridftpTransferManagerStub)
+    {
+        _gridftpTransferManagerStub = gridftpTransferManagerStub;
+    }
+
+    @Required
+    public void setCopyManagerStub(CellStub copyManagerStub)
+    {
+        _copyManagerStub = copyManagerStub;
+    }
+
+    @Required
+    public void setPinManagerStub(CellStub pinManagerStub)
+    {
+        _pinManagerStub = pinManagerStub;
+    }
+
+    @Required
+    public void setPnfsHandler(PnfsHandler pnfs)
+    {
+        _pnfs = pnfs;
+    }
+
+    @Required
+    public void setHttpRootPath(String path)
+    {
+        _httpRootPath = new FsPath(path);
+    }
+
+    @Required
+    public void setXrootdRootPath(String path)
+    {
+        _xrootdRootPath = new FsPath(path);
+    }
+
+    @Required
+    public void setConfiguration(Configuration config)
+    {
+        this.config = config;
+    }
+
+    public void setLoginBrokerUpdatePeriod(long period)
+    {
+        LOGINBROKERINFO_VALIDITYSPAN = period;
+    }
+
+    public void setNumberOfDoorsInRandomSelection(int value)
+    {
+        numDoorInRanSelection = value;
+    }
+
+    public void setUseCustomGetHostByAddress(boolean value)
+    {
+        customGetHostByAddr = value;
+    }
+
+    public void setIgnoreClientProtocolOrder(boolean ignore)
+    {
+        ignoreClientProtocolOrder = ignore;
     }
 
     public void start()
@@ -335,554 +421,52 @@ public final class Storage
     {
         _log.info("Starting SRM");
 
-        __poolManagerTimeout =
-            getIntOption("pool-manager-timeout", __poolManagerTimeout);
-        _poolManagerName = getOption("poolManager", "PoolManager" );
-        _poolManagerStub = new CellStub();
-        _poolManagerStub.setDestination(_poolManagerName);
-        _poolManagerStub.setCellEndpoint(getCellEndpoint());
-        _poolManagerStub.setTimeout(__poolManagerTimeout * 1000);
-
-        _poolStub = new CellStub();
-        _poolStub.setCellEndpoint(getCellEndpoint());
-        _poolStub.setTimeout(__poolManagerTimeout * 1000);
-
-        _spaceManagerStub = new CellStub();
-        _spaceManagerStub.setCellEndpoint(getCellEndpoint());
-        _spaceManagerStub.setDestination("SrmSpaceManager");
-        _spaceManagerStub.setTimeout(3 * 60 * 1000);
-
-        _gridftpTransferManagerStub = new CellStub();
-        _gridftpTransferManagerStub.setCellEndpoint(getCellEndpoint());
-        _gridftpTransferManagerStub.setDestination(remoteGridftpTransferManagerName);
-        _gridftpTransferManagerStub.setTimeout(24 * 60 * 60 * 1000);
-
-        _copyManagerStub = new CellStub();
-        _copyManagerStub.setCellEndpoint(getCellEndpoint());
-        _copyManagerStub.setDestination("CopyManager");
-        _copyManagerStub.setTimeout(24 * 60 * 60 * 1000);
-
-        _pinManagerStub = new CellStub();
-        _pinManagerStub.setCellEndpoint(getCellEndpoint());
-        _pinManagerStub.setDestination("PinManager");
-        _pinManagerStub.setTimeout(60 * 60 * 1000);
-
-        __pnfsTimeout = getIntOption("pnfs-timeout",__pnfsTimeout);
-        _pnfsManagerName = getOption("pnfsManager" , "PnfsManager") ;
-        _pnfsStub = new CellStub();
-        _pnfsStub.setDestination(_pnfsManagerName);
-        _pnfsStub.setCellEndpoint(getCellEndpoint());
-        _pnfsStub.setTimeout(__pnfsTimeout * 1000);
-        _pnfsStub.setRetryOnNoRouteToCell(true);
-
-        _loginBrokerStub = new CellStub();
-        _loginBrokerStub.setCellEndpoint(getCellEndpoint());
-        _loginBrokerStub.setDestination(loginBrokerName);
-        _loginBrokerStub.setTimeout(__pnfsTimeout * 1000);
-
-        _pnfs = new PnfsHandler(_pnfsStub);
-        permissionHandler =
-            new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler());
-
-        _httpRootPath = new FsPath(getOption("httpRootPath", "/"));
-        _xrootdRootPath = new FsPath(getOption("xrootdRootPath", "/"));
-
-        String tmpstr = _args.getOpt("config");
-        if(tmpstr != null) {
-            try {
-                config.read(_args.getOpt("config"));
-            } catch (Exception e) {
-                _log.error("can't read config from file: "+_args.getOpt("config"));
-                throw e;
-            }
-        }
-
-        config.setPort(getIntOption("srmport",config.getPort()));
-        config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
-	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
-
-        config.setMaxNumberOfLsEntries(getIntOption("max-number-of-ls-entries",config.getMaxNumberOfLsEntries()));
-        config.setMaxNumberOfLsLevels(getIntOption("max-number-of-ls-levels",config.getMaxNumberOfLsLevels()));
-
-        config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
-        config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
-            "use-gplazma-authorization-cell",
-            config.getUseGplazmaAuthzCellFlag()));
-
-        config.setDelegateToGplazmaFlag(isOptionSetToTrueOrYes(
-            "delegate-to-gplazma",
-            config.getDelegateToGplazmaFlag()));
-
-        config.setUseGplazmaAuthzModuleFlag(isOptionSetToTrueOrYes(
-            "use-gplazma-authorization-module",
-            config.getUseGplazmaAuthzModuleFlag()));
-
-        config.setAuthzCacheLifetime( getOption("srm-authz-cache-lifetime",
-            config.getAuthzCacheLifetime()) );
-        config.setGplazmaPolicy(getOption("gplazma-authorization-module-policy",
-            config.getGplazmaPolicy()) );
-
-        srm_root = getOption("pnfs-srm-path",srm_root);
-        config.setSrm_root(srm_root);
-
-        config.setProxies_directory(getOption("proxies-directory",
-            config.getProxies_directory()) );
-
-        config.setUrlcopy(getOption("url-copy-command",
-            config.getUrlcopy()));
-
-        config.setTimeout_script(getOption("timeout-command",
-            config.getTimeout_script()));
-
-        config.setTimeout(getIntOption("timout",config.getTimeout()));
-
-        config.setBuffer_size(getIntOption("buffer_size",
-            config.getBuffer_size()));
-
-        config.setTcp_buffer_size(getIntOption("tcp_buffer_size",
-            config.getTcp_buffer_size()));
-
-        config.setParallel_streams(getIntOption("parallel_streams",
-            config.getParallel_streams()));
-
-        config.setSrmHost(getOption("srmHost",
-                java.net.InetAddress.getLocalHost().getCanonicalHostName()));
-
-        String localSrmHosts = getOption("localSrmHosts", "");
-        if (localSrmHosts.trim().length() > 0) {
-            for (String aHost: localSrmHosts.split(",")) {
-                config.addSrmHost(aHost);
-            }
-        } else {
-            config.addSrmHost(config.getSrmHost());
-        }
-        config.setDebug(isOptionSetToTrueOrYes("debug", config.isDebug()));
-        tmpstr =  _args.getOpt("usekftp");
-        if(tmpstr != null && tmpstr.equalsIgnoreCase("true")) {
-            config.setGsiftpclinet("kftp");
-        } else {
-            config.setGsiftpclinet("globus-url-copy");
-        }
-
-        config.setUseUrlcopyScript(isOptionSetToTrueOrYes("use-urlcopy-script",
-            config.isUseUrlcopyScript()));
-
-        config.setUseDcapForSrmCopy(
-            isOptionSetToTrueOrYes("use-dcap-for-srm-copy",
-            config.isUseDcapForSrmCopy()));
-
-        config.setUseGsiftpForSrmCopy(
-            isOptionSetToTrueOrYes("use-gsiftp-for-srm-copy",
-            config.isUseGsiftpForSrmCopy()));
-
-        config.setUseHttpForSrmCopy(isOptionSetToTrueOrYes("use-http-for-srm-copy",
-            config.isUseHttpForSrmCopy()));
-
-        config.setUseFtpForSrmCopy(isOptionSetToTrueOrYes("use-ftp-for-srm-copy",
-            config.isUseFtpForSrmCopy()));
-
-        config.setGetLifetime(getLongOption(
-            "get-lifetime",config.getGetLifetime()));
-        config.setBringOnlineLifetime(getLongOption(
-            "bring-online-lifetime",config.getBringOnlineLifetime()));
-        config.setLsLifetime(getLongOption(
-                                     "ls-request-lifetime",config.getLsLifetime()));
-        config.setPutLifetime(getLongOption(
-            "put-lifetime",config.getPutLifetime()));
-        config.setCopyLifetime(getLongOption("copy-lifetime",
-            config.getCopyLifetime()));
-
-        config.setRecursiveDirectoryCreation(isOptionSetToTrueOrYes(
-            "recursive-dirs-creation",config.isRecursiveDirectoryCreation()));
-
-        config.setAdvisoryDelete(isOptionSetToTrueOrYes("advisory-delete",
-            config.isAdvisoryDelete()));
-
-        config.setRemoveFile(isOptionSetToTrueOrYes("rm",config.isRemoveFile()));
-
-        config.setRemoveDirectory(isOptionSetToTrueOrYes("rmdir",
-            config.isRemoveDirectory()));
-
-        config.setCreateDirectory(isOptionSetToTrueOrYes("mkdir",
-            config.isCreateDirectory()));
-
-        config.setMoveEntry(isOptionSetToTrueOrYes("mv",config.isMoveEntry()));
-
-        config.setReserve_space_implicitely(isOptionSetToTrueOrYes(
-            "reserve-space-implicitly",config.isReserve_space_implicitely()));
-
-        config.setSpace_reservation_strict(isOptionSetToTrueOrYes(
-            "space-reservation-strict",config.isSpace_reservation_strict()));
-
-
-        config.setGetPriorityPolicyPlugin(getOption("get-priority-policy",
-            config.getGetPriorityPolicyPlugin()));
-        config.setBringOnlinePriorityPolicyPlugin(getOption("bring-online-priority-policy",
-            config.getBringOnlinePriorityPolicyPlugin()));
-        config.setLsPriorityPolicyPlugin(getOption("ls-request-priority-policy",
-                                                   config.getLsPriorityPolicyPlugin()));
-        config.setPutPriorityPolicyPlugin(getOption("put-priority-policy",
-            config.getPutPriorityPolicyPlugin()));
-        config.setCopyPriorityPolicyPlugin(getOption("copy-priority-policy",
-            config.getCopyPriorityPolicyPlugin()));
-
-        String jdbcPass = _args.getOpt("dbPass");
-        String jdbcPwdfile = _args.getOpt("pgPass");
-        if((jdbcPass==null && jdbcPwdfile==null)) {
+        if (config.getJdbcPass() == null && config.getJdbcPwdfile() == null) {
             String error = "database parameters are not specified; use options " +
                 "-jdbcUrl, -jdbcDriver, -dbUser and -dbPass/-pgPass";
             _log.error(error);
             throw new Exception(error);
         }
-        config.setJdbcUrl(getOption("jdbcUrl"));
-        config.setJdbcClass(getOption("jdbcDriver"));
-        config.setJdbcUser(getOption("dbUser"));
-        config.setJdbcPass( jdbcPass);
-        if(jdbcPwdfile != null && jdbcPwdfile.trim().length() > 0 ) {
-            config.setJdbcPwdfile(jdbcPwdfile);
-            _log.info("jdbc info : JDBC Password file:"+jdbcPwdfile);
-        }
 
-        // scheduler parameters
+        if (config.isGsissl()) {
+            config.setWebservice_protocol("https");
 
-        config.setGetReqTQueueSize( getIntOption("get-req-thread-queue-size",
-            config.getGetReqTQueueSize()));
-        config.setGetThreadPoolSize(getIntOption("get-req-thread-pool-size",
-            config.getGetThreadPoolSize()));
-        config.setGetMaxWaitingRequests(getIntOption("get-req-max-waiting-requests",
-            config.getGetMaxWaitingRequests()));
-        config.setGetReadyQueueSize(getIntOption("get-req-ready-queue-size",
-            config.getGetReadyQueueSize()));
-        config.setGetMaxReadyJobs(getIntOption("get-req-max-ready-requests",
-            config.getGetMaxReadyJobs()));
-        config.setGetMaxNumOfRetries(getIntOption("get-req-max-number-of-retries",
-            config.getGetMaxNumOfRetries()));
-        config.setGetRetryTimeout(getLongOption("get-req-retry-timeout",
-            config.getGetRetryTimeout()));
-        config.setGetMaxRunningBySameOwner(
-            getIntOption("get-req-max-num-of-running-by-same-owner",
-            config.getGetMaxRunningBySameOwner()));
-        config.setGetSwitchToAsynchronousModeDelay(getTimeOption("get-req-switch-to-asynchronous-mode-delay", config.getGetSwitchToAsynchronousModeDelay()));
-
-        config.setBringOnlineReqTQueueSize( getIntOption("bring-online-req-thread-queue-size",
-            config.getBringOnlineReqTQueueSize()));
-        config.setBringOnlineThreadPoolSize(getIntOption("bring-online-req-thread-pool-size",
-            config.getBringOnlineThreadPoolSize()));
-        config.setBringOnlineMaxWaitingRequests(getIntOption("bring-online-req-max-waiting-requests",
-            config.getBringOnlineMaxWaitingRequests()));
-        config.setBringOnlineReadyQueueSize(getIntOption("bring-online-req-ready-queue-size",
-            config.getBringOnlineReadyQueueSize()));
-        config.setBringOnlineMaxReadyJobs(getIntOption("bring-online-req-max-ready-requests",
-            config.getBringOnlineMaxReadyJobs()));
-        config.setBringOnlineMaxNumOfRetries(getIntOption("bring-online-req-max-number-of-retries",
-            config.getBringOnlineMaxNumOfRetries()));
-        config.setBringOnlineRetryTimeout(getLongOption("bring-online-req-retry-timeout",
-            config.getBringOnlineRetryTimeout()));
-        config.setBringOnlineMaxRunningBySameOwner(
-            getIntOption("bring-online-req-max-num-of-running-by-same-owner",
-            config.getBringOnlineMaxRunningBySameOwner()));
-        config.setBringOnlineSwitchToAsynchronousModeDelay(getTimeOption("bring-online-req-switch-to-asynchronous-mode-delay", config.getBringOnlineSwitchToAsynchronousModeDelay()));
-
-
-        config.setLsReqTQueueSize( getIntOption("ls-request-thread-queue-size",
-            config.getLsReqTQueueSize()));
-        config.setLsThreadPoolSize(getIntOption("ls-request-thread-pool-size",
-            config.getLsThreadPoolSize()));
-        config.setLsMaxWaitingRequests(getIntOption("ls-request-max-waiting-requests",
-            config.getLsMaxWaitingRequests()));
-        config.setLsReadyQueueSize(getIntOption("ls-request-ready-queue-size",
-            config.getLsReadyQueueSize()));
-        config.setLsMaxReadyJobs(getIntOption("ls-request-max-ready-requests",
-            config.getLsMaxReadyJobs()));
-        config.setLsMaxNumOfRetries(getIntOption("ls-request-max-number-of-retries",
-            config.getLsMaxNumOfRetries()));
-        config.setLsRetryTimeout(getLongOption("ls-request-retry-timeout",
-            config.getLsRetryTimeout()));
-        config.setLsMaxRunningBySameOwner(
-            getIntOption("ls-request-max-num-of-running-by-same-owner",
-            config.getLsMaxRunningBySameOwner()));
-        config.setLsSwitchToAsynchronousModeDelay(getTimeOption("ls-request-switch-to-asynchronous-mode-delay", config.getLsSwitchToAsynchronousModeDelay()));
-
-        config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
-            config.getPutReqTQueueSize()));
-        config.setPutThreadPoolSize(getIntOption("put-req-thread-pool-size",
-            config.getPutThreadPoolSize()));
-        config.setPutMaxWaitingRequests(getIntOption("put-req-max-waiting-requests",
-            config.getPutMaxWaitingRequests()));
-        config.setPutReadyQueueSize(getIntOption("put-req-ready-queue-size",
-            config.getPutReadyQueueSize()));
-        config.setPutMaxReadyJobs(getIntOption("put-req-max-ready-requests",
-            config.getPutMaxReadyJobs()));
-        config.setPutMaxNumOfRetries(getIntOption("put-req-max-number-of-retries",
-            config.getPutMaxNumOfRetries()));
-        config.setPutRetryTimeout(getLongOption("put-req-retry-timeout",
-            config.getPutRetryTimeout()));
-        config.setPutMaxRunningBySameOwner(
-             getIntOption("put-req-max-num-of-running-by-same-owner",
-            config.getPutMaxRunningBySameOwner()));
-        config.setPutSwitchToAsynchronousModeDelay(getTimeOption("put-req-switch-to-asynchronous-mode-delay", config.getPutSwitchToAsynchronousModeDelay()));
-
-        config.setCopyReqTQueueSize(getIntOption("copy-req-thread-queue-size",
-            config.getCopyReqTQueueSize()));
-        config.setCopyThreadPoolSize(getIntOption("copy-req-thread-pool-size",
-            config.getCopyThreadPoolSize()));
-        config.setCopyMaxWaitingRequests(getIntOption("copy-req-max-waiting-requests",
-            config.getCopyMaxWaitingRequests()));
-        config.setCopyMaxNumOfRetries(getIntOption("copy-req-max-number-of-retries",
-            config.getCopyMaxNumOfRetries()));
-        config.setCopyRetryTimeout(getLongOption("copy-req-retry-timeout",
-            config.getCopyRetryTimeout()));
-        config.setCopyMaxRunningBySameOwner(
-            getIntOption("copy-req-max-num-of-running-by-same-owner",
-            config.getCopyMaxRunningBySameOwner()));
-
-        config.setStorage_info_update_period( getLongOption(
-            "storage-info-update-period",
-            config.getStorage_info_update_period()));
-
-        config.setVacuum(isOptionSetToTrueOrYes( "vacuum",
-            config.isVacuum()));
-        config.setVacuum_period_sec( getLongOption("vacuum-period",
-            config.getVacuum_period_sec()));
-
-        config.setGetRequestRestorePolicy(getOption("get-request-restore-policy",
-            config.getGetRequestRestorePolicy()));
-        config.setBringOnlineRequestRestorePolicy(getOption("bring-online-request-restore-policy",
-            config.getBringOnlineRequestRestorePolicy()));
-        config.setLsRequestRestorePolicy(getOption("ls-request-restore-policy",
-            config.getLsRequestRestorePolicy()));
-        config.setPutRequestRestorePolicy(getOption("put-request-restore-policy",
-            config.getPutRequestRestorePolicy()));
-        config.setCopyRequestRestorePolicy(getOption("copy-request-restore-policy",
-            config.getCopyRequestRestorePolicy()));
-
-        LOGINBROKERINFO_VALIDITYSPAN = getLongOption("login-broker-update-period",
-            LOGINBROKERINFO_VALIDITYSPAN);
-
-        numDoorInRanSelection = getIntOption("num-doors-in-rand-selection",
-            numDoorInRanSelection);
-
-        config.setNumDaysHistory(getIntOption("num-days-history",
-            config.getNumDaysHistory()));
-        config.setOldRequestRemovePeriodSecs(
-            getLongOption("old-request-remove-period-secs",
-            config.getOldRequestRemovePeriodSecs()));
-
-        if( _args.getOpt("max-queued-jdbc-tasks-num") != null) {
-            config.setMaxQueuedJdbcTasksNum(Integer.valueOf(getIntOption(
-                "max-queued-jdbc-tasks-num")));
-        }
-
-        if( _args.getOpt("jdbc-execution-thread-num") != null) {
-            config.setJdbcExecutionThreadNum(Integer.valueOf(getIntOption(
-                "jdbc-execution-thread-num")));
-        }
-
-        config.setCredentialsDirectory(getOption("credentials-dir",
-            config.getCredentialsDirectory()));
-
-        config.setJdbcLogRequestHistoryInDBEnabled(isOptionSetToTrueOrYes("log-request-history-in-db-enabled",
-            config.isJdbcLogRequestHistoryInDBEnabled())); // false by default
-
-        config.setCleanPendingRequestsOnRestart(isOptionSetToTrueOrYes("clean-pending-requests-on-restart",
-            config.isCleanPendingRequestsOnRestart())); // false by default
-
-        config.setOverwrite(isOptionSetToTrueOrYes("overwrite",
-            config.isOverwrite())); //false by default
-
-        config.setOverwrite_by_default(isOptionSetToTrueOrYes("overwrite_by_default",
-            config.isOverwrite_by_default())); //false by default
-
-        customGetHostByAddr = isOptionSetToTrueOrYes("custom-get-host-by-addr",
-            customGetHostByAddr);
-
-        ignoreClientProtocolOrder = isOptionSetToTrueOrYes(
-            "ignore-client-protocol-order",ignoreClientProtocolOrder);
-
-
-        config.setCredentialsDirectory(getOption("credentials-dir",
-            config.getCredentialsDirectory()));
-
-		config.setQosPluginClass(getOption("qosPluginClass",config.getQosPluginClass()));
-		config.setQosConfigFile(getOption("qosConfigFile",config.getQosConfigFile()));
-
-        config.setClientDNSLookup(isOptionSetToTrueOrYes("client-dns-lookup",
-        config.isClientDNSLookup())); // false by default
-
-        config.setCounterRrdDirectory(getOption("counterRrdDirectory",config.getCounterRrdDirectory()));
-        config.setGaugeRrdDirectory(getOption("gaugeRrdDirectory",config.getGaugeRrdDirectory()));
-
-        config.setSrmCounterRrdDirectory(getOption("srmCounterRrdDirectory",config.getSrmCounterRrdDirectory()));
-        config.setSrmGaugeRrdDirectory(getOption("srmGaugeRrdDirectory",config.getSrmGaugeRrdDirectory()));
-
-        config.setJdbcSaveCompletedRequestsOnly(
-                isOptionSetToTrueOrYes("jdbc-save-completed-requests-only",
-                config.isJdbcSaveCompletedRequestsOnly()));
-
-        config.setJdbcEnabled(
-                isOptionSetToTrueOrYes("jdbc-enabled",
-                config.isJdbcEnabled()));
-
-        _log.info("scheduler parameter read, starting");
-
-        AuthRecordPersistenceManager authRecordPersistenceManager =
-            new AuthRecordPersistenceManager(
-                config.getJdbcUrl(),
-                config.getJdbcClass(),
-                config.getJdbcUser(),
-                config.getJdbcPass());
-        config.setSrmUserPersistenceManager(authRecordPersistenceManager);
-
-        tmpstr = _args.getOpt("gsissl");
-        if(tmpstr !=null) {
-            config.setGsissl(tmpstr.equalsIgnoreCase("true"));
-            if(config.isGsissl()) {
-                config.setWebservice_protocol("https");
-
-                LoginStrategy loginStrategy;
-                if (config.getUseGplazmaAuthzCellFlag() ||
-                    config.getUseGplazmaAuthzModuleFlag()) {
-                    loginStrategy =
-                        new RemoteLoginStrategy(new CellStub(getCellEndpoint(), new CellPath("gPlazma"), 30000));
-                } else {
-                    loginStrategy =
-                        new KauthFileLoginStrategy(new File(config.getKpwdfile()));
-                }
-
-                DCacheAuthorization authorization =
-                    new DCacheAuthorization(loginStrategy,
-                                            authRecordPersistenceManager);
-                authorization.setCacheLifetime(config.getAuthzCacheLifetime());
-                config.setAuthorization(authorization);
+            LoginStrategy loginStrategy;
+            if (config.getUseGplazmaAuthzCellFlag() ||
+                config.getUseGplazmaAuthzModuleFlag()) {
+                loginStrategy =
+                    new RemoteLoginStrategy(new CellStub(getCellEndpoint(), new CellPath("gPlazma"), 30000));
             } else {
-                config.setWebservice_protocol("http");
+                loginStrategy =
+                    new KauthFileLoginStrategy(new File(config.getKpwdfile()));
             }
 
+            DCacheAuthorization authorization =
+                new DCacheAuthorization(loginStrategy,
+                                        (AuthRecordPersistenceManager) config.getSrmUserPersistenceManager());
+            authorization.setCacheLifetime(config.getAuthzCacheLifetime());
+            config.setAuthorization(authorization);
         } else {
             config.setWebservice_protocol("http");
         }
 
-        config.setStorage(this);
-
-        _log.debug("Starting Storage, about to instantiate SRM...");
         srm = SRM.getSRM(config, getCellName());
         storageInfoUpdateThread = new Thread(this);
         storageInfoUpdateThread.start();
     }
 
+    @Required
     public void setDirectoryListSource(DirectoryListSource source)
     {
         _listSource = source;
     }
 
-    private String getOption(String value) {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            throw new IllegalArgumentException("option "+value+" is not set");
-        }
-        return tmpstr;
-
-    }
-
-    private String getOption(String value, String default_value) {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            return default_value;
-        }
-       return tmpstr;
-    }
-
-    private boolean isOptionSetToTrueOrYes(String value) {
-        String tmpstr = _args.getOpt(value);
-        return tmpstr != null &&
-            (tmpstr.equalsIgnoreCase("true") ||
-             tmpstr.equalsIgnoreCase("on")   ||
-             tmpstr.equalsIgnoreCase("yes")  ||
-             tmpstr.equalsIgnoreCase("enabled") ) ;
-    }
-
-    private boolean isOptionSetToTrueOrYes(String value, boolean default_value) {
-        String tmpstr = _args.getOpt(value);
-       if( tmpstr != null && tmpstr.length() > 0) {
-            return
-             tmpstr.equalsIgnoreCase("true") ||
-             tmpstr.equalsIgnoreCase("on")   ||
-             tmpstr.equalsIgnoreCase("yes")  ||
-             tmpstr.equalsIgnoreCase("enabled") ;
-       } else {
-            return default_value;
-       }
-    }
-
-    private long parseTime(String s)
+    public static long parseTime(String s)
     {
         return s.equals(INFINITY) ? Long.MAX_VALUE : Long.parseLong(s);
     }
 
-    private long getTimeOption(String value) throws IllegalArgumentException {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            throw new IllegalArgumentException("option "+value+" is not set");
-        }
-        return parseTime(tmpstr);
-    }
-
-    private long getTimeOption(String value, long default_value) {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            return default_value;
-        }
-        return parseTime(tmpstr);
-    }
-
-    private double getDoubleOption(String value) throws IllegalArgumentException {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            throw new IllegalArgumentException("option "+value+" is not set");
-        }
-        return Double.parseDouble(tmpstr);
-    }
-
-    private double getDoubleOption(String value, double default_value) {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            return default_value;
-        }
-        return Double.parseDouble(tmpstr);
-    }
-
-    private long getLongOption(String value) throws IllegalArgumentException {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            throw new IllegalArgumentException("option "+value+" is not set");
-        }
-        return Long.parseLong(tmpstr);
-    }
-
-    private long getLongOption(String value, long default_value) {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            return default_value;
-        }
-        return Long.parseLong(tmpstr);
-    }
-
-    private int getIntOption(String value) throws IllegalArgumentException {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            throw new IllegalArgumentException("option "+value+" is not set");
-        }
-        return Integer.parseInt(tmpstr);
-    }
-
-    private int getIntOption(String value, int default_value) {
-        String tmpstr = _args.getOpt(value);
-        if(tmpstr == null || tmpstr.length() == 0)  {
-            return default_value;
-        }
-       return Integer.parseInt(tmpstr);
-    }
-
+    @Required
     public void setLoginBrokerHandler(LoginBrokerHandler handler)
         throws UnknownHostException
     {
@@ -974,9 +558,9 @@ public final class Storage
         return "";
     }
 
-    public String fh_db_history_log= " Syntax: db history log [on|off] "+
+    public final static String fh_db_history_log= " Syntax: db history log [on|off] "+
         "# show status or enable db history log ";
-    public String hh_db_history_log= " [on|off] " +
+    public final static String hh_db_history_log= " [on|off] " +
         "# show status or enable db history log ";
     public String ac_db_history_log_$_0_1(Args args) {
         if (args.argc()==0) {
@@ -998,9 +582,9 @@ public final class Storage
                     " disabled");
     }
 
-    public String fh_db_debug_history_log= " Syntax: db debug history log [on|off] "+
+    public final static String fh_db_debug_history_log= " Syntax: db debug history log [on|off] "+
         "# show status or enable db history log ";
-    public String hh_db_debug_history_log= " [on|off] " +
+    public final static String hh_db_debug_history_log= " [on|off] " +
         "# show status or enable db history log ";
     public String ac_db_debug_history_log_$_0_1(Args args) {
         if(args.argc() == 0) {
@@ -1022,8 +606,8 @@ public final class Storage
                     " disabled");
     }
 
-    public String fh_cancel= " Syntax: cancel <id> ";
-    public String hh_cancel= " <id> ";
+    public final static String fh_cancel= " Syntax: cancel <id> ";
+    public final static String hh_cancel= " <id> ";
     public String ac_cancel_$_1(Args args) {
         try {
             Long id = Long.valueOf(args.argv(0));
@@ -1040,8 +624,8 @@ public final class Storage
         }
     }
 
-    public String fh_cancelall= " Syntax: cancel [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
-    public String hh_cancelall= " [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
+    public final static String fh_cancelall= " Syntax: cancel [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
+    public final static String hh_cancelall= " [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
     public String ac_cancelall_$_1(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
@@ -1093,9 +677,9 @@ public final class Storage
             return e.toString();
         }
     }
-    public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] "+
+    public final static String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] "+
             "#will list all requests";
-    public String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
+    public final static String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
     public String ac_ls_$_0_1(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
@@ -1153,10 +737,10 @@ public final class Storage
             return t.toString();
         }
     }
-    public String fh_ls_queues= " Syntax: ls queues " +
+    public final static String fh_ls_queues= " Syntax: ls queues " +
         "[-get] [-put] [-copy] [-bring] [-ls] [-l]  "+
             "#will list schedule queues";
-    public String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-ls] [-l] ";
+    public final static String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-ls] [-l] ";
     public String ac_ls_queues_$_0(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
@@ -1216,11 +800,11 @@ public final class Storage
         }
     }
 
-    public String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
+    public final static String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
         " [-copy] [-l] [max_count]"+
             " #will list completed (done, failed or canceled) requests, " +
         "if max_count is not specified, it is set to 50";
-    public String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
+    public final static String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
     public String ac_ls_completed_$_0_1(Args args) throws Exception{
         boolean get=args.getOpt("get") != null;
         boolean put=args.getOpt("put") != null;
@@ -1256,9 +840,9 @@ public final class Storage
         return sb.toString();
     }
 
-    public String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
+    public final static String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
             "will set priority for the requestid";
-    public String hh_set_job_priority=" <requestId> <priority>";
+    public final static String hh_set_job_priority=" <requestId> <priority>";
 
     public String ac_set_job_priority_$_2(Args args) {
         String s1 = args.argv(0);
@@ -1295,9 +879,9 @@ public final class Storage
     }
 
 
-    public String fh_set_max_ready_put= " Syntax: set max ready put <count>"+
+    public final static String fh_set_max_ready_put= " Syntax: set max ready put <count>"+
             " #will set a maximum number of put requests in the ready state";
-    public String hh_set_max_ready_put= " <count>";
+    public final static String hh_set_max_ready_put= " <count>";
     public String ac_set_max_ready_put_$_1(Args args) throws Exception{
         if(args.argc() != 1) {
             throw new IllegalArgumentException("count is not specified");
@@ -1309,9 +893,9 @@ public final class Storage
         return "put-req-max-ready-requests="+value;
     }
 
-    public String fh_set_max_ready_get= " Syntax: set max ready get <count>"+
+    public final static String fh_set_max_ready_get= " Syntax: set max ready get <count>"+
             " #will set a maximum number of get requests in the ready state";
-    public String hh_set_max_ready_get= " <count>";
+    public final static String hh_set_max_ready_get= " <count>";
     public String ac_set_max_ready_get_$_1(Args args) throws Exception{
         if(args.argc() != 1) {
             throw new IllegalArgumentException("count is not specified");
@@ -1323,9 +907,9 @@ public final class Storage
         return "get-req-max-ready-requests="+value;
     }
 
-    public String fh_set_max_ready_bring_online= " Syntax: set max ready bring online <count>"+
+    public final static String fh_set_max_ready_bring_online= " Syntax: set max ready bring online <count>"+
             " #will set a maximum number of bring online requests in the ready state";
-    public String hh_set_max_ready_bring_online= " <count>";
+    public final static String hh_set_max_ready_bring_online= " <count>";
     public String ac_set_max_ready_bring_online_$_1(Args args) throws Exception{
         if(args.argc() != 1) {
             throw new IllegalArgumentException("count is not specified");
@@ -1337,17 +921,17 @@ public final class Storage
         return "bring-online-req-max-ready-requests="+value;
     }
 
-    public String fh_set_max_read_ls_= " Syntax: set max read ls <count>\n"+
+    public final static String fh_set_max_read_ls_= " Syntax: set max read ls <count>\n"+
             " #will set a maximum number of ls requests in the ready state\n"+
             " #\"set max read ls\" is an alias for \"set max ready ls\" preserved for compatibility ";
-    public String hh_set_max_read_ls= " <count>";
+    public final static String hh_set_max_read_ls= " <count>";
     public String ac_set_read_ls_$_1(Args args) throws Exception{
         return ac_set_max_ready_ls_$_1(args);
     }
 
-    public String fh_set_max_ready_ls= " Syntax: set max ready ls <count>\n"+
+    public final static String fh_set_max_ready_ls= " Syntax: set max ready ls <count>\n"+
             " #will set a maximum number of ls requests in the ready state";
-    public String hh_set_max_ready_ls= " <count>";
+    public final static String hh_set_max_ready_ls= " <count>";
     public String ac_set_max_ready_ls_$_1(Args args) throws Exception{
         if(args.argc() != 1) {
             throw new IllegalArgumentException("count is not specified");
@@ -1359,9 +943,9 @@ public final class Storage
         return "ls-request-max-ready-requests="+value;
     }
 
-      public String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+
+      public final static String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+
          "#will list all put companion waiting for the dir creation ";
-      public String hh_dir_creators_ls= " [-l] ";
+      public final static String hh_dir_creators_ls= " [-l] ";
       public String ac_dir_creators_ls_$_0(Args args) {
         try {
             boolean longformat = args.getOpt("l") != null;
@@ -1373,9 +957,9 @@ public final class Storage
             return t.toString();
          }
       }
-      public String fh_cancel_dir_creation= " Syntax:cancel dir creation <path>  "+
+      public final static String fh_cancel_dir_creation= " Syntax:cancel dir creation <path>  "+
          "#will fail companion waiting for the dir creation on <path> ";
-      public String hh_cancel_dir_creation= " <path>";
+      public final static String hh_cancel_dir_creation= " <path>";
       public String ac_cancel_dir_creation_$_1(Args args) {
         try {
             String pnfsPath = args.argv(0);
@@ -1388,7 +972,7 @@ public final class Storage
          }
       }
 
-      public String hh_print_srm_counters= "# prints the counters for all srm operations";
+      public final static String hh_print_srm_counters= "# prints the counters for all srm operations";
       public String ac_print_srm_counters_$_0(Args args) {
             return srm.getSrmServerV1Counters().toString()+
                     '\n'+
@@ -1442,21 +1026,6 @@ public final class Storage
              return false;
          }
      }
-
-    public void log(String s)
-    {
-        _log.info(s);
-    }
-
-    public void elog(String s)
-    {
-        _log.error(s);
-    }
-
-    public void elog(Throwable t)
-    {
-        _log.error(t.toString(),t);
-    }
 
     public void pinFile(SRMUser user,
         String fileId,
@@ -1587,7 +1156,7 @@ public final class Storage
 
     public String getGetTurl(SRMUser user,String path,String[] protocols)
     throws SRMException {
-        path = srm_root+"/"+path;
+        path = getFullPath(path);
         String protocol = selectGetProtocol(protocols);
         return getTurl(path,protocol,user);
     }
@@ -1595,7 +1164,7 @@ public final class Storage
     public String getGetTurl(SRMUser user,String filePath,
             String previous_turl)
             throws SRMException {
-        String actualFilePath = srm_root+"/"+filePath;
+        String actualFilePath = getFullPath(filePath);
         GlobusURL prev_turl;
         try {
             prev_turl= new GlobusURL(previous_turl);
@@ -1615,7 +1184,7 @@ public final class Storage
 
     public String getPutTurl(SRMUser user,String path,String[] protocols)
     throws SRMException {
-        path=srm_root+"/"+path;
+        path=getFullPath(path);
         String protocol = this.selectPutProtocol(protocols);
         return getTurl(path,protocol,user);
     }
@@ -1623,7 +1192,7 @@ public final class Storage
 
     public String getPutTurl(SRMUser user, String filePath, String previous_turl)
     throws SRMException {
-        String actualFilePath = srm_root+"/"+filePath;
+        String actualFilePath = getFullPath(filePath);
         GlobusURL prev_turl;
         try {
             prev_turl= new GlobusURL(previous_turl);
@@ -1963,10 +1532,10 @@ public final class Storage
      * BNL's contribution
      */
 
-        private static Map resolve(String name, String[] attrIds)
+        private static Map<String,List<String>> resolve(String name, String[] attrIds)
             throws NamingException {
 
-            Map map = new HashMap();
+            Map<String,List<String>> map = new HashMap<String,List<String>>();
             DirContext ctx = new InitialDirContext();
             javax.naming.directory.Attributes attrs =
                     ctx.getAttributes(name, attrIds);
@@ -1980,7 +1549,7 @@ public final class Storage
                     javax.naming.directory.Attribute attr =
                             (javax.naming.directory.Attribute)ae.next();
                     String attrID = attr.getID();
-                    List l = new ArrayList();
+                    List<String> l = new ArrayList<String>();
                     for (NamingEnumeration e = attr.getAll();
                          e.hasMoreElements();) {
                         String literalip = (String)e.nextElement();
@@ -2013,12 +1582,11 @@ public final class Storage
 
                 String[] ids = new String[1];
                 ids[0] = "PTR"; // PTR record
-                Map map = resolve("dns:///" + literalip, ids);
-                Set entrySet = map.entrySet();
+                Map<String,List<String>> map =
+                    resolve("dns:///" + literalip, ids);
                 String host = "";
-                for (Iterator itr = entrySet.iterator(); itr.hasNext();) {
-                    Map.Entry e = (Map.Entry)itr.next();
-                    host = (String)((ArrayList)e.getValue()).get(0);
+                for (List<String> hosts: map.values()) {
+                    host = hosts.get(0);
                 }
                 return host;
             } catch (Exception e) {
@@ -2028,7 +1596,7 @@ public final class Storage
 
     public void getFileInfo(SRMUser user, String filePath, boolean read,
         GetFileInfoCallbacks callbacks) {
-        String actualPnfsPath= srm_root+"/"+filePath;
+        String actualPnfsPath= getFullPath(filePath);
         if(!verifyUserPathIsRootSubpath(actualPnfsPath,user)) {
             callbacks.GetStorageInfoFailed("user's path ["+actualPnfsPath+
                     "] is not a subpath of user's root ");
@@ -2045,7 +1613,7 @@ public final class Storage
             String filePath,
             PrepareToPutCallbacks callbacks,
             boolean overwrite) {
-        String actualPnfsPath = srm_root+"/"+filePath;
+        String actualPnfsPath = getFullPath(filePath);
         PutCompanion.PrepareToPutFile(
                 (AuthorizationRecord)user,
                 permissionHandler,
@@ -2162,13 +1730,15 @@ public final class Storage
         return fmd;
     }
 
-    private final Map idToUserMap = new HashMap();
-    private final Map idToCredentialMap = new HashMap();
+    private final Map<Long,String> idToUserMap =
+        new HashMap<Long,String>();
+    private final Map<Long,GSSCredential> idToCredentialMap =
+        new HashMap<Long,GSSCredential>();
 
     private String getUserById(long id) {
         _log.debug("getDcacheUserById("+id+")");
         synchronized(idToUserMap) {
-            return (String) idToUserMap.get(Long.valueOf(id));
+            return idToUserMap.get(id);
 
         }
     }
@@ -2176,7 +1746,7 @@ public final class Storage
     private GSSCredential getCredentialById(long id) {
         _log.debug("getDcacheUserById("+id+")");
         synchronized(idToUserMap) {
-            return (GSSCredential) idToCredentialMap.get(Long.valueOf(id));
+            return idToCredentialMap.get(id);
 
         }
     }
@@ -2617,7 +2187,7 @@ public final class Storage
             String spaceReservationId,
             long size,
             CopyCallbacks callbacks) throws SRMException{
-        actualFilePath = srm_root+"/"+actualFilePath;
+        actualFilePath = getFullPath(actualFilePath);
         _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +actualFilePath);
         return performRemoteTransfer(user,remoteTURL,actualFilePath,true,
                 remoteUser,
@@ -2634,7 +2204,7 @@ public final class Storage
             SRMUser remoteUser,
             Long remoteCredentialId,
             CopyCallbacks callbacks) throws SRMException{
-        actualFilePath = srm_root+"/"+actualFilePath;
+        actualFilePath = getFullPath(actualFilePath);
         _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +actualFilePath);
         return performRemoteTransfer(user,remoteTURL,actualFilePath,true,
                 remoteUser,
@@ -2662,7 +2232,7 @@ public final class Storage
             Long remoteCredentialId,
             CopyCallbacks callbacks)
             throws SRMException{
-        String actualFilePath = srm_root+"/"+filePath;
+        String actualFilePath = getFullPath(filePath);
         _log.debug(" putToRemoteTURL from "+actualFilePath+" to " +remoteTURL);
         return performRemoteTransfer(user,remoteTURL,actualFilePath,false,
                 remoteUser,
@@ -3269,7 +2839,7 @@ public final class Storage
         }
 
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        String actualFilePath = srm_root+"/"+fileName;
+        String actualFilePath = getFullPath(fileName);
         FsPath fsPath           = new FsPath(actualFilePath);
         SrmMarkSpaceAsBeingUsedCompanion.markSpace(
                 duser,
@@ -3295,7 +2865,7 @@ public final class Storage
             return;
         }
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        String actualFilePath = srm_root+"/"+fileName;
+        String actualFilePath = getFullPath(fileName);
         FsPath fsPath           = new FsPath(actualFilePath);
         SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(
                 duser,
@@ -3601,7 +3171,7 @@ public final class Storage
 
     public boolean exists(SRMUser user,
                           String path)  throws SRMException {
-            String absolute_path = srm_root + "/" + path;
+        String absolute_path = getFullPath(path);
             try {
                 return _pnfs.getPnfsIdByPath(absolute_path) != null;
             }
@@ -3625,8 +3195,7 @@ public final class Storage
      */
     private String getFullPath(String path)
     {
-        FsPath fullPath = new FsPath(srm_root + "/" + path);
+        FsPath fullPath = new FsPath(config.getSrm_root() + "/" + path);
         return fullPath.toString();
     }
-
 }

@@ -17,9 +17,8 @@ exec file:${dcache.paths.share}/cells/threadmanager.fragment
 #
 onerror continue
 
-set context -c srmHost ""
-set context -c localSrmHosts ""
-set context -c srmVersion         version1
+check -strong srmHost
+check -strong localSrmHosts
 set context -c srmDbHost          localhost
 set context -c srmDatabaseHost    ${srmDbHost}
 set context -c srmDbName          dcache
@@ -267,7 +266,8 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/srm-${srmJettyConnectorType}.xml \
         -export \
         -srmPort=${port} \
-        -srmVersion=${srmVersion}  \
+        -srmHost=${srmHost} \
+        -localSrmHosts=${localSrmHosts} \
         -srmTimeout=${srmTimeout} \
         -srmPnfsManager=${srmPnfsManager} \
         -srmPnfsTimeout=${srmPnfsTimeout} \
