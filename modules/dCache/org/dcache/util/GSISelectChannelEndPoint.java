@@ -125,7 +125,7 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
                     case CH_INITIAL:
                     case CH_NOTDONEYET:
 
-                        needOutBuffer();
+                        needOutBuffer(inBuffer.capacity()*2);
                         ByteBuffer outBuffer = _outNIOBuffer.getByteBuffer();
 
                         /* this does not fill any bytes into the fill-buffer */
@@ -218,10 +218,12 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
         return totalFilled;
     }
 
-    private synchronized void needOutBuffer()
+    private synchronized void needOutBuffer(int size)
     {
-        if (_outNIOBuffer==null) {
-            _outNIOBuffer=(NIOBuffer)_buffers.getBuffer();
+        if (_outNIOBuffer==null || _outNIOBuffer.capacity() < size) {
+            _outNIOBuffer = null;
+            _logger.debug("Getting an output buffer with size {}", size);
+            _outNIOBuffer=(NIOBuffer)_buffers.getBuffer(size);
         }
     }
 
@@ -273,7 +275,13 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
             available += buffer.length();
         }
 
-        needOutBuffer();
+        int outBufferSize =
+            ((header == null)?0:header.length()) +
+            ((buffer == null)?0:buffer.length()) +
+            ((trailer == null)?0:trailer.length());
+        outBufferSize *= 2;
+
+        needOutBuffer(outBufferSize);
 
         try {
             loop: while (true) {
