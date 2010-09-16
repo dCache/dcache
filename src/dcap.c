@@ -971,7 +971,7 @@ dc_debug(DC_ERROR, "2=%s",outStr);
 						     "%s -truncate=\"%s\"", outStr, node->pnfsId);
 				}else{
 					outStr = dc_char_buf_sprintf(context,
-						     "%s -truncate=\"%s\"", outStr);
+						     "%s -truncate", outStr);
 				}
 				if (outStr == NULL) {
 					goto out_of_mem_exit;
