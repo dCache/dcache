@@ -20,6 +20,25 @@
 
 #define DC_STAGE (O_RDONLY | O_NONBLOCK)
 
+static int name_invalid(char *);
+
+static int
+name_invalid(char *p)
+{
+	/* Check input strings for characters which will cause protocol problems.  Currently
+	* newlines and double-quotes are problematic */
+	if (!p)
+		return 1;
+	for (; *p; ++p) {
+		switch( *p ){
+			case '\n':
+			case '"':
+				return 1;
+		}
+       }
+       return 0;
+}
+
 int
 dc_open(const char *fname, int flags,...)
 {
@@ -79,10 +98,18 @@ dc_open(const char *fname, int flags,...)
 		location = va_arg(args, char* );
 		va_end(args);
 	}
-
 	url = (dcap_url *)dc_getURL(fname);
 	if(url != NULL) {
 		path = strdup(url->file);
+		if (name_invalid(path))
+		{
+			/* Current parser of dcap urls cannot handle all characters */
+			dc_errno = DEPARSER;
+			errno = EINVAL;
+			dc_debug(DC_ERROR, "File '%s' contains a currently invalid dcap protocol character." , path);
+			free(path);
+			return -1;
+		}
 	}else{
 
 		if(flags & O_CREAT) {
@@ -105,6 +132,15 @@ dc_open(const char *fname, int flags,...)
 				dc_debug(DC_INFO, "Using system native open for %s.", fname);
 			    flags |= O_LARGEFILE ;
 				return system_open(fname, flags, mode);
+		}
+		if (name_invalid(path))
+		{
+			/* Current parser of dcap urls cannot handle all characters */
+			dc_errno = DEPARSER;
+			errno = EINVAL;
+			dc_debug(DC_ERROR, "File '%s' contains a currently invalid dcap protocol character." , path);
+			free(path);
+			return -1;
 		}
 
 		dc_debug(DC_INFO, "Using dCache open for %s.", path);
