@@ -3,6 +3,7 @@ package org.dcache.xrootd2.pool;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -14,12 +15,16 @@ import java.util.Queue;
 import java.util.UUID;
 import org.dcache.xrootd2.core.XrootdRequestHandler;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
+import org.dcache.xrootd2.protocol.messages.AbstractRequestMessage;
 import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd2.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
+import org.dcache.xrootd2.protocol.messages.DirListRequest;
 import org.dcache.xrootd2.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import org.dcache.xrootd2.protocol.messages.ErrorResponse;
 import org.dcache.xrootd2.protocol.messages.LoginRequest;
+import org.dcache.xrootd2.protocol.messages.MkDirRequest;
+import org.dcache.xrootd2.protocol.messages.MvRequest;
 import org.dcache.xrootd2.protocol.messages.OKResponse;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
 import org.dcache.xrootd2.protocol.messages.OpenResponse;
@@ -28,6 +33,8 @@ import org.dcache.xrootd2.protocol.messages.ReadRequest;
 import org.dcache.xrootd2.protocol.messages.ReadResponse;
 import org.dcache.xrootd2.protocol.messages.ReadVRequest;
 import org.dcache.xrootd2.protocol.messages.RedirectResponse;
+import org.dcache.xrootd2.protocol.messages.RmDirRequest;
+import org.dcache.xrootd2.protocol.messages.RmRequest;
 import org.dcache.xrootd2.protocol.messages.StatRequest;
 import org.dcache.xrootd2.protocol.messages.StatxRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
@@ -279,6 +286,47 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     protected void doOnStat(ChannelHandlerContext ctx, MessageEvent event,
                             StatRequest msg)
     {
+        redirectToDoor(ctx, event, msg);
+
+    }
+
+    @Override
+    protected void doOnDirList(ChannelHandlerContext ctx, MessageEvent event,
+                               DirListRequest msg)
+    {
+        redirectToDoor(ctx, event, msg);
+    }
+
+    @Override
+    protected void doOnMv(ChannelHandlerContext ctx, MessageEvent event,
+                          MvRequest msg)
+    {
+        redirectToDoor(ctx, event, msg);
+    }
+
+    @Override
+    protected void doOnRm(ChannelHandlerContext ctx, MessageEvent event,
+                          RmRequest msg)
+    {
+        redirectToDoor(ctx, event, msg);
+    }
+
+    @Override
+    protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent event,
+                          RmDirRequest msg)
+    {
+        redirectToDoor(ctx, event, msg);
+    }
+
+    @Override
+    protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent event,
+                             MkDirRequest msg)
+    {
+        redirectToDoor(ctx, event, msg);
+    }
+
+    private void redirectToDoor(ChannelHandlerContext ctx, MessageEvent event,
+                                AbstractRequestMessage msg) {
         if (_redirectingDoor == null) {
             unsupported(ctx, event, msg);
         } else {
@@ -289,18 +337,12 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
         }
     }
 
+
     @Override
     protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent event,
                              StatxRequest msg)
     {
-        if (_redirectingDoor == null) {
-            unsupported(ctx, event, msg);
-        } else {
-            respond(ctx, event,
-                    new RedirectResponse(msg.getStreamID(),
-                                         _redirectingDoor.getHostName(),
-                                         _redirectingDoor.getPort()));
-        }
+        redirectToDoor(ctx, event, msg);
     }
 
     /**
@@ -555,14 +597,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     protected void doOnProtocolRequest(ChannelHandlerContext ctx,
                                        MessageEvent event, ProtocolRequest msg)
     {
-        if (_redirectingDoor == null) {
-            unsupported(ctx, event, msg);
-        } else {
-            respond(ctx, event,
-                    new RedirectResponse(msg.getStreamID(),
-                                         _redirectingDoor.getHostName(),
-                                         _redirectingDoor.getPort()));
-        }
+        redirectToDoor(ctx, event, msg);
     }
 
     /**
