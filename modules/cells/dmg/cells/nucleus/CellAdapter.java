@@ -55,7 +55,7 @@ public class   CellAdapter
     private final Gate        _startGate = new Gate(false);
     private final Args        _args;
     private boolean     _useInterpreter = true;
-    private boolean     _returnCommandException = false;
+    private boolean     _returnCommandException = true;
     private boolean     _answerPing     = true;
     private CellMessage _currentMessage = null;
     private String      _autoSetup      = null;
@@ -130,7 +130,9 @@ public class   CellAdapter
                 _log.info("Callback set to sync");
             } else _log.warn("Illegal value for 'callback' option : "+async);
         }
-        if (_args.getOpt("replyObject") != null)setCommandExceptionEnabled(true);
+        if (_args.getOpt("replyObject") != null && _args.getOpt("replyObject").equals("false")) {
+            setCommandExceptionEnabled(false);
+        }
 
         /* Instantiate management component for log filtering.
          */
@@ -921,6 +923,8 @@ public class   CellAdapter
                         o =  executeLocalCommand(obj);
                         if (o == null)
                             return;
+                    } catch (CommandThrowableException e) {
+                        o = e.getCause();
                     } catch (CommandException ce) {
                         o = ce;
                     } catch (Throwable te) {
