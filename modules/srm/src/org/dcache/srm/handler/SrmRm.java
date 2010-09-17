@@ -41,15 +41,15 @@ import org.apache.axis.types.URI.MalformedURIException;
 
 public class SrmRm {
 	private final static String SFN_STRING = "?SFN=";
-        private static Logger logger = 
+        private static Logger logger =
             LoggerFactory.getLogger(SrmRm.class);
-        
+
 	AbstractStorageElement storage;
 	SrmRmRequest           request;
 	SrmRmResponse          response;
 	SRMUser            user;
 	Configuration configuration;
-	
+
 	public SrmRm(SRMUser user,
 		     RequestCredential credential,
 		     SrmRmRequest request,
@@ -64,13 +64,13 @@ public class SrmRm {
 			throw new NullPointerException("configuration is null");
 		}
 	}
-	
+
 	public SrmRmResponse getResponse() {
-            
+
             if(response != null ) {
                 return response;
             }
-            
+
             try {
                 response = srmRm();
             } catch(MalformedURIException mue) {
@@ -83,11 +83,11 @@ public class SrmRm {
             }
             return response;
 	}
-	
+
 	public static final SrmRmResponse getFailedResponse(String error) {
 		return getResponse(error,TStatusCode.SRM_FAILURE);
 	}
-	
+
 	public static final  SrmRmResponse getResponse(String error,
 						       TStatusCode statusCode) {
 		if(statusCode == null) {
@@ -100,12 +100,12 @@ public class SrmRm {
 		response.setReturnStatus(status);
 		return response;
 	}
-    
-    
+
+
     /**
      * implementation of srm rm
      */
-    
+
 	public SrmRmResponse srmRm() throws SRMException,
 		MalformedURIException {
 		if(request==null) {
@@ -131,11 +131,11 @@ public class SrmRm {
 			surlReturnStatusArray[i].setSurl(surls[i]);
 			callbacks[i] = new RemoveFile();
 		}
-		
+
 		int start=0;
 		int end=callbacks.length>configuration.getSizeOfSingleRemoveBatch()?configuration.getSizeOfSingleRemoveBatch():callbacks.length;
 
-		while(end<=callbacks.length) { 
+		while(end<=callbacks.length) {
 			for ( int i=start;i<end;i++) {
 				try {
 					String path = surls[i].getPath(true,true);
@@ -144,22 +144,22 @@ public class SrmRm {
 						path=path.substring(indx+SFN_STRING.length());
 					}
 					storage.removeFile(user,path,callbacks[i]);
-					
-				} 
+
+				}
 				catch(RuntimeException re) {
 					logger.error(re.toString());
-					surlReturnStatusArray[i].setStatus( 
+					surlReturnStatusArray[i].setStatus(
 						new TReturnStatus(
 							TStatusCode.SRM_INTERNAL_ERROR,
 							"RuntimeException "+re.getMessage()));
-				} 
+				}
 				catch (Exception e) {
 					logger.error(e.toString());
-					surlReturnStatusArray[i].setStatus( 
+					surlReturnStatusArray[i].setStatus(
 						new TReturnStatus(
 							TStatusCode.SRM_INTERNAL_ERROR,
 							"Exception "+e));
-					
+
 				}
 			}
 			try {
@@ -183,14 +183,14 @@ public class SrmRm {
 			if (end+configuration.getSizeOfSingleRemoveBatch()<callbacks.length) {
 				end+=configuration.getSizeOfSingleRemoveBatch();
 			}
-			else { 
+			else {
 				end=callbacks.length;
 			}
 		}
 		SrmRmResponse srmRmResponse;
 		if ( any_failed ) {
 			srmRmResponse=getFailedResponse("problem with one or more files: \n"+error);
-		} 
+		}
 		else {
 			srmRmResponse  = getResponse("successfully removed files",
 						     TStatusCode.SRM_SUCCESS);
@@ -199,19 +199,19 @@ public class SrmRm {
 			new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
 		return srmRmResponse;
 	}
-	
+
 	private class RemoveFile implements RemoveFileCallbacks {
-		
+
 		public TReturnStatus status;
             private CountDownLatch _done = new CountDownLatch(1);
 		private boolean success  = true;
 		public RemoveFile( ) {
 		}
-		
+
 		public TReturnStatus getStatus() {
 			return status;
 		}
-		
+
 		public void RemoveFileFailed(String reason) {
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
@@ -219,7 +219,7 @@ public class SrmRm {
 			logger.info("RemoveFileFailed:"+reason);
 			done();
 		}
-		
+
 		public void FileNotFound(String reason) {
 			status = new TReturnStatus(
 				TStatusCode.SRM_INVALID_PATH,
@@ -227,14 +227,14 @@ public class SrmRm {
 			logger.info("RemoveFileFailed:"+reason);
 			done();
 		}
-		
+
 		public void RemoveFileSucceeded(){
 			status = new TReturnStatus(
 				TStatusCode.SRM_SUCCESS,
 				null);
 			done();
 		}
-		
+
 		public void Exception(Exception e){
 			status = new TReturnStatus(
 				TStatusCode.SRM_FAILURE,
@@ -244,7 +244,7 @@ public class SrmRm {
 			logger.warn(e.toString());
 			done();
 		}
-		
+
 		public void Timeout(){
 			status = new TReturnStatus(
                     TStatusCode.SRM_FAILURE,
@@ -253,20 +253,20 @@ public class SrmRm {
 			done();
 		}
 
-            public void PermissionDenied() 
+            public void PermissionDenied()
             {
                 status = new TReturnStatus(TStatusCode.SRM_AUTHORIZATION_FAILURE,
                                            "Permission denied");
                 done();
             }
-		
-            public void waitToComplete() 
-                throws InterruptedException 
+
+            public void waitToComplete()
+                throws InterruptedException
             {
                 _done.await();
             }
-		
-            public void done() 
+
+            public void done()
             {
                 _done.countDown();
             }
