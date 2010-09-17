@@ -132,7 +132,7 @@ int             init_hostname();
 
 static void     getPortRange();
 static int isActive();
-
+static int name_invalid(char *);
 int get_data( struct vsp_node *);
 int get_fin( struct vsp_node *);
 int get_ack(int , ConfirmationBlock * );
@@ -153,6 +153,24 @@ static MUTEX(bindLock);
 static MUTEX(acceptLock);
 
 /* Utilities functions */
+
+name_invalid(char *p)
+{
+       /* Check input strings for characters which will cause protocol problems.  Currently
+       * newlines and double-quotes are problematic */
+       if (!p)
+               return 1;
+       for (; *p; ++p) {
+               switch( *p ){
+                       case '\n':
+                       case '"':
+                               return 1;
+               }
+       }
+       return 0;
+}
+
+
 
 int init_hostname()
 {
@@ -899,6 +917,21 @@ ascii_open_conversation(struct vsp_node * node)
 		case DCAP_CMD_OPEN:
 		case DCAP_CMD_TRUNC:
 #ifdef WIN32
+            if ((node->flags == O_RDONLY) || (node->flags & O_WRONLY) || (node->flags & O_RDWR) || (node->flags == O_BINARY)){
+#else
+            if ((node->flags == O_RDONLY) || (node->flags & O_WRONLY) || (node->flags & O_RDWR)	){
+#endif /* WIN32 */
+                invalid_flag = 0;
+                if ((node->file_name != NULL) && (name_invalid(node->file_name))) {
+                    dc_debug(DC_ERROR, "File '%s' contains a currently invalid dcap protocol character." , node->file_name);
+                    goto parser_exit;
+                }
+                if ((node->directory != NULL ) && (name_invalid(node->directory))) {
+                    dc_debug(DC_ERROR, "Directory '%s' contains a currently invalid dcap protocol character." , node->directory);
+                    goto parser_exit;
+                }
+            }
+#ifdef WIN32
 			if( (node->flags == O_RDONLY) || (node->flags == O_BINARY)) {
 #else
 			if( node->flags == O_RDONLY) {
@@ -909,7 +942,6 @@ ascii_open_conversation(struct vsp_node * node)
 				if (outStr == NULL) {
 					goto out_of_mem_exit;
 				}
-				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
 					outStr = dc_char_buf_sprintf(context,
 					              "%s -path=%s/%s", outStr, node->directory, node->file_name);
@@ -925,7 +957,6 @@ ascii_open_conversation(struct vsp_node * node)
 				if (outStr == NULL) {
 					goto out_of_mem_exit;
 				}
-				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
 					outStr = dc_char_buf_sprintf(context,
 					              "%s -path=%s/%s", outStr, node->directory, node->file_name);
@@ -941,7 +972,6 @@ ascii_open_conversation(struct vsp_node * node)
 				if (outStr == NULL) {
 					goto out_of_mem_exit;
 				}
-				invalid_flag = 0;
 				if( (node->url == NULL) && (node->directory != NULL ) && (node->file_name != NULL) ) {
 					outStr = dc_char_buf_sprintf(context,
 					              "%s -path=%s/%s", outStr, node->directory, node->file_name);
@@ -1155,7 +1185,11 @@ out_of_mem_exit:
 	dc_char_buf_free(context);
 	dc_errno = DEMALLOC;
 	return -1;
-
+parser_exit:
+	dc_char_buf_free(context);
+	dc_errno = DEPARSER;
+	errno = EINVAL;
+	return -1;
 }
 
 int
@@ -1182,7 +1216,7 @@ int sendControlMessage(int to, const char *buff, size_t len, ioTunnel *en)
 		m_lock(&bindLock);
 		debugMessage = xstrndup(buff, len);
 		debugMessage[len-1] = '\0';
-		dc_debug(DC_INFO, "Sending control message: %s", debugMessage);
+        dc_debug(DC_INFO, "Sending control message: %s (len=%d)", debugMessage, len);
 		free(debugMessage);
 		n = writen(to, buff, len, en);
 		m_unlock(&bindLock);
