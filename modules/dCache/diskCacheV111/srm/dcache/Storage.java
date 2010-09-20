@@ -173,6 +173,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TFileLocality;
 import org.dcache.util.LoginBrokerHandler;
 import org.dcache.util.Interval;
 import org.dcache.util.list.DirectoryListSource;
@@ -1000,32 +1001,88 @@ public final class Storage
             });
     }
 
-    private boolean isCached(FileAttributes attributes)
-    {
-         try {
-             StorageInfo storage_info = attributes.getStorageInfo();
-             PoolMgrQueryPoolsMsg query =
-                 new PoolMgrQueryPoolsMsg(DirectionType.READ,
-                                          "*/*",
-                                          config.getSrmHost(),
-                                          storage_info);
+    private TFileLocality getFileLocality(FileAttributes attributes)
+        throws SRMException {
+        if (attributes.getFileType()==FileType.DIR) {
+            return TFileLocality.NONE;
+        }
+        StorageInfo storage_info = attributes.getStorageInfo();
+        try {
+            PoolMgrQueryPoolsMsg query =
+                new PoolMgrQueryPoolsMsg(DirectionType.READ,
+                                         "*/*",
+                                         config.getSrmHost(),
+                                         storage_info);
+            _log.debug("getFileLocality() : Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
+            query = _poolManagerStub.sendAndWait(query);
+            Set<String> readPools = new HashSet<String>();
+            for (List<String> list: query.getPools()) {
+                readPools.addAll(list);
+            }
+            if (Collections.disjoint(readPools, attributes.getLocations())) {
+                if (storage_info.isStored()) {
+                    return TFileLocality.NEARLINE;
+                }
+                _log.debug("getFileLocality() : list of available read pools did not match location list, checking if pools in location list are online");
+                // we are here if list of locations and pools do not intersect
+                // check that any of the pools in attributes.getLocations() is online
+                // if it is, we declare file NEARLINE
+                for (String pool : attributes.getLocations()) {
+                    try {
+                        //
+                        //     Valid concern about the check below is that the pool
+                        //     could have been removed by "psu remove" command
+                        //     but still will pass the check.
+                        //     Also, file may not be in this location
+                        //     anymore
+                        // TODO:
+                        //      implement proper check @ PoolManager
+                        //
+                        PoolCellInfo poolCellInfo =
+                            _poolStub.sendAndWait(new CellPath(pool),
+                                                  "xgetcellinfo",
+                                                  PoolCellInfo.class);
+                        //
+                        // poolCellInfo.getErrorCode()!=0 for disabled pool
+                        //
+                        if (poolCellInfo.getErrorCode()==0) {
+                            //
+                            // this is all we need to check - pool is online and enabled
+                            // check also that p2p queue is not zero, does not hurt.
+                            //
+                            PoolCostInfo.PoolQueueInfo p2pQueueInfo = poolCellInfo.getPoolCostInfo().getP2pQueue();
+                            _log.debug("pool {} p2p max active {} ",pool,p2pQueueInfo.getMaxActive());
+                            if (p2pQueueInfo.getMaxActive()>0){
+                                return TFileLocality.NEARLINE;
+                            }
+                        }
+                    }
+                    catch (CacheException e) {
+                        _log.warn("getFileLocality() : failed to get PoolCellInfo {} {}",pool,e.getMessage());
+                        continue;
+                    }
+                    catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new SRMInternalErrorException("Received interrupt exception waiting for reply from PoolManager",e);
+                    }
 
-             _log.debug("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
-             query = _poolManagerStub.sendAndWait(query);
-             Set<String> readPools = new HashSet<String>();
-             for (List<String> list: query.getPools()) {
-                 readPools.addAll(list);
-             }
-
-             return !Collections.disjoint(readPools, attributes.getLocations());
-         } catch (CacheException e) {
-            _log.warn("isCached(): error receiving message back from PoolManager : " + e);
-             return false;
-         } catch (InterruptedException e) {
-             Thread.currentThread().interrupt();
-             return false;
-         }
-     }
+                }
+                return TFileLocality.UNAVAILABLE;
+            }
+            else {
+                return (storage_info.isStored()?
+                        TFileLocality.ONLINE_AND_NEARLINE:TFileLocality.ONLINE);
+            }
+        }
+        catch (CacheException e) {
+            _log.warn("getFileLocality(): error receiving message back from PoolManager : " + e);
+            throw new SRMInternalErrorException("Error receiving message back from PoolManager",e);
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SRMInternalErrorException("Received interrupt exception waiting for reply from PoolManager",e);
+        }
+    }
 
     public void pinFile(SRMUser user,
         String fileId,
@@ -1694,7 +1751,11 @@ public final class Storage
         }
         FileMetaData fmd = new DcacheFileMetaData(attributes);
         if (attributes.getFileType() != FileType.DIR) {
-            fmd.isCached = isCached(attributes);
+            fmd.locality = getFileLocality(attributes);
+            if (fmd.locality == TFileLocality.NEARLINE ||
+                fmd.locality == TFileLocality.ONLINE_AND_NEARLINE)  {
+                fmd.isCached = true;
+            }
         }
 	try {
 	    GetFileSpaceTokensMessage msg =
@@ -2734,8 +2795,16 @@ public final class Storage
 
                     if (verbose && attributes.getFileType() != FileType.DIR) {
                         PnfsId pnfsId = attributes.getPnfsId();
-                        fmd.isCached = isCached(attributes);
-
+                        try {
+                            fmd.locality = getFileLocality(attributes);
+                            if (fmd.locality == TFileLocality.NEARLINE ||
+                                fmd.locality == TFileLocality.ONLINE_AND_NEARLINE)  {
+                                fmd.isCached = true;
+                            }
+                        }
+                        catch (SRMException e) {
+                            throw new RuntimeException(e);
+                        }
                         try {
                             GetFileSpaceTokensMessage msg =
                                 new GetFileSpaceTokensMessage(pnfsId);
