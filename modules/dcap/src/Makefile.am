@@ -83,9 +83,7 @@ dcap_reconnect.h \
 ioTunnel.h \
 tunnelManager.h \
 xutil.h \
-dcap_nodes.h \
 dcap_errno.h \
-dcap_shared.h \
 dcap_checksum.h \
 debug_map.h \
 dcap_command.h \

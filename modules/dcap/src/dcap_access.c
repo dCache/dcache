@@ -15,14 +15,11 @@
  * $Id: dcap_access.c,v 1.3 2004-11-01 19:33:29 tigran Exp $
  */
 
-#include "dcap_shared.h"
+#include "dcap.h"
 
 /**
   * faked access system call, based on stat.
   */
-
-
-extern int dc_stat( const char *, struct stat *);
 
 
 #ifndef WIN32

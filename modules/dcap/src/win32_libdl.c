@@ -1,10 +1,12 @@
- 
+
 /*
  * $Id: win32_libdl.c,v 1.2 2004-11-01 19:33:30 tigran Exp $
  */
 
 #include <windows.h>
 #include <stdio.h>
+
+#include "win32_libdl.h"
 
 static char errbuf[512];
 

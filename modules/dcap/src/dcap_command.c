@@ -14,20 +14,21 @@
 /*
  * $Id: dcap_command.c,v 1.29 2006-09-26 07:40:16 tigran Exp $
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+
+#include "dcap.h"
 #include "dcap_types.h"
 #include "dcap_protocol.h"
 #include "dcap_debug.h"
 #include "dcap_error.h"
 #include "system_io.h"
-#include "dcap_shared.h"
-
+#include "str2errno.h"
+#include "string2stat.h"
 
 int do_command_fail(char **argv, asciiMessage *result)
 {
@@ -118,12 +119,6 @@ int do_command_pong(char **argv, asciiMessage *result)
    dc_debug(DC_INFO, "Server reply: Pong. Destination [%d].", result->destination);
    return 0;
 }
-
-#ifdef WIN32
-extern void string2stat64( const char **, struct _stati64 *);
-#else
-extern void string2stat64( const char **, struct stat64 *);
-#endif
 
 int do_command_stat(char **argv, asciiMessage *result)
 {

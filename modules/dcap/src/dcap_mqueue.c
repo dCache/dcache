@@ -16,8 +16,11 @@
  */
 #include <stdlib.h>
 #include <string.h>
+
+#include "dcap.h"
 #include "dcap_types.h"
-#include "dcap_debug.h"
+#include "dcap_mqueue.h"
+#include "debug_level.h"
 #include "sysdep.h"
 
 

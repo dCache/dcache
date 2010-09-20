@@ -19,14 +19,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
 #include "system_io.h"
+#include "dcap.h"
+#include "debug_level.h"
+#include "dcap_debug.h"
 
-
-
-extern const int dc_getProtocol();
-extern const int dc_getMajor();
-extern const int dc_getMinor();
-extern const char * dc_getPatch();
+/* FIXME: declaration of debugMap belongs in debug_map.h */
 
 typedef struct {
 	int debugLevel;
@@ -34,14 +33,14 @@ typedef struct {
 } debugMap;
 
 #include "debug_map.h"
-#include "debug_level.h"
-
 
 static unsigned int debugLevel = DC_ERROR; /* default debug level - ERROR only */
 static int isChangable = 1;
 static int debug_stream = -1;
 
-void init_dc_debug();
+/* Local function prototypes */
+static void init_dc_debug();
+static int string2debugLevel( const char *str);
 
 void dc_setDebugLevel(unsigned int newLevel)
 {

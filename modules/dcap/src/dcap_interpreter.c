@@ -18,9 +18,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "dcap_types.h"
 #include "dcap_command.h"
 #include "dcap_mqueue.h"
+#include "dcap_interpreter.h"
 
 
 typedef struct {

@@ -15,8 +15,17 @@
  * $Id: dcap_chown.c,v 1.1 2006-03-28 11:42:49 tigran Exp $
  */
 
+#include <stdlib.h>
+#include <string.h>
 
- #include "dcap_shared.h"
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_protocol.h"
+#include "dcap_url.h"
+#include "node_plays.h"
+#include "debug_level.h"
+#include "dcap_mqueue.h"
+#include "system_io.h"
 
 
 int dc_chown( const char *path, uid_t uid, gid_t gid)

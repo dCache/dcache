@@ -21,10 +21,11 @@
 #ifndef WIN32
 #    include <unistd.h>
 #else
-#    include "dcap_win32.h"
+#    include "dcap_unix2win.h"
 #endif
 #include "ioTunnel.h"
 #include "io.h"
+#include "input_parser.h"
 
 #define MAXLINELEN 4096
 

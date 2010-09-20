@@ -9,14 +9,14 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
- * $Id: win32_dlfcn.h,v 1.2 2004-11-01 19:33:30 tigran Exp $
+ * $Id: win32_libdl.h,v 1.2 2004-11-01 19:33:30 tigran Exp $
  */
 
-#ifndef WIN32_DLFCN_H
-#define WIN32_DLFCN_H
+#ifndef WIN32_LIBDL_H
+#define WIN32_LIBDL_H
 
 #define RTLD_LAZY 1
 #define RTLD_NOW  2

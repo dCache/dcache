@@ -15,8 +15,13 @@
  * $Id: dcap_checksum.c,v 1.4 2004-11-01 19:33:29 tigran Exp $
  */
 
-#include "dcap_shared.h"
 #include <zlib.h>
+#include <stdlib.h>
+
+#include "dcap.h"
+#include "dcap_checksum.h"
+#include "node_plays.h"
+#include "debug_level.h"
 
 /*
  * reserved for future

@@ -15,7 +15,6 @@
  * $Id: dcap_test.c,v 1.37 2004-11-03 14:09:23 tigran Exp $
  */
 
-#include "dcap.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +25,8 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include "dcap.h"
+
 #define DATAFILE "/pnfs/fs/usr/h1/user/tigran/DUMMY/index.dat"
 /* #define DATAFILE "/scratch/usr/tigran/index.dat" */
 #define BSIZE 512
@@ -34,6 +35,10 @@ int dup_fd[2]; /* to test a dup as well */
 off_t size;
 
 
+static int make_index(const char *path);
+static long byteSwapL(unsigned long b);
+static void mode2string(mode_t m, char *s);
+static void thread_task();
 
 
 int

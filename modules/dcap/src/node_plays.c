@@ -18,8 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dcap_shared.h"
-
+#include "dcap.h"
+#include "dcap_types.h"
+#include "debug_level.h"
+#include "xutil.h"
 
 #ifdef WIN32
 #    define PATH_SEPARATOR '\\'
@@ -30,7 +32,11 @@
 static RDLOCK(nodeRWlock);
 
 
+/* Local function prototypes */
 static void real_node_unplug( struct vsp_node *);
+static int node_init(struct vsp_node *node, const char *path);
+static void real_node_unplug( struct vsp_node *node);
+
 
 static struct vsp_node *vspNode = NULL;
 static struct vsp_node *lastNode = NULL;
@@ -295,7 +301,7 @@ void node_unplug( struct vsp_node *node)
 }
 
 
-static void real_node_unplug( struct vsp_node *node)
+void real_node_unplug( struct vsp_node *node)
 {
 
 

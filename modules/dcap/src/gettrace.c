@@ -27,14 +27,23 @@
 #include <sys/param.h>
 
 
-#include "dcap_debug.h"
+#include "dcap.h"
+#include "gettrace.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 4096
 #endif
 
+/* Local function prototypes */
+static void mcheck_init_bfd(char *name);
 static asymbol **read_bfd_stuff(bfd *);
-extern void getStackTrace(unsigned long *, int *);
+static void mcheck_lookup_method_info(const char **file,
+				      const char **func,
+				      unsigned int *line, const char *address);
+static int printStackInfo(const char *address, int i);
+static void init_traceBack();
+
+
 
 static asymbol **sym;
 static bfd *abfd;
@@ -42,7 +51,6 @@ static asection *core_text_sect;
 static int init;
 
 
-static
 void mcheck_init_bfd(char *name)
 {
 
@@ -68,7 +76,6 @@ void mcheck_init_bfd(char *name)
     }
 }
 
-static
 asymbol **read_bfd_stuff(bfd * abfd)
 {
     long storage_needed;
@@ -103,7 +110,7 @@ void mcheck_lookup_method_info(const char **file,
 			  line);
 }
 
-static int printStackInfo(const char *address, int i)
+int printStackInfo(const char *address, int i)
 {
     const char *file = NULL;
     const char *func = NULL, *s;
@@ -136,7 +143,7 @@ static int printStackInfo(const char *address, int i)
 }
 
 
-static void init_traceBack()
+void init_traceBack()
 {
 	char exename[MAXPATHLEN];
 	int res;

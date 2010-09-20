@@ -10,10 +10,11 @@
 *
 */
 
-
-
 #include <errno.h>
-#include "dcap_shared.h"
+
+#include "dcap.h"
+#include "gettrace.h"
+#include "node_plays.h"
 
 #if defined(HAVE_ACL) || defined(HAVE_FACL)
 
@@ -54,6 +55,7 @@
 #define ACE_GETACLCNT 6
 #endif
 
+static int dc_acl_dummy(int cmd);
 
 
 int dc_acl_dummy(int cmd)

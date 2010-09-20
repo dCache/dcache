@@ -10,6 +10,7 @@
  *
  */
 
+#include "char2crc.h"
 
 /*
  * $Id: char2crc.c,v 1.6 2004-11-01 19:33:28 tigran Exp $

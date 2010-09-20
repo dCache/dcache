@@ -25,16 +25,14 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
-#ifndef WIN32
-#    include <sys/param.h>
-#    include "dcap_signal.h"
-#else
-#    include "dcap_win32.h"
+#ifdef WIN32
+#    include "dcap_unix2win.h"
 extern int getopt(int, char * const *, const char *);
 #endif
 
 #include "dcap.h"
 #include "dcap_str_util.h"
+#include "dcap_read.h"
 
 #define DEFAULT_BUFFER 1048570L /* 1Mb */
 

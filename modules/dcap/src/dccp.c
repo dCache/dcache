@@ -29,11 +29,12 @@
 #    include <sys/param.h>
 #    include "dcap_signal.h"
 #else
-#    include "dcap_win32.h"
+#    include "dcap_unix2win.h"
 extern int getopt(int, char * const *, const char *);
 #endif
 
 #include "dcap.h"
+#include "dcap_str_util.h"
 
 #define DEFAULT_BUFFER 1048570L /* 1Mb */
 
@@ -52,8 +53,8 @@ extern int getopt(int, char * const *, const char *);
 #define MAXPATHLEN 4096
 #endif
 
-void usage();
-int copyfile(int src, int dest, size_t buffsize, off64_t  *size);
+static void usage();
+static int copyfile(int src, int dest, size_t buffsize, off64_t  *size);
 
 int main(int argc, char *argv[])
 {

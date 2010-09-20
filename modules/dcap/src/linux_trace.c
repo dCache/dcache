@@ -22,6 +22,8 @@
 #include <signal.h>
 #include <setjmp.h>
 
+#include "stack_trace.h"
+
 #if __GNUC__ < 2
 #error you need gcc >= 2 to use this abomination
 #endif

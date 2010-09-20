@@ -24,15 +24,15 @@
  * Approximate the System V system call ``poll()'' with select(2).
  */
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <Winsock2.h>
-#include "dcap_debug.h"
 
-#include <sys/types.h>
+#include "dcap.h"
 
 struct pollfd {
         int fd;

@@ -16,18 +16,21 @@
  */
 
 #include <stdio.h>
-#include "dcap_shared.h"
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
-off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
-#ifdef WIN32
-int dc_stat64(const char *path, struct _stati64 *buf);
-int dc_lstat64(const char *path, struct _stati64 *buf);
-int dc_fstat64(int fd, struct _stati64 *buf);
-#else
-int dc_stat64(const char *path, struct stat64 *buf);
-int dc_lstat64(const char *path, struct stat64 *buf);
-int dc_fstat64(int fd, struct stat64 *buf);
-#endif
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_lseek.h"
+#include "dcap_mqueue.h"
+#include "dcap_url.h"
+#include "gettrace.h"
+#include "node_plays.h"
+#include "pnfs.h"
+#include "debug_level.h"
+#include "dcap_protocol.h"
+#include "system_io.h"
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -39,6 +42,9 @@ int dc_fstat64(int fd, struct stat64 *buf);
    control line to get a real file size ( wich located in pnfs level 2 layer.
 */
 
+static char * getNodePath(struct vsp_node *node);
+
+/* FIXME: stat64to32 is duplicated in system_io.c */
 #ifdef WIN32
 static void stat64to32(struct stat *st32, const struct _stati64 *st64)
 #else

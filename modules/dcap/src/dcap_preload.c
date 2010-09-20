@@ -14,23 +14,23 @@
 /*
  * $Id: dcap_preload.c,v 1.39 2006-09-26 07:47:27 tigran Exp $
  */
-#include <dcap.h>
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <dirent.h>
-#include <dcap_debug.h>
-#include <sys/mman.h>
 
+#include "dcap.h"
+#include "dcap_close.h"
+#include "debug_level.h"
 
 /*
  * some applications do not close the file, which they have opned
  */
 static int cleanupEnabled;
-extern void dc_closeAll();
 
 
 /* Replacing system calls with our if we are PRELOAD library */

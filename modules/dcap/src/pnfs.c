@@ -15,20 +15,24 @@
  * $Id: pnfs.c,v 1.16 2006-01-09 14:28:15 tigran Exp $
  */
 
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #ifndef WIN32
 #    include <unistd.h>
 #else
-#include "dcap_win32.h"
+#include "dcap_unix2win.h"
 #endif
 
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include "dcap_shared.h"
+#include "dcap.h"
+#include "dcap_types.h"
+#include "dcap_errno.h"
+#include "debug_level.h"
+#include "system_io.h"
+#include "xutil.h"
 
 #ifdef WIN32
 #    define PATH_SEPARATOR '\\'

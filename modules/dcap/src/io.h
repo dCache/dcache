@@ -19,9 +19,7 @@
 
 #include "ioTunnel.h"
 
-extern int             readln(int, char *, int, ioTunnel *);
 extern int             readn(int, char *, int, ioTunnel *);
 extern int             writen(int, const char *, int, ioTunnel *);
-extern int             writeln(int, const char *, int, ioTunnel *);
 
 #endif

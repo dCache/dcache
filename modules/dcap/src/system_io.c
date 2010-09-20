@@ -178,7 +178,12 @@ static int (*s_feof)(FILE *);
 static char * (*s_fgets)(char *, int, FILE *);
 static int (*s_fgetc)(FILE *);
 
-static void stat64to32(struct stat *st32, const struct stat64 *st64)
+static int initIfNeeded();
+static void stat64to32(struct stat *st32, const struct stat64 *st64);
+
+
+/* FIXME: stat64to32 is duplicated in dcap_stat.c */
+void stat64to32(struct stat *st32, const struct stat64 *st64)
 {
 	memset(st32, 0, sizeof(struct stat) );
 
@@ -197,7 +202,7 @@ static void stat64to32(struct stat *st32, const struct stat64 *st64)
 	st32->st_ctime = st64->st_ctime;
 }
 
-static int initIfNeeded()
+int initIfNeeded()
 {
 	union pointer_converter convert;
 	char *em;

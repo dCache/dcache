@@ -22,8 +22,6 @@
 
 #define IO_BUFFER_SIZE 1048576 /* 1024*1024 */
 
-extern void dc_noBuffering(int);
-extern void dc_setBufferSize(int, size_t);
 extern void dc_setNodeBufferSize(struct vsp_node *, size_t);
 
 #endif

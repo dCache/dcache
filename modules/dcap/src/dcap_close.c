@@ -15,13 +15,27 @@
  * $Id: dcap_close.c,v 1.8 2004-12-01 14:25:39 tigran Exp $
  */
 
-#include "dcap_shared.h"
+#include <arpa/inet.h>
+#include <stdlib.h>
+
 #include "dcap.h"
+#include "dcap_types.h"
+#include "dcap_fsync.h"
+#include "dcap_functions.h"
+#include "dcap_protocol.h"
+#include "dcap_poll.h"
+#include "dcap_mqueue.h"
+#include "dcap_reconnect.h"
+#include "gettrace.h"
+#include "io.h"
+#include "node_plays.h"
+#include "debug_level.h"
+#include "array.h"
+#include "system_io.h"
+
 #define ENVAR_TIMEOUT  "DCACHE_CLOSE_TIMEOUT_DEFAULT"
 #define ENVAR_TIMEOUT_OVERRIDE  "DCACHE_CLOSE_TIMEOUT_OVERRIDE"
 #define ENVAR_TIMEOUT_VALUE_BASE   10
-
-extern int dc_real_fsync( struct vsp_node *);
 
 static int closeTimeOut_set, parsed_timeout;
 
@@ -38,6 +52,10 @@ static unsigned int closeTimeOut;
  *  This function is idempotence: it may be run multiple times with
  *  the same effect as running it once.
  */
+
+
+static int validate_env_variable(char* timeout_var, long* timeout_val);
+static void check_timeout_envar();
 
 
 int
@@ -240,8 +258,6 @@ dc_close2(int fd)
 }
 
 
-
-extern fdList getAllFD();
 
 /*
  * close all open files

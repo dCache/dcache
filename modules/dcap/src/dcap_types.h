@@ -19,7 +19,7 @@
 
 #include <sys/types.h>
 #ifdef WIN32
-#   include "dcap_win32.h"
+#   include "dcap_unix2win.h"
 #endif
 
 #ifdef sun
@@ -28,6 +28,8 @@
 
 #include "ioTunnel.h"
 #include "sysdep.h"
+#include "dcap_url.h"
+#include "dcap_checksum.h"
 
 #ifdef __alpha
 typedef int int32_t;
@@ -72,25 +74,6 @@ typedef struct {
 	size_t    cur;
 	int       isDirty;
 } ioBuffer;
-
-#define URL_NONE 0
-#define URL_DCAP 1
-#define URL_PNFS 2
-
-typedef struct {
-	char *host;
-	char *file;
-	int type;
-	char *prefix;
-} dcap_url;
-
-
-typedef struct {
-	unsigned long sum;
-	int isOk;
-	int type;
-}checkSum;
-
 
 typedef struct vsp_node {
 	int dataFd;		/* data socket descriptor */

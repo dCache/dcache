@@ -7,6 +7,7 @@
 #include "dcap_types.h"
 
 
+static long byteSwapL(unsigned long b);
 
 
 long byteSwapL(unsigned long b)

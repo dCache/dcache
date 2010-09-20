@@ -21,12 +21,16 @@
 #include <sys/stat.h>
 
 #ifdef WIN32
-#	include "dcap_win32.h"
+#	include "dcap_unix2win.h"
 #endif /* WIN32 */
 
 #ifdef __CYGWIN__
 #define atoll(a) atol(a)
 #endif
+
+/* Local function prototypes */
+static mode_t string2mode(const char *str_mode);
+
 
 mode_t string2mode(const char *str_mode)
 {
