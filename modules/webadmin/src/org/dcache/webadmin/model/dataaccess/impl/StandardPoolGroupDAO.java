@@ -1,6 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import org.dcache.webadmin.model.dataaccess.xmlprocessing.PoolGroupXMLProcessor;
+import org.dcache.webadmin.model.dataaccess.xmlmapping.PoolGroupXmlToObjectMapper;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +23,7 @@ public class StandardPoolGroupDAO implements PoolGroupDAO {
 
     public static final List<String> POOLGROUPS_PATH = Arrays.asList("poolgroups");
     private static final Logger _log = LoggerFactory.getLogger(StandardPoolGroupDAO.class);
-    private PoolGroupXMLProcessor _xmlProcessor = new PoolGroupXMLProcessor();
+    private PoolGroupXmlToObjectMapper _xmlProcessor = new PoolGroupXmlToObjectMapper();
     private CommandSenderFactory _commandSenderFactory;
 
     public StandardPoolGroupDAO(CommandSenderFactory commandSenderFactory) {

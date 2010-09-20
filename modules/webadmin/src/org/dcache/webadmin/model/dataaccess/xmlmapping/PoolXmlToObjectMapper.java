@@ -1,4 +1,4 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author jans
  */
-public class PoolXMLProcessor extends XMLProcessor {
+public class PoolXmlToObjectMapper extends XmlToObjectMapper {
 
     private static final String SPECIAL_POOL_FRAGMENT = "/dCache/pools/pool[@name='";
     private static final String SPECIAL_QUEUE_FRAGMENT = "/queues/queue[@type='";
@@ -35,7 +35,7 @@ public class PoolXMLProcessor extends XMLProcessor {
     private static final String QUEUE_ACTIVE_FRAGMENT = "/metric[@name='active']/text()";
     private static final String QUEUE_MAX_FRAGMENT = "/metric[@name='max-active']/text()";
     private static final String QUEUE_QUEUED_FRAGMENT = "/metric[@name='queued']/text()";
-    private static final Logger _log = LoggerFactory.getLogger(PoolXMLProcessor.class);
+    private static final Logger _log = LoggerFactory.getLogger(PoolXmlToObjectMapper.class);
 
     /**
      * @param document document to parse

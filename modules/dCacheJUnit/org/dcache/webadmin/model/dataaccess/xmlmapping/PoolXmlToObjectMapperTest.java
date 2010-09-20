@@ -1,4 +1,4 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
 import org.dcache.webadmin.model.dataaccess.impl.*;
 import java.util.Set;
@@ -14,13 +14,13 @@ import static org.junit.Assert.*;
  * the parsing on pre fabricated XMLs. Also exposes them to others for testusage
  * @author jan schaefer
  */
-public class PoolXMLProcessorTest {
+public class PoolXmlToObjectMapperTest {
 
-    public PoolXMLProcessor _processor = null;
+    public PoolXmlToObjectMapper _processor = null;
 
     @Before
     public void setUp() {
-        _processor = new PoolXMLProcessor();
+        _processor = new PoolXmlToObjectMapper();
     }
 
     @Test

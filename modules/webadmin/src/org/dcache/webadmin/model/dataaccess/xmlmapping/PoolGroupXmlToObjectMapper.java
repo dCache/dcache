@@ -1,4 +1,4 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author jans
  */
-public class PoolGroupXMLProcessor extends XMLProcessor {
+public class PoolGroupXmlToObjectMapper extends XmlToObjectMapper {
 
     private static final String ALL_POOLGROUPS = "/dCache/poolgroups/poolgroup";
-    private static final Logger _log = LoggerFactory.getLogger(PoolGroupXMLProcessor.class);
+    private static final Logger _log = LoggerFactory.getLogger(PoolGroupXmlToObjectMapper.class);
 
     /**
      * @param document document to parse

@@ -1,6 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import org.dcache.webadmin.model.dataaccess.xmlprocessing.PoolXMLProcessor;
+import org.dcache.webadmin.model.dataaccess.xmlmapping.PoolXmlToObjectMapper;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -34,7 +34,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
     public static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardPoolsDAO.class);
-    private PoolXMLProcessor _xmlToObjectMapper = new PoolXMLProcessor();
+    private PoolXmlToObjectMapper _xmlToObjectMapper = new PoolXmlToObjectMapper();
     private CommandSenderFactory _commandSenderFactory;
 
     public StandardPoolsDAO(CommandSenderFactory commandSenderFactory) {

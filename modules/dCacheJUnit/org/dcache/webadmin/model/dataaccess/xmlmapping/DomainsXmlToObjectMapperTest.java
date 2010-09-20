@@ -1,5 +1,6 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
+import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import java.util.HashSet;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
@@ -15,13 +16,13 @@ import static org.junit.Assert.*;
  *
  * @author jans
  */
-public class DomainsXMLProcessorTest {
+public class DomainsXmlToObjectMapperTest {
 
-    public DomainsXMLProcessor _processor;
+    public DomainsXmlToObjectMapper _processor;
 
     @Before
     public void setUp() {
-        _processor = new DomainsXMLProcessor();
+        _processor = new DomainsXmlToObjectMapper();
     }
 
     @Test

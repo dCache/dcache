@@ -1,4 +1,4 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * the appropriate businessobjects
  * @author jan schaefer
  */
-public abstract class XMLProcessor {
+public abstract class XmlToObjectMapper {
 
     public static final String EMPTY_DOCUMENT_CONTENT =
             "<dCache xmlns='http://www.dcache.org/2008/01/Info'/>";
@@ -34,9 +34,9 @@ public abstract class XMLProcessor {
     private XPath _xpath = _factory.newXPath();
     private DocumentBuilderFactory _dbFactory;
     private DocumentBuilder _documentBuilder;
-    private static final Logger _log = LoggerFactory.getLogger(XMLProcessor.class);
+    private static final Logger _log = LoggerFactory.getLogger(XmlToObjectMapper.class);
 
-    public XMLProcessor() {
+    public XmlToObjectMapper() {
         try {
             _dbFactory = DocumentBuilderFactory.newInstance();
             _documentBuilder = _dbFactory.newDocumentBuilder();
@@ -54,7 +54,7 @@ public abstract class XMLProcessor {
             throws ParsingException {
         try {
             if (_log.isDebugEnabled()) {
-                _log.debug("xml-String received: {}", xmlContent);
+//                _log.debug("xml-String received: {}", xmlContent);
             }
             String contentCopy = xmlContent;
             if (contentCopy.isEmpty()) {

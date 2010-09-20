@@ -1,4 +1,4 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,10 +19,10 @@ import org.w3c.dom.NodeList;
  *
  * @author jans
  */
-public class DomainsXMLProcessor extends XMLProcessor {
+public class DomainsXmlToObjectMapper extends XmlToObjectMapper {
 
     private static final Logger _log = LoggerFactory.getLogger(
-            DomainsXMLProcessor.class);
+            DomainsXmlToObjectMapper.class);
     private static final String ALL_CELLNODES = "/dCache/domains/domain" +
             "[@name='dCacheDomain']/routing/named-cells/cell";
     private static final String ALL_DOMAINNODES = "/dCache/domains/domain";
