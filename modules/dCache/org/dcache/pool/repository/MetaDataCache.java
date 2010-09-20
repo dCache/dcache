@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
@@ -28,7 +29,7 @@ public class MetaDataCache
     /** Map of cached MetaDataRecords.
      */
     private final Map<PnfsId,MetaDataRecord> _entries =
-        new HashMap<PnfsId,MetaDataRecord>();
+        new ConcurrentHashMap<PnfsId,MetaDataRecord>();
 
     /**
      * Ids of entries not yet cached. Invariantly all ids of entries
