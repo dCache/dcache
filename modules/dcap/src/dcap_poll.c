@@ -193,6 +193,7 @@ dcap_poll(int mode, struct vsp_node *node, int what)
 	asciiMessage   *aM;
 	struct pollfd   pfd;
 	int            	isFound = 0;
+	poolConnectInfo *pool;
 
 
 	while(1) {
@@ -251,8 +252,8 @@ dcap_poll(int mode, struct vsp_node *node, int what)
 						case ASCII_CONNECT:
 							dc_debug(DC_INFO, "door in passive mode [%d].", node->queueID);
 
-							poolConnectInfo *pool = (poolConnectInfo *)aM->msg;
-							int rc = connect_to_pool(node, pool);
+							pool = (poolConnectInfo *)aM->msg;
+							rc = connect_to_pool(node, pool);
 
 							m_unlock(&gLock);
 							if(rc == 0 ) {
