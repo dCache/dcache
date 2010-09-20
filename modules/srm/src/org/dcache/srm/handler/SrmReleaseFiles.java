@@ -31,7 +31,7 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
-import org.apache.axis.types.URI; 
+import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.srm.SRM;
@@ -50,11 +50,11 @@ import org.dcache.srm.SRMInvalidRequestException;
  * @author  timur
  */
 public class SrmReleaseFiles {
-    
-    
-    private static final Logger logger= 
+
+
+    private static final Logger logger=
         LoggerFactory.getLogger(SrmReleaseFiles.class.getName()) ;
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmReleaseFilesRequest srmReleaseFilesRequest;
@@ -67,7 +67,7 @@ public class SrmReleaseFiles {
     private int max_results_num;
     int numOfLevels =0;
     SRM srm;
-    
+
     /** Creates a new instance of SrmReleaseFiles */
     public SrmReleaseFiles(SRMUser user,
             RequestCredential credential,
@@ -84,7 +84,7 @@ public class SrmReleaseFiles {
         this.configuration = srm.getConfiguration();
         this.srm = srm;
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -111,20 +111,20 @@ public class SrmReleaseFiles {
             logger.error("Illegal State Transition : " +ist.getMessage());
             response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
-        
+
         return response;
     }
-    
+
     public static final SrmReleaseFilesResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmReleaseFilesResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
         logger.error("getFailedResponse: "+error+" StatusCode "+statusCode);
- 
+
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
@@ -140,16 +140,16 @@ public class SrmReleaseFiles {
            SQLException, IllegalStateTransition {
         String requestToken = srmReleaseFilesRequest.getRequestToken();
         Long requestId = null;
-        if( requestToken != null ) {        
+        if( requestToken != null ) {
             try {
                 requestId = new Long( requestToken);
-            } 
+            }
             catch (NumberFormatException nfe){
                 return getFailedResponse(" requestToken \""+
                                          requestToken+"\"is not valid",
                                          TStatusCode.SRM_INVALID_REQUEST);
             }
-        }        
+        }
         URI [] surls ;
         if(  srmReleaseFilesRequest.getArrayOfSURLs() == null ){
             if(requestToken == null) {
@@ -158,35 +158,35 @@ public class SrmReleaseFiles {
                         TStatusCode.SRM_NOT_SUPPORTED);
             }
             surls = null;
-        }  
+        }
 	else if (requestToken == null) {
             surls = srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray();
-            
+
             return unpinDirectlyBySURLs(surls);
-            
+
         }
         else {
             surls = srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray();
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             if(surls != null && surls.length > 0) {
                 return unpinFilesDirectlyBySURLAndRequestId(requestId, surls);
-               
+
             } else {
                 return getFailedResponse("request for requestToken \""+
                                          requestToken+"\"is not found",
                                          TStatusCode.SRM_INVALID_REQUEST);
             }
-            
+
         }
         if ( !(request instanceof GetRequest || request instanceof BringOnlineRequest) ){
             return getFailedResponse("request for requestToken \""+
 				     requestToken+"\"is not srmPrepareToGet or srmBringOnlineRequest request",
 				     TStatusCode.SRM_INVALID_REQUEST);
         }
-        
+
         //if(request instanceof GetRequest) {
         String surl_strings[] = null;
         if( surls == null ){
@@ -215,10 +215,10 @@ public class SrmReleaseFiles {
             } else {
                 BringOnlineRequest bringOnlineRequest = (BringOnlineRequest)request;
                 return bringOnlineRequest.releaseFiles(surls,surl_strings);
-                
+
             }
         }
-        
+
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(TStatusCode.SRM_SUCCESS);
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
@@ -236,11 +236,11 @@ public class SrmReleaseFiles {
         // we do this to make the srm update the status of the request if it changed
         request.getTReturnStatus();
         return srmReleaseFilesResponse;
-        
+
     }
 
     private SrmReleaseFilesResponse unpinFilesDirectlyBySURLAndRequestId(final Long requestId, final URI[] surls) {
-        TSURLReturnStatus[] surlReturnStatusArray = 
+        TSURLReturnStatus[] surlReturnStatusArray =
             new TSURLReturnStatus[surls.length];
         int failure_num=0;
         for (int i = 0; i< surls.length; ++i) {
@@ -257,10 +257,10 @@ public class SrmReleaseFiles {
                 surlReturnStatusArray[i].setStatus(
                     new TReturnStatus(TStatusCode.SRM_FAILURE,"release failed: "+e));
                 failure_num++;
-                
+
             }
         }
-        
+
         TReturnStatus status = new TReturnStatus();
         if(failure_num == 0) {
             status.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -275,11 +275,11 @@ public class SrmReleaseFiles {
                                 new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
         return srmReleaseFilesResponse;
     }
-    
+
    private SrmReleaseFilesResponse unpinDirectlyBySURLs(final URI[] surls) throws
    SQLException, IllegalStateTransition, SRMInvalidRequestException {
        //prepare initial return statuses
-       Map<URI,TSURLReturnStatus> surlsMap = 
+       Map<URI,TSURLReturnStatus> surlsMap =
            new HashMap<URI,TSURLReturnStatus>();
         for(URI surl: surls) {
             TSURLReturnStatus rs = new TSURLReturnStatus();
@@ -288,16 +288,16 @@ public class SrmReleaseFiles {
                 new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,"not released"));
             surlsMap.put(surl,rs);
         }
-        
-        //try to find and relelease active get and bring online file requests 
+
+        //try to find and relelease active get and bring online file requests
         releaseFileRequestsDirectlyBySURLs(surls,surlsMap);
-        
+
         //try to unpin surls directly in the pin manager too
         unpinFilesDirectlyBySURLs(surls,surlsMap);
-        
+
         //analize the results to form SrmReleaseFilesResponse
         int failure_num=0;
-        TSURLReturnStatus[] surlReturnStatusArray = 
+        TSURLReturnStatus[] surlReturnStatusArray =
             new TSURLReturnStatus[surls.length];
         for(int i = 0; i<surls.length; i++) {
             URI surl =  surls[i];
@@ -307,7 +307,7 @@ public class SrmReleaseFiles {
             }
             surlReturnStatusArray[i] = rs;
         }
-        
+
         TReturnStatus status = new TReturnStatus();
         if(failure_num == 0) {
             status.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -321,11 +321,11 @@ public class SrmReleaseFiles {
         srmReleaseFilesResponse.setArrayOfFileStatuses(
                                 new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
         return srmReleaseFilesResponse;
-     
+
     }
-   
+
     private void unpinFilesDirectlyBySURLs(final URI[] surls, Map<URI,TSURLReturnStatus> surlsMap ) {
-        TSURLReturnStatus[] surlReturnStatusArray = 
+        TSURLReturnStatus[] surlReturnStatusArray =
             new TSURLReturnStatus[surls.length];
         int failure_num=0;
         for (URI surl:surls) {
@@ -338,52 +338,52 @@ public class SrmReleaseFiles {
             }
             catch(Exception e) {
                 logger.warn(e.toString());
-                //if rs status is TStatusCode.SRM_INTERNAL_ERROR 
-                // this means it was not changed since 
+                //if rs status is TStatusCode.SRM_INTERNAL_ERROR
+                // this means it was not changed since
                 // it is set initially in the calling function
-                // if it chanded, we do not want to override it 
-                // as other method of releasing might have already 
+                // if it chanded, we do not want to override it
+                // as other method of releasing might have already
                 // succeded
-            
+
                 if(rs.getStatus().getStatusCode().equals(TStatusCode.SRM_INTERNAL_ERROR)) {
                     rs.setStatus(
                         new TReturnStatus(TStatusCode.SRM_FAILURE,"release failed: "+e));
                 }
             }
         }
-        
+
     }
 
     private void releaseFileRequestsDirectlyBySURLs(final URI[] surls,
-        Map<URI,TSURLReturnStatus> surlsMap) 
-        throws java.sql.SQLException, 
+        Map<URI,TSURLReturnStatus> surlsMap)
+        throws java.sql.SQLException,
         IllegalStateTransition,
         SRMInvalidRequestException {
-        Set<BringOnlineFileRequest> bofrsToRelease = 
+        Set<BringOnlineFileRequest> bofrsToRelease =
             findBringOnlineFileRequestBySURLs(surls);
        for (BringOnlineFileRequest fileRequest: bofrsToRelease) {
-            
+
             TSURLReturnStatus release_rs = fileRequest.releaseFile();
             if(release_rs.getStatus().getStatusCode().equals(TStatusCode.SRM_SUCCESS) ) {
                 surlsMap.put(release_rs.getSurl(),release_rs);
             } else {
                 TSURLReturnStatus rs = surlsMap.get(release_rs.getSurl());
-                
-                //if rs status is TStatusCode.SRM_INTERNAL_ERROR 
-                // this means it was not changed since 
+
+                //if rs status is TStatusCode.SRM_INTERNAL_ERROR
+                // this means it was not changed since
                 // it is set initially in the calling function
-                // if it chanded, we do not want to override it 
-                // as other method of releasing might have already 
+                // if it chanded, we do not want to override it
+                // as other method of releasing might have already
                 // succeded
-            
+
                 if(rs.getStatus().getStatusCode().equals(TStatusCode.SRM_INTERNAL_ERROR)) {
                     surlsMap.put(release_rs.getSurl(),release_rs);
                 }
-                
+
             }
         }
-       
-       Set<GetFileRequest> gfrToRelease = 
+
+       Set<GetFileRequest> gfrToRelease =
             findGetFileRequestBySURLs(surls);
        for (GetFileRequest fileRequest: gfrToRelease) {
             fileRequest.setState(State.DONE,"SrmReleaseFiles called");
@@ -393,43 +393,43 @@ public class SrmReleaseFiles {
                 surlsMap.put(surlReturnStatus.getSurl(),surlReturnStatus);
             } else {
                 TSURLReturnStatus rs = surlsMap.get(surlReturnStatus.getSurl());
-                
-                //if rs status is TStatusCode.SRM_INTERNAL_ERROR 
-                // this means it was not changed since 
+
+                //if rs status is TStatusCode.SRM_INTERNAL_ERROR
+                // this means it was not changed since
                 // it is set initially in the calling function
-                // if it chanded, we do not want to override it 
-                // as other method of releasing might have already 
+                // if it chanded, we do not want to override it
+                // as other method of releasing might have already
                 // succeded
-            
+
                 if(rs.getStatus().getStatusCode().equals(TStatusCode.SRM_INTERNAL_ERROR)) {
                     surlsMap.put(surlReturnStatus.getSurl(),surlReturnStatus);
                 }
-                
+
             }
         }
-            
+
     }
-    
+
     private Set<BringOnlineFileRequest> findBringOnlineFileRequestBySURLs(URI[] surls) {
         Scheduler scheduler =
                 SchedulerFactory.getSchedulerFactory().
                 getScheduler(BringOnlineFileRequest.class);
-        Set<BringOnlineFileRequest> foundRequests = 
+        Set<BringOnlineFileRequest> foundRequests =
             new HashSet<BringOnlineFileRequest>();
-        JobStorage js = 
+        JobStorage js =
                 JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
         if(js instanceof DatabaseFileRequestStorage) {
             DatabaseFileRequestStorage reqstorage =(DatabaseFileRequestStorage) js;
             Set<Long> activeRequestIds ;
             try {
-                activeRequestIds = 
+                activeRequestIds =
                    reqstorage.getActiveFileRequestIds(scheduler.getId());
             } catch (java.sql.SQLException sqle) {
                 logger.warn(sqle.toString());
                 //just return empty
                 return foundRequests;
             }
-        
+
             for(Long requestId:activeRequestIds) {
                 Job job;
                 try {
@@ -442,7 +442,7 @@ public class SrmReleaseFiles {
                     continue;
                 }
                 BringOnlineFileRequest bofr = (BringOnlineFileRequest)job;
-                for(URI surl: surls) { 
+                for(URI surl: surls) {
                     if(bofr.getSurlString().equals(surl.toString())) {
                         foundRequests.add(bofr);
                     }
@@ -451,10 +451,10 @@ public class SrmReleaseFiles {
         }
         return foundRequests;
     }
-    
+
     private Set<GetFileRequest> findGetFileRequestBySURLs(URI[] surls)  {
         Scheduler scheduler = srm.getGetRequestScheduler();
-        Set<GetFileRequest> foundRequests = 
+        Set<GetFileRequest> foundRequests =
             new HashSet<GetFileRequest>();
         JobStorage js =
                 JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
@@ -463,15 +463,15 @@ public class SrmReleaseFiles {
                    (DatabaseFileRequestStorage) js;
         Set<Long> activeRequestIds ;
         try {
-            activeRequestIds = 
+            activeRequestIds =
                 reqstorage.getActiveFileRequestIds(scheduler.getId());
         } catch (java.sql.SQLException sqle) {
             logger.warn(sqle.toString());
             //just return empty
             return foundRequests;
         }
-        
-        
+
+
         for(Long requestId:activeRequestIds) {
             Job job;
             try {
@@ -484,7 +484,7 @@ public class SrmReleaseFiles {
                 continue;
             }
             GetFileRequest gfr = (GetFileRequest)job;
-            for(URI surl: surls) { 
+            for(URI surl: surls) {
                 if(gfr.getSurlString().equals(surl.toString())) {
                     foundRequests.add(gfr);
                 }
@@ -494,5 +494,5 @@ public class SrmReleaseFiles {
         return foundRequests;
     }
 
-    
+
 }

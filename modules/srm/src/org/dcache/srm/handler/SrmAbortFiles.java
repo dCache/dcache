@@ -35,10 +35,10 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmAbortFiles {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmAbortFiles.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmAbortFilesRequest srmAbortFilesRequest;
@@ -65,7 +65,7 @@ public class SrmAbortFiles {
         this.getScheduler = srm.getGetRequestScheduler();
         this.configuration = srm.getConfiguration();
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -95,11 +95,11 @@ public class SrmAbortFiles {
         }
         return response;
     }
-    
+
     public static final SrmAbortFilesResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmAbortFilesResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -129,19 +129,19 @@ public class SrmAbortFiles {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not found",
                     TStatusCode.SRM_INVALID_REQUEST);
-            
+
         }
         org.apache.axis.types.URI [] surls ;
         if(  srmAbortFilesRequest.getArrayOfSURLs() == null ){
             return getFailedResponse("request does not contain any SURLs",
                     TStatusCode.SRM_INVALID_REQUEST);
-            
+
         }  else {
             surls = srmAbortFilesRequest.getArrayOfSURLs().getUrlArray();
         }
@@ -159,7 +159,7 @@ public class SrmAbortFiles {
             FileRequest fileRequest = request.getFileRequestBySurl(surl_stings[i]);
             fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
         }
-        
+
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(TStatusCode.SRM_SUCCESS);
         SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
@@ -177,8 +177,8 @@ public class SrmAbortFiles {
         request.getTReturnStatus();
 
         return srmAbortFilesResponse;
-        
+
     }
-    
-    
+
+
 }

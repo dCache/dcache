@@ -32,10 +32,10 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmStatusOfBringOnlineRequest {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfBringOnlineRequest.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmStatusOfBringOnlineRequestRequest statusOfBringOnlineRequest;
@@ -64,10 +64,10 @@ public class SrmStatusOfBringOnlineRequest {
         this.storage = storage;
         this.srmBringOnlineScheduler = srm.getBringOnlineRequestScheduler();
         this.configuration = srm.getConfiguration();
-        
-        
+
+
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -87,14 +87,14 @@ public class SrmStatusOfBringOnlineRequest {
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
-        }        
+        }
         return response;
     }
-    
+
     public static final SrmStatusOfBringOnlineRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmStatusOfBringOnlineRequestResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -110,7 +110,7 @@ public class SrmStatusOfBringOnlineRequest {
      * implementation of srm ls
      */
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequestResponse()
-    throws SRMException, 
+    throws SRMException,
             MalformedURIException,
             SQLException {
         String requestToken = statusOfBringOnlineRequest.getRequestToken();
@@ -125,38 +125,38 @@ public class SrmStatusOfBringOnlineRequest {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_FAILURE);
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not found",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         if ( !(request instanceof BringOnlineRequest) ){
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not srmPrepareToGet request",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         BringOnlineRequest getRequest = (BringOnlineRequest) request;
-        if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null 
+        if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null
             || statusOfBringOnlineRequest.getArrayOfSourceSURLs().getUrlArray() == null){
             return getRequest.getSrmStatusOfBringOnlineRequestResponse();
         }
-        
+
         org.apache.axis.types.URI [] surls = statusOfBringOnlineRequest.getArrayOfSourceSURLs().getUrlArray();
         if(surls.length == 0) {
             return getRequest.getSrmStatusOfBringOnlineRequestResponse();
         }
-        
+
         String[] surlStrings = new String[surls.length];
         for(int i = 0; i< surls.length; ++i) {
             surlStrings[i] = surls[i].toString();
         }
-        
+
         return getRequest.getSrmStatusOfBringOnlineRequestResponse(surlStrings);
     }
-    
-    
+
+
 }

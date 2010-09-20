@@ -32,7 +32,7 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmStatusOfGetRequest {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfGetRequest.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -62,10 +62,10 @@ public class SrmStatusOfGetRequest {
         this.storage = storage;
         this.getScheduler = srm.getGetRequestScheduler();
         this.configuration = srm.getConfiguration();
-        
-        
+
+
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -85,15 +85,15 @@ public class SrmStatusOfGetRequest {
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
-        }        
-        
+        }
+
         return response;
     }
-    
+
     public static final SrmStatusOfGetRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmStatusOfGetRequestResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -123,37 +123,37 @@ public class SrmStatusOfGetRequest {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_FAILURE);
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not found",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         if ( !(request instanceof GetRequest) ){
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not srmPrepareToGet request",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         GetRequest getRequest = (GetRequest) request;
         if( statusOfGetRequestRequest.getArrayOfSourceSURLs() == null ){
             return getRequest.getSrmStatusOfGetRequestResponse();
         }
-        
+
         org.apache.axis.types.URI [] surls = statusOfGetRequestRequest.getArrayOfSourceSURLs().getUrlArray();
         if(surls.length == 0) {
             return getRequest.getSrmStatusOfGetRequestResponse();
         }
-        
+
         String[] surlStrings = new String[surls.length];
         for(int i = 0; i< surls.length; ++i) {
             surlStrings[i] = surls[i].toString();
         }
-        
+
         return getRequest.getSrmStatusOfGetRequestResponse(surlStrings);
     }
-    
-    
+
+
 }

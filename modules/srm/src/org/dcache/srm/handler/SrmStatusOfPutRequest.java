@@ -31,10 +31,10 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmStatusOfPutRequest {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfPutRequest.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmStatusOfPutRequestRequest statusOfPutRequestRequest;
@@ -64,7 +64,7 @@ public class SrmStatusOfPutRequest {
         this.putScheduler = srm.getPutRequestScheduler();
         this.configuration = srm.getConfiguration();
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -84,15 +84,15 @@ public class SrmStatusOfPutRequest {
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
-        }        
-        
+        }
+
         return response;
     }
-    
+
     public static final SrmStatusOfPutRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmStatusOfPutRequestResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -122,38 +122,38 @@ public class SrmStatusOfPutRequest {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_FAILURE);
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not found",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         if ( !(request instanceof PutRequest) ){
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not srmPrepareToPut request",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         PutRequest putRequest = (PutRequest) request;
         if( statusOfPutRequestRequest.getArrayOfTargetSURLs() == null ){
             return putRequest.getSrmStatusOfPutRequestResponse();
         }
-        
+
         org.apache.axis.types.URI [] surls = statusOfPutRequestRequest.getArrayOfTargetSURLs().getUrlArray();
-        
+
         if(surls.length == 0) {
             return putRequest.getSrmStatusOfPutRequestResponse();
         }
-        
+
         String[] surlStrings = new String[surls.length];
         for(int i = 0; i< surls.length; ++i) {
             surlStrings[i] = surls[i].toString();
         }
-        
+
         return putRequest.getSrmStatusOfPutRequestResponse(surlStrings);
     }
-    
-    
+
+
 }
