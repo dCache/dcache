@@ -40,14 +40,14 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmRmdir {
-        private static Logger logger = 
+        private static Logger logger =
             LoggerFactory.getLogger(SrmRmdir.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmRmdirRequest           request;
 	SrmRmdirResponse          response;
 	SRMUser            user;
-	
+
 	public SrmRmdir(SRMUser user,
 			RequestCredential credential,
 			SrmRmdirRequest request,
@@ -58,7 +58,7 @@ public class SrmRmdir {
 		this.user = user;
 		this.storage = storage;
 	}
-	
+
 	public SrmRmdirResponse getResponse() {
 		if(response != null ) return response;
 		try {
@@ -73,22 +73,22 @@ public class SrmRmdir {
 		}
 		return response;
 	}
-	
+
 	private void getDirectoryTree(SRMUser user,
 				      String directory,
 				      Vector tree,
 				      SrmRmdirRequest request,
 				      SrmRmdirResponse response,
-                                      boolean topdir) 
+                                      boolean topdir)
                                       throws SRMException {
-		
-		if (response.getReturnStatus().getStatusCode() != 
+
+		if (response.getReturnStatus().getStatusCode() !=
                         TStatusCode.SRM_SUCCESS) return;
 		String[] dirList;
 		tree.add(directory);
 		try {
 			dirList  = storage.listNonLinkedDirectory(user,directory);
-		} 
+		}
                 catch(SRMAuthorizationException srmae) {
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_AUTHORIZATION_FAILURE);
@@ -110,14 +110,14 @@ public class SrmRmdir {
                                 directory +" : "+srmipe.getMessage());
 			return;
                     }
-		} 
+		}
 		catch (SRMException srme) {
 			response.getReturnStatus().setStatusCode(
                                 TStatusCode.SRM_FAILURE);
 			response.getReturnStatus().setExplanation(
                                 directory +" : "+srme.getMessage());
 			return;
-		} 
+		}
 		catch (Exception e) {
 			logger.warn(e.toString());
 			response.getReturnStatus().setStatusCode(
@@ -131,14 +131,14 @@ public class SrmRmdir {
 		}
 		if ( dirList.length == 0 ) {
 			return;
-		} 
-		else if ( dirList.length > 0 ) {                    
+		}
+		else if ( dirList.length > 0 ) {
 			if ( request.getRecursive() != null && request.getRecursive().booleanValue()) {
 				for (int i=0; i<dirList.length; i++) {
 					getDirectoryTree(user,directory+
                                                 "/"+dirList[i],tree,request,response,false);
 				}
-			} 
+			}
 			else {
 				response.getReturnStatus().setStatusCode(
                                         TStatusCode.SRM_NON_EMPTY_DIRECTORY);
@@ -148,12 +148,12 @@ public class SrmRmdir {
 			}
 		}
 	}
-	
-    
+
+
 	public static final SrmRmdirResponse getFailedResponse(String error) {
 		return getFailedResponse(error,null);
 	}
-    
+
 	public static final  SrmRmdirResponse getFailedResponse(String error,
                 TStatusCode statusCode) {
 		if(statusCode == null) {
@@ -166,13 +166,13 @@ public class SrmRmdir {
 		response.setReturnStatus(status);
 		return response;
 	}
-    
-    
+
+
 	/**
 	 * implementation of srm rmdir
 	 */
-	
-	public SrmRmdirResponse srmRmdir() throws 
+
+	public SrmRmdirResponse srmRmdir() throws
                 SRMException,MalformedURIException {
 		SrmRmdirResponse response  = new SrmRmdirResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
@@ -197,7 +197,7 @@ public class SrmRmdir {
 		// get list of directories
 		//
 		getDirectoryTree(user,path,tree,request,response,true);
-		if (response.getReturnStatus().getStatusCode() != 
+		if (response.getReturnStatus().getStatusCode() !=
                         TStatusCode.SRM_SUCCESS) {
 			return response;
 		}
@@ -225,7 +225,7 @@ public class SrmRmdir {
 		//
 		try {
 			storage.removeDirectory(user,tree);
-		} 
+		}
 		catch (SRMException srme) {
 			logger.warn("failed to remove "+path,srme);
 			response.getReturnStatus().setStatusCode(
