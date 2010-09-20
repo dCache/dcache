@@ -30,7 +30,7 @@
 #   include <Winsock2.h>
 #   include <process.h>
 #   include <mmsystem.h>
-#   include "dcap_win32.h"
+#   include "dcap_unix2win.h"
 #else
 #   include <sys/time.h>
 #   include <sys/times.h>
@@ -44,6 +44,7 @@
 
 #include "system_io.h"
 
+#include "dcap.h"
 #include "dcap_debug.h"
 #include "dcap_error.h"
 #include "dcap_types.h"
@@ -51,6 +52,8 @@
 #include "dcap_poll.h"
 #include "dcap_mqueue.h"
 #include "dcap_str_util.h"
+#include "dcap_reconnect.h"
+#include "dcap_functions.h"
 #include "array.h"
 #include "pnfs.h"
 #include "io.h"
@@ -58,12 +61,13 @@
 #include "links.h"
 #include "dcap_url.h"
 #include "dcap_accept.h"
-#include "dcap_ahead.h"
 #include "socket_nio.h"
 #include "dcap_reconnect.h"
 #include "ioTunnel.h"
 #include "tunnelManager.h"
+#include "lineparser.h"
 #include "xutil.h"
+#include "node_plays.h"
 
 
 static char    *hostName;
@@ -96,7 +100,6 @@ static long openTimeOut = -1;
 #define PNFS_DC_LOCK "/.(config)(dCache)/dcap.LOCK"
 #define DC_LOCK_TIME 60 /* time to sleep if dcap.LOCK file exist */
 #define DC_STAGE (O_RDONLY | O_NONBLOCK)
-#include "dcap_nodes.h"
 #ifndef MAXHOSTNAMELEN
 #define		MAXHOSTNAMELEN  64
 #endif /* MAXHOSTNAMELEN */
@@ -104,39 +107,21 @@ static long openTimeOut = -1;
 
 static int activeClient = 0;
 
-/* funcions prototypes */
-
-int             cache_open(struct vsp_node *);
-int             initControlLine(struct vsp_node *);
-int             serverConnect(struct vsp_node *);
-server         *parseConfig(const char *);
-int             cache_connect(server *);
-int             sayHello(int, ioTunnel *);
-int             create_data_socket(int *, unsigned short *);
-int             ascii_open_conversation(struct vsp_node *);
-int             close_data_socket(int);
-int             sendControlMessage(int, const char *, size_t, ioTunnel *);
-asciiMessage   *getControlMessage(int, struct vsp_node *);
-int             getDataMessage(struct vsp_node *);
-int             data_hello_conversation(struct vsp_node *);
-int             sendDataMessage(struct vsp_node *, char *, int , int , ConfirmationBlock *);
-int             reconnected(struct vsp_node *, int, int64_t);
-int             dc_set_pos(struct vsp_node *, int, int64_t);
-int             newControlLine(struct vsp_node *);
-void            dc_setCallbackPortRange( unsigned short, unsigned short );
-void            dc_setCallbackPort( unsigned short );
-void            getRevision( revision * );
-void            dc_setTCPSendBuffer( int );
-void            dc_setTCPReceiveBuffer( int );
-int             init_hostname();
-
-static void     getPortRange();
+/* Local funcion prototypes */
+static int initControlLine(struct vsp_node *);
+static int serverConnect(struct vsp_node *);
+static server *parseConfig(const char *);
+static int cache_connect(server *);
+static int sayHello(int, ioTunnel *);
+static int create_data_socket(int *, unsigned short *);
+static int ascii_open_conversation(struct vsp_node *);
+static int getDataMessage(struct vsp_node *);
+static void getRevision( revision * );
+static int init_hostname();
+static void getPortRange();
 static int isActive();
+static ConfirmationBlock get_reply(int);
 static int name_invalid(char *);
-int get_data( struct vsp_node *);
-int get_fin( struct vsp_node *);
-int get_ack(int , ConfirmationBlock * );
-ConfirmationBlock get_reply(int);
 
 #ifndef HAVE_HTONLL
     uint64_t  htonll(uint64_t);
@@ -600,7 +585,6 @@ serverConnect(struct vsp_node * node)
 	}
 
 }
-extern char ** lineParser( const char *, const char *);
 
 /* current config line format:
     [tunnelType@]host[:port[:tunnelProvider[:tunnelType] ] ]

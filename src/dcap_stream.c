@@ -15,16 +15,17 @@
  * $Id: dcap_stream.c,v 1.21 2006-08-30 09:54:02 tigran Exp $
  */
 
-#include "dcap_shared.h"
 #include <stdio.h>
+#include <stdlib.h>
 
-int        dc_open(const char *, int, ...);
-int        dc_close(int);
-ssize_t    dc_real_read(struct vsp_node *node, void *buff, size_t buflen);
-ssize_t    dc_real_write(struct vsp_node *node, const void *buff, size_t buflen);
-off64_t  dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
-off64_t  dc_ftello64(FILE *fp);
-int        dc_fseeko64(FILE *, off64_t, int);
+#include "dcap.h"
+#include "dcap_read.h"
+#include "dcap_write.h"
+#include "dcap_lseek.h"
+#include "node_plays.h"
+#include "pnfs.h"
+#include "debug_level.h"
+#include "system_io.h"
 
 /*******************************************************************
  *                                                                 *

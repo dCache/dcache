@@ -15,11 +15,16 @@
  * $Id: dcap_checksum.h,v 1.4 2004-11-01 19:33:29 tigran Exp $
  */
 
-
 #ifndef DCAP_CHECKSUM_H
 #define DCAP_CHECKSUM_H
 
 #include <sys/types.h>
+
+typedef struct {
+	unsigned long sum;
+	int isOk;
+	int type;
+} checkSum;
 
 #define ADLER32 1
 

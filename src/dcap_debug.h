@@ -20,11 +20,6 @@
 
 #include "debug_level.h"
 
-extern void dc_debug(unsigned int, const char *, ...);
-extern void dc_setDebugLevel(unsigned int);
-extern void dc_setStrDebugLevel(const char *);
 extern void dc_setRecoveryDebugLevel();
-extern void init_dc_debug();
-
 
 #endif				/* _DCAP_DEBUG_H_ */

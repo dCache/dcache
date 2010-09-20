@@ -16,21 +16,24 @@
  */
 
 
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_ahead.h"
+
 #include "dcap_types.h"
 #include "dcap_debug.h"
-#include "dcap_nodes.h"
 #include "dcap_reconnect.h"
+#include "node_plays.h"
 #include "sysdep.h"
 #include <stdlib.h>
 #include <string.h>
 #ifdef WIN32
-#    include "dcap_win32.h"
+#    include "dcap_unix2win.h"
 #    include <stdio.h> /* for SEEK_X */
 #else
 #    include <unistd.h>
 #endif
 
-extern int dc_set_pos(struct vsp_node *, int, int64_t);
 
 void dc_noBuffering(int fd)
 {

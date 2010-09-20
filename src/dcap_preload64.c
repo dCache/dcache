@@ -26,8 +26,9 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <dirent.h>
-#include <dcap_debug.h>
 
+#include "dcap.h"
+#include "debug_level.h"
 
 /* Replacing system calls with our if we are PRELOAD library */
 

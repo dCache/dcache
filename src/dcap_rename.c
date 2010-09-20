@@ -14,9 +14,20 @@
 /*
  * $Id: dcap_rename.c,v 1.2 2005-04-25 07:56:37 tigran Exp $
  */
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
-#include "dcap_shared.h"
-
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_mqueue.h"
+#include "dcap_url.h"
+#include "gettrace.h"
+#include "node_plays.h"
+#include "pnfs.h"
+#include "debug_level.h"
+#include "system_io.h"
+#include "dcap_protocol.h"
 
 int dc_rename( const char *oldPath, const char *newPath )
 {

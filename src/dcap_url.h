@@ -17,7 +17,16 @@
 #ifndef DCAP_URL_H
 #define DCAP_URL_H
 
-#include "dcap_types.h"
+#define URL_NONE 0
+#define URL_DCAP 1
+#define URL_PNFS 2
+
+typedef struct {
+	char *host;
+	char *file;
+	int type;
+	char *prefix;
+} dcap_url;
 
 extern dcap_url *dc_getURL(const char *);
 extern char *url2config( char *, size_t, dcap_url *);

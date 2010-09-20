@@ -20,17 +20,6 @@
 
 #include "dcap_errno.h"
 
-/* thread-safe errno hack */
-#ifdef _REENTRANT
-extern int *__dc_errno();
-#define dc_errno (*(__dc_errno()))
-#else
-extern int dc_errno;
-#endif /* _REENTRANT */
-
-extern void dc_error(const char *);
-extern void dc_perror(const char *);
-extern const char * dc_strerror(int);
 extern void dc_setServerError(const char *);
 
 #endif /* DCAP_ERROR */

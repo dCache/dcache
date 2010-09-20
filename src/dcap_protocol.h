@@ -89,6 +89,6 @@
 /*  optional data on close */
 #define DCAP_DATA_SUM 1
 
-extern const char *asciiCommand( int );
+extern const char *asciiCommand( unsigned int );
 
 #endif				/* DCAP_PROTOCOL_H */

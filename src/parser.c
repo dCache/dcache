@@ -32,7 +32,10 @@
 #define inQuote 2		/* 00000010 */
 #define inOption 4		/* 00000100 */
 
-char          **
+static char **CommandParser(const char *buffer);
+
+
+char **
 CommandParser(const char *buffer)
 {
 

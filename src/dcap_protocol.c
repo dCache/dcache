@@ -18,6 +18,8 @@
 
 #include <stdlib.h>
 
+#include "dcap_protocol.h"
+
 #define DCAP_MAX_COMMAND 14
 
 static const char *commandTable[] = {

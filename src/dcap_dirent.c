@@ -16,16 +16,28 @@
  */
 
 
-#include "dcap_shared.h"
 #include <sys/types.h>
+#include <stdlib.h>
 #include <dirent.h>
+#include <string.h>
+#include <errno.h>
 
 #define RD_SEPARATOR ':'
 
-ssize_t dc_real_read( struct vsp_node *node, void *buff, size_t buflen);
-struct dirent64 *dc_readdir64( DIR *dir);
-int char2dirent64(const char *, struct dirent64 *);
-int char2dirent(const char *, struct dirent *);
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_protocol.h"
+#include "dcap_mqueue.h"
+#include "dcap_url.h"
+#include "gettrace.h"
+#include "node_plays.h"
+#include "debug_level.h"
+#include "system_io.h"
+#include "dcap_read.h"
+
+/* Local function prototypes */
+static int char2dirent64(const char *, struct dirent64 *);
+static int char2dirent(const char *, struct dirent *);
 
 
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)

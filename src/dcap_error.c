@@ -20,10 +20,11 @@
 #include <errno.h>
 #include <string.h>
 #include "sysdep.h"
+#include "dcap.h"
 #include "dcap_errno.h"
 #include "system_io.h"
 #ifdef WIN32
-#    include "dcap_win32.h"
+#    include "dcap_unix2win.h"
 #endif
 
 #define DC_MAX_SRV_ERR_MSG 1024
@@ -37,6 +38,11 @@ static MUTEX(kLock);
 static int err_once = 0;
 static int msg_once = 0;
 static int msgPtr_once = 0;
+
+/* Local function prototypes */
+static char **__dc_srvMessage();
+static char * dc_errno2srvMessage();
+
 
 int *
 __dc_errno()

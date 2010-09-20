@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lineparser.h"
+
 #define Idle 0
 #define inToken 1
 #define MAXLINELEN 1024

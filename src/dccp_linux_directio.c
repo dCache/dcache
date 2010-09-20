@@ -30,7 +30,7 @@
 #    include <sys/param.h>
 #    include "dcap_signal.h"
 #else
-#    include "dcap_win32.h"
+#    include "dcap_unix2win.h"
 extern int getopt(int, char * const *, const char *);
 #endif
 
@@ -53,8 +53,8 @@ extern int getopt(int, char * const *, const char *);
 #define MAXPATHLEN 4096
 #endif
 
-void usage();
-int copyfile(int src, int dest, size_t buffsize, off_t  *size);
+static void usage();
+static int copyfile(int src, int dest, size_t buffsize, off_t  *size);
 
 int
 main(argc, argv)

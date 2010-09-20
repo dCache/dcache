@@ -15,8 +15,12 @@
  * $Id: dcap_dup.c,v 1.4 2004-11-01 19:33:29 tigran Exp $
  */
 
-#include "dcap_shared.h"
-
+#include "dcap.h"
+#include "dcap_types.h"
+#include "system_io.h"
+#include "gettrace.h"
+#include "node_plays.h"
+#include "debug_level.h"
 
 int dc_dup(int fd)
 {

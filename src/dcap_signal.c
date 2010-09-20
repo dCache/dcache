@@ -24,7 +24,12 @@
 #    endif /* HAVE_STROPTS_H */
 #endif /* __CYGWIN__ */
 
-#include "dcap_debug.h"
+#include "dcap.h"
+#include "dcap_signal.h"
+#include "debug_level.h"
+
+static void pipe_handler(int s);
+
 
 void pipe_handler(int s)
 {

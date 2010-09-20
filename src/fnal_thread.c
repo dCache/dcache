@@ -30,6 +30,8 @@
 int fd;
 off_t size;
 
+static long byteSwapL(unsigned long b);
+static void *thread_task(void *arg);
 
 long byteSwapL(unsigned long b)
 {

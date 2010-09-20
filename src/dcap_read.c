@@ -16,13 +16,25 @@
  */
 
 
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <zlib.h>
-#include "dcap_shared.h"
 
-ssize_t dc_real_read( struct vsp_node *node, void *buff, size_t buflen);
-ssize_t dc_pread64( int fd, void *buff, size_t buflen, off64_t);
-extern off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
-extern int dc_real_fsync(struct vsp_node *);
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_read.h"
+#include "dcap_fsync.h"
+#include "dcap_lseek.h"
+#include "dcap_ahead.h"
+#include "dcap_reconnect.h"
+#include "dcap_protocol.h"
+#include "gettrace.h"
+#include "io.h"
+#include "node_plays.h"
+#include "system_io.h"
+#include "debug_level.h"
 
 ssize_t
 dc_read(int fd, void *buff, size_t buflen)

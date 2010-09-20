@@ -15,12 +15,13 @@
  * $Id: dcap_fsync.c,v 1.5 2004-11-01 19:33:29 tigran Exp $
  */
 
-#include "dcap_shared.h"
-
-
-int dc_real_fsync( struct vsp_node *node);
-extern ssize_t dc_real_write(struct vsp_node *node, void *buff, size_t len);
-
+#include "dcap.h"
+#include "dcap_fsync.h"
+#include "dcap_write.h"
+#include "gettrace.h"
+#include "node_plays.h"
+#include "system_io.h"
+#include "debug_level.h"
 
 int dc_fsync(int fd)
 {

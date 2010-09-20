@@ -18,12 +18,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "dcap_shared.h"
+#include <netdb.h>
+
+#include "dcap.h"
 #include "dcap_types.h"
 #include "dcap_errno.h"
 #include "dcap_error.h"
-
 #include "dcap_url.h"
+#include "debug_level.h"
+#include "xutil.h"
+#include "dcap_str_util.h"
 
 #define DCAP_PREFIX "dcap://"
 #define PNFS_PREFIX "pnfs://"

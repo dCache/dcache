@@ -15,7 +15,25 @@
  * $Id: dcap_open.c,v 1.26 2007-07-06 16:09:08 tigran Exp $
  */
 
-#include "dcap_shared.h"
+#include <sys/times.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <stdarg.h>
+
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_checksum.h"
+#include "dcap_mqueue.h"
+#include "dcap_url.h"
+#include "gettrace.h"
+#include "links.h"
+#include "node_plays.h"
+#include "pnfs.h"
+#include "debug_level.h"
+#include "system_io.h"
+#include "dcap_protocol.h"
+#include "xutil.h"
 
 
 #define DC_STAGE (O_RDONLY | O_NONBLOCK)

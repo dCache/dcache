@@ -17,7 +17,8 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <dcap.h>
+
+#include "dcap.h"
 
 main(int argc, char *argv[])
 {

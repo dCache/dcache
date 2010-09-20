@@ -15,8 +15,18 @@
  * $Id: dcap_unlink.c,v 1.4 2004-11-01 19:33:29 tigran Exp $
  */
 
+#include <stdlib.h>
+#include <string.h>
 
- #include "dcap_shared.h"
+#include "dcap.h"
+#include "dcap_types.h"
+#include "dcap_functions.h"
+#include "dcap_mqueue.h"
+#include "dcap_url.h"
+#include "node_plays.h"
+#include "debug_level.h"
+#include "dcap_protocol.h"
+#include "system_io.h"
 
  int dc_unlink( const char *path)
  {

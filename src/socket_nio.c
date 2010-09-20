@@ -26,8 +26,10 @@
 #endif
 #include <fcntl.h>
 #include <errno.h>
+
+#include "dcap.h"
 #include "dcap_reconnect.h"
-#include "dcap_debug.h"
+#include "debug_level.h"
 
 
 int setNonBlocking(int fd)

@@ -22,6 +22,11 @@
 #    include  <Winsock2.h>
 #endif
 
+/* Local function prototypes */
+static int writeln(int fd, const char *buf, int bufsize, ioTunnel *en);
+static int readln(int fd, char *str, int bufsize, ioTunnel *en);
+
+
 int
 writen(int fd, const char *buf, int bufsize, ioTunnel *en)
 {

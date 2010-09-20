@@ -15,25 +15,35 @@
  * $Id: dcap_reconnect.c,v 1.21 2004-11-01 19:33:29 tigran Exp $
  */
 #include <sys/types.h>
-#include "dcap_types.h"
-#include "dcap_debug.h"
-#include "dcap_protocol.h"
-#include "dcap_poll.h"
-#include "socket_nio.h"
-#include "sysdep.h"
 #include <fcntl.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <string.h>
+#include <stdio.h>
+
 #ifdef WIN32
-#    include "dcap_win32.h"
+#    include "dcap_unix2win.h"
 #    include "dcap_win_poll.h"
 #else
 #    include <sys/poll.h>
 #    include <unistd.h>
 #endif
-#include <string.h>
-#include <stdio.h>
 
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_types.h"
+#include "dcap_protocol.h"
+#include "dcap_poll.h"
+#include "socket_nio.h"
+#include "sysdep.h"
+#include "debug_level.h"
+#include "dcap_reconnect.h"
+
+/* Local function prototypes */
+static int smart_reconnect(struct vsp_node *, int);
+#ifndef WIN32
+static void alarm_handler( int sig);
+#endif
 
 #ifdef _REENTRANT
 static TKEY ioFailedKey;
@@ -44,6 +54,13 @@ static int ioKeyOnce = 0;
 static int alarmKeyOnce = 0;
 static int saKeyOnce = 0;
 static MUTEX(kLock);
+
+#define isAlarm (*(__isAlarm()))
+#define old_sa_alarm (*(__old_sa_alarm()))
+
+/* Reentrant local function prototypes */
+static int *__isAlarm();
+static struct sigaction *__old_sa_alarm();
 
 int *
 __isIOFailed()
@@ -67,9 +84,7 @@ __isIOFailed()
 
 }
 
-#define isIOFailed (*(__isIOFailed()))
-
-static int *
+int *
 __isAlarm()
 {
 	int *al;
@@ -91,9 +106,7 @@ __isAlarm()
 
 }
 
-#define isAlarm (*(__isAlarm()))
-
-static struct sigaction *
+struct sigaction *
 __old_sa_alarm()
 {
 	struct sigaction *sa;
@@ -115,8 +128,6 @@ __old_sa_alarm()
 
 }
 
-#define old_sa_alarm (*(__old_sa_alarm()))
-
 #else
 int isIOFailed = 0;
 static int isAlarm = 0;
@@ -124,14 +135,6 @@ static int isAlarm = 0;
     static struct sigaction old_sa_alarm;
 #endif /* WIN32 */
 #endif /* _REENTRANT */
-
-extern int dc_set_pos(struct vsp_node *, int, int64_t);
-extern asciiMessage   *getControlMessage(int, struct vsp_node *);
-extern int sendControlMessage(int, const char *, size_t, ioTunnel *);
-extern int data_hello_conversation(struct vsp_node *);
-
-int smart_reconnect(struct vsp_node *, int);
-int recover_connection(struct vsp_node *, int);
 
 int recover_connection(struct vsp_node * node, int mode)
 {
@@ -182,7 +185,6 @@ smart_reconnect(struct vsp_node * node, int mode)
 }
 
 #ifndef WIN32
-
 void alarm_handler( int sig)
 {
 	dc_debug(DC_ERROR, "dcap: Last IO operation timeout.");

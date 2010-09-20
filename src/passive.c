@@ -15,10 +15,17 @@
  * $Id: passive.c,v 1.1 2006-07-17 15:13:36 tigran Exp $
  */
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netdb.h>
 
-
-#include "dcap_shared.h"
+#include "dcap.h"
 #include "socket_nio.h"
+#include "node_plays.h"
+#include "system_io.h"
 
 /*
 

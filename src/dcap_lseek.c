@@ -14,14 +14,22 @@
 /*
  * $Id: dcap_lseek.c,v 1.19 2004-11-04 14:34:31 tigran Exp $
  */
+#include <arpa/inet.h>
+#include <errno.h>
+#include <string.h>
 
-#include "dcap_shared.h"
 
+#include "dcap.h"
+#include "dcap_functions.h"
 
-off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
-extern int dc_real_fsync( struct vsp_node *node);
-off64_t dc_lseek64(int fd,off64_t offset, int whence);
-
+#include "dcap_protocol.h"
+#include "dcap_lseek.h"
+#include "dcap_fsync.h"
+#include "gettrace.h"
+#include "io.h"
+#include "node_plays.h"
+#include "system_io.h"
+#include "debug_level.h"
 
 
 off_t dc_lseek(int fd, off_t offset, int whence) {

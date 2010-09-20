@@ -21,7 +21,7 @@
 #ifndef WIN32
 #   include <unistd.h>
 #else
-#   include "dcap_win32.h"
+#   include "dcap_unix2win.h"
 #endif
 
 typedef struct {

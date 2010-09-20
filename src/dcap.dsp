@@ -302,10 +302,6 @@ SOURCE=.\dcap_mqueue.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\dcap_nodes.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\dcap_poll.h
 # End Source File
 # Begin Source File
@@ -326,7 +322,7 @@ SOURCE=.\dcap_url.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\dcap_win32.h
+SOURCE=.\dcap_unix2win.h
 # End Source File
 # Begin Source File
 
@@ -382,7 +378,7 @@ SOURCE=.\tunnelManager.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\win32_dlfcn.h
+SOURCE=.\win32_libdl.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

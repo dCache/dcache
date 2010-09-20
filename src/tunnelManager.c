@@ -19,15 +19,18 @@
 #   include <dlfcn.h>
 #   include <unistd.h>
 #else
-#    include "win32_dlfcn.h"
+#    include "win32_libdl.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "dcap.h"
 #include "sysdep.h"
+#include "debug_level.h"
 #include "ioTunnel.h"
-#include "dcap_debug.h"
+#include "tunnelManager.h"
 
 typedef struct {
 	int sock;

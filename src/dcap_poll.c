@@ -15,10 +15,12 @@
  * $Id: dcap_poll.c,v 1.61 2006-07-17 15:13:36 tigran Exp $
  */
 
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
-#include <sys/types.h>
 #ifndef WIN32
 #    ifndef __CYGWIN__
 #        ifdef HAVE_STROPTS_H
@@ -31,13 +33,19 @@
 #    include "dcap_win_poll.h"
 #endif /* WIN32 */
 
-#include <errno.h>
-#include <string.h>
 #include "io.h"
 #include "input_parser.h"
+#include "dcap.h"
+#include "dcap_poll.h"
 #include "dcap_interpreter.h"
-#include "dcap_shared.h"
 #include "dcap_str_util.h"
+#include "dcap_mqueue.h"
+#include "dcap_reconnect.h"
+#include "tunnelManager.h"
+#include "debug_level.h"
+#include "dcap_protocol.h"
+#include "system_io.h"
+#include "passive.h"
 
 static          MUTEX(gLock);
 static          MUTEX(controlLock);
@@ -47,7 +55,10 @@ static struct pollfd *poll_list = NULL;
 static unsigned long poll_len = 1; /* keep one room for date chanel */
 static unsigned long poll_len_inuse = 1; /* keep one room for date chanel */
 
+/* Local function prototypes */
 static void messageDestroy( char ** );
+static const char *pevent2str(int event);
+static void int_pollDelete(int fd);
 
 #define POLL_CONTROL 0
 #define POLL_DATA 1
@@ -141,7 +152,7 @@ pollAdd(int fd)
 	return 0;
 }
 
-static void int_pollDelete(int fd)
+void int_pollDelete(int fd)
 {
 	unsigned int i;
 
@@ -474,7 +485,7 @@ again2:
 }
 
 
-static void
+void
 messageDestroy( char ** msg)
 {
 	register int i;

@@ -98,7 +98,8 @@ client          clients[CNUM];
 static int      mTotal = 0;
 
 
-static int      getMessage(int, int, client *, message *);
+static int getMessage(int, int, client *, message *);
+static void *thread_task(void *arg);
 
 
 void           *
@@ -256,7 +257,7 @@ main()
 }
 
 
-static int
+int
 getMessage(int fd, int myID, client * clnt, message * out)
 {
 

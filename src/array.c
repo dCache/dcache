@@ -18,7 +18,7 @@
 
 #include <stdlib.h>
 #include "sysdep.h"
-
+#include "char2crc.h"
 
 static MUTEX(gLock);
 
@@ -30,10 +30,6 @@ typedef struct {
 
 static arrayElement *array;
 static int      len;
-
-extern unsigned long char2crc(const unsigned char *);
-
-
 
 unsigned short
 isMember(char *key)

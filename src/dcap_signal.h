@@ -17,8 +17,6 @@
 #ifndef DCAP_SIGNAL_H
 #define DCAP_SIGNAL_H
 
-#include <signal.h>
-
 extern int dcap_signal();
 
 

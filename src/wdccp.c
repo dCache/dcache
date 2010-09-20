@@ -25,11 +25,8 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
-#ifndef WIN32
-#    include <sys/param.h>
-#    include "dcap_signal.h"
-#else
-#    include "dcap_win32.h"
+#ifdef WIN32
+#    include "dcap_unix2win.h"
 extern int getopt(int, char * const *, const char *);
 #endif
 
@@ -63,7 +60,6 @@ static char *path2filename(const char *, const char *);
   */
 
 
-static
 char *path2filename(const char *path, const char *filename)
 {
 	char *newFile;
@@ -112,7 +108,6 @@ char *path2filename(const char *path, const char *filename)
   */
 
 
-static
 int file2file( const char *source, const char *destination, int overwrite, size_t buffer_size, int unsafeWrite, int doCheckSum)
 {
 	int rc = 0;
@@ -260,7 +255,6 @@ int file2file( const char *source, const char *destination, int overwrite, size_
   */
 
 
-static
 int copyfile(int src, int dest, size_t bufsize, off_t *size)
 {
 	ssize_t n, m ;
@@ -322,7 +316,6 @@ int copyfile(int src, int dest, size_t bufsize, off_t *size)
   */
 
 
-static
 void usage()
 {
 	fprintf(stderr,"DiskCache Copy Program. LibDCAP version: %d.%d.%d-%s\n",

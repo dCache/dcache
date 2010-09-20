@@ -15,12 +15,24 @@
  * $Id: dcap_write.c,v 1.21 2006-09-26 07:47:27 tigran Exp $
  */
 
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <sys/uio.h> /* needed for readv/writev */
-#include "dcap_shared.h"
 
-ssize_t dc_real_write( struct vsp_node *node, const void *buff, size_t buflen);
-ssize_t dc_pwrite64(int fd, const void *buff, size_t buflen, off64_t offset);
-off64_t dc_real_lseek(struct vsp_node *node, off64_t offset, int whence);
+#include "dcap.h"
+#include "dcap_functions.h"
+#include "dcap_ahead.h"
+#include "dcap_checksum.h"
+#include "dcap_lseek.h"
+#include "dcap_protocol.h"
+#include "gettrace.h"
+#include "io.h"
+#include "node_plays.h"
+#include "system_io.h"
+#include "debug_level.h"
+#include "dcap_write.h"
 
 ssize_t
 dc_write(int fd,const void *buff, size_t buflen)

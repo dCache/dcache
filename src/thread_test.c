@@ -23,6 +23,8 @@
 #define DATAFILE "/pnfs/fs/usr/dmg/eagle/tigran/dcap.c"
 #define BSIZE 512
 
+static void *thread_task(void *arg);
+
 void *
 thread_task(void *arg) {
 	int fd;
