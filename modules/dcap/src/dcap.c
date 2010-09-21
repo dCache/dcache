@@ -139,7 +139,7 @@ static MUTEX(acceptLock);
 
 /* Utilities functions */
 
-name_invalid(char *p)
+int name_invalid(char *p)
 {
        /* Check input strings for characters which will cause protocol problems.  Currently
        * newlines and double-quotes are problematic */
