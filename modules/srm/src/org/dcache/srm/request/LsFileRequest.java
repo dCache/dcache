@@ -614,27 +614,7 @@ public final class LsFileRequest extends FileRequest {
                                         metaDataPathDetail.setFileStorageType(TFileStorageType.VOLATILE);
                                 }
                         }
-                        TFileLocality fileLocality = TFileLocality.NONE;
-                        if (fmd.isCached) {
-                                if (fmd.isStored) {
-                                        fileLocality = TFileLocality.ONLINE_AND_NEARLINE;
-                                }
-                                else {
-                                        fileLocality = TFileLocality.ONLINE;
-                                }
-                        }
-                        else {
-                                if (fmd.isStored) {
-                                        fileLocality = TFileLocality.NEARLINE;
-                                }
-                                else {
-                                        fileLocality = TFileLocality.UNAVAILABLE;
-                                }
-                        }
-                        if (fmd.isDirectory) {
-                                fileLocality = TFileLocality.NONE;
-                        }
-                        metaDataPathDetail.setFileLocality(fileLocality);
+                        metaDataPathDetail.setFileLocality(fmd.locality);
                         if (fmd.retentionPolicyInfo!=null) {
                                 TAccessLatency al = fmd.retentionPolicyInfo.getAccessLatency();
                                 TRetentionPolicy rp = fmd.retentionPolicyInfo.getRetentionPolicy();
