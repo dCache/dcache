@@ -1497,6 +1497,7 @@ get_reply(int dataFd)
 	tmp = readn(dataFd, (char *) &acksize_net, sizeof(acksize), NULL);
 	if(tmp !=  sizeof(acksize)) {
 		dc_debug(DC_ERROR, "[%d] Failed to get reply.", dataFd);
+		memset(&reply, 0, sizeof(ConfirmationBlock));
 		reply.code = IOCMD_ERROR;
 		return reply;
 	}
@@ -1504,6 +1505,7 @@ get_reply(int dataFd)
 	acksize = ntohl(acksize_net);
 	if( acksize <=0 ) {
 		dc_debug(DC_ERROR, "[%d] He..!? reply is [0x%.8X](%d).", dataFd, acksize_net, acksize);
+		memset(&reply, 0, sizeof(ConfirmationBlock));
 		reply.code = IOCMD_ERROR;
 		return reply;
 	}
@@ -1513,6 +1515,7 @@ get_reply(int dataFd)
 
 	if (!ackinfo) {
 		dc_debug(DC_ERROR, "get_reply: Failed to allocate %d bytes.", acksize);
+		memset(&reply, 0, sizeof(ConfirmationBlock));
 		reply.code = IOCMD_ERROR;
 		return reply;
 	}
