@@ -497,7 +497,7 @@ public class JMSTunnel
         }
 
         /** Called by JMS on ARP reply. */
-        public void onMessage(Message message)
+        synchronized public void onMessage(Message message)
         {
             try {
                 Lookup lookup = _lookups.remove(message.getJMSCorrelationID());
@@ -520,6 +520,8 @@ public class JMSTunnel
                                    new NoRouteToCellException(envelope.getUOID(),
                                                               envelope.getDestinationPath(),
                                                               "Communication failure. Message could not be delivered."));
+                } else {
+                    _log.warn("ARP reply was late: " + message);
                 }
             } catch (JMSException e) {
                 _log.error("Error while resolving well known cell: "
