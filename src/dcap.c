@@ -1315,7 +1315,9 @@ data_hello_conversation(struct vsp_node * node)
 
 		if (hostEnt != NULL) {
 			hostname = hostEnt->h_name;
-		} /* else -> address not resolved */
+		} else {
+			hostname = "UNKNOWN-HOST.invalid";
+		}
 
 	/* change send/receive buffer size prior any write/read operation */
 #ifdef  SO_RCVBUF
