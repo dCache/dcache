@@ -302,7 +302,7 @@ ssize_t dc_writev(int fd, const struct iovec *vector, int count) {
 	char *iobuf;
 	int i;
 	ssize_t iobuf_len;
-	off_t iobuf_pos;
+	off_t iobuf_pos = 0;
 
 
 #ifdef DC_CALL_TRACE
