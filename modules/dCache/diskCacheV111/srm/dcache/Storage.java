@@ -86,8 +86,9 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.Version;
+import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
+import diskCacheV111.vehicles.PoolManagerGetFileLocalityMessage;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.services.login.RemoteLoginStrategy;
@@ -1001,89 +1002,6 @@ public final class Storage
             });
     }
 
-    private TFileLocality getFileLocality(FileAttributes attributes)
-        throws SRMException {
-        if (attributes.getFileType()==FileType.DIR) {
-            return TFileLocality.NONE;
-        }
-        StorageInfo storage_info = attributes.getStorageInfo();
-        try {
-            PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg(DirectionType.READ,
-                                         "*/*",
-                                         config.getSrmHost(),
-                                         storage_info);
-            _log.debug("getFileLocality() : Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
-            query = _poolManagerStub.sendAndWait(query);
-            Set<String> readPools = new HashSet<String>();
-            for (List<String> list: query.getPools()) {
-                readPools.addAll(list);
-            }
-            if (Collections.disjoint(readPools, attributes.getLocations())) {
-                if (storage_info.isStored()) {
-                    return TFileLocality.NEARLINE;
-                }
-                _log.debug("getFileLocality() : list of available read pools did not match location list, checking if pools in location list are online");
-                // we are here if list of locations and pools do not intersect
-                // check that any of the pools in attributes.getLocations() is online
-                // if it is, we declare file NEARLINE
-                for (String pool : attributes.getLocations()) {
-                    try {
-                        //
-                        //     Valid concern about the check below is that the pool
-                        //     could have been removed by "psu remove" command
-                        //     but still will pass the check.
-                        //     Also, file may not be in this location
-                        //     anymore
-                        // TODO:
-                        //      implement proper check @ PoolManager
-                        //
-                        PoolCellInfo poolCellInfo =
-                            _poolStub.sendAndWait(new CellPath(pool),
-                                                  "xgetcellinfo",
-                                                  PoolCellInfo.class);
-                        //
-                        // poolCellInfo.getErrorCode()!=0 for disabled pool
-                        //
-                        if (poolCellInfo.getErrorCode()==0) {
-                            //
-                            // this is all we need to check - pool is online and enabled
-                            // check also that p2p queue is not zero, does not hurt.
-                            //
-                            PoolCostInfo.PoolQueueInfo p2pQueueInfo = poolCellInfo.getPoolCostInfo().getP2pQueue();
-                            _log.debug("pool {} p2p max active {} ",pool,p2pQueueInfo.getMaxActive());
-                            if (p2pQueueInfo.getMaxActive()>0){
-                                return TFileLocality.NEARLINE;
-                            }
-                        }
-                    }
-                    catch (CacheException e) {
-                        _log.warn("getFileLocality() : failed to get PoolCellInfo {} {}",pool,e.getMessage());
-                        continue;
-                    }
-                    catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new SRMInternalErrorException("Received interrupt exception waiting for reply from PoolManager",e);
-                    }
-
-                }
-                return TFileLocality.UNAVAILABLE;
-            }
-            else {
-                return (storage_info.isStored()?
-                        TFileLocality.ONLINE_AND_NEARLINE:TFileLocality.ONLINE);
-            }
-        }
-        catch (CacheException e) {
-            _log.warn("getFileLocality(): error receiving message back from PoolManager : " + e);
-            throw new SRMInternalErrorException("Error receiving message back from PoolManager",e);
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SRMInternalErrorException("Received interrupt exception waiting for reply from PoolManager",e);
-        }
-    }
-
     public void pinFile(SRMUser user,
         String fileId,
         String clientHost,
@@ -1721,74 +1639,79 @@ public final class Storage
     {
         _log.debug("getFileMetaData(" + path + ")");
         String fullPath = getFullPath(path);
-        FileAttributes attributes;
-        PnfsId pnfsId;
         AuthorizationRecord duser = (AuthorizationRecord) user;
         PnfsHandler handler =
             new PnfsHandler(_pnfs, Subjects.getSubject(duser));
         try {
+            /* Fetch file attributes.
+             */
             Set<FileAttribute> requestedAttributes =
                 EnumSet.of(TYPE, LOCATIONS);
             requestedAttributes.addAll(DcacheFileMetaData.getKnownAttributes());
-            attributes = handler.getFileAttributes(fullPath, requestedAttributes, read ? EnumSet.of(AccessMask.READ_DATA) : EnumSet.noneOf(AccessMask.class));
-            pnfsId = attributes.getPnfsId();
-        }
-        catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException(e.getMessage(), e);
-        }
-        catch (PermissionDeniedCacheException e) {
-            throw new SRMAuthorizationException(e.getMessage(),e);
-        }
-        catch (DirNotExistsCacheException e) {
-            throw new SRMInvalidPathException(e.getMessage(),e);
-        }
-        catch (FileNotFoundCacheException e) {
-            throw new SRMInvalidPathException(e.getMessage(),e);
-        }
-        catch (CacheException e) {
-            throw new SRMException("could not get storage info by path: " +
-                                   e.getMessage(), e);
-        }
-        FileMetaData fmd = new DcacheFileMetaData(attributes);
-        if (attributes.getFileType() != FileType.DIR) {
-            fmd.locality = getFileLocality(attributes);
-            if (fmd.locality == TFileLocality.NEARLINE ||
-                fmd.locality == TFileLocality.ONLINE_AND_NEARLINE)  {
-                fmd.isCached = true;
-            }
-        }
-	try {
-	    GetFileSpaceTokensMessage msg =
-                new GetFileSpaceTokensMessage(pnfsId);
-            msg = _spaceManagerStub.sendAndWait(msg);
+            requestedAttributes.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
 
-            if (msg.getSpaceTokens() != null) {
-                fmd.spaceTokens = new long[msg.getSpaceTokens().length];
-                System.arraycopy(msg.getSpaceTokens(), 0,
-                                 fmd.spaceTokens, 0,
-                                 msg.getSpaceTokens().length);
-            }
-        } catch (TimeoutCacheException e) {
-            _log.error("Failed to retrieve space reservation tokens for file "+
-                       fullPath+" ("+pnfsId+"): SrmSpaceManager timed out");
+            Set<AccessMask> accessMask =
+                read
+                ? EnumSet.of(AccessMask.READ_DATA)
+                : EnumSet.noneOf(AccessMask.class);
 
-        } catch (CacheException e) {
-            if (e.getRc()!=0) {
-                _log.error("Failed to retrieve space reservation tokens for file "+
-                           fullPath+"("+pnfsId+"): " + e.getMessage());
-            }
-            else {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Failed to retrieve space reservation tokens for file "+
-                               fullPath+"("+pnfsId+"): " + e.getMessage());
+            FileAttributes attributes =
+                handler.getFileAttributes(fullPath,
+                                          requestedAttributes,
+                                          accessMask);
+            FileMetaData fmd = new DcacheFileMetaData(attributes);
+
+            /* Determine file locality.
+             */
+            if (attributes.getFileType() != FileType.DIR) {
+                PoolManagerGetFileLocalityMessage message =
+                    new PoolManagerGetFileLocalityMessage(attributes,
+                                                          config.getSrmHost());
+                FileLocality locality =
+                    _poolManagerStub.sendAndWait(message).getFileLocality();
+                fmd.locality = locality.toTFileLocality();
+                switch (locality) {
+                case NEARLINE:
+                case ONLINE_AND_NEARLINE:
+                    fmd.isCached = true;
                 }
             }
-        } catch (RuntimeException e) {
-	    _log.error("getFileMetaData failed", e);
-        } catch (Exception e) {
-	    _log.warn("getFileMetaData failed: " + e);
-	}
-        return fmd;
+
+            /* Determine space tokens.
+             */
+            try {
+                GetFileSpaceTokensMessage msg =
+                    new GetFileSpaceTokensMessage(attributes.getPnfsId());
+                msg = _spaceManagerStub.sendAndWait(msg);
+
+                if (msg.getSpaceTokens() != null) {
+                    fmd.spaceTokens = new long[msg.getSpaceTokens().length];
+                    System.arraycopy(msg.getSpaceTokens(), 0,
+                                     fmd.spaceTokens, 0,
+                                     msg.getSpaceTokens().length);
+                }
+            } catch (TimeoutCacheException e) {
+                /* SpaceManager is optional, so we don't clasify this
+                 * as an error.
+                 */
+                _log.info(e.getMessage());
+            }
+
+            return fmd;
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
+        } catch (PermissionDeniedCacheException e) {
+            throw new SRMAuthorizationException(e.getMessage(), e);
+        } catch (DirNotExistsCacheException e) {
+            throw new SRMInvalidPathException(e.getMessage(), e);
+        } catch (FileNotFoundCacheException e) {
+            throw new SRMInvalidPathException(e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMException("Could not get storage info by path: " +
+                                   e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new SRMInternalErrorException("Operation interrupted", e);
+        }
     }
 
     private final Map<Long,String> idToUserMap =
@@ -2776,6 +2699,7 @@ public final class Storage
         if (verbose) {
             required.add(LOCATIONS);
         }
+        required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
         final String prefix =
             !directory.endsWith("/") ? directory + "/" : directory;
         final List<FileMetaData> result = new ArrayList<FileMetaData>();
@@ -2796,26 +2720,32 @@ public final class Storage
                     if (verbose && attributes.getFileType() != FileType.DIR) {
                         PnfsId pnfsId = attributes.getPnfsId();
                         try {
-                            fmd.locality = getFileLocality(attributes);
-                            if (fmd.locality == TFileLocality.NEARLINE ||
-                                fmd.locality == TFileLocality.ONLINE_AND_NEARLINE)  {
+                            PoolManagerGetFileLocalityMessage localityMsg =
+                                new PoolManagerGetFileLocalityMessage(attributes, config.getSrmHost());
+                            FileLocality locality =
+                                _poolManagerStub.sendAndWait(localityMsg).getFileLocality();
+                            fmd.locality = locality.toTFileLocality();
+                            switch (locality) {
+                            case NEARLINE:
+                            case ONLINE_AND_NEARLINE:
                                 fmd.isCached = true;
                             }
-                        }
-                        catch (SRMException e) {
-                            throw new RuntimeException(e);
-                        }
-                        try {
-                            GetFileSpaceTokensMessage msg =
-                                new GetFileSpaceTokensMessage(pnfsId);
-                            msg = _spaceManagerStub.sendAndWait(msg);
-                            fmd.spaceTokens = msg.getSpaceTokens();
+
+                            try {
+                                GetFileSpaceTokensMessage tokensMsg =
+                                    new GetFileSpaceTokensMessage(pnfsId);
+                                fmd.spaceTokens =
+                                    _spaceManagerStub.sendAndWait(tokensMsg).getSpaceTokens();
+                            } catch (TimeoutCacheException e) {
+                                /* SpaceManager is optional, so we
+                                 * don't clasify this as an error.
+                                 */
+                                _log.info(e.getMessage());
+                            }
                         } catch (TimeoutCacheException e) {
-                            _log.error("Failed to retrieve space tokens for "
-                                       + pnfsId + ": SrmSpaceManager timed out");
+                            _log.error(e.getMessage());
                         } catch (CacheException e) {
-                            _log.error("Failed to retrieve space tokens for "
-                                       + pnfsId + ": " + e.getMessage());
+                            _log.error(e.getMessage());
                         } catch (InterruptedException e) {
                             /* Propagate the interrupt to the caller.
                              */
