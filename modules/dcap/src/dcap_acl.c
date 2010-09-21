@@ -15,6 +15,7 @@
 #include "dcap.h"
 #include "gettrace.h"
 #include "node_plays.h"
+#include "debug_level.h"
 
 #if defined(HAVE_ACL) || defined(HAVE_FACL)
 
