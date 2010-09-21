@@ -19,9 +19,11 @@ import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Version;
+import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
@@ -41,6 +43,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+import diskCacheV111.vehicles.PoolManagerGetFileLocalityMessage;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -55,6 +58,8 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileType;
 
 public class PoolManagerV5
     extends AbstractCellComponent
@@ -558,6 +563,66 @@ public class PoolManagerV5
                                 null)));
         msg.setSucceeded();
         return msg;
+    }
+
+    private FileLocality
+        getFileLocality(PoolManagerGetFileLocalityMessage message)
+        throws CacheException
+    {
+        FileAttributes attributes = message.getFileAttributes();
+
+        if (attributes.getFileType() == FileType.DIR ||
+            attributes.getSize() == 0) {
+            return FileLocality.NONE;
+        }
+
+        StorageInfo storageInfo = attributes.getStorageInfo();
+        PoolPreferenceLevel[] levels =
+            _selectionUnit.match(DirectionType.READ,
+                                 message.getClient(),
+                                 "*/*",
+                                 storageInfo,
+                                 null);
+
+        Collection<String> locations = attributes.getLocations();
+        for (PoolPreferenceLevel level: levels) {
+            if (!Collections.disjoint(level.getPoolList(), locations)) {
+                return (storageInfo.isStored()
+                        ? FileLocality.ONLINE_AND_NEARLINE
+                        : FileLocality.ONLINE);
+            }
+        }
+
+        if (storageInfo.isStored()) {
+            return FileLocality.NEARLINE;
+        }
+
+        for (String name: locations) {
+            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
+            if (pool == null || !pool.canReadForP2P()) {
+                continue;
+            }
+
+            PoolCostInfo cost = _costModule.getPoolCostInfo(name);
+            if (cost == null) {
+                continue;
+            }
+
+            // REVISIT: This check should be integrated into
+            // SelectionPool.canReadForP2P
+            if (cost.getP2pQueue().getMaxActive() > 0){
+                return FileLocality.NEARLINE;
+            }
+        }
+        return FileLocality.UNAVAILABLE;
+    }
+
+    public PoolManagerGetFileLocalityMessage
+        messageArrived(PoolManagerGetFileLocalityMessage message)
+        throws CacheException
+    {
+        message.setFileLocality(getFileLocality(message));
+        return message;
     }
 
     private static class XProtocolInfo implements IpProtocolInfo {
