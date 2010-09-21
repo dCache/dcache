@@ -374,7 +374,7 @@ char * dc_fgets(char *s, int size, FILE *fp)
 	struct vsp_node *node;
 	int i;
 	char c;
-	int n;
+	int n=0;
 	char *rs;
 
 	node = get_vsp_node(FILE_NO(fp));
