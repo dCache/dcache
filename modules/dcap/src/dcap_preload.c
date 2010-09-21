@@ -80,6 +80,12 @@ int _xstat(int i, const char *p, struct stat *s)
 	dc_debug(DC_TRACE, "Running preloaded _xstat for %s", p);
 	return dc_stat(p, s);
 }
+#else
+int stat(const char *p, struct stat *s)
+{
+	dc_debug(DC_TRACE, "Running preloaded stat for %s", p);
+	return dc_stat(p, s);
+}
 #endif /* HAVE__XSTAT */
 
 int __xstat(int i, const char *p, struct stat *s)
@@ -92,6 +98,12 @@ int __xstat(int i, const char *p, struct stat *s)
 int _lxstat(int i, const char *p, struct stat *s)
 {
 	dc_debug(DC_TRACE, "Running preloaded _lxstat for %s", p);
+	return dc_lstat(p, s);
+}
+#else
+int lstat(const char *p, struct stat *s)
+{
+	dc_debug(DC_TRACE, "Running preloaded lstat for %s", p);
 	return dc_lstat(p, s);
 }
 #endif /* HAVE__LXSTAT */
@@ -108,31 +120,17 @@ int _fxstat(int i, int fd, struct stat *s)
 	dc_debug(DC_TRACE, "Running preloaded _fxstat for [%d]", fd);
 	return dc_fstat(fd, s);
 }
+#else
+int fstat(int fd, struct stat *s)
+{
+	dc_debug(DC_TRACE, "Running preloaded fstat for [%d]", fd);
+	return dc_fstat(fd, s);
+}
 #endif /* HAVE__FXSTAT */
 
 int __fxstat(int i, int fd, struct stat *s)
 {
 	dc_debug(DC_TRACE, "Running preloaded __fxstat for [%d]", fd);
-	return dc_fstat(fd, s);
-}
-
-
-int stat(const char *p, struct stat *s)
-{
-	dc_debug(DC_TRACE, "Running preloaded stat for %s", p);
-	return dc_stat(p, s);
-}
-
-
-int lstat(const char *p, struct stat *s)
-{
-	dc_debug(DC_TRACE, "Running preloaded lstat for %s", p);
-	return dc_lstat(p, s);
-}
-
-int fstat(int fd, struct stat *s)
-{
-	dc_debug(DC_TRACE, "Running preloaded fstat for [%d]", fd);
 	return dc_fstat(fd, s);
 }
 

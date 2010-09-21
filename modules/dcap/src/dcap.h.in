@@ -23,6 +23,7 @@
 
 #include <stdio.h> /* needed for FILE */
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/uio.h> /* needed for readv/writev */
 
 #include <fcntl.h>
