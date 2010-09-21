@@ -107,6 +107,7 @@ import org.dcache.util.ChecksumType;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
+import org.dcache.srm.v2_2.TFileLocality;
 
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -143,6 +144,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         isRegular = false;
         isDirectory = false;
         isLink = false;
+        locality = TFileLocality.NONE;
 
         for (FileAttribute attribute: attributes.getDefinedAttributes()) {
             switch (attribute) {
