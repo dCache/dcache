@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 		dc_perror("Can't open source file");
 		return -1;
 	}
-	dest = dc_open( argv[optind+1], O_WRONLY|O_CREAT|O_TRUNC, sbuf.st_mode & 0777|S_IWUSR);
+	dest = dc_open( argv[optind+1], O_WRONLY|O_CREAT|O_TRUNC, (sbuf.st_mode & 0777) | S_IWUSR);
 	if( dest < 0 ) {
 		dc_perror("Can't open destination file");
 		dc_close(src);
