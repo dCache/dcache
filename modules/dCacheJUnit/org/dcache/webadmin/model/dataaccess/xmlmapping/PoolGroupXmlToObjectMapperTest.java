@@ -1,5 +1,6 @@
-package org.dcache.webadmin.model.dataaccess.xmlprocessing;
+package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
+import org.dcache.webadmin.model.dataaccess.xmlmapping.PoolGroupXmlToObjectMapper;
 import java.util.Set;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.dcache.webadmin.model.exceptions.ParsingException;
@@ -11,13 +12,13 @@ import static org.junit.Assert.*;
  *
  * @author jans
  */
-public class PoolGroupXMLProcessorTest {
+public class PoolGroupXmlToObjectMapperTest {
 
-    public PoolGroupXMLProcessor _processor = null;
+    public PoolGroupXmlToObjectMapper _processor = null;
 
     @Before
     public void setUp() {
-        _processor = new PoolGroupXMLProcessor();
+        _processor = new PoolGroupXmlToObjectMapper();
     }
 
     @Test
