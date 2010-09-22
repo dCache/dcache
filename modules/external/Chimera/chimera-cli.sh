@@ -26,8 +26,10 @@ if [ ! -d "$DCACHE_HOME" ]; then
     exit 2
 fi
 
-${DCACHE_HOME}/share/lib/loadConfig.sh -q
+. ${DCACHE_HOME}/share/lib/loadConfig.sh -q
 
-CLASSPATH="$(getProperty dcache.paths.classpath)" \
+PATH_TO_LOGBACK_CONF=$(getProperty dcache.paths.etc)
+
+CLASSPATH="$(getProperty dcache.paths.classpath):$PATH_TO_LOGBACK_CONF" \
     ${JAVA} $(getProperty dcache.java.options) \
     org.dcache.chimera.examples.cli.${command} ${DCACHE_CONFIG}/chimera-config.xml $*
