@@ -222,7 +222,6 @@ public final class LsRequest extends ContainerRequest {
                 throws SRMException ,java.sql.SQLException {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
-                response.setRequestToken(getTRequestToken());
                 if (!response.getReturnStatus().getStatusCode().isProcessing()) {
                     ArrayOfTMetaDataPathDetail details =
                         new ArrayOfTMetaDataPathDetail();
@@ -230,6 +229,7 @@ public final class LsRequest extends ContainerRequest {
                     response.setDetails(details);
                 } else {
                     response.setDetails(null);
+                    response.setRequestToken(getTRequestToken());
                 }
                 return response;
         }
