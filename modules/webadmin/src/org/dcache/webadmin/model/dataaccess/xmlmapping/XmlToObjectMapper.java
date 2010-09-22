@@ -53,9 +53,7 @@ public abstract class XmlToObjectMapper {
     public Document createXMLDocument(String xmlContent)
             throws ParsingException {
         try {
-            if (_log.isDebugEnabled()) {
-//                _log.debug("xml-String received: {}", xmlContent);
-            }
+            _log.debug("xml-String received: {}", xmlContent);
             String contentCopy = xmlContent;
             if (contentCopy.isEmpty()) {
                 contentCopy = EMPTY_DOCUMENT_CONTENT;
