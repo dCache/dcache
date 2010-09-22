@@ -26,7 +26,7 @@ if [ ! -d "$DCACHE_HOME" ]; then
     exit 2
 fi
 
-${DCACHE_HOME}/share/lib/loadConfig.sh -q
+. ${DCACHE_HOME}/share/lib/loadConfig.sh -q
 
 CLASSPATH="$(getProperty dcache.paths.classpath)" \
     ${JAVA} $(getProperty dcache.java.options) \
