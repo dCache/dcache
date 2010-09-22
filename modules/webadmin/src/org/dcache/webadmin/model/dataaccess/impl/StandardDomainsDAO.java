@@ -15,7 +15,7 @@ import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.C
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
-import org.dcache.webadmin.model.dataaccess.xmlprocessing.DomainsXMLProcessor;
+import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
 import org.dcache.webadmin.model.exceptions.ParsingException;
@@ -37,7 +37,7 @@ public class StandardDomainsDAO implements DomainsDAO {
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
     public static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardDomainsDAO.class);
-    private DomainsXMLProcessor _xmlToObjectMapper = new DomainsXMLProcessor();
+    private DomainsXmlToObjectMapper _xmlToObjectMapper = new DomainsXmlToObjectMapper();
     private CommandSenderFactory _commandSenderFactory;
 
     public StandardDomainsDAO(CommandSenderFactory commandSenderFactory) {
