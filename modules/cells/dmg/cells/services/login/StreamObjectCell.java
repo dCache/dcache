@@ -21,6 +21,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import dmg.util.CommandExitException;
+import dmg.util.CommandSyntaxException;
 import dmg.util.StreamEngine;
 import javax.security.auth.Subject;
 import dmg.util.Subjects;
@@ -456,7 +457,20 @@ public class StreamObjectCell
                 done = (result instanceof CommandExitException);
             }
             if (result != null) {
-                String s = result.toString();
+                String s;
+                if (result instanceof CommandSyntaxException) {
+                    CommandSyntaxException e = (CommandSyntaxException) result;
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("Syntax error: " + e.getMessage() + "\n");
+                    String help  = e.getHelpText();
+                    if (help != null) {
+                        sb.append("Help : \n");
+                        sb.append(help);
+                    }
+                    s = sb.toString();
+                } else {
+                    s = result.toString();
+                }
                 if (!s.isEmpty()){
                     console.printString(s);
                     if (s.charAt(s.length() - 1) != '\n') {
