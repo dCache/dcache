@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	int  src, dest;
 	struct stat64 sbuf, sbuf2;
 	time_t starttime, endtime, copy_time;
-	off64_t size;
+	off64_t size=0;
 	size_t buffer_size = DEFAULT_BUFFER; /* transfer buffer size */
 	int rc ;
 	char filename[MAXPATHLEN],*inpfile, *outfile;
