@@ -28,8 +28,7 @@ fi
 
 . ${DCACHE_HOME}/share/lib/loadConfig.sh -q
 
-PATH_TO_LOGBACK_CONF=$(getProperty dcache.paths.etc)
-
-CLASSPATH="$(getProperty dcache.paths.classpath):$PATH_TO_LOGBACK_CONF" \
+CLASSPATH="$(getProperty dcache.paths.classpath)" \
     ${JAVA} $(getProperty dcache.java.options) \
+    "-Dlogback.configurationFile=$(getProperty dcache.paths.share)/xml/logback-cli.xml" \
     org.dcache.chimera.examples.cli.${command} ${DCACHE_CONFIG}/chimera-config.xml $*
