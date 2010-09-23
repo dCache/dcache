@@ -37,7 +37,6 @@
 
 /* Local function prototypes */
 static int char2dirent64(const char *, struct dirent64 *);
-static int char2dirent(const char *, struct dirent *);
 
 
 #if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
@@ -291,57 +290,6 @@ void dc_seekdir(DIR *dir, off_t offset)
 		pnfsid:type(f,d,u):name len:name
 */
 int char2dirent64(const char *line, struct dirent64 *ent)
-{
-
-	char *s;
-	char *ss;
-
-	/* valid entry have to be at least 5 character */
-	if( (line == NULL) || (strlen(line) < 5) ) {
-		return 0;
-	}
-
-
-	if( ent == NULL ) {
-		return 0;
-	}
-
-
-	s = strchr(line, RD_SEPARATOR);
-	if( s == NULL ) {
-		return 0;
-	}
-
-	s++;
-#if defined(__linux__) || defined(__GNU__) || defined(__FreeBSD_kernel__)
-	switch(s[0]){
-		case 'f' :
-			ent->d_type = DT_REG;
-			break;
-		case 'd' :
-			ent->d_type = DT_DIR;
-			break;
-		default:
-			ent->d_type = DT_UNKNOWN;
-	}
-#endif
-	/* move pointer to the <name len>  */
-	s +=2;
-
-
-	ss = strrchr(line, RD_SEPARATOR);
-	++ss;
-
-
-	memcpy(ent->d_name, ss, strlen(ss));
-	ent->d_name[strlen(ss)] = '\0';
-
-	ent->d_reclen = sizeof(ent);
-
-	return 1;
-}
-
-int char2dirent(const char *line, struct dirent *ent)
 {
 
 	char *s;
