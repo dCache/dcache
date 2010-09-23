@@ -252,6 +252,11 @@ public class JettyCell extends AbstractCell {
         public void handle(String target, Request baseRequest,
                 HttpServletRequest request, HttpServletResponse response) throws
                 IOException, ServletException {
+//          redirect Root Context To Webadmin
+            if (target.equals("/")) {
+                response.sendRedirect("/webadmin");
+                return;
+            }
             String[] contexts = target.split("/");
             if (isContextLegacyOne(contexts)) {
                 _log.debug("target: {}", target);
