@@ -57,7 +57,7 @@ __dc_errno()
 	}
 	m_unlock(&kLock);
 
-	t_getspecific(err_key, (void **)&en);
+	t_getspecific(err_key, &en);
 	if( en == NULL ) {
 		en = calloc(1, sizeof(int));
 		t_setspecific(err_key, (void *)en);
@@ -79,7 +79,7 @@ __dc_srvMessage()
 	}
 	m_unlock(&kLock);
 
-	t_getspecific(srvMessage_key, (void **)&msg);
+	t_getspecific(srvMessage_key, &msg);
 	if ( msg == NULL ) {
 		msg = calloc(1,sizeof(char *));
 		t_setspecific(srvMessage_key, (void *)msg);
@@ -100,7 +100,7 @@ static char * dc_errno2srvMessage()
 	}
 	m_unlock(&kLock);
 
-	t_getspecific(srvMessagePtr_key, (void **)&sPtr);
+	t_getspecific(srvMessagePtr_key, &sPtr);
 	if ( sPtr == NULL ) {
 		sPtr = calloc(DC_MAX_SRV_ERR_MSG + 1,sizeof(char));
 		strcat(sPtr,"Server Error Messages");
