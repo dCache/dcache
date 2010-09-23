@@ -102,9 +102,9 @@ dc_pread64(int fd, void *buff, size_t buflen, off64_t offset)
 
 
 ssize_t
-dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
+dc_real_read( struct vsp_node *node, void *vbuff, size_t buflen)
 {
-
+	char *buff = vbuff;
 	int             tmp;
 	int32_t         readmsg[7]; /* keep one buffer for READ and SEEK_AND_READ*/
 	int              msglen;
