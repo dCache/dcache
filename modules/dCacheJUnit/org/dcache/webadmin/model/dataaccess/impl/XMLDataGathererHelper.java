@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 
@@ -18,7 +17,7 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
 public class XMLDataGathererHelper {
 
     public static final String POOL1_NAME = "myFirstPool";
-    public static final String POOL1_DOMAIN = "myFirstPoolDomain";
+    public static final String POOL1_DOMAIN = "patrickxenvm02Domain";
     public static final boolean IS_POOL1_ENABLED = true;
     public static final long POOL1_FREE_SPACE = 2147367538;
     public static final long POOL1_PRECIOUS_SPACE = 16110;
@@ -87,113 +86,6 @@ public class XMLDataGathererHelper {
             "        <metric name=\"gap\" type=\"integer\">1048576</metric>" +
             "      </space>      <poolgroups>        <poolgroupref name=\"" + POOL1_POOLGROUP1 + "\"/>" +
             "      </poolgroups>    </pool>  </pools></dCache>";
-    public static final String namedCellXmlcontent = "<?xml version=\"1.0\"?>" +
-            "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\"> " +
-            " <domains> " +
-            "  <domain name=\"dCacheDomain\"> " +
-            "   <routing> " +
-            "    <named-cells>" +
-            "          <cell name=\"PinManager\">" +
-            "<domainref name=\"utilityDomain\"/>" +
-            "         </cell>" +
-            "        <cell name=\"" + TESTCELL_NAME + "\">" +
-            "         <domainref name=\"" + TESTCELL_DOMAIN + "\"/>" +
-            "         </cell>" +
-            "        <cell name=\"GFTP-srm-devel\">" +
-            "          <domainref name=\"gridftp-srm-develDomain\"/>" +
-            "       </cell>" +
-            "      <cell name=\"info\">" +
-            "            <domainref name=\"infoDomain\"/>" +
-            "         </cell>" +
-            "        <cell name=\"DCap-srm-devel\">" +
-            "         <domainref name=\"dcap-srm-develDomain\"/>" +
-            "      </cell>" +
-            "     <cell name=\"PoolManager\">" +
-            "      <domainref name=\"dCacheDomain\"/>" +
-            "          </cell>" +
-            "         <cell name=\"acladmin\">" +
-            "          <domainref name=\"chimeraDomain\"/>" +
-            "       </cell>" +
-            "      <cell name=\"CopyManager\">" +
-            "       <domainref name=\"srm-srm-develDomain\"/>" +
-            "    </cell>" +
-            "          <cell name=\"DCap-gsi-srm-devel\">" +
-            "           <domainref name=\"gsidcap-srm-develDomain\"/>" +
-            "        </cell>" +
-            "       <cell name=\"PnfsManager\">" +
-            "            <domainref name=\"chimeraDomain\"/>" +
-            "         </cell>" +
-            "        <cell name=\"srm-devel_1\">" +
-            "         <domainref name=\"srm-develDomain\"/>" +
-            "      </cell>" +
-            "         <cell name=\"Xrootd-srm-devel\">" +
-            "            <domainref name=\"xrootd-srm-develDomain\"/>" +
-            "    </cell>" +
-            "     <cell name=\"topo\">" +
-            "        <domainref name=\"httpdDomain\"/>" +
-            "       </cell>" +
-            "        <cell name=\"SrmSpaceManager\">" +
-            "           <domainref name=\"srm-srm-develDomain\"/>" +
-            "          </cell>" +
-            "  <cell name=\"RemoteGsiftpTransferManager\">" +
-            "     <domainref name=\"srm-srm-develDomain\"/>" +
-            "    </cell>" +
-            "     <cell name=\"pam\">" +
-            "        <domainref name=\"adminDoorDomain\"/>" +
-            "       </cell>" +
-            "        <cell name=\"billing\">" +
-            "           <domainref name=\"httpdDomain\"/>" +
-            "          </cell>" +
-            "<cell name=\"gsi-pam\">" +
-            " <domainref name=\"utilityDomain\"/>" +
-            "</cell>" +
-            "	  <cell name=\"srm-LoginBroker\">" +
-            "	    <domainref name=\"httpdDomain\"/>" +
-            "	  </cell>" +
-            "	  <cell name=\"GFTP-srm-devel-Unknown-1345\">" +
-            "	    <domainref name=\"gridftp-srm-develDomain\"/>" +
-            "	  </cell>" +
-            "	  <cell name=\"dirLookupPool\">" +
-            "	    <domainref name=\"dirDomain\"/>" +
-            "	  </cell>" +
-            "<cell name=\"SRM-srm-devel\">" +
-            "	    <domainref name=\"srm-srm-develDomain\"/>" +
-            " </cell>" +
-            "	  <cell name=\"RemoteHttpTransferManager\">" +
-            "	   <domainref name=\"srm-srm-develDomain\"/>" +
-            "	  </cell>" +
-            "	  <cell name=\"cleaner\">" +
-            "	    <domainref name=\"chimeraDomain\"/>" +
-            "	  </cell>" +
-            "	  <cell name=\"Prestager\">" +
-            "	    <domainref name=\"dCacheDomain\"/>" +
-            "	  </cell>" +
-            "	  <cell name=\"srm-devel_5\"> " +
-            "            <domainref name=\"srm-develDomain\"/>" +
-            " </cell>" +
-            " <cell name=\"srm-devel_4\">" +
-            "    <domainref name=\"srm-develDomain\"/>" +
-            "   </cell>" +
-            "    <cell name=\"srm-devel_3\">" +
-            "       <domainref name=\"srm-develDomain\"/>" +
-            "      </cell>" +
-            "       <cell name=\"gPlazma\">" +
-            "          <domainref name=\"gPlazma-srm-develDomain\"/>" +
-            "         </cell>" +
-            "	 <cell name=\"LoginBroker\">" +
-            " <domainref name=\"dCacheDomain\"/>" +
-            "</cell>" +
-            " <cell name=\"srm-devel_2\">" +
-            "    <domainref name=\"srm-develDomain\"/>" +
-            "  </cell>" +
-            "   <cell name=\"TransferObserver\">" +
-            "	   <domainref name=\"httpdDomain\"/>" +
-            "	 </cell>" +
-            "    </named-cells>" +
-            "   </routing>" +
-            "  </domain>" +
-            " </domains>" +
-            "</dCache>";
     public static final String poolGroupXmlcontent = "<?xml version=\"1.0\"?>" +
             "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\">" +
             "<poolgroups>" +
@@ -833,116 +725,6 @@ public class XMLDataGathererHelper {
             "        </cell>" +
             "      </cells>" +
             "      <metric name=\"address\" type=\"string\">System@dCacheDomain</metric>" +
-            "      <routing>" +
-            "        <local>" +
-            "          <cellref name=\"PoolManager\"/>" +
-            "          <cellref name=\"Prestager\"/>" +
-            "          <cellref name=\"broadcast\"/>" +
-            "          <cellref name=\"topo\"/>" +
-            "          <cellref name=\"LoginBroker\"/>" +
-            "        </local>" +
-            "        <remote>" +
-            "          <domain name=\"dirDomain\">" +
-            "            <cellref name=\"dirLookupPool\"/>" +
-            "          </domain>" +
-            "          <domain name=\"patrickxenvm02Domain\">" +
-            "            <cellref name=\"mySecondPool\"/>" +
-            "            <cellref name=\"myFirstPool\"/>" +
-            "          </domain>" +
-            "          <domain name=\"infoDomain\">" +
-            "            <cellref name=\"info\"/>" +
-            "          </domain>" +
-            "          <domain name=\"adminDoorDomain\">" +
-            "            <cellref name=\"pam\"/>" +
-            "          </domain>" +
-            "          <domain name=\"dcap-patrickxenvm02Domain\">" +
-            "            <cellref name=\"DCap-patrickxenvm02\"/>" +
-            "          </domain>" +
-            "          <domain name=\"gPlazma-patrickxenvm02Domain\">" +
-            "            <cellref name=\"gPlazma\"/>" +
-            "          </domain>" +
-            "          <domain name=\"gridftp-patrickxenvm02Domain\">" +
-            "            <cellref name=\"GFTP-patrickxenvm02\"/>" +
-            "          </domain>" +
-            "          <domain name=\"utilityDomain\">" +
-            "            <cellref name=\"gsi-pam\"/>" +
-            "            <cellref name=\"PinManager\"/>" +
-            "          </domain>" +
-            "          <domain name=\"gsidcap-patrickxenvm02Domain\">" +
-            "            <cellref name=\"DCap-gsi-patrickxenvm02\"/>" +
-            "          </domain>" +
-            "          <domain name=\"httpdDomain\">" +
-            "            <cellref name=\"TransferObserver\"/>" +
-            "          </domain>" +
-            "          <domain name=\"namespaceDomain\">" +
-            "            <cellref name=\"PnfsManager\"/>" +
-            "            <cellref name=\"cleaner\"/>" +
-            "            <cellref name=\"acladmin\"/>" +
-            "          </domain>" +
-            "        </remote>" +
-            "        <named-cells>" +
-            "          <cell name=\"PinManager\">" +
-            "            <domainref name=\"utilityDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"PnfsManager\">" +
-            "            <domainref name=\"namespaceDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"DCap-gsi-patrickxenvm02\">" +
-            "            <domainref name=\"gsidcap-patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"topo\">" +
-            "            <domainref name=\"dCacheDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"broadcast\">" +
-            "            <domainref name=\"dCacheDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"mySecondPool\">" +
-            "            <domainref name=\"patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"myFirstPool\">" +
-            "            <domainref name=\"patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"pam\">" +
-            "            <domainref name=\"adminDoorDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"info\">" +
-            "            <domainref name=\"infoDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"gsi-pam\">" +
-            "            <domainref name=\"utilityDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"DCap-patrickxenvm02\">" +
-            "            <domainref name=\"dcap-patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"GFTP-patrickxenvm02\">" +
-            "            <domainref name=\"gridftp-patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"dirLookupPool\">" +
-            "            <domainref name=\"dirDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"PoolManager\">" +
-            "            <domainref name=\"dCacheDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"cleaner\">" +
-            "            <domainref name=\"namespaceDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"Prestager\">" +
-            "            <domainref name=\"dCacheDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"acladmin\">" +
-            "            <domainref name=\"namespaceDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"gPlazma\">" +
-            "            <domainref name=\"gPlazma-patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"LoginBroker\">" +
-            "            <domainref name=\"dCacheDomain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"TransferObserver\">" +
-            "            <domainref name=\"httpdDomain\"/>" +
-            "          </cell>" +
-            "        </named-cells>" +
-            "      </routing>" +
             "    </domain>" +
             "    <domain name=\"patrickxenvm02Domain\">" +
             "      <cells>" +
@@ -1053,20 +835,6 @@ public class XMLDataGathererHelper {
             "        </cell>" +
             "      </cells>" +
             "      <metric name=\"address\" type=\"string\">System@dCacheDomain:System@patrickxenvm02Domain</metric>" +
-            "      <routing>" +
-            "        <local>" +
-            "          <cellref name=\"mySecondPool\"/>" +
-            "          <cellref name=\"myFirstPool\"/>" +
-            "        </local>" +
-            "        <named-cells>" +
-            "          <cell name=\"mySecondPool\">" +
-            "            <domainref name=\"patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "          <cell name=\"myFirstPool\">" +
-            "            <domainref name=\"patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "        </named-cells>" +
-            "      </routing>" +
             "    </domain>" +
             "    <domain name=\"infoDomain\">" +
             "      <cells>" +
@@ -1162,16 +930,6 @@ public class XMLDataGathererHelper {
             "        </cell>" +
             "      </cells>" +
             "      <metric name=\"address\" type=\"string\">System@dCacheDomain:System@infoDomain</metric>" +
-            "      <routing>" +
-            "        <local>" +
-            "          <cellref name=\"info\"/>" +
-            "        </local>" +
-            "        <named-cells>" +
-            "          <cell name=\"info\">" +
-            "            <domainref name=\"infoDomain\"/>" +
-            "          </cell>" +
-            "        </named-cells>" +
-            "      </routing>" +
             "    </domain>" +
             "    <domain name=\"webadminDomain\">" +
             "      <cells>" +
@@ -1362,16 +1120,6 @@ public class XMLDataGathererHelper {
             "        </cell>" +
             "      </cells>" +
             "      <metric name=\"address\" type=\"string\">System@dCacheDomain:System@dcap-patrickxenvm02Domain</metric>" +
-            "      <routing>" +
-            "        <local>" +
-            "          <cellref name=\"DCap-patrickxenvm02\"/>" +
-            "        </local>" +
-            "        <named-cells>" +
-            "          <cell name=\"DCap-patrickxenvm02\">" +
-            "            <domainref name=\"dcap-patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "        </named-cells>" +
-            "      </routing>" +
             "    </domain>" +
             "    <domain name=\"gridftp-patrickxenvm02Domain\">" +
             "      <cells>" +
@@ -1467,16 +1215,6 @@ public class XMLDataGathererHelper {
             "        </cell>" +
             "      </cells>" +
             "      <metric name=\"address\" type=\"string\">System@dCacheDomain:System@gridftp-patrickxenvm02Domain</metric>" +
-            "      <routing>" +
-            "        <local>" +
-            "          <cellref name=\"GFTP-patrickxenvm02\"/>" +
-            "        </local>" +
-            "        <named-cells>" +
-            "          <cell name=\"GFTP-patrickxenvm02\">" +
-            "            <domainref name=\"gridftp-patrickxenvm02Domain\"/>" +
-            "          </cell>" +
-            "        </named-cells>" +
-            "      </routing>" +
             "    </domain>" +
             "  </domains>" +
             "</dCache>";
@@ -1519,30 +1257,6 @@ public class XMLDataGathererHelper {
         pool1.addMoverQueue(POOL1_P2PSERVER);
         pool1.setPoolGroups(POOL1_POOLGROUPS);
         return pool1;
-    }
-
-    public static Set<NamedCell> getExpectedNamedCells() {
-        Set<NamedCell> namedCells = new HashSet<NamedCell>(3);
-
-        NamedCell testNamedCell = new NamedCell();
-        testNamedCell = new NamedCell();
-        testNamedCell.setCellName(TESTCELL_NAME);
-        testNamedCell.setDomainName(TESTCELL_DOMAIN);
-
-        namedCells.add(testNamedCell);
-
-        NamedCell testNamedCell2 = new NamedCell();
-        testNamedCell2.setCellName(TESTCELL2_NAME);
-        testNamedCell2.setDomainName(TESTCELL2_DOMAIN);
-
-        namedCells.add(testNamedCell2);
-
-        NamedCell testNamedCell3 = new NamedCell();
-        testNamedCell3.setCellName(EMPTY_TESTCELL_NAME);
-        testNamedCell3.setDomainName(EMPTY_TESTCELL_DOMAIN);
-
-        namedCells.add(testNamedCell3);
-        return namedCells;
     }
 
     public static List<PoolSpaceBean> createExpectedPoolBeans() {

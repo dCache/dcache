@@ -1,9 +1,7 @@
 package org.dcache.webadmin.controller.util;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 
 /**
  * Utility for handling the NamedCells (well known cells) in the
@@ -12,11 +10,15 @@ import org.dcache.webadmin.model.businessobjects.NamedCell;
  */
 public class NamedCellUtil {
 
-    public static Map<String, NamedCell> createCellMap(Set<NamedCell> namedCells) {
-        Map<String, NamedCell> cells = new HashMap();
-        for (NamedCell currentNamedCell : namedCells) {
-            cells.put(currentNamedCell.getCellName(), currentNamedCell);
+    public static String findDomainOfUniqueCell(Map<String, List<String>> domains,
+            String cell) {
+        String domain = "";
+        for (Map.Entry<String, List<String>> entry : domains.entrySet()) {
+            if (entry.getValue().contains(cell)) {
+                domain = entry.getKey();
+                break;
+            }
         }
-        return cells;
+        return domain;
     }
 }

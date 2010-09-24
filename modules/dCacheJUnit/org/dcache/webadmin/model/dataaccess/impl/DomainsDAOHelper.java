@@ -9,7 +9,6 @@ import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.businessobjects.CellResponse;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 
 /**
  *
@@ -18,33 +17,18 @@ import org.dcache.webadmin.model.businessobjects.NamedCell;
 public class DomainsDAOHelper implements DomainsDAO {
 
     public static final String RESPONSE_FOR_ALL_RESPONSES = "dummy";
-    private Set<NamedCell> _namedCells = new HashSet<NamedCell>();
     private Map<String, List<String>> _domainsMap =
             new HashMap<String, List<String>>();
     private boolean _areAllResponsesFailure = false;
     private boolean _isThrowingExceptionOnCommandSending = false;
 
     public DomainsDAOHelper() {
-        _namedCells = XMLDataGathererHelper.getExpectedNamedCells();
-    }
-
-    public void resetNamedCells() {
-        _namedCells.clear();
-    }
-
-    public void addNamedCell(NamedCell namedCell) {
-        _namedCells.add(namedCell);
     }
 
     @Override
     public Set<CellStatus> getCellStatuses() throws DAOException {
         Set<CellStatus> cellStatuses = new HashSet<CellStatus>();
         return cellStatuses;
-    }
-
-    @Override
-    public Set<NamedCell> getNamedCells() {
-        return _namedCells;
     }
 
     @Override

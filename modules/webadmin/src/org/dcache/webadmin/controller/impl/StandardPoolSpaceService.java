@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
-import org.dcache.webadmin.controller.util.NamedCellUtil;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -41,10 +39,10 @@ public class StandardPoolSpaceService implements PoolSpaceService {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
             List<PoolSpaceBean> poolBeans = new ArrayList<PoolSpaceBean>(pools.size());
-            Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getDomainsDAO().getNamedCells());
+            Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
+
             for (Pool currentPool : pools) {
-                PoolSpaceBean newPoolBean = createPoolBean(currentPool, namedCells);
+                PoolSpaceBean newPoolBean = createPoolBean(currentPool, domainMap);
                 poolBeans.add(newPoolBean);
             }
             _log.debug("returned PoolBeans: " + poolBeans.size());
@@ -60,14 +58,9 @@ public class StandardPoolSpaceService implements PoolSpaceService {
         _daoFactory = daoFactory;
     }
 
-    private PoolSpaceBean createPoolBean(Pool pool, Map<String, NamedCell> namedCells) {
-        NamedCell currentNamedCell = namedCells.get(pool.getName());
-        if (currentNamedCell != null) {
-            return BeanDataMapper.poolModelToView(pool, currentNamedCell);
-        }
-//        if there is no match for the pool in the namedCells(perhaps
-//        not yet available etc.) fill in only the pool
-        return BeanDataMapper.poolModelToView(pool);
+    private PoolSpaceBean createPoolBean(Pool pool,
+            Map<String, List<String>> domainMap) {
+        return BeanDataMapper.poolModelToView(pool, domainMap);
     }
 
     private PoolsDAO getPoolsDAO() {

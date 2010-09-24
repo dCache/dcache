@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.CellResponse;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.dataaccess.communication.impl.StringCommandMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
@@ -29,13 +28,11 @@ import org.w3c.dom.Document;
  */
 public class StandardDomainsDAO implements DomainsDAO {
 
-    public static final String EMPTY_STRING = "";
-    public static final List<String> NAMEDCELLS_PATH = Arrays.asList("domains",
-            "dCacheDomain", "routing", "named-cells");
-    public static final List<String> DOMAINS_PATH = Arrays.asList("domains");
-    public static final List<String> DOORS_PATH = Arrays.asList("doors");
-    public static final List<String> POOLS_PATH = Arrays.asList("pools");
-    public static final String RESPONSE_FAILED = "failed";
+    private static final String EMPTY_STRING = "";
+    private static final List<String> DOMAINS_PATH = Arrays.asList("domains");
+    private static final List<String> DOORS_PATH = Arrays.asList("doors");
+    private static final List<String> POOLS_PATH = Arrays.asList("pools");
+    private static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardDomainsDAO.class);
     private DomainsXmlToObjectMapper _xmlToObjectMapper = new DomainsXmlToObjectMapper();
     private CommandSenderFactory _commandSenderFactory;
@@ -94,24 +91,6 @@ public class StandardDomainsDAO implements DomainsDAO {
         } catch (InterruptedException e) {
             throw new DataGatheringException("Interrupted during data gathering", e);
         }
-    }
-
-    @Override
-    public Set<NamedCell> getNamedCells() throws DAOException {
-        _log.debug("getNamedCells called");
-        try {
-            return tryToGetNamedCells();
-        } catch (ParsingException ex) {
-            throw new DAOException(ex);
-        } catch (DataGatheringException ex) {
-            throw new DAOException(ex);
-        }
-    }
-
-    private Set<NamedCell> tryToGetNamedCells() throws ParsingException, DataGatheringException {
-        String serialisedXML = getXmlForStatePath(NAMEDCELLS_PATH);
-        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
-        return _xmlToObjectMapper.parseNamedCellsDocument(xmlDocument);
     }
 
     @Override
