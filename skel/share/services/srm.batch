@@ -99,8 +99,6 @@ set context -c srmLsMaxNumberOfLevels                 100
 set context -c srmLsRequestThreadQueueSize            1000
 set context -c srmLsRequestThreadPoolSize             30
 set context -c srmLsRequestMaxWaitingRequests         1000
-set context -c srmLsRequestReadyQueueSize             1000
-set context -c srmLsRequestMaxReadyRequests           60
 set context -c srmLsRequestMaxNumberOfRetries         10
 set context -c srmLsRequestRetryTimeout               60000
 set context -c srmLsRequestMaxNumberOfRunningBySameOwner 100
@@ -355,8 +353,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmLsRequestThreadQueueSize=${srmLsRequestThreadQueueSize}\
         -srmLsRequestThreadPoolSize=${srmLsRequestThreadPoolSize}\
         -srmLsRequestMaxWaitingRequests=${srmLsRequestMaxWaitingRequests}\
-        -srmLsRequestReadyQueueSize=${srmLsRequestReadyQueueSize}\
-        -srmLsRequestMaxReadyRequests=${srmLsRequestMaxReadyRequests}\
         -srmLsRequestMaxNumberOfRetries=${srmLsRequestMaxNumberOfRetries}\
         -srmLsRequestRetryTimeout=${srmLsRequestRetryTimeout}\
         -srmLsRequestMaxNumberOfRunningBySameOwner=${srmLsRequestMaxNumberOfRunningBySameOwner}\
