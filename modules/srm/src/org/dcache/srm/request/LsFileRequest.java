@@ -158,6 +158,13 @@ public final class LsFileRequest extends FileRequest {
                         if (logger.isDebugEnabled()) {
                                 logger.debug("LsFileRequest.run(), TOOK "+(System.currentTimeMillis()-t0));
                         }
+                        try {
+                                getRequest().resetRetryDeltaTime();
+                        }
+                        catch(SRMInvalidRequestException ire) {
+                                logger.error(ire.toString());
+                        }
+                        setState(State.DONE, State.DONE.toString());
                 }
                 catch (Exception e) {
                         wlock();
@@ -203,18 +210,9 @@ public final class LsFileRequest extends FileRequest {
                 }
         }
 
-
-        protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
-                State state = getState();
+        @Override
+        protected void stateChanged(State oldState) {
                 logger.debug("State changed from "+oldState+" to "+getState());
-                if(state == State.READY) {
-                        try {
-                                getRequest().resetRetryDeltaTime();
-                        }
-                        catch(SRMInvalidRequestException ire) {
-                                logger.error(ire.toString());
-                        }
-                }
                 super.stateChanged(oldState);
         }
 
@@ -262,14 +260,6 @@ public final class LsFileRequest extends FileRequest {
         }
 
         public TMetaDataPathDetail getMetaDataPathDetail() {
-                if (getState()==State.READY||getState()==State.RQUEUED) {
-                        try {
-                                setState(State.DONE,State.DONE.toString());
-                        }
-                        catch(IllegalStateTransition ist) {
-                                 logger.error("Illegal State Transition : " +ist.getMessage());
-                        }
-                }
                 return metaDataPathDetail;
         }
 

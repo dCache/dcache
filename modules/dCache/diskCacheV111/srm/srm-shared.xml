@@ -202,8 +202,6 @@
     <property name="lsReqTQueueSize" value="${srmLsRequestThreadQueueSize}"/>
     <property name="lsThreadPoolSize" value="${srmLsRequestThreadPoolSize}"/>
     <property name="lsMaxWaitingRequests" value="${srmLsRequestMaxWaitingRequests}"/>
-    <property name="lsReadyQueueSize" value="${srmLsRequestReadyQueueSize}"/>
-    <property name="lsMaxReadyJobs" value="${srmLsRequestMaxReadyRequests}"/>
     <property name="lsMaxNumOfRetries"
               value="${srmLsRequestMaxNumberOfRetries}"/>
     <property name="lsRetryTimeout"
