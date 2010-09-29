@@ -9,7 +9,6 @@ import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.exceptions.PoolAdminServiceException;
 import org.dcache.webadmin.controller.util.NamedCellUtil;
 import org.dcache.webadmin.model.businessobjects.CellResponse;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -41,13 +40,12 @@ public class StandardPoolAdminService implements PoolAdminService {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
             Set<String> poolGroups = getPoolGroupDAO().getPoolGroupNames();
-            Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getDomainsDAO().getNamedCells());
+            Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
             List<PoolAdminBean> adminBeans = new ArrayList<PoolAdminBean>();
             for (String currentPoolGroup : poolGroups) {
                 PoolAdminBean newAdmin = createPoolAdminBean(
-                        currentPoolGroup, pools, namedCells);
+                        currentPoolGroup, pools, domainMap);
                 adminBeans.add(newAdmin);
             }
             return adminBeans;
@@ -74,7 +72,7 @@ public class StandardPoolAdminService implements PoolAdminService {
     }
 
     private PoolAdminBean createPoolAdminBean(String currentPoolGroup,
-            Set<Pool> pools, Map<String, NamedCell> namedCells) {
+            Set<Pool> pools, Map<String, List<String>> domainMap) {
         PoolAdminBean newAdmin = new PoolAdminBean(currentPoolGroup);
         List<SelectableWrapper<PoolCommandBean>> groupPools =
                 new ArrayList<SelectableWrapper<PoolCommandBean>>();
@@ -82,10 +80,8 @@ public class StandardPoolAdminService implements PoolAdminService {
             if (currentPool.getPoolGroups().contains(currentPoolGroup)) {
                 PoolCommandBean groupPool = new PoolCommandBean();
                 groupPool.setName(currentPool.getName());
-                NamedCell namedCell = namedCells.get(currentPool.getName());
-                if (namedCell != null) {
-                    groupPool.setDomain(namedCell.getDomainName());
-                }
+                groupPool.setDomain(NamedCellUtil.findDomainOfUniqueCell(domainMap,
+                        currentPool.getName()));
                 groupPools.add(new SelectableWrapper<PoolCommandBean>(groupPool));
             }
         }

@@ -1,8 +1,9 @@
 package org.dcache.webadmin.controller.util;
 
+import java.util.List;
+import java.util.Map;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
@@ -16,14 +17,15 @@ import org.dcache.webadmin.view.beans.PoolRequestQueue;
 public class BeanDataMapper {
 
     public static PoolSpaceBean poolModelToView(Pool poolBusinessObject,
-            NamedCell namedCellBusinessObject) {
+            Map<String, List<String>> domainMap) {
         PoolSpaceBean returnPoolBean = poolModelToView(poolBusinessObject);
-        returnPoolBean.setDomainName(namedCellBusinessObject.getDomainName());
-
+        returnPoolBean.setDomainName(
+                NamedCellUtil.findDomainOfUniqueCell(
+                domainMap, returnPoolBean.getName()));
         return returnPoolBean;
     }
 
-    public static PoolSpaceBean poolModelToView(Pool poolBusinessObject) {
+    private static PoolSpaceBean poolModelToView(Pool poolBusinessObject) {
         PoolSpaceBean returnPoolBean = new PoolSpaceBean();
         returnPoolBean.setEnabled(poolBusinessObject.isEnabled());
         returnPoolBean.setFreeSpace(poolBusinessObject.getFreeSpace());
@@ -36,14 +38,16 @@ public class BeanDataMapper {
     }
 
     public static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject,
-            NamedCell namedCellBusinessObject) {
+            Map<String, List<String>> domainMap) {
         PoolQueueBean returnPoolQueueBean = poolQueueModelToView(poolBusinessObject);
-        returnPoolQueueBean.setDomainName(namedCellBusinessObject.getDomainName());
+        returnPoolQueueBean.setDomainName(
+                NamedCellUtil.findDomainOfUniqueCell(
+                domainMap, returnPoolQueueBean.getName()));
 
         return returnPoolQueueBean;
     }
 
-    public static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject) {
+    private static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject) {
         PoolQueueBean returnPoolQueueBean = new PoolQueueBean();
         returnPoolQueueBean.setName(poolBusinessObject.getName());
         for (MoverQueue queue : poolBusinessObject.getMoverQueues()) {

@@ -9,9 +9,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
-import org.dcache.webadmin.controller.util.NamedCellUtil;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -43,15 +41,14 @@ public class StandardPoolGroupService implements PoolGroupService {
             Set<String> poolGroupNames = getPoolGroupDAO().getPoolGroupNames();
             _log.debug("returned pools: {} returned poolGroups: {}", pools.size(),
                     poolGroupNames.size());
-            Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getDomainsDAO().getNamedCells());
+            Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
             Set<CellStatus> cellStatuses = getDomainsDAO().getCellStatuses();
 
             List<PoolGroupBean> poolGroups = new ArrayList<PoolGroupBean>();
             for (String currentPoolGroupName : poolGroupNames) {
                 PoolGroupBean newPoolGroup = createPoolGroupBean(
-                        currentPoolGroupName, pools, namedCells, cellStatuses);
+                        currentPoolGroupName, pools, domainMap, cellStatuses);
                 poolGroups.add(newPoolGroup);
             }
             _log.debug("returned PoolGroupBeans: " + poolGroups.size());
@@ -80,15 +77,15 @@ public class StandardPoolGroupService implements PoolGroupService {
     }
 
     private PoolGroupBean createPoolGroupBean(String currentPoolGroupName,
-            Set<Pool> pools, Map<String, NamedCell> namedCells,
+            Set<Pool> pools, Map<String, List<String>> domainMap,
             Set<CellStatus> cellStatuses) {
         List<PoolSpaceBean> poolSpaces = new ArrayList<PoolSpaceBean>();
         List<PoolQueueBean> poolMovers = new ArrayList<PoolQueueBean>();
         List<CellServicesBean> poolStatuses = new ArrayList<CellServicesBean>();
         for (Pool currentPool : pools) {
             if (currentPool.isInPoolGroup(currentPoolGroupName)) {
-                poolSpaces.add(createPoolSpaceBean(currentPool, namedCells));
-                poolMovers.add(createPoolQueueBean(currentPool, namedCells));
+                poolSpaces.add(createPoolSpaceBean(currentPool, domainMap));
+                poolMovers.add(createPoolQueueBean(currentPool, domainMap));
                 poolStatuses.add(createCellServiceBean(getMatchingCellStatus(
                         currentPool, cellStatuses)));
             }
@@ -99,24 +96,14 @@ public class StandardPoolGroupService implements PoolGroupService {
         return newPoolGroup;
     }
 
-    private PoolSpaceBean createPoolSpaceBean(Pool pool, Map<String, NamedCell> namedCells) {
-        NamedCell currentNamedCell = namedCells.get(pool.getName());
-        if (currentNamedCell != null) {
-            return BeanDataMapper.poolModelToView(pool, currentNamedCell);
-        }
-//        if there is no match for the pool in the namedCells(perhaps
-//        not yet available etc.) fill in only the pool
-        return BeanDataMapper.poolModelToView(pool);
+    private PoolSpaceBean createPoolSpaceBean(Pool pool,
+            Map<String, List<String>> domainMap) {
+        return BeanDataMapper.poolModelToView(pool, domainMap);
     }
 
-    private PoolQueueBean createPoolQueueBean(Pool pool, Map<String, NamedCell> namedCells) {
-        NamedCell currentNamedCell = namedCells.get(pool.getName());
-        if (currentNamedCell != null) {
-            return BeanDataMapper.poolQueueModelToView(pool, currentNamedCell);
-        }
-//        if there is no match for the pool in the namedCells(perhaps
-//        not yet available etc.) fill in only the pool
-        return BeanDataMapper.poolQueueModelToView(pool);
+    private PoolQueueBean createPoolQueueBean(Pool pool,
+            Map<String, List<String>> domainMap) {
+        return BeanDataMapper.poolQueueModelToView(pool, domainMap);
     }
 
     private CellServicesBean createCellServiceBean(CellStatus cellStatus) {

@@ -1,10 +1,8 @@
 package org.dcache.webadmin.model.dataaccess.xmlmapping;
 
-import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import java.util.HashSet;
 import java.util.Set;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
 import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.junit.Before;
@@ -60,38 +58,12 @@ public class DomainsXmlToObjectMapperTest {
     }
 
     @Test
-    public void testCreateNamedCellXMLDocument() throws ParsingException {
-        Document document = _processor.createXMLDocument(
-                XMLDataGathererHelper.namedCellXmlcontent);
-        assertNotNull(document);
-    }
-
-    @Test
-    public void testParseNamedCellsDocument() throws ParsingException {
-        Set<NamedCell> namedCells = _processor.parseNamedCellsDocument(
-                _processor.createXMLDocument(XMLDataGathererHelper.namedCellXmlcontent));
-        assertNotNull("Set is null", namedCells);
-        assertNotSame("zero elements returned", 0, namedCells.size());
-//      look, if the specific element is in it
-        boolean isFound = false;
-        for (NamedCell expectedNamedCell : XMLDataGathererHelper.getExpectedNamedCells()) {
-            for (NamedCell currentCell : namedCells) {
-                if (expectedNamedCell.getCellName().equals(currentCell.getCellName())) {
-                    assertEquals(currentCell.getDomainName(),
-                            expectedNamedCell.getDomainName());
-                    isFound = true;
-                    break;
-                }
-            }
-        }
-        assertTrue("none of the named cells found in result", isFound);
-    }
-
-    @Test
-    public void testParseNamedCellsEmptyDocument() throws ParsingException {
-        Set<NamedCell> namedCells = _processor.parseNamedCellsDocument(
+    public void testParseDomainsMapDocument() throws ParsingException {
+        Set<CellStatus> parsedCellStatuses = _processor.parseDomainsDocument(
+                new HashSet<String>(),
+                getExpectedPoolNames(),
                 _processor.createXMLDocument(XMLDataGathererHelper.emptyXmlcontent));
-        assertEquals("more than zero elements returned", 0, namedCells.size());
+        assertTrue(parsedCellStatuses.isEmpty());
     }
 
     private Set<String> getExpectedPoolNames() {

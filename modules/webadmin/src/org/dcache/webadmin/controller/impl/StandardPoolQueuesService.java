@@ -8,8 +8,6 @@ import java.util.Set;
 import org.dcache.webadmin.controller.PoolQueuesService;
 import org.dcache.webadmin.controller.exceptions.PoolQueuesServiceException;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
-import org.dcache.webadmin.controller.util.NamedCellUtil;
-import org.dcache.webadmin.model.businessobjects.NamedCell;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -39,11 +37,11 @@ public class StandardPoolQueuesService implements PoolQueuesService {
             Set<Pool> pools = getPoolsDAO().getPools();
             _log.debug("returned pools: " + pools.size());
             List<PoolQueueBean> poolQueues = new ArrayList<PoolQueueBean>(pools.size());
-            Map<String, NamedCell> namedCells = NamedCellUtil.createCellMap(
-                    getDomainsDAO().getNamedCells());
+            Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
+
             for (Pool currentPool : pools) {
                 PoolQueueBean newPoolQueueBean = createPoolQueueBean(currentPool,
-                        namedCells);
+                        domainMap);
                 poolQueues.add(newPoolQueueBean);
             }
             _log.debug("returned PoolQueueBeans: " + poolQueues.size());
@@ -56,14 +54,9 @@ public class StandardPoolQueuesService implements PoolQueuesService {
 
     }
 
-    private PoolQueueBean createPoolQueueBean(Pool pool, Map<String, NamedCell> namedCells) {
-        NamedCell currentNamedCell = namedCells.get(pool.getName());
-        if (currentNamedCell != null) {
-            return BeanDataMapper.poolQueueModelToView(pool, currentNamedCell);
-        }
-//        if there is no match for the pool in the namedCells(perhaps
-//        not yet available etc.) fill in only the pool
-        return BeanDataMapper.poolQueueModelToView(pool);
+    private PoolQueueBean createPoolQueueBean(Pool pool,
+            Map<String, List<String>> domainMap) {
+        return BeanDataMapper.poolQueueModelToView(pool, domainMap);
     }
 
     private DomainsDAO getDomainsDAO() {
