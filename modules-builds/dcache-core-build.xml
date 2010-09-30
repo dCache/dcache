@@ -95,7 +95,6 @@
         <path refid="authz.classpath" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
-        <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/dcache.jar" />
@@ -423,14 +422,6 @@
 
         <!-- ACL -->
         <!--<copy file="${buildTop}/common/acl.properties" todir="${server.bin.dir}/config" /> -->
-
-        <!-- glite -->
-        <mkdir dir="${server.bin.dir}/classes/glite" />
-        <copy todir="${server.bin.dir}/classes/glite" flatten="true">
-            <fileset dir="${glite.untarred}">
-                <include name="**/*.jar" />
-            </fileset>
-        </copy>
 
         <!-- logback -->
         <mkdir dir="${server.bin.dir}/classes/logback" />

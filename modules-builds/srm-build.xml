@@ -35,7 +35,6 @@
     <path id="srm.classpath">
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
-        <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
@@ -52,7 +51,7 @@
     <!--
         compile srm code
     -->
-    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare,-lib.glite.untar">
+    <target name="-srm.compile" unless="srm.jar.upToDate" depends="-prepare">
 
         <mkdir dir="${srm.build.dir}" />
         <javac destdir="${srm.build.dir}" classpathref="srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">

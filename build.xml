@@ -57,7 +57,7 @@
     </target>
 
     <!-- init dirs, unpack external libraries -->
-    <target name="-prepare" depends="-init,-lib.glite.untar" />
+    <target name="-prepare" depends="-init" />
 
     <!--=======================================================================
             import component specific build modules here

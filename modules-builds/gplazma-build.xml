@@ -37,7 +37,6 @@
     <path id="gplazma.classpath">
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
-        <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />

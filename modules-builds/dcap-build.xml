@@ -18,7 +18,6 @@
 
     <path id="javatunnel.classpath">
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
-        <fileset dir="${glite.untarred}" includes="**/*.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
