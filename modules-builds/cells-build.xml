@@ -1,6 +1,6 @@
 <!-- $Id: cells-build.xml,v 1.12 2007-05-24 13:52:15 tigran Exp $ -->
 
-<project name="Cells" default="help" basedir=".">
+<project name="Cells" basedir=".">
 
 
     <!--

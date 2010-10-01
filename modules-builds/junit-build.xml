@@ -40,7 +40,7 @@
 
         <mkdir dir="${unittest.build.dir}" />
         <javac classpathref="junit.classpath" destdir="${unittest.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}" encoding="${javac.encoding}" deprecation="on">
-            <src path="${unittest.src}" />
+            <src path="${unittest.src}:${gplazma.unittest.src}" />
         </javac>
 
     </target>

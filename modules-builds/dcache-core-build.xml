@@ -1,6 +1,6 @@
 <!-- $Id: dcache-core-build.xml,v 1.45 2008-10-05 09:22:38 behrmann Exp $ -->
 
-<project name="Core" default="help" basedir=".">
+<project name="Core" basedir=".">
 
     <property name="dcache.build.dir" location="${buildDir}/dcache" />
     <!--
@@ -70,20 +70,12 @@
     <!-- Classpath for dcache.jar -->
 
     <path id="chimera.classpath">
-        <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/Chimera/chimera-core.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/Chimera/portmap.jar" />
     </path>
 
-    <path id="dcache.classpath">
-        <path refid="cells.classpath" />
-        <path refid="chimera.classpath" />
-        <path refid="dependency.classpath" />
-        <pathelement location="${classesDir}/dcache-common.jar" />
-        <pathelement location="${classesDir}/cells.jar" />
-        <pathelement location="${classesDir}/srm.jar" />
-        <pathelement location="${classesDir}/gplazma.jar" />
+    <path id="dcache.external.classpath">
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
@@ -92,17 +84,27 @@
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/dbcp/commons-pool.jar" />
         <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
-        <path refid="authz.classpath" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
-        <pathelement location="${classesDir}/dcache.jar" />
-        <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
-	<fileset dir="${libDir}/batik-1.7" includes="*.jar" />
+        <fileset dir="${libDir}/batik-1.7" includes="*.jar" />
+        <fileset dir="${libDir}/logback" includes="*.jar" />
+        <path refid="dependency.classpath" />
+        <path refid="chimera.classpath" />
+    </path>
+    <path id="dcache.classpath">
+        <path refid="cells.classpath" />
+        <path refid="authz.classpath" />
+        <path refid="dcache.external.classpath" />
+        <pathelement location="${classesDir}/dcache-common.jar" />
+        <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/srm.jar" />
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${classesDir}/dcache.jar" />
     </path>
 
 
@@ -193,7 +195,7 @@
         compile dcache code
     -->
 
-    <target name="-dcache.compile" depends="-prepare,-dcache.smc,-dcache.depend" unless="dcache.jar.upToDate-classes">
+    <target name="-dcache.compile" depends="-dcache.smc,-dcache.depend" unless="dcache.jar.upToDate-classes">
 
         <mkdir dir="${dcache.build.dir}" />
 

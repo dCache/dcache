@@ -118,7 +118,7 @@
 
         <mkdir dir="${server.bin.dir}/etc" />
         <mkdir dir="${server.bin.dir}/install" />
-        <copy file="${srm.src}/sbin/upgrade_space_manager_schema.sh" todir="${server.bin.dir}/install" />
+        <copy file="${srm.src}/../sbin/upgrade_space_manager_schema.sh" todir="${server.bin.dir}/install" />
 
     </target>
 

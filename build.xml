@@ -260,12 +260,69 @@
        <echo message="                       : use -Dtestdir=testdir/sub/subsub/" />
        <echo message="                       : to run all tests in that dir/package." />
        <echo message="" />
+       <echo message="     eclipse           : generate eclipse's .project and .classpath files." />
+       <echo message="                       : Use -Declipse.project.name=XXX to set the project name." />
+       <echo message="                       : The default value is the name of the current working directory. " />
+       <echo message="" />
        <echo message="" />
        <echo message="" />
        <echo message=" Use -Dpatch.number=XXX to change default patch number value" />
    </target>
 
 
+    <!--
+        Generate eclipse project files
+    -->
+    <target name="eclipse" description="creates eclipse .classpath and .project files"
+        depends="eclipse-classpath,eclipse-project"/>
+
+    <target name="eclipse-classpath" description="creates an eclipse .classpath file">
+        <pathconvert property="eclipse.entries" refid="dcache.external.classpath"
+ pathsep="&quot;/&gt;&#10;    &lt;classpathentry kind=&quot;lib&quot; path=&quot;" />
+
+        <echo file=".classpath"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path="${dcache-common.src}"/>
+    <classpathentry kind="src" path="${cells.src}"/>
+    <classpathentry kind="src" path="${dcache.src}"/>
+    <classpathentry kind="src" path="${gplazma.src}"/>
+    <classpathentry kind="src" path="${srm.src}"/>
+    <classpathentry kind="src" path="${srmclient.src}"/>
+    <classpathentry kind="src" path="${javatunnel.src}"/>
+    <classpathentry kind="src" path="${webadmin.src}" />
+    <classpathentry kind="src" path="${unittest.src}"/>
+    <classpathentry kind="src" path="${gplazma.unittest.src}"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+    <classpathentry kind="lib" path="${eclipse.entries}"/>
+    <classpathentry kind="output" path="${buildDir}"/>
+</classpath>
+]]>
+        </echo>
+     </target>
+
+    <target name="eclipse-project" description="creates eclipse .project file">
+        <basename property="eclipse.project.name" file="${basedir}"/>
+        <echo file=".project"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+    <name>${eclipse.project.name}</name>
+    <comment></comment>
+    <projects>
+    </projects>
+    <buildSpec>
+        <buildCommand>
+            <name>org.eclipse.jdt.core.javabuilder</name>
+            <arguments>
+            </arguments>
+        </buildCommand>
+    </buildSpec>
+    <natures>
+        <nature>org.eclipse.jdt.core.javanature</nature>
+    </natures>
+</projectDescription>
+]]>
+        </echo>
+     </target>
    <!-- ========================================================================
             DEBUG STAFF
    ==========================================================================-->
