@@ -15,7 +15,8 @@
  * $Id: dccp.c,v 1.77 2007-02-22 10:19:46 tigran Exp $
  */
 
-
+#include <sys/ioctl.h>
+#include <termios.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -25,6 +26,7 @@
 #include <errno.h>
 #include <time.h>
 #include <limits.h>
+#include <string.h>
 #ifndef WIN32
 #    include <sys/param.h>
 #    include "dcap_signal.h"
@@ -34,6 +36,8 @@ extern int getopt(int, char * const *, const char *);
 #endif
 
 #include "dcap.h"
+#include "sigfig.h"
+#include "print_size.h"
 #include "dcap_str_util.h"
 
 #define DEFAULT_BUFFER 1048570L /* 1Mb */
@@ -53,19 +57,93 @@ extern int getopt(int, char * const *, const char *);
 #define MAXPATHLEN 4096
 #endif
 
+/* Number of bytes transferred for one sweep of the activity bar */
+#define ACTIVITY_BAR_ONE_SWEEP_SIZE 107374182
+
+/* How many hash symbols should form the activity bar */
+#define ACTIVITY_BAR_SIZE 5
+
+/* Number of characters to leave blank at the end of the line.  This
+   could be zero; however, due to latency in obtaining the correct
+   window size, if the user reduces the window size then the line will
+   overflow, corrupting the output.  We leave a small gap to reduce
+   the likelihood of this happening. */
+#define END_OF_LINE_EMPTY 4
+
+/* Placeholder value for total-length when file's length is unknown */
+#define SIZE_FOR_UNKNOWN_TRANSFER_LENGTH 0
+
+/* The width of window to assume when cannot establish the terminal's
+   actual width */
+#define DEFAULT_TERMINAL_WIDTH 80
+
+/* Number of items we could potentially put in the line output */
+#define ITEM_COUNT 3
+
+typedef enum  {
+	ett_set,
+	ett_measure
+} operation_t;
+
+typedef enum {
+	progress_set,
+	progress_finished
+} progress_op_t;
+
+typedef struct {
+  char *content;
+  int should_display;
+  int hide_order;
+  size_t length;
+} display_item_t;
+
+
+static int is_feedback_enabled;
+
+
 static void usage();
-static int copyfile(int src, int dest, size_t buffsize, off64_t  *size);
+static int copyfile(int src, int dest, size_t buffsize, off64_t  *size, off64_t total_size);
+static void hash_printing_accept_byte_count(progress_op_t op,
+                                            off64_t total_bytes,
+                                            off64_t total_size);
+static void build_output(char *buffer, int width,
+                         off64_t bytes_so_far, off64_t total_size);
+static void append_spaces_if_shrunk( char *buffer, int width);
+static void write_bytes_written(char *buffer, off64_t bytes_written,
+                                off64_t total_size);
+static void write_avr_rate(char *buffer, off64_t bytes_written,
+                           off64_t total_size);
+static void write_percent(char *buffer, off64_t bytes_written,
+                          off64_t total_size);
+static void write_percentage_progress_bar(char *buffer,
+                                          size_t progress_bar_size,
+                                          off64_t bytes_written,
+                                          off64_t total_size);
+static void write_activity_progress_bar(char *buffer, size_t progress_bar_size,
+                                        off64_t bytes_written);
+static void write_spaces( char *buffer, int count);
+static time_t elapsed_transfer_time( operation_t op);
+static int get_terminal_width();
+static int transfer_has_known_size( off64_t total_size);
+static int build_item( display_item_t *item, off64_t bytes_written,
+		       off64_t total_size, int priority, int bar_size,
+		       void (*fn)(char *buffer, off64_t bytes_written, off64_t total_size));
+static int hide_items_for_minimum_bar_size( display_item_t *item, int bar_size, int minimum_size);
+static void write_items( char *buffer, display_item_t *items);
+static int hide_items_for_minimum_bar_size( display_item_t *item, int bar_size,
+					    int minimum_size);
 
 int main(int argc, char *argv[])
 {
 
 	int  src, dest;
 	struct stat64 sbuf, sbuf2;
-	time_t starttime, endtime, copy_time;
-	off64_t size=0;
+	time_t copy_time;
+	off64_t size=0, total_size;
 	size_t buffer_size = DEFAULT_BUFFER; /* transfer buffer size */
 	int rc ;
 	char filename[MAXPATHLEN],*inpfile, *outfile;
+	char formatted_rate[12], formatted_size[12];
 	char extraOption[MAXPATHLEN];
 	char allocSpaceOption[MAXPATHLEN];
 	char *cp ;
@@ -87,7 +165,6 @@ int main(int argc, char *argv[])
 	extern char *optarg;
 	extern int optind;
 
-
 	if (argc < 3) {
 		usage();
 	}
@@ -95,7 +172,11 @@ int main(int argc, char *argv[])
 	extraOption[0] = '\0';
 	allocSpaceOption[0] = '\0';
 
-	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:cC:")) != EOF) {
+	if( getenv("DCACHE_SHOW_PROGRESS") != NULL) {
+		is_feedback_enabled = 1;
+	}
+
+	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:cC:H")) != EOF) {
 
 		switch(c) {
 			case 'd':
@@ -171,6 +252,9 @@ int main(int argc, char *argv[])
 			case 'C':
 				dc_setCloseTimeout(atoi(optarg));
 				break;
+		        case 'H':
+				is_feedback_enabled=1;
+				break;
 			case '?':
 				usage();
 
@@ -230,6 +314,9 @@ int main(int argc, char *argv[])
 			             " -alloc-size=%lld", (long long)sbuf.st_size);
 #endif
 		}
+		total_size = sbuf.st_size;
+	} else {
+		total_size = SIZE_FOR_UNKNOWN_TRANSFER_LENGTH;
 	}
 
 	dc_setExtraOption(extraOption);
@@ -289,9 +376,8 @@ int main(int argc, char *argv[])
 		dc_noCheckSum(dest);
 	}
 
-	time(&starttime);
-	rc = copyfile(src, dest, buffer_size, &size);
-	time(&endtime);
+	elapsed_transfer_time( ett_set);
+	rc = copyfile(src, dest, buffer_size, &size, total_size);
 
 	if (dc_close(src) < 0) {
 		perror("Failed to close source file");
@@ -307,10 +393,12 @@ int main(int argc, char *argv[])
 	}
 
 	if (rc != -1 )  {
-		copy_time = endtime-starttime ;
-		fprintf(stderr,"%llu bytes in %lu seconds",(off64_t)size, copy_time);
+		copy_time = elapsed_transfer_time(ett_measure);
+		dc_bytes_as_size(formatted_size, size);
+		fprintf(stderr,"%llu bytes (%s) in %lu seconds",(off64_t)size, formatted_size, copy_time);
 		if ( copy_time > 0) {
-			fprintf(stderr," (%.2f KB/sec)\n",(double)size/(double)(1024*copy_time) );
+			dc_bytes_as_size(formatted_rate, (double)size / copy_time);
+			fprintf(stderr," (%s/s)\n", formatted_rate);
 		}else{
 			fprintf(stderr,"\n");
 		}
@@ -326,7 +414,7 @@ int main(int argc, char *argv[])
 	return rc;
 }
 
-int copyfile(int src, int dest, size_t bufsize, off64_t *size)
+int copyfile(int src, int dest, size_t bufsize, off64_t *size, off64_t total_size)
 {
 	ssize_t n, m ;
 	char * cpbuf;
@@ -334,10 +422,13 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 	off64_t total_bytes = 0;
 	size_t off;
 
-
 	if ( ( cpbuf = malloc(bufsize) ) == NULL ) {
 		perror("malloc");
 		return -1;
+	}
+
+	if( is_feedback_enabled) {
+		hash_printing_accept_byte_count(progress_set, 0, total_size);
 	}
 
 	do{
@@ -358,9 +449,13 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 		if (off > 0) {
 			count = 0;
 
-			total_bytes += (off64_t)off;
-			while ((count != off) && ((m = dc_write(dest, cpbuf+count, off-count)) > 0))
+			while ((count != off) && ((m = dc_write(dest, cpbuf+count, off-count)) > 0)) {
+				total_bytes += (off64_t)m;
 				count += m;
+				if( is_feedback_enabled) {
+					hash_printing_accept_byte_count(progress_set, total_bytes, total_size);
+				}
+			}
 
 			if (m < 0) {
 				/* Write failed. */
@@ -368,13 +463,15 @@ int copyfile(int src, int dest, size_t bufsize, off64_t *size)
 				return -1;
 			}
 		}
-
 	} while (n != 0);
 
 	if(size != NULL) {
 		*size = total_bytes;
 	}
 
+	if( is_feedback_enabled) {
+		hash_printing_accept_byte_count( progress_finished, 0, 0);
+	}
 	free(cpbuf);
 	return 0;
 }
@@ -388,7 +485,7 @@ void usage()
         dc_getMinor(),
         dc_getPatch());
 
-	fprintf(stderr,"Usage:  dccp [-d <debugLevel>]  [-h <replyhostname>] [-i]\n");
+	fprintf(stderr,"Usage:  dccp [-H] [-d <debugLevel>]  [-h <replyhostname>] [-i]\n");
 	fprintf(stderr,"    [-P [-t <time in seconds>] [-l <stage location>] ]\n");
 	fprintf(stderr,"    [-a] [-b <read_ahead bufferSize>] [-B <bufferSize>]\n");
 	fprintf(stderr,"    [-X <extraOption>] [-u] [-p <first port>[:last port]]\n");
@@ -418,5 +515,317 @@ void usage()
 	fprintf(stderr, "\t-s <buffer size>              : specify TCP send buffer size.\n");
 	fprintf(stderr, "\t-c                            : disable checksum calculation.\n");
 	fprintf(stderr, "\t-C <seconds>                  : specify timeout for the 'close' operation.\n");
+	fprintf(stderr, "\t-H                            : show progress during file transfer.\n");
 	exit(1);
+}
+
+
+void hash_printing_accept_byte_count(progress_op_t op, off64_t bytes_written,
+                                     off64_t total_size)
+{
+	static char *output;
+	static size_t max_output_size;
+	int width;
+
+	switch( op) {
+	case progress_set:
+		width = get_terminal_width();
+
+		if( width >= max_output_size) {
+			max_output_size = width+1;
+			output = realloc( output, max_output_size);
+		}
+
+		build_output(output, width, bytes_written, total_size);
+		append_spaces_if_shrunk(output, width);
+		printf( "%s\r", output);
+		fflush(stdout);
+		break;
+
+	case progress_finished:
+		free(output);
+		output = NULL;
+		max_output_size = 0;
+		printf( "\n");
+		break;
+	}
+}
+
+/* Add spaces to block out stale output */
+void append_spaces_if_shrunk( char *buffer, int width)
+{
+	static size_t previous;
+	size_t current;
+	int count, max_spaces;
+
+	current = strlen( buffer);
+	max_spaces = width - current;
+
+	if( previous > current) {
+		count = (previous-current) < max_spaces ? (previous-current) : \
+		        max_spaces;
+		write_spaces( &buffer [current], count);
+	}
+
+	previous = current;
+}
+
+void write_spaces( char *buffer, int count)
+{
+	char *p = buffer;
+	int i;
+
+	for( i = 0; i < count; i++) {
+		p [i] = ' ';
+	}
+
+	p [i] = '\0';
+}
+
+void build_output( char *buffer, int width, off64_t bytes_written,
+                   off64_t total_size)
+{
+	int bar_size = width - END_OF_LINE_EMPTY;
+	display_item_t item [ITEM_COUNT];
+
+	if( transfer_has_known_size( total_size)) {
+		bar_size = build_item( &item[0], bytes_written, total_size, 0,
+		                       bar_size, write_percent);
+	} else {
+		item[0].should_display=0;
+	}
+
+	bar_size = build_item( &item[1], bytes_written, total_size, 1,
+			       bar_size, write_bytes_written);
+	bar_size = build_item( &item[2], bytes_written, total_size, 2,
+			       bar_size, write_avr_rate);
+
+	bar_size = hide_items_for_minimum_bar_size( item, bar_size, 20);
+
+	if( transfer_has_known_size( total_size)) {
+		write_percentage_progress_bar(buffer, bar_size, bytes_written,
+		                              total_size);
+	} else {
+		write_activity_progress_bar( buffer, bar_size, bytes_written);
+	}
+
+	write_items( buffer, item);
+}
+
+
+int build_item( display_item_t *item, off64_t bytes_written,
+		 off64_t total_size, int hide_order, int bar_size,
+		 void (*fn)(char *buffer,  off64_t bytes_written, off64_t total_size))
+{
+	char tmp[15]; /* must ensure this is big enough for all items */
+
+	fn( tmp, bytes_written, total_size);
+	item->content = strdup(tmp);
+	item->should_display = 1;
+	item->hide_order = hide_order;
+	item->length = strlen( tmp);
+	bar_size -= item->length+1;
+	return bar_size;
+}
+
+int hide_items_for_minimum_bar_size( display_item_t *items, int bar_size,
+				     int minimum_size)
+{
+	int i, cur_hide_order=0;
+	display_item_t *item;
+
+	while( bar_size < minimum_size) {
+		for( i = 0; i < ITEM_COUNT; i++) {
+			item = &items[i];
+
+			if( item->should_display &&
+			    item->hide_order == cur_hide_order) {
+				item->should_display = 0;
+				free(item->content);
+				bar_size += item->length + 1;
+				break;
+			}
+		}
+
+		if( i == ITEM_COUNT) {
+			if( cur_hide_order <  ITEM_COUNT-1)
+				cur_hide_order++;
+			else
+				break;  /* give up, we're run out of things to hide */
+		}
+	}
+
+	return bar_size;
+}
+
+
+int transfer_has_known_size( off64_t total_size)
+{
+	return total_size != SIZE_FOR_UNKNOWN_TRANSFER_LENGTH;
+}
+
+void write_items( char *buffer, display_item_t *items)
+{
+	int i;
+	display_item_t *item;
+
+	for( i = 0; i < ITEM_COUNT; i++) {
+		item = &items [i];
+		if( item->should_display) {
+			strcat( buffer, " ");
+			strcat( buffer, item->content);
+			free(item->content);
+		}
+	}
+}
+
+
+/**
+ *  Write a progress bar into the buffer that shows the percent of the
+ *  file transferred.  This overwrites any pre-existing content in
+ *  buffer, so the memory need not be initialised.  Requires
+ *  bar_size+1 bytes.
+ */
+void write_percentage_progress_bar( char *buffer, size_t bar_size,
+                                    off64_t bytes_written, off64_t total_size)
+{
+	int nhashes, i;
+	int bar_active_size = bar_size-2;  /* size, excluding '[' and ']' */
+
+	nhashes = (bar_active_size * bytes_written) / total_size;
+
+	buffer[0] = '[';
+	for( i = 0; i < nhashes; i++) {
+		buffer[i+1] = '#';
+	}
+	for( i = nhashes; i < bar_active_size; i++) {
+		buffer[i+1] = '-';
+	}
+	buffer[i+1] = ']';
+	buffer[i+2] = '\0';
+}
+
+
+/**
+ *  Write an activity bar into the buffer that indicates the flow of
+ *  data.  This overwrites any pre-existing content in buffer, so the
+ *  memory need not be initialised.  Requires bar_size+1 bytes.
+ */
+void write_activity_progress_bar( char *buffer, size_t bar_size,
+                                  off64_t bytes_written)
+{
+	int i, start, end, extra_at_start;
+	int bar_active_size = bar_size-2;  /* size, excluding '[' and ']' */
+	off64_t remainder;
+
+	remainder = bytes_written % ACTIVITY_BAR_ONE_SWEEP_SIZE;
+	start = (bar_active_size * remainder) / ACTIVITY_BAR_ONE_SWEEP_SIZE;
+	end = start + ACTIVITY_BAR_SIZE - 1;
+
+	extra_at_start = end >= bar_active_size ?  1 + end - bar_active_size : 0;
+
+	buffer[0] = '[';
+	for( i = 0; i < bar_active_size; i++) {
+		if( i < extra_at_start ||
+		   (i >= start && i <= end)) {
+			buffer[i+1] = '#';
+		} else {
+			buffer[i+1] = '-';
+		}
+	}
+	buffer[i+1] = ']';
+	buffer[i+2] = '\0';
+}
+
+
+/* Memory pointed to by buffer must be (at least) 10 bytes in size (9
+ * bytes for the output and 1 byte for '\0') */
+void write_bytes_written( char *buffer, off64_t bytes_written,
+                          off64_t total_size)
+{
+	char si_size[10];
+
+	dc_bytes_as_size( si_size, bytes_written);
+	strcpy( buffer, si_size);
+}
+
+/* Memory pointed to by buffer must be (at least) 14 bytes in size (13
+ * bytes for the output and 1 byte for '\0'). */
+void write_avr_rate( char *buffer, off64_t bytes_written,
+                     off64_t total_size)
+{
+	double rate;
+	char formatted_bytes[10];
+	time_t copy_time;
+
+	copy_time = elapsed_transfer_time( ett_measure);
+
+	if(copy_time > 0) {
+		/* Bytes transferred in first second, at average rate */
+		rate = ((double)bytes_written)  / copy_time;
+		dc_bytes_as_size( formatted_bytes, rate);
+		sprintf( buffer, "(%s/s)", formatted_bytes);
+	} else {
+		buffer[0] = '\0';
+	}
+}
+
+/* Memory pointed to by buffer needs to be at least 6 bytes in size (5
+ * bytes for the output and 1 byte for the '\0') */
+void write_percent(char *buffer, off64_t bytes_written, off64_t total_size)
+{
+	char percent[5];
+
+	dc_print_with_sigfig(percent, sizeof(percent), 2,
+	                     100.0*bytes_written/total_size);
+
+	sprintf(buffer, "%s%%", percent);
+}
+
+
+int get_terminal_width()
+{
+	static int fd;
+	struct winsize size;
+
+	if( fd == 0) {
+		fd = open("/dev/tty", O_RDONLY);
+	}
+
+	if( fd < 0) {
+		return DEFAULT_TERMINAL_WIDTH;
+	}
+
+	if( ioctl(fd, TIOCGWINSZ, &size) < 0) {
+		close(fd);
+		fd = -1;
+		return DEFAULT_TERMINAL_WIDTH;
+	}
+
+	return size.ws_col;
+}
+
+
+/**
+ * A simple timer mechansim: calling ett_set (re-)sets the timer
+ * (returns zero); calling with ett_measure returns elapsed time, in
+ * seconds, since the last call to ett_set.
+ */
+time_t elapsed_transfer_time( operation_t op)
+{
+	static time_t start_time;
+	time_t now, retval=0;
+
+	switch( op) {
+	case ett_set:
+		time(&start_time);
+		break;
+
+	case ett_measure:
+		time(&now);
+		retval = now - start_time;
+		break;
+	}
+
+	return retval;
 }
