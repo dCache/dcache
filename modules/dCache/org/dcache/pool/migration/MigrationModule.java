@@ -598,7 +598,7 @@ public class MigrationModule
         int concurrency = Integer.valueOf(args.argv(1));
         Job job = getJob(id);
         job.setConcurrency(concurrency);
-        return String.format("[%d] Concurrency set to %d", id, concurrency);
+        return String.format("[%s] Concurrency set to %d", id, concurrency);
     }
 
     public final static String hh_migration_copy = "[options] <target> ...";
