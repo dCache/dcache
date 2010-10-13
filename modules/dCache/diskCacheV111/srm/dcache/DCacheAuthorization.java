@@ -140,10 +140,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import org.dcache.auth.*;
-import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.Origin.AuthType;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
@@ -155,6 +152,8 @@ import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import javax.security.auth.Subject;
 
@@ -201,7 +200,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
      *            not authorized to access/use the resource.
      */
     public SRMUser authorize(Long requestCredentialId,
-        String secureId,String name, GSSContext gsscontext)
+        String secureId,String name, GSSContext gsscontext, String remoteIP)
     throws SRMAuthorizationException {
 
         AuthorizationRecord user_rec = null;
@@ -238,7 +237,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         }
 
         if(user_rec  == null){
-            user_rec = authorize(secureId, gsscontext, name);
+            user_rec = authorize(secureId, gsscontext, name, remoteIP);
 
             /* Persist the authorization record. This is the place
              * in which we resolve conflicts in id generation.
@@ -274,7 +273,8 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
     private AuthorizationRecord authorize(String secureId,
                                           GSSContext serviceContext,
-                                          String name)
+                                          String name,
+                                          String remoteIP)
         throws SRMAuthorizationException
     {
         try {
@@ -299,6 +299,17 @@ public final class DCacheAuthorization implements SRMAuthorization {
                 subject.getPrincipals().add(new GlobusPrincipal(secureId));
             }
             subject.getPublicCredentials().add(chain);
+
+            try {
+                InetAddress remoteOrigin = InetAddress.getByName(remoteIP);
+                subject.getPrincipals().add(new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+                                                      remoteOrigin));
+                _logAuth.debug("User connected from the following IP, setting as origin: {}.",
+                              remoteIP);
+            } catch (UnknownHostException uhex) {
+                _logAuth.info("Could not add the remote-IP {} as an origin principal.",
+                              remoteIP);
+            }
 
             AuthorizationRecord authRecord =
                 new AuthorizationRecord(loginStrategy.login(subject));
@@ -379,7 +390,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         List grplistcoll = new LinkedList<GroupList>();
         GroupList grplist = new GroupList();
         List grpcoll = new LinkedList<Group>();
-        int[] GIDs = ((UserAuthRecord) legacyAuthRec).GIDs;
+        int[] GIDs = legacyAuthRec.GIDs;
         for (int gid : GIDs) {
             Group grp = new Group();
             grp.setGroupList(grplist);

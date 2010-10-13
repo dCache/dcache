@@ -1,5 +1,6 @@
 // $Id$
 
+
 /*
  * UnixfsAuthorization.java
  *
@@ -13,8 +14,6 @@
 
 package org.dcache.srm.unixfs;
 
-import java.net.Socket;
-
 import org.dcache.srm.unixfs.KAuthFile;
 import org.dcache.srm.unixfs.UserAuthRecord;
 
@@ -22,13 +21,16 @@ import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMUser;
 
-import org.dcache.srm.SRMUser;
 import org.ietf.jgss.GSSContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class UnixfsAuthorization implements SRMAuthorization {
 
-    // private Hashtable users = new Hashtable ();
     private static UnixfsAuthorization srmauthorization;
+    private static Logger logger =
+        LoggerFactory.getLogger(UnixfsAuthorization.class);
+
     private String kAuthFileName;
 
     /** Creates a new instance of SRMAuthorization */
@@ -45,32 +47,18 @@ public final class UnixfsAuthorization implements SRMAuthorization {
      * @exception <code>SRMAuthorizationException</code> if the peer is
      *            not authorized to access/use the resource.
      */
-    public SRMUser authorize(Long requestCredentialId, String secureId,String name, GSSContext context)
+    public SRMUser authorize(Long requestCredentialId, String secureId,String name, GSSContext context,
+                             String remoteIP)
     throws SRMAuthorizationException {
   /** @todo -- javadoc, there is no such arg 'chain' */
         UserAuthRecord user_rec = authorize(secureId,name);
+        logger.debug("Received authorization request from remote IP {}", remoteIP);
         String username = user_rec.Username;
         String root = user_rec.Root;
         int uid = user_rec.UID;
         int gid = user_rec.GID;
-/*        JobCreator creator = JobCreator.getJobCreator(username);
-        if(creator != null) {
-            if( ! (creator instanceof UnixfsUser) ) {
-                throw new SRMAuthorizationException(" job creator with name "+username+
-                " exists and is not an instance of UnixfsUser !!!");
-            }
-            UnixfsUser user = (UnixfsUser) creator;
-            if ( username.equals( user.getName()) &&
-                 root.equals(user.getRoot()) &&
-                 uid == user.getUid() &&
-                 gid == user.getGid() ){
-                return user;
-            }
-            System.err.println(" Warning: user parameters for user "+ user+ " have changed ");
-        }
- */
+
         UnixfsUser user = new UnixfsUser(username,root,uid,gid);
-       // user.saveCreator();
         return user;
 
     }
