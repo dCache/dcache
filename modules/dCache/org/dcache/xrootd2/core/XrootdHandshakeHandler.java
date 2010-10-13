@@ -2,16 +2,17 @@ package org.dcache.xrootd2.core;
 
 import java.util.Arrays;
 
+
 import static org.jboss.netty.channel.Channels.*;
 import static org.jboss.netty.buffer.ChannelBuffers.*;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 
 import org.dcache.xrootd2.protocol.messages.AbstractRequestMessage;
 import org.dcache.xrootd2.protocol.messages.HandshakeRequest;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * are passed on. Failure to handshake causes the channel to be
  * closed.
  */
-@ChannelPipelineCoverage("one")
+@Sharable
 public class XrootdHandshakeHandler extends SimpleChannelHandler
 {
     private final static Logger _log =

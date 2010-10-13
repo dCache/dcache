@@ -1,8 +1,8 @@
 package org.dcache.xrootd2.core;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
+
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
  * Default respons to all requests is kXR_Unsupported. Sub-classes
  * may override handler methods to implement request handling.
  */
-@ChannelPipelineCoverage("all")
 public class XrootdRequestHandler extends IdleStateAwareChannelHandler
 {
     private final static Logger _log =
