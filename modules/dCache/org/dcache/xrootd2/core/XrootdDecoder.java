@@ -5,6 +5,8 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
@@ -18,6 +20,9 @@ import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
  */
 public class XrootdDecoder extends FrameDecoder
 {
+    private final static Logger _logger =
+        LoggerFactory.getLogger(XrootdDecoder.class);
+
     private boolean gotHandshake = false;
 
     @Override
@@ -45,7 +50,16 @@ public class XrootdDecoder extends FrameDecoder
         }
 
         int pos = buffer.readerIndex();
-        int length = CLIENT_REQUEST_LEN + buffer.getInt(pos + 20);
+        int headerFrameLength = buffer.getInt(pos + 20);
+
+        if (headerFrameLength < 0) {
+            _logger.error("Received illegal frame length in xrootd header: {}."
+                          + " Closing channel.", headerFrameLength);
+            channel.close();
+            return null;
+        }
+
+        int length = CLIENT_REQUEST_LEN + headerFrameLength;
 
         if (readable < length) {
             return null;
