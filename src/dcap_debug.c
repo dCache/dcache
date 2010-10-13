@@ -41,6 +41,8 @@ static int debug_stream = -1;
 /* Local function prototypes */
 static void init_dc_debug();
 static int string2debugLevel( const char *str);
+static void emit_debug(const char *format, va_list ap);
+static void conditional_initialize();
 
 void dc_setDebugLevel(unsigned int newLevel)
 {
@@ -109,33 +111,51 @@ void dc_setStrDebugLevel(const char *str)
 
 }
 
-#define MAX_MESSAGE_LEN 2048
-
-void dc_debug(unsigned int level, const char *str, ...)
+void dc_debug(unsigned int level, const char *format, ...)
 {
 	va_list args;
+
+	if(dc_is_debug_level_enabled(level)) {
+		va_start(args, format);
+		emit_debug(format, args);
+		va_end(args);
+	}
+}
+
+void dc_vdebug(unsigned int level, const char *format, va_list ap)
+{
+	if(dc_is_debug_level_enabled(level)) {
+		emit_debug(format, ap);
+	}
+}
+
+int dc_is_debug_level_enabled( unsigned int level)
+{
+	conditional_initialize();
+
+	return level & debugLevel;
+}
+
+void conditional_initialize()
+{
+	if(debug_stream == -1) {
+		init_dc_debug();
+	}
+}
+
+
+void emit_debug(const char *format, va_list ap)
+{
 	char msg[MAX_MESSAGE_LEN];
 	int len;
 
-	if(debug_stream == -1) {
-		/* initialize debug enviroment DCACHE_DEBUG and DCACHE_DEBUG_FILE */
-		init_dc_debug();
-	}
-
-	if(level & debugLevel) {
-
-		va_start(args, str);
 #ifndef WIN32
-		len = vsnprintf(msg, MAX_MESSAGE_LEN,  str, args);
+	len = vsnprintf(msg, MAX_MESSAGE_LEN, format, ap);
 #else
-		len = vsprintf(msg, str, args);
+	len = vsprintf(msg, format, ap);
 #endif
-		va_end(args);
-		system_write(debug_stream, msg, len);
-		system_write(debug_stream, "\n", 1);
-	}
-
-	return;
+	system_write(debug_stream, msg, len);
+	system_write(debug_stream, "\n", 1);
 }
 
 

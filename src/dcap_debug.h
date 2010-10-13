@@ -20,6 +20,10 @@
 
 #include "debug_level.h"
 
+#define MAX_MESSAGE_LEN 2048
+
 extern void dc_setRecoveryDebugLevel();
+void dc_vdebug(unsigned int level, const char *format, va_list ap);
+int dc_is_debug_level_enabled( unsigned int level);
 
 #endif				/* _DCAP_DEBUG_H_ */
