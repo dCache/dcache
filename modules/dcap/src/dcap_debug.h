@@ -18,6 +18,8 @@
 #ifndef _DCAP_DEBUG_H_
 #define _DCAP_DEBUG_H_
 
+#include <stdarg.h>
+
 #include "debug_level.h"
 
 #define MAX_MESSAGE_LEN 2048
