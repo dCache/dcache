@@ -1,0 +1,204 @@
+<html>
+	<head>
+		<title>CoG JGlobus: Configuring</title>
+		<style>
+			body {
+				width: 60%;
+			}
+			h1, h3 {
+				color: #cc0000; 
+				font-family: Arial, Helvetica, sans-serif;
+			}
+			h2 {
+				font-family: Arial, Helvetica, sans-serif;
+			}
+			li>a {
+				color: #003390;
+				font-family: Arial, Helvetica, sans-serif;
+				font-weight: bold;
+				font-size: 120%;
+			}
+			p, li {
+				font-family: Arial, Helvetica, sans-serif;
+			}
+			pre {
+				padding: 8px 8px 8px 8px;
+				background-color: #c6dafc;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Configuring</h1>
+		<h2>Table of Contents</h2>
+		<ol>
+			<li><a href="#trusted-certificates-location">Trusted certificates location</a></li>
+  			<li><a href="#signing-policy-location">Signing policy location</a></li>
+  			<li><a href="#user-certificate-location">User certificate location</a></li>
+  			<li><a href="#user-private-key-location">User private key location</a></li>
+  			<li><a href="#proxy-certificate-location">Proxy certificate location</a></li>
+  			<li><a href="#public-ip-address">Public IP address</a></li>
+  			<li><a href="#tcp-port-range">TCP port range</a></li>
+            <li><a href="#delegationCacheLifetime">Delegation Key-pair Cache Lifetime</a></li>
+		</ol>
+		
+		<p>In general no extra configuration is required to use Java CoG Kit. 
+		However, in certain cases additional configuration might be required. 
+		The Java CoG Kit configuration file is placed in $HOME/.globus/cog.properties 
+		on Unix/Linux machines or %USERPROFILE%\.globus\cog.properties on Windows machines.</p>
+		
+		<ol>
+			<li>
+				<a name="trusted-certificates-location"></a>
+				<h3>Trusted certificates location</h3>
+				<p>Trusted certificates can be configured as described below 
+				and are loaded in the specified order:</p>
+				<ol>
+					<li>
+						Property cacerts in configuration file cog.properties file can 
+						be used to set the trusted certificates. The value of the property 
+						is a list of comma-separated CA certificates or directories of 
+						certificates. Example:
+
+<pre>cacert = /home/gawor/MyCaCert.pem, /etc/grid-security/certificates/</pre>
+
+						If a directory is specified in the list, all certificate files within 
+						that directory with .0 extension will be loaded.
+					</li>
+					<li>
+						The system property X509_CERT_DIR can be used to configured trusted 
+						certificates. It is used if the cog.properties file is not found or 
+						the cacert property is not set
+					</li>
+					<li>
+						Trusted certificates can be placed in ${user.home}/.globus/certificates 
+						directory. If system property is not set, this location is checked.
+					</li>
+					<li>
+						The certificates can be placed in /etc/grid-security/certificates directory. 
+						This directory is checked on Unix/Linux machines if certificates are not 
+						found as described in previous steps.
+					</li> 
+				</ol>
+				<p>If one of the above directories with certificates is found, all the 
+				certificates in that directory will be loaded and used. If no directory 
+				is found, JGlobus will not work.</p>
+			</li>
+  			<li>
+  				<a name="signing-policy-location"></a>
+  				<h3>Signing policy location</h3>
+  				<p>Signing policies are read in from the same directory as trusted 
+  				certificates. All files with the .signing_policy extension in the same 
+  				directory as trusted certificates are loaded for processing. 
+  				By default signing policies are required and enforced.</p>
+
+				<p>Signing policy enforcement can be disabled by setting a system 
+				property java.security.gsi.signing.policy to "no" or "false".</p>
+
+				<p>Details on signing policy grammar support is outlined 
+				<a href="http://dev.globus.org/wiki/Signing_Policy">here</a>.</p>
+  			</li>
+  			<li>
+  				<a name="user-certificate-location"></a>
+  				<h3>User certificate location</h3>
+  				<p>User certificate can be configured as described below and an 
+  				attempt is made to find the file in the order specified:</p>
+  				<ol>
+					<li>Location of the file can be specified as value of property 
+					usercert in configuration file cog.properties</li>
+					<li>Location of the user certificate can be set as value of 
+					environment variable X509_USER_CERT. This property is used if 
+					cog.properties file is not configured or the usercert property 
+					is not specified in the file.</li>
+					<li>The certificate can be placed in default location 
+					${user.home}/.globus/usercert.pem. If none of the above configuration 
+					is found, the library defaults to this location.</li> 
+				</ol>
+  			</li>
+  			<li>
+  				<a name="user-private-key-location"></a>
+  				<h3>User private key location</h3>
+  				<p>User private key can be configured as described below and an 
+  				attempt is made to find the file in the order specified:</p>
+  				<ol>
+					<li>Location of the file can be specified as value of property 
+					userkey in configuration file cog.properties</li>
+					<li>Location of the user private key can be set as value of 
+					environment variable X509_USER_KEY. This property is used if 
+					cog.properties file is not configured or the userkey property 
+					is not specified in the file.</li>
+					<li>The private key can be placed in default location 
+					${user.home}/.globus/userkey.pem. If none of the above configuration 
+					is found, the library defaults to this location.<li>
+				</ol> 
+  			</li>
+  			<li>
+  				<a name="proxy-certificate-location"></a>
+  				<h3>Proxy certificate location</h3>
+  				<p>Proxy file can be configured as described below and an attempt 
+  				is made to find the file in the order specified:</p>
+  				
+  				<ol>
+					<li>Location of the file can be specified as value of property proxy
+					in configuration file cog.properties</li>
+					<li>Location of the proxy can be set as value of environment 
+					variable X509_USER_PROXY. This property is used if cog.properties 
+					file is not configured or the proxy property is not specified in the file.</li>
+					<li>If the above configuration is not used, then the library looks for proxy
+					in default location using the following rules:
+						<ul>
+							<li>If a UID system property is set, and running on a Unix/Linux 
+							machine it returns /tmp/x509up_u${UID}.</li>
+							<li>If on any other machine than Unix/Linux,it returns 
+							${tempdir}/x509up_u${UID}, where tempdir is a platform-specific 
+							temporary directory as indicated by the java.io.tmpdir 
+							system property.</li>
+							<li>If a UID system property is not set, the username will be used
+							instead of the UID. That is, it returns ${tempdir}/x509up_u_${username}</li>
+						</ul>
+					</li>
+				</ol> 
+  			</li>
+  			<li>
+  				<a name="public-ip-address"></a>
+  				<h3>Public IP address</h3>
+  				<p>Sometimes, especially on machines with DHCP enabled, the local IP 
+  				address of the machine might be incorrectly detected by Java or the 
+  				wrong non-public IP address might be used if behind a NAT router or 
+  				on VPN. To configure the public IP address used by Java CoG Kit, add 
+  				the following line to the configuration file:</p>
+
+<pre>ip=&lt;current ip&gt;</pre>
+
+				<p>This has the same effect as setting the GLOBUS_HOSTNAME environment 
+				property or Java system property.</p>
+  			</li>
+  			<li>
+  				<a name="tcp-port-range"></a>
+  				<h3>TCP port range</h3>
+  				<p>Sometimes it is necessary to restrict the listening port numbers 
+  				that Java CoG Toolkit will use. To set the port range in the 
+  				configuration file, just add the following line:</p>
+
+<pre>tcp.port.range=&lt;min&gt;,&lt;max&gt;</pre>
+
+				<p>This has the same effect as setting the GLOBUS_TCP_PORT_RANGE 
+				environment property or Java system property.</p>
+  			</li>
+
+            <li>
+                <a name="delegationCacheLifetime"></a>
+                <h3> Delegation Key Pair Cache</h3>
+                <p> GSI SSL allows a client to optionally delegate its credential to the server.
+                    To improve performance, the server can optionally configure a delegation key pair cache.
+                    A single cache is maintained per JVM and by default no caching is done. To configure the cache,
+                    a cache lifetime property as described below needs to be set to be a value greater than zero.
+                    <ul>
+                <li>A system property, org.globus.jglobus.delegation.cache.lifetime, set to the desired cache lifetime, in seconds.</li>
+                <li>Same property as above set in COG Properties file. The system property takes precedence over the properties file.</li>
+                    </ul>
+
+                </p>
+            </li>
+		</ol>		
+	</body>
+</html>

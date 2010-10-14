@@ -1,0 +1,6 @@
+&
+ (executable=/bin/env)
+ (directory=/homes/gawor)
+ (argument=-l)
+ (environment=(MIS $(GLOBUSRUN_GASS_URL) ) )
+

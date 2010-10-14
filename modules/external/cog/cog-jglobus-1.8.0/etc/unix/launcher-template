@@ -1,0 +1,63 @@
+#! /bin/sh 
+
+EXEC=@class@
+OPTIONS=
+
+updateOptions() {
+ 
+    if [ "X$2" != "X" ] ; then
+	OPTIONS="$OPTIONS -D$1=$2"
+    fi
+
+}
+
+####### MAIN BODY ##########
+
+if [ ! -d "$COG_INSTALL_PATH" ] ; then
+    echo "Error: COG_INSTALL_PATH not set" 1>&2
+    exit 1
+fi
+
+CONFIG=${COG_INSTALL_PATH}/etc/java.cfg
+
+if [ -r "${CONFIG}" ] ; then
+   . "${CONFIG}"
+else
+   echo "Error: Cannot find ${CONFIG} configuration file"
+   exit
+fi
+
+### SETUP OTHER ENV VARIABLES ####
+
+updateOptions "GLOBUS_HOSTNAME" "$GLOBUS_HOSTNAME"
+updateOptions "GLOBUS_TCP_PORT_RANGE" "$GLOBUS_TCP_PORT_RANGE"
+updateOptions "GLOBUS_TCP_SOURCE_PORT_RANGE" "$GLOBUS_TCP_SOURCE_PORT_RANGE"
+
+if [ "X$IBM_JAVA_OPTIONS" = "X" ] ; then
+  IBM_JAVA_OPTIONS=-Xquickstart
+  export IBM_JAVA_OPTIONS
+fi
+
+### EXECUTE ############
+
+LDAP_JARS=-Xbootclasspath/p:$COG_INSTALL_PATH/lib/providerutil.jar:$COG_INSTALL_PATH/lib/ldap.jar
+
+if [ $# -gt 0 ]; then
+ set - ${OPTIONS} ${COG_OPTS} "${LDAP_JARS}" -classpath "${LOCALCLASSPATH}" ${EXEC} "$@"
+else
+ set - ${OPTIONS} ${COG_OPTS} "${LDAP_JARS}" -classpath "${LOCALCLASSPATH}" ${EXEC}
+fi
+
+if [ "X$GLOBUS_LOCATION" != "X" ] ; then
+  set - -DGLOBUS_LOCATION="$GLOBUS_LOCATION" "$@"
+fi
+
+if [ "X$X509_USER_PROXY" != "X" ] ; then
+  set - -DX509_USER_PROXY="$X509_USER_PROXY" "$@"
+fi
+
+if [ "X$X509_CERT_DIR" != "X" ] ; then
+  set - -DX509_CERT_DIR="$X509_CERT_DIR" "$@"
+fi
+
+exec java "$@"

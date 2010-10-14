@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="org/globus/mds/gsi/jndi/SaslClientFactoryWrapper.java|org/globus/mds/gsi/jndi/SaslClientWrapper.java" kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-logging-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/cryptix.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/cryptix32.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/cryptix-asn1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jce-jdk13-131.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jgss.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/junit.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.13.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/puretls.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="src/org/globus/mds/gsi/netscape/ldapjdk-patched.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>

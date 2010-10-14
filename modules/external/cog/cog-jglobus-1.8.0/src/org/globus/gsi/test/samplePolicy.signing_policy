@@ -1,0 +1,37 @@
+# ca-signing-policy.conf
+#
+# This is the configuration file describing the policy for what CAs are
+# allowed to sign whose certificates.
+#
+# This file is parsed from start to finish with a given CA and subject
+# name.
+# subject names may include the following wildcard characters:
+#    *    Matches any number of characters.
+#    ?    Matches any single character.
+#
+# CA names must be specified (no wildcards). Names containing whitespaces
+# must be included in single quotes, e.g. 'Certification Authority'. 
+# Names must not contain new line symbols. 
+# The value of condition attribute is represented as a set of regular 
+# expressions. Each regular expression must be included in double quotes.  
+#
+# This policy file dictates the following policy:
+#   -The Globus CA can sign certificates for the Globus or the Alliance
+#   -The Alliance CA can sign certificates for the Alliance (note that
+#    this may not be the real DN for the Alliance CA).
+#
+# Format:
+#------------------------------------------------------------------------
+#  token type  | def.authority |                value              
+#--------------|---------------|-----------------------------------------
+# ACL entry #1 |
+
+# Globus CA rights
+ access_id_CA      X509         '/C=US/O=Globus/CN=Globus Certification Authority'
+ pos_rights        globus        CA:sign
+ cond_subjects     globus       '"/C=us/O=Globus/*"  "/C=US/O=Globus/*"'
+# Alliance CA rights
+ access_id_CA      X509         '/C=US/O=National Computational Science Alliance/CN=Globus Certification Authority'
+ pos_rights        globus        CA:sign
+ cond_subjects     globus       '"/C=us/O=National Computational Science Alliance/*"'
+# End of ca-signing-policy.conf

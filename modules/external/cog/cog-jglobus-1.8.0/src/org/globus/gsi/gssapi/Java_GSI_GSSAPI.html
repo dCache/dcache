@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html><head><title>Java GSI GSS-API Features and Limitations</title><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body><big><big>Java GSI GSS-API &nbsp;Implementation Features and Limitations</big></big><br>
+<br>
+The Java GSI implementation is an implementation of the Java GSS-API. It supports the <a href="http://www.ggf.org/security/gsi/draft-ggf-gss-extensions-07.pdf">GSS-API extensions</a> and the <a href="http://www.ggf.org/security/gsi/draft-ggf-gsi-proxy-04.pdf">new proxy certificate format</a> specifications as defined by the <a href="http://www.ggf.org/">Global Grid Forum</a>. <br>
+The implementation is based on the <a href="http://www.rtfm.com/puretls/">PureTLS library</a> (for SSL API) and the <a href="http://www.bouncycastle.org/">BouncyCastle library</a> (for certificate processing API).<br>
+<br>
+<b>Features</b>:<br>
+<ul>
+  <li>Implements Java GSS-API</li>
+  <ul>
+    <li>wrap/unwrap support SSL and GSI wrapped tokens (GSI_BIG QoP)</li>
+    <li>getMIC/verifyMIC support large blocks <br>
+    </li>
+  </ul>
+  <li>Implements most of the GSS-Extensions including:</li>
+  <ul>
+    <li>Context options</li>
+    <ul>
+      <li>Supports PROTECTION_FAIL_ON_CONTEXT_EXPIRATION (in Java GSI GSS-API called CHECK_CONTEXT_EXPIRATION)</li>
+      <li>Supports DISALLOW_ENCRYPTION (but through other means than context option)</li>
+      <li>Defined additional options:&nbsp;</li>
+      <ul>
+        <li>GSS_MODE</li>
+        <li>DELEGATION_TYPE</li>
+        <li>REJECT_LIMITED_PROXY</li>
+        <li>REQUIRE_CLIENT_AUTH</li>
+      </ul>
+    </ul>
+    <li>Delegation API</li>
+    <ul>
+      <li>both wrapped and unwrapped mode (SSL compatible mode)<br>
+      </li>
+    </ul>
+    <li>Import and export of credential</li>
+    <ul>
+      <li>both opaque and mechanism specific data import/export<br>
+      </li>
+    </ul>
+  </ul>
+  <li>Supports GSI and SSL compatibility mode (set via context option interface - GSS_MODE)</li>
+  <li>Supports limited and full delegation both using initSecContext/acceptSecContext
+and initDelegation/acceptDelegation methods (set via context option interface
+- DELEGATION_TYPE)</li>
+  <li>Supports enabling / disabling checking of peer credential  for limited proxy.<br>
+  </li>
+  <li>Supports enabling / disabling client authentication for acceptors (set via context option interface - REQUIRE_CLIENT_AUTH)</li>
+  <li>Supports checking GSSAPI credential usage, setting/getting context lifetime</li>
+  <li>Supports anonymous authentication and anonymous credentials</li>
+  <li>Supports internationalization of error messages</li><li>Supports authorization check (on the initiating side, hostbased service, identity, etc.)<br>
+  </li>
+<li>Support certificate extension checking (certificate chain validation is performed by the&nbsp;<i>ProxyPathValidation</i> library)</li>
+  <ul>
+    <li>BasicConstraints and KeyUsage certificate extension are checked.</li>
+    <li>Any certificates with unsupported critical extensions will be rejected. <br>
+    </li>
+  </ul>
+</ul>
+<b>Limitations:</b>
+<ul>
+  <li>No GAA support. Additional certificate chain validation is performed by the <i>ProxyPathValidation</i> library (this is performed after the SSL library verified the chain)</li>
+  <ul>
+    
+  </ul>
+  <li>Only looks for a proxy file when asked to load default credentials.</li>
+  <li>Does not support protection key parameter to credential import and export API</li>
+
+  <li>Does not support extensions parameters in the delegation API</li>
+  <li>There
+is a few unimplemented methods (e.g.in GSSContext: getWrapSizeLimit(),&nbsp;
+export(), isTransferable(), etc) All unimplemented methods return GSSException.UNAVAILABLE
+error and are marked as unimplemented in JavaDoc. Most of stream based operations
+defined in Java GSS-API are not implemented (but can be implemented easily)</li>
+  
+  <li>The org.ietf.jgss.Oid is not completely implemented (this might be
+a problem if the library is used with Java 1.3.x, that class is built in
+with Java 1.4.x)</li>
+</ul>
+<b>Versions of software used:</b>
+<ul>
+  <li>PureTLS: puretls-0.9b4 with a few custom modifications</li>
+  <li>Cryptix: 3.2 (PureTLS depends on it)</li>
+  <li>Cryptix ASN.1 Kit (Custom version provided by PureTLS)<br>
+  </li>
+  <li>
+BouncyCastle: 1.17<br>
+</li>
+</ul>
+<br>
+</body></html>

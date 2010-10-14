@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>org.globus.gass.server package</title>
+<!--
+    $Id: package.html,v 1.3 2000/02/10 03:58:16 rehn Exp $
+-->
+</head>
+<body bgcolor="white">
+
+Provides a pure Java Globus GASS server for
+transferring files via HTTPS.
+<p>
+
+The server is multi-threaded and accepts HTTPS connection from GASS
+clients to copy from, copy to, and append to files that are local to the
+server.
+<p>
+
+This version has not been fully tested against the full GASS protocol,
+but works for all cases tested with <tt>globus-url-copy</tt>.
+
+<h2>Package Specification</h2>
+
+(none)
+
+<h2>Related Documentation</h2>
+
+The following classes are used by the org.globus.gass.server class:
+<ul>
+    <li><a href="">org.globus.security.Util</a>
+    <li><a href="">iaik.security.ssl.SSLSocket</a>
+    <li><a href="">iaik.security.ssl.SSLServerConnection</a>
+</ul>
+
+For overviews, tutorials, examples, guides, and tool documentation,
+please see:
+<ul>
+    <li><a href="http://www.globus.org">Globus</a>
+</ul>
+
+</body>
+</html>

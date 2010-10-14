@@ -1,0 +1,20 @@
+TODO
+====
+
+Higher Priority:
+        - Internationalize more components
+
+Lower Priority:
+	- Improve file:// url handling
+        - Fix unix scripts in the fixCommandLine thig to use ' instead of "
+        - Batch and script files to check for JAVA_HOME and if set to use it
+          otherwise just call java.
+        - Implement a couple of new programs cert-renew?
+        - Add '/' to the end of urls (look into this)
+        - Provide a generic Gass open call somewhere
+	- Continue to clean up HTTP protocol stuff - there is no 
+          need for GASSProtocol class, etc.
+        - Improve on error reporting in GASS server.
+	- Implement all Gram 1.6 features (credential refresh)
+        - Gass server: the support for redirected input streams? (and tail -f
+          functionality?)

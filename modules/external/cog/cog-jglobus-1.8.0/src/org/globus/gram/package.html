@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title>org.globus.gram package</title>
+<!--
+    $Id: package.html,v 1.6 2001/06/25 23:40:17 gawor Exp $
+-->
+</head>
+<body bgcolor="white">
+
+This library is a full implementation of the GRAM client API. It allows for submitting
+and canceling of jobs, polling for job status and sending signals to a job. The
+library enables a user to 'ping' a gatekeeper to verify if the user can authenticate
+to it. In addition, this library allows for registering and un-registering of callback
+listeners that listen for job status updates. The callbacks are implemented as Java
+events.<BR>
+Beyond the functionality of Globus, the Java GRAM API allows the specification of the
+delegation type to perform-either full or limited.
+<p>
+Notification of state changes for GRAM jobs is supported 
+by the user's class adding itself as a listener to a GramJob.  See the
+example below for more details.
+
+<h2>Example</h2>
+
+<pre>
+public class GramExample implements GramJobListener {
+
+   private someMethod() {
+     ...
+
+     String gramContact = "pitcairn.mcs.anl.gov:6722:...";
+     String rsl = "&(executable=...)(...)(...)";
+     
+     try {
+         Gram.ping(gramContact);
+     } catch (GramException e) {
+        // can't submit
+        return;
+     }
+
+     job.addListener(this);
+     // add this class as a listener for state changes
+
+     GramJob job = null;
+     try {
+        job = new GramJob(rsl);
+	Gram.request(gramContact,job);
+     } catch (GramException e) {
+        // request failed
+        ...
+     }
+
+     ...
+
+     try {
+         job.cancel();
+     } catch (GramException e) {
+       // cancel failed
+       ...
+     }
+   }
+
+   // this method must be implemented in order for the class to 
+   // implement the GramJobListener class
+   public stateChanged(GramJob job) {
+       System.out.println("Job state change \n" +
+                          "     ID   : " + job.getID() + "\n"  +
+			  "     State: " + job.getStateAsString());
+    }
+}
+</pre>
+
+<h2>Package Specification</h2>
+
+<h2>Related Documentation</h2>
+
+For overviews, tutorials, examples, guides, and tool documentation,
+please see:
+<ul>
+  <li><a href="http://www.globus.org/cog/java">Java CoG Kit</a></li>
+  <li><a href="http://www.globus.org"> Globus </a></li>
+</ul>
+
+</body>
+</html>

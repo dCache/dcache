@@ -1,0 +1,198 @@
+Index: src/org/globus/gsi/bc/BouncyCastleCertProcessingFactory.java
+===================================================================
+RCS file: /homes/dsl/cog/CVS/jglobus/src/org/globus/gsi/bc/BouncyCastleCertProcessingFactory.java,v
+retrieving revision 1.8
+diff -u -w -r1.8 BouncyCastleCertProcessingFactory.java
+--- src/org/globus/gsi/bc/BouncyCastleCertProcessingFactory.java	20 Jan 2006 20:21:25 -0000	1.8
++++ src/org/globus/gsi/bc/BouncyCastleCertProcessingFactory.java	1 Mar 2006 05:03:55 -0000
+@@ -39,15 +39,15 @@
+ import org.globus.gsi.proxy.ext.ProxyCertInfoExtension;
+ import org.globus.gsi.proxy.ext.GlobusProxyCertInfoExtension;
+ 
+-import org.bouncycastle.jce.X509V3CertificateGenerator;
++import org.bouncycastle.x509.X509V3CertificateGenerator;
+ import org.bouncycastle.jce.PKCS10CertificationRequest;
+ import org.bouncycastle.jce.provider.X509CertificateObject;
+-import org.bouncycastle.asn1.DERConstructedSet;
++import org.bouncycastle.asn1.DERSet;
+ import org.bouncycastle.asn1.DERObject;
+ import org.bouncycastle.asn1.DERBitString;
+ import org.bouncycastle.asn1.x509.X509Name;
+-import org.bouncycastle.asn1.DERInputStream;
+ import org.bouncycastle.asn1.ASN1Sequence;
++import org.bouncycastle.asn1.ASN1InputStream;
+ import org.bouncycastle.asn1.x509.TBSCertificateStructure;
+ import org.bouncycastle.asn1.x509.X509CertificateStructure;
+ import org.bouncycastle.asn1.x509.X509Extensions;
+@@ -160,7 +160,7 @@
+ 					     String cnValue) 
+ 	throws IOException, GeneralSecurityException {
+ 
+-	DERInputStream derin = new DERInputStream(certRequestInputStream);
++	ASN1InputStream derin = new ASN1InputStream(certRequestInputStream);
+ 	DERObject reqInfo = derin.readObject();
+ 	PKCS10CertificationRequest certReq = 
+ 	    new PKCS10CertificationRequest((ASN1Sequence)reqInfo);
+@@ -190,7 +190,7 @@
+      */
+     public X509Certificate loadCertificate(InputStream in)
+ 	throws IOException, GeneralSecurityException {
+-	DERInputStream derin = new DERInputStream(in);
++        ASN1InputStream derin = new ASN1InputStream(in);
+ 	DERObject certInfo = derin.readObject();
+ 	ASN1Sequence seq = ASN1Sequence.getInstance(certInfo);
+ 	return new X509CertificateObject(new X509CertificateStructure(seq));
+@@ -360,7 +360,7 @@
+ 					   String sigAlgName,
+ 					   KeyPair keyPair)
+ 	throws GeneralSecurityException {
+-	DERConstructedSet attrs = null;
++	DERSet attrs = null;
+ 	PKCS10CertificationRequest certReq = null;
+ 	certReq = new PKCS10CertificationRequest(sigAlgName,
+ 						 subjectDN,
+Index: src/org/globus/gsi/bc/BouncyCastleOpenSSLKey.java
+===================================================================
+RCS file: /homes/dsl/cog/CVS/jglobus/src/org/globus/gsi/bc/BouncyCastleOpenSSLKey.java,v
+retrieving revision 1.5
+diff -u -w -r1.5 BouncyCastleOpenSSLKey.java
+--- src/org/globus/gsi/bc/BouncyCastleOpenSSLKey.java	20 Jan 2006 20:21:25 -0000	1.5
++++ src/org/globus/gsi/bc/BouncyCastleOpenSSLKey.java	1 Mar 2006 05:03:55 -0000
+@@ -30,7 +30,7 @@
+ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+ import org.bouncycastle.asn1.DERObject;
+ import org.bouncycastle.asn1.DERObjectIdentifier;
+-import org.bouncycastle.asn1.DERInputStream;
++import org.bouncycastle.asn1.ASN1InputStream;
+ import org.bouncycastle.asn1.ASN1Sequence;
+ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+@@ -64,7 +64,7 @@
+ 	if (alg.equals("RSA")) {
+ 	    try {
+ 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
+-		DERInputStream derin = new DERInputStream(bis);
++                ASN1InputStream derin = new ASN1InputStream(bis);
+ 		DERObject keyInfo = derin.readObject();
+ 		
+ 		DERObjectIdentifier rsa_oid = PKCSObjectIdentifiers.rsaEncryption;    	   
+Index: src/org/globus/gsi/bc/BouncyCastleUtil.java
+===================================================================
+RCS file: /homes/dsl/cog/CVS/jglobus/src/org/globus/gsi/bc/BouncyCastleUtil.java,v
+retrieving revision 1.7
+diff -u -w -r1.7 BouncyCastleUtil.java
+--- src/org/globus/gsi/bc/BouncyCastleUtil.java	20 Jan 2006 20:21:25 -0000	1.7
++++ src/org/globus/gsi/bc/BouncyCastleUtil.java	1 Mar 2006 05:03:55 -0000
+@@ -33,8 +33,8 @@
+ import org.bouncycastle.asn1.ASN1Sequence;
+ import org.bouncycastle.asn1.ASN1OctetString;
+ import org.bouncycastle.asn1.ASN1Set;
++import org.bouncycastle.asn1.ASN1InputStream;
+ import org.bouncycastle.asn1.DEROutputStream;
+-import org.bouncycastle.asn1.DERInputStream;
+ import org.bouncycastle.asn1.DERObjectIdentifier;
+ import org.bouncycastle.asn1.DERString;
+ import org.bouncycastle.asn1.DERBoolean;
+@@ -86,7 +86,7 @@
+     public static DERObject toDERObject(byte[] data) 
+ 	throws IOException {
+ 	ByteArrayInputStream inStream = new ByteArrayInputStream(data);
+-	DERInputStream derInputStream = new DERInputStream(inStream);
++        ASN1InputStream derInputStream = new ASN1InputStream(inStream);
+ 	return derInputStream.readObject();
+     }
+ 
+@@ -408,7 +408,7 @@
+ 		DEREncodable value = seq.getObjectAt(0);
+ 		if (value instanceof DERInteger) {
+ 		    int length = ((DERInteger)value).getValue().intValue();
+-		    return new BasicConstraints(false, length);
++		    return new BasicConstraints(length);
+ 		} else if (value instanceof DERBoolean) {
+ 		    boolean ca = ((DERBoolean)value).isTrue();
+ 		    return new BasicConstraints(ca);
+@@ -501,7 +501,7 @@
+     public static byte[] getExtensionValue(byte [] certExtValue) 
+ 	throws IOException {
+ 	ByteArrayInputStream inStream = new ByteArrayInputStream(certExtValue);
+-	DERInputStream derInputStream = new DERInputStream(inStream);
++        ASN1InputStream derInputStream = new ASN1InputStream(inStream);
+ 	DERObject object = derInputStream.readObject();
+ 	if (object instanceof ASN1OctetString) {
+ 	    return ((ASN1OctetString)object).getOctets();
+Index: src/org/globus/gsi/bc/test/BouncyCastleCertProcessingFactoryTest.java
+===================================================================
+RCS file: /homes/dsl/cog/CVS/jglobus/src/org/globus/gsi/bc/test/BouncyCastleCertProcessingFactoryTest.java,v
+retrieving revision 1.4
+diff -u -w -r1.4 BouncyCastleCertProcessingFactoryTest.java
+--- src/org/globus/gsi/bc/test/BouncyCastleCertProcessingFactoryTest.java	20 Jan 2006 20:21:25 -0000	1.4
++++ src/org/globus/gsi/bc/test/BouncyCastleCertProcessingFactoryTest.java	1 Mar 2006 05:03:55 -0000
+@@ -92,7 +92,7 @@
+ 	ext = new X509Extension(oid, critical, expectedValue.getBytes());
+ 	extSet.add(ext);
+ 	
+-	BasicConstraints constraints = new BasicConstraints(false, 15);
++	BasicConstraints constraints = new BasicConstraints(false);
+ 	ext = new BouncyCastleX509Extension(X509Extensions.BasicConstraints.getId(),
+ 					    false, constraints);
+ 	extSet.add(ext);
+Index: src/org/globus/gsi/proxy/ext/test/ProxyCertInfoTest.java
+===================================================================
+RCS file: /homes/dsl/cog/CVS/jglobus/src/org/globus/gsi/proxy/ext/test/ProxyCertInfoTest.java,v
+retrieving revision 1.4
+diff -u -w -r1.4 ProxyCertInfoTest.java
+--- src/org/globus/gsi/proxy/ext/test/ProxyCertInfoTest.java	20 Jan 2006 20:21:28 -0000	1.4
++++ src/org/globus/gsi/proxy/ext/test/ProxyCertInfoTest.java	1 Mar 2006 05:03:56 -0000
+@@ -23,8 +23,8 @@
+ 
+ import org.bouncycastle.asn1.DERObjectIdentifier;
+ import org.bouncycastle.asn1.DEROutputStream;
+-import org.bouncycastle.asn1.DERInputStream;
+ import org.bouncycastle.asn1.DERObject;
++import org.bouncycastle.asn1.ASN1InputStream;
+ import org.bouncycastle.asn1.ASN1Sequence;
+ 
+ import junit.framework.TestCase;
+@@ -76,7 +76,7 @@
+ 
+ 	ByteArrayInputStream bIn = 
+ 	    new ByteArrayInputStream(bOut.toByteArray());
+-	DERInputStream dIn = new DERInputStream(bIn);
++	ASN1InputStream dIn = new ASN1InputStream(bIn);
+ 	DERObject obj = dIn.readObject();
+ 	
+ 	assertTrue(obj instanceof ASN1Sequence);
+@@ -125,7 +125,7 @@
+ 	
+ 	ByteArrayInputStream bIn = 
+ 	    new ByteArrayInputStream(bOut.toByteArray());
+-	DERInputStream dIn = new DERInputStream(bIn);
++	ASN1InputStream dIn = new ASN1InputStream(bIn);
+ 	DERObject obj = dIn.readObject();
+ 
+ 	ProxyCertInfo testInfo = new ProxyCertInfo((ASN1Sequence)obj);
+Index: src/org/globus/tools/GridCertRequest.java
+===================================================================
+RCS file: /homes/dsl/cog/CVS/jglobus/src/org/globus/tools/GridCertRequest.java,v
+retrieving revision 1.3
+diff -u -w -r1.3 GridCertRequest.java
+--- src/org/globus/tools/GridCertRequest.java	17 May 2005 05:28:33 -0000	1.3
++++ src/org/globus/tools/GridCertRequest.java	1 Mar 2006 05:03:57 -0000
+@@ -44,7 +44,7 @@
+ import java.security.PrivateKey;
+ import java.security.PublicKey;
+ 
+-import org.bouncycastle.asn1.DERConstructedSet;
++import org.bouncycastle.asn1.DERSet;
+ import org.bouncycastle.asn1.x509.X509Name;
+ import org.bouncycastle.jce.PKCS10CertificationRequest;
+ import org.bouncycastle.util.encoders.Base64;
+@@ -430,7 +430,7 @@
+         PublicKey pubKey = keyPair.getPublic();
+ 
+         // Generate the certificate request.        
+-        DERConstructedSet derSet = new DERConstructedSet();
++        DERSet derSet = new DERSet();
+         PKCS10CertificationRequest request =
+             new PKCS10CertificationRequest(
+                 sigAlgName,

@@ -1,0 +1,4 @@
+# CL HPCLUCY CA
+access_id_CA	X509	'/C=CY/O=CyGrid/O=HPCL/CN=CyGridCA'
+pos_rights	globus	CA:sign
+cond_subjects	globus	'"/C=CY/O=CyGrid/*"'

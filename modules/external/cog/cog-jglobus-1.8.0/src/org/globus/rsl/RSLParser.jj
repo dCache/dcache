@@ -1,0 +1,487 @@
+
+options {
+  STATIC = false;
+  LOOKAHEAD = 1;
+  FORCE_LA_CHECK = true;
+  IGNORE_CASE = true;
+}
+
+PARSER_BEGIN(RSLParser)
+
+/*
+This file is licensed under the terms of the Globus Toolkit Public
+License, found at http://www.globus.org/toolkit/download/license.html.
+*/
+package org.globus.rsl;
+
+import java.io.StringReader;
+import java.util.LinkedList;
+import java.util.ListIterator;
+
+/**
+ * Parser for the <A HREF="http://www-fp.globus.org/gram/rsl_spec1.html">
+ * Globus Resource Specification Language RSL v1.0. </A>
+ * <BR>
+ * Things that are not supported: <BR>
+ * (1) User-specified delimiter for quoted literals.<BR>
+ * (2) RSLs that only contain relations outside of 'spec-list'.<BR><BR>
+ * Other notes: <BR>
+ * (1) Implicit concatenation is not part of the 'simple value' relation 
+ * and is implemented by inspecting the white space between individual
+ * values. 
+ */
+public class RSLParser {
+	
+    private Class nodeClass = RslNode.class;
+
+  public static void main(String argv[]) throws ParseException {
+    if ((argv.length != 0) && (argv.length != 1)) {
+      System.err.println("Usage: RSL [rsl string]");
+      System.exit(1);
+    }
+
+    RSLParser parser = null;
+    if (argv.length == 0) {
+      parser = new RSLParser(System.in);
+    } else {
+      parser = new RSLParser(new StringReader(argv[0]));
+    }
+
+    parser.parse();
+  }
+
+  public static RslNode parse(String rsl) throws ParseException {
+	return (RslNode)parse(RslNode.class, rsl);
+  }
+
+  public static AbstractRslNode parse(Class rslNodeClass, String rsl) 
+	throws ParseException {
+        RSLParser parser = new RSLParser(new StringReader(rsl));
+	parser.setRslNodeClass(rslNodeClass);
+	return parser.parse();
+  }
+
+  public RSLParser(String rsl)
+	throws ParseException {
+	this(new StringReader(rsl));
+  }
+
+  public void setRslNodeClass(Class rslNodeClass) {
+	nodeClass = rslNodeClass;
+  }
+
+  private String unQuotify(String str, char quoteChar) {
+      char curChar;
+      char nextChar;
+      int size = str.length();
+      StringBuffer buf = new StringBuffer(size-2);
+	
+      for (int i=1;i<size-1;i++) {
+	curChar = str.charAt(i);
+        if (curChar == quoteChar) {
+          if (i+1 < size-1) {
+            i++;
+            nextChar = str.charAt(i);
+            if (nextChar == quoteChar) { 
+              buf.append(quoteChar);
+            } else {
+              buf.append(nextChar);
+            }
+          }
+        } else {
+          buf.append(curChar);
+        }
+      }
+      return buf.toString();
+  }
+
+  private Value concat(LinkedList tokenList) {
+    ListIterator iter = tokenList.listIterator();
+    
+    Value value, pValue, firstValue;
+
+    firstValue = (Value)iter.next();
+    pValue = firstValue;
+
+    while(iter.hasNext()) {
+      value = (Value)iter.next();
+      pValue.concat(value);
+      pValue = value;
+    }
+
+    return firstValue;
+  }
+
+  private void updateValueList(Token tok, LinkedList valueList, LinkedList tokenList) {
+	if (tok.specialToken != null && tokenList != null && tokenList.size() > 0) {
+		valueList.add( concat(tokenList) );
+		tokenList.clear();
+	} 
+  }
+ 
+  private String unQuotify(Token tok) {
+	switch(tok.kind) {
+		case DOUBLE_QUOTED_LITERAL:
+			return unQuotify(tok.image,'"');	
+		case SINGLE_QUOTED_LITERAL:
+			return unQuotify(tok.image,'\'');
+		default:
+			return tok.image;
+	}
+  }
+
+}
+
+PARSER_END(RSLParser)
+
+SPECIAL_TOKEN :
+{
+  " " | "\t" | "\r" | "\n"
+}
+
+SKIP :
+{
+  <"(*" (~["*"])* "*" ("*" | ~["*",")"] (~["*"])* "*")* ")">
+}
+
+TOKEN :
+{
+  < EQUAL : "=" > | < NOT_EQUAL : "!=" >
+  | < GREATER_THAN : ">" > | < GREATER_THAN_EQUAL : ">=" >
+  | < LESS_THAN : "<" > | < LESS_THAN_EQUAL : "<=" >
+  | < AND : "&" > | < OR : "|" > | < MULTI : "+" > 
+  | < RPAREN : "(" > | < LPAREN : ")" >
+  | < VARSTART : "$(" > 
+  | < VARIABLES : "rsl_substitution" | "rslsubstitution" >
+  | < VARIABLES_DQUOTE : "\"" "rsl_substitution" "\"" | "\"" "rslsubstitution" "\"" >
+  | < VARIABLES_SQUOTE : "'" "rsl_substitution" "'" | "'" "rslsubstitution" "'" >
+  | < #CHARACTER : ["a"-"z"] | ["A"-"Z"] >
+  | < #DIGIT : ["0"-"9"] >
+  | < #OTHER_CHAR : "_" | "-" >
+  | < UNQUOTED_LITERAL : (~["+","&","|","(",")","=","<",">",
+                          "!","\"","'","^","#","$","\n","\t"," "])+ >
+  | < DOUBLE_QUOTED_LITERAL : "\"" (~["\""] | "\"\"")* "\"" >
+  | < SINGLE_QUOTED_LITERAL : "'" (~["'"] | "''")* "'" >
+}
+
+AbstractRslNode parse() :
+{ AbstractRslNode tree; }
+{
+  ( tree = subSpecification() ) <EOF>
+	{	
+		return tree;
+	}
+}
+
+void specification(AbstractRslNode parentNode) :
+{
+  AbstractRslNode node;
+}
+{
+   ( relation(parentNode) ) 
+	{
+	}
+   | ( node = subSpecification() )
+	{
+	   parentNode.add(node);
+	}
+
+}
+
+AbstractRslNode subSpecification() :
+{
+  AbstractRslNode node = null;
+  try {
+    node = (AbstractRslNode)nodeClass.newInstance();
+  } catch(Exception e) {
+    throw new ParseException("Failed to instantiate rsl node class: " + e.getMessage());
+  }
+}
+{
+   ( "&" specList(node) ) 
+	{
+	   node.setOperator(RslNode.AND);
+	   return node;
+	}
+   | ( "+" specList(node) ) 
+	{
+	   node.setOperator(RslNode.MULTI);
+	   return node;
+	}
+   | ( "|" specList(node) )
+	{
+ 	   node.setOperator(RslNode.OR);
+	   return node;
+	}
+}
+
+void relation(AbstractRslNode node) :
+{
+  String attribute;
+  int op;
+  LinkedList values;
+  Token tok;
+  Bindings bd;
+}
+{
+  ( tok = <VARIABLES> "=" values = bindingSequence() )
+	{
+		bd = new Bindings(tok.image);
+		bd.setValues(values);
+		node.add(bd);
+	}
+  | ( tok = <VARIABLES_DQUOTE> "=" values = bindingSequence() )
+        {
+                bd = new Bindings(unQuotify(tok.image,'"'));
+                bd.setValues(values);
+                node.add(bd);
+        }
+  | ( tok = <VARIABLES_SQUOTE> "=" values = bindingSequence() )
+        {
+                bd = new Bindings(unQuotify(tok.image,'\''));
+                bd.setValues(values);
+                node.add(bd);
+        }
+  | ( attribute = attribute() op = op() values = valueSequence() )
+	{
+		NameOpValue nm = new NameOpValue(attribute, op);	
+		nm.setValues(values);
+		node.add(nm);
+	}
+}
+
+void specList(AbstractRslNode node) : 
+{
+}
+{
+  ( "(" specification(node) ")" )+
+	{
+	}
+}
+
+int op() :
+{ Token tok; }
+{
+  ( tok = <EQUAL> )
+	{
+		return NameOpValue.EQ; 
+	}
+  | (tok = <NOT_EQUAL> )
+	{
+		return NameOpValue.NEQ;
+	}
+  | (tok = <GREATER_THAN> )
+	{
+		return NameOpValue.GT;
+	}
+  | (tok = <GREATER_THAN_EQUAL> ) 
+	{
+		return NameOpValue.GTEQ;
+	}
+  | (tok = <LESS_THAN> ) 
+	{
+		return NameOpValue.LT;
+	}
+  | (tok = <LESS_THAN_EQUAL> ) 
+	{
+		return NameOpValue.LTEQ;
+	}	
+}
+
+String attribute() :
+{ String name; }
+{
+  ( name = stringLiteral() )
+    {
+      return name;
+    }
+}
+
+LinkedList valueSequence() :
+{
+  LinkedList list = new LinkedList();
+  LinkedList tokenList = new LinkedList();
+}
+{
+  ( value(list, tokenList) )+ 
+    {
+	if (tokenList.size() > 0) {
+		list.add( concat(tokenList) );
+	}
+	return list;
+    }
+}
+
+
+LinkedList bindingSequence() :
+{
+  LinkedList list = new LinkedList();
+}
+{
+  ( binding(list) )+ 
+    {
+	return list;
+    }
+}
+
+void binding(LinkedList list) :
+{
+ Value value;
+ String name;
+}
+{
+  ( "(" name = stringLiteral() value = concatSimpleValue() ")" )
+    {
+	Binding db = new Binding(name, value);
+	list.add(db);			
+    }
+}
+
+
+void value(LinkedList list, LinkedList tokenList) :
+{
+ Object value = null;
+}
+{
+  ( "(" value = valueSequence() ")" )
+    {
+	list.add(value);
+    }
+  | ( value = SimpleValue(list, tokenList) )
+    { 
+	tokenList.add(value);
+    }
+}
+
+Value SimpleValue(LinkedList valueList, LinkedList tokenList) :
+{
+ Token t1 = null;
+ Value v1 = null;
+ Value v2 = null;
+}
+{
+  ( t1 = stringToken() v2 = explicitConcat(valueList, tokenList) ) 
+	{
+		updateValueList(t1, valueList, tokenList);
+
+		Value v = new Value( unQuotify(t1) );
+		if (v2 != null) {
+			v.concat(v2);
+		}
+		return v;
+	}
+  | ( v1 = variableReference(valueList, tokenList) v2 = explicitConcat(valueList, tokenList) )
+	{
+		if (v2 != null) {
+			v1.concat(v2);
+		}
+		return v1;
+	}
+}
+
+Value variableReference(LinkedList valueList, LinkedList tokenList) :
+{
+ String name = null;
+ Value value = null;
+ Token t1;
+}
+{
+  ( t1 = <VARSTART> name = stringLiteral() [ value = concatSimpleValue() ] ")" ) 
+	{
+		updateValueList(t1, valueList, tokenList);
+
+		VarRef vr = new VarRef(name);
+	        if (value != null) vr.setDefaultValue(value);
+		return vr;
+	}
+}
+
+Value explicitConcat(LinkedList valueList, LinkedList tokenList) :
+{
+  Object v1 = null;
+  Value v2 = null;
+}
+{
+ [ "#" ( v1 = stringLiteral() | v1 = variableReference(valueList, tokenList) ) v2 = explicitConcat(valueList, tokenList) ] 
+	{
+		Value v = null;
+		if (v1 instanceof String) {
+			v = new Value( (String)v1);
+		} else if (v1 instanceof Value) {
+			v = (Value)v1;
+		}
+		if (v2 != null) {
+			v.concat(v2); 
+		}
+		return v;
+	}	
+}
+
+
+Token stringToken() :
+{ Token tok; }
+{
+  ( tok = <UNQUOTED_LITERAL> )
+    {
+      return tok;
+    }
+  | ( tok = <DOUBLE_QUOTED_LITERAL> )
+   {
+      return tok;
+    }
+  | ( tok = <SINGLE_QUOTED_LITERAL> )
+   {
+      return tok;
+   }
+}
+
+String stringLiteral() :
+{ Token tok; }
+{
+  ( tok = <UNQUOTED_LITERAL> )
+    {
+      return tok.image;
+    }
+  | ( tok = <DOUBLE_QUOTED_LITERAL> )
+   {
+      return unQuotify(tok.image,'"');
+    }
+  | ( tok = <SINGLE_QUOTED_LITERAL> )
+   {
+      return unQuotify(tok.image,'\'');
+   }
+}
+
+// -----------------------------------------------------
+
+Value concatSimpleValue() :
+{
+  LinkedList list = new LinkedList();
+  LinkedList tokenList = new LinkedList();
+}
+{
+  ( concatSimpleValueSub(list, tokenList) )+ 
+    {
+	if (tokenList.size() > 0) {
+		list.add( concat(tokenList) );
+	}
+	if (list.size() == 1) {
+		return (Value)list.getFirst();
+	} else {
+		throw new ParseException("Encountered sequence instead of a single value.");
+	}
+    }
+}
+
+
+void concatSimpleValueSub(LinkedList list, LinkedList tokenList) :
+{
+ Object value = null;
+}
+{
+  ( value = SimpleValue(list, tokenList) )
+    { 
+	tokenList.add(value);
+    }
+}
+

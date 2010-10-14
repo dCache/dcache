@@ -1,0 +1,4 @@
+# EACL INFN CA
+access_id_CA            X509    '/C=IT/O=INFN/CN=INFN Certification Authority'
+pos_rights      	globus	CA:sign
+cond_subjects   	globus	'"/C=it/O=INFN/*" "/C=IT/O=INFN/*"'

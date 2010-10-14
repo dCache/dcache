@@ -1,0 +1,186 @@
+Secure LDAP Client Notes
+========================
+
+ Introduction:
+
+   The org.globus.mds.gsi library provides hooks for both Netscape Directory
+   SDK and JNDI (with LDAP provider) for establishing secure connection with
+   GSI-enabled ldap servers such as MDS-2 server.
+
+
+ Background:
+
+   The 'hooks' that the library provides are based on the SASL protocol. 
+   SASL protocol is defined in the RFC 2222 document. The Java SASL API
+   are currently defined by the 'draft-weltman-java-sasl-05' Internet Draft.
+
+
+ Usage:
+  
+   The library is used in exactly the same manner as any other SASL mechanism.
+   See the Netscape Directory Programming Guide or JNDI Tutorial for more 
+   details on SASL authentication. The only differences are the properties
+   that can be passed to the underlying SASL mechanism. 
+
+   Please see the sample test programs for details on how to setup a secure
+   connection using JNDI or Netscape's APIs.
+
+   Properties:
+   o "javax.security.sasl.client.pkgs"
+      It specifies where to find the actual implementation of the SASL 
+      mechanism. This points to a java package where SaslClientFactory 
+      class can be found. 
+      Use "org.globus.mds.gsi.netscape" for Netscape Directory SDK
+      Use "org.globus.mds.gsi.jndi" for JNDI/LDAP provider
+
+   o "javax.security.sasl.qop"
+      It specifies what Quality-Of-Protection (QOP) to use. It is a comma
+      separated list of QOP values in preference order (the server and the
+      client will negotiate the common QOP)
+      Allowed QOP values:
+	o "auth"      - authentication only
+        o "auth-int"  - authentication with integrity protection 
+			(GSI without encryption)
+        o "auth-conf" - authentication with integrity and privacy protections
+			(GSI with encryption)
+
+      If the property is not specified, it defaults to "auth".
+
+   o GSIMechanism.SECURITY_CREDENTIALS
+      It specifies the credentials to use for SASL authentication. 
+      If the property is not set, the default credentials will be used.
+      Must be of type org.ietf.jgss.GSSCredential
+
+   o "javax.security.sasl.strength"
+      It specifies the strength of encryption. But it is currently not used
+      by the library.
+
+    
+ Netscape-specific notes:
+
+   Software Info:
+
+    The GSI SASL mechanism is designed for Netscape Directory SDK version 4.1.
+    The SDK implements version 3 of the Java SASL API I-D.
+
+   The Problem:
+
+    The Netscape library has a threading bug that sometimes will cause the
+    connection to fail. It only occurs when the negotiated QOP is "auth-conf" 
+    or "auth-int". 
+
+   Solution/Work-around:
+
+    A patched version of the Netscape library (ldapjdk-patched.jar) is 
+    distributed with Java CoG in src/org/globus/mds/gsi/netscape/ directory.
+    The source code can be downloaded from: 
+    http://www.mcs.anl.gov/~gawor/notes/
+    The patched library provides a temporary fix for this problem. The fix was
+    not extensively tested in other situations.
+
+   Other Notes:
+    1. The following error message can be safely ignored when running the
+       code with debugging mode turned on:
+       "java.net.SocketException: Resource temporarily unavailable..."
+       This error message appears when the client disconnects from the server
+       and the server immediately closes the connection with the client.
+       The SSL protocol requires 'close' messages to be exchanged between 
+       the client and the server. The LDAP protocol does not.
+
+ JNDI-specific notes:
+
+   Software Info:
+
+    The GSI SASL mechanism is designed for JNDI with LDAP provider version 
+    1.2.3. The provider implements version 5 of the JAVA SASL API I-D.
+
+   The Problem:
+
+    The provider might hang due to a Thread.interrupt() problem in JVM. It 
+    only occurs when the negotiated QOP is "auth-conf" or "auth-int".
+
+   Solution/Work-around:
+ 
+    There is no solution or work-around to this problem. The bug in each JVM 
+    must be fixed first. However, this problem does not affect Sun's 1.2.2 and
+    1.3 (with classic compiler) JVMs. J2SE 1.4 beta has the problem fixed for
+    all platforms.
+
+   Other Notes:
+
+    1. If you see this error with JVM 1.3 (occurs when negotiated QOP is 
+       "auth-conf" or "auth-int")
+
+       > javax.naming.AuthenticationException: Cannot find replace IO stream 
+         methods
+
+       Upgrade your JVM to 1.3.1 version or make sure to use the latest 
+       LDAP provider. The latest recommended version is 1.2.3.
+       If you must use 1.3, make sure to point to the latest LDAP provider
+       in the following way:
+
+       LDAP_JARS=$JNDI_HOME/lib/ldap.jar:$JNDI_HOME/lib/providerutil.jar
+       java -Xbootclasspath/p:$LDAP_JARS  YourProgram
+
+       This is because JVM 1.3 was released with an older version of the
+       LDAP JNDI provider. 
+
+       Since JVM 1.3.1 comes with LDAP provider 1.2.3, the jndi.jar
+       and ldap.jar are not needed. However, the ldabp.jar and jaas.jar 
+       that come with LDAP provider 1.2.3 distribution must be used. 
+
+       If using LDAP provider 1.2.4 version with JVM 1.3.1 the
+       ldap provider jar files must be loaded from the bootclasspath
+       as mentioned above.
+
+ General notes:
+   
+   1. The "javax.security.sasl.strength" property is not currently used.
+   2. The proper GSI SASL mechanism name is "GSS-OWNYQ6NTEOAUVGWG" according 
+      to the following I-D: 
+      http://www.ietf.org/internet-drafts/draft-ietf-cat-sasl-gssapi-05.txt
+      The "GSSAPI" mechanism name is explicitly reserved for Kerberos V5
+      SASL authentication and should not be used for any other mechanisms.
+
+ TODO:
+
+  1. Update the GSI SASL mechanism name to "GSS-OWNYQ6NTEOAUVGWG"
+  2. Provide the ability to do subject authentication or disable
+     HOST authentication.
+
+
+ Tested configurations: (with QOP "auth-conf" or "auth-int")
+    
+   JNDI: 
+    
+     Sun JVM 1.3.0 Solaris 5.8 - HANGS. 
+        o has no classic compiler
+        o hangs in all cases with HotSpot client/server and with -Xint
+
+     Sun JVM 1.2.2 Solaris 5.7 - OK
+
+     Sun JVM 1.2.2 Linux - OK
+
+     Sun JVM 1.3.0 - 1.3.1 Linux 
+       o OK with -classic
+       o HANGS with HotSpot client/server and with -Xint
+    
+     IBM JVM 1.3.0 Linux - OK
+
+   Netscape: (unmodified version 4.1)
+
+     Sun JVM 1.3.0 Solaris 5.8 - Throws an exception in all cases.
+
+     Sun JVM 1.2.2 Solaris 5.7 - OK
+
+     Sun JVM 1.2.2 Linux - OK
+
+     Sun JVM 1.3.1beta/1.3.0_02/1.3.0 Linux
+       o OK with -classic
+       o Throws an exception with HotSpot client/server and with -Xint.
+
+     IBM JVM 1.3.0 Linux - Throws an exception.
+
+   Netscape: (patched version 4.1) 
+
+     Works on every JVM tested above.
