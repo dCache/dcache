@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<psf version="2.0">
-	<provider id="org.eclipse.team.cvs.core.cvsnature">
-		<project reference="1.0,:pserver:anonymous@cvs.globus.org:/home/dsl/cog/CVS,jglobus,CoG JGlobus"/>
-	</provider>
-</psf>

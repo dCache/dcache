@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: org.globus.tools.ui.config.ConfigurationWizard
-Class-Path: commons-logging-1.1.jar log4j-1.2.13.jar jce-jdk13-131.jar puretls.jar cryptix.jar cryptix-asn1.jar cryptix32.jar
