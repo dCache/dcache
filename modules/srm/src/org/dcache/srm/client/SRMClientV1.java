@@ -82,7 +82,7 @@ import org.slf4j.LoggerFactory;
 
 public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private static final Logger logger =
-            LoggerFactory.getLogger(SRMClientV1.class);
+        LoggerFactory.getLogger(SRMClientV1.class);
     private final static String SFN_STRING="?SFN=";
     private int retries;
     private long retrytimeout;
@@ -135,18 +135,18 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     // client underneath
 
     public SRMClientV1(GlobusURL srmurl,
-            GSSCredential user_cred,
-            long retrytimeout,
-            int numberofretries,
-            boolean do_delegation,
-            boolean full_delegation,
-            String gss_expected_name,
-            String webservice_path) throws
-                IOException,InterruptedException,ServiceException{
+                       GSSCredential user_cred,
+                       long retrytimeout,
+                       int numberofretries,
+                       boolean do_delegation,
+                       boolean full_delegation,
+                       String gss_expected_name,
+                       String webservice_path) throws
+                       IOException,InterruptedException,ServiceException{
 
-	logger.debug("In Server Side: webservice_path= "+webservice_path);
+        logger.debug("In Server Side: webservice_path= "+webservice_path);
 
-	logger.debug("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
+        logger.debug("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;
         this.user_cred = user_cred;
@@ -154,7 +154,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             throw new NullPointerException("user credential is null");
         }
         try {
-	    logger.debug("user credentials are: "+user_cred.getName());
+            logger.debug("user credentials are: "+user_cred.getName());
             if(user_cred.getRemainingLifetime() < 60) {
                 throw new IOException("credential remaining lifetime is less then a minute ");
             }
@@ -202,23 +202,23 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         axis_isrm = sl.getISRM(url);
         if(axis_isrm instanceof org.apache.axis.client.Stub) {
             org.apache.axis.client.Stub axis_isrm_as_stub = (org.apache.axis.client.Stub)axis_isrm;
-       		axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_CREDENTIALS,user_cred);
-	        // sets authorization type
-                axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,
-                        new PromiscuousHostAuthorization());//HostAuthorization(gss_expected_name));
-        	//axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,org.globus.gsi.gssapi.auth.HostAuthorization.getInstance());
-                if (do_delegation) {
-                    if(full_delegation) {
-                        // sets gsi mode
-                        axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_FULL_DELEG);
-                    } else {
-                        axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_LIMITED_DELEG);
-                    }
-
-                } else {
+            axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_CREDENTIALS,user_cred);
+            // sets authorization type
+            axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,
+                    new PromiscuousHostAuthorization());//HostAuthorization(gss_expected_name));
+            //axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,org.globus.gsi.gssapi.auth.HostAuthorization.getInstance());
+            if (do_delegation) {
+                if(full_delegation) {
                     // sets gsi mode
-                    axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_NO_DELEG);
+                    axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_FULL_DELEG);
+                } else {
+                    axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_LIMITED_DELEG);
                 }
+
+            } else {
+                // sets gsi mode
+                axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_NO_DELEG);
+            }
         }
         else {
             throw new java.io.IOException("can't set properties to the axis_isrm");
@@ -226,10 +226,10 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     }
 
     public diskCacheV111.srm.RequestStatus put( String[] sources,
-    String[] dests,
-    long[] sizes,
-    boolean[] wantPerm,
-    String[] protocols ) {
+                                                String[] dests,
+                                                long[] sizes,
+                                                boolean[] wantPerm,
+                                                String[] protocols ) {
         for(int i = 0 ; i<sources.length;++i) {
             logger.debug("\tput, sources["+i+"]=\""+sources[i]+"\"");
         }
@@ -246,8 +246,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             try {
                 if(user_cred.getRemainingLifetime() < 60) {
                     throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
+                            "credential remaining lifetime is less " +
+                    "than one minute ");
                 }
             }
             catch(org.ietf.jgss.GSSException gsse) {
@@ -258,8 +258,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             try {
                 try {
                     org.dcache.srm.client.axis.RequestStatus rs =
-                       axis_isrm.put(sources, dests,
-                                     sizes, wantPerm, protocols);
+                        axis_isrm.put(sources, dests,
+                                sizes, wantPerm, protocols);
                     return ConvertUtil.axisRS2RS(rs);
                 }
                 catch(java.rmi.RemoteException re) {
@@ -296,7 +296,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             try {
                 try
                 {
-        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
+                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
                     return ConvertUtil.axisRS2RS(rs);
                 }catch(java.rmi.RemoteException re) {
                     logger.debug(re.toString());
@@ -312,8 +312,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     }
 
     public diskCacheV111.srm.RequestStatus copy( String[] srcSURLS,
-    String[] destSURLS,
-    boolean[] wantPerm ) {
+                                                 String[] destSURLS,
+                                                 boolean[] wantPerm ) {
         for(int i = 0 ; i<srcSURLS.length;++i) {
             logger.debug("\tcopy, srcSURLS["+i+"]=\""+srcSURLS[i]+"\"");
         }
@@ -413,14 +413,14 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             try {
                 try
                 {
-                      return axis_isrm.ping();
+                    return axis_isrm.ping();
                 }catch(java.rmi.RemoteException re) {
                     throw new RuntimeException (re.toString());
                 }
 
             }
             catch(RuntimeException e) {
-                    logger.error("ping: try # "+i+" failed with error "+e.getMessage());
+                logger.error("ping: try # "+i+" failed with error "+e.getMessage());
                 if(i <retries) {
                     i++;
                     logger.error("ping: try again");
@@ -456,10 +456,10 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     }
 
     public diskCacheV111.srm.RequestStatus getEstPutTime( String[] src_names,
-    String[] dest_names,
-    long[] sizes,
-    boolean[] wantPermanent,
-    String[] protocols) {
+                                                          String[] dest_names,
+                                                          long[] sizes,
+                                                          boolean[] wantPermanent,
+                                                          String[] protocols) {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
@@ -483,7 +483,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                 try
                 {
                     org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
-                     return ConvertUtil.axisFMDs2FMDs(fmd);
+                    return ConvertUtil.axisFMDs2FMDs(fmd);
                 }catch(java.rmi.RemoteException re) {
                     throw new RuntimeException (re.toString());
                 }
@@ -509,8 +509,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     }
 
     public diskCacheV111.srm.RequestStatus setFileStatus( int requestId,
-    int fileId,
-    String state ) {
+                                                          int fileId,
+                                                          String state ) {
         int i = 0;
         while(true)
         {
@@ -577,14 +577,14 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
 
         try
         {
-             axis_isrm.advisoryDelete(SURLS);
-             return;
+            axis_isrm.advisoryDelete(SURLS);
+            return;
         }catch(java.rmi.RemoteException re) {
             String message = re.getMessage();
             if(message != null)  throw new RuntimeException (message);
             throw new RuntimeException (re);
         }
-   }
+    }
 
     public String[] getProtocols() {
         logger.debug(" getProtocols, contacting service "+service_url);
@@ -604,8 +604,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             try {
                 try
                 {
-                      String protocols[] =axis_isrm.getProtocols();
-                      return protocols;
+                    String protocols[] =axis_isrm.getProtocols();
+                    return protocols;
                 }catch(java.rmi.RemoteException re) {
                     throw new RuntimeException (re.toString());
                 }

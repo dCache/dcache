@@ -24,15 +24,15 @@ import org.globus.gsi.gssapi.GlobusGSSName;
  * @author timur
  */
 public class PromiscuousHostAuthorization extends GSSAuthorization {
-    
+
     public void authorize(GSSContext gSSContext, String string) throws AuthorizationException {
     }
-    
+
     public GSSName getExpectedName(GSSCredential gSSCredential, String host) throws GSSException {
         return new SRMGSSName("srmName@"+host,
                 GSSName.NT_HOSTBASED_SERVICE);
     }
-    
+
     private static class SRMGSSName extends GlobusGSSName {
         public SRMGSSName(String name, Oid nameType) throws GSSException {
             super(name,nameType);
@@ -41,7 +41,7 @@ public class PromiscuousHostAuthorization extends GSSAuthorization {
         public boolean equals(GSSName another) throws GSSException {
             return true;
         }
-        
+
     }
 }
 

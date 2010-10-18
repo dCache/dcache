@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -87,7 +87,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     private static final Logger logger =
-            LoggerFactory.getLogger(TurlGetterPutterV1.class);
+        LoggerFactory.getLogger(TurlGetterPutterV1.class);
 
     protected diskCacheV111.srm.ISRM remoteSRM;
     private final Object sync = new Object();
@@ -107,11 +107,11 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     protected boolean createdMap;
     private long retry_timout;
     private int retry_num;
-    
+
     /** Creates a new instance of RemoteTurlGetter */
     public TurlGetterPutterV1(AbstractStorageElement storage,
-    RequestCredential credential, String[] SURLs,
-    String[] protocols,long retry_timeout,int retry_num ) {
+                              RequestCredential credential, String[] SURLs,
+                              String[] protocols,long retry_timeout,int retry_num ) {
         super(storage,credential, protocols);
         this.SURLs = SURLs;
         this.number_of_file_reqs = SURLs.length;
@@ -119,18 +119,18 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         this.retry_timout = retry_timeout;
         logger.debug("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
     }
-    
-     public void getInitialRequest() throws SRMException {
-         if(number_of_file_reqs == 0) {
+
+    public void getInitialRequest() throws SRMException {
+        if(number_of_file_reqs == 0) {
             logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
             //use new client using the apache axis soap tool
             remoteSRM = new SRMClientV1(
-            new SrmUrl(SURLs[0]),
-            credential.getDelegatedCredential(),
-            retry_timout,retry_num,true,true,"host","srm/managerv1");
+                    new SrmUrl(SURLs[0]),
+                    credential.getDelegatedCredential(),
+                    retry_timout,retry_num,true,true,"host","srm/managerv1");
         }
         catch(Exception e) {
             throw new SRMException("failed to connect to "+SURLs[0],e);
@@ -143,17 +143,17 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         catch(Exception e) {
             throw new SRMException("failed to get initial request status",e);
         }
-   }    
-   
-    
+    }
+
+
     public void run() {
-        
+
         if(number_of_file_reqs == 0) {
             logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
-            
-        
+
+
         if(rs.fileStatuses == null || rs.fileStatuses.length == 0) {
             String err="run() : fileStatuses "+
             " are null or of zero length";
@@ -164,20 +164,20 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
         if(frs.length != this.number_of_file_reqs) {
             notifyOfFailure("run(): wrong number of RequestFileStatuses "+frs.length+
-            " should be "+number_of_file_reqs);
+                    " should be "+number_of_file_reqs);
             return;
         }
-        
+
         synchronized(fileIDs) {
             for(int i = 0; i<number_of_file_reqs;++i) {
                 Integer fileId = frs[i].fileId;
                 fileIDs.add(fileId);
-                
+
                 fileIDsMap.put(fileId,frs[i]);
             }
             createdMap = true;
         }
-        
+
         logger.debug("getFromRemoteSRM() : received requestStatus, waiting");
         try {
             waitForReadyStatuses();
@@ -187,34 +187,34 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             notifyOfFailure(e);
             return;
         }
-            
+
     }
-    
+
     private void waitForReadyStatuses() throws Exception{
         while(!fileIDs.isEmpty()) {
             if(isStopped()) {
                 logger.debug("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
                 Iterator iter = fileIDs.iterator();
                 while(iter.hasNext()) {
-                        diskCacheV111.srm.RequestFileStatus frs;
-                        Integer nextID = (Integer)iter.next();
-                        try {
-                            logger.debug("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
-                            setFileStatus(requestID,nextID.intValue(),"Done");
-                        }
-                        catch(Exception e) {
-                            logger.error("error setting file status to done",e);
-                        }
-                        try {
-                            frs = getFileRequest(rs,nextID);
-                            notifyOfFailure(frs.SURL,"stopped by user request",Integer.toString(rs.requestId),nextID.toString());
-                        }
-                        catch(Exception e) {
-                            logger.error(e.toString());
-                       }
+                    diskCacheV111.srm.RequestFileStatus frs;
+                    Integer nextID = (Integer)iter.next();
+                    try {
+                        logger.debug("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
+                        setFileStatus(requestID,nextID.intValue(),"Done");
+                    }
+                    catch(Exception e) {
+                        logger.error("error setting file status to done",e);
+                    }
+                    try {
+                        frs = getFileRequest(rs,nextID);
+                        notifyOfFailure(frs.SURL,"stopped by user request",Integer.toString(rs.requestId),nextID.toString());
+                    }
+                    catch(Exception e) {
+                        logger.error(e.toString());
+                    }
                 }
                 break;
-                
+
             } else {
                 boolean totalFailure = false;
                 String totalFailureError = null;
@@ -279,7 +279,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                             } else {
                                 ready = true;
                                 logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL="+
-                                frs.TURL);
+                                        frs.TURL);
                                 //notifyOfTURL(frs.SURL, frs.TURL,rs.requestId,frs.fileId);
                                 removeIDs.add(nextID);
                                 removedIDsToResutls.put(nextID,Boolean.TRUE);
@@ -289,14 +289,14 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                 }
                                 continue;
                             }
-                         } else if(frs.state.equals("Done") ) {
+                        } else if(frs.state.equals("Done") ) {
                             removedIDsToResutls.put(nextID,Boolean.FALSE);
                             removeIDsToErrorMessages.put(nextID, "remote srm set state to Done, when we were waiting for Ready");
                             continue;
                         } else  {
                             removedIDsToResutls.put(nextID,Boolean.FALSE);
                             removeIDsToErrorMessages.put(nextID, "remote srm set state is unknown :"+frs.state
-                                +", when we were waiting for Ready");
+                                    +", when we were waiting for Ready");
                             continue;
                         }
                     } //while(iter.hasNext())
@@ -305,15 +305,15 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
 
                 }//synchronized
                 // we do all notifications outside of the sycnchronized block to avoid deadlocks
-                 if(totalFailure){
-                     logger.error(" breaking the waiting loop with a failure:"+ totalFailureError);
+                if(totalFailure){
+                    logger.error(" breaking the waiting loop with a failure:"+ totalFailureError);
 
                     notifyOfFailure(totalFailureError);
                     return;
 
                 }
 
-               for(Iterator i = removeIDs.iterator();i.hasNext();)
+                for(Iterator i = removeIDs.iterator();i.hasNext();)
                 {
                     Integer nextRemoveId = (Integer)i.next();
                     String surl = (String)removedIDsToSURL.get(nextRemoveId);
@@ -358,7 +358,7 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                     catch(InterruptedException ie) {
                     }
                 }
-                
+
                 synchronized (fileIDs) {
                     if(fileIDs.isEmpty()) {
                         break;
@@ -389,13 +389,13 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             }
         }
     }
-    
+
     private  static diskCacheV111.srm.RequestFileStatus getFileRequest(diskCacheV111.srm.RequestStatus rs,Integer nextID) {
         diskCacheV111.srm.RequestFileStatus[] frs = rs.fileStatuses;
         if(frs == null ) {
             return null;
         }
-        
+
         for(int i= 0; i<frs.length;++i) {
             if(frs[i].fileId == nextID.intValue()) {
                 return frs[i];
@@ -403,18 +403,18 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         }
         return null;
     }
-    
-        
+
+
     protected abstract diskCacheV111.srm.RequestStatus getInitialRequestStatus() throws Exception;
-    
+
     protected diskCacheV111.srm.RequestStatus getRequestStatus(int requestID) {
         return remoteSRM.getRequestStatus(requestID);
     }
-    
+
     private  boolean setFileStatus(int requestID,int fileId,String status) {
-        
+
         diskCacheV111.srm.RequestStatus srm_status = remoteSRM.setFileStatus(requestID,fileId,status);
-        
+
         //we are just verifying that the requestId and fileId are valid
         //meaning that the setFileStatus message was received
         if(srm_status == null) {
@@ -433,30 +433,30 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                 return true;
             }
         }
-            
+
         return false;
     }
-    
-    
-    public static void staticSetFileStatus(RequestCredential credential, 
-        String surl,
-        int requestID,
-        int fileId,
-        String status,
-        long retry_timeout,
-        int retry_num) throws Exception
-    {
-        
-        diskCacheV111.srm.ISRM remoteSRM; 
-        
+
+
+    public static void staticSetFileStatus(RequestCredential credential,
+                                           String surl,
+                                           int requestID,
+                                           int fileId,
+                                           String status,
+                                           long retry_timeout,
+                                           int retry_num) throws Exception
+                                           {
+
+        diskCacheV111.srm.ISRM remoteSRM;
+
         // todo: extact web service path from surl if ?SFN= is present
         remoteSRM = new SRMClientV1(new SrmUrl(surl),
-            credential.getDelegatedCredential(),
-            retry_timeout, retry_num,true,true,"host","srm/managerv1");
-        
+                credential.getDelegatedCredential(),
+                retry_timeout, retry_num,true,true,"host","srm/managerv1");
+
         remoteSRM.setFileStatus(requestID,fileId,status);
 
-    }
-    
-    
+                                           }
+
+
 }
