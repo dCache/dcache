@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -94,8 +94,8 @@ public abstract class SRMClient {
 	protected long retrytimeout=1000;
 	protected int retries = 10;
 	protected Report report;
-	
-	
+
+
 	public SRMClient(Configuration configuration) {
 		this.configuration = configuration;
 		logger = configuration.getLogger();
@@ -107,27 +107,27 @@ public abstract class SRMClient {
 		this.doDelegation = configuration.isDelegate();
 		this.fullDelegation = configuration.isFull_delegation();
 		this.gss_expected_name = configuration.getGss_expected_name();
-		
+
 		dsay("In SRMClient ExpectedName: "+gss_expected_name);
 		dsay("SRMClient("+glueprotocol+","+gluepath+","+gsissl+")");
 	}
-	
+
 	public void setUrlcopy(String urlcopy) {
 		this.urlcopy = urlcopy;
 	}
-	
+
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
-	
-	public static RequestFileStatus getFileRequest(RequestStatus rs, 
+
+	public static RequestFileStatus getFileRequest(RequestStatus rs,
 						       Integer nextID) {
-		
+
 		RequestFileStatus[] frs = rs.fileStatuses;
 		if(frs == null ) {
 			return null;
 		}
-		
+
 		for(int i= 0; i<frs.length;++i) {
 			if(frs[i].fileId ==  nextID.intValue()) {
 				return frs[i];
@@ -135,56 +135,56 @@ public abstract class SRMClient {
 		}
 		return null;
 	}
-	
-   
+
+
    public final void say(String msg) {
       logger.log(new java.util.Date().toString() +": "+msg);
    }
-   
+
    //say if debug
    public  final void dsay(String msg) {
       if(debug) {
          logger.log(new java.util.Date().toString() +": "+msg);
       }
    }
-   
+
    //error say
    public final void esay(String err) {
       logger.elog(new java.util.Date().toString() +": "+err);
    }
-   
+
    //esay if debug
    public  final void edsay(String err) {
       if(debug) {
          logger.elog(new java.util.Date().toString() +": "+err);
       }
    }
-   
+
    public abstract void connect() throws Exception;
-   
+
    public abstract void start() throws Exception;
-   
+
    protected void connect(GlobusURL srmUrl) throws Exception {
       try {
-	 
+
          SRMClientV1 client;
          client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
          dsay("connected to server, obtaining proxy");
-         
+
          //srm =  client.getManagerConnection ();
          srm = client;
          srm_url = srmUrl;
          dsay("got proxy of type "+srm.getClass());
-         
+
       } catch (Exception srme) {
          throw new IOException(srme.toString());
       }
       if(srm == null) {
          throw new IOException("can not get manager connection");
       }
-      
+
    }
-   
+
    public org.ietf.jgss.GSSCredential  getGssCredential()
    throws Exception {
       if(configuration.isUseproxy()) {
@@ -200,32 +200,32 @@ public abstract class SRMClient {
             configuration.getX509_user_key());
       }
    }
-   
+
    public  void done(RequestStatus rs,ISRM srm) {
       if(rs.fileStatuses != null) {
          for(int i = 0; i< rs.fileStatuses.length;++i) {
             RequestFileStatus rfs = rs.fileStatuses[i];
-            if(!rfs.state.equals("Done") && 
+            if(!rfs.state.equals("Done") &&
                !rfs.state.equals("Failed")) {
-               say("rfs.state is " + rfs.state + 
-                   " calling setFileStatus(" + rs.requestId + "," + 
+               say("rfs.state is " + rfs.state +
+                   " calling setFileStatus(" + rs.requestId + "," +
                    rfs.fileId + ",\"Done\")");
                srm.setFileStatus(rs.requestId,rfs.fileId,"Done");
             }
          }
       }
    }
-   
+
    private void setReportSuccessStatusBySource(GlobusURL url){
       if(report == null) return;
       report.setStatusBySourceUrl(url, Report.OK_RC, null);
-      
+
    }
-   
+
    private void setReportSuccessStatusByDest(GlobusURL url){
       if(report == null) return;
       report.setStatusByDestinationUrl(url, Report.OK_RC, null);
-      
+
    }
    private void setReportSuccessStatusBySrcAndDest(GlobusURL srcurl,
                                                    GlobusURL dsturl){
@@ -237,15 +237,15 @@ public abstract class SRMClient {
          setReportSuccessStatusBySource(srcurl);
          return;
       }
-      
+
       if(report == null) return;
-      
-      
-      
+
+
+
       report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.OK_RC, null);
       return;
    }
-   
+
    private void setReportFailedStatusBySource(GlobusURL url, String error){
       if(report == null) return;
       if(error == null) {
@@ -264,7 +264,7 @@ public abstract class SRMClient {
       report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
       return;
    }
-   
+
    private void setReportFailedStatusByDest(GlobusURL url, String error){
       if(report == null) return;
       if(error == null) {
@@ -280,11 +280,11 @@ public abstract class SRMClient {
          report.setStatusByDestinationUrl(url, Report.PERMISSION_RC, error);
          return;
       }
-      
+
       report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
       return;
    }
-   
+
    private void setReportFailedStatusBySrcAndDest(GlobusURL srcurl, GlobusURL dsturl, String error){
       if(srcurl == null ) {
          setReportFailedStatusByDest(dsturl,error);
@@ -294,10 +294,10 @@ public abstract class SRMClient {
          setReportFailedStatusBySource(srcurl,error);
          return;
       }
-      
+
       if(report == null) return;
-      
-      
+
+
       if(error == null) {
          report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknonw error");
          return;
@@ -311,11 +311,11 @@ public abstract class SRMClient {
          report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.PERMISSION_RC, error);
          return;
       }
-      
+
       report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
       return;
    }
-   
+
    protected void setReportFailed(GlobusURL srcurl,GlobusURL dsturl,String error ) {
       try {
          setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
@@ -329,7 +329,7 @@ public abstract class SRMClient {
          }
       }
    }
-   
+
    protected void setReportSucceeded(GlobusURL srcurl,
                                      GlobusURL dsturl) {
       try {
@@ -342,7 +342,7 @@ public abstract class SRMClient {
          }
       }
    }
-   
-   
+
+
 }
 
