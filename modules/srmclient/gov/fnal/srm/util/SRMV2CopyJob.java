@@ -174,13 +174,13 @@ public class SRMV2CopyJob implements CopyJob {
             try {
                 org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[1];
                 surlArray[0] =
-                        new org.apache.axis.types.URI(surl.getURL());
+                    new org.apache.axis.types.URI(surl.getURL());
                 if(success) {
                     if(isSrmPrepareToGet) {
                         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
                         srmReleaseFilesRequest.setRequestToken(requestToken);
                         srmReleaseFilesRequest.setArrayOfSURLs(
-                            new ArrayOfAnyURI(surlArray));
+                                new ArrayOfAnyURI(surlArray));
                         //srmReleaseFilesRequest.setKeepSpace(Boolean.FALSE);
                         SrmReleaseFilesResponse srmReleaseFilesResponse =
                             srm.srmReleaseFiles(srmReleaseFilesRequest);
@@ -194,7 +194,7 @@ public class SRMV2CopyJob implements CopyJob {
                         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
                         srmPutDoneRequest.setRequestToken(requestToken);
                         srmPutDoneRequest.setArrayOfSURLs(
-                            new ArrayOfAnyURI(surlArray));
+                                new ArrayOfAnyURI(surlArray));
                         SrmPutDoneResponse srmPutDoneResponse =
                             srm.srmPutDone(srmPutDoneRequest);
                         TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
@@ -210,15 +210,15 @@ public class SRMV2CopyJob implements CopyJob {
                     SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
                     srmAbortFilesRequest.setRequestToken(requestToken);
                     srmAbortFilesRequest.setArrayOfSURLs(
-                        new ArrayOfAnyURI(surlArray));
+                            new ArrayOfAnyURI(surlArray));
                     SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
                     if(srmAbortFilesResponse == null) {
                         logger.elog(" srmAbortFilesResponse is null");
                     } else {
                         TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
                         if(returnStatus == null) {
-                                logger.elog("srmAbortFiles return status is null");
-                                return;
+                            logger.elog("srmAbortFiles return status is null");
+                            return;
                         }
                         logger.log("srmAbortFiles status code="+returnStatus.getStatusCode());
                     }

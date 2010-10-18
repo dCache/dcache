@@ -88,94 +88,94 @@ import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 
 public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
-	private GlobusURL srmURL;
-	private org.ietf.jgss.GSSCredential credential = null;
-	private ISRM srmv2;
+    private GlobusURL srmURL;
+    private org.ietf.jgss.GSSCredential credential = null;
+    private ISRM srmv2;
 
-	public SRMGetSpaceMetaDataClientV2(Configuration configuration,
-				       GlobusURL url) {
-		super(configuration);
-		srmURL=url;
-		try {
-			credential = getGssCredential();
-		}
-		catch (Exception e) {
-			credential = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    public SRMGetSpaceMetaDataClientV2(Configuration configuration,
+                                       GlobusURL url) {
+        super(configuration);
+        srmURL=url;
+        try {
+            credential = getGssCredential();
+        }
+        catch (Exception e) {
+            credential = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
+    @Override
+    public void connect() throws Exception {
 
-		srmv2 = new SRMClientV2(srmURL,
-					getGssCredential(),
-					configuration.getRetry_timeout(),
-					configuration.getRetry_num(),
-					doDelegation,
-					fullDelegation,
-					gss_expected_name,
-					configuration.getWebservice_path());
-	}
+        srmv2 = new SRMClientV2(srmURL,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			if (credential.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		try {
-                        String[] tokens = configuration.getSpaceTokensList();
-                	SrmGetSpaceMetaDataRequest request = new SrmGetSpaceMetaDataRequest();
-                        request.setArrayOfSpaceTokens(new ArrayOfString(tokens));
+    @Override
+    public void start() throws Exception {
+        try {
+            if (credential.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        try {
+            String[] tokens = configuration.getSpaceTokensList();
+            SrmGetSpaceMetaDataRequest request = new SrmGetSpaceMetaDataRequest();
+            request.setArrayOfSpaceTokens(new ArrayOfString(tokens));
 
-			SrmGetSpaceMetaDataResponse response = srmv2.srmGetSpaceMetaData(request);
+            SrmGetSpaceMetaDataResponse response = srmv2.srmGetSpaceMetaData(request);
 
 
-			if ( response == null ) {
-				throw new IOException(" null SrmGetSpaceMetaDataResponse");
-			}
+            if ( response == null ) {
+                throw new IOException(" null SrmGetSpaceMetaDataResponse");
+            }
 
-			TReturnStatus rs     = response.getReturnStatus();
-			if ( rs == null) {
-				throw new IOException(" null TReturnStatus ");
-			}
-			if (RequestStatusTool.isFailedRequestStatus(rs)) {
-				throw new IOException("SrmGetSpaceMetaData failed, unexpected or failed return status : "+
-						      rs.getStatusCode()+" explanation="+rs.getExplanation());
-			}
-                        TMetaDataSpace [] spaceMetaDatas  = response.getArrayOfSpaceDetails().getSpaceDataArray();
-                        for(int i = 0; i< spaceMetaDatas.length; ++i) {
-                            TMetaDataSpace spaceMetaData = spaceMetaDatas[i];
+            TReturnStatus rs     = response.getReturnStatus();
+            if ( rs == null) {
+                throw new IOException(" null TReturnStatus ");
+            }
+            if (RequestStatusTool.isFailedRequestStatus(rs)) {
+                throw new IOException("SrmGetSpaceMetaData failed, unexpected or failed return status : "+
+                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+            }
+            TMetaDataSpace [] spaceMetaDatas  = response.getArrayOfSpaceDetails().getSpaceDataArray();
+            for(int i = 0; i< spaceMetaDatas.length; ++i) {
+                TMetaDataSpace spaceMetaData = spaceMetaDatas[i];
 
-                            System.out.println("Space Reservation with token="+spaceMetaData.getSpaceToken());
-                            if(spaceMetaData.getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                                System.out.println("\t StatusCode="+spaceMetaData.getStatus().getStatusCode()+
-                                        " explanation="+spaceMetaData.getStatus().getExplanation());
-                                continue;
+                System.out.println("Space Reservation with token="+spaceMetaData.getSpaceToken());
+                if(spaceMetaData.getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                    System.out.println("\t StatusCode="+spaceMetaData.getStatus().getStatusCode()+
+                            " explanation="+spaceMetaData.getStatus().getExplanation());
+                    continue;
 
-                            }
-                            System.out.println("\t           owner:"+spaceMetaData.getOwner());
-                            System.out.println("\t       totalSize:"+spaceMetaData.getTotalSize());
-                            System.out.println("\t  guaranteedSize:"+spaceMetaData.getGuaranteedSize());
-                            System.out.println("\t      unusedSize:"+spaceMetaData.getUnusedSize());
-                            System.out.println("\tlifetimeAssigned:"+spaceMetaData.getLifetimeAssigned());
-                            System.out.println("\t    lifetimeLeft:"+spaceMetaData.getLifetimeLeft());
-                            TRetentionPolicyInfo policyInfo = spaceMetaData.getRetentionPolicyInfo();
-                            if(policyInfo != null) {
-                                System.out.println("\t   accessLatency:"+policyInfo.getAccessLatency());
-                                System.out.println("\t retentionPolicy:"+policyInfo.getRetentionPolicy());
-                            }
+                }
+                System.out.println("\t           owner:"+spaceMetaData.getOwner());
+                System.out.println("\t       totalSize:"+spaceMetaData.getTotalSize());
+                System.out.println("\t  guaranteedSize:"+spaceMetaData.getGuaranteedSize());
+                System.out.println("\t      unusedSize:"+spaceMetaData.getUnusedSize());
+                System.out.println("\tlifetimeAssigned:"+spaceMetaData.getLifetimeAssigned());
+                System.out.println("\t    lifetimeLeft:"+spaceMetaData.getLifetimeLeft());
+                TRetentionPolicyInfo policyInfo = spaceMetaData.getRetentionPolicyInfo();
+                if(policyInfo != null) {
+                    System.out.println("\t   accessLatency:"+policyInfo.getAccessLatency());
+                    System.out.println("\t retentionPolicy:"+policyInfo.getRetentionPolicy());
+                }
 
-                        }
+            }
 
- 		}
-		catch(Exception e) {
-			throw e;
-		}
-	}
+        }
+        catch(Exception e) {
+            throw e;
+        }
+    }
 }

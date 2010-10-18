@@ -78,42 +78,42 @@ import org.globus.util.GlobusURL;
  * @author  timur
  */
 public class SRMSimpleCopyClient extends SRMClient {
-	GlobusURL from[];
-	GlobusURL to[];
-	private Copier copier;
-	/** Creates a new instance of SRMGetClient */
-	public SRMSimpleCopyClient(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
-		super(configuration);
-                report = new Report(from,to,configuration.getReport());
-		this.from = from;
-		this.to = to;
-	}
+    GlobusURL from[];
+    GlobusURL to[];
+    private Copier copier;
+    /** Creates a new instance of SRMGetClient */
+    public SRMSimpleCopyClient(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+        super(configuration);
+        report = new Report(from,to,configuration.getReport());
+        this.from = from;
+        this.to = to;
+    }
 
 
-        @Override
-	public void connect() throws Exception {
-	}
+    @Override
+    public void connect() throws Exception {
+    }
 
-	public void setProtocols(String[] protocols) {
-	}
+    public void setProtocols(String[] protocols) {
+    }
 
-        @Override
-	public void start() throws Exception {
-            copier = new Copier(urlcopy,configuration);
-            copier.setDebug(debug);
-            new Thread(copier).start();
-            int len = from.length;
+    @Override
+    public void start() throws Exception {
+        copier = new Copier(urlcopy,configuration);
+        copier.setDebug(debug);
+        new Thread(copier).start();
+        int len = from.length;
 
-            for(int i =0; i<len;++i) {
-                    CopyJob job = new SimpleCopyJob(from[i],to[i],logger,this);
-                    copier.addCopyJob(job);
-            }
-            copier.doneAddingJobs();
-            copier.waitCompletion();
-            report.dumpReport();
-            if(!report.everythingAllRight()){
-                System.err.println("srm copy of at least one file failed or not completed");
-                System.exit(1);
-            }
-	}
+        for(int i =0; i<len;++i) {
+            CopyJob job = new SimpleCopyJob(from[i],to[i],logger,this);
+            copier.addCopyJob(job);
+        }
+        copier.doneAddingJobs();
+        copier.waitCompletion();
+        report.dumpReport();
+        if(!report.everythingAllRight()){
+            System.err.println("srm copy of at least one file failed or not completed");
+            System.exit(1);
+        }
+    }
 }

@@ -87,126 +87,126 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMGetPermissionClientV2 extends SRMClient {
-	private org.ietf.jgss.GSSCredential cred = null;
-	private GlobusURL[] surls;
-	private String[] surl_string;
-	private ISRM isrm;
+    private org.ietf.jgss.GSSCredential cred = null;
+    private GlobusURL[] surls;
+    private String[] surl_string;
+    private ISRM isrm;
 
-	public SRMGetPermissionClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_string) {
-		super(configuration);
-		this.surls       = surls;
-		this.surl_string = surl_string;
-		try {
-			cred = getGssCredential();
-		}catch (Exception e) {
-			cred = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    public SRMGetPermissionClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_string) {
+        super(configuration);
+        this.surls       = surls;
+        this.surl_string = surl_string;
+        try {
+            cred = getGssCredential();
+        }catch (Exception e) {
+            cred = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
-		GlobusURL srmUrl = surls[0];
-		isrm = new SRMClientV2(srmUrl,
-				      getGssCredential(),
-				      configuration.getRetry_timeout(),
-				      configuration.getRetry_num(),
-				      doDelegation,
-				      fullDelegation,
-				      gss_expected_name,
-				      configuration.getWebservice_path());
-	}
+    @Override
+    public void connect() throws Exception {
+        GlobusURL srmUrl = surls[0];
+        isrm = new SRMClientV2(srmUrl,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			if (cred.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
-		URI[] uriarray=new URI[surl_string.length];
-		URI uri;
-
-
-		for(int i=0;i<uriarray.length;i++){
-			uri=new URI(surl_string[i]);
-			uriarray[i]=uri;
-		}
-
-		surlarray.setUrlArray(uriarray);
+    @Override
+    public void start() throws Exception {
+        try {
+            if (cred.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
+        URI[] uriarray=new URI[surl_string.length];
+        URI uri;
 
 
-		SrmGetPermissionRequest req = new SrmGetPermissionRequest();
-		req.setArrayOfSURLs(surlarray);
-		SrmGetPermissionResponse resp = isrm.srmGetPermission(req);
-		TReturnStatus rs   = resp.getReturnStatus();
-		ArrayOfTPermissionReturn permissions=resp.getArrayOfPermissionReturns();
-		TPermissionReturn[] permissionarray=null;
-		if (permissions!=null) {
-			permissionarray=permissions.getPermissionArray();
-		}
-		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-			TStatusCode rc  = rs.getStatusCode();
-			StringBuffer sb = new StringBuffer();
-			sb.append("Return code: "+rc.toString()+"\n");
-			sb.append("Explanation: "+rs.getExplanation()+"\n");
-			System.out.println(sb.toString());
-		}
+        for(int i=0;i<uriarray.length;i++){
+            uri=new URI(surl_string[i]);
+            uriarray[i]=uri;
+        }
 
-		StringBuffer txt = new StringBuffer();
-		if (permissionarray==null) {
-			txt.append("permissions array is null\n");
-			System.out.println(txt.toString());
-			System.exit(1);
-		}
-		for(int i=0;i<permissionarray.length;i++){
-			txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
-			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-				txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
-				txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
-				if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
-					continue;
-				}
-			}
-			TPermissionReturn pr = permissionarray[i];
-			txt.append("# owner : "+pr.getOwner()+"\n");
-			txt.append("owner:"+pr.getOwner()+":"+pr.getOwnerPermission().toString()+"\n");
-                        ArrayOfTUserPermission arrayOfUserPermissions = pr.getArrayOfUserPermissions();
-                        if (arrayOfUserPermissions!=null) {
-                                TUserPermission[] userPermissionArray = arrayOfUserPermissions.getUserPermissionArray();
-                                if (userPermissionArray!=null) {
-                                        for (TUserPermission upr : userPermissionArray) {
-                                                if (upr!=null) {
-                                                        txt.append("user:"+upr.getUserID()+":"+upr.getMode().toString()+"\n");
-                                                }
-                                        }
-                                }
+        surlarray.setUrlArray(uriarray);
+
+
+        SrmGetPermissionRequest req = new SrmGetPermissionRequest();
+        req.setArrayOfSURLs(surlarray);
+        SrmGetPermissionResponse resp = isrm.srmGetPermission(req);
+        TReturnStatus rs   = resp.getReturnStatus();
+        ArrayOfTPermissionReturn permissions=resp.getArrayOfPermissionReturns();
+        TPermissionReturn[] permissionarray=null;
+        if (permissions!=null) {
+            permissionarray=permissions.getPermissionArray();
+        }
+        if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+            TStatusCode rc  = rs.getStatusCode();
+            StringBuffer sb = new StringBuffer();
+            sb.append("Return code: "+rc.toString()+"\n");
+            sb.append("Explanation: "+rs.getExplanation()+"\n");
+            System.out.println(sb.toString());
+        }
+
+        StringBuffer txt = new StringBuffer();
+        if (permissionarray==null) {
+            txt.append("permissions array is null\n");
+            System.out.println(txt.toString());
+            System.exit(1);
+        }
+        for(int i=0;i<permissionarray.length;i++){
+            txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
+            if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
+                txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
+                if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                    continue;
+                }
+            }
+            TPermissionReturn pr = permissionarray[i];
+            txt.append("# owner : "+pr.getOwner()+"\n");
+            txt.append("owner:"+pr.getOwner()+":"+pr.getOwnerPermission().toString()+"\n");
+            ArrayOfTUserPermission arrayOfUserPermissions = pr.getArrayOfUserPermissions();
+            if (arrayOfUserPermissions!=null) {
+                TUserPermission[] userPermissionArray = arrayOfUserPermissions.getUserPermissionArray();
+                if (userPermissionArray!=null) {
+                    for (TUserPermission upr : userPermissionArray) {
+                        if (upr!=null) {
+                            txt.append("user:"+upr.getUserID()+":"+upr.getMode().toString()+"\n");
                         }
-                        ArrayOfTGroupPermission arrayOfGroupPermissions = pr.getArrayOfGroupPermissions();
-                        if (arrayOfGroupPermissions!=null) {
-                                TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions.getGroupPermissionArray();
-                                if (groupPermissionArray!=null) {
-                                        for (TGroupPermission upr: groupPermissionArray) {
-                                                if (upr!=null) {
-                                                        txt.append("group:"+upr.getGroupID()+":"+upr.getMode().toString()+"\n");
-                                                }
-                                        }
-                                }
-			}
-                        txt.append("other:"+pr.getOtherPermission().toString()+"\n");
-		}
-		System.out.println(txt.toString());
-		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-			System.exit(1);
-		}
-		else {
-			System.exit(0);
-		}
+                    }
+                }
+            }
+            ArrayOfTGroupPermission arrayOfGroupPermissions = pr.getArrayOfGroupPermissions();
+            if (arrayOfGroupPermissions!=null) {
+                TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions.getGroupPermissionArray();
+                if (groupPermissionArray!=null) {
+                    for (TGroupPermission upr: groupPermissionArray) {
+                        if (upr!=null) {
+                            txt.append("group:"+upr.getGroupID()+":"+upr.getMode().toString()+"\n");
+                        }
+                    }
+                }
+            }
+            txt.append("other:"+pr.getOtherPermission().toString()+"\n");
+        }
+        System.out.println(txt.toString());
+        if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+            System.exit(1);
+        }
+        else {
+            System.exit(0);
+        }
 
-	}
+    }
 
 }

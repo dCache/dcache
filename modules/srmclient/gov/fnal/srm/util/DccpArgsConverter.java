@@ -119,7 +119,7 @@ public class DccpArgsConverter {
 
     private static final void usage() {
         System.err.println("usage: java DccpArgsConverter src dest \n"+
-        "       where either src or dest is a dcap  URL\n"+
+                "       where either src or dest is a dcap  URL\n"+
         "       and the other one is file URL");
         System.exit(1);
     }

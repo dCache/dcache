@@ -100,7 +100,7 @@ public class CopyJobFileReader {
                 StringTokenizer st = new StringTokenizer(line);
                 if(st.countTokens() != 2) {
                     throw new IOException("File format is incorect, line #"+
-                    line_num+": "+origline);
+                            line_num+": "+origline);
                 }
                 String source = st.nextToken();
                 String dest = st.nextToken();

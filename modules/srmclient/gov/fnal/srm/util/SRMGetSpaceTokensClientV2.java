@@ -88,78 +88,78 @@ import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
 
 public class SRMGetSpaceTokensClientV2 extends SRMClient  {
-	private GlobusURL srmURL;
-	private org.ietf.jgss.GSSCredential credential = null;
-	private ISRM srmv2;
+    private GlobusURL srmURL;
+    private org.ietf.jgss.GSSCredential credential = null;
+    private ISRM srmv2;
 
-	public SRMGetSpaceTokensClientV2(Configuration configuration,
-				       GlobusURL url) {
-		super(configuration);
-		srmURL=url;
-		try {
-			credential = getGssCredential();
-		}
-		catch (Exception e) {
-			credential = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    public SRMGetSpaceTokensClientV2(Configuration configuration,
+                                     GlobusURL url) {
+        super(configuration);
+        srmURL=url;
+        try {
+            credential = getGssCredential();
+        }
+        catch (Exception e) {
+            credential = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
+    @Override
+    public void connect() throws Exception {
 
-		srmv2 = new SRMClientV2(srmURL,
-					getGssCredential(),
-					configuration.getRetry_timeout(),
-					configuration.getRetry_num(),
-					doDelegation,
-					fullDelegation,
-					gss_expected_name,
-					configuration.getWebservice_path());
-	}
+        srmv2 = new SRMClientV2(srmURL,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			if (credential.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		try {
-                        String tokenDescription = configuration.getSpaceTokenDescription();
-                	SrmGetSpaceTokensRequest request = new SrmGetSpaceTokensRequest();
-                        request.setUserSpaceTokenDescription(tokenDescription);
-			SrmGetSpaceTokensResponse response = srmv2.srmGetSpaceTokens(request);
+    @Override
+    public void start() throws Exception {
+        try {
+            if (credential.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        try {
+            String tokenDescription = configuration.getSpaceTokenDescription();
+            SrmGetSpaceTokensRequest request = new SrmGetSpaceTokensRequest();
+            request.setUserSpaceTokenDescription(tokenDescription);
+            SrmGetSpaceTokensResponse response = srmv2.srmGetSpaceTokens(request);
 
 
-			if ( response == null ) {
-				throw new IOException(" null SrmGetSpaceTokensResponse");
-			}
+            if ( response == null ) {
+                throw new IOException(" null SrmGetSpaceTokensResponse");
+            }
 
-			TReturnStatus rs     = response.getReturnStatus();
-			if ( rs == null) {
-				throw new IOException(" null TReturnStatus ");
-			}
-			if (RequestStatusTool.isFailedRequestStatus(rs)) {
-				throw new IOException("SrmGetSpaceTokens failed, unexpected or failed return status : "+
-						      rs.getStatusCode()+" explanation="+rs.getExplanation());
-			}
-                        if( response.getArrayOfSpaceTokens() == null || response.getArrayOfSpaceTokens().getStringArray() ==null) {
-				throw new IOException("SrmGetSpaceTokens returned null array of space tokens");
-                        }
-                        String [] spaceTokens  = response.getArrayOfSpaceTokens().getStringArray();
-                        System.out.println("Space Reservation Tokens:");
-                        for(int i = 0; i< spaceTokens.length; ++i) {
+            TReturnStatus rs     = response.getReturnStatus();
+            if ( rs == null) {
+                throw new IOException(" null TReturnStatus ");
+            }
+            if (RequestStatusTool.isFailedRequestStatus(rs)) {
+                throw new IOException("SrmGetSpaceTokens failed, unexpected or failed return status : "+
+                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+            }
+            if( response.getArrayOfSpaceTokens() == null || response.getArrayOfSpaceTokens().getStringArray() ==null) {
+                throw new IOException("SrmGetSpaceTokens returned null array of space tokens");
+            }
+            String [] spaceTokens  = response.getArrayOfSpaceTokens().getStringArray();
+            System.out.println("Space Reservation Tokens:");
+            for(int i = 0; i< spaceTokens.length; ++i) {
 
-                            System.out.println(spaceTokens[i]);
-                        }
+                System.out.println(spaceTokens[i]);
+            }
 
- 		}
-		catch(Exception e) {
-			throw e;
-		}
-	}
+        }
+        catch(Exception e) {
+            throw e;
+        }
+    }
 }

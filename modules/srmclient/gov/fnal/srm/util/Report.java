@@ -46,18 +46,18 @@ public class Report {
                 if(reportFile.exists() ) {
                     if(!reportFile.canWrite()) {
                         throw new IllegalArgumentException(
-                            " can not write into report file : "+reportFileName);
+                                " can not write into report file : "+reportFileName);
                     }
-                 }
+                }
 
-                 else if(!reportFile.createNewFile()) {
-                     throw new IllegalArgumentException(
-                         " can not write into report file : "+reportFileName);
+                else if(!reportFile.createNewFile()) {
+                    throw new IllegalArgumentException(
+                            " can not write into report file : "+reportFileName);
                 }
             } catch ( java.io.IOException ioe) {
                 throw new IllegalArgumentException(
-                            " can not write into report file : "+reportFileName+
-                            " : "+ioe);
+                        " can not write into report file : "+reportFileName+
+                        " : "+ioe);
             }
         }
         this.from = from;
@@ -99,8 +99,8 @@ public class Report {
         }
         for(int i = 0; i <length; ++i) {
             if(srcURL.getURL().equals(from[i].getURL())&&
-               srcURL.getHost().equals(from[i].getHost()) &&
-               srcURL.getProtocol().equals(from[i].getProtocol())){
+                    srcURL.getHost().equals(from[i].getHost()) &&
+                    srcURL.getProtocol().equals(from[i].getProtocol())){
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -115,8 +115,8 @@ public class Report {
         }
         for(int i = 0; i <length; ++i) {
             if(dstURL.getURL().equals(to[i].getURL())&&
-               dstURL.getHost().equals(to[i].getHost())&&
-               dstURL.getProtocol().equals(to[i].getProtocol())){
+                    dstURL.getHost().equals(to[i].getHost())&&
+                    dstURL.getProtocol().equals(to[i].getProtocol())){
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -125,7 +125,7 @@ public class Report {
             }
         }
         throw new IllegalArgumentException("record for dest="+
-        dstURL.getURL()+" not found");
+                dstURL.getURL()+" not found");
     }
 
     public void setStatusBySourceDestinationUrl(GlobusURL srcURL,GlobusURL dstURL,int returnCode,String errorDscr){
@@ -134,11 +134,11 @@ public class Report {
         }
         for(int i = 0; i <length; ++i) {
             if((dstURL.getURL().equals(to[i].getURL())&&
-                dstURL.getHost().equals(to[i].getHost())&&
-                dstURL.getProtocol().equals(to[i].getProtocol()))&&
-               (srcURL.getURL().equals(from[i].getURL())&&
-                srcURL.getHost().equals(from[i].getHost())&&
-                srcURL.getProtocol().equals(from[i].getProtocol()))) {
+                    dstURL.getHost().equals(to[i].getHost())&&
+                    dstURL.getProtocol().equals(to[i].getProtocol()))&&
+                    (srcURL.getURL().equals(from[i].getURL())&&
+                            srcURL.getHost().equals(from[i].getHost())&&
+                            srcURL.getProtocol().equals(from[i].getProtocol()))) {
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -147,7 +147,7 @@ public class Report {
             }
         }
         throw new IllegalArgumentException("record for source="+
-        srcURL.getURL()+" and dest="+dstURL.getURL()+" not found");
+                srcURL.getURL()+" and dest="+dstURL.getURL()+" not found");
     }
 
     public boolean isValidRC(int rc) {
@@ -160,7 +160,7 @@ public class Report {
                 java.io.FileWriter fw = new java.io.FileWriter(reportFile);
                 fw.write(toString());
                 fw.close();
-             }
+            }
             catch (Exception e) {
                 e.printStackTrace();
             }

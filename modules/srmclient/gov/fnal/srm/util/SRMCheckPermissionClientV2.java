@@ -78,93 +78,93 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMCheckPermissionClientV2 extends SRMClient {
-	private org.ietf.jgss.GSSCredential cred = null;
-	private GlobusURL[] surls;
-	private String[] surl_string;
-	private ISRM isrm;
+    private org.ietf.jgss.GSSCredential cred = null;
+    private GlobusURL[] surls;
+    private String[] surl_string;
+    private ISRM isrm;
 
-	public SRMCheckPermissionClientV2(Configuration configuration,
-					  GlobusURL[] surls, String[] surl_string) {
-		super(configuration);
-		this.surls       = surls;
-		this.surl_string = surl_string;
-		try {
-			cred = getGssCredential();
-		}
-		catch (Exception e) {
-			cred = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    public SRMCheckPermissionClientV2(Configuration configuration,
+                                      GlobusURL[] surls, String[] surl_string) {
+        super(configuration);
+        this.surls       = surls;
+        this.surl_string = surl_string;
+        try {
+            cred = getGssCredential();
+        }
+        catch (Exception e) {
+            cred = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
-		GlobusURL srmUrl = surls[0];
-		isrm = new SRMClientV2(srmUrl,
-				      getGssCredential(),
-				      configuration.getRetry_timeout(),
-				      configuration.getRetry_num(),
-				      doDelegation,
-				      fullDelegation,
-				      gss_expected_name,
-				      configuration.getWebservice_path());
-	}
+    @Override
+    public void connect() throws Exception {
+        GlobusURL srmUrl = surls[0];
+        isrm = new SRMClientV2(srmUrl,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-	public void start() throws Exception {
-		try {
-			if (cred.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
-		URI[] uriarray=new URI[surl_string.length];
-		URI uri;
-		for(int i=0;i<uriarray.length;i++){
-			uri=new URI(surl_string[i]);
-			uriarray[i]=uri;
-		}
-		surlarray.setUrlArray(uriarray);
-		SrmCheckPermissionRequest req = new SrmCheckPermissionRequest();
-		req.setArrayOfSURLs(surlarray);
-		SrmCheckPermissionResponse resp = isrm.srmCheckPermission(req);
-		try {
-			TReturnStatus rs   = resp.getReturnStatus();
-			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-				TStatusCode rc  = rs.getStatusCode();
-				StringBuffer sb = new StringBuffer();
-				sb.append("Return code: "+rc.toString()+"\n");
-				sb.append("Explanation: "+rs.getExplanation()+"\n");
-				System.out.println(sb.toString());
-			}
-			ArrayOfTSURLPermissionReturn  permissions=resp.getArrayOfPermissions();
-			TSURLPermissionReturn[] permissionarray=permissions.getSurlPermissionArray();
-			StringBuffer txt = new StringBuffer();
-			for(int i=0;i<permissionarray.length;i++){
-				txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
-				if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-					txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
-					txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
-					if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
-						continue;
-					}
-				}
-				TPermissionMode mode =  permissionarray[i].getPermission();
-				txt.append("permission mode:"+mode.toString()+"\n");
-			}
-			System.out.println(txt.toString());
-			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-				System.exit(1);
-			}
-			else {
-				System.exit(0);
-			}
-		}
-		catch (Exception e) {
-			throw e;
-		}
-	}
+    public void start() throws Exception {
+        try {
+            if (cred.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
+        URI[] uriarray=new URI[surl_string.length];
+        URI uri;
+        for(int i=0;i<uriarray.length;i++){
+            uri=new URI(surl_string[i]);
+            uriarray[i]=uri;
+        }
+        surlarray.setUrlArray(uriarray);
+        SrmCheckPermissionRequest req = new SrmCheckPermissionRequest();
+        req.setArrayOfSURLs(surlarray);
+        SrmCheckPermissionResponse resp = isrm.srmCheckPermission(req);
+        try {
+            TReturnStatus rs   = resp.getReturnStatus();
+            if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                TStatusCode rc  = rs.getStatusCode();
+                StringBuffer sb = new StringBuffer();
+                sb.append("Return code: "+rc.toString()+"\n");
+                sb.append("Explanation: "+rs.getExplanation()+"\n");
+                System.out.println(sb.toString());
+            }
+            ArrayOfTSURLPermissionReturn  permissions=resp.getArrayOfPermissions();
+            TSURLPermissionReturn[] permissionarray=permissions.getSurlPermissionArray();
+            StringBuffer txt = new StringBuffer();
+            for(int i=0;i<permissionarray.length;i++){
+                txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
+                if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                    txt.append("Return code: "+permissionarray[i].getStatus().getStatusCode().toString()+"\n");
+                    txt.append("Explanation: "+permissionarray[i].getStatus().getExplanation()+"\n");
+                    if ( permissionarray[i].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                        continue;
+                    }
+                }
+                TPermissionMode mode =  permissionarray[i].getPermission();
+                txt.append("permission mode:"+mode.toString()+"\n");
+            }
+            System.out.println(txt.toString());
+            if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                System.exit(1);
+            }
+            else {
+                System.exit(0);
+            }
+        }
+        catch (Exception e) {
+            throw e;
+        }
+    }
 
 }

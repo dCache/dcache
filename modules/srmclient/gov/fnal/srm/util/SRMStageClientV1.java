@@ -84,166 +84,166 @@ import java.util.Iterator;
  * @author  timur
  */
 public class SRMStageClientV1 extends SRMClient implements Runnable {
-	private String[] protocols;
-	GlobusURL from[];
-	private HashSet fileIDs = new HashSet();
-	private HashMap fileIDsMap = new HashMap();
-	private int requestID;
-	private Thread hook;
+    private String[] protocols;
+    GlobusURL from[];
+    private HashSet fileIDs = new HashSet();
+    private HashMap fileIDsMap = new HashMap();
+    private int requestID;
+    private Thread hook;
 
-	/** Creates a new instance of SRMStageClient */
-	public SRMStageClientV1(Configuration configuration, GlobusURL[] from) {
-		super(configuration);
-		report = new Report(from,from,configuration.getReport());
-		this.protocols = configuration.getProtocols();
-		this.from = from;
-	}
+    /** Creates a new instance of SRMStageClient */
+    public SRMStageClientV1(Configuration configuration, GlobusURL[] from) {
+        super(configuration);
+        report = new Report(from,from,configuration.getReport());
+        this.protocols = configuration.getProtocols();
+        this.from = from;
+    }
 
-        @Override
-	public void connect() throws Exception {
-		connect(from[0]);
-	}
+    @Override
+    public void connect() throws Exception {
+        connect(from[0]);
+    }
 
-	public void setProtocols(String[] protocols) {
-		this.protocols = protocols;
-	}
+    public void setProtocols(String[] protocols) {
+        this.protocols = protocols;
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			int len = from.length;
-			String SURLS[] = new String[len];
-			for(int i = 0; i < len; ++i) {
-				SURLS[i] = from[i].getURL();
-			}
-			hook = new Thread(this);
-			Runtime.getRuntime().addShutdownHook(hook);
-			RequestStatus rs = srm.get(SURLS,protocols);
-			if(rs == null) {
-				throw new IOException(" null requests status");
-			}
-			requestID = rs.requestId;
-			dsay(" srm returned requestId = "+rs.requestId);
-			try {
-				if(rs.state.equals("Failed")) {
-					esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-					for(int i = 0; i< rs.fileStatuses.length;++i) {
-						edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
-					}
-					throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-				}
+    @Override
+    public void start() throws Exception {
+        try {
+            int len = from.length;
+            String SURLS[] = new String[len];
+            for(int i = 0; i < len; ++i) {
+                SURLS[i] = from[i].getURL();
+            }
+            hook = new Thread(this);
+            Runtime.getRuntime().addShutdownHook(hook);
+            RequestStatus rs = srm.get(SURLS,protocols);
+            if(rs == null) {
+                throw new IOException(" null requests status");
+            }
+            requestID = rs.requestId;
+            dsay(" srm returned requestId = "+rs.requestId);
+            try {
+                if(rs.state.equals("Failed")) {
+                    esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    for(int i = 0; i< rs.fileStatuses.length;++i) {
+                        edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                    }
+                    throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                }
 
-				if(rs.fileStatuses.length != len) {
-					esay( "incorrect number of RequestFileStatuses"+
-					"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-					throw new IOException("incorrect number of RequestFileStatuses"+
-					"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-				}
+                if(rs.fileStatuses.length != len) {
+                    esay( "incorrect number of RequestFileStatuses"+
+                            "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                    throw new IOException("incorrect number of RequestFileStatuses"+
+                            "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                }
 
-				for(int i =0; i<len;++i) {
-					Integer fileId = new Integer(rs.fileStatuses[i].fileId);
-					fileIDs.add(fileId);
-					fileIDsMap.put(fileId,rs.fileStatuses[i]);
-				}
-				int hashsetSize=fileIDs.size();
-				//say("HashSet has : "+hashsetSize+ " elements");
-				while(!fileIDs.isEmpty()) {
-					Iterator iter = fileIDs.iterator();
-					HashSet removeIDs = new HashSet();
+                for(int i =0; i<len;++i) {
+                    Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                    fileIDs.add(fileId);
+                    fileIDsMap.put(fileId,rs.fileStatuses[i]);
+                }
+                int hashsetSize=fileIDs.size();
+                //say("HashSet has : "+hashsetSize+ " elements");
+                while(!fileIDs.isEmpty()) {
+                    Iterator iter = fileIDs.iterator();
+                    HashSet removeIDs = new HashSet();
 
-					while(iter.hasNext()) {
-						Integer nextID = (Integer)iter.next();
-						RequestFileStatus frs = getFileRequest(rs,nextID);
-						if(frs == null) {
-							throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
-						}
-						if(frs.state.equals("Failed")) {
-							removeIDs.add(nextID);
-							GlobusURL surl = new GlobusURL(frs.SURL);
-							setReportFailed(surl,surl,  rs.errorMessage);
-							esay( "staging of SURL "+frs.SURL+" failed: File Status is \"Failed\"");
-							continue;
-						}
+                    while(iter.hasNext()) {
+                        Integer nextID = (Integer)iter.next();
+                        RequestFileStatus frs = getFileRequest(rs,nextID);
+                        if(frs == null) {
+                            throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
+                        }
+                        if(frs.state.equals("Failed")) {
+                            removeIDs.add(nextID);
+                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            setReportFailed(surl,surl,  rs.errorMessage);
+                            esay( "staging of SURL "+frs.SURL+" failed: File Status is \"Failed\"");
+                            continue;
+                        }
 
-						if(frs.state.equals("Ready") ) {
-							say(frs.SURL+" is staged successfully ");
-                                                        GlobusURL surl = new GlobusURL(frs.SURL);
-							removeIDs.add(nextID);
-                                                        srm.setFileStatus(rs.requestId,nextID.intValue(),"Done");
-                                                        setReportSucceeded(surl,surl);
-						}
-					}
+                        if(frs.state.equals("Ready") ) {
+                            say(frs.SURL+" is staged successfully ");
+                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            removeIDs.add(nextID);
+                            srm.setFileStatus(rs.requestId,nextID.intValue(),"Done");
+                            setReportSucceeded(surl,surl);
+                        }
+                    }
 
-					fileIDs.removeAll(removeIDs);
-					removeIDs = null;
+                    fileIDs.removeAll(removeIDs);
+                    removeIDs = null;
 
-					if(fileIDs.isEmpty()) {
-						dsay("fileIDs is empty, breaking the loop");
-						Runtime.getRuntime().removeShutdownHook(hook);
-						break;
-					}
+                    if(fileIDs.isEmpty()) {
+                        dsay("fileIDs is empty, breaking the loop");
+                        Runtime.getRuntime().removeShutdownHook(hook);
+                        break;
+                    }
 
-					try{
-						int retrytime = rs.retryDeltaTime;
-						if( retrytime <= 0 ) {
-							retrytime = 1;
-						}
-						say("sleeping "+retrytime+" seconds ...");
-						Thread.sleep(retrytime * 1000);
-					}catch(InterruptedException ie) {
-					}
+                    try{
+                        int retrytime = rs.retryDeltaTime;
+                        if( retrytime <= 0 ) {
+                            retrytime = 1;
+                        }
+                        say("sleeping "+retrytime+" seconds ...");
+                        Thread.sleep(retrytime * 1000);
+                    }catch(InterruptedException ie) {
+                    }
 
-					rs = srm.getRequestStatus(requestID);
-					if(rs == null) {
-						throw new IOException(" null requests status");
-					}
+                    rs = srm.getRequestStatus(requestID);
+                    if(rs == null) {
+                        throw new IOException(" null requests status");
+                    }
 
-					if(rs.fileStatuses.length != len) {
-						esay( "incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-						throw new IOException("incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-					}
+                    if(rs.fileStatuses.length != len) {
+                        esay( "incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                        throw new IOException("incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                    }
 
-					for(int i =0; i<len;++i) {
-						fileIDsMap.put(new Integer(rs.fileStatuses[i].fileId),rs.fileStatuses[i]);
-					}
+                    for(int i =0; i<len;++i) {
+                        fileIDsMap.put(new Integer(rs.fileStatuses[i].fileId),rs.fileStatuses[i]);
+                    }
 
-					if(rs.state.equals("Failed")) {
-						esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-						for(int i = 0; i< rs.fileStatuses.length;++i) {
-							edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
-						}
-						throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-					}
-				}
-			}catch(IOException ioe) {
-				done(rs,srm);
-				throw ioe;
-			}
-		}finally{
-		//say("initialStagingTest: "+initialStagingTest);
-			//say("atleastOneFailed: "+atleastOneFailed);
-			report.dumpReport();
-			if(!report.everythingAllRight()){
-				//This means that some failure occured while staging file onto dcache
-                                System.err.println("srm stage of at least one file failed or not completed");
-				System.exit(1);
-			}
-		}
-	}
+                    if(rs.state.equals("Failed")) {
+                        esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                        for(int i = 0; i< rs.fileStatuses.length;++i) {
+                            edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                        }
+                        throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    }
+                }
+            }catch(IOException ioe) {
+                done(rs,srm);
+                throw ioe;
+            }
+        }finally{
+            //say("initialStagingTest: "+initialStagingTest);
+            //say("atleastOneFailed: "+atleastOneFailed);
+            report.dumpReport();
+            if(!report.everythingAllRight()){
+                //This means that some failure occured while staging file onto dcache
+                System.err.println("srm stage of at least one file failed or not completed");
+                System.exit(1);
+            }
+        }
+    }
 
-        @Override
-	public void run() {
-		say("setting all remaining file statuses to \"Done\"");
-		while(true) {
-			if(fileIDs.isEmpty()) {
-				break;
-			}
-			Integer fileId = (Integer)fileIDs.iterator().next();
-			fileIDs.remove(fileId);
-			say("setting file request "+fileId+" status to Done");
-			RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
-			srm.setFileStatus(requestID,rfs.fileId,"Done");
-		}
-		say("set all file statuses to \"Done\"");
-	}
+    @Override
+    public void run() {
+        say("setting all remaining file statuses to \"Done\"");
+        while(true) {
+            if(fileIDs.isEmpty()) {
+                break;
+            }
+            Integer fileId = (Integer)fileIDs.iterator().next();
+            fileIDs.remove(fileId);
+            say("setting file request "+fileId+" status to Done");
+            RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
+            srm.setFileStatus(requestID,rfs.fileId,"Done");
+        }
+        say("set all file statuses to \"Done\"");
+    }
 }

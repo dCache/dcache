@@ -151,7 +151,7 @@ public class Copier implements Runnable {
 
         synchronized(copy_jobs) {
             copy_jobs.add(job);
-	    num_jobs++;
+            num_jobs++;
         }
         synchronized(this) {
             notify();
@@ -168,45 +168,45 @@ public class Copier implements Runnable {
         }
     }
 
-//    public synchronized void waitCompletion() throws Exception {
+    //    public synchronized void waitCompletion() throws Exception {
 
-	//this method will wait for all the individual file transfers to complete
-	//when all transfers are complete, then it will notify all threads.
+    //this method will wait for all the individual file transfers to complete
+    //when all transfers are complete, then it will notify all threads.
 
-	public synchronized void  waitCompletion() throws Exception {
-		if(completed) {
-			if(!completed_successfully) {
-				throw error;
-			}
-                        if(num_completed_successfully!=num_jobs) {
-                            throw new Exception("number of jobs = "+num_jobs+
+    public synchronized void  waitCompletion() throws Exception {
+        if(completed) {
+            if(!completed_successfully) {
+                throw error;
+            }
+            if(num_completed_successfully!=num_jobs) {
+                throw new Exception("number of jobs = "+num_jobs+
+                        " successfully completed="+num_completed_successfully);
+            }
+            return;
+        }
+        for(;;) {
+            try {
+                wait();
+            }catch(InterruptedException ie) {
+                esay("waitCompletion is interrupted");
+                notifyAll();
+                throw ie;
+            }
+            if(completed) {
+                if(!completed_successfully) {
+                    throw error;
+                }
+                if(num_completed_successfully!=num_jobs) {
+                    throw new Exception("number of jobs = "+num_jobs+
                             " successfully completed="+num_completed_successfully);
-                        }
-                        return;
-		}
-		for(;;) {
-			try {
-				wait();
-			}catch(InterruptedException ie) {
-				esay("waitCompletion is interrupted");
-				notifyAll();
-				throw ie;
-			}
-			if(completed) {
-				if(!completed_successfully) {
-					throw error;
-                                 }
-                                if(num_completed_successfully!=num_jobs) {
-                                    throw new Exception("number of jobs = "+num_jobs+
-                                    " successfully completed="+num_completed_successfully);
-                                }
-				return;
-			}
-			else {
-				notify();
-			}
-		}
-	}
+                }
+                return;
+            }
+            else {
+                notify();
+            }
+        }
+    }
 
     public void stop() {
         synchronized(this) {
@@ -239,7 +239,7 @@ public class Copier implements Runnable {
         while(true) {
             synchronized(this) {
                 if(stop) {
-		    say("going to stop....");
+                    say("going to stop....");
                     completed = true;
                     completed_successfully = false;
                     error = new Exception(" stopped ");
@@ -379,8 +379,8 @@ public class Copier implements Runnable {
 
         dsay("copying " +job);
         if(from.getProtocol().equals("dcap") ||
-        to.getProtocol().equals("dcap") ||
-        configuration.isUse_urlcopy_script() ) {
+                to.getProtocol().equals("dcap") ||
+                configuration.isUse_urlcopy_script() ) {
             try {
                 say("trying script copy");
                 String[] script_protocols = null;
@@ -424,30 +424,30 @@ public class Copier implements Runnable {
         }
 
         if( (( from.getProtocol().equals("gsiftp") ||
-        from.getProtocol().equals("gridftp") ) &&
-        to.getProtocol().equals("file")) ||
-        (  from.getProtocol().equals("file") &&
-        ( to.getProtocol().equals("gsiftp") ||
-        to.getProtocol().equals("gridftp") ))
+                from.getProtocol().equals("gridftp") ) &&
+                to.getProtocol().equals("file")) ||
+                (  from.getProtocol().equals("file") &&
+                        ( to.getProtocol().equals("gsiftp") ||
+                                to.getProtocol().equals("gridftp") ))
         )
 
         {
-	   GSSCredential credential =null;
+            GSSCredential credential =null;
             if(configuration.isUseproxy()) {
                 credential=
-                org.dcache.srm.security.SslGsiSocketFactory.createUserCredential(
-                configuration.getX509_user_proxy());
+                    org.dcache.srm.security.SslGsiSocketFactory.createUserCredential(
+                            configuration.getX509_user_proxy());
             }
             else {
                 credential =
-                org.dcache.srm.security.SslGsiSocketFactory.getServiceCredential(
-                configuration.getX509_user_cert(), configuration.getX509_user_key(),
-                GSSCredential.INITIATE_AND_ACCEPT);
+                    org.dcache.srm.security.SslGsiSocketFactory.getServiceCredential(
+                            configuration.getX509_user_cert(), configuration.getX509_user_key(),
+                            GSSCredential.INITIATE_AND_ACCEPT);
             }
             javaGridFtpCopy(from,
-                            to,
-                            credential,
-                            logger);
+                    to,
+                    credential,
+                    logger);
             return;
         }
         URL fromURL;
@@ -486,7 +486,7 @@ public class Copier implements Runnable {
         }
 
         String x509_cert_dir =
-        configuration.getX509_user_trusted_certificates();
+            configuration.getX509_user_trusted_certificates();
         if(x509_cert_dir != null) {
             command = command+" -x509_user_certs_dir "+x509_cert_dir;
         }
@@ -544,7 +544,7 @@ public class Copier implements Runnable {
         String serverMode   = configuration.getServerMode();
         int numberOfStreams = configuration.getStreams_num();
         if((src_url.getProtocol().equals("gsiftp")||src_url.getProtocol().equals("gridftp")) &&
-           dst_url.getProtocol().equals("file")) {
+                dst_url.getProtocol().equals("file")) {
             //
             // case of read
             //
@@ -567,36 +567,36 @@ public class Copier implements Runnable {
             }
             else {
                 throw new IllegalArgumentException("Unknown server_mode option specified \""+serverMode+
-                                                   "\". Allowed options \"passive\" or \"active\"");
+                "\". Allowed options \"passive\" or \"active\"");
             }
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
                 GridftpClient client = new GridftpClient(src_url.getHost(),
-                                           src_url.getPort(),
-                                           configuration.getTcp_buffer_size(),
-                                           configuration.getBuffer_size(),
-                                           credential);
+                        src_url.getPort(),
+                        configuration.getTcp_buffer_size(),
+                        configuration.getBuffer_size(),
+                        credential);
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
-                                   configuration.getCksmValue());
+                        configuration.getCksmValue());
                 try {
                     client.gridFTPRead(src_url.getPath(),
-                                       dst_url.getPath(),
-                                       emode,
-                                       passive_server_mode );
+                            dst_url.getPath(),
+                            emode,
+                            passive_server_mode );
                     num_completed_successfully++;
                 }
                 finally {
                     client.close();
                 }
             }  else {
-                    num_completed_successfully++;
+                num_completed_successfully++;
             }
             return;
         }
 
         if(src_url.getProtocol().equals("file")&&
-           (dst_url.getProtocol().equals("gsiftp")||dst_url.getProtocol().equals("gridftp"))) {
+                (dst_url.getProtocol().equals("gsiftp")||dst_url.getProtocol().equals("gridftp"))) {
             //
             // case of write
             //
@@ -618,31 +618,31 @@ public class Copier implements Runnable {
             }
             else {
                 throw new IllegalArgumentException("Unknown server_mode option specified \""+serverMode+
-                                                   "\". Allowed options \"passive\" or \"active\"");
+                "\". Allowed options \"passive\" or \"active\"");
             }
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
                 GridftpClient client = new GridftpClient(dst_url.getHost(),
-                                           dst_url.getPort(),
-                                           configuration.getTcp_buffer_size(),
-                                           configuration.getBuffer_size(),
-                                           credential);
+                        dst_url.getPort(),
+                        configuration.getTcp_buffer_size(),
+                        configuration.getBuffer_size(),
+                        credential);
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
-                                   configuration.getCksmValue());
+                        configuration.getCksmValue());
                 try {
                     client.gridFTPWrite(src_url.getPath(),
-                                        dst_url.getPath(),
-                                        emode,
-                                        configuration.getDoSendCheckSum(),
-                                        passive_server_mode);
+                            dst_url.getPath(),
+                            emode,
+                            configuration.getDoSendCheckSum(),
+                            passive_server_mode);
                     num_completed_successfully++;
                 }
                 finally {
                     client.close();
                 }
             } else {
-                    num_completed_successfully++;
+                num_completed_successfully++;
             }
             return;
         }

@@ -95,208 +95,208 @@ import java.util.Arrays;
 
 
 public class SRMCopyClientV1 extends SRMClient implements Runnable {
-	private GlobusURL from[];
-	private GlobusURL to[];
-	private HashSet   fileIDs    = new HashSet();
-	private HashMap   fileIDsMap = new HashMap();
-	private int       requestID;
-	private Thread hook;
+    private GlobusURL from[];
+    private GlobusURL to[];
+    private HashSet   fileIDs    = new HashSet();
+    private HashMap   fileIDsMap = new HashMap();
+    private int       requestID;
+    private Thread hook;
 
-	public SRMCopyClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
-		super(configuration);
-		report = new Report(from,to,configuration.getReport());
-		this.from = from;
-		this.to = to;
-	}
+    public SRMCopyClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+        super(configuration);
+        report = new Report(from,to,configuration.getReport());
+        this.from = from;
+        this.to = to;
+    }
 
-        @Override
-	public void connect() throws Exception {
-		if ( configuration.isPushmode()  ) {
-			dsay("starting transfer in push mode");
-			connect(from[0]);
-		}
-		else {
-			dsay("starting transfer in pull mode");
-			connect(to[0]);
-		}
-	}
+    @Override
+    public void connect() throws Exception {
+        if ( configuration.isPushmode()  ) {
+            dsay("starting transfer in push mode");
+            connect(from[0]);
+        }
+        else {
+            dsay("starting transfer in pull mode");
+            connect(to[0]);
+        }
+    }
 
-        @Override
-	public void start() throws Exception {
-		int len = from.length;
-		String[] srcSURLs = new String[len];
-		String[] dstSURLs = new String[len];
-		boolean[] wantPerm = new boolean[len];
-		// do it temporarily to avoid
-		// permanent writes at jlab
-		Arrays.fill(wantPerm,false);
-		for(int i = 0; i<from.length;++i) {
-			GlobusURL source = from[i];
-			GlobusURL dest = to[i];
-			srcSURLs[i] = source.getURL();
-			dstSURLs[i] = dest.getURL();
-			dsay("copying "+srcSURLs[i]+" into "+dstSURLs[i]);
-		}
-		hook = new Thread(this);
-		Runtime.getRuntime().addShutdownHook(hook);
+    @Override
+    public void start() throws Exception {
+        int len = from.length;
+        String[] srcSURLs = new String[len];
+        String[] dstSURLs = new String[len];
+        boolean[] wantPerm = new boolean[len];
+        // do it temporarily to avoid
+        // permanent writes at jlab
+        Arrays.fill(wantPerm,false);
+        for(int i = 0; i<from.length;++i) {
+            GlobusURL source = from[i];
+            GlobusURL dest = to[i];
+            srcSURLs[i] = source.getURL();
+            dstSURLs[i] = dest.getURL();
+            dsay("copying "+srcSURLs[i]+" into "+dstSURLs[i]);
+        }
+        hook = new Thread(this);
+        Runtime.getRuntime().addShutdownHook(hook);
 
-		RequestStatus rs = srm.copy(srcSURLs,dstSURLs,wantPerm);
-		if(rs == null) {
-			throw new IOException(" null requests status");
-		}
-		requestID = rs.requestId;
-		dsay(" srm returned requestId = "+rs.requestId);
+        RequestStatus rs = srm.copy(srcSURLs,dstSURLs,wantPerm);
+        if(rs == null) {
+            throw new IOException(" null requests status");
+        }
+        requestID = rs.requestId;
+        dsay(" srm returned requestId = "+rs.requestId);
 
-		try {
-			if(rs.state.equals("Failed")) {
-				esay("Request with requestId ="+rs.requestId+
-				     " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-				for(int i = 0; i< rs.fileStatuses.length;++i) {
-					edsay("      ====> fileStatus with fileId="+
-					      rs.fileStatuses[i].fileId+
-					      " state =="+rs.fileStatuses[i].state);
-				}
-				throw new IOException("Request with requestId ="+rs.requestId+
-						      " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-			}
+        try {
+            if(rs.state.equals("Failed")) {
+                esay("Request with requestId ="+rs.requestId+
+                        " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                for(int i = 0; i< rs.fileStatuses.length;++i) {
+                    edsay("      ====> fileStatus with fileId="+
+                            rs.fileStatuses[i].fileId+
+                            " state =="+rs.fileStatuses[i].state);
+                }
+                throw new IOException("Request with requestId ="+rs.requestId+
+                        " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+            }
 
-			if(rs.fileStatuses.length != len) {
-				esay( "incorrect number of RequestFileStatuses"+
-				      "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-				throw new IOException("incorrect number of RequestFileStatuses "+
-						      "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-			}
+            if(rs.fileStatuses.length != len) {
+                esay( "incorrect number of RequestFileStatuses"+
+                        "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                throw new IOException("incorrect number of RequestFileStatuses "+
+                        "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+            }
 
-			for(int i =0; i<len;++i) {
-				Integer fileId = new Integer(rs.fileStatuses[i].fileId);
-				fileIDs.add(fileId);
-				fileIDsMap.put(fileId,rs.fileStatuses[i]);
-			}
+            for(int i =0; i<len;++i) {
+                Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                fileIDs.add(fileId);
+                fileIDsMap.put(fileId,rs.fileStatuses[i]);
+            }
 
-			while(!fileIDs.isEmpty()) {
-				Iterator iter = fileIDs.iterator();
-				HashSet removeIDs = new HashSet();
-				while(iter.hasNext()) {
-					Integer nextID = (Integer)iter.next();
-					RequestFileStatus frs = getFileRequest(rs,nextID);
-					if(frs == null) {
-						throw new IOException("request status does not have"+
-								      "RequestFileStatus fileID = "+nextID);
-					}
+            while(!fileIDs.isEmpty()) {
+                Iterator iter = fileIDs.iterator();
+                HashSet removeIDs = new HashSet();
+                while(iter.hasNext()) {
+                    Integer nextID = (Integer)iter.next();
+                    RequestFileStatus frs = getFileRequest(rs,nextID);
+                    if(frs == null) {
+                        throw new IOException("request status does not have"+
+                                "RequestFileStatus fileID = "+nextID);
+                    }
 
-					if(frs.state.equals("Failed")) {
-						say("FileRequestStatus is Failed => copying of "+frs.SURL+
-						    " has failed");
-						setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
-						removeIDs.add(nextID);
-					}
+                    if(frs.state.equals("Failed")) {
+                        say("FileRequestStatus is Failed => copying of "+frs.SURL+
+                        " has failed");
+                        setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
+                        removeIDs.add(nextID);
+                    }
 
-					if(frs.state.equals("Ready") ) {
-						say("FileRequestStatus is Ready => copying of "+frs.SURL+
-						    " is complete");
-						setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
-						removeIDs.add(nextID);
-						srm.setFileStatus(requestID,nextID.intValue(),"Done");
-					}
-					if(frs.state.equals("Done")) {
-						say("FileRequestStatus fileID = "+nextID+" is Done => copying of "+frs.SURL+
-						    " is complete");
-						setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
-						removeIDs.add(nextID);
-					}
-				}
-				fileIDs.removeAll(removeIDs);
-				removeIDs = null;
+                    if(frs.state.equals("Ready") ) {
+                        say("FileRequestStatus is Ready => copying of "+frs.SURL+
+                        " is complete");
+                        setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
+                        removeIDs.add(nextID);
+                        srm.setFileStatus(requestID,nextID.intValue(),"Done");
+                    }
+                    if(frs.state.equals("Done")) {
+                        say("FileRequestStatus fileID = "+nextID+" is Done => copying of "+frs.SURL+
+                        " is complete");
+                        setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
+                        removeIDs.add(nextID);
+                    }
+                }
+                fileIDs.removeAll(removeIDs);
+                removeIDs = null;
 
-				if(fileIDs.isEmpty()) {
-					Runtime.getRuntime().removeShutdownHook(hook);
-					//we have copyed all files
-					break;
-				}
+                if(fileIDs.isEmpty()) {
+                    Runtime.getRuntime().removeShutdownHook(hook);
+                    //we have copyed all files
+                    break;
+                }
 
-				try {
-					int retrytime = rs.retryDeltaTime;
-					if( retrytime <= 0 ) {
-						retrytime = 1;
-					}
+                try {
+                    int retrytime = rs.retryDeltaTime;
+                    if( retrytime <= 0 ) {
+                        retrytime = 1;
+                    }
 
-					say("sleeping "+retrytime+" seconds ...");
-					Thread.sleep(retrytime * 1000);
-				}
-				catch(InterruptedException ie) {
-				}
+                    say("sleeping "+retrytime+" seconds ...");
+                    Thread.sleep(retrytime * 1000);
+                }
+                catch(InterruptedException ie) {
+                }
 
-				rs = srm.getRequestStatus(requestID);
-				if(rs == null) {
-					throw new IOException(" null requests status");
-				}
+                rs = srm.getRequestStatus(requestID);
+                if(rs == null) {
+                    throw new IOException(" null requests status");
+                }
 
-				if(rs.state.equals("Failed")) {
-					Iterator iter1 = fileIDs.iterator();
-					while(iter1.hasNext()) {
-						Integer nextID1 = (Integer)iter1.next();
-						RequestFileStatus frs = getFileRequest(rs,nextID1);
-						if(frs.state.equals("Failed")) {
-							say("FileRequestStatus is Failed => copying of "+frs.SURL+
-							    " has failed");
-							setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
-						}
-						if(frs.state.equals("Ready") ) {
-							say("FileRequestStatus fileID = "+nextID1+" is Ready => copying of "+frs.SURL+
-							    " is complete");
-							setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
-						}
-						if(frs.state.equals("Done")) {
-							say("FileRequestStatus fileID = "+nextID1+" is Done => copying of "+frs.SURL+
-							    " is complete");
-							setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
-						}
-					}
-					throw new IOException("Request with requestId ="+rs.requestId+
-							      " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-				}
-				if(rs.fileStatuses.length != len) {
-					esay( "incorrect number of RequestFileStatuses"+
-					      " in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-					throw new IOException("incorrect number of RequestFileStatuses"+
-							      " in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-				}
-			}
-		}
-		catch(IOException ioe) {
-                        if(configuration.isDebug()) {
-                                ioe.printStackTrace();
+                if(rs.state.equals("Failed")) {
+                    Iterator iter1 = fileIDs.iterator();
+                    while(iter1.hasNext()) {
+                        Integer nextID1 = (Integer)iter1.next();
+                        RequestFileStatus frs = getFileRequest(rs,nextID1);
+                        if(frs.state.equals("Failed")) {
+                            say("FileRequestStatus is Failed => copying of "+frs.SURL+
+                            " has failed");
+                            setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
                         }
-                        else {
-                                esay(ioe.toString());
+                        if(frs.state.equals("Ready") ) {
+                            say("FileRequestStatus fileID = "+nextID1+" is Ready => copying of "+frs.SURL+
+                            " is complete");
+                            setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
                         }
-			done(rs,srm);
-			throw ioe;
-		}
-		finally {
-			report.dumpReport();
-                        if(!report.everythingAllRight()){
-                            System.err.println("srm copy of at least one file failed or not completed");
-                            System.exit(1);
+                        if(frs.state.equals("Done")) {
+                            say("FileRequestStatus fileID = "+nextID1+" is Done => copying of "+frs.SURL+
+                            " is complete");
+                            setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
                         }
-		}
-	}
+                    }
+                    throw new IOException("Request with requestId ="+rs.requestId+
+                            " rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                }
+                if(rs.fileStatuses.length != len) {
+                    esay( "incorrect number of RequestFileStatuses"+
+                            " in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                    throw new IOException("incorrect number of RequestFileStatuses"+
+                            " in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                }
+            }
+        }
+        catch(IOException ioe) {
+            if(configuration.isDebug()) {
+                ioe.printStackTrace();
+            }
+            else {
+                esay(ioe.toString());
+            }
+            done(rs,srm);
+            throw ioe;
+        }
+        finally {
+            report.dumpReport();
+            if(!report.everythingAllRight()){
+                System.err.println("srm copy of at least one file failed or not completed");
+                System.exit(1);
+            }
+        }
+    }
 
-        @Override
-	public void run() {
-		say("setting all remaining file statuses of request"+
-		    " requestId="+requestID+" to \"Done\"");
-		while(true) {
-			if(fileIDs.isEmpty()) {
-				break;
-			}
-			Integer fileId = (Integer)fileIDs.iterator().next();
-			fileIDs.remove(fileId);
-			say("setting file request "+fileId+" status to Done");
-			RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
-			srm.setFileStatus(requestID,rfs.fileId,"Done");
-		}
-		say("set all file statuses to \"Done\"");
-	}
+    @Override
+    public void run() {
+        say("setting all remaining file statuses of request"+
+                " requestId="+requestID+" to \"Done\"");
+        while(true) {
+            if(fileIDs.isEmpty()) {
+                break;
+            }
+            Integer fileId = (Integer)fileIDs.iterator().next();
+            fileIDs.remove(fileId);
+            say("setting file request "+fileId+" status to Done");
+            RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
+            srm.setFileStatus(requestID,rfs.fileId,"Done");
+        }
+        say("set all file statuses to \"Done\"");
+    }
 }
 

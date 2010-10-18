@@ -87,241 +87,241 @@ import java.io.File;
  * @author  timur
  */
 public class SRMPutClientV1 extends SRMClient implements Runnable {
-	private GlobusURL from[];
-	private GlobusURL to[];
-	private String protocols[];
-	private  HashSet fileIDs = new HashSet();
-	private  HashMap fileIDsMap = new HashMap();
-	private Copier copier;
-	private int requestID;
-	private Thread hook;
-	/** Creates a new instance of SRMPutClient */
-	public SRMPutClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
-		super(configuration);
-                report = new Report(from,to,configuration.getReport());
-		this.protocols = configuration.getProtocols();
-		this.from = from;
-		this.to = to;
-	}
+    private GlobusURL from[];
+    private GlobusURL to[];
+    private String protocols[];
+    private  HashSet fileIDs = new HashSet();
+    private  HashMap fileIDsMap = new HashMap();
+    private Copier copier;
+    private int requestID;
+    private Thread hook;
+    /** Creates a new instance of SRMPutClient */
+    public SRMPutClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+        super(configuration);
+        report = new Report(from,to,configuration.getReport());
+        this.protocols = configuration.getProtocols();
+        this.from = from;
+        this.to = to;
+    }
 
 
-	public void setProtocols(String[] protocols) {
-		this.protocols = protocols;
-	}
+    public void setProtocols(String[] protocols) {
+        this.protocols = protocols;
+    }
 
-        @Override
-	public void connect() throws Exception {
-		connect(to[0]);
-	}
+    @Override
+    public void connect() throws Exception {
+        connect(to[0]);
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			copier = new Copier(urlcopy,configuration);
-			copier.setDebug(debug);
-			new Thread(copier).start();
-			int len = from.length;
-			String sources[] = new String[len];
-			long sizes[] = new long[len];
-			boolean[] wantperm = new boolean[len];
+    @Override
+    public void start() throws Exception {
+        try {
+            copier = new Copier(urlcopy,configuration);
+            copier.setDebug(debug);
+            new Thread(copier).start();
+            int len = from.length;
+            String sources[] = new String[len];
+            long sizes[] = new long[len];
+            boolean[] wantperm = new boolean[len];
 
-			Arrays.fill(wantperm,true);
-			String dests[] = new String[len];
-			for(int i = 0; i<from.length;++i) {
-				GlobusURL filesource = from[i];
-				GlobusURL srmdest = to[i];
-				int filetype = SRMDispatcher.getUrlType(filesource);
-				if((filetype & SRMDispatcher.FILE_URL) == 0) {
-					throw new IOException(" source is not file "+ filesource.getURL());
-				}
-				if((filetype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
-					throw new IOException(" source is directory "+ filesource.getURL());
-				}
-				if((filetype & SRMDispatcher.CAN_READ_FILE_URL) == 0) {
-					throw new IOException(" source is not readable "+ filesource.getURL());
-				}
-				sources[i] = filesource.getPath();
-                                dsay("source file#"+i+" : "+sources[i]);
-				File f = new File(sources[i]);
-				sizes[i] = f.length();
-				dests[i] = srmdest.getURL();
-			}
-			hook = new Thread(this);
-			Runtime.getRuntime().addShutdownHook(hook);
+            Arrays.fill(wantperm,true);
+            String dests[] = new String[len];
+            for(int i = 0; i<from.length;++i) {
+                GlobusURL filesource = from[i];
+                GlobusURL srmdest = to[i];
+                int filetype = SRMDispatcher.getUrlType(filesource);
+                if((filetype & SRMDispatcher.FILE_URL) == 0) {
+                    throw new IOException(" source is not file "+ filesource.getURL());
+                }
+                if((filetype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
+                    throw new IOException(" source is directory "+ filesource.getURL());
+                }
+                if((filetype & SRMDispatcher.CAN_READ_FILE_URL) == 0) {
+                    throw new IOException(" source is not readable "+ filesource.getURL());
+                }
+                sources[i] = filesource.getPath();
+                dsay("source file#"+i+" : "+sources[i]);
+                File f = new File(sources[i]);
+                sizes[i] = f.length();
+                dests[i] = srmdest.getURL();
+            }
+            hook = new Thread(this);
+            Runtime.getRuntime().addShutdownHook(hook);
 
-			RequestStatus rs = srm.put(dests,dests,sizes,wantperm,protocols);
-			if(rs == null) {
-				throw new IOException(" null requests status");
-			}
-			requestID = rs.requestId;
-			dsay(" srm returned requestId = "+rs.requestId);
+            RequestStatus rs = srm.put(dests,dests,sizes,wantperm,protocols);
+            if(rs == null) {
+                throw new IOException(" null requests status");
+            }
+            requestID = rs.requestId;
+            dsay(" srm returned requestId = "+rs.requestId);
 
-			try {
-				if(rs.state.equals("Failed")) {
-					esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-					for(int i = 0; i< rs.fileStatuses.length;++i) {
-						edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
-					}
-					throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-				}
+            try {
+                if(rs.state.equals("Failed")) {
+                    esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    for(int i = 0; i< rs.fileStatuses.length;++i) {
+                        edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                    }
+                    throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                }
 
-				if(rs.fileStatuses.length != len) {
-					esay( "incorrect number of RequestFileStatuses"+
-					"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-					throw new IOException("incorrect number of RequestFileStatuses"+
-					"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-				}
+                if(rs.fileStatuses.length != len) {
+                    esay( "incorrect number of RequestFileStatuses"+
+                            "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                    throw new IOException("incorrect number of RequestFileStatuses"+
+                            "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                }
 
-				for(int i =0; i<len;++i) {
-					Integer fileId = new Integer(rs.fileStatuses[i].fileId);
-					fileIDs.add(fileId);
-					fileIDsMap.put(fileId,rs.fileStatuses[i]);
-				}
+                for(int i =0; i<len;++i) {
+                    Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                    fileIDs.add(fileId);
+                    fileIDsMap.put(fileId,rs.fileStatuses[i]);
+                }
 
-				while(!fileIDs.isEmpty()) {
-					Iterator iter = fileIDs.iterator();
-					HashSet removeIDs = new HashSet();
-					while(iter.hasNext()) {
-						Integer nextID = (Integer)iter.next();
-						RequestFileStatus frs = getFileRequest(rs,nextID);
-						if(frs == null) {
-							throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
-						}
-
-						if(frs.state.equals("Failed")) {
-							removeIDs.add(nextID);
-							GlobusURL surl = new GlobusURL(frs.SURL);
-							GlobusURL filesource = null;
-							if(len == 1) {
-								// in case of  one file there could be no correspondence between source and destination
-								filesource = from[0];
-							}else {
-								for(int i =0; i< len;++i) {
-									if(surl.equals(to[i])) {
-										filesource = from[i];
-										break;
-									}
-								}
-							}
-							setReportFailed(filesource,surl, rs.errorMessage);
-							esay( "copying from  file file "+filesource.getURL()+ " to SURL "+frs.SURL +" failed: File Status is \"Failed\"");
-							continue;
-						}
-						if(frs.state.equals("Ready") ) {
-							if(frs.TURL  == null) {
-								throw new IOException("  TURL not found (check root path in kpwd), fileStatus state =="+frs.state);
-							}
-							say("FileRequestStatus with SURL="+frs.SURL+" is Ready");
-							say("       received TURL="+ frs.TURL);
-							GlobusURL globusTURL = new GlobusURL(frs.TURL);
-							GlobusURL filesource = null;
-							GlobusURL surl = new GlobusURL(frs.SURL);
-							if(len == 1) {
-								// in case of  one file there could be no correspondence between source and destination
-								filesource = from[0];
-							}else {
-								for(int i =0; i< len;++i) {
-									if(surl.equals(to[i])) {
-										filesource = from[i];
-										break;
-									}
-								}
-							}
-							//why is setReportFailed Called Here ??
-							setReportFailed(filesource,surl, "received TURL, but did not complete transfer");
-							if(filesource == null) {
-								esay("could not find file source "+
-								"for destination SURL "+ surl.getURL() );
-								throw new IOException("could not find source "+"for destination SURL "+ surl );
-							}
-							CopyJob job = new SRMV1CopyJob(filesource,globusTURL,srm,requestID,nextID.intValue(),logger,surl,false,this);
-							copier.addCopyJob(job);
-							removeIDs.add(nextID);
-						}
-					}
-					fileIDs.removeAll(removeIDs);
-					removeIDs = null;
-
-					if(fileIDs.isEmpty()) {
-						Runtime.getRuntime().removeShutdownHook(hook);
-						//we are copying all files
-						break;
-					}
-					try {
-						int retrytime = rs.retryDeltaTime;
-						if( retrytime <= 0 ) {
-							retrytime = 1;
-						}
-						say("sleeping "+retrytime+" seconds ...");
-						Thread.sleep(retrytime * 1000);
-					}catch(InterruptedException ie) {
-					}
-
-					rs = srm.getRequestStatus(requestID);
-					if(rs == null) {
-						throw new IOException(" null requests status");
-					}
-
-					if(rs.fileStatuses.length != len) {
-						esay( "incorrect number of RequestFileStatuses"+
-						"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-						throw new IOException("incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
-					}
-
-					for(int i =0; i<len;++i) {
-						Integer fileId = new Integer(rs.fileStatuses[i].fileId);
-						// the following commented code is incorrect, since the fileIDs contains only unprocessed request ids
-						//if(!fileIDs.contains(fileId)) {
-						//throw new IOException("receied unknown id : "+fileId);
-						//}
-						//say("substituting request file status with fileId="+rs.fileStatuses[i].fileId);
-						fileIDsMap.put(fileId,rs.fileStatuses[i]);
-					}
-					if(rs.state.equals("Failed")) {
-						esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-						for(int i = 0; i< rs.fileStatuses.length;++i) {
-							edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
-						}
-						throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
-					}
-				}
-			}catch(IOException ioe) {
-				if(configuration.isDebug()) {
-					ioe.printStackTrace();
-				}
-                                else {
-                                        esay(ioe.toString());
-                                }
-				done(rs,srm);
-				throw ioe;
-			}
-		}finally {
-			if(copier != null) {
-				copier.doneAddingJobs();
-				copier.waitCompletion();
-			}
-			report.dumpReport();
-                        if(!report.everythingAllRight()){
-                            System.err.println("srm copy of at least one file failed or not completed");
-                            System.exit(1);
+                while(!fileIDs.isEmpty()) {
+                    Iterator iter = fileIDs.iterator();
+                    HashSet removeIDs = new HashSet();
+                    while(iter.hasNext()) {
+                        Integer nextID = (Integer)iter.next();
+                        RequestFileStatus frs = getFileRequest(rs,nextID);
+                        if(frs == null) {
+                            throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
                         }
-		}
-	}
 
-        @Override
-	public void run() {
-		say("setting all remaining file statuses to \"Done\"");
-		copier.stop();
-		while(true) {
-			if(fileIDs.isEmpty()) {
-				break;
-			}
-			Integer fileId = (Integer)fileIDs.iterator().next();
-			fileIDs.remove(fileId);
-			say("setting file request "+fileId+" status to Done");
-			RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
-			srm.setFileStatus(requestID,rfs.fileId,"Done");
-		}
-	       	say("set all file statuses to \"Done\"");
-	}
+                        if(frs.state.equals("Failed")) {
+                            removeIDs.add(nextID);
+                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            GlobusURL filesource = null;
+                            if(len == 1) {
+                                // in case of  one file there could be no correspondence between source and destination
+                                filesource = from[0];
+                            }else {
+                                for(int i =0; i< len;++i) {
+                                    if(surl.equals(to[i])) {
+                                        filesource = from[i];
+                                        break;
+                                    }
+                                }
+                            }
+                            setReportFailed(filesource,surl, rs.errorMessage);
+                            esay( "copying from  file file "+filesource.getURL()+ " to SURL "+frs.SURL +" failed: File Status is \"Failed\"");
+                            continue;
+                        }
+                        if(frs.state.equals("Ready") ) {
+                            if(frs.TURL  == null) {
+                                throw new IOException("  TURL not found (check root path in kpwd), fileStatus state =="+frs.state);
+                            }
+                            say("FileRequestStatus with SURL="+frs.SURL+" is Ready");
+                            say("       received TURL="+ frs.TURL);
+                            GlobusURL globusTURL = new GlobusURL(frs.TURL);
+                            GlobusURL filesource = null;
+                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            if(len == 1) {
+                                // in case of  one file there could be no correspondence between source and destination
+                                filesource = from[0];
+                            }else {
+                                for(int i =0; i< len;++i) {
+                                    if(surl.equals(to[i])) {
+                                        filesource = from[i];
+                                        break;
+                                    }
+                                }
+                            }
+                            //why is setReportFailed Called Here ??
+                            setReportFailed(filesource,surl, "received TURL, but did not complete transfer");
+                            if(filesource == null) {
+                                esay("could not find file source "+
+                                        "for destination SURL "+ surl.getURL() );
+                                throw new IOException("could not find source "+"for destination SURL "+ surl );
+                            }
+                            CopyJob job = new SRMV1CopyJob(filesource,globusTURL,srm,requestID,nextID.intValue(),logger,surl,false,this);
+                            copier.addCopyJob(job);
+                            removeIDs.add(nextID);
+                        }
+                    }
+                    fileIDs.removeAll(removeIDs);
+                    removeIDs = null;
+
+                    if(fileIDs.isEmpty()) {
+                        Runtime.getRuntime().removeShutdownHook(hook);
+                        //we are copying all files
+                        break;
+                    }
+                    try {
+                        int retrytime = rs.retryDeltaTime;
+                        if( retrytime <= 0 ) {
+                            retrytime = 1;
+                        }
+                        say("sleeping "+retrytime+" seconds ...");
+                        Thread.sleep(retrytime * 1000);
+                    }catch(InterruptedException ie) {
+                    }
+
+                    rs = srm.getRequestStatus(requestID);
+                    if(rs == null) {
+                        throw new IOException(" null requests status");
+                    }
+
+                    if(rs.fileStatuses.length != len) {
+                        esay( "incorrect number of RequestFileStatuses"+
+                                "in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                        throw new IOException("incorrect number of RequestFileStatuses"+"in RequestStatus expected "+len+" received "+rs.fileStatuses.length);
+                    }
+
+                    for(int i =0; i<len;++i) {
+                        Integer fileId = new Integer(rs.fileStatuses[i].fileId);
+                        // the following commented code is incorrect, since the fileIDs contains only unprocessed request ids
+                        //if(!fileIDs.contains(fileId)) {
+                        //throw new IOException("receied unknown id : "+fileId);
+                        //}
+                        //say("substituting request file status with fileId="+rs.fileStatuses[i].fileId);
+                        fileIDsMap.put(fileId,rs.fileStatuses[i]);
+                    }
+                    if(rs.state.equals("Failed")) {
+                        esay("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                        for(int i = 0; i< rs.fileStatuses.length;++i) {
+                            edsay("      ====> fileStatus state =="+rs.fileStatuses[i].state);
+                        }
+                        throw new IOException("rs.state = "+rs.state+" rs.error = "+rs.errorMessage);
+                    }
+                }
+            }catch(IOException ioe) {
+                if(configuration.isDebug()) {
+                    ioe.printStackTrace();
+                }
+                else {
+                    esay(ioe.toString());
+                }
+                done(rs,srm);
+                throw ioe;
+            }
+        }finally {
+            if(copier != null) {
+                copier.doneAddingJobs();
+                copier.waitCompletion();
+            }
+            report.dumpReport();
+            if(!report.everythingAllRight()){
+                System.err.println("srm copy of at least one file failed or not completed");
+                System.exit(1);
+            }
+        }
+    }
+
+    @Override
+    public void run() {
+        say("setting all remaining file statuses to \"Done\"");
+        copier.stop();
+        while(true) {
+            if(fileIDs.isEmpty()) {
+                break;
+            }
+            Integer fileId = (Integer)fileIDs.iterator().next();
+            fileIDs.remove(fileId);
+            say("setting file request "+fileId+" status to Done");
+            RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
+            srm.setFileStatus(requestID,rfs.fileId,"Done");
+        }
+        say("set all file statuses to \"Done\"");
+    }
 }

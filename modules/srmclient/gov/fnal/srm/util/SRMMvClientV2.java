@@ -87,60 +87,60 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMMvClientV2 extends SRMClient {
-	private org.ietf.jgss.GSSCredential cred = null;
-	private GlobusURL[] surls;
-	private String[] surl_strings;
-	private ISRM isrm;
+    private org.ietf.jgss.GSSCredential cred = null;
+    private GlobusURL[] surls;
+    private String[] surl_strings;
+    private ISRM isrm;
 
-	public SRMMvClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_strings) {
-		super(configuration);
-		this.surls      = surls;
-		this.surl_strings=surl_strings;
-		try {
-			cred = getGssCredential();
-		}
-		catch (Exception e) {
-			cred = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    public SRMMvClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_strings) {
+        super(configuration);
+        this.surls      = surls;
+        this.surl_strings=surl_strings;
+        try {
+            cred = getGssCredential();
+        }
+        catch (Exception e) {
+            cred = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
-		GlobusURL srmUrl = surls[0];
-		isrm = new SRMClientV2(srmUrl,
-				      getGssCredential(),
-				      configuration.getRetry_timeout(),
-				      configuration.getRetry_num(),
-				      doDelegation,
-				      fullDelegation,
-				      gss_expected_name,
-				      configuration.getWebservice_path());
-	}
+    @Override
+    public void connect() throws Exception {
+        GlobusURL srmUrl = surls[0];
+        isrm = new SRMClientV2(srmUrl,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			if (cred.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		SrmMvRequest req = new SrmMvRequest();
-		req.setFromSURL(new URI(surl_strings[0]));
-		req.setToSURL(new URI(surl_strings[1]));
-		SrmMvResponse resp = isrm.srmMv(req);
-		TReturnStatus rs   = resp.getReturnStatus();
-		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-			TStatusCode rc  = rs.getStatusCode();
-			StringBuffer sb = new StringBuffer();
-			sb.append("Return code: "+rc.toString()+"\n");
-			sb.append("Explanation: "+rs.getExplanation()+"\n");
-			System.out.println(sb.toString());
-			System.exit(1);
-		}
-	}
+    @Override
+    public void start() throws Exception {
+        try {
+            if (cred.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        SrmMvRequest req = new SrmMvRequest();
+        req.setFromSURL(new URI(surl_strings[0]));
+        req.setToSURL(new URI(surl_strings[1]));
+        SrmMvResponse resp = isrm.srmMv(req);
+        TReturnStatus rs   = resp.getReturnStatus();
+        if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+            TStatusCode rc  = rs.getStatusCode();
+            StringBuffer sb = new StringBuffer();
+            sb.append("Return code: "+rc.toString()+"\n");
+            sb.append("Explanation: "+rs.getExplanation()+"\n");
+            System.out.println(sb.toString());
+            System.exit(1);
+        }
+    }
 
 }

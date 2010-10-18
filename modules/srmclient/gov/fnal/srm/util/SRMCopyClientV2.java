@@ -155,7 +155,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         try {
             if (cred.getRemainingLifetime() < 60)
                 throw new Exception(
-                        "Remaining lifetime of credential is less than a minute.");
+                "Remaining lifetime of credential is less than a minute.");
         } catch (org.ietf.jgss.GSSException gsse) {
             throw gsse;
         }
@@ -184,24 +184,24 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
             if (storagetype!=null) {
-                    if(storagetype.equals("volatile")){
-                            req.setTargetFileStorageType(TFileStorageType.VOLATILE);
-                    }
-                    else if(storagetype.equals("durable")){
-                            req.setTargetFileStorageType(TFileStorageType.DURABLE);
-                    }
-                    else if (storagetype.equals("permanent")) {
-                            req.setTargetFileStorageType(TFileStorageType.PERMANENT);
-                    }
-                    else {
-                            throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
-                    }
+                if(storagetype.equals("volatile")){
+                    req.setTargetFileStorageType(TFileStorageType.VOLATILE);
+                }
+                else if(storagetype.equals("durable")){
+                    req.setTargetFileStorageType(TFileStorageType.DURABLE);
+                }
+                else if (storagetype.equals("permanent")) {
+                    req.setTargetFileStorageType(TFileStorageType.PERMANENT);
+                }
+                else {
+                    throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
+                }
             }
             req.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
             TRetentionPolicy retentionPolicy = null;
             TAccessLatency accessLatency = null;
             if(configuration.getRetentionPolicy() != null ){
-                 retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+                retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
 
             }
 
@@ -211,7 +211,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             }
             if(retentionPolicy != null) {
                 TRetentionPolicyInfo retentionPolicyInfo =
-                        new TRetentionPolicyInfo(retentionPolicy,accessLatency);
+                    new TRetentionPolicyInfo(retentionPolicy,accessLatency);
                 req.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
 
@@ -223,18 +223,18 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if(configuration.getSpaceToken() != null) {
                 req.setTargetSpaceToken(configuration.getSpaceToken());
             }
-	    if (configuration.getExtraParameters().size()>0) {
-		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
-		    int counter=0;
-                    Map extraParameters = configuration.getExtraParameters();
-		    for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
-                            String key = (String)i.next();
-                            String value = (String)extraParameters.get(key);
-			    extraInfoArray[counter++]=new TExtraInfo(key,value);
-		    }
-		    ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
-		    req.setSourceStorageSystemInfo(arrayOfExtraInfo);
-	    }
+            if (configuration.getExtraParameters().size()>0) {
+                TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
+                int counter=0;
+                Map extraParameters = configuration.getExtraParameters();
+                for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
+                    String key = (String)i.next();
+                    String value = (String)extraParameters.get(key);
+                    extraInfoArray[counter++]=new TExtraInfo(key,value);
+                }
+                ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
+                req.setSourceStorageSystemInfo(arrayOfExtraInfo);
+            }
             SrmCopyResponse resp = srmv2.srmCopy(req);
             if ( resp == null ) {
                 throw new IOException(" null SrmCopyResponse");
@@ -255,7 +255,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
 
             }
             TCopyRequestFileStatus[] arrayOfStatuses =
-                    resp.getArrayOfFileStatuses().getStatusArray();
+                resp.getArrayOfFileStatuses().getStatusArray();
             if ( arrayOfStatuses.length != len ) {
                 throw new IOException("number of SrmCopyRequestFileStatuses "+
                         "is SrmRequestStatus is different from exopected "+len+" received "+
@@ -290,8 +290,8 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                     String to_surl_string = to_surl.toString();
                     if ( RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
                         String error ="copy of "+from_surl_string+" into "+to_surl+
-                                " failed, status = "+fileStatusCode+
-                                " explanation="+fileStatus.getExplanation();
+                        " failed, status = "+fileStatusCode+
+                        " explanation="+fileStatus.getExplanation();
                         esay(error);
                         int indx = pendingSurlsMap.remove(from_surl_string).intValue();
                         setReportFailed(from[indx],to[indx],error);
@@ -352,7 +352,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 }
 
                 arrayOfStatuses =
-                        copyStatusRequestResponse.getArrayOfFileStatuses().getStatusArray();
+                    copyStatusRequestResponse.getArrayOfFileStatuses().getStatusArray();
 
                 if ( arrayOfStatuses.length != pendingSurlsMap.size() ) {
                     esay( "incorrect number of arrayOfStatuses "+
@@ -369,8 +369,8 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                     throw new IOException(" null status code");
                 }
                 if (RequestStatusTool.isFailedRequestStatus(status)){
-                         String error = "srmCopy update failed, status : "+ statusCode+
-                            " explanation="+status.getExplanation();
+                    String error = "srmCopy update failed, status : "+ statusCode+
+                    " explanation="+status.getExplanation();
                     esay(error);
                     for(int i = 0; i<expectedResponseLength;++i) {
                         TReturnStatus frstatus = arrayOfStatuses[i].getStatus();
@@ -380,7 +380,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                                     " , "+arrayOfStatuses[i].getTargetSURL()+
                                     "] status="+frstatus.getStatusCode()+
                                     " explanation="+frstatus.getExplanation()
-                                 );
+                            );
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
                                 pendingSurlsMap.remove(arrayOfStatuses[i].getSourceSURL().toString());
                             }
@@ -428,7 +428,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
 
         for(int i=0;i<len;++i){
             org.apache.axis.types.URI uri =
-                    new org.apache.axis.types.URI(surl_strings[i]);
+                new org.apache.axis.types.URI(surl_strings[i]);
             surlArray[i]=uri;
         }
         SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();

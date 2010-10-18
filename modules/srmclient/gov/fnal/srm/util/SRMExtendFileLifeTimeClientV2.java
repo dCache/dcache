@@ -88,88 +88,88 @@ public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
     private ISRM isrm;
 
     public SRMExtendFileLifeTimeClientV2(Configuration configuration,
-					 GlobusURL surls[],
-					 String surl_strings[]) {
-	super(configuration);
-	this.surls        = surls;
-	this.surl_strings = surl_strings;
-	try
-	{
-	    cred = getGssCredential();
-	}
-	catch (Exception e)
-	{
-	    cred = null;
-	    esay("Couldn't getGssCredential.");
-	}
+                                         GlobusURL surls[],
+                                         String surl_strings[]) {
+        super(configuration);
+        this.surls        = surls;
+        this.surl_strings = surl_strings;
+        try
+        {
+            cred = getGssCredential();
+        }
+        catch (Exception e)
+        {
+            cred = null;
+            esay("Couldn't getGssCredential.");
+        }
     }
 
     @Override
     public void connect() throws Exception {
-	GlobusURL srmUrl = surls[0];
-	isrm = new SRMClientV2(srmUrl,
-			      getGssCredential(),
-			      configuration.getRetry_timeout(),
-			      configuration.getRetry_num(),
-			      doDelegation,
-			      fullDelegation,
-			      gss_expected_name,
-			      configuration.getWebservice_path());
+        GlobusURL srmUrl = surls[0];
+        isrm = new SRMClientV2(srmUrl,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
     }
 
     @Override
     public void start() throws Exception {
-	try {
-	    if (cred.getRemainingLifetime() < 60)
-		throw new Exception(
-		    "Remaining lifetime of credential is less than a minute.");
-	}
-	catch (org.ietf.jgss.GSSException gsse) {
-	    throw gsse;
-	}
-	ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
-	URI uriarray[] = new URI[surls.length];
-	URI uri;
-	for (int i=0;i<uriarray.length;i++){
-			uri=new URI(surl_strings[i]);
-			uriarray[i]=uri;
-	}
-	surlarray.setUrlArray(uriarray);
-//	SrmExtendFileLifeTimeResponse
-	SrmExtendFileLifeTimeRequest req = new SrmExtendFileLifeTimeRequest();
-	req.setArrayOfSURLs(surlarray);
-	req.setRequestToken(configuration.getExtendFileLifetimeRequestToken());
-	req.setNewFileLifeTime(configuration.getNewFileLifetime());
-	req.setNewPinLifeTime(configuration.getNewPinLifetime());
-	SrmExtendFileLifeTimeResponse resp = isrm.srmExtendFileLifeTime(req);
+        try {
+            if (cred.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
+        URI uriarray[] = new URI[surls.length];
+        URI uri;
+        for (int i=0;i<uriarray.length;i++){
+            uri=new URI(surl_strings[i]);
+            uriarray[i]=uri;
+        }
+        surlarray.setUrlArray(uriarray);
+        //	SrmExtendFileLifeTimeResponse
+        SrmExtendFileLifeTimeRequest req = new SrmExtendFileLifeTimeRequest();
+        req.setArrayOfSURLs(surlarray);
+        req.setRequestToken(configuration.getExtendFileLifetimeRequestToken());
+        req.setNewFileLifeTime(configuration.getNewFileLifetime());
+        req.setNewPinLifeTime(configuration.getNewPinLifetime());
+        SrmExtendFileLifeTimeResponse resp = isrm.srmExtendFileLifeTime(req);
         if(resp == null) {
             esay("Received null SrmExtendFileLifeTimeResponse");
             System.exit(1);
         }
-	try {
-	    TReturnStatus rs   = resp.getReturnStatus();
-	    if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS ||
-                   configuration.isDebug() ) {
-		TStatusCode rc  = rs.getStatusCode();
-		StringBuffer sb = new StringBuffer();
-		sb.append("Return code: "+rc.toString()+"\n");
-		sb.append("Explanation: "+rs.getExplanation()+"\n");
+        try {
+            TReturnStatus rs   = resp.getReturnStatus();
+            if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS ||
+                    configuration.isDebug() ) {
+                TStatusCode rc  = rs.getStatusCode();
+                StringBuffer sb = new StringBuffer();
+                sb.append("Return code: "+rc.toString()+"\n");
+                sb.append("Explanation: "+rs.getExplanation()+"\n");
 
-		if ( resp.getArrayOfFileStatuses()!=null ) {
-		    if ( resp.getArrayOfFileStatuses().getStatusArray()!=null) {
-			for (int i=0; i<resp.getArrayOfFileStatuses().getStatusArray().length;i++) {
-			    TSURLLifetimeReturnStatus t = resp.getArrayOfFileStatuses().getStatusArray()[i];
-			    sb.append("surl["+i+"] "+t.getSurl()+"\n");
-			    sb.append("\tReturn code: "+t.getStatus().getStatusCode().toString()+"\n");
-			    sb.append("\tExplanation: "+t.getStatus().getExplanation()+"\n");
-			    sb.append("\t\tfilelifetime="+t.getFileLifetime()+"\n");
-			    sb.append("\t\tpinlifetime="+t.getPinLifetime()+"\n");
-			}
-		    }
+                if ( resp.getArrayOfFileStatuses()!=null ) {
+                    if ( resp.getArrayOfFileStatuses().getStatusArray()!=null) {
+                        for (int i=0; i<resp.getArrayOfFileStatuses().getStatusArray().length;i++) {
+                            TSURLLifetimeReturnStatus t = resp.getArrayOfFileStatuses().getStatusArray()[i];
+                            sb.append("surl["+i+"] "+t.getSurl()+"\n");
+                            sb.append("\tReturn code: "+t.getStatus().getStatusCode().toString()+"\n");
+                            sb.append("\tExplanation: "+t.getStatus().getExplanation()+"\n");
+                            sb.append("\t\tfilelifetime="+t.getFileLifetime()+"\n");
+                            sb.append("\t\tpinlifetime="+t.getPinLifetime()+"\n");
+                        }
+                    }
                     else {
                         sb.append("array of file statuse is null\n");
                     }
-		}
+                }
                 else {
                     sb.append("array of file statuse is null\n");
                 }
@@ -179,15 +179,15 @@ public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
                 } else {
                     say(sb.toString());
                 }
-	    }
-	    else {
-		System.exit(0);
-	    }
-	}
-	catch (Exception e) {
-	    e.printStackTrace();
-	    System.exit(1);
-	}
+            }
+            else {
+                System.exit(0);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }
 

@@ -99,10 +99,10 @@ public class ShellCommandExecuter implements Runnable {
         }
 
         java.io.BufferedReader OutReader =
-        new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
+            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,new java.io.PrintWriter(System.out),logger);
         java.io.BufferedReader ErrReader =
-        new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
+            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
         new ShellCommandExecuter(ErrReader,new java.io.PrintWriter(System.out),logger);
         int exit_value=1;
         try {
@@ -135,10 +135,10 @@ public class ShellCommandExecuter implements Runnable {
 
         java.io.StringWriter string_writer = new java.io.StringWriter();
         java.io.BufferedReader OutReader =
-        new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
+            new java.io.BufferedReader(new java.io.InputStreamReader(StdOut));
         new ShellCommandExecuter(OutReader,string_writer,logger);
         java.io.BufferedReader ErrReader =
-        new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
+            new java.io.BufferedReader(new java.io.InputStreamReader(StdErr));
         new ShellCommandExecuter(ErrReader,new java.io.PrintWriter(System.err),logger);
         int exit_value=1;
         try {
@@ -161,8 +161,8 @@ public class ShellCommandExecuter implements Runnable {
     private java.io.Writer out;
 
     private  ShellCommandExecuter(java.io.BufferedReader reader,
-    java.io.Writer out,
-    org.dcache.srm.Logger logger) {
+                                  java.io.Writer out,
+                                  org.dcache.srm.Logger logger) {
         this.reader = reader;
         this.out = out;
         new Thread(this).start();

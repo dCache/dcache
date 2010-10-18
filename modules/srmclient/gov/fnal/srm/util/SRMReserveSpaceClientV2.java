@@ -96,7 +96,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     private String requestToken;
 
     public SRMReserveSpaceClientV2(Configuration configuration,
-        GlobusURL url) {
+                                   GlobusURL url) {
         super(configuration);
         srmURL=url;
         try {
@@ -111,13 +111,13 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     public void connect() throws Exception {
 
         srmv2 = new SRMClientV2(srmURL,
-            getGssCredential(),
-            configuration.getRetry_timeout(),
-            configuration.getRetry_num(),
-            doDelegation,
-            fullDelegation,
-            gss_expected_name,
-            configuration.getWebservice_path());
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
         try {
             if (credential.getRemainingLifetime() < 60)
                 throw new Exception(
-                    "Remaining lifetime of credential is less than a minute.");
+                "Remaining lifetime of credential is less than a minute.");
         } catch (org.ietf.jgss.GSSException gsse) {
             throw gsse;
         }
@@ -142,33 +142,33 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             TRetentionPolicyInfo rpi = new TRetentionPolicyInfo(rp,al);
             request.setRetentionPolicyInfo(rpi);
             if (configuration.getDesiredReserveSpaceSize()!=null) {
-                    request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
+                request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
             }
             if (configuration.getGuaranteedReserveSpaceSize()!=null){
-                    request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize().longValue()));
+                request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize().longValue()));
             }
             request.setUserSpaceTokenDescription(configuration.getSpaceTokenDescription());
             if (configuration.getDesiredLifetime()!=null) {
-                    request.setDesiredLifetimeOfReservedSpace(new Integer((int)(configuration.getDesiredLifetime().longValue())));
+                request.setDesiredLifetimeOfReservedSpace(new Integer((int)(configuration.getDesiredLifetime().longValue())));
             }
             if (configuration.getArrayOfClientNetworks()!=null ||
-                configuration.getConnectionType()!=null ||
-                configuration.getAccessPattern()!=null ||
-                configuration.getProtocols()!=null) {
-                    TTransferParameters tp = new TTransferParameters();
-                    if (configuration.getArrayOfClientNetworks()!=null) {
-                            tp.setArrayOfClientNetworks(new ArrayOfString(configuration.getArrayOfClientNetworks()));
-                    }
-                    if (configuration.getConnectionType()!=null) {
-                            tp.setConnectionType(TConnectionType.fromString(configuration.getConnectionType()));
-                    }
-                    if (configuration.getAccessPattern()!=null) {
-                            tp.setAccessPattern(TAccessPattern.fromString(configuration.getAccessPattern()));
-                    }
-                    if (configuration.getProtocols()!=null) {
-                            tp.setArrayOfTransferProtocols(new ArrayOfString(configuration.getProtocols()));
-                    }
-                    request.setTransferParameters(tp);
+                    configuration.getConnectionType()!=null ||
+                    configuration.getAccessPattern()!=null ||
+                    configuration.getProtocols()!=null) {
+                TTransferParameters tp = new TTransferParameters();
+                if (configuration.getArrayOfClientNetworks()!=null) {
+                    tp.setArrayOfClientNetworks(new ArrayOfString(configuration.getArrayOfClientNetworks()));
+                }
+                if (configuration.getConnectionType()!=null) {
+                    tp.setConnectionType(TConnectionType.fromString(configuration.getConnectionType()));
+                }
+                if (configuration.getAccessPattern()!=null) {
+                    tp.setAccessPattern(TAccessPattern.fromString(configuration.getAccessPattern()));
+                }
+                if (configuration.getProtocols()!=null) {
+                    tp.setArrayOfTransferProtocols(new ArrayOfString(configuration.getProtocols()));
+                }
+                request.setTransferParameters(tp);
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
@@ -187,102 +187,102 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             }
             if (RequestStatusTool.isFailedRequestStatus(rs)) {
                 throw new IOException("srmReserveSpace submission failed, unexpected or failed return status : "+
-                    rs.getStatusCode()+" explanation="+rs.getExplanation());
+                        rs.getStatusCode()+" explanation="+rs.getExplanation());
             }
-	    if (response.getSpaceToken()!=null) {
-                    System.out.println("Space token ="+
-				       response.getSpaceToken());
-                    logger.log("lifetime = "+
-			       response.getLifetimeOfReservedSpace());
-		    if (response.getRetentionPolicyInfo()!=null) {
-			    logger.log("access latency = "+
-				       response.getRetentionPolicyInfo().getAccessLatency());
-			    logger.log("retention policy = "+
-				       response.getRetentionPolicyInfo().getRetentionPolicy());
-		    }
-                    logger.log("guaranteed size = "+
-			       response.getSizeOfGuaranteedReservedSpace());
-                    logger.log("total size = "+
-			       response.getSizeOfTotalReservedSpace());
-	    }
+            if (response.getSpaceToken()!=null) {
+                System.out.println("Space token ="+
+                        response.getSpaceToken());
+                logger.log("lifetime = "+
+                        response.getLifetimeOfReservedSpace());
+                if (response.getRetentionPolicyInfo()!=null) {
+                    logger.log("access latency = "+
+                            response.getRetentionPolicyInfo().getAccessLatency());
+                    logger.log("retention policy = "+
+                            response.getRetentionPolicyInfo().getRetentionPolicy());
+                }
+                logger.log("guaranteed size = "+
+                        response.getSizeOfGuaranteedReservedSpace());
+                logger.log("total size = "+
+                        response.getSizeOfTotalReservedSpace());
+            }
             else {
-		    while(true) {
-			    long estimatedWaitInSeconds = 5;
+                while(true) {
+                    long estimatedWaitInSeconds = 5;
 
-			    if(estimatedWaitInSeconds > 60) {
-				    estimatedWaitInSeconds = 60;
-			    }
-			    try {
-				    say("sleeping "+estimatedWaitInSeconds+" seconds ...");
-				    Thread.sleep(estimatedWaitInSeconds * 1000);
-			    } catch(InterruptedException ie) {
-				    System.out.println("Interrupted, quitting");
-				    if ( requestToken != null  ) {
-					    abortRequest();
-				    }
-				    System.exit(1);
-			    }
-			    //
-			    // check our request
-			    //
-			    SrmStatusOfReserveSpaceRequestRequest req = new SrmStatusOfReserveSpaceRequestRequest();
-			    req.setRequestToken(requestToken);
-			    req.setAuthorizationID(request.getAuthorizationID());
-			    SrmStatusOfReserveSpaceRequestResponse statusOfReserveSpaceRequestResponse =  srmv2.srmStatusOfReserveSpaceRequest(req);
+                    if(estimatedWaitInSeconds > 60) {
+                        estimatedWaitInSeconds = 60;
+                    }
+                    try {
+                        say("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                        Thread.sleep(estimatedWaitInSeconds * 1000);
+                    } catch(InterruptedException ie) {
+                        System.out.println("Interrupted, quitting");
+                        if ( requestToken != null  ) {
+                            abortRequest();
+                        }
+                        System.exit(1);
+                    }
+                    //
+                    // check our request
+                    //
+                    SrmStatusOfReserveSpaceRequestRequest req = new SrmStatusOfReserveSpaceRequestRequest();
+                    req.setRequestToken(requestToken);
+                    req.setAuthorizationID(request.getAuthorizationID());
+                    SrmStatusOfReserveSpaceRequestResponse statusOfReserveSpaceRequestResponse =  srmv2.srmStatusOfReserveSpaceRequest(req);
 
-			    if( statusOfReserveSpaceRequestResponse == null) {
-				    throw new IOException(" null statusOfReserveSpaceRequestResponse");
-			    }
-			    TReturnStatus status = statusOfReserveSpaceRequestResponse.getReturnStatus();
-			    if ( status == null ) {
-				    throw new IOException(" null return status");
-			    }
-			    if ( status.getStatusCode() == null ) {
-				    throw new IOException(" null status code");
-			    }
-			    if (RequestStatusTool.isFailedRequestStatus(status)){
-				    logger.log("status: code="+status.getStatusCode()+
-					       " explanantion="+status.getExplanation());
-				    throw new IOException("SrmStatusOfReserveSpaceRequest unexpected or failed status : "+
-							  status.getStatusCode() +" explanation="+status.getExplanation());
-			    }
-			    if (status.getStatusCode()==TStatusCode.SRM_SUCCESS ||
-				status.getStatusCode()==TStatusCode.SRM_SPACE_AVAILABLE ||
-				status.getStatusCode()==TStatusCode.SRM_LOWER_SPACE_GRANTED) {
-				    System.out.println("Space token ="+
-						       statusOfReserveSpaceRequestResponse.getSpaceToken());
-				    logger.log("lifetime = "+
-					       statusOfReserveSpaceRequestResponse.getLifetimeOfReservedSpace());
-				    logger.log("access latency = "+
-					       statusOfReserveSpaceRequestResponse.getRetentionPolicyInfo().getAccessLatency());
-				    logger.log("retention policy = "+
-					       statusOfReserveSpaceRequestResponse.getRetentionPolicyInfo().getRetentionPolicy());
-				    logger.log("guaranteed size = "+
-					       statusOfReserveSpaceRequestResponse.getSizeOfGuaranteedReservedSpace());
-				    logger.log("total size = "+
-					       statusOfReserveSpaceRequestResponse.getSizeOfTotalReservedSpace());
-				    break;
-			    }
-			    if(statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime() != null &&
-			       statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue() < estimatedWaitInSeconds &&
-			       statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue() >=1) {
-				    estimatedWaitInSeconds = statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue();
-			    }
-		    }
-	    }
+                    if( statusOfReserveSpaceRequestResponse == null) {
+                        throw new IOException(" null statusOfReserveSpaceRequestResponse");
+                    }
+                    TReturnStatus status = statusOfReserveSpaceRequestResponse.getReturnStatus();
+                    if ( status == null ) {
+                        throw new IOException(" null return status");
+                    }
+                    if ( status.getStatusCode() == null ) {
+                        throw new IOException(" null status code");
+                    }
+                    if (RequestStatusTool.isFailedRequestStatus(status)){
+                        logger.log("status: code="+status.getStatusCode()+
+                                " explanantion="+status.getExplanation());
+                        throw new IOException("SrmStatusOfReserveSpaceRequest unexpected or failed status : "+
+                                status.getStatusCode() +" explanation="+status.getExplanation());
+                    }
+                    if (status.getStatusCode()==TStatusCode.SRM_SUCCESS ||
+                            status.getStatusCode()==TStatusCode.SRM_SPACE_AVAILABLE ||
+                            status.getStatusCode()==TStatusCode.SRM_LOWER_SPACE_GRANTED) {
+                        System.out.println("Space token ="+
+                                statusOfReserveSpaceRequestResponse.getSpaceToken());
+                        logger.log("lifetime = "+
+                                statusOfReserveSpaceRequestResponse.getLifetimeOfReservedSpace());
+                        logger.log("access latency = "+
+                                statusOfReserveSpaceRequestResponse.getRetentionPolicyInfo().getAccessLatency());
+                        logger.log("retention policy = "+
+                                statusOfReserveSpaceRequestResponse.getRetentionPolicyInfo().getRetentionPolicy());
+                        logger.log("guaranteed size = "+
+                                statusOfReserveSpaceRequestResponse.getSizeOfGuaranteedReservedSpace());
+                        logger.log("total size = "+
+                                statusOfReserveSpaceRequestResponse.getSizeOfTotalReservedSpace());
+                        break;
+                    }
+                    if(statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime() != null &&
+                            statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue() < estimatedWaitInSeconds &&
+                            statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue() >=1) {
+                        estimatedWaitInSeconds = statusOfReserveSpaceRequestResponse.getEstimatedProcessingTime().intValue();
+                    }
+                }
+            }
             Runtime.getRuntime().removeShutdownHook(hook);
         }
-	catch(Exception e) {
-		esay(e.toString());
-		try {
-			if ( requestToken != null ) {
-				abortRequest();
-			}
-			System.exit(1);
-		} catch (Exception e1) {
-			logger.elog(e1.toString());
-			System.exit(1);
-		}
+        catch(Exception e) {
+            esay(e.toString());
+            try {
+                if ( requestToken != null ) {
+                    abortRequest();
+                }
+                System.exit(1);
+            } catch (Exception e1) {
+                logger.elog(e1.toString());
+                System.exit(1);
+            }
         }
     }
 

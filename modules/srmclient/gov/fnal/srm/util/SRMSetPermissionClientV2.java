@@ -87,98 +87,98 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMSetPermissionClientV2 extends SRMClient {
-        //
-        // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
-        // dCache SRM ignores this value and uses group id it retrieves from
-        // file metadata on the server side. SRM developers agreed to treat hyphen
-        // as "unspecified". No chage of ownership happens.
-        //
-        private static final String DEFAULT_DUMMY_GROUP_ID = "-";
-	private org.ietf.jgss.GSSCredential cred = null;
-	private GlobusURL surl;
-	private String surl_string;
-	private ISRM isrm;
+    //
+    // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
+    // dCache SRM ignores this value and uses group id it retrieves from
+    // file metadata on the server side. SRM developers agreed to treat hyphen
+    // as "unspecified". No chage of ownership happens.
+    //
+    private static final String DEFAULT_DUMMY_GROUP_ID = "-";
+    private org.ietf.jgss.GSSCredential cred = null;
+    private GlobusURL surl;
+    private String surl_string;
+    private ISRM isrm;
 
-	public SRMSetPermissionClientV2(Configuration configuration,
-					  GlobusURL surl, String surl_string) {
-		super(configuration);
-		this.surl       = surl;
-		this.surl_string = surl_string;
-		try {
-			cred = getGssCredential();
-		}
-		catch (Exception e) {
-			cred = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    public SRMSetPermissionClientV2(Configuration configuration,
+                                    GlobusURL surl, String surl_string) {
+        super(configuration);
+        this.surl       = surl;
+        this.surl_string = surl_string;
+        try {
+            cred = getGssCredential();
+        }
+        catch (Exception e) {
+            cred = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
-		GlobusURL srmUrl = surl;
-		isrm = new SRMClientV2(srmUrl,
-				      getGssCredential(),
-				      configuration.getRetry_timeout(),
-				      configuration.getRetry_num(),
-				      doDelegation,
-				      fullDelegation,
-				      gss_expected_name,
-				      configuration.getWebservice_path());
-	}
+    @Override
+    public void connect() throws Exception {
+        GlobusURL srmUrl = surl;
+        isrm = new SRMClientV2(srmUrl,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			if (cred.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		URI uri = new URI(surl_string);
-		SrmSetPermissionRequest req = new SrmSetPermissionRequest();
-		req.setSURL(uri);
-		TPermissionType type = TPermissionType.fromString(configuration.getSetPermissionType());
-		req.setPermissionType(type);
-		TPermissionMode mode = null;
-		if ( configuration.getSetOwnerPermissionMode() != null ) {
-			mode = TPermissionMode.fromString(configuration.getSetOwnerPermissionMode());
-		}
-		req.setOwnerPermission(mode);
-		ArrayOfTGroupPermission arrayOfGroupPermissions = new ArrayOfTGroupPermission();
-		TGroupPermission grouppermissions[] = null;
-		if ( configuration.getSetGroupPermissionMode()!=null ) {
-			grouppermissions = new  TGroupPermission[1];
-			grouppermissions[0] = new TGroupPermission();
-			grouppermissions[0].setMode(TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
-			grouppermissions[0].setGroupID(DEFAULT_DUMMY_GROUP_ID);
-		}
-		arrayOfGroupPermissions.setGroupPermissionArray(grouppermissions);
-		req.setArrayOfGroupPermissions(arrayOfGroupPermissions);
-		TPermissionMode other = null;
-		if ( configuration.getSetOtherPermissionMode()!=null) {
-			other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
-		}
-		req.setOtherPermission(other);
-		SrmSetPermissionResponse resp = isrm.srmSetPermission(req);
-		try {
-			TReturnStatus rs   = resp.getReturnStatus();
-			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-				TStatusCode rc  = rs.getStatusCode();
-				StringBuffer sb = new StringBuffer();
-				sb.append("Return code: "+rc.toString()+"\n");
-				sb.append("Explanation: "+rs.getExplanation()+"\n");
-				System.out.println(sb.toString());
-				System.exit(1);
-			}
-			else {
-				System.exit(0);
-			}
-		}
-		catch (Exception e) {
-			throw e;
-		}
-	}
+    @Override
+    public void start() throws Exception {
+        try {
+            if (cred.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        URI uri = new URI(surl_string);
+        SrmSetPermissionRequest req = new SrmSetPermissionRequest();
+        req.setSURL(uri);
+        TPermissionType type = TPermissionType.fromString(configuration.getSetPermissionType());
+        req.setPermissionType(type);
+        TPermissionMode mode = null;
+        if ( configuration.getSetOwnerPermissionMode() != null ) {
+            mode = TPermissionMode.fromString(configuration.getSetOwnerPermissionMode());
+        }
+        req.setOwnerPermission(mode);
+        ArrayOfTGroupPermission arrayOfGroupPermissions = new ArrayOfTGroupPermission();
+        TGroupPermission grouppermissions[] = null;
+        if ( configuration.getSetGroupPermissionMode()!=null ) {
+            grouppermissions = new  TGroupPermission[1];
+            grouppermissions[0] = new TGroupPermission();
+            grouppermissions[0].setMode(TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
+            grouppermissions[0].setGroupID(DEFAULT_DUMMY_GROUP_ID);
+        }
+        arrayOfGroupPermissions.setGroupPermissionArray(grouppermissions);
+        req.setArrayOfGroupPermissions(arrayOfGroupPermissions);
+        TPermissionMode other = null;
+        if ( configuration.getSetOtherPermissionMode()!=null) {
+            other = TPermissionMode.fromString(configuration.getSetOtherPermissionMode());
+        }
+        req.setOtherPermission(other);
+        SrmSetPermissionResponse resp = isrm.srmSetPermission(req);
+        try {
+            TReturnStatus rs   = resp.getReturnStatus();
+            if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                TStatusCode rc  = rs.getStatusCode();
+                StringBuffer sb = new StringBuffer();
+                sb.append("Return code: "+rc.toString()+"\n");
+                sb.append("Explanation: "+rs.getExplanation()+"\n");
+                System.out.println(sb.toString());
+                System.exit(1);
+            }
+            else {
+                System.exit(0);
+            }
+        }
+        catch (Exception e) {
+            throw e;
+        }
+    }
 
 }

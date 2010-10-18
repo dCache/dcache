@@ -87,86 +87,86 @@ import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 
 public class SRMRmClientV2 extends SRMClient {
-	private org.ietf.jgss.GSSCredential cred = null;
-	private GlobusURL surls[];
-	private String surl_strings[];
-	private ISRM isrm;
+    private org.ietf.jgss.GSSCredential cred = null;
+    private GlobusURL surls[];
+    private String surl_strings[];
+    private ISRM isrm;
 
-	/** Creates a new instance of SRMGetClient */
-	public SRMRmClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_strings) {
-		super(configuration);
-		this.surls      = surls;
-		this.surl_strings=surl_strings;
-		try {
-			cred = getGssCredential();
-		}
-		catch (Exception e) {
-			cred = null;
-			System.err.println("Couldn't getGssCredential.");
-		}
-	}
+    /** Creates a new instance of SRMGetClient */
+    public SRMRmClientV2(Configuration configuration, GlobusURL[] surls, String[] surl_strings) {
+        super(configuration);
+        this.surls      = surls;
+        this.surl_strings=surl_strings;
+        try {
+            cred = getGssCredential();
+        }
+        catch (Exception e) {
+            cred = null;
+            System.err.println("Couldn't getGssCredential.");
+        }
+    }
 
-        @Override
-	public void connect() throws Exception {
-		GlobusURL srmUrl = surls[0];
-		isrm = new SRMClientV2(srmUrl,
-				      getGssCredential(),
-				      configuration.getRetry_timeout(),
-				      configuration.getRetry_num(),
-				      doDelegation,
-				      fullDelegation,
-				      gss_expected_name,
-				      configuration.getWebservice_path());
-	}
+    @Override
+    public void connect() throws Exception {
+        GlobusURL srmUrl = surls[0];
+        isrm = new SRMClientV2(srmUrl,
+                getGssCredential(),
+                configuration.getRetry_timeout(),
+                configuration.getRetry_num(),
+                doDelegation,
+                fullDelegation,
+                gss_expected_name,
+                configuration.getWebservice_path());
+    }
 
-        @Override
-	public void start() throws Exception {
-		try {
-			if (cred.getRemainingLifetime() < 60)
-				throw new Exception(
-					"Remaining lifetime of credential is less than a minute.");
-		}
-		catch (org.ietf.jgss.GSSException gsse) {
-			throw gsse;
-		}
-		SrmRmRequest req = new SrmRmRequest();
-		URI[] uris = new URI[surls.length];
-		for(int i =0; i<surls.length; ++i) {
-			uris[i] = new URI(surl_strings[i]);
-		}
-		req.setArrayOfSURLs(new ArrayOfAnyURI(uris));
-		SrmRmResponse resp = isrm.srmRm(req);
-		TReturnStatus rs   = resp.getReturnStatus();
-		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
-			TStatusCode rc  = rs.getStatusCode();
-			StringBuffer sb = new StringBuffer();
-			sb.append("Return code: "+rc.toString()+"\n");
-			sb.append("Explanation: "+rs.getExplanation()+"\n");
-                        if(resp.getArrayOfFileStatuses() != null) {
-				TSURLReturnStatus[] arrayOfStatuses = resp.getArrayOfFileStatuses().getStatusArray();
-				if(arrayOfStatuses != null) {
-					for (int i=0; i<arrayOfStatuses.length; i++) {
-						if(arrayOfStatuses[i] != null ) {
-							sb.append("file#").append(i).append(" : ");
-							if(arrayOfStatuses[i].getSurl() != null) {
-								sb.append(arrayOfStatuses[i].getSurl());
-							}
-							if(arrayOfStatuses[i].getStatus() != null) {
-								sb.append(", ");
-								sb.append(arrayOfStatuses[i].getStatus().getStatusCode());
-								sb.append(", \"");
-								sb.append(arrayOfStatuses[i].getStatus().getExplanation());
-								sb.append( "\"");
-							}
-							sb.append('\n');
-						}
-					}
-				}
+    @Override
+    public void start() throws Exception {
+        try {
+            if (cred.getRemainingLifetime() < 60)
+                throw new Exception(
+                "Remaining lifetime of credential is less than a minute.");
+        }
+        catch (org.ietf.jgss.GSSException gsse) {
+            throw gsse;
+        }
+        SrmRmRequest req = new SrmRmRequest();
+        URI[] uris = new URI[surls.length];
+        for(int i =0; i<surls.length; ++i) {
+            uris[i] = new URI(surl_strings[i]);
+        }
+        req.setArrayOfSURLs(new ArrayOfAnyURI(uris));
+        SrmRmResponse resp = isrm.srmRm(req);
+        TReturnStatus rs   = resp.getReturnStatus();
+        if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+            TStatusCode rc  = rs.getStatusCode();
+            StringBuffer sb = new StringBuffer();
+            sb.append("Return code: "+rc.toString()+"\n");
+            sb.append("Explanation: "+rs.getExplanation()+"\n");
+            if(resp.getArrayOfFileStatuses() != null) {
+                TSURLReturnStatus[] arrayOfStatuses = resp.getArrayOfFileStatuses().getStatusArray();
+                if(arrayOfStatuses != null) {
+                    for (int i=0; i<arrayOfStatuses.length; i++) {
+                        if(arrayOfStatuses[i] != null ) {
+                            sb.append("file#").append(i).append(" : ");
+                            if(arrayOfStatuses[i].getSurl() != null) {
+                                sb.append(arrayOfStatuses[i].getSurl());
+                            }
+                            if(arrayOfStatuses[i].getStatus() != null) {
+                                sb.append(", ");
+                                sb.append(arrayOfStatuses[i].getStatus().getStatusCode());
+                                sb.append(", \"");
+                                sb.append(arrayOfStatuses[i].getStatus().getExplanation());
+                                sb.append( "\"");
+                            }
+                            sb.append('\n');
                         }
-			System.out.println(sb.toString());
-			System.exit(1);
-		}
-	}
+                    }
+                }
+            }
+            System.out.println(sb.toString());
+            System.exit(1);
+        }
+    }
 
 
 }

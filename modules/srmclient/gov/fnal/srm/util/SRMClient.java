@@ -79,269 +79,269 @@ import org.globus.util.GlobusURL;
  * @author  timur
  */
 public abstract class SRMClient {
-	private String glueprotocol;
-	private String gluepath;
-	private boolean gsissl;
-	protected boolean debug;
-	protected ISRM srm;
-	private GlobusURL srm_url;
-	protected String urlcopy;
-	protected Configuration configuration;
-	protected org.dcache.srm.Logger logger;
-	protected boolean doDelegation =false;
-	protected boolean fullDelegation =false;
-	protected String gss_expected_name ="host";
-	protected long retrytimeout=1000;
-	protected int retries = 10;
-	protected Report report;
+    private String glueprotocol;
+    private String gluepath;
+    private boolean gsissl;
+    protected boolean debug;
+    protected ISRM srm;
+    private GlobusURL srm_url;
+    protected String urlcopy;
+    protected Configuration configuration;
+    protected org.dcache.srm.Logger logger;
+    protected boolean doDelegation =false;
+    protected boolean fullDelegation =false;
+    protected String gss_expected_name ="host";
+    protected long retrytimeout=1000;
+    protected int retries = 10;
+    protected Report report;
 
 
-	public SRMClient(Configuration configuration) {
-		this.configuration = configuration;
-		logger = configuration.getLogger();
-		this.glueprotocol = configuration.getWebservice_protocol();
-		this.gluepath = configuration.getWebservice_path();
-		this.gsissl = configuration.isGsissl();
-		this.debug=configuration.isDebug();
-		this.urlcopy=configuration.getUrlcopy();
-		this.doDelegation = configuration.isDelegate();
-		this.fullDelegation = configuration.isFull_delegation();
-		this.gss_expected_name = configuration.getGss_expected_name();
+    public SRMClient(Configuration configuration) {
+        this.configuration = configuration;
+        logger = configuration.getLogger();
+        this.glueprotocol = configuration.getWebservice_protocol();
+        this.gluepath = configuration.getWebservice_path();
+        this.gsissl = configuration.isGsissl();
+        this.debug=configuration.isDebug();
+        this.urlcopy=configuration.getUrlcopy();
+        this.doDelegation = configuration.isDelegate();
+        this.fullDelegation = configuration.isFull_delegation();
+        this.gss_expected_name = configuration.getGss_expected_name();
 
-		dsay("In SRMClient ExpectedName: "+gss_expected_name);
-		dsay("SRMClient("+glueprotocol+","+gluepath+","+gsissl+")");
-	}
+        dsay("In SRMClient ExpectedName: "+gss_expected_name);
+        dsay("SRMClient("+glueprotocol+","+gluepath+","+gsissl+")");
+    }
 
-	public void setUrlcopy(String urlcopy) {
-		this.urlcopy = urlcopy;
-	}
+    public void setUrlcopy(String urlcopy) {
+        this.urlcopy = urlcopy;
+    }
 
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
 
-	public static RequestFileStatus getFileRequest(RequestStatus rs,
-						       Integer nextID) {
+    public static RequestFileStatus getFileRequest(RequestStatus rs,
+                                                   Integer nextID) {
 
-		RequestFileStatus[] frs = rs.fileStatuses;
-		if(frs == null ) {
-			return null;
-		}
+        RequestFileStatus[] frs = rs.fileStatuses;
+        if(frs == null ) {
+            return null;
+        }
 
-		for(int i= 0; i<frs.length;++i) {
-			if(frs[i].fileId ==  nextID.intValue()) {
-				return frs[i];
-			}
-		}
-		return null;
-	}
-
-
-   public final void say(String msg) {
-      logger.log(new java.util.Date().toString() +": "+msg);
-   }
-
-   //say if debug
-   public  final void dsay(String msg) {
-      if(debug) {
-         logger.log(new java.util.Date().toString() +": "+msg);
-      }
-   }
-
-   //error say
-   public final void esay(String err) {
-      logger.elog(new java.util.Date().toString() +": "+err);
-   }
-
-   //esay if debug
-   public  final void edsay(String err) {
-      if(debug) {
-         logger.elog(new java.util.Date().toString() +": "+err);
-      }
-   }
-
-   public abstract void connect() throws Exception;
-
-   public abstract void start() throws Exception;
-
-   protected void connect(GlobusURL srmUrl) throws Exception {
-      try {
-
-         SRMClientV1 client;
-         client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
-         dsay("connected to server, obtaining proxy");
-
-         //srm =  client.getManagerConnection ();
-         srm = client;
-         srm_url = srmUrl;
-         dsay("got proxy of type "+srm.getClass());
-
-      } catch (Exception srme) {
-         throw new IOException(srme.toString());
-      }
-      if(srm == null) {
-         throw new IOException("can not get manager connection");
-      }
-
-   }
-
-   public org.ietf.jgss.GSSCredential  getGssCredential()
-   throws Exception {
-      if(configuration.isUseproxy()) {
-         return org.dcache.srm.security.SslGsiSocketFactory.
-                createUserCredential(configuration.getX509_user_proxy(),
-            null,
-            null);
-      } else {
-         return org.dcache.srm.security.SslGsiSocketFactory.
-                createUserCredential(
-            null,
-            configuration.getX509_user_cert(),
-            configuration.getX509_user_key());
-      }
-   }
-
-   public  void done(RequestStatus rs,ISRM srm) {
-      if(rs.fileStatuses != null) {
-         for(int i = 0; i< rs.fileStatuses.length;++i) {
-            RequestFileStatus rfs = rs.fileStatuses[i];
-            if(!rfs.state.equals("Done") &&
-               !rfs.state.equals("Failed")) {
-               say("rfs.state is " + rfs.state +
-                   " calling setFileStatus(" + rs.requestId + "," +
-                   rfs.fileId + ",\"Done\")");
-               srm.setFileStatus(rs.requestId,rfs.fileId,"Done");
+        for(int i= 0; i<frs.length;++i) {
+            if(frs[i].fileId ==  nextID.intValue()) {
+                return frs[i];
             }
-         }
-      }
-   }
-
-   private void setReportSuccessStatusBySource(GlobusURL url){
-      if(report == null) return;
-      report.setStatusBySourceUrl(url, Report.OK_RC, null);
-
-   }
-
-   private void setReportSuccessStatusByDest(GlobusURL url){
-      if(report == null) return;
-      report.setStatusByDestinationUrl(url, Report.OK_RC, null);
-
-   }
-   private void setReportSuccessStatusBySrcAndDest(GlobusURL srcurl,
-                                                   GlobusURL dsturl){
-      if(srcurl == null ) {
-         setReportSuccessStatusByDest(dsturl);
-         return;
-      }
-      if(dsturl == null ) {
-         setReportSuccessStatusBySource(srcurl);
-         return;
-      }
-
-      if(report == null) return;
+        }
+        return null;
+    }
 
 
+    public final void say(String msg) {
+        logger.log(new java.util.Date().toString() +": "+msg);
+    }
 
-      report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.OK_RC, null);
-      return;
-   }
+    //say if debug
+    public  final void dsay(String msg) {
+        if(debug) {
+            logger.log(new java.util.Date().toString() +": "+msg);
+        }
+    }
 
-   private void setReportFailedStatusBySource(GlobusURL url, String error){
-      if(report == null) return;
-      if(error == null) {
-         report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknonw error");
-         return;
-      }
-      error.replace('\n', ' ');
-      if(error.toLowerCase().indexOf("file exists") != -1 ) {
-         report.setStatusBySourceUrl(url, Report.FILE_EXISTS_RC, error);
-         return;
-      }
-      if(error.toLowerCase().indexOf("permission") != -1 ) {
-         report.setStatusBySourceUrl(url, Report.PERMISSION_RC, error);
-         return;
-      }
-      report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
-      return;
-   }
+    //error say
+    public final void esay(String err) {
+        logger.elog(new java.util.Date().toString() +": "+err);
+    }
 
-   private void setReportFailedStatusByDest(GlobusURL url, String error){
-      if(report == null) return;
-      if(error == null) {
-         report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknonw error");
-         return;
-      }
-      error.replace('\n', ' ');
-      if(error.toLowerCase().indexOf("file exists") != -1 ) {
-         report.setStatusByDestinationUrl(url, Report.FILE_EXISTS_RC, error);
-         return;
-      }
-      if(error.toLowerCase().indexOf("permission") != -1 ) {
-         report.setStatusByDestinationUrl(url, Report.PERMISSION_RC, error);
-         return;
-      }
+    //esay if debug
+    public  final void edsay(String err) {
+        if(debug) {
+            logger.elog(new java.util.Date().toString() +": "+err);
+        }
+    }
 
-      report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
-      return;
-   }
+    public abstract void connect() throws Exception;
 
-   private void setReportFailedStatusBySrcAndDest(GlobusURL srcurl, GlobusURL dsturl, String error){
-      if(srcurl == null ) {
-         setReportFailedStatusByDest(dsturl,error);
-         return;
-      }
-      if(dsturl == null ) {
-         setReportFailedStatusBySource(srcurl,error);
-         return;
-      }
+    public abstract void start() throws Exception;
 
-      if(report == null) return;
+    protected void connect(GlobusURL srmUrl) throws Exception {
+        try {
 
+            SRMClientV1 client;
+            client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
+            dsay("connected to server, obtaining proxy");
 
-      if(error == null) {
-         report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknonw error");
-         return;
-      }
-      error.replace('\n', ' ');
-      if(error.toLowerCase().indexOf("file exists") != -1 ) {
-         report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.FILE_EXISTS_RC, error);
-         return;
-      }
-      if(error.toLowerCase().indexOf("permission") != -1 ) {
-         report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.PERMISSION_RC, error);
-         return;
-      }
+            //srm =  client.getManagerConnection ();
+            srm = client;
+            srm_url = srmUrl;
+            dsay("got proxy of type "+srm.getClass());
 
-      report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
-      return;
-   }
+        } catch (Exception srme) {
+            throw new IOException(srme.toString());
+        }
+        if(srm == null) {
+            throw new IOException("can not get manager connection");
+        }
 
-   protected void setReportFailed(GlobusURL srcurl,GlobusURL dsturl,String error ) {
-      try {
-         setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
-      } catch(Exception e) {
-         //e.printStackTrace();
-         try {
-            setReportFailedStatusByDest(dsturl, error);
-         } catch(Exception e1){
-            //e1.printStackTrace();
-            setReportFailedStatusBySource(srcurl,error);
-         }
-      }
-   }
+    }
 
-   protected void setReportSucceeded(GlobusURL srcurl,
-                                     GlobusURL dsturl) {
-      try {
-         setReportSuccessStatusBySrcAndDest(srcurl,dsturl);
-      } catch(Exception e) {
-         try {
+    public org.ietf.jgss.GSSCredential  getGssCredential()
+    throws Exception {
+        if(configuration.isUseproxy()) {
+            return org.dcache.srm.security.SslGsiSocketFactory.
+            createUserCredential(configuration.getX509_user_proxy(),
+                    null,
+                    null);
+        } else {
+            return org.dcache.srm.security.SslGsiSocketFactory.
+            createUserCredential(
+                    null,
+                    configuration.getX509_user_cert(),
+                    configuration.getX509_user_key());
+        }
+    }
+
+    public  void done(RequestStatus rs,ISRM srm) {
+        if(rs.fileStatuses != null) {
+            for(int i = 0; i< rs.fileStatuses.length;++i) {
+                RequestFileStatus rfs = rs.fileStatuses[i];
+                if(!rfs.state.equals("Done") &&
+                        !rfs.state.equals("Failed")) {
+                    say("rfs.state is " + rfs.state +
+                            " calling setFileStatus(" + rs.requestId + "," +
+                            rfs.fileId + ",\"Done\")");
+                    srm.setFileStatus(rs.requestId,rfs.fileId,"Done");
+                }
+            }
+        }
+    }
+
+    private void setReportSuccessStatusBySource(GlobusURL url){
+        if(report == null) return;
+        report.setStatusBySourceUrl(url, Report.OK_RC, null);
+
+    }
+
+    private void setReportSuccessStatusByDest(GlobusURL url){
+        if(report == null) return;
+        report.setStatusByDestinationUrl(url, Report.OK_RC, null);
+
+    }
+    private void setReportSuccessStatusBySrcAndDest(GlobusURL srcurl,
+                                                    GlobusURL dsturl){
+        if(srcurl == null ) {
             setReportSuccessStatusByDest(dsturl);
-         } catch(Exception e1){
+            return;
+        }
+        if(dsturl == null ) {
             setReportSuccessStatusBySource(srcurl);
-         }
-      }
-   }
+            return;
+        }
+
+        if(report == null) return;
+
+
+
+        report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.OK_RC, null);
+        return;
+    }
+
+    private void setReportFailedStatusBySource(GlobusURL url, String error){
+        if(report == null) return;
+        if(error == null) {
+            report.setStatusBySourceUrl(url, Report.ERROR_RC, "unknonw error");
+            return;
+        }
+        error.replace('\n', ' ');
+        if(error.toLowerCase().indexOf("file exists") != -1 ) {
+            report.setStatusBySourceUrl(url, Report.FILE_EXISTS_RC, error);
+            return;
+        }
+        if(error.toLowerCase().indexOf("permission") != -1 ) {
+            report.setStatusBySourceUrl(url, Report.PERMISSION_RC, error);
+            return;
+        }
+        report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
+        return;
+    }
+
+    private void setReportFailedStatusByDest(GlobusURL url, String error){
+        if(report == null) return;
+        if(error == null) {
+            report.setStatusByDestinationUrl(url, Report.ERROR_RC, "unknonw error");
+            return;
+        }
+        error.replace('\n', ' ');
+        if(error.toLowerCase().indexOf("file exists") != -1 ) {
+            report.setStatusByDestinationUrl(url, Report.FILE_EXISTS_RC, error);
+            return;
+        }
+        if(error.toLowerCase().indexOf("permission") != -1 ) {
+            report.setStatusByDestinationUrl(url, Report.PERMISSION_RC, error);
+            return;
+        }
+
+        report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
+        return;
+    }
+
+    private void setReportFailedStatusBySrcAndDest(GlobusURL srcurl, GlobusURL dsturl, String error){
+        if(srcurl == null ) {
+            setReportFailedStatusByDest(dsturl,error);
+            return;
+        }
+        if(dsturl == null ) {
+            setReportFailedStatusBySource(srcurl,error);
+            return;
+        }
+
+        if(report == null) return;
+
+
+        if(error == null) {
+            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, "unknonw error");
+            return;
+        }
+        error.replace('\n', ' ');
+        if(error.toLowerCase().indexOf("file exists") != -1 ) {
+            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.FILE_EXISTS_RC, error);
+            return;
+        }
+        if(error.toLowerCase().indexOf("permission") != -1 ) {
+            report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.PERMISSION_RC, error);
+            return;
+        }
+
+        report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
+        return;
+    }
+
+    protected void setReportFailed(GlobusURL srcurl,GlobusURL dsturl,String error ) {
+        try {
+            setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
+        } catch(Exception e) {
+            //e.printStackTrace();
+            try {
+                setReportFailedStatusByDest(dsturl, error);
+            } catch(Exception e1){
+                //e1.printStackTrace();
+                setReportFailedStatusBySource(srcurl,error);
+            }
+        }
+    }
+
+    protected void setReportSucceeded(GlobusURL srcurl,
+                                      GlobusURL dsturl) {
+        try {
+            setReportSuccessStatusBySrcAndDest(srcurl,dsturl);
+        } catch(Exception e) {
+            try {
+                setReportSuccessStatusByDest(dsturl);
+            } catch(Exception e1){
+                setReportSuccessStatusBySource(srcurl);
+            }
+        }
+    }
 
 
 }
