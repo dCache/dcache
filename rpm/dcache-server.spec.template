@@ -98,7 +98,9 @@ fi
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
 %attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
 %attr(0755,root,root) /opt/d-cache/bin/dcache
-%attr(0755,root,root) /opt/d-cache/libexec/chimera/chimera-cli.sh
+%attr(0755,root,root) /opt/d-cache/bin/chimera-cli.sh
+%attr(0755,root,root) /opt/d-cache/bin/chimera-get-acl.sh
+%attr(0755,root,root) /opt/d-cache/bin/chimera-set-acl.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
 %config(noreplace) /opt/d-cache/config/chimera-config.xml
