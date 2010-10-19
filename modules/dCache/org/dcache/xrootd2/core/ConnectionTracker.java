@@ -10,7 +10,7 @@ import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ChannelHandler.Sharable;;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.channel.Channel;
 
 import org.dcache.cells.CellCommandListener;
