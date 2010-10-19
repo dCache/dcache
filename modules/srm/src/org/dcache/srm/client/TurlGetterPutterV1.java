@@ -74,6 +74,7 @@ package org.dcache.srm.client;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.SrmUrl;
+import diskCacheV111.srm.RequestFileStatus;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -92,18 +93,20 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     protected diskCacheV111.srm.ISRM remoteSRM;
     private final Object sync = new Object();
     protected diskCacheV111.srm.RequestStatus rs;
-    // this is the set of remote file ids that are not "Ready" yet
-    // this object will be used for synchronization fo all hash sets and maps
+
+    // this is the set of remote file IDs that are not "Ready" yet
+    // this object will be used for synchronization of all hash sets and maps
     // used in this class
-    private  final HashSet fileIDs = new HashSet();
-    //the map between remote file ids and corresponding RequestFileStatuses
-    private  HashMap fileIDsMap = new HashMap();
-    // this two maps give the correspondence between local file ids
-    // and a remote file ids
+    private  final HashSet<Integer> fileIDs = new HashSet<Integer>();
+
+    // The map between remote file IDs and corresponding RequestFileStatuses
+    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer,RequestFileStatus>();
+
+    // This two maps give the correspondence between local file IDs
+    // and a remote file IDs
     protected String SURLs[];
     protected int requestID;
     protected int number_of_file_reqs;
-    //    protected String[] SURLs;
     protected boolean createdMap;
     private long retry_timout;
     private int retry_num;
@@ -120,13 +123,14 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         logger.debug("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
     }
 
+    @Override
     public void getInitialRequest() throws SRMException {
         if(number_of_file_reqs == 0) {
             logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
         try {
-            //use new client using the apache axis soap tool
+            //use new client using the Apache Axis SOAP tool
             remoteSRM = new SRMClientV1(
                     new SrmUrl(SURLs[0]),
                     credential.getDelegatedCredential(),
@@ -146,13 +150,13 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     }
 
 
+    @Override
     public void run() {
 
         if(number_of_file_reqs == 0) {
             logger.debug("number_of_file_reqs is 0, nothing to do");
             return;
         }
-
 
         if(rs.fileStatuses == null || rs.fileStatuses.length == 0) {
             String err="run() : fileStatuses "+
@@ -194,10 +198,10 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
         while(!fileIDs.isEmpty()) {
             if(isStopped()) {
                 logger.debug("TurlGetterPutter is done, still have "+fileIDs.size()+" file ids");
-                Iterator iter = fileIDs.iterator();
+                Iterator<Integer> iter = fileIDs.iterator();
                 while(iter.hasNext()) {
                     diskCacheV111.srm.RequestFileStatus frs;
-                    Integer nextID = (Integer)iter.next();
+                    Integer nextID = iter.next();
                     try {
                         logger.debug("calling setFileStatus("+requestID+","+nextID+",\"Done\") on remote server");
                         setFileStatus(requestID,nextID.intValue(),"Done");
@@ -218,19 +222,18 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             } else {
                 boolean totalFailure = false;
                 String totalFailureError = null;
-                HashSet removeIDs = new HashSet();
-                HashMap removedIDsToResutls = new HashMap();
-                HashMap removedIDsToSURL = new HashMap();
-                HashMap removedIDsToTURL = new HashMap();
-                HashMap removedIDsToSizes = new HashMap();
-                HashMap removeIDsToErrorMessages = new HashMap();
+                HashSet<Integer> removeIDs = new HashSet<Integer>();
+                HashMap<Integer,Boolean> removedIDsToResutls = new HashMap<Integer,Boolean>();
+                HashMap<Integer,String> removedIDsToSURL = new HashMap<Integer,String>();
+                HashMap<Integer,String> removedIDsToTURL = new HashMap<Integer,String>();
+                HashMap<Integer,Long> removedIDsToSizes = new HashMap<Integer,Long>();
+                HashMap<Integer,String> removeIDsToErrorMessages = new HashMap<Integer,String>();
                 synchronized(fileIDs) {
-                    Iterator iter = fileIDs.iterator();
+                    Iterator<Integer> iter = fileIDs.iterator();
 
-                    boolean ready = false;
                     while(iter.hasNext()) {
                         diskCacheV111.srm.RequestFileStatus frs;
-                        Integer nextID = (Integer)iter.next();
+                        Integer nextID = iter.next();
                         try {
                             frs = getFileRequest(rs,nextID);
                         }
@@ -264,23 +267,19 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                         removedIDsToSURL.put(nextID,frs.SURL);
 
                         if(frs.state.equals("Failed")) {
-                            //notifyOfFailure(frs.SURL,"remote srm set state to Failed");
                             removedIDsToResutls.put(nextID,Boolean.FALSE);
                             removeIDsToErrorMessages.put(nextID, "remote srm set state to Failed");
                             continue;
 
                         } else if(frs.state.equals("Ready") || frs.state.equals("Running")) {
                             if(frs.TURL  == null) {
-                                //notifyOfFailure(frs.SURL,"  TURL nof found, fileStatus state =="+frs.state);
                                 removeIDs.add(nextID);
                                 removedIDsToResutls.put(nextID,Boolean.FALSE);
                                 removeIDsToErrorMessages.put(nextID, "  TURL nof found but fileStatus state =="+frs.state);
                                 continue;
                             } else {
-                                ready = true;
                                 logger.debug("waitForReadyStatuses(): FileRequestStatus is Ready received TURL="+
                                         frs.TURL);
-                                //notifyOfTURL(frs.SURL, frs.TURL,rs.requestId,frs.fileId);
                                 removeIDs.add(nextID);
                                 removedIDsToResutls.put(nextID,Boolean.TRUE);
                                 removedIDsToTURL.put(nextID,frs.TURL);
@@ -299,34 +298,33 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                     +", when we were waiting for Ready");
                             continue;
                         }
-                    } //while(iter.hasNext())
+                    }
 
                     fileIDs.removeAll(removeIDs);
 
-                }//synchronized
-                // we do all notifications outside of the sycnchronized block to avoid deadlocks
-                if(totalFailure){
-                    logger.error(" breaking the waiting loop with a failure:"+ totalFailureError);
-
-                    notifyOfFailure(totalFailureError);
-                    return;
-
                 }
 
-                for(Iterator i = removeIDs.iterator();i.hasNext();)
+                // we do all notifications outside of the synchronized block to avoid deadlocks
+                if(totalFailure){
+                    logger.error(" breaking the waiting loop with a failure:"+ totalFailureError);
+                    notifyOfFailure(totalFailureError);
+                    return;
+                }
+
+                for(Iterator<Integer> i = removeIDs.iterator();i.hasNext();)
                 {
-                    Integer nextRemoveId = (Integer)i.next();
-                    String surl = (String)removedIDsToSURL.get(nextRemoveId);
-                    String turl = (String)removedIDsToTURL.get(nextRemoveId);
-                    Long size = (Long)removedIDsToSizes.get(nextRemoveId);
-                    Boolean success = (Boolean)removedIDsToResutls.get(nextRemoveId);
+                    Integer nextRemoveId = i.next();
+                    String surl = removedIDsToSURL.get(nextRemoveId);
+                    String turl = removedIDsToTURL.get(nextRemoveId);
+                    Long size = removedIDsToSizes.get(nextRemoveId);
+                    Boolean success = removedIDsToResutls.get(nextRemoveId);
                     if(success.booleanValue())
                     {
                         notifyOfTURL(surl, turl,Integer.toString(rs.requestId),nextRemoveId.toString(),size);
                     }
                     else
                     {
-                        String errormsg = (String)removeIDsToErrorMessages.get(nextRemoveId);
+                        String errormsg = removeIDsToErrorMessages.get(nextRemoveId);
                         notifyOfFailure(surl,errormsg,Integer.toString(rs.requestId),nextRemoveId.toString());
                     }
 
@@ -445,18 +443,14 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                            String status,
                                            long retry_timeout,
                                            int retry_num) throws Exception
-                                           {
-
+    {
         diskCacheV111.srm.ISRM remoteSRM;
 
-        // todo: extact web service path from surl if ?SFN= is present
+        // todo: extract web service path from surl if ?SFN= is present
         remoteSRM = new SRMClientV1(new SrmUrl(surl),
                 credential.getDelegatedCredential(),
                 retry_timeout, retry_num,true,true,"host","srm/managerv1");
 
         remoteSRM.setFileStatus(requestID,fileId,status);
-
-                                           }
-
-
+    }
 }

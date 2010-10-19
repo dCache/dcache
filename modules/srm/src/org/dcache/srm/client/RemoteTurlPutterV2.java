@@ -97,8 +97,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     private ISRM srmv2;
     private String requestToken;
     private String targetSpaceToken;
-    private HashMap pendingSurlsToIndex = new HashMap();
-    private Object sync = new Object();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
     SrmPrepareToPutResponse srmPrepareToPutResponse;
 
     protected String SURLs[];
@@ -157,6 +156,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         logger.debug("srmPutDone status code="+returnStatus.getStatusCode());
     }
 
+    @Override
     public void getInitialRequest() throws SRMException {
         if(number_of_file_reqs == 0) {
             logger.debug("number_of_file_reqs is 0, nothing to do");
@@ -171,12 +171,11 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                     true,
                     true,
                     "host",
-            "srm/managerv1");
+                    "srm/managerv1");
 
             int len = SURLs.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
             for(int i = 0; i < len; ++i) {
-                long filesize = sizes[i];
                 org.apache.axis.types.URI uri =
                     new org.apache.axis.types.URI(SURLs[i]);
                 fileRequests[i] = new TPutFileRequest();
@@ -222,6 +221,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     }
 
 
+    @Override
     public void run() {
         if(number_of_file_reqs == 0) {
             logger.debug("number_of_file_reqs is 0, nothing to do");
@@ -292,14 +292,14 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                         String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         logger.error(error);
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
                         continue;
                     }
                     if(putRequestFileStatus.getTransferURL() != null ) {
                         String turl = putRequestFileStatus.getTransferURL().toString();
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
                         // in case of put we do not need the size from the destination
                         notifyOfTURL(SURLs[indx], turl,requestToken,null,null);
                         continue;
@@ -335,14 +335,12 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 int expectedResponseLength;
                 if(haveCompletedFileRequests){
                     String [] pendingSurlStrings =
-                        (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
+                        pendingSurlsToIndex.keySet().toArray(new String[0]);
                     expectedResponseLength= pendingSurlStrings.length;
                     org.apache.axis.types.URI surlArray[] =
                         new org.apache.axis.types.URI[expectedResponseLength];
 
                     for(int i=0;i<expectedResponseLength;++i){
-                        org.apache.axis.types.URI surl =
-                            new org.apache.axis.types.URI();
                         org.apache.axis.types.URI uri =
                             new org.apache.axis.types.URI(pendingSurlStrings[i]);
                         surlArray[i]=uri;
@@ -430,7 +428,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                      String  requestTokenString,
                                      long retry_timeout,
                                      int retry_num) throws Exception
-                                     {
+    {
 
         SrmUrl srmUrl = new SrmUrl(surl);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
@@ -457,8 +455,5 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             return;
         }
         logger.debug("srmPutDone status code="+returnStatus.getStatusCode());
-
-                                     }
-
-
+    }
 }

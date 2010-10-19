@@ -89,11 +89,10 @@ import org.slf4j.LoggerFactory;
  */
 public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     private static final Logger logger = LoggerFactory.getLogger(RemoteTurlGetterV2.class);
-    private Object sync = new Object();
 
     private ISRM srmv2;
     protected String SURLs[];
-    private HashMap pendingSurlsToIndex = new HashMap();
+    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<String,Integer>();
     protected int number_of_file_reqs;
     protected boolean createdMap;
     private String requestToken;
@@ -138,6 +137,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
     }
 
+    @Override
     public  void getInitialRequest() throws SRMException
     {
         if(number_of_file_reqs == 0) {
@@ -176,7 +176,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
             // we do not want to do this
             // we do not know which storage type to use and
             // it is read anyway
-            //srmPrepareToGetRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
 
             ArrayOfTGetFileRequest arrayOfTGetFileRequest =
                 new ArrayOfTGetFileRequest ();
@@ -189,6 +188,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         }
     }
 
+    @Override
     public void run() {
 
         if(number_of_file_reqs == 0) {
@@ -259,7 +259,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                         " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         logger.error(error);
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).
+                        int indx = (pendingSurlsToIndex.remove(surl_string)).
                         intValue();
                         notifyOfFailure(SURLs[indx], error, requestToken, null);
                         haveCompletedFileRequests = true;
@@ -267,7 +267,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                     }
                     if(getRequestFileStatus.getTransferURL() != null ) {
                         String transferUrl = getRequestFileStatus.getTransferURL().toString();
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
                         long size=0;
                         if( getRequestFileStatus.getFileSize() != null ) {
                             size = getRequestFileStatus.getFileSize().longValue();
@@ -310,7 +310,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 int expectedResponseLength;
                 if(haveCompletedFileRequests){
                     String [] pendingSurlStrings =
-                        (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
+                        pendingSurlsToIndex.keySet().toArray(new String[0]);
                     expectedResponseLength= pendingSurlStrings.length;
                     org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[expectedResponseLength];
 
@@ -387,7 +387,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                                          String requestTokenString,
                                          long retry_timeout,
                                          int retry_num) throws Exception
-                                         {
+    {
         SrmUrl srmUrl = new SrmUrl(surl);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
                 credential.getDelegatedCredential(),
@@ -396,7 +396,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 true,
                 true,
                 "host",
-        "srm/managerv1");
+                "srm/managerv1");
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
         surl_strings[0] = surl;
@@ -405,7 +405,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
         srmReleaseFilesRequest.setRequestToken(requestToken);
         srmReleaseFilesRequest.setArrayOfSURLs(new org.dcache.srm.v2_2.ArrayOfAnyURI(surlArray));
-        //srmReleaseFilesRequest.setKeepSpace(Boolean.FALSE);
         SrmReleaseFilesResponse srmReleaseFilesResponse =
             srmv2.srmReleaseFiles(srmReleaseFilesRequest);
         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
@@ -415,6 +414,5 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         }
         logger.debug("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
         return;
-                                         }
-
+    }
 }

@@ -131,7 +131,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         return http_url;
     }
 
-    //this is the cleint that will use the axis version of the
+    //this is the client that will use the axis version of the
     // client underneath
 
     public SRMClientV1(GlobusURL srmurl,
@@ -205,8 +205,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_CREDENTIALS,user_cred);
             // sets authorization type
             axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,
-                    new PromiscuousHostAuthorization());//HostAuthorization(gss_expected_name));
-            //axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,org.globus.gsi.gssapi.auth.HostAuthorization.getInstance());
+                    new PromiscuousHostAuthorization());
             if (do_delegation) {
                 if(full_delegation) {
                     // sets gsi mode
@@ -225,6 +224,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus put( String[] sources,
                                                 String[] dests,
                                                 long[] sizes,
@@ -273,6 +273,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus get( String[] surls,String[] protocols ) {
 
         for(int i = 0 ; i<surls.length;++i) {
@@ -311,6 +312,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus copy( String[] srcSURLS,
                                                  String[] destSURLS,
                                                  boolean[] wantPerm ) {
@@ -351,6 +353,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus getRequestStatus( int requestId ) {
         int i = 0;
         while(true)
@@ -395,6 +398,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public boolean ping() {
         logger.debug(" ping, contacting service "+service_url);
         int i = 0;
@@ -439,22 +443,27 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus mkPermanent( String[] SURLS ) {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus pin( String[] TURLS ) {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus unPin( String[] TURLS ,int requestID) {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus getEstGetTime( String[] SURLS ,String[] protocols) {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus getEstPutTime( String[] src_names,
                                                           String[] dest_names,
                                                           long[] sizes,
@@ -463,6 +472,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         throw new UnsupportedOperationException("Not Implemented");
     }
 
+    @Override
     public diskCacheV111.srm.FileMetaData[] getFileMetaData( String[] SURLS ) {
         if (axis_isrm == null) { throw new NullPointerException ("both isrms are null!!!!");}
         logger.debug(" getFileMetaData, contacting service "+service_url);
@@ -508,6 +518,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public diskCacheV111.srm.RequestStatus setFileStatus( int requestId,
                                                           int fileId,
                                                           String state ) {
@@ -537,33 +548,21 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             catch(RuntimeException e) {
                 logger.error("getRequestStatus: try #"+i+" failed with error "+e.getMessage());
                 /*
-                 * we do not retry in case of setFileStatus for reasons of performanse
-                 * and because the setFileStatus fails too often for castor implementation
+                 * we do not retry in case of setFileStatus for reasons of performance
+                 * and because the setFileStatus fails too often for Castor implementation
                  *
                  */
-                if(false) {
-                    i++;
-                    logger.error("getRequestStatus: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            try {
-                logger.debug("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
+                throw e;
             }
         }
     }
 
+    @Override
     public void advisoryDelete( String[] SURLS) {
         for(int i = 0 ; i<SURLS.length;++i) {
             logger.debug("\tadvisoryDelete SURLS["+i+"]=\""+SURLS[i]+"\"");
         }
         logger.debug(" advisoryDelete, contacting service "+service_url);
-        int i = 0;
 
         try {
             if(user_cred.getRemainingLifetime() < 60) {
@@ -586,6 +585,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    @Override
     public String[] getProtocols() {
         logger.debug(" getProtocols, contacting service "+service_url);
         int i = 0;

@@ -142,5 +142,4 @@ public class TURLsArrivedEvent extends java.beans.PropertyChangeEvent {
     public java.lang.Long getSize() {
         return size;
     }
-
 }

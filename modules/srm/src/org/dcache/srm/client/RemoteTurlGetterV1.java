@@ -94,6 +94,7 @@ public final class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
         addListener(listener);
     }
 
+    @Override
     protected diskCacheV111.srm.RequestStatus getInitialRequestStatus()
     throws IOException,InterruptedException{
         logger.debug("SURLs[0] is "+SURLs[0]);

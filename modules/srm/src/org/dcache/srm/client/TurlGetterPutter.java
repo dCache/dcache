@@ -104,7 +104,6 @@ public abstract class TurlGetterPutter implements Runnable {
         changeSupport.addPropertyChangeListener(listener);
     }
 
-    private Object sync = new Object();
     protected AbstractStorageElement storage;
     protected RequestCredential credential;
     protected String[] protocols;
