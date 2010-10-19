@@ -1,6 +1,6 @@
 <!-- $Id: cells-build.xml,v 1.0 2008-09-19 13:52:15 tdh Exp $ -->
 
-<project name="dcache-common" default="help" basedir=".">
+<project name="dcache-common" basedir=".">
 
     <property name="dcache-common.build.dir" location="${buildDir}/dcache-common" />
     <!--
@@ -12,7 +12,7 @@
        For each of these jar files there are targets below -->
 
     <property name="dcache-common.jar" location="${classesDir}/dcache-common.jar" />
-
+    
     <!--
         check is jar file up to date
     -->

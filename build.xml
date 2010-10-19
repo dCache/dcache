@@ -50,7 +50,6 @@
     <property name="release.version.id" value="${build.name}"/>
     <property name="release.name" value="${release.version.id}" />
 
-
     <target name="-init">
       <mkdir dir="${buildDir}" />
       <mkdir dir="${classesDir}" />
@@ -214,67 +213,69 @@
         </antcall>
     </target>
 
-   <target name="help">
-       <echo message="" />
-       <echo message="" />
-       <echo message="Defined targets:" />
-       <echo message="" />
-       <echo message="     clean             : Remove intermidiet files (.class )" />
-       <echo message="" />
-       <echo message="     cleanall          : Remove all generated files." />
-       <echo message="" />
-       <echo message="     common            : Compile common package" />
-       <echo message="" />
-       <echo message="     cells             : Compile cells package" />
-       <echo message="" />
-       <echo message="     gplazma           : Compile gplazma and depended packages" />
-       <echo message="" />
-       <echo message="     srm               : Compile srm and dependent packages" />
-       <echo message="" />
-       <echo message="     dcache            : Compile dcache and dependent packages" />
-       <echo message="" />
-       <echo message="     webadmin          : Compile webadmin and dcache" />
-       <echo message="" />
-       <echo message="     xrootd-tokenauthz : Compile xrootd-tokenauthz and dependent packages" />
-       <echo message="" />
-       <echo message="     javatunnel        : Compile javatunnel and dependent packages" />
-       <echo message="" />
-       <echo message="     install-server    : build deploy-ready server package" />
-       <echo message="                       : to overwrite default location use" />
-       <echo message="                       : -Dserver.bin.dir=/path/to/install" />
-       <echo message="" />
-       <echo message="     install-srmclient : build deploy-ready srmcleint" />
-       <echo message="                       : to overwrite default location use" />
-       <echo message="                       : -Dsrmclient.bin.dir=/path/to/install" />
-       <echo message="" />
-       <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
-       <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
-       <echo message="     server.dep        : generate dcache-server-xxx.dep" />
-       <echo message="     server.solpkg     : generate dcache-server-xxx.pkg (Solaris)" />
-       <echo message="" />
-       <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
-       <echo message="" />
-       <echo message="     test              : run all available unit tests" />
-       <echo message="                       : use -Dtestcase=test.class.name" />
-       <echo message="                       : to run single test only." />
-       <echo message="                       : use -Dtestdir=testdir/sub/subsub/" />
-       <echo message="                       : to run all tests in that dir/package." />
-       <echo message="" />
-       <echo message="     eclipse           : generate eclipse's .project and .classpath files." />
-       <echo message="                       : Use -Declipse.project.name=XXX to set the project name." />
-       <echo message="                       : The default value is the name of the current working directory. " />
-       <echo message="" />
-       <echo message="" />
-       <echo message="" />
-       <echo message=" Use -Dpatch.number=XXX to change default patch number value" />
-   </target>
-
+	<target name="help">
+			       <echo message="" />
+			       <echo message="" />
+			       <echo message="Defined targets:" />
+			       <echo message="" />
+			       <echo message="     clean             : Remove intermidiet files (.class )" />
+			       <echo message="" />
+			       <echo message="     cleanall          : Remove all generated files." />
+			       <echo message="" />
+			       <echo message="     common            : Compile common package" />
+			       <echo message="" />
+			       <echo message="     cells             : Compile cells package" />
+			       <echo message="" />
+			       <echo message="     gplazma           : Compile gplazma and depended packages" />
+			       <echo message="" />
+			       <echo message="     srm               : Compile srm and dependent packages" />
+			       <echo message="" />
+			       <echo message="     dcache            : Compile dcache and dependent packages" />
+			       <echo message="" />
+			       <echo message="     webadmin          : Compile webadmin and dcache" />
+			       <echo message="" />
+			       <echo message="     xrootd-tokenauthz : Compile xrootd-tokenauthz and dependent packages" />
+			       <echo message="" />
+			       <echo message="     javatunnel        : Compile javatunnel and dependent packages" />
+			       <echo message="" />
+			       <echo message="     install-server    : build deploy-ready server package" />
+			       <echo message="                       : to overwrite default location use" />
+			       <echo message="                       : -Dserver.bin.dir=/path/to/install" />
+			       <echo message="" />
+			       <echo message="     install-srmclient : build deploy-ready srmcleint" />
+			       <echo message="                       : to overwrite default location use" />
+			       <echo message="                       : -Dsrmclient.bin.dir=/path/to/install" />
+			       <echo message="" />
+			       <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
+			       <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
+			       <echo message="     server.dep        : generate dcache-server-xxx.dep" />
+			       <echo message="     server.solpkg     : generate dcache-server-xxx.pkg (Solaris)" />
+			       <echo message="" />
+			       <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
+			       <echo message="" />
+			       <echo message="     test              : run all available unit tests" />
+			       <echo message="                       : use -Dtestcase=test.class.name" />
+			       <echo message="                       : to run single test only." />
+			       <echo message="                       : use -Dtestdir=testdir/sub/subsub/" />
+			       <echo message="                       : to run all tests in that dir/package." />
+			       <echo message="" />
+			       <echo message="     eclipse           : generate eclipse's .project and .classpath files." />
+			       <echo message="                       : Use -Declipse.project.name=XXX to set the project name." />
+			       <echo message="                       : The default value is the name of the current working directory. " />
+			       <echo message="" />
+			       <echo message="" />
+			       <echo message="" />
+			       <echo message=" Use -Dpatch.number=XXX to change default patch number value" />
+	</target>
 
     <!--
         Generate eclipse project files
     -->
     <target name="eclipse" description="creates eclipse .classpath and .project files"
-        depends="eclipse-classpath,eclipse-project"/>
+        depends="eclipse-classpath,eclipse-project,server.rpm"/>
+    	
+  
+    	
 
     <target name="eclipse-classpath" description="creates an eclipse .classpath file">
         <pathconvert property="eclipse.entries" refid="dcache.external.classpath"
@@ -284,7 +285,6 @@
 <classpath>
     <classpathentry kind="src" path="${dcache-common.src}"/>
     <classpathentry kind="src" path="${cells.src}"/>
-    <classpathentry kind="src" path="${dcache.src}"/>
     <classpathentry kind="src" path="${gplazma.src}"/>
     <classpathentry kind="src" path="${srm.src}"/>
     <classpathentry kind="src" path="${srmclient.src}"/>
@@ -292,10 +292,15 @@
     <classpathentry kind="src" path="${webadmin.src}" />
     <classpathentry kind="src" path="${unittest.src}"/>
     <classpathentry kind="src" path="${gplazma.unittest.src}"/>
+    <classpathentry kind="src" path="${build.dcache}"/>
+    <classpathentry excluding="${web-dcache}/classes/|${web-dcache}/classes/devel/|${web-billing.web-dcache}/src/java/|${web-billing.web-dcache}/src/java/" kind="src" path="modules/dCache"/>
+    <classpathentry excluding="devel/" kind="src" path="modules/dCache/${web-dcache}/classes"/>
+    <classpathentry kind="src" path="modules/dCache/diskCacheV111/scripts/plots/web-dcache/WEB-INF/classes/devel"/>
+    <classpathentry kind="src" path="modules/dCache/${web-billing.web-dcache}/src/java"/>
     <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
     <classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
     <classpathentry kind="lib" path="${eclipse.entries}"/>
-    <classpathentry kind="output" path="${buildDir}"/>
+    <classpathentry kind="output" path="${buildDir}_eclipse"/>
 </classpath>
 ]]>
         </echo>
@@ -326,7 +331,7 @@
    <!-- ========================================================================
             DEBUG STAFF
    ==========================================================================-->
-
+	
 
     <target name="debug">
         <echoproperties />
