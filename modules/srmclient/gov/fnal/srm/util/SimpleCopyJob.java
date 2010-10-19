@@ -84,7 +84,6 @@ public class SimpleCopyJob implements CopyJob {
     private GlobusURL from;
     private GlobusURL to;
     private boolean isDone;
-    private Logger logger;
 
     // added these to support generation of the report
     private SRMClient client;
@@ -97,7 +96,6 @@ public class SimpleCopyJob implements CopyJob {
         }
         this.from = from;
         this.to = to;
-        this.logger = logger;
         this.client = client;
     }
 

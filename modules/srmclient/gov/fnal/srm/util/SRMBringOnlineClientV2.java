@@ -87,7 +87,7 @@ import org.dcache.srm.util.RequestStatusTool;
 public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
     private String[] protocols;
     GlobusURL from[];
-    private HashMap pendingSurlsToIndex = new HashMap();
+    private HashMap<String,Integer>pendingSurlsToIndex = new HashMap<String,Integer>();
     private String requestToken;
     private Thread hook;
     private ISRM srmv2;
@@ -136,7 +136,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             SrmBringOnlineRequest srmBringOnlineRequest = new SrmBringOnlineRequest();
             srmBringOnlineRequest.setDesiredTotalRequestTime(
                     new Integer((int)configuration.getRequestLifetime()));
-            //
+
             if (configuration.getDesiredLifetime()!=null) {
                 srmBringOnlineRequest.setDesiredLifeTime(
                         new Integer(configuration.getDesiredLifetime().intValue()));
@@ -183,10 +183,10 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             if (configuration.getExtraParameters().size()>0) {
                 TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
                 int counter=0;
-                Map extraParameters = configuration.getExtraParameters();
-                for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
-                    String key = (String)i.next();
-                    String value = (String)extraParameters.get(key);
+                Map<String,String> extraParameters = configuration.getExtraParameters();
+                for (Iterator<String> i =extraParameters.keySet().iterator(); i.hasNext();) {
+                    String key = i.next();
+                    String value = extraParameters.get(key);
                     extraInfoArray[counter++]=new TExtraInfo(key,value);
                 }
                 ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
@@ -250,12 +250,12 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         " failed, status = "+fileStatusCode+
                         " explanation="+fileStatus.getExplanation();
                         esay(error);
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
                         setReportFailed(from[indx],from[indx],error);
                         continue;
                     }
                     if(fileStatus.getStatusCode() == TStatusCode.SRM_SUCCESS ) {
-                        int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
+                        int indx = (pendingSurlsToIndex.remove(surl_string)).intValue();
                         setReportSucceeded(from[indx],from[indx]);
                         System.out.println(from[indx].getURL()+" brought online, use request id "+requestToken+" to release");
                         continue;
@@ -289,7 +289,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 // no surls are specified int the status update request
                 // so we always are sending the list of all pending srm urls
                 String [] pendingSurlStrings =
-                    (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
+                    pendingSurlsToIndex.keySet().toArray(new String[0]);
                 // if we do not have completed file requests
                 // we want to get status for all files
                 // we do not need to specify any surls
@@ -337,7 +337,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         TReturnStatus frstatus = bringOnlineRequestFileStatuses[i].getStatus();
                         if ( frstatus != null) {
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
-                                int indx = ((Integer) pendingSurlsToIndex.remove(bringOnlineRequestFileStatuses[i].getSourceSURL().toString())).intValue();
+                                int indx = (pendingSurlsToIndex.remove(bringOnlineRequestFileStatuses[i].getSourceSURL().toString())).intValue();
                                 setReportFailed(from[indx],from[indx],error);
                             }
                             esay("BringOnlineFileRequest["+
@@ -376,7 +376,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             return;
         }
         if(requestToken != null) {
-            String[] surl_strings = (String[])pendingSurlsToIndex.keySet().toArray(new String[0]);
+            String[] surl_strings = pendingSurlsToIndex.keySet().toArray(new String[0]);
             int len = surl_strings.length;
             say("Releasing all remaining file requests");
             org.apache.axis.types.URI surlArray[] = new org.apache.axis.types.URI[len];

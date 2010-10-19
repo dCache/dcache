@@ -100,8 +100,6 @@ public class Args implements java.io.Serializable {
         private static final int OPT_QUOTED    = 5 ;
         private static final int OPT_PLAIN     = 6 ;
 
-        private void undo( char r ){ _res = r ; _undo = true ; }
-
         private boolean _undo    = false ;
         private char    _res     = 0 ;
         private int     _current = 0 ;

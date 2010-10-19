@@ -92,7 +92,7 @@ import org.dcache.srm.Logger;
  */
 
 public class Copier implements Runnable {
-    private final HashSet copy_jobs = new HashSet();
+    private final HashSet<CopyJob> copy_jobs = new HashSet<CopyJob>();
     private boolean doneAddingJobs;
     private boolean stop;
     private Thread hook;
@@ -161,14 +161,12 @@ public class Copier implements Runnable {
     public void doneAddingJobs() {
         synchronized(copy_jobs) {
             doneAddingJobs = true;
-            //say("Total Number of Jobs is : num_jobs: "+num_jobs);
         }
         synchronized(this) {
             notify();
         }
     }
 
-    //    public synchronized void waitCompletion() throws Exception {
 
     //this method will wait for all the individual file transfers to complete
     //when all transfers are complete, then it will notify all threads.
@@ -219,7 +217,7 @@ public class Copier implements Runnable {
                 return;
             }
 
-            CopyJob nextJob = (CopyJob)copy_jobs.iterator().next();
+            CopyJob nextJob = copy_jobs.iterator().next();
 
             copy_jobs.remove(nextJob);
             nextJob.done(false,"stopped");
@@ -264,7 +262,7 @@ public class Copier implements Runnable {
                 }
 
                 if(!copy_jobs.isEmpty()) {
-                    nextJob = (CopyJob)copy_jobs.iterator().next();
+                    nextJob = copy_jobs.iterator().next();
                 }
             }
 
@@ -683,16 +681,13 @@ public class Copier implements Runnable {
 
     private void cleanup() {
         CopyJob jobs[] = new CopyJob[0];
-        jobs =   (CopyJob[]) copy_jobs.toArray(jobs);
+        jobs =   copy_jobs.toArray(jobs);
 
         if(jobs == null) return;
 
         for(int i = 0; i<jobs.length;++i) {
             jobs[i].done(false,"stopped by cleanup");
         }
-
-
-
     }
 
 }

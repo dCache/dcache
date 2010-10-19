@@ -135,7 +135,6 @@ public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
             uriarray[i]=uri;
         }
         surlarray.setUrlArray(uriarray);
-        //	SrmExtendFileLifeTimeResponse
         SrmExtendFileLifeTimeRequest req = new SrmExtendFileLifeTimeRequest();
         req.setArrayOfSURLs(surlarray);
         req.setRequestToken(configuration.getExtendFileLifetimeRequestToken());
@@ -190,8 +189,3 @@ public class SRMExtendFileLifeTimeClientV2 extends SRMClient {
         }
     }
 }
-
-// $Log: not supported by cvs2svn $
-// Revision 1.1  2007/02/10 02:10:03  litvinse
-// implemented extend file lifetime client
-//

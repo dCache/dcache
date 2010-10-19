@@ -123,7 +123,6 @@ public class SRMDispatcher {
 
     public static final void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        String webservicePath=conf.getWebservice_path();
         try {
             conf.parseArguments(args);
             Logger logger=new SRMCopyLogger(conf.isDebug());
@@ -393,7 +392,6 @@ public class SRMDispatcher {
                     }
                     String success = exception == null? "success":"failure";
                     endTime = System.currentTimeMillis();
-                    StringBuilder sb = new StringBuilder();
                     System.out.format("%25s, %19d, %19d, %5d, %s, %s\n",
                             "performace info", startTime,endTime,i,success,perfomanceTestName );
                     startTime = endTime;
@@ -470,10 +468,10 @@ public class SRMDispatcher {
         }
         else if (configuration.isReserveSpace()) {
             String[] surl_strings  = configuration.getReserveSpaceURLs();
-            int number_of_surls    = surl_strings.length;
             if (  surl_strings == null ) {
                 throw new IllegalArgumentException("Must specify SRM URL" ) ;
             }
+            int number_of_surls    = surl_strings.length;
             if ( number_of_surls > 1  ) {
                 throw new IllegalArgumentException("Only one SRM SURL is  supported " ) ;
             }
@@ -490,10 +488,10 @@ public class SRMDispatcher {
         }
         else if (configuration.isReleaseSpace()) {
             String[] surl_strings  = configuration.getReserveSpaceURLs();
-            int number_of_surls    = surl_strings.length;
             if (  surl_strings == null ) {
                 throw new IllegalArgumentException("Must specify SRM URL" ) ;
             }
+            int number_of_surls    = surl_strings.length;
             if ( number_of_surls > 1  ) {
                 throw new IllegalArgumentException("Only one SRM SURL is  supported " ) ;
             }
@@ -822,7 +820,6 @@ public class SRMDispatcher {
     }
 
     public void  checkURLSUniformity(int type,GlobusURL urls[],boolean areSources) throws Exception {
-        //String[] from = configuration.getFrom();
         int number_of_sources = urls.length;
         if (number_of_sources==0) {
             throw new IllegalArgumentException("No URL(s) specified ");

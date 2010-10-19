@@ -87,7 +87,7 @@ public class CopyJobFileReader {
     public CopyJobFileReader(String file) throws IOException {
         FileInputStream fin = new FileInputStream(file);
         BufferedReader in = new BufferedReader( new InputStreamReader(fin));
-        HashSet src_dest_set= new HashSet();
+        HashSet<String[]> src_dest_set= new HashSet<String[]>();
         try {
             String origline;
             int line_num=0;

@@ -91,7 +91,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
     // dCache SRM ignores this value and uses group id it retrieves from
     // file metadata on the server side. SRM developers agreed to treat hyphen
-    // as "unspecified". No chage of ownership happens.
+    // as "unspecified". No change of ownership happens.
     //
     private static final String DEFAULT_DUMMY_GROUP_ID = "-";
     private org.ietf.jgss.GSSCredential cred = null;

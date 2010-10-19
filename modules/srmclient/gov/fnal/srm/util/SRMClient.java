@@ -84,7 +84,6 @@ public abstract class SRMClient {
     private boolean gsissl;
     protected boolean debug;
     protected ISRM srm;
-    private GlobusURL srm_url;
     protected String urlcopy;
     protected Configuration configuration;
     protected org.dcache.srm.Logger logger;
@@ -171,9 +170,7 @@ public abstract class SRMClient {
             client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
             dsay("connected to server, obtaining proxy");
 
-            //srm =  client.getManagerConnection ();
             srm = client;
-            srm_url = srmUrl;
             dsay("got proxy of type "+srm.getClass());
 
         } catch (Exception srme) {
@@ -320,11 +317,9 @@ public abstract class SRMClient {
         try {
             setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
         } catch(Exception e) {
-            //e.printStackTrace();
             try {
                 setReportFailedStatusByDest(dsturl, error);
             } catch(Exception e1){
-                //e1.printStackTrace();
                 setReportFailedStatusBySource(srcurl,error);
             }
         }

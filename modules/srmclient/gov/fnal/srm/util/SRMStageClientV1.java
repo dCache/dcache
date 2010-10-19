@@ -86,8 +86,8 @@ import java.util.Iterator;
 public class SRMStageClientV1 extends SRMClient implements Runnable {
     private String[] protocols;
     GlobusURL from[];
-    private HashSet fileIDs = new HashSet();
-    private HashMap fileIDsMap = new HashMap();
+    private HashSet<Integer> fileIDs = new HashSet<Integer>();
+    private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer, RequestFileStatus>();
     private int requestID;
     private Thread hook;
 
@@ -145,14 +145,13 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                     fileIDs.add(fileId);
                     fileIDsMap.put(fileId,rs.fileStatuses[i]);
                 }
-                int hashsetSize=fileIDs.size();
-                //say("HashSet has : "+hashsetSize+ " elements");
+
                 while(!fileIDs.isEmpty()) {
-                    Iterator iter = fileIDs.iterator();
-                    HashSet removeIDs = new HashSet();
+                    Iterator<Integer> iter = fileIDs.iterator();
+                    HashSet<Integer> removeIDs = new HashSet<Integer>();
 
                     while(iter.hasNext()) {
-                        Integer nextID = (Integer)iter.next();
+                        Integer nextID = iter.next();
                         RequestFileStatus frs = getFileRequest(rs,nextID);
                         if(frs == null) {
                             throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
@@ -220,11 +219,9 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                 throw ioe;
             }
         }finally{
-            //say("initialStagingTest: "+initialStagingTest);
-            //say("atleastOneFailed: "+atleastOneFailed);
             report.dumpReport();
             if(!report.everythingAllRight()){
-                //This means that some failure occured while staging file onto dcache
+                //This means that some failure occurred while staging file onto dCache
                 System.err.println("srm stage of at least one file failed or not completed");
                 System.exit(1);
             }
@@ -238,10 +235,10 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
             if(fileIDs.isEmpty()) {
                 break;
             }
-            Integer fileId = (Integer)fileIDs.iterator().next();
+            Integer fileId = fileIDs.iterator().next();
             fileIDs.remove(fileId);
             say("setting file request "+fileId+" status to Done");
-            RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
+            RequestFileStatus rfs = fileIDsMap.get(fileId);
             srm.setFileStatus(requestID,rfs.fileId,"Done");
         }
         say("set all file statuses to \"Done\"");

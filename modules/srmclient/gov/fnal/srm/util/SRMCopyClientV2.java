@@ -226,10 +226,10 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if (configuration.getExtraParameters().size()>0) {
                 TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
                 int counter=0;
-                Map extraParameters = configuration.getExtraParameters();
-                for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
-                    String key = (String)i.next();
-                    String value = (String)extraParameters.get(key);
+                Map<String,String> extraParameters = configuration.getExtraParameters();
+                for (Iterator<String> i =extraParameters.keySet().iterator(); i.hasNext();) {
+                    String key = i.next();
+                    String value = extraParameters.get(key);
                     extraInfoArray[counter++]=new TExtraInfo(key,value);
                 }
                 ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
@@ -274,7 +274,6 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                         throw new IOException(" null file return status");
                     }
                     TStatusCode fileStatusCode = fileStatus.getStatusCode();
-                    //say("file status code="+fileStatusCode);
                     if ( fileStatusCode == null ) {
                         throw new IOException(" null file status code");
                     }
@@ -332,9 +331,9 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 int expectedResponseLength= pendingSurlsMap.size();
                 URI surlArrayOfFromSURLs[]  = new URI[expectedResponseLength];
                 URI surlArrayOfToSURLs[]    = new URI[expectedResponseLength];
-                Iterator it = pendingSurlsMap.values().iterator();
+                Iterator<Integer> it = pendingSurlsMap.values().iterator();
                 for (int i=0; it.hasNext(); i++) {
-                    int indx = ((Integer) it.next()).intValue();
+                    int indx = (it.next()).intValue();
                     TCopyFileRequest copyFileRequest = copyFileRequests[indx];
                     surlArrayOfFromSURLs[i] = copyFileRequest.getSourceSURL();
                     surlArrayOfToSURLs[i]   = copyFileRequest.getTargetSURL();

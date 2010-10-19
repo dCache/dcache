@@ -19,7 +19,7 @@ public class OptionParser {
 
     public static Set<String> getOptions(Object o){
         Set<String> set = new HashSet<String>();
-        Class c = o.getClass();
+        Class<?> c = o.getClass();
         while(c!=null) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
@@ -52,8 +52,6 @@ public class OptionParser {
      throws IllegalArgumentException {
          String s=null;
          s = args.getOpt(option.name());
-         //                if (s != null && (s.length() > 0 || !option.required()))
-         //                        return s;
          if (s != null ) {
              if (s.length()==0 && !option.required())
                  return "true";    // to support switch type options
@@ -78,7 +76,7 @@ public class OptionParser {
          for (int i=0;i<args.optc();i++) {
              String optionName=args.optv(i);
              Boolean exists=false;
-             Class c = o.getClass();
+             Class<?> c = o.getClass();
              while(c!=null) {
                  for (Field field : c.getDeclaredFields()) {
                      Option option = field.getAnnotation(Option.class);
@@ -104,7 +102,7 @@ public class OptionParser {
      public static void checkNullOptions(Object o, String ... names) throws IllegalArgumentException  {
          boolean haveNullOptions=false;
          StringBuilder sb = new StringBuilder();
-         Class c = o.getClass();
+         Class<?> c = o.getClass();
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
@@ -141,7 +139,7 @@ public class OptionParser {
 
      public static String printOptions(Object o, String ... names) throws IllegalArgumentException  {
          StringBuilder sb = new StringBuilder();
-         Class c = o.getClass();
+         Class<?> c = o.getClass();
          int maxlength=0;
          int nblanks=3;
          for (String s:names) {
@@ -202,7 +200,7 @@ public class OptionParser {
       * Sets class fields to their default values
       */
      public static <T>  void setDefaults(T t) {
-         Class c = t.getClass();
+         Class<?> c = t.getClass();
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
@@ -243,7 +241,7 @@ public class OptionParser {
      public static <T>  void parseOptions(T t,
                                           Args args) {
          checkOptions(t,args);
-         Class c = t.getClass();
+         Class<?> c = t.getClass();
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
@@ -256,9 +254,6 @@ public class OptionParser {
                          try {
                              value=toType(s,field.getType());
                              field.set(t,value);
-                             //                                                         if (option.log()) {
-                                 //                                                                 System.out.println("-"+option.name()+"="+value);
-                             //                                                         }
                          }
                          catch (ClassCastException e) {
                              throw new
@@ -288,7 +283,7 @@ public class OptionParser {
      public static <T>  void parseSpecifiedOptions(T t,
                                                    Args args) {
          checkOptions(t,args);
-         Class c = t.getClass();
+         Class<?> c = t.getClass();
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
@@ -325,7 +320,7 @@ public class OptionParser {
      public static <T>  void parseOption(T t,
                                          String optionName,
                                          Args args) {
-         Class c = t.getClass();
+         Class<?> c = t.getClass();
          boolean exists = false;
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
@@ -370,10 +365,9 @@ public class OptionParser {
       * Writes information about all options (Option annotated fields)
       * to a writer.
       */
-
      protected <T> void writeOptions(T t,
                                      PrintWriter out) {
-         Class c = t.getClass();
+         Class<?> c = t.getClass();
          while (c!=null) {
              for (Field field : c.getDeclaredFields()) {
                  Option option = field.getAnnotation(Option.class);
@@ -406,7 +400,7 @@ public class OptionParser {
      static public <T> T toType(final Object object, final Class<T> type) {
          T result = null;
          if (object == null || "null".equalsIgnoreCase(object.toString()) ) {
-             //initalize primitive types:
+             // Initialize primitive types:
              if (type == Boolean.TYPE) {
                  result = ((Class<T>) Boolean.class).cast(false);
              }

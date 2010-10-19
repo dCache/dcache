@@ -1854,11 +1854,6 @@ public class Configuration {
         extraParameters = new HashMap<String,String>();
     }
 
-    private String storage_info_options =
-        " Storage Info options : None \n"+
-        "Example:\n" +
-        "      srm-storage-element-info  https://fndca.fnal.gov:8443/srm/infoProvider1_0.wsdl\n";
-
     private String mkdir_options =
         " srmmkdir options : None\n"+
         "Examples: \n"+
@@ -1876,12 +1871,6 @@ public class Configuration {
 
     private String checkPermission_options =
         " srm-check-permissions options : None \n";
-
-    private String extendFileLifetime_options =
-        " extendFileLifetime options :\n"+
-        "\t-request_token=<string> \n"+
-        "\t-file_lifetime=<int> \n"+
-        "\t-pin_lifetime=<int> \n";
 
     public final String usage() {
         String general_options=
@@ -2294,7 +2283,6 @@ public class Configuration {
                     // that is "-option "
                     //
                     sb.append(args[i]);
-                    String key = args[i];
                     i++;
                     //
                     // if this was last string on command line we are done
@@ -2708,7 +2696,7 @@ public class Configuration {
                 Text t            = (Text)child;
                 String node_name  = node.getNodeName();
                 String text_value = t.getData().trim();
-                for (Class c = getClass(); c != null; c = c.getSuperclass()) {
+                for (Class<?> c = getClass(); c != null; c = c.getSuperclass()) {
                     for (Field field : c.getDeclaredFields()) {
                         Option option = field.getAnnotation(Option.class);
                         try {
@@ -2778,7 +2766,7 @@ public class Configuration {
         DocumentBuilder db         = dbf.newDocumentBuilder();
         Document document          = db.newDocument();
         Element root               = document.createElement("srm-configuration");
-        for (Class c = getClass(); c != null; c = c.getSuperclass()) {
+        for (Class<?> c = getClass(); c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 try {
@@ -2828,7 +2816,7 @@ public class Configuration {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("SRM Configuration:");
-        for (Class c = getClass(); c != null; c = c.getSuperclass()) {
+        for (Class<?> c = getClass(); c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 try {
@@ -3186,7 +3174,7 @@ public class Configuration {
         return Integer.parseInt(extraParameters.get("priority"));
     }
 
-    public Map getExtraParameters() {
+    public Map<String,String> getExtraParameters() {
         return this.extraParameters;
     }
 

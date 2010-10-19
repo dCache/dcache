@@ -78,20 +78,12 @@ package gov.fnal.srm.util;
  * @author  timur
  */
 public class Version {
-    private static String revision = "$Revision: 9567 $";
-    private static String tagName ="$Name: not supported by cvs2svn $";
-    private static String date ="$Date: 2008-06-21 09:28:04 -0500 (Sat, 21 Jun 2008) $";
-
     private static String specVersion= "2.2";
     private static String specVendor = "SRM Working Group http://sdm.lbl.gov/srm-wg";
     private static String specTitle  = "Storage Resource Manager (SRM)";
     private static String copyRight  = "Copyright (c) 2002-2009";
 
-
-
-
     static {
-        Class c   = gov.fnal.srm.util.Version.class;
         Package p = Package.getPackage("gov.fnal.srm.util");
         if (p!=null) {
             String tmp = null ;
@@ -101,6 +93,7 @@ public class Version {
             if( ( tmp =  p.getSpecificationVendor() ) != null  ) specVendor  = tmp ;
         }
     }
+
     /** Creates a new instance of Version */
     public Version() {
     }
@@ -109,8 +102,6 @@ public class Version {
     public String toString() {
         String s =  specTitle + " Client version "+specVersion+'\n';
         s+= copyRight + " "+specVendor+'\n';
-        // This is incorrect and unnecessary
-        //	    s+= "Specification Version 2.0 by SRM Working Group (http://sdm.lbl.gov/srm-wg)";
         return s;
     }
 }

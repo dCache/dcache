@@ -82,8 +82,6 @@ public class ShellCommandExecuter implements Runnable {
     public static int execute(String command,org.dcache.srm.Logger logger) {
 
         logger.log("executing command "+command);
-        char[] buffer = new char[1024];
-        char[] subbuf;
         Process proc;
         InputStream StdErr;
         InputStream StdOut;
@@ -117,8 +115,6 @@ public class ShellCommandExecuter implements Runnable {
     public static String[] executeAndReturnOutput(String command,org.dcache.srm.Logger logger) {
 
         logger.log("executing command "+command);
-        char[] buffer = new char[1024];
-        char[] subbuf;
         Process proc;
         InputStream StdErr;
         InputStream StdOut;

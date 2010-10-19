@@ -110,6 +110,7 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
                 configuration.getWebservice_path());
     }
 
+    @Override
     public void start() throws Exception {
         try {
             if (cred.getRemainingLifetime() < 60)

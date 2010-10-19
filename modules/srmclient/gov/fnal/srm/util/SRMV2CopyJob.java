@@ -181,7 +181,6 @@ public class SRMV2CopyJob implements CopyJob {
                         srmReleaseFilesRequest.setRequestToken(requestToken);
                         srmReleaseFilesRequest.setArrayOfSURLs(
                                 new ArrayOfAnyURI(surlArray));
-                        //srmReleaseFilesRequest.setKeepSpace(Boolean.FALSE);
                         SrmReleaseFilesResponse srmReleaseFilesResponse =
                             srm.srmReleaseFiles(srmReleaseFilesRequest);
                         TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();

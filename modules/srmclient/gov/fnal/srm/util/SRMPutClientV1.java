@@ -90,8 +90,8 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
     private GlobusURL from[];
     private GlobusURL to[];
     private String protocols[];
-    private  HashSet fileIDs = new HashSet();
-    private  HashMap fileIDsMap = new HashMap();
+    private  HashSet<Integer> fileIDs = new HashSet<Integer>();
+    private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer,RequestFileStatus>();
     private Copier copier;
     private int requestID;
     private Thread hook;
@@ -179,10 +179,10 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                 }
 
                 while(!fileIDs.isEmpty()) {
-                    Iterator iter = fileIDs.iterator();
-                    HashSet removeIDs = new HashSet();
+                    Iterator<Integer> iter = fileIDs.iterator();
+                    HashSet<Integer> removeIDs = new HashSet<Integer>();
                     while(iter.hasNext()) {
-                        Integer nextID = (Integer)iter.next();
+                        Integer nextID = iter.next();
                         RequestFileStatus frs = getFileRequest(rs,nextID);
                         if(frs == null) {
                             throw new IOException("request status does not have"+"RequestFileStatus fileID = "+nextID);
@@ -270,11 +270,6 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
 
                     for(int i =0; i<len;++i) {
                         Integer fileId = new Integer(rs.fileStatuses[i].fileId);
-                        // the following commented code is incorrect, since the fileIDs contains only unprocessed request ids
-                        //if(!fileIDs.contains(fileId)) {
-                        //throw new IOException("receied unknown id : "+fileId);
-                        //}
-                        //say("substituting request file status with fileId="+rs.fileStatuses[i].fileId);
                         fileIDsMap.put(fileId,rs.fileStatuses[i]);
                     }
                     if(rs.state.equals("Failed")) {
@@ -316,10 +311,10 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
             if(fileIDs.isEmpty()) {
                 break;
             }
-            Integer fileId = (Integer)fileIDs.iterator().next();
+            Integer fileId = fileIDs.iterator().next();
             fileIDs.remove(fileId);
             say("setting file request "+fileId+" status to Done");
-            RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
+            RequestFileStatus rfs = fileIDsMap.get(fileId);
             srm.setFileStatus(requestID,rfs.fileId,"Done");
         }
         say("set all file statuses to \"Done\"");

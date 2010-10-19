@@ -97,9 +97,9 @@ import java.util.Arrays;
 public class SRMCopyClientV1 extends SRMClient implements Runnable {
     private GlobusURL from[];
     private GlobusURL to[];
-    private HashSet   fileIDs    = new HashSet();
-    private HashMap   fileIDsMap = new HashMap();
-    private int       requestID;
+    private HashSet<Integer> fileIDs    = new HashSet<Integer>();
+    private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<Integer,RequestFileStatus>();
+    private int requestID;
     private Thread hook;
 
     public SRMCopyClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
@@ -174,10 +174,10 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
             }
 
             while(!fileIDs.isEmpty()) {
-                Iterator iter = fileIDs.iterator();
-                HashSet removeIDs = new HashSet();
+                Iterator<Integer> iter = fileIDs.iterator();
+                HashSet<Integer> removeIDs = new HashSet<Integer>();
                 while(iter.hasNext()) {
-                    Integer nextID = (Integer)iter.next();
+                    Integer nextID = iter.next();
                     RequestFileStatus frs = getFileRequest(rs,nextID);
                     if(frs == null) {
                         throw new IOException("request status does not have"+
@@ -210,7 +210,7 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
 
                 if(fileIDs.isEmpty()) {
                     Runtime.getRuntime().removeShutdownHook(hook);
-                    //we have copyed all files
+                    //we have copied all files
                     break;
                 }
 
@@ -232,9 +232,9 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                 }
 
                 if(rs.state.equals("Failed")) {
-                    Iterator iter1 = fileIDs.iterator();
+                    Iterator<Integer> iter1 = fileIDs.iterator();
                     while(iter1.hasNext()) {
-                        Integer nextID1 = (Integer)iter1.next();
+                        Integer nextID1 = iter1.next();
                         RequestFileStatus frs = getFileRequest(rs,nextID1);
                         if(frs.state.equals("Failed")) {
                             say("FileRequestStatus is Failed => copying of "+frs.SURL+
@@ -290,10 +290,10 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
             if(fileIDs.isEmpty()) {
                 break;
             }
-            Integer fileId = (Integer)fileIDs.iterator().next();
+            Integer fileId = fileIDs.iterator().next();
             fileIDs.remove(fileId);
             say("setting file request "+fileId+" status to Done");
-            RequestFileStatus rfs = (RequestFileStatus)fileIDsMap.get(fileId);
+            RequestFileStatus rfs = fileIDsMap.get(fileId);
             srm.setFileStatus(requestID,rfs.fileId,"Done");
         }
         say("set all file statuses to \"Done\"");

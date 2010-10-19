@@ -225,10 +225,10 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             if (configuration.getExtraParameters().size()>0) {
                 TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
                 int counter=0;
-                Map extraParameters = configuration.getExtraParameters();
-                for (Iterator i =extraParameters.keySet().iterator(); i.hasNext();) {
-                    String key = (String)i.next();
-                    String value = (String)extraParameters.get(key);
+                Map<String,String> extraParameters = configuration.getExtraParameters();
+                for (Iterator<String> i =extraParameters.keySet().iterator(); i.hasNext();) {
+                    String key = i.next();
+                    String value = extraParameters.get(key);
                     extraInfoArray[counter++]=new TExtraInfo(key,value);
                 }
                 ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
@@ -266,7 +266,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         "in RequestStatus expected "+len+" received "+
                         putRequestFileStatuses.length);
             }
-            boolean haveCompletedFileRequests = false;
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
                 for(int i = 0 ; i<len;++i) {
@@ -294,7 +293,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         esay(error);
                         int indx = pendingSurlsToIndex.remove(surl_string).intValue();
                         setReportFailed(from[indx],to[indx],error);
-                        haveCompletedFileRequests = true;
                         continue;
                     }
                     if(putRequestFileStatus.getTransferURL() != null &&
@@ -304,7 +302,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(from[indx],globusTURL,srmv2,requestToken,logger,to[indx],false,this);
                         copier.addCopyJob(job);
-                        haveCompletedFileRequests = true;
                         continue;
                     }
                     if(putRequestFileStatus.getEstimatedWaitTime() != null &&
@@ -337,7 +334,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 // we do not know what to expect from the server when
                 // no surls are specified int the status update request
                 // so we always are sending the list of all pending srm urls
-                //if(haveCompletedFileRequests){
                 String [] pendingSurlStrings = pendingSurlsToIndex.keySet().toArray(new String[0]);
                 expectedResponseLength= pendingSurlStrings.length;
                 URI surlArray[] = new URI[expectedResponseLength];
