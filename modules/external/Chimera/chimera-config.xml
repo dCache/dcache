@@ -6,7 +6,7 @@
 <!-- 
 	<db fsid="0" url="jdbc:oracle:thin:@localhost:1521:XE" drv="oracle.jdbc.driver.OracleDriver" user="himera" pass="himera" dialect="Oracle" />
  -->
-	<db fsid="0" url="jdbc:postgresql://localhost/chimera?prepareThreshold=3" drv="org.postgresql.Driver" user="postgres" pass="" dialect="PgSQL" />
+	<db fsid="0" url="jdbc:postgresql://localhost/chimera?prepareThreshold=3" drv="org.postgresql.Driver" user="chimera" pass="" dialect="PgSQL" />
 
 	
 	<nfs>
