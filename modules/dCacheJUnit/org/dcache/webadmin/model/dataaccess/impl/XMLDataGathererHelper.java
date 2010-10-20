@@ -47,6 +47,12 @@ public class XMLDataGathererHelper {
     public static final String TESTCELL2_DOMAIN = POOL2_DOMAIN;
     public static final String EMPTY_TESTCELL_NAME = "";
     public static final String EMPTY_TESTCELL_DOMAIN = "";
+    public static final String LINKGROUP1_ID = "0";
+    public static final String LINKGROUP1_NAME = "dteam-linkGroup-Disk";
+    public static final String LINKGROUP1_TOTAL_SPACE = "8085024768";
+    public static final String LINKGROUP1_RESERVATION1_ID = "21";
+    public static final String RESERVATION1_TOTAL = "123456";
+    public static final String RESERVATION1_FQAN = "/dteam";
     public static final String emptyXmlcontent = "";
     public static final String poolsXmlcontent = "<?xml version=\"1.0\"?>" +
             "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\">" +
@@ -1217,6 +1223,89 @@ public class XMLDataGathererHelper {
             "      <metric name=\"address\" type=\"string\">System@dCacheDomain:System@gridftp-patrickxenvm02Domain</metric>" +
             "    </domain>" +
             "  </domains>" +
+            "</dCache>";
+    public final static String LINKGROUPS_XML = "<?xml version=\"1.0\"?>" +
+            "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\">" +
+            "  <linkgroups>" +
+            "    <linkgroup lgid=\"" + LINKGROUP1_ID + "\">" +
+            "      <metric name=\"id\" type=\"string\">" + LINKGROUP1_ID + "</metric>" +
+            "      <access-latency>" +
+            "        <metric name=\"onlineAllowed\" type=\"boolean\">true</metric>" +
+            "        <metric name=\"nearlineAllowed\" type=\"boolean\">true</metric>" +
+            "      </access-latency>" +
+            "      <metric name=\"name\" type=\"string\">" + LINKGROUP1_NAME + "</metric>" +
+            "      <lastUpdated>" +
+            "        <metric name=\"ISO-8601\" type=\"string\">2010-10-15T09:13Z</metric>" +
+            "        <metric name=\"simple\" type=\"string\">Oct 15, 11:13:39 CEST</metric>" +
+            "        <metric name=\"unix\" type=\"integer\">1287134019</metric>" +
+            "      </lastUpdated>" +
+            "      <retention-policy>" +
+            "        <metric name=\"custodialAllowed\" type=\"boolean\">true</metric>" +
+            "        <metric name=\"outputAllowed\" type=\"boolean\">true</metric>" +
+            "        <metric name=\"replicaAllowed\" type=\"boolean\">true</metric>" +
+            "      </retention-policy>" +
+            "      <space>" +
+            "        <metric name=\"total\" type=\"integer\">" + LINKGROUP1_TOTAL_SPACE + "</metric>" +
+            "        <metric name=\"free\" type=\"integer\">3221186835</metric>" +
+            "        <metric name=\"available\" type=\"integer\">3221186835</metric>" +
+            "        <metric name=\"used\" type=\"integer\">0</metric>" +
+            "        <metric name=\"reserved\" type=\"integer\">0</metric>" +
+            "      </space>" +
+            "      <authorisation>" +
+            "        <authorised name=\"/desy:*\">" +
+            "          <metric name=\"FQAN\" type=\"string\">/desy</metric>" +
+            "          <metric name=\"role\" type=\"string\">*</metric>" +
+            "          <metric name=\"group\" type=\"string\">/desy</metric>" +
+            "        </authorised>" +
+            "        <authorised name=\"/dteam:*\">" +
+            "          <metric name=\"FQAN\" type=\"string\">/dteam</metric>" +
+            "          <metric name=\"role\" type=\"string\">*</metric>" +
+            "          <metric name=\"group\" type=\"string\">/dteam</metric>" +
+            "        </authorised>" +
+            "        <authorised name=\"dteam001:*\">" +
+            "          <metric name=\"FQAN\" type=\"string\">dteam001</metric>" +
+            "          <metric name=\"role\" type=\"string\">*</metric>" +
+            "          <metric name=\"group\" type=\"string\">dteam001</metric>" +
+            "        </authorised>" +
+            "        <authorised name=\"cms001:*\">" +
+            "          <metric name=\"FQAN\" type=\"string\">cms001</metric>" +
+            "          <metric name=\"role\" type=\"string\">*</metric>" +
+            "          <metric name=\"group\" type=\"string\">cms001</metric>" +
+            "        </authorised>" +
+            "      </authorisation>" +
+            "      <reservations>" +
+            "      <reservationref reservation-id=\"" + LINKGROUP1_RESERVATION1_ID + "\"/>" +
+            "      </reservations>" +
+            "    </linkgroup>" +
+            "  </linkgroups>" +
+            "</dCache>";
+    public static final String RESERVATIONS_XML = "<?xml version=\"1.0\"?>" +
+            "<dCache xmlns=\"http://www.dcache.org/2008/01/Info\">" +
+            "  <reservations>" +
+            "    <reservation reservation-id=\"" + LINKGROUP1_RESERVATION1_ID + "\">" +
+            "      <metric name=\"id\" type=\"string\">" + LINKGROUP1_RESERVATION1_ID + "</metric>" +
+            "      <metric name=\"access-latency\" type=\"string\">ONLINE</metric>" +
+            "      <created>" +
+            "        <metric name=\"ISO-8601\" type=\"string\">2009-11-30T15:08Z</metric>" +
+            "        <metric name=\"simple\" type=\"string\">Nov 30, 16:08:00 CET</metric>" +
+            "        <metric name=\"unix\" type=\"integer\">1259593680</metric>" +
+            "      </created>" +
+            "      <metric name=\"description\" type=\"string\">Simple</metric>" +
+            "      <metric name=\"state\" type=\"string\">RESERVED</metric>" +
+            "      <metric name=\"retention-policy\" type=\"string\">REPLICA</metric>" +
+            "      <space>" +
+            "        <metric name=\"total\" type=\"integer\">" + RESERVATION1_TOTAL + "</metric>" +
+            "        <metric name=\"free\" type=\"integer\">1024000</metric>" +
+            "        <metric name=\"allocated\" type=\"integer\">0</metric>" +
+            "        <metric name=\"used\" type=\"integer\">0</metric>" +
+            "      </space>" +
+            "      <authorisation>" +
+            "        <metric name=\"FQAN\" type=\"string\">" + RESERVATION1_FQAN + "</metric>" +
+            "        <metric name=\"group\" type=\"string\">/dteam</metric>" +
+            "      </authorisation>" +
+            "      <metric name=\"linkgroupref\" type=\"string\">" + LINKGROUP1_ID + "</metric>" +
+            "    </reservation>" +
+            "  </reservations>" +
             "</dCache>";
 
     public static Set<Pool> getExpectedPools() {

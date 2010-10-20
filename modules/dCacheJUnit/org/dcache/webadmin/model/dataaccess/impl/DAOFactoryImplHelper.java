@@ -2,6 +2,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
+import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
@@ -16,6 +17,7 @@ public class DAOFactoryImplHelper implements DAOFactory {
     PoolsDAOImplHelper _poolsDao = new PoolsDAOImplHelper();
     PoolGroupDAOHelper _poolGroupDao = new PoolGroupDAOHelper();
     DomainsDAOHelper _domainsDao = new DomainsDAOHelper();
+    LinkGroupsDAOHelper _linkGroupsDao = new LinkGroupsDAOHelper();
 
     @Override
     public PoolsDAO getPoolsDAO() {
@@ -40,5 +42,10 @@ public class DAOFactoryImplHelper implements DAOFactory {
     @Override
     public DomainsDAO getDomainsDAO() {
         return _domainsDao;
+    }
+
+    @Override
+    public LinkGroupsDAO getLinkGroupsDAO() {
+        return _linkGroupsDao;
     }
 }

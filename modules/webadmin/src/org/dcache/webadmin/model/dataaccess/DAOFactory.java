@@ -17,5 +17,7 @@ public interface DAOFactory {
 
     public InfoDAO getInfoDAO();
 
+    public LinkGroupsDAO getLinkGroupsDAO();
+
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }
