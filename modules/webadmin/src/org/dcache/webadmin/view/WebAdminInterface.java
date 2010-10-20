@@ -30,6 +30,7 @@ import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.InfoService;
+import org.dcache.webadmin.controller.LinkGroupsService;
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.PoolGroupService;
@@ -61,6 +62,7 @@ public class WebAdminInterface extends WebApplication {
     private InfoService _infoService;
     private PoolAdminService _poolAdminService;
     private CellAdminService _cellAdminService;
+    private LinkGroupsService _linkGroupsService;
     private int _httpPort;
     private int _httpsPort;
     private boolean _authenticatedMode;
@@ -192,6 +194,14 @@ public class WebAdminInterface extends WebApplication {
 
     public void setCellAdminService(CellAdminService cellAdminService) {
         _cellAdminService = cellAdminService;
+    }
+
+    public LinkGroupsService getLinkGroupsService() {
+        return _linkGroupsService;
+    }
+
+    public void setLinkGroupsService(LinkGroupsService linkGroupsService) {
+        _linkGroupsService = linkGroupsService;
     }
 
     public void setDcacheName(String dCacheName) {
