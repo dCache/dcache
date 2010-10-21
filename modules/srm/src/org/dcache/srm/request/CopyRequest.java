@@ -74,6 +74,7 @@ package org.dcache.srm.request;
 
 import org.dcache.srm.util.SrmUrl;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.io.IOException;
 import java.util.Set;
 import java.util.Date;
@@ -411,7 +412,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             RequestCredential credential = getCredential();
             QOSTicket qosTicket = getQosPlugin().createTicket(
                     credential.getCredentialName(),
-                    (getStorage().getFileMetaData((SRMUser)getUser(),cfr.getFromPath(), false)).size,
+                    getStorage().getFileMetaData((SRMUser)getUser(), cfr.getFrom_surl(), false).size,
                     getFrom_url(i).getURL(),
                     getFrom_url(i).getPort(),
                     getFrom_url(i).getPort(),
@@ -544,7 +545,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 }
                 logger.debug("getTurlsArrived, setting \"from\" turl to "+
                 getFrom_url(i).getURL());
-                cfr.setFrom_turl(getFrom_url(i));
+                cfr.setFrom_turl(URI.create(getFrom_url(i).getURL()));
                 cfr.saveJob();
 
             }
@@ -586,7 +587,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                 }
                 logger.debug("getTurlsArrived, setting remote \"to\" TURL to "+
                 getTo_url(i).getURL());
-                cfr.setTo_turl(getTo_url(i));
+                cfr.setTo_turl(URI.create(getTo_url(i).getURL()));
                 cfr.saveJob();
                 // everything is known, can start transfers
                 Scheduler.getScheduler(schedulerId).schedule(cfr);
@@ -620,7 +621,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         for(int i =0 ; i<length;++i) {
             Long fileRequestId = (Long) remoteSurlToFileReqIds.get(remoteSurlsUniqueArray[i]);
             CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
-            sizes[i] = (getStorage().getFileMetaData(getUser(),cfr.getFromPath(), false)).size;
+            sizes[i] = getStorage().getFileMetaData(getUser(), cfr.getFrom_surl(), false).size;
             logger.debug("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
@@ -682,20 +683,14 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
                     getQosPlugin().sayStatus(cfr.getQOSTicket());
                 }
 
-                try {
-                    if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
-                        cfr.setFrom_turl(new SrmUrl(TURL));
-                    }
-                    else {
-                        cfr.setTo_turl(new SrmUrl(TURL));
-                    }
-                    if(size != null)
-                    {
-                        cfr.setSize(size.longValue());
-                    }
+                if( isFrom_url_is_srm() && ! isFrom_url_is_local()) {
+                    cfr.setFrom_turl(URI.create(TURL));
                 }
-                catch(MalformedURLException mue) {
-
+                else {
+                    cfr.setTo_turl(URI.create(TURL));
+                }
+                if(size != null) {
+                    cfr.setSize(size.longValue());
                 }
                 cfr.setRemoteRequestId(remoteRequestId);
                 cfr.setRemoteFileId(remoteFileId);

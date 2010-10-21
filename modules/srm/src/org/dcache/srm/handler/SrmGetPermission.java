@@ -34,7 +34,6 @@ import org.apache.axis.types.URI.MalformedURIException;
 public class SrmGetPermission {
         private static Logger logger =
                 LoggerFactory.getLogger(SrmGetPermission.class);
-	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmGetPermissionRequest request;
 	SrmGetPermissionResponse response;
@@ -103,26 +102,22 @@ public class SrmGetPermission {
 		if (length==0) {
 			return getFailedResponse(" zero length array of URLS");
 		}
-		String path[]=new String[length];
 		ArrayOfTPermissionReturn permissionarray=new ArrayOfTPermissionReturn();
 		TPermissionReturn permissionsArray[] =new TPermissionReturn[length];
 		permissionarray.setPermissionArray(permissionsArray);
 		boolean haveFailure = false;
 		int nfailed = 0;
 		for(int i=0;i <length;i++){
-            logger.debug("SURL["+i+"]= "+uriarray[i]);
-            path[i]  = uriarray[i].getPath(true,true);
-			int indx = path[i].indexOf(SFN_STRING);
+                        logger.debug("SURL["+i+"]= "+uriarray[i]);
+                        java.net.URI surl =
+                            java.net.URI.create(uriarray[i].getPath(true,true));
 			TReturnStatus rs = new TReturnStatus();
 			rs.setStatusCode(TStatusCode.SRM_SUCCESS);
 			TPermissionReturn p = new TPermissionReturn();
 			p.setStatus(rs);
 			p.setSurl(uriarray[i]);
-			if(indx != -1) {
-				path[i]=path[i].substring(indx+SFN_STRING.length());
-			}
 			try {
-                            FileMetaData fmd= storage.getFileMetaData(user,path[i], false);
+                            FileMetaData fmd= storage.getFileMetaData(user,surl, false);
 				String owner    = fmd.owner;
 				int permissions = fmd.permMode;
 				TPermissionMode  upm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));

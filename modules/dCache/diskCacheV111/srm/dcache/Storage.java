@@ -97,6 +97,7 @@ import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import diskCacheV111.util.CacheException;
@@ -121,6 +122,8 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
@@ -239,6 +242,8 @@ public final class Storage
         = {};
     private static final String[] SRM_PREFERED_PROTOCOLS
         = { "gsiftp", "gsidcap" };
+
+    private final static String SFN_STRING = "SFN=";
 
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
@@ -1128,106 +1133,92 @@ public final class Storage
         return this.selectHost(protocol);
     }
 
-
-    public String getGetTurl(SRMUser user,String path,String[] protocols)
-    throws SRMException {
-        path = getFullPath(path);
+    @Override
+    public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
+        throws SRMException
+    {
+        FsPath path = getPath(surl);
         String protocol = selectGetProtocol(protocols);
-        return getTurl(path,protocol,user);
+        return getTurl(path, protocol, user);
     }
 
-    public String getGetTurl(SRMUser user,String filePath,
-            String previous_turl)
-            throws SRMException {
-        String actualFilePath = getFullPath(filePath);
-        GlobusURL prev_turl;
-        try {
-            prev_turl= new GlobusURL(previous_turl);
-        } catch (java.net.MalformedURLException e) {
-            _log.warn(e.toString());
-            throw new SRMException("Illegal previous turl: " + e.getMessage(),
-                                   e);
-        }
-
-        String host = prev_turl.getHost();
-        int port = prev_turl.getPort();
-        if(port > 0) {
-            host = host+":"+port;
-        }
-        return getTurl(actualFilePath, prev_turl.getProtocol(),host, user);
+    @Override
+    public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
+        throws SRMException
+    {
+        FsPath actualFilePath = getPath(surl);
+        String host = previous_turl.getHost();
+        int port = previous_turl.getPort();
+        return getTurl(actualFilePath, previous_turl.getScheme(), host, port, user);
     }
 
-    public String getPutTurl(SRMUser user,String path,String[] protocols)
-    throws SRMException {
-        path=getFullPath(path);
-        String protocol = this.selectPutProtocol(protocols);
-        return getTurl(path,protocol,user);
+    @Override
+    public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
+        throws SRMException
+    {
+        FsPath path = getPath(surl);
+        String protocol = selectPutProtocol(protocols);
+        return getTurl(path, protocol, user);
     }
 
-
-    public String getPutTurl(SRMUser user, String filePath, String previous_turl)
-    throws SRMException {
-        String actualFilePath = getFullPath(filePath);
-        GlobusURL prev_turl;
-        try {
-            prev_turl= new GlobusURL(previous_turl);
-        } catch (java.net.MalformedURLException e) {
-            throw
-                new SRMException("illegal previous turl:" + e.getMessage(), e);
-        }
-        String host = prev_turl.getHost();
-        int port = prev_turl.getPort();
-        if(port > 0) {
-            host = host+":"+port;
-        }
-        return getTurl(actualFilePath, prev_turl.getProtocol(),host, user);
+    @Override
+    public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
+        throws SRMException
+    {
+        FsPath path = getPath(surl);
+        String host = previous_turl.getHost();
+        int port = previous_turl.getPort();
+        return getTurl(path, previous_turl.getScheme(), host, port, user);
     }
 
-
-
-    private String getTurl(String path,String protocol,SRMUser user)
-    throws SRMException {
-        if(path == null) {
-            throw new IllegalArgumentException("path is null");
-        }
-        if(protocol == null) {
+    private URI getTurl(FsPath path,String protocol,SRMUser user)
+        throws SRMException
+    {
+        if (protocol == null) {
             throw new IllegalArgumentException("protocol is null");
         }
-        String transfer_path = getTurlPath(path,protocol,user);
-        if(transfer_path == null) {
-            throw new SRMException("cab not get transfer path");
+        String hostPort = selectHost(protocol);
+        int index = hostPort.indexOf(':');
+        if (index > -1) {
+            String host = hostPort.substring(0, index);
+            int port = Integer.parseInt(hostPort.substring(index + 1));
+            return getTurl(path, protocol, host, port, user);
+        } else {
+            return getTurl(path, protocol, hostPort, 0, user);
         }
-        String host = selectHost(protocol);
-        if(host == null) {
-            throw new SRMException(" failed to get host for "+protocol);
-        }
-        String turl = protocol+"://"+host+"/"+transfer_path;
-        _log.debug("getTurl() returns turl="+turl);
-        return turl;
-
     }
 
-    private String getTurl(String path,String protocol,String host,SRMUser user)
-    throws SRMException {
-        if(path == null) {
+    private URI getTurl(FsPath path, String protocol,
+                        String host, int port, SRMUser user)
+        throws SRMException
+    {
+        if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
-        if(protocol == null) {
+        if (protocol == null) {
             throw new IllegalArgumentException("protocol is null");
         }
-        if(host == null) {
+        if (host == null) {
             throw new IllegalArgumentException("host is null");
         }
         String transfer_path = getTurlPath(path,protocol,user);
-        if(transfer_path == null) {
+        if (transfer_path == null) {
             throw new SRMException("cab not get transfer path");
         }
-        String turl = protocol+"://"+host+"/"+transfer_path;
-        _log.debug("getTurl() returns turl="+turl);
-        return turl;
+        try {
+            if (port == 0) {
+                port = -1;
+            }
+            URI turl =
+                new URI(protocol, null, host, port, transfer_path, null, null);
+            _log.debug("getTurl() returns turl="+turl);
+            return turl;
+        } catch (URISyntaxException e) {
+            throw new SRMInternalErrorException(e.getMessage());
+        }
     }
 
-    private boolean verifyUserPathIsRootSubpath(String absolutePath, SRMUser user) {
+    private boolean verifyUserPathIsRootSubpath(FsPath absolutePath, SRMUser user) {
 
         if(absolutePath == null) {
             return false;
@@ -1242,10 +1233,10 @@ public final class Storage
         }
 
 
-        absolutePath = new FsPath(absolutePath).toString();
         if(user_root!= null) {
+            String path = absolutePath.toString();
             _log.debug("getTurl() user root is "+user_root);
-            if(!absolutePath.startsWith(user_root)) {
+            if(!path.startsWith(user_root)) {
                 String error = "verifyUserPathIsInTheRoot error:"+
                         "user's path "+absolutePath+
                         " is not subpath of the user's root" +user_root;
@@ -1269,10 +1260,9 @@ public final class Storage
                                          l.size()));
     }
 
-    private String getTurlPath(String path, String protocol, SRMUser user)
+    private String getTurlPath(FsPath path, String protocol, SRMUser user)
         throws SRMException
     {
-        FsPath fullPath = new FsPath(path);
         FsPath userRoot = new FsPath();
         if (user != null) {
             AuthorizationRecord duser = (AuthorizationRecord) user;
@@ -1288,13 +1278,13 @@ public final class Storage
 
         String transferPath;
         if (protocol.equals("gsiftp")) {
-            transferPath = stripRootPath(userRoot, fullPath);
+            transferPath = stripRootPath(userRoot, path);
         } else if (protocol.equals("http") || protocol.equals("https")) {
-            transferPath = stripRootPath(_httpRootPath, fullPath);
+            transferPath = stripRootPath(_httpRootPath, path);
         } else if (protocol.equals("root")) {
-            transferPath = stripRootPath(_xrootdRootPath, fullPath);
+            transferPath = stripRootPath(_xrootdRootPath, path);
         } else {
-            transferPath = fullPath.toString();
+            transferPath = path.toString();
         }
 
         _log.debug("getTurlPath(path=" + path + ",protocol=" + protocol +
@@ -1569,36 +1559,46 @@ public final class Storage
             }
         }
 
-    public void getFileInfo(SRMUser user, String filePath, boolean read,
+    @Override
+    public void getFileInfo(SRMUser user, URI surl, boolean read,
         GetFileInfoCallbacks callbacks) {
-        String actualPnfsPath= getFullPath(filePath);
-        if(!verifyUserPathIsRootSubpath(actualPnfsPath,user)) {
-            callbacks.GetStorageInfoFailed("user's path ["+actualPnfsPath+
-                    "] is not a subpath of user's root ");
+        try {
+            FsPath actualPnfsPath = getPath(surl);
+            if (!verifyUserPathIsRootSubpath(actualPnfsPath,user)) {
+                callbacks.GetStorageInfoFailed("user's path ["+actualPnfsPath+
+                                               "] is not a subpath of user's root ");
+            }
+            GetFileInfoCompanion.getFileInfo((AuthorizationRecord) user,
+                                             actualPnfsPath.toString(),
+                                             read,
+                                             callbacks,
+                                             _pnfsStub);
+        } catch (SRMInvalidPathException e) {
+            callbacks.FileNotFound(e.getMessage());
         }
-        GetFileInfoCompanion.getFileInfo(
-                (AuthorizationRecord)user,
-                actualPnfsPath,
-                read,
-                callbacks,
-                _pnfsStub);
     }
 
+    @Override
     public void prepareToPut(SRMUser user,
-            String filePath,
-            PrepareToPutCallbacks callbacks,
-            boolean overwrite) {
-        String actualPnfsPath = getFullPath(filePath);
-        PutCompanion.PrepareToPutFile(
-                (AuthorizationRecord)user,
-                permissionHandler,
-                actualPnfsPath,
-                callbacks,
-                _pnfsStub,
-                config.isRecursiveDirectoryCreation(),
-                overwrite);
+                             URI surl,
+                             PrepareToPutCallbacks callbacks,
+                             boolean overwrite)
+    {
+        try {
+            FsPath actualPnfsPath = getPath(surl);
+            PutCompanion.PrepareToPutFile((AuthorizationRecord) user,
+                                          permissionHandler,
+                                          actualPnfsPath.toString(),
+                                          callbacks,
+                                          _pnfsStub,
+                                          config.isRecursiveDirectoryCreation(),
+                                          overwrite);
+        } catch (SRMInvalidPathException e) {
+            callbacks.InvalidPathError(e.getMessage());
+        }
     }
 
+    @Override
     public void setFileMetaData(SRMUser user, FileMetaData fmd)
         throws SRMException
     {
@@ -1634,11 +1634,12 @@ public final class Storage
         }
     }
 
-    public FileMetaData getFileMetaData(SRMUser user, String path, boolean read)
+    @Override
+    public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read)
         throws SRMException
     {
-        _log.debug("getFileMetaData(" + path + ")");
-        String fullPath = getFullPath(path);
+        _log.debug("getFileMetaData(" + surl + ")");
+        FsPath path = getPath(surl);
         AuthorizationRecord duser = (AuthorizationRecord) user;
         PnfsHandler handler =
             new PnfsHandler(_pnfs, Subjects.getSubject(duser));
@@ -1656,7 +1657,7 @@ public final class Storage
                 : EnumSet.noneOf(AccessMask.class);
 
             FileAttributes attributes =
-                handler.getFileAttributes(fullPath,
+                handler.getFileAttributes(path.toString(),
                                           requestedAttributes,
                                           accessMask);
             FileMetaData fmd = new DcacheFileMetaData(attributes);
@@ -1742,12 +1743,12 @@ public final class Storage
         return nextMessageID.getAndIncrement();
     }
 
-
-    public void localCopy(SRMUser user,String fromFilePath, String toFilePath)
+    @Override
+    public void localCopy(SRMUser user, String fromFilePath, String toFilePath)
         throws SRMException
     {
-        String actualFromFilePath = getFullPath(fromFilePath);
-        String actualToFilePath = getFullPath(toFilePath);
+        FsPath actualFromFilePath = getPath(fromFilePath);
+        FsPath actualToFilePath = getPath(toFilePath);
         long id = getNextMessageID();
         _log.debug("localCopy for user " + user +
                    "from actualFromFilePath to actualToFilePath");
@@ -1756,8 +1757,8 @@ public final class Storage
             CopyManagerMessage copyRequest =
                 new CopyManagerMessage(duser.getUid(),
                                        duser.getGid(),
-                                       actualFromFilePath,
-                                       actualToFilePath,
+                                       actualFromFilePath.toString(),
+                                       actualToFilePath.toString(),
                                        id,
                                        config.getBuffer_size(),
                                        config.getTcp_buffer_size());
@@ -1908,7 +1909,7 @@ public final class Storage
         }
 
         RemoveFileCompanion.removeFile((AuthorizationRecord) user,
-                                       getFullPath(path),
+                                       getPath(path).toString(),
                                        removeFileCallback,
                                        _pnfsStub,
                                        getCellEndpoint());
@@ -1921,7 +1922,7 @@ public final class Storage
         _log.debug("Storage.removeFile");
 
         RemoveFileCompanion.removeFile((AuthorizationRecord)user,
-                                       getFullPath(path),
+                                       getPath(path).toString(),
                                        callbacks,
                                        _pnfsStub,
                                        getCellEndpoint());
@@ -1932,9 +1933,9 @@ public final class Storage
     {
         _log.debug("Storage.removeDirectory");
         for (Object path: tree) {
-            String actualPath = getFullPath(path.toString());
+            FsPath actualPath = getPath(path.toString());
             try {
-                _pnfs.deletePnfsEntry(actualPath);
+                _pnfs.deletePnfsEntry(actualPath.toString());
             } catch (TimeoutCacheException e) {
                 _log.error("Failed to delete " + actualPath + " due to timeout");
                 throw new SRMInternalErrorException("Internal name space timeout while deleting " + path);
@@ -1960,7 +1961,7 @@ public final class Storage
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
 
         try {
-            handler.createPnfsDirectory(getFullPath(directory));
+            handler.createPnfsDirectory(getPath(directory).toString());
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
@@ -1986,13 +1987,13 @@ public final class Storage
     {
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
-        String fromPath = getFullPath(from);
-        String toPath = getFullPath(to);
+        FsPath fromPath = getPath(from);
+        FsPath toPath = getPath(to);
 
         try {
             try {
                 FileAttributes attr =
-                    handler.getFileAttributes(toPath, EnumSet.of(TYPE));
+                    handler.getFileAttributes(toPath.toString(), EnumSet.of(TYPE));
 
                 /* We now know the destination exists. In case the
                  * source and destination names are identical, we
@@ -2006,16 +2007,14 @@ public final class Storage
                     throw new SRMDuplicationException("Destination exists");
                 }
 
-                File fromFile = new File(fromPath);
-                File toFile = new File(new File(toPath), fromFile.getName());
-                toPath = toFile.toString();
-                to = to + "/" + fromFile.getName();
+                toPath = new FsPath(toPath, fromPath.getName());
+                to = to + "/" + fromPath.getName();
             } catch (FileNotFoundCacheException e) {
                 /* Destination name does not exist; not a problem.
                  */
             }
 
-            handler.renameEntry(fromPath, toPath, false);
+            handler.renameEntry(fromPath.toString(), toPath.toString(), false);
         } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException("No such file or directory", e);
         } catch (FileExistsCacheException e) {
@@ -2171,9 +2170,9 @@ public final class Storage
             String spaceReservationId,
             long size,
             CopyCallbacks callbacks) throws SRMException{
-        actualFilePath = getFullPath(actualFilePath);
-        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +actualFilePath);
-        return performRemoteTransfer(user,remoteTURL,actualFilePath,true,
+        FsPath path = getPath(actualFilePath);
+        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
+        return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
                 remoteCredentialId,
                 spaceReservationId,
@@ -2188,9 +2187,9 @@ public final class Storage
             SRMUser remoteUser,
             Long remoteCredentialId,
             CopyCallbacks callbacks) throws SRMException{
-        actualFilePath = getFullPath(actualFilePath);
-        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +actualFilePath);
-        return performRemoteTransfer(user,remoteTURL,actualFilePath,true,
+        FsPath path = getPath(actualFilePath);
+        _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
+        return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
                 remoteCredentialId,
                 null,
@@ -2216,9 +2215,9 @@ public final class Storage
             Long remoteCredentialId,
             CopyCallbacks callbacks)
             throws SRMException{
-        String actualFilePath = getFullPath(filePath);
-        _log.debug(" putToRemoteTURL from "+actualFilePath+" to " +remoteTURL);
-        return performRemoteTransfer(user,remoteTURL,actualFilePath,false,
+        FsPath path = getPath(filePath);
+        _log.debug(" putToRemoteTURL from "+path+" to " +remoteTURL);
+        return performRemoteTransfer(user,remoteTURL,path,false,
                 remoteUser,
                 remoteCredentialId,
                 null,
@@ -2248,7 +2247,7 @@ public final class Storage
 
     private String performRemoteTransfer(SRMUser user,
                                          String remoteTURL,
-                                         String actualFilePath,
+                                         FsPath actualFilePath,
                                          boolean store,
                                          SRMUser remoteUser,
                                          Long remoteCredentialId,
@@ -2289,7 +2288,7 @@ public final class Storage
                 gsiftpTransferRequest =
                     new RemoteGsiftpTransferManagerMessage(duser,
                                                            remoteTURL,
-                                                           actualFilePath,
+                                                           actualFilePath.toString(),
                                                            store,
                                                            remoteCredentialId,
                                                            credentialName,
@@ -2303,7 +2302,7 @@ public final class Storage
                 gsiftpTransferRequest =
                     new RemoteGsiftpTransferManagerMessage(duser,
                                                            remoteTURL,
-                                                           actualFilePath,
+                                                           actualFilePath.toString(),
                                                            store,
                                                            remoteCredentialId,
                                                            credentialName,
@@ -2564,14 +2563,14 @@ public final class Storage
         AuthorizationRecord duser = (AuthorizationRecord) user;
         Subject subject = Subjects.getSubject(duser);
 
-        String path = getFullPath(directoryName);
+        FsPath path = getPath(directoryName);
         try {
             Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE);
             requestedAttributes.addAll(permissionHandler.getRequiredAttributes());
             FileAttributes parentAttr =
-                _pnfs.getFileAttributes(FsPath.getParent(path), requestedAttributes);
+                _pnfs.getFileAttributes(path.getParent().toString(), requestedAttributes);
             FileAttributes childAttr =
-                _pnfs.getFileAttributes(path, requestedAttributes);
+                _pnfs.getFileAttributes(path.toString(), requestedAttributes);
 
             AccessType canDelete =
                 permissionHandler.canDeleteDir(subject, parentAttr, childAttr);
@@ -2604,7 +2603,7 @@ public final class Storage
                                      FileMetaData fileMetaData)
         throws SRMException
     {
-        final File path = new File(getFullPath(directoryName));
+        final File path = new File(getPath(directoryName).toString());
         final Collection<File> result = new ArrayList<File>();
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
         DirectoryListPrinter printer =
@@ -2648,7 +2647,7 @@ public final class Storage
                                   FileMetaData fileMetaData)
         throws SRMException
     {
-        final File path = new File(getFullPath(directoryName));
+        final File path = new File(getPath(directoryName).toString());
         final Collection<String> result = new ArrayList<String>();
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
         DirectoryListPrinter printer =
@@ -2758,7 +2757,7 @@ public final class Storage
             };
 
         try {
-            File path = new File(getFullPath(directory));
+            File path = new File(getPath(directory).toString());
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
             _listSource.printDirectory(subject, printer, path, null,
                                        new Interval(offset, offset + count - 1));
@@ -2838,8 +2837,7 @@ public final class Storage
         }
 
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        String actualFilePath = getFullPath(fileName);
-        FsPath fsPath           = new FsPath(actualFilePath);
+        FsPath fsPath = getPath(fileName);
         SrmMarkSpaceAsBeingUsedCompanion.markSpace(
                 duser,
                 longSpaceToken,
@@ -2864,8 +2862,7 @@ public final class Storage
             return;
         }
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        String actualFilePath = getFullPath(fileName);
-        FsPath fsPath           = new FsPath(actualFilePath);
+        FsPath fsPath = getPath(fileName);
         SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(
                 duser,
                 longSpaceToken,
@@ -3063,9 +3060,9 @@ public final class Storage
     {
         try {
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
-            String fullPath = getFullPath(path);
+            FsPath fullPath = getPath(path);
             PnfsHandler handler = new PnfsHandler(_pnfs, subject);
-            handler.getFileAttributes(fullPath,
+            handler.getFileAttributes(fullPath.toString(),
                                       EnumSet.noneOf(FileAttribute.class),
                                       EnumSet.of(AccessMask.WRITE_DATA));
         } catch (TimeoutCacheException e) {
@@ -3170,9 +3167,9 @@ public final class Storage
 
     public boolean exists(SRMUser user,
                           String path)  throws SRMException {
-        String absolute_path = getFullPath(path);
+        FsPath absolute_path = getPath(path);
             try {
-                return _pnfs.getPnfsIdByPath(absolute_path) != null;
+                return _pnfs.getPnfsIdByPath(absolute_path.toString()) != null;
             }
             catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND ||
@@ -3192,9 +3189,41 @@ public final class Storage
      * Given a path relative to the root path, this method returns a
      * full PNFS path.
      */
-    private String getFullPath(String path)
+    private FsPath getPath(String path)
     {
-        FsPath fullPath = new FsPath(config.getSrm_root() + "/" + path);
-        return fullPath.toString();
+        return new FsPath(config.getSrm_root() + "/" + path);
+    }
+
+    /**
+     * Given a path relative to the root path, this method returns a
+     * full PNFS path.
+     */
+    private FsPath getPath(URI surl)
+        throws SRMInvalidPathException
+    {
+        try {
+            String scheme = surl.getScheme();
+            if (scheme != null && !scheme.equalsIgnoreCase("srm")) {
+                throw new SRMInvalidPathException("Invalid scheme: " + scheme);
+            }
+
+            String host = surl.getHost();
+            if (host != null && !Tools.sameHost(config.getSrmHosts(), host)) {
+                throw new SRMInvalidPathException("SURL is not local: " + surl);
+            }
+
+            String path = surl.getPath();
+            String query = surl.getQuery();
+            if (query != null) {
+                int i = query.indexOf(SFN_STRING);
+                if (i != -1) {
+                    path = query.substring(i + SFN_STRING.length());
+                }
+            }
+
+            return getPath(path);
+        } catch (UnknownHostException e) {
+            throw new SRMInvalidPathException(e.getMessage());
+        }
     }
 }

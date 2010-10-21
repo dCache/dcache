@@ -98,6 +98,7 @@ import java.util.Iterator;
 import java.io.IOException;
 import java.io.File;
 import java.net.InetAddress;
+import java.net.URI;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
@@ -807,24 +808,9 @@ public class SRM {
         // call getFileMetaData(String path) for each SURL in array
         for (int i = 0; i < len; ++i) {
             try {
-                GlobusURL url = new GlobusURL(SURLS[i]);
-                if (!Tools.sameHost(configuration.getSrmHosts(),
-                        url.getHost())) {
-                    String error = "getFileMetaData: surl is not local : " + url.getURL();
-                    logger.error(error);
-                    throw new IllegalArgumentException(error);
-                }
-
-                String surlpath = url.getPath();
-                int indx = surlpath.indexOf(SFN_STRING);
-                if (indx != -1) {
-
-                    surlpath = surlpath.substring(indx + SFN_STRING.length());
-                }
-
-                logger.debug("getFileMetaData(String[]) calling FileMetaData(" + surlpath + ")");
-
-                FileMetaData fmd = storage.getFileMetaData(user, surlpath, false);
+                URI surl = new URI(SURLS[i]);
+                logger.debug("getFileMetaData(String[]) calling FileMetaData({})", surl);
+                FileMetaData fmd = storage.getFileMetaData(user, surl, false);
                 fmd.SURL = SURLS[i];
                 fmds[i] = new FileMetaData(fmd);
                 logger.debug("FileMetaData[" + i + "]=" + fmds[i]);

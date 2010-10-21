@@ -72,13 +72,13 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 
 import diskCacheV111.srm.RequestFileStatus;
 import java.sql.SQLException;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
-import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
@@ -95,7 +95,6 @@ import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
@@ -110,7 +109,7 @@ public final class BringOnlineFileRequest extends FileRequest {
             LoggerFactory.getLogger(BringOnlineFileRequest.class);
 
     // the globus url class created from surl_string
-    private GlobusURL surl;
+    private URI surl;
     private String pinId;
     private String fileId;
     private transient FileMetaData fileMetaData;
@@ -130,14 +129,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 lifetime,
                 maxNumberOfRetries);
         logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
-        try {
-            surl = new GlobusURL(url);
-            logger.debug("    surl = "+surl.getURL());
-        }
-        catch(MalformedURLException murle) {
-            throw new IllegalArgumentException(murle.toString());
-        }
-
+        surl = URI.create(url);
         updateMemoryCache();
     }
     /**
@@ -181,12 +173,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         requestCredentalId,
         statusCodeString);
 
-        try {
-            this.surl = new GlobusURL(SURL);
-        }
-        catch(MalformedURLException murle) {
-            throw new IllegalArgumentException(murle.toString());
-        }
+        this.surl = URI.create(SURL);
 
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
@@ -225,14 +212,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
     }
 
-
-
-    public String getPath() {
-        return getPath(getSurl());
-    }
-
-
-    public GlobusURL getSurl() {
+    public URI getSurl() {
         rlock();
         try {
             return surl;
@@ -243,12 +223,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
 
     public String getSurlString() {
-        rlock();
-        try {
-            return getSurl().getURL();
-        } finally {
-            runlock();
-        }
+        return getSurl().toString();
     }
 
     public String getFileId() {
@@ -309,7 +284,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
 
         try {
-             fileStatus.setSourceSURL(new URI(getSurlString()));
+             fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
@@ -330,7 +305,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         TReturnStatus returnStatus = getReturnStatus();
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         try {
-            surlReturnStatus.setSurl(new URI(getSurlString()));
+            surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
@@ -352,7 +327,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         }
         sb.append(" state:").append(getState());
         if(longformat) {
-            sb.append('\n').append("   SURL: ").append(getSurl().getURL());
+            sb.append('\n').append("   SURL: ").append(getSurl());
             sb.append('\n').append("   pinned: ").append(isPinned());
             String thePinId = getPinId();
             if(thePinId != null) {
@@ -372,7 +347,7 @@ public final class BringOnlineFileRequest extends FileRequest {
                 try {
                     if(!Tools.sameHost(getConfiguration().getSrmHosts(),
                     getSurl().getHost())) {
-                        String error ="surl is not local : "+getSurl().getURL();
+                        String error ="surl is not local : "+getSurl();
                         logger.error(error);
                         throw new FatalJobFailure(error);
                     }
@@ -416,8 +391,8 @@ public final class BringOnlineFileRequest extends FileRequest {
         try {
 
             logger.debug(" proccessing the file request id "+getId());
-            String  path =   getPath();
-            logger.debug(" path is "+path);
+            URI surl = getSurl();
+            logger.debug(" path is "+surl);
             // if we can not read this path for some reason
             //(not in ftp root for example) this will throw exception
             // we do not care about the return value yet
@@ -451,9 +426,12 @@ public final class BringOnlineFileRequest extends FileRequest {
                 }
             }
             //storage.getGetTurl(getUser(),path,request.protocols);
-            logger.debug("storage.prepareToGet("+path+",...)");
+            logger.debug("storage.prepareToGet("+surl+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            getStorage().getFileInfo(getUser(),path,true,callbacks);
+            getStorage().getFileInfo(getUser(),
+                                     surl,
+                                     true,
+                                     callbacks);
         }
         catch(Exception e) {
             logger.error(e.toString());
@@ -517,7 +495,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         TReturnStatus returnStatus = new TReturnStatus();
         try {
-            surlReturnStatus.setSurl(new URI(getSurlString()));
+            surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
            returnStatus.setExplanation("wrong surl format");
@@ -648,13 +626,6 @@ public final class BringOnlineFileRequest extends FileRequest {
         SRMUser user =(SRMUser) getUser();
         getStorage().extendPinLifetime(user,getFileId(), getPinId(),newLifetime);
         return newLifetime;
-    }
-
-    /**
-     * @param surl the surl to set
-     */
-    private void setSurl(GlobusURL surl) {
-        this.surl = surl;
     }
 
     /**
@@ -1129,12 +1100,11 @@ public final class BringOnlineFileRequest extends FileRequest {
         AbstractStorageElement storage,
         final SRMUser user,
         final long id,
-        final String surl_string) throws SRMException, MalformedURLException {
-        GlobusURL surl = new GlobusURL(surl_string);
-        String path = FileRequest.getPath(surl);
+        final String surl_string) throws SRMException {
+        java.net.URI surl = URI.create(surl_string);
 
         FileMetaData fmd =
-            storage.getFileMetaData(user,path,true);
+            storage.getFileMetaData(user,surl,true);
         String fileId = fmd.fileId;
         if(fileId != null) {
             BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =
@@ -1167,12 +1137,10 @@ public final class BringOnlineFileRequest extends FileRequest {
         AbstractStorageElement storage,
         final SRMUser user,
         final String surl_string)
-        throws SRMException,
-            MalformedURLException {
-        GlobusURL surl = new GlobusURL(surl_string);
-        String path = FileRequest.getPath(surl);
+        throws SRMException {
+        java.net.URI surl = URI.create(surl_string);
         FileMetaData fmd =
-            storage.getFileMetaData(user,path,true);
+            storage.getFileMetaData(user,surl,true);
         String fileId = fmd.fileId;
         if(fileId != null) {
             BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks =

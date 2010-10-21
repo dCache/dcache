@@ -18,6 +18,7 @@ import org.dcache.srm.AbstractStorageElement;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
 import diskCacheV111.srm.StorageElementInfo;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
@@ -37,6 +38,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 import org.ietf.jgss.GSSCredential;
 //import java.io.*;
@@ -45,6 +47,7 @@ import java.io.IOException;
 
 import java.net.InetAddress;
 //import java.net.URL;
+import java.net.URI;
 import org.globus.util.GlobusURL;
 //import java.net.*;
 import java.net.UnknownHostException;
@@ -66,6 +69,8 @@ public class Storage
   private static final Logger logger =
           LoggerFactory.getLogger(Storage.class);
   private final static String cvsId = "$Id:";
+
+  private final static String SFN_STRING = "?SFN=";
 
   private boolean debug = true; // Turns on/off debug messages
   private String gridftphost;
@@ -178,16 +183,18 @@ public class Storage
   }
 
   /** */
-  public String getPutTurl(SRMUser user, String filePath, String[] protocols)
+  public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
       throws SRMException {
     /**@todo # Implement getPutTurl() method */
 
+    String filePath = getPath(surl);
+
     for(int i= 0; i<protocols.length; ++i) {
         if(protocols[i].equals("gridftp") || protocols[i].equals("gsiftp") ) {
-            return "gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath;
+            return URI.create("gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
         if(protocols[i].equals("enstore")) {
-            return "enstore://"+gridftphost+":"+gridftpport+"/"+filePath;
+            return URI.create("enstore://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
     }
     throw new SRMException("no sutable protocol found");
@@ -202,9 +209,9 @@ public class Storage
    * This is a feature of dCache implementation of SRM SE for DCAP protocol.
    * */
 
-  public String getPutTurl(SRMUser user, String filePath, String previous_turl)
+  public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
       throws SRMException {
-    return  getPutTurl(user,filePath,new String[]{previous_turl});
+      return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
     /*
     String erStr1 = "Method getPutTurl(..., previous_turl) not implemented.";
     String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
@@ -218,15 +225,16 @@ public class Storage
   }
 
   /** */
-  public String getGetTurl(SRMUser user, String filePath, String[] protocols)
+  public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
       throws SRMException {
     /**@todo # Implement getGetTurl() method */
+    String filePath = getPath(surl);
     for(int i= 0; i<protocols.length; ++i) {
         if(protocols[i].equals("gridftp") || protocols[i].equals("gsiftp") ) {
-	    return "gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath;
+	    return URI.create("gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
         if(protocols[i].equals("enstore")) {
-            return "enstore://"+gridftphost+":"+gridftpport+"/"+filePath;
+            return URI.create("enstore://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
 
     }
@@ -242,9 +250,9 @@ public class Storage
    * This is a feature of dCache implementation of SRM SE for DCAP protocol.
    * */
 
-  public String getGetTurl(SRMUser user, String filePath, String previous_turl)
+  public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
       throws SRMException {
-    return  getPutTurl(user,filePath,new String[]{previous_turl});
+      return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
 /*
     String erStr1 = "Method getGetTurl(..., previous_turl) not implemented.";
     String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
@@ -486,10 +494,10 @@ public class Storage
   }
 
   /** */
-    public FileMetaData getFileMetaData(SRMUser user, String filePath, boolean read) throws SRMException{
+  public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read) throws SRMException{
 
     /**@todo getFileMetaData() - process exception */
-    return _getFileMetaData(user, filePath);
+    return _getFileMetaData(user, getPath(surl));
   }
 
   /** */
@@ -525,9 +533,17 @@ public class Storage
   //-------------- Async methods ----------------
 
   /** */
-    public void getFileInfo(SRMUser user, String filePath, boolean read,
-                          GetFileInfoCallbacks callbacks) {
+  public void getFileInfo(SRMUser user, URI surl, boolean read,
+                          GetFileInfoCallbacks callbacks)
+  {
     /**@todo getFileInfo() - async, lost fileId */
+      String filePath;
+      try {
+        filePath = getPath(surl);
+      } catch (SRMInvalidPathException e) {
+        callbacks.FileNotFound(e.getMessage());
+        return;
+      }
 
     if( ! ( callbacks instanceof GetFileInfoCallbacks ) )
       throw new java.lang.IllegalArgumentException(
@@ -687,13 +703,21 @@ public class Storage
   }
 
   /** */
-  public void prepareToPut(SRMUser user, String filePath,
+  public void prepareToPut(SRMUser user, URI surl,
                            PrepareToPutCallbacks callbacks,
-                           boolean overwrite ) {
+                           boolean overwrite )
+  {
    // the type of callback is already specified in the function declaration
    // if( ! ( callbacks instanceof PrepareToPutCallbacks ) )
    //   throw new java.lang.IllegalArgumentException(
    //       "Method prepareToPut() has wrong callback argument type.");
+    String filePath;
+    try {
+      filePath = getPath(surl);
+    } catch (SRMInvalidPathException e) {
+      callbacks.InvalidPathError(e.getMessage());
+      return;
+    }
 
     String       parentPath;
     File         file   = null;
@@ -847,7 +871,7 @@ public class Storage
                     logger.debug("calling getFromRemoteTURL from a copy thread");
                     getFromRemoteTURL(user, remoteTURL,actualFilePath, remoteUser, remoteCredentialId);
                     logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath, false));
+                    callbacks.copyComplete(actualFilePath, _getFileMetaData(user,actualFilePath));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -883,7 +907,7 @@ public class Storage
                     logger.debug("calling putToRemoteTURL from a copy thread");
                     putToRemoteTURL(user, actualFilePath,remoteTURL, remoteUser, remoteCredentialId);
                     logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath, false));
+                    callbacks.copyComplete(actualFilePath, _getFileMetaData(user,actualFilePath));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -931,7 +955,7 @@ public class Storage
       }
 
 	public String[] listNonLinkedDirectory(SRMUser user, String directoryName) throws SRMException {
-            FileMetaData fmd = getFileMetaData(user, directoryName, false);
+            FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -968,7 +992,7 @@ public class Storage
 	}
 
       public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-          FileMetaData fmd = getFileMetaData(user, directoryName,false);
+          FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -1005,7 +1029,7 @@ public class Storage
       }
 
       public String[] listDirectory(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-          FileMetaData fmd = getFileMetaData(user, directoryName, false);
+          FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -1050,7 +1074,7 @@ public class Storage
         String[] list = listDirectory(user, directory, null);
         List<FileMetaData> result = new ArrayList<FileMetaData>();
         for (long i = offset; i < list.length && i < offset + count; i++) {
-            result.add(getFileMetaData(user, directory + "/" + list[(int)i], false));
+            result.add(_getFileMetaData(user, directory + "/" + list[(int)i]));
         }
 
         return result;
@@ -1111,7 +1135,7 @@ public class Storage
      *   -1 stands for infinite lifetime
      */
     public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime) throws SRMException {
-        FileMetaData fmd = getFileMetaData(user,fileName, false);
+        FileMetaData fmd = _getFileMetaData(user,fileName);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
@@ -1175,4 +1199,34 @@ public class Storage
     public boolean exists(SRMUser user, String path)  throws SRMException {
             return true;
     }
+
+    /**
+     * Given a path relative to the root path, this method returns a
+     * full PNFS path.
+     */
+    private String getPath(URI surl)
+        throws SRMInvalidPathException
+    {
+        try {
+            String path = surl.getPath();
+            String scheme = surl.getScheme();
+            if (scheme != null) {
+                if (!scheme.equalsIgnoreCase("srm")) {
+                    throw new SRMInvalidPathException("Invalid scheme: " + scheme);
+                }
+                if (!Tools.sameHost(config.getSrmHosts(), surl.getHost())) {
+                    throw new SRMInvalidPathException("SURL is not local: " + surl);
+                }
+
+                int i = path.indexOf(SFN_STRING);
+                if (i != -1) {
+                    path = path.substring(i + SFN_STRING.length());
+                }
+            }
+            return path;
+        } catch (UnknownHostException e) {
+            throw new SRMInvalidPathException(e.getMessage());
+        }
+    }
+
 }

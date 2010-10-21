@@ -42,7 +42,6 @@ import org.apache.axis.types.URI.MalformedURIException;
 public class SrmSetPermission {
         private static Logger logger =
             LoggerFactory.getLogger(SrmSetPermission.class);
-	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement   storage;
 	SrmSetPermissionRequest  request;
 	SrmSetPermissionResponse response;
@@ -104,14 +103,10 @@ public class SrmSetPermission {
 		if(request==null) {
 			return getFailedResponse(" null request passed to SrmSetPermission()");
 		}
-		URI uri = request.getSURL();
-		String path = uri.getPath(true,true);
-		int indx = path.indexOf(SFN_STRING);
-		if (indx!=-1) {
-			path=path.substring(indx+SFN_STRING.length());
-		}
+		java.net.URI surl =
+                    java.net.URI.create(request.getSURL().toString());
 		try {
-                    FileMetaData fmd= storage.getFileMetaData(user,path,false);
+                    FileMetaData fmd= storage.getFileMetaData(user,surl,false);
 			String owner    = fmd.owner;
 			int permissions = fmd.permMode;
 			int groupid = Integer.parseInt(fmd.group);

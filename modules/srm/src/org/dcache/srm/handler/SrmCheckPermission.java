@@ -39,12 +39,13 @@ import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.SRMException;
-import org.apache.axis.types.URI;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -55,7 +56,6 @@ import org.slf4j.LoggerFactory;
 public class SrmCheckPermission {
         private static Logger logger =
             LoggerFactory.getLogger(SrmCheckPermission.class);
-	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmCheckPermissionRequest request;
 	SrmCheckPermissionResponse response;
@@ -105,7 +105,8 @@ public class SrmCheckPermission {
 	 */
 
 	public SrmCheckPermissionResponse srmCheckPermission()
-		throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+		throws SRMException, URISyntaxException
+        {
 		SrmCheckPermissionResponse response  = new SrmCheckPermissionResponse();
 		TReturnStatus returnStatus           = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -116,12 +117,11 @@ public class SrmCheckPermission {
 		}
 		ArrayOfAnyURI anyuriarray=request.getArrayOfSURLs();
 		String authorizationID=request.getAuthorizationID();
-		URI[] uriarray=anyuriarray.getUrlArray();
+		org.apache.axis.types.URI[] uriarray=anyuriarray.getUrlArray();
 		int length=uriarray.length;
 		if (length==0) {
 			return getFailedResponse(" zero length array of URLS");
 		}
-		String[] path=new String[length];
 		ArrayOfTSURLPermissionReturn arrayOfPermissions=new ArrayOfTSURLPermissionReturn();
 		TSURLPermissionReturn surlPermissionArray[] = new TSURLPermissionReturn[length];
 		arrayOfPermissions.setSurlPermissionArray(surlPermissionArray);
@@ -133,13 +133,9 @@ public class SrmCheckPermission {
 			pr.setStatus(rs);
 			pr.setSurl(uriarray[i]);
 			logger.debug("SURL["+i+"]= "+uriarray[i]);
-			path[i] = uriarray[i].getPath(true,true);
-			int indx    = path[i].indexOf(SFN_STRING);
-			if(indx != -1) {
-				path[i]=path[i].substring(indx+SFN_STRING.length());
-			}
+			URI surl = new URI(uriarray[i].toString());
 			try {
-                            FileMetaData fmd=storage.getFileMetaData(user,path[i],false);
+                            FileMetaData fmd = storage.getFileMetaData(user,surl,false);
 				int permissions = fmd.permMode;
 				TPermissionMode pm  = TPermissionMode.NONE;
 				if (fmd.isOwner(user)) {

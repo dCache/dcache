@@ -72,11 +72,11 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.FileMetaData;
-import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -94,7 +94,6 @@ import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
-import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,9 +105,8 @@ import org.slf4j.LoggerFactory;
 public final class GetFileRequest extends FileRequest {
     private final static Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
 
-    // the globus url class created from surl_string
-    private GlobusURL surl;
-    private GlobusURL turl;
+    private URI surl;
+    private URI turl;
     private String pinId;
     private String fileId;
 
@@ -134,13 +132,7 @@ public final class GetFileRequest extends FileRequest {
             lifetime,
             maxNumberOfRetries);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
-        try {
-            surl = new GlobusURL(url);
-            logger.debug("    surl = "+surl.getURL());
-        }
-        catch(MalformedURLException murle) {
-            throw new IllegalArgumentException(murle.toString());
-        }
+        surl = URI.create(url);
         updateMemoryCache();
 
     }
@@ -186,14 +178,9 @@ public final class GetFileRequest extends FileRequest {
         requestCredentalId,
         statusCodeString);
 
-        try {
-            this.surl = new GlobusURL(SURL);
-            if(TURL != null && (!TURL.equalsIgnoreCase("null"))) {
-                this.turl = new GlobusURL(TURL);
-            }
-        }
-        catch(MalformedURLException murle) {
-            throw new IllegalArgumentException(murle.toString());
+        this.surl = URI.create(SURL);
+        if(TURL != null && !TURL.equalsIgnoreCase("null")) {
+            this.turl = URI.create(TURL);
         }
 
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
@@ -224,40 +211,10 @@ public final class GetFileRequest extends FileRequest {
     }
 
     public boolean isPinned() {
-        rlock();
-        try {
-            return getPinId() != null;
-        } finally {
-            runlock();
-        }
+        return getPinId() != null;
     }
 
-
-
-    private final String getPath() {
-        String path;
-
-        rlock();
-        try {
-            path = getSurl().getPath();
-        } finally {
-            runlock();
-        }
-
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-
-            path=path.substring(indx+SFN_STRING.length());
-        }
-
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        return path;
-    }
-
-
-    private final GlobusURL getSurl() {
+    private final URI getSurl() {
         rlock();
         try {
             return surl;
@@ -266,7 +223,7 @@ public final class GetFileRequest extends FileRequest {
         }
     }
 
-    private final GlobusURL getTurl() {
+    private final URI getTurl() {
         rlock();
         try {
             return turl;
@@ -276,15 +233,8 @@ public final class GetFileRequest extends FileRequest {
     }
 
     public final String getSurlString() {
-        rlock();
-        try {
-            return getSurl().getURL();
-        } finally {
-            runlock();
-        }
+        return getSurl().toString();
     }
-
-
 
     public String getTurlString()  {
         wlock();
@@ -323,7 +273,7 @@ public final class GetFileRequest extends FileRequest {
             }
 
             if(getTurl()!= null) {
-                return getTurl().getURL();
+                return getTurl().toString();
             }
         } finally {
             wunlock();
@@ -392,7 +342,7 @@ public final class GetFileRequest extends FileRequest {
         }
 
         try {
-             fileStatus.setSourceSURL(new URI(getSurlString()));
+             fileStatus.setSourceSURL(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
@@ -401,7 +351,7 @@ public final class GetFileRequest extends FileRequest {
         String turlstring = getTurlString();
         if(turlstring != null) {
             try {
-            fileStatus.setTransferURL(new URI(turlstring));
+            fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
             } catch (Exception e) {
                 logger.error(e.toString());
                 throw new java.sql.SQLException("wrong turl format");
@@ -423,7 +373,7 @@ public final class GetFileRequest extends FileRequest {
         TReturnStatus returnStatus = getReturnStatus();
         TSURLReturnStatus surlReturnStatus = new TSURLReturnStatus();
         try {
-            surlReturnStatus.setSurl(new URI(getSurlString()));
+            surlReturnStatus.setSurl(new org.apache.axis.types.URI(getSurlString()));
         } catch (Exception e) {
             logger.error(e.toString());
             throw new java.sql.SQLException("wrong surl format");
@@ -432,44 +382,29 @@ public final class GetFileRequest extends FileRequest {
         return surlReturnStatus;
     }
 
-    private GlobusURL getTURL() throws SRMException, java.sql.SQLException{
+    private URI getTURL() throws SRMException, java.sql.SQLException{
         String firstDcapTurl = null;
         GetRequest request = (GetRequest) Job.getJob(requestId);
-        if(request != null) {
+        if (request != null) {
             firstDcapTurl = request.getFirstDcapTurl();
-            if(firstDcapTurl == null) {
-                try {
-                    String theTurl = getStorage().getGetTurl(getUser(),
-                        getPath(),
-                        request.protocols);
-                    if(theTurl == null) {
-                        throw new SRMException("turl is null");
-                    }
-                    GlobusURL g_turl = new GlobusURL(theTurl);
-                    if(g_turl.getProtocol().equals("dcap")) {
-
-                        request.setFirstDcapTurl(theTurl);
-                    }
-                    return g_turl;
+            if (firstDcapTurl == null) {
+                URI turl =
+                    getStorage().getGetTurl(getUser(),
+                                            getSurl(),
+                                            request.protocols);
+                if (turl == null) {
+                    throw new SRMException("turl is null");
                 }
-                catch(MalformedURLException murle) {
-                    logger.error(murle.toString());
-                    throw new SRMException(murle.toString());
+                if (turl.getScheme().equals("dcap")) {
+                    request.setFirstDcapTurl(turl.toString());
                 }
+                return turl;
             }
         }
 
-        try {
-
-            String theTurl =getStorage().getGetTurl(getUser(),getPath(), firstDcapTurl);
-            if(theTurl == null) {
-                return null;
-            }
-            return new GlobusURL(theTurl);
-        }
-        catch(MalformedURLException murle) {
-            return null;
-        }
+        return getStorage().getGetTurl(getUser(),
+                                       getSurl(),
+                                       URI.create(firstDcapTurl));
     }
 
     @Override
@@ -486,7 +421,7 @@ public final class GetFileRequest extends FileRequest {
         State state = getState();
         sb.append(" state:").append(state);
         if(longformat) {
-            sb.append('\n').append("   SURL: ").append(getSurl().getURL());
+            sb.append('\n').append("   SURL: ").append(getSurlString());
             sb.append('\n').append("   pinned: ").append(isPinned());
             String thePinId = getPinId();
             if(thePinId != null) {
@@ -504,19 +439,6 @@ public final class GetFileRequest extends FileRequest {
         logger.debug("run()");
         try {
             if(getFileId() == null) {
-                try {
-                    if(!Tools.sameHost(getConfiguration().getSrmHosts(),
-                    getSurl().getHost())) {
-                        String error ="surl is not local : "+getSurl().getURL();
-                        logger.error(error);
-                        throw new FatalJobFailure(error);
-                    }
-                }
-                catch(java.net.UnknownHostException uhe) {
-                    logger.error(uhe.toString());
-                    throw new FatalJobFailure(uhe.toString());
-                }
-
                 logger.debug("fileId is null, asking to get a fileId");
                 askFileId();
                 if(getFileId() == null) {
@@ -549,8 +471,8 @@ public final class GetFileRequest extends FileRequest {
         try {
 
             logger.debug(" proccessing the file request id "+getId());
-            String  path =   getPath();
-            logger.debug(" path is "+path);
+            URI surl = getSurl();
+            logger.debug(" path is "+surl);
             // if we can not read this path for some reason
             //(not in ftp root for example) this will throw exception
             // we do not care about the return value yet
@@ -573,9 +495,12 @@ public final class GetFileRequest extends FileRequest {
                 throw new FatalJobFailure("transfer protocols not supported");
             }
             //storage.getGetTurl(getUser(),path,request.protocols);
-            logger.debug("storage.prepareToGet("+path+",...)");
+            logger.debug("storage.prepareToGet("+surl+",...)");
             GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            getStorage().getFileInfo(getUser(),path,true,callbacks);
+            getStorage().getFileInfo(getUser(),
+                                     getSurl(),
+                                     true,
+                                     callbacks);
         }
         catch(Exception e) {
             logger.error(e.toString());
@@ -703,7 +628,7 @@ public final class GetFileRequest extends FileRequest {
     /**
      * @param turl the turl to set
      */
-    private void setTurl(GlobusURL turl) {
+    private void setTurl(URI turl) {
         wlock();
         try {
             this.turl = turl;

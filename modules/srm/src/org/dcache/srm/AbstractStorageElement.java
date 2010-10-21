@@ -79,6 +79,7 @@ package org.dcache.srm;
 import diskCacheV111.srm.StorageElementInfo;
 import java.util.Vector;
 import java.util.List;
+import java.net.URI;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 
@@ -124,28 +125,26 @@ public interface AbstractStorageElement {
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param protocols List of SE supported protocols
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getPutTurl(SRMUser user,String filePath,
-            String[] protocols)
-            throws SRMException;
+    public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
+        throws SRMException;
 
     /** To accomodate the property of dcache that requires that the same client get all
      * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
      * this siganture.
      * The previous_turl is the turl that was obtained by the client before.
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param previous_turl The transport URL received from the previous call of getPutTurl
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getPutTurl(SRMUser user,String filePath,
-            String previous_turl)
-            throws SRMException;
+    public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
+        throws SRMException;
 
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
@@ -155,23 +154,21 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getGetTurl(SRMUser user,String filePath,
-            String[] protocols)
-            throws SRMException;
+    public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
+        throws SRMException;
 
     /** To accomodate the property of dcache that requires that the same client get all
      * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
      * this siganture.
      * The previous_turl is the turl that was obtained by the client before.
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param previous_turl The transport URL received from the previous call of getPutTurl
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getGetTurl(SRMUser user, String filePath,
-            String previous_turl)
-            throws SRMException;
+    public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
+        throws SRMException;
 
     /**
      * Retrieves the FileMetaData of a file.
@@ -188,23 +185,23 @@ public interface AbstractStorageElement {
      * then only permission to retrieve the FileMetaData is checked.
      *
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param read True if read permission are required, false otherwise
      * @param callbacks Callback for delivering the result of the
      *                  asynchronous operation.
      */
-    public void getFileInfo(SRMUser user, String filePath, boolean read,
-            GetFileInfoCallbacks callbacks);
+    public void getFileInfo(SRMUser user, URI surl, boolean read,
+                            GetFileInfoCallbacks callbacks);
 
     /** Method must be nonblocking -- when called it creates thread and returns immediately,
      *         result will be sent thru callbacks
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * @param overwrite allow overwrite if true
      * various actions performed to put file from the storage
      */
-    public void prepareToPut(SRMUser user, String filePath,
+    public void prepareToPut(SRMUser user, URI surl,
             PrepareToPutCallbacks callbacks,
             boolean overwrite);
 
@@ -372,7 +369,7 @@ public interface AbstractStorageElement {
      * @throws SRMInternalErrorException in case of transient errors
      * @throws SRMException for any other error
      */
-    public FileMetaData getFileMetaData(SRMUser user,String path,boolean read)
+    public FileMetaData getFileMetaData(SRMUser user,URI surl,boolean read)
         throws SRMException;
 
     /**
