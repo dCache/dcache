@@ -1899,25 +1899,25 @@ public final class Storage
         }
     }
 
-    public void removeDirectory(SRMUser user, Vector tree)
+    @Override
+    public void removeDirectory(SRMUser user, List<URI> surls)
         throws SRMException
     {
         _log.debug("Storage.removeDirectory");
-        for (Object path: tree) {
-            FsPath actualPath = getPath(path.toString());
+        for (URI surl: surls) {
+            FsPath path = getPath(surl);
             try {
-                _pnfs.deletePnfsEntry(actualPath.toString());
+                _pnfs.deletePnfsEntry(path.toString());
             } catch (TimeoutCacheException e) {
-                _log.error("Failed to delete " + actualPath + " due to timeout");
-                throw new SRMInternalErrorException("Internal name space timeout while deleting " + path);
+                _log.error("Failed to delete " + path + " due to timeout");
+                throw new SRMInternalErrorException("Internal name space timeout while deleting " + surl);
             } catch (FileNotFoundCacheException e) {
-                throw new SRMException("File does not exist: " + path);
+                throw new SRMException("File does not exist: " + surl);
             } catch (NotInTrashCacheException e) {
-                throw new SRMException("File does not exist: " + path);
+                throw new SRMException("File does not exist: " + surl);
             } catch (CacheException e) {
-                _log.error("Failed to delete " + actualPath + ": "
-                           + e.getMessage());
-                throw new SRMException("Failed to delete " + path + ": "
+                _log.error("Failed to delete " + path + ": " + e.getMessage());
+                throw new SRMException("Failed to delete " + surl + ": "
                                        + e.getMessage());
             }
         }
@@ -2528,23 +2528,24 @@ public final class Storage
     }
 
     /**
-     * Provides a directory listing of directoryName if and only if
-     * directoryName is not a symbolic link. As a side effect, the
-     * method checks that directoryName can be deleted by the user.
+     * Provides a directory listing of surl if and only if surl is not
+     * a symbolic link. As a side effect, the method checks that surl
+     * can be deleted by the user.
      *
      * @param user The SRMUser performing the operation; this myst be
      * of type AuthorizationRecord
-     * @param directoryName The directory to delete
+     * @param surl The directory to delete
      * @return The array of directory entries or null if directoryName
      * is a symbolic link
      */
-    public String[] listNonLinkedDirectory(SRMUser user, String directoryName)
+    @Override
+    public List<URI> listNonLinkedDirectory(SRMUser user, URI surl)
         throws SRMException
     {
         AuthorizationRecord duser = (AuthorizationRecord) user;
         Subject subject = Subjects.getSubject(duser);
 
-        FsPath path = getPath(directoryName);
+        FsPath path = getPath(surl);
         try {
             Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE);
             requestedAttributes.addAll(permissionHandler.getRequiredAttributes());
@@ -2577,15 +2578,17 @@ public final class Storage
                                                  e.getRc(), e.getMessage()));
         }
 
-        return listDirectory(user, directoryName, null);
+        return listDirectory(user, surl, null);
     }
 
-    public File[] listDirectoryFiles(SRMUser user, String directoryName,
-                                     FileMetaData fileMetaData)
+    @Override
+    public List<URI> listDirectory(SRMUser user, URI surl,
+                                   FileMetaData fileMetaData)
         throws SRMException
     {
-        final File path = new File(getPath(directoryName).toString());
-        final Collection<File> result = new ArrayList<File>();
+        final File path = new File(getPath(surl).toString());
+        final List<URI> result = new ArrayList<URI>();
+        final String base = addTrailingSlash(surl.toString());
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
@@ -2597,57 +2600,13 @@ public final class Storage
 
                 public void print(FileAttributes dirAttr, DirectoryEntry entry)
                 {
-                    result.add(new File(path, entry.getName()));
+                    result.add(URI.create(base + entry.getName()));
                 }
             };
 
         try {
             _listSource.printDirectory(subject, printer, path, null, null);
-            return result.toArray(new File[0]);
-        } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("Internal name space timeout", e);
-        } catch (InterruptedException e) {
-            throw new SRMInternalErrorException("List aborted by administrator", e);
-        } catch (NotDirCacheException e) {
-            throw new SRMInvalidPathException("Not a directory", e);
-        } catch (FileNotFoundCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (NotInTrashCacheException e) {
-            throw new SRMInvalidPathException("No such file or directory", e);
-        } catch (PermissionDeniedCacheException e) {
-            throw new SRMAuthorizationException("Permission denied", e);
-        } catch (CacheException e) {
-            _log.error("Failed to list directory " + path + ": "
-                       + e.getMessage());
-            throw new SRMException(String.format("List failed [rc=%d,msg=%s]",
-                                                 e.getRc(), e.getMessage()));
-        }
-    }
-
-    public String[] listDirectory(SRMUser user, String directoryName,
-                                  FileMetaData fileMetaData)
-        throws SRMException
-    {
-        final File path = new File(getPath(directoryName).toString());
-        final Collection<String> result = new ArrayList<String>();
-        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
-        DirectoryListPrinter printer =
-            new DirectoryListPrinter()
-            {
-                public Set<FileAttribute> getRequiredAttributes()
-                {
-                    return EnumSet.noneOf(FileAttribute.class);
-                }
-
-                public void print(FileAttributes dirAttr, DirectoryEntry entry)
-                {
-                    result.add(entry.getName());
-                }
-            };
-
-        try {
-            _listSource.printDirectory(subject, printer, path, null, null);
-            return result.toArray(new String[0]);
+            return result;
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (InterruptedException e) {
@@ -2668,7 +2627,7 @@ public final class Storage
 
     @Override
     public List<FileMetaData>
-        listDirectory(SRMUser user, String directory, final boolean verbose,
+        listDirectory(SRMUser user, URI surl, final boolean verbose,
                       long offset, long count)
         throws SRMException
     {
@@ -2680,8 +2639,8 @@ public final class Storage
             required.add(LOCATIONS);
         }
         required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
-        final String prefix =
-            !directory.endsWith("/") ? directory + "/" : directory;
+        String directory = getPathOfSurl(surl);
+        final String prefix = addTrailingSlash(directory);
         final List<FileMetaData> result = new ArrayList<FileMetaData>();
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
@@ -2738,7 +2697,7 @@ public final class Storage
             };
 
         try {
-            File path = new File(getPath(directory).toString());
+            File path = new File(getPath(surl).toString());
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
             _listSource.printDirectory(subject, printer, path, null,
                                        new Interval(offset, offset + count - 1));
@@ -2761,6 +2720,7 @@ public final class Storage
         }
     }
 
+    @Override
     public void srmReserveSpace(SRMUser user,
             long sizeInBytes,
             long spaceReservationLifetime,
@@ -2781,7 +2741,7 @@ public final class Storage
                 _spaceManagerStub);
     }
 
-
+    @Override
     public void srmReleaseSpace(SRMUser user,
             String spaceToken,
             Long releaseSizeInBytes, // everything is null
@@ -2802,54 +2762,54 @@ public final class Storage
                 _spaceManagerStub);
     }
 
+    @Override
     public void srmMarkSpaceAsBeingUsed(SRMUser user,
-            String spaceToken,
-            String fileName,
-            long sizeInBytes,
-            long useLifetime,
-            boolean overwrite,
-            SrmUseSpaceCallbacks callbacks) {
-        long longSpaceToken;
+                                        String spaceToken,
+                                        URI surl,
+                                        long sizeInBytes,
+                                        long useLifetime,
+                                        boolean overwrite,
+                                        SrmUseSpaceCallbacks callbacks)
+    {
         try {
-            longSpaceToken = Long.parseLong(spaceToken);
-        } catch(Exception e){
-            callbacks.SrmUseSpaceFailed("invalid space token="+spaceToken);
-            return;
+            long longSpaceToken = Long.parseLong(spaceToken);
+            AuthorizationRecord duser = (AuthorizationRecord) user;
+            FsPath fsPath = getPath(surl);
+            SrmMarkSpaceAsBeingUsedCompanion.markSpace(duser,
+                                                       longSpaceToken,
+                                                       fsPath.toString(),
+                                                       sizeInBytes,
+                                                       useLifetime,
+                                                       overwrite,
+                                                       callbacks,
+                                                       _spaceManagerStub);
+        } catch (SRMInvalidPathException e) {
+            callbacks.SrmUseSpaceFailed("Invalid path: " + e.getMessage());
+        } catch (NumberFormatException e){
+            callbacks.SrmUseSpaceFailed("invalid space token=" + spaceToken);
         }
-
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-        FsPath fsPath = getPath(fileName);
-        SrmMarkSpaceAsBeingUsedCompanion.markSpace(
-                duser,
-                longSpaceToken,
-                fsPath.toString(),
-                sizeInBytes,
-                useLifetime,
-                overwrite,
-                callbacks,
-                _spaceManagerStub);
     }
 
-    public void srmUnmarkSpaceAsBeingUsed(
-            SRMUser user,
-            String spaceToken,
-            String fileName,
-            SrmCancelUseOfSpaceCallbacks callbacks) {
-        long longSpaceToken;
+    @Override
+    public void srmUnmarkSpaceAsBeingUsed(SRMUser user,
+                                          String spaceToken,
+                                          URI surl,
+                                          SrmCancelUseOfSpaceCallbacks callbacks)
+    {
         try {
-            longSpaceToken = Long.parseLong(spaceToken);
-        } catch(Exception e){
+            long longSpaceToken = Long.parseLong(spaceToken);
+            AuthorizationRecord duser = (AuthorizationRecord) user;
+            FsPath fsPath = getPath(surl);
+            SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(duser,
+                                                           longSpaceToken,
+                                                           fsPath.toString(),
+                                                           callbacks,
+                                                           _spaceManagerStub);
+        } catch (SRMInvalidPathException e) {
+            callbacks.CancelUseOfSpaceFailed("Invalid path: " + e.getMessage());
+        } catch (NumberFormatException e){
             callbacks.CancelUseOfSpaceFailed("invalid space token="+spaceToken);
-            return;
         }
-        AuthorizationRecord duser = (AuthorizationRecord) user;
-        FsPath fsPath = getPath(fileName);
-        SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(
-                duser,
-                longSpaceToken,
-                fsPath.toString(),
-                callbacks,
-                _spaceManagerStub);
     }
 
     /**
@@ -2858,9 +2818,11 @@ public final class Storage
      * @throws org.dcache.srm.SRMException
      * @return
      */
+    @Override
     public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user,
-        String[] spaceTokens)
-    throws SRMException {
+                                                String[] spaceTokens)
+        throws SRMException
+    {
         _log.debug("srmGetSpaceMetaData");
         if(spaceTokens == null) {
             throw new SRMException("null array of space tokens");
@@ -2966,6 +2928,7 @@ public final class Storage
      * @throws org.dcache.srm.SRMException
      * @return
      */
+    @Override
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException
     {
@@ -2997,6 +2960,7 @@ public final class Storage
         return tokenStrings;
     }
 
+    @Override
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
@@ -3036,14 +3000,14 @@ public final class Storage
      * @throws SRMInternalErrorException for transient errors
      * @throws SRMException for other errors
      */
-    public void checkWritePrivileges(SRMUser user, String path)
+    private void checkWritePrivileges(SRMUser user, URI surl)
         throws SRMException
     {
         try {
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
-            FsPath fullPath = getPath(path);
+            FsPath path = getPath(surl);
             PnfsHandler handler = new PnfsHandler(_pnfs, subject);
-            handler.getFileAttributes(fullPath.toString(),
+            handler.getFileAttributes(path.toString(),
                                       EnumSet.noneOf(FileAttribute.class),
                                       EnumSet.of(AccessMask.WRITE_DATA));
         } catch (TimeoutCacheException e) {
@@ -3069,10 +3033,10 @@ public final class Storage
      *   -1 stands for infinite lifetime
      *
      */
-    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime)
+    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime)
         throws SRMException
     {
-        checkWritePrivileges(user, fileName);
+        checkWritePrivileges(user, surl);
         return -1;
     }
 
@@ -3146,24 +3110,31 @@ public final class Storage
         return diskCacheV111.util.Version.getVersion();
     }
 
-    public boolean exists(SRMUser user,
-                          String path)  throws SRMException {
-        FsPath absolute_path = getPath(path);
-            try {
-                return _pnfs.getPnfsIdByPath(absolute_path.toString()) != null;
-            }
-            catch (CacheException e) {
-                if (e.getRc() == CacheException.FILE_NOT_FOUND ||
-                    e.getRc() == CacheException.NOT_IN_TRASH) {
-                    return false;
-                }
-                _log.warn("Failed to find file by path : "+e.getMessage());
-                throw new SRMException("Failed to find file by path due to internal system failure or timeout : "+e.getMessage());
-            }
-            catch (RuntimeException e) {
-                _log.error("Unexpected Exception ",e);
-                throw new SRMException("Failed to find file by path due to internal system failure or timeout, unexpected exception thrown : "+e.getMessage());
-            }
+    public boolean exists(SRMUser user, URI surl)  throws SRMException
+    {
+        FsPath path = getPath(surl);
+        try {
+            return _pnfs.getPnfsIdByPath(path.toString()) != null;
+        } catch (FileNotFoundCacheException e) {
+            return false;
+        } catch (NotInTrashCacheException e) {
+            return false;
+        } catch (CacheException e) {
+            _log.error("Failed to find file by path : " + e.getMessage());
+            throw new SRMException("Failed to find file by path due to internal system failure or timeout: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Adds a trailing slash to a string unless the string already has
+     * a trailing slash.
+     */
+    private String addTrailingSlash(String s)
+    {
+        if (!s.endsWith("/")) {
+            s = s + "/";
+        }
+        return s;
     }
 
     /**
@@ -3172,14 +3143,22 @@ public final class Storage
      */
     private FsPath getPath(String path)
     {
-        return new FsPath(config.getSrm_root() + "/" + path);
+        return new FsPath(new FsPath(config.getSrm_root()), path);
     }
 
     /**
-     * Given a path relative to the root path, this method returns a
-     * full PNFS path.
+     * Given a surl, this method returns a full PNFS path.
      */
     private FsPath getPath(URI surl)
+        throws SRMInvalidPathException
+    {
+        return getPath(getPathOfSurl(surl));
+    }
+
+    /**
+     * Given a surl, this method returns the path in the surl.
+     */
+    private String getPathOfSurl(URI surl)
         throws SRMInvalidPathException
     {
         try {
@@ -3201,8 +3180,7 @@ public final class Storage
                     path = query.substring(i + SFN_STRING.length());
                 }
             }
-
-            return getPath(path);
+            return path;
         } catch (UnknownHostException e) {
             throw new SRMInvalidPathException(e.getMessage());
         }

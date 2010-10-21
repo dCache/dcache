@@ -37,10 +37,13 @@ import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.ContainerRequest;
-import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
+import java.net.URISyntaxException;
+import java.net.URI;
+
+
 /**
  *
  * @author  litvinse
@@ -72,9 +75,9 @@ public class SrmExtendFileLifeTime {
         if(response != null ) return response;
         try {
             response = srmExtendFileLifeTime();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -102,7 +105,7 @@ public class SrmExtendFileLifeTime {
     }
 
 
-    URI surls[];
+    org.apache.axis.types.URI surls[];
     Integer newFileLifetime ;
     Integer newPinLifetime ;
     String token ;
@@ -111,7 +114,9 @@ public class SrmExtendFileLifeTime {
     /**
      * implementation of srm expend file life time
      */
-    public SrmExtendFileLifeTimeResponse srmExtendSURLLifeTime() {
+    public SrmExtendFileLifeTimeResponse srmExtendSURLLifeTime()
+        throws URISyntaxException
+    {
         int failuresCount = 0;
         int len = surls.length;
         TSURLLifetimeReturnStatus surlStatus[] =
@@ -120,16 +125,11 @@ public class SrmExtendFileLifeTime {
 
             surlStatus[i] = new TSURLLifetimeReturnStatus();
             surlStatus[i].setSurl(surls[i]);
-            String path   = surls[i].getPath(true,true);
-            int indx      = path.indexOf(SFN_STRING);
 
-            if ( indx != -1 ) {
-                path=path.substring(indx+SFN_STRING.length());
-            }
-
+            URI surl = new URI(surls[i].toString());
             try{
                 int lifetimeLeft =
-                        storage.srmExtendSurlLifetime(user,path,newFileLifetime);
+                    storage.srmExtendSurlLifetime(user,surl,newFileLifetime);
                 surlStatus[i].setFileLifetime(lifetimeLeft);
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_SUCCESS,"ok"));
@@ -290,7 +290,8 @@ public class SrmExtendFileLifeTime {
     }
 
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime()
-    throws SRMException,MalformedURIException {
+        throws SRMException, URISyntaxException
+    {
         if(request==null) {
             return getFailedResponse(" null request passed to SrmRm()",
                     TStatusCode.SRM_INVALID_REQUEST);

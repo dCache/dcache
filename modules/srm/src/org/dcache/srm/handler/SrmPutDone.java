@@ -163,7 +163,7 @@ public class SrmPutDone {
 								}
 								else {
                                     try {
-                                        if (storage.exists(user,fileRequest.getPath())) {
+                                        if (storage.exists(user,fileRequest.getSurl())) {
                                             fileRequest.setState(State.DONE,"SrmPutDone called");
                                             success_counter++;
 									    }
@@ -245,7 +245,7 @@ public class SrmPutDone {
 								}
 								else {
                                     try {
-                                        if (storage.exists(user,fileRequest.getPath())) {
+                                        if (storage.exists(user,fileRequest.getSurl())) {
                                                 fileRequest.setState(State.DONE,"SrmPutDone called");
 										success_counter++;
                                         }

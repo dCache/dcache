@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 public final class LsFileRequest extends FileRequest {
         private static final Logger logger =
                 LoggerFactory.getLogger(LsFileRequest.class);
+        private static final String SFN_STRING="?SFN=";
         private URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
@@ -308,20 +309,22 @@ public final class LsFileRequest extends FileRequest {
                 return aMetaDataPathDetail;
         }
 
-        public final void getMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
-                                                long offset,
-                                                long count,
-                                                boolean longFormat)
-            throws SRMException, URISyntaxException
+        private void getMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
+                                           long offset,
+                                           long count,
+                                           boolean longFormat)
+                throws SRMException, URISyntaxException
         {
                 List<FileMetaData> directoryList;
                 //
                 // simplify things for the most common case when people perform
                 // ls on directory w/o specifying recursionDepth
                 //
+                URI surl =
+                    new URI(null, null, metaDataPathDetail.getPath(), null);
                 directoryList =
                         getStorage().listDirectory(getUser(),
-                                                   metaDataPathDetail.getPath(),
+                                                   surl,
                                                    longFormat,
                                                    offset,
                                                    count);
@@ -356,17 +359,19 @@ public final class LsFileRequest extends FileRequest {
                 metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList.toArray(new TMetaDataPathDetail[0])));
         }
 
-        public final void getRecursiveMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
-                                                         final FileMetaData fmd,
-                                                         int depth,
-                                                         long offset,
-                                                         long count,
-                                                         int recursionDepth,
-                                                         boolean longFormat)
+        private void getRecursiveMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
+                                                    FileMetaData fmd,
+                                                    int depth,
+                                                    long offset,
+                                                    long count,
+                                                    int recursionDepth,
+                                                    boolean longFormat)
                 throws SRMException, URISyntaxException
         {
                 if (!fmd.isDirectory || depth >= recursionDepth)  return;
                 List<FileMetaData> directoryList;
+                URI surl =
+                        new URI(null, null, metaDataPathDetail.getPath(), null);
                 //
                 // cannot use offset or count in this case since
                 // we are trying to flatten tree structure.
@@ -378,7 +383,7 @@ public final class LsFileRequest extends FileRequest {
                         //
                         directoryList =
                                 getStorage().listDirectory(getUser(),
-                                                           metaDataPathDetail.getPath(),
+                                                           surl,
                                                            longFormat,
                                                            0,
                                                            count);
@@ -392,7 +397,7 @@ public final class LsFileRequest extends FileRequest {
                         //
                         directoryList =
                                 getStorage().listDirectory(getUser(),
-                                                           metaDataPathDetail.getPath(),
+                                                           surl,
                                                            false,
                                                            0,
                                                            Long.MAX_VALUE);

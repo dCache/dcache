@@ -110,7 +110,6 @@ public abstract class FileRequest extends Job {
     // for get and put it means that file turl
     // is not available yet
     //for copy - file is being copied
-    public static final String SFN_STRING="?SFN=";
 
     //request which contains this fileRequest (which is different from request number)
     protected final Long requestId;
@@ -337,20 +336,6 @@ public abstract class FileRequest extends Job {
         } finally {
             wunlock();
         }
-    }
-
-    public static String getPath(GlobusURL surl) {
-        String path = surl.getPath();
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-
-            path=path.substring(indx+SFN_STRING.length());
-        }
-
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        return path;
     }
 
     /**

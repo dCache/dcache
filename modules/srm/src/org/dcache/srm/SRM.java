@@ -1017,7 +1017,7 @@ public class SRM {
                         PutFileRequest pfr = (PutFileRequest) fr;
                         if (pfr.getTurlString() != null) {
                             try {
-                                if (storage.exists(user, pfr.getPath())) {
+                                if (storage.exists(user, pfr.getSurl())) {
                                     fr.setStatus(state);
                                 } else {
                                     pfr.setState(State.FAILED, "file transfer was not performed on SURL");

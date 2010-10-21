@@ -429,15 +429,11 @@ public interface AbstractStorageElement {
     public void removeFile(SRMUser user, URI surl,RemoveFileCallbacks callbacks);
 
     /**
-     *
      * @param user User ID
-     * @param path File path
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to remove file from the storage
+     * @param surls List of SURLs
      */
-
-    public void removeDirectory(SRMUser user,
-            Vector tree) throws SRMException;
+    public void removeDirectory(SRMUser user, List<URI> surls)
+        throws SRMException;
 
     /**
      *
@@ -496,31 +492,28 @@ public interface AbstractStorageElement {
     public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException;
 
     /**
+     * Provides a directory listing of surl if and only if surl is not
+     * a symbolic link. As a side effect, the method checks that surl
+     * can be deleted by the user.
      *
-     * @param user
-     * @param directoryName
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * @param user The SRMUser performing the operation; this myst be
+     * of type AuthorizationRecord
+     * @param surl The directory to delete
+     * @return The array of directory entries or null if directoryName
+     * is a symbolic link
      */
-    public String[] listNonLinkedDirectory(SRMUser user,String directoryName) throws SRMException;
+    public List<URI> listNonLinkedDirectory(SRMUser user, URI surl)
+        throws SRMException;
+
     /**
      *
      * @param user
-     * @param directoryName
+     * @param surl
      * @param fileMetaData
      * @throws org.dcache.srm.SRMException
      * @return
      */
-    public String[] listDirectory(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
-    /**
-     *
-     * @param user
-     * @param directoryName
-     * @param fileMetaData
-     * @throws org.dcache.srm.SRMException
-     * @return
-     */
-    public java.io.File[] listDirectoryFiles(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
+    public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException;
 
     /**
      * Lists directory contents. The contents is provided as a list of
@@ -537,7 +530,7 @@ public interface AbstractStorageElement {
      * be filled. Those fields may be more expensive to retrieve.
      *
      * @param user The user requesting the list operation
-     * @param directory The path of the directory to list
+     * @param surl The path of the directory to list
      * @param verbose Whether to include fields that are expensive to
      *                retrieve
      * @param offset The first entry in the directory to retrieve
@@ -552,7 +545,7 @@ public interface AbstractStorageElement {
      * @throws SRMException for other failures.
      */
     List<FileMetaData>
-        listDirectory(SRMUser user, String directory, boolean verbose,
+        listDirectory(SRMUser user, URI surl, boolean verbose,
                       long offset, long count)
         throws SRMException;
 
@@ -590,30 +583,30 @@ public interface AbstractStorageElement {
      *
      * @param user
      * @param spaceToken
-     * @param fileName
+     * @param surl
      * @param sizeInBytes
      * @param useLifetime
      * @param callbacks
      */
     public void srmMarkSpaceAsBeingUsed(SRMUser user,
-            String spaceToken,
-            String fileName,
-            long sizeInBytes,
-            long useLifetime,
-            boolean overwrite,
-            SrmUseSpaceCallbacks callbacks);
+                                        String spaceToken,
+                                        URI surl,
+                                        long sizeInBytes,
+                                        long useLifetime,
+                                        boolean overwrite,
+                                        SrmUseSpaceCallbacks callbacks);
 
     /**
      *
      * @param user
      * @param spaceToken
-     * @param fileName
+     * @param surl
      * @param callbacks
      */
     public void srmUnmarkSpaceAsBeingUsed(SRMUser user,
-            String spaceToken,
-            String fileName,
-            SrmCancelUseOfSpaceCallbacks callbacks);
+                                          String spaceToken,
+                                          URI surl,
+                                          SrmCancelUseOfSpaceCallbacks callbacks);
 
     /**
      *
@@ -658,10 +651,10 @@ public interface AbstractStorageElement {
      * @return long lifetime left in milliseconds
      *   -1 stands for infinite lifetime
      */
-    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime)
+    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime)
     throws SRMException;
 
     public String getStorageBackendVersion();
 
-    public boolean exists(SRMUser user, String path) throws SRMException;
+    public boolean exists(SRMUser user, URI surl) throws SRMException;
 }

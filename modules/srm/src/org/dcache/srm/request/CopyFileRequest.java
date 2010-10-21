@@ -112,8 +112,9 @@ import org.slf4j.LoggerFactory;
  */
 public final class CopyFileRequest extends FileRequest {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(CopyFileRequest.class);
+        private static final Logger logger =
+                LoggerFactory.getLogger(CopyFileRequest.class);
+        private static final String SFN_STRING="?SFN=";
 	private URI from_surl;
 	private URI to_surl;
 	private URI from_turl;
@@ -634,7 +635,7 @@ public final class CopyFileRequest extends FileRequest {
 			long remaining_lifetime =
                     lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getLocal_to_path(),
+			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
 							size==0?1:size,
 							remaining_lifetime,
 							((CopyRequest)getRequest()).isOverwrite(),
@@ -722,7 +723,7 @@ public final class CopyFileRequest extends FileRequest {
             setState(State.ASYNCWAIT,"marking space as being used");
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getLocal_to_path(),
+			getStorage().srmMarkSpaceAsBeingUsed(getUser(),getSpaceReservationId(),getTo_surl(),
 							size==0?1:size,
 							remaining_lifetime,
 							((CopyRequest)getRequest()).isOverwrite(),
@@ -1040,7 +1041,7 @@ public final class CopyFileRequest extends FileRequest {
 			   isSpaceMarkedAsBeingUsed() ) {
 				SrmCancelUseOfSpaceCallbacks callbacks =
 					new CopyCancelUseOfSpaceCallbacks(getId());
-				getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getLocal_to_path(),callbacks);
+				getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getTo_surl(),callbacks);
 			}
 			if( getRemoteRequestId() != null ) {
 				if(getLocal_from_path() != null ) {

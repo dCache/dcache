@@ -253,20 +253,6 @@ public final class PutFileRequest extends FileRequest {
        }
     }
 
-    public final String getPath() {
-        String path = getSurl().getPath();
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-
-            path=path.substring(indx+SFN_STRING.length());
-        }
-
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        return path;
-    }
-
     public final String getSurlString() {
         return getSurl().toString();
     }
@@ -549,7 +535,7 @@ public final class PutFileRequest extends FileRequest {
                 long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
                 SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
                     getStorage().srmMarkSpaceAsBeingUsed(getUser(),
-                                getSpaceReservationId(),getPath(),
+                                getSpaceReservationId(),getSurl(),
                                 getSize()==0?1:getSize(),
                                 remaining_lifetime,
                                 ((PutRequest)getRequest()).isOverwrite(),
@@ -596,7 +582,7 @@ public final class PutFileRequest extends FileRequest {
                     isSpaceMarkedAsBeingUsed() ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
                         new PutCancelUseOfSpaceCallbacks(getId());
-                getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getPath(),
+                getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getSurl(),
                         callbacks);
 
             }

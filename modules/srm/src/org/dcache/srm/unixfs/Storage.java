@@ -947,7 +947,7 @@ public class Storage
 
       @Override
       public void removeDirectory(final SRMUser user,
-				  final Vector tree)  throws SRMException {
+				  final List<URI> surls)  throws SRMException {
       }
 
       @Override
@@ -955,7 +955,9 @@ public class Storage
 				  final URI directory) throws SRMException {
       }
 
-	public String[] listNonLinkedDirectory(SRMUser user, String directoryName) throws SRMException {
+        @Override
+	public List<URI> listNonLinkedDirectory(SRMUser user, URI surl) throws SRMException {
+            String directoryName = getPath(surl);
             FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
@@ -988,48 +990,17 @@ public class Storage
          if(!f.isDirectory()) {
              throw new SRMException("not a directory");
          }
-         return f.list();
-
+         String base = addTrailingSlash(surl.toString());
+         List<URI> result = new ArrayList<URI>();
+         for (String file: f.list()) {
+             result.add(URI.create(base + file));
+         }
+         return result;
 	}
 
-      public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-          FileMetaData fmd = _getFileMetaData(user, directoryName);
-         int uid = Integer.parseInt(fmd.owner);
-         int gid = Integer.parseInt(fmd.group);
-         int permissions = fmd.permMode;
-
-         if(permissions == 0 ) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!Permissions.worldCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(uid == -1 || gid == -1) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(user == null ) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!fmd.isGroupMember(user) || !Permissions.groupCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!fmd.isOwner(user) || !Permissions.userCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-         File f = new File(directoryName);
-         if(!f.isDirectory()) {
-             throw new SRMException("not a directory");
-         }
-         return f.listFiles();
-
-      }
-
-      public String[] listDirectory(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
+      @Override
+      public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException {
+          String directoryName = getPath(surl);
           FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
@@ -1062,22 +1033,25 @@ public class Storage
          if(!f.isDirectory()) {
              throw new SRMException("not a directory");
          }
-         return f.list();
-
+         String base = addTrailingSlash(surl.toString());
+         List<URI> result = new ArrayList<URI>();
+         for (String file: f.list()) {
+             result.add(URI.create(base + file));
+         }
+         return result;
       }
 
     @Override
     public List<FileMetaData>
-        listDirectory(SRMUser user, String directory, final boolean verbose,
+        listDirectory(SRMUser user, URI surl, final boolean verbose,
                       long offset, long count)
         throws SRMException
     {
-        String[] list = listDirectory(user, directory, null);
+        List<URI> list = listDirectory(user, surl, null);
         List<FileMetaData> result = new ArrayList<FileMetaData>();
-        for (long i = offset; i < list.length && i < offset + count; i++) {
-            result.add(_getFileMetaData(user, directory + "/" + list[(int)i]));
+        for (long i = offset; i < list.size() && i < offset + count; i++) {
+            result.add(getFileMetaData(user, list.get((int) i), false));
         }
-
         return result;
     }
 
@@ -1087,16 +1061,20 @@ public class Storage
         {
 	}
 
+    @Override
     public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,org.dcache.srm.SrmReserveSpaceCallbacks callbacks) {
     }
 
-    public void srmUnmarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, SrmCancelUseOfSpaceCallbacks callbacks) {
+    @Override
+    public void srmUnmarkSpaceAsBeingUsed(SRMUser user, String spaceToken, URI surl, SrmCancelUseOfSpaceCallbacks callbacks) {
     }
 
+    @Override
     public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallbacks callbacks) {
     }
 
-    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, long sizeInBytes, long useLifetime,
+    @Override
+    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, URI surl, long sizeInBytes, long useLifetime,
         boolean overwrite,
         SrmUseSpaceCallbacks callbacks) {
     }
@@ -1108,6 +1086,7 @@ public class Storage
      * @throws org.dcache.srm.SRMException
      * @return
      */
+    @Override
     public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user, String[] spaceTokens)
         throws SRMException {
         return null;
@@ -1118,11 +1097,13 @@ public class Storage
      * @throws org.dcache.srm.SRMException
      * @return
      */
+    @Override
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException {
         return null;
     }
 
+    @Override
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException{
         return null;
@@ -1136,8 +1117,9 @@ public class Storage
      * @return long lifetime left in seconds
      *   -1 stands for infinite lifetime
      */
-    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime) throws SRMException {
-        FileMetaData fmd = _getFileMetaData(user,fileName);
+    @Override
+    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime) throws SRMException {
+        FileMetaData fmd = getFileMetaData(user,surl, true);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
@@ -1167,16 +1149,20 @@ public class Storage
 
     }
 
+    @Override
     public long extendPinLifetime(SRMUser user, String fileId, String pinId, long newPinLifetime) throws SRMException {
         return newPinLifetime;
     }
 
+    @Override
     public long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime) throws SRMException {
         return newReservationLifetime;
     }
 
+    @Override
     public String getStorageBackendVersion() { return "$Revision: 1.35 $"; }
 
+    @Override
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
         UnpinCallbacks callbacks,
         long srmRequestId)   {
@@ -1193,13 +1179,28 @@ public class Storage
      * various actions performed to "unpin" file in the storage
      * @param srmRequestId id given to the storage  during pinFile operation
      */
+    @Override
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks) {
         callbacks.Unpinned(fileId);
 
     }
-    public boolean exists(SRMUser user, String path)  throws SRMException {
+
+    @Override
+    public boolean exists(SRMUser user, URI surl)  throws SRMException {
             return true;
+    }
+
+    /**
+     * Adds a trailing slash to a string unless the string already has
+     * a trailing slash.
+     */
+    private String addTrailingSlash(String s)
+    {
+        if (!s.endsWith("/")) {
+            s = s + "/";
+        }
+        return s;
     }
 
     /**
