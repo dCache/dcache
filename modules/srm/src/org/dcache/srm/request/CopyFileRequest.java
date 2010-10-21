@@ -642,7 +642,7 @@ public final class CopyFileRequest extends FileRequest {
 			return;
 		}
 
-        getStorage().localCopy(getUser(),getLocal_from_path(), getLocal_to_path());
+        getStorage().localCopy(getUser(),getFrom_surl(), getTo_surl());
         setStateToDone();
         return;
 	}
@@ -733,11 +733,11 @@ public final class CopyFileRequest extends FileRequest {
             setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
 			if(getSpaceReservationId() != null) {
-				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().toString(), getLocal_to_path(), getUser(), credential.getId(), getSpaceReservationId(), size, copycallbacks));
+				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl(), getTo_surl(), getUser(), credential.getId(), getSpaceReservationId(), size, copycallbacks));
 
 			}
 			else {
-				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl().toString(), getLocal_to_path(), getUser(), credential.getId(), copycallbacks));
+				setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl(), getTo_surl(), getUser(), credential.getId(), copycallbacks));
 			}
 			long remaining_lifetime =
 				this.getCreationTime() +
@@ -784,7 +784,7 @@ public final class CopyFileRequest extends FileRequest {
 			logger.debug("copying using storage.putToRemoteTURL");
 			RequestCredential credential = getCredential();
 			TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-			setTransferId(getStorage().putToRemoteTURL(getUser(), getLocal_from_path(), getTo_turl().toString(), getUser(), credential.getId(), copycallbacks));
+			setTransferId(getStorage().putToRemoteTURL(getUser(), getFrom_surl(), getTo_turl(), getUser(), credential.getId(), copycallbacks));
 			setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
 			saveJob();
 			return;
@@ -1389,7 +1389,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.debug("StorageInfoArrived: FileId:"+fileId);
 				State state = fr.getState();
 				if(state == State.ASYNCWAIT) {
-					logger.debug("PutCallbacks StorageInfoArrived for file "+fr.getToPath()+" fmd ="+fmd);
+					logger.debug("PutCallbacks StorageInfoArrived for file "+fr.getTo_surl()+" fmd ="+fmd);
 					fr.setToFileId(fileId);
 					fr.setToParentFileId(parentFileId);
 					fr.setToParentFmd(parentFmd);
@@ -1518,7 +1518,7 @@ public final class CopyFileRequest extends FileRequest {
 			return null;
 		}
 
-		public void copyComplete(String fileId, FileMetaData fmd) {
+		public void copyComplete(FileMetaData fmd) {
             try {
                 CopyFileRequest  copyFileRequest = getCopyFileRequest();
                 logger.debug("copy succeeded");
@@ -1739,7 +1739,7 @@ public final class CopyFileRequest extends FileRequest {
 				logger.debug("Space Reserved: spaceReservationToken:"+spaceReservationToken);
 				State state = fr.getState();
 				if(state == State.ASYNCWAIT) {
-					logger.debug("CopyReserveSpaceCallbacks Space Reserved for file "+fr.getToPath());
+					logger.debug("CopyReserveSpaceCallbacks Space Reserved for file "+fr.getTo_surl());
 					fr.setSpaceReservationId(spaceReservationToken);
 					fr.setWeReservedSpace(true);
 					Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());

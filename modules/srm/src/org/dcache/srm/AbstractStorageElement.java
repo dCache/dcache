@@ -257,7 +257,7 @@ public interface AbstractStorageElement {
      *
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
@@ -267,8 +267,8 @@ public interface AbstractStorageElement {
      */
     public String getFromRemoteTURL(
             SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
+            URI remoteTURL,
+            URI surl,
             SRMUser remoteUser,
             Long requestCredentialId,
             CopyCallbacks callbacks)
@@ -284,7 +284,7 @@ public interface AbstractStorageElement {
      *
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
@@ -294,8 +294,8 @@ public interface AbstractStorageElement {
      */
     public String getFromRemoteTURL(
             SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
+            URI remoteTURL,
+            URI surl,
             SRMUser remoteUser,
             Long requestCredentialId,
             String spaceReservationId,
@@ -309,7 +309,7 @@ public interface AbstractStorageElement {
      * completeon of the transfer asynchronously, though the callbacks interface
      *
      * @param user User ID
-     * @param actualFilePath
+     * @param surl
      * @param remoteTURL
      * @param remoteUser
      * @param callbacks
@@ -319,8 +319,8 @@ public interface AbstractStorageElement {
      *    an id to the pending tranfer that can be used to cancel the transfer via killRemoteTransfer
      */
     public String putToRemoteTURL(SRMUser user,
-            String actualFilePath,
-            String remoteTURL,
+            URI surl,
+            URI remoteTURL,
             SRMUser remoteUser,
             Long requestCredentialId,
             CopyCallbacks callbacks)
@@ -335,19 +335,19 @@ public interface AbstractStorageElement {
 
     /**
      * @param user User ID
-     * @param actualFromFilePath
-     * @param actualToFilePath
+     * @param fromSurl
+     * @param toSurl
      * @throws SRMException
      */
-    public void localCopy(SRMUser user,String actualFromFilePath, String actualToFilePath)
+    public void localCopy(SRMUser user, URI fromSurl, URI toSurl)
     throws SRMException;
 
     /**
-     * @param url User ID
+     * @param url
      * @throws SRMException
      * @return
      */
-    public boolean isLocalTransferUrl(String url) throws SRMException;
+    public boolean isLocalTransferUrl(URI url) throws SRMException;
 
     /**
      * Retrieves the FileMetaData of a file.
@@ -413,20 +413,20 @@ public interface AbstractStorageElement {
     /** This method tells SE that the specified file can be removed from the storage.
      * This is up to SE to decide when the file will be deleted
      * @param user User ID
-     * @param path File path
+     * @param surl
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void advisoryDelete(SRMUser user, String path,AdvisoryDeleteCallbacks callbacks);
+    public void advisoryDelete(SRMUser user, URI surl,AdvisoryDeleteCallbacks callbacks);
 
     /**
      *
      * @param user User ID
-     * @param path File path
+     * @param surl
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void removeFile(SRMUser user, String path,RemoveFileCallbacks callbacks);
+    public void removeFile(SRMUser user, URI surl,RemoveFileCallbacks callbacks);
 
     /**
      *
@@ -442,11 +442,11 @@ public interface AbstractStorageElement {
     /**
      *
      * @param user
-     * @param directory
+     * @param surl
      * @throws org.dcache.srm.SRMException
      */
     public void createDirectory(SRMUser user,
-            String directory) throws SRMException;
+                                URI surl) throws SRMException;
 
     /**
      *
@@ -455,8 +455,9 @@ public interface AbstractStorageElement {
      * @param to
      * @throws org.dcache.srm.SRMException
      */
-    public void moveEntry(SRMUser user, String from,
-            String to) throws SRMException;
+    public void moveEntry(SRMUser user,
+                          URI from,
+                          URI to) throws SRMException;
 
 
 

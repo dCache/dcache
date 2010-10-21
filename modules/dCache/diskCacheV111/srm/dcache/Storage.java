@@ -1371,23 +1371,19 @@ public final class Storage
         return protocols;
     }
 
-    public boolean isLocalTransferUrl(String url)
+    @Override
+    public boolean isLocalTransferUrl(URI url)
         throws SRMException
     {
-        try {
-            GlobusURL gurl = new GlobusURL(url);
-            String protocol = gurl.getProtocol();
-            String host = gurl.getHost();
-            int port = gurl.getPort();
-            for (LoginBrokerInfo info: getLoginBrokerInfos(protocol)) {
-                if (info.getHost().equals(host) && info.getPort() == port) {
-                    return true;
-                }
+        String protocol = url.getScheme();
+        String host = url.getHost();
+        int port = url.getPort();
+        for (LoginBrokerInfo info: getLoginBrokerInfos(protocol)) {
+            if (info.getHost().equals(host) && info.getPort() == port) {
+                return true;
             }
-            return false;
-        } catch (MalformedURLException e) {
-            return false;
         }
+        return false;
     }
 
 
@@ -1744,11 +1740,11 @@ public final class Storage
     }
 
     @Override
-    public void localCopy(SRMUser user, String fromFilePath, String toFilePath)
+    public void localCopy(SRMUser user, URI fromSurl, URI toSurl)
         throws SRMException
     {
-        FsPath actualFromFilePath = getPath(fromFilePath);
-        FsPath actualToFilePath = getPath(toFilePath);
+        FsPath actualFromFilePath = getPath(fromSurl);
+        FsPath actualToFilePath = getPath(toSurl);
         long id = getNextMessageID();
         _log.debug("localCopy for user " + user +
                    "from actualFromFilePath to actualToFilePath");
@@ -1827,7 +1823,8 @@ public final class Storage
         }
     }
 
-    public void advisoryDelete(final SRMUser user, final String path,
+    @Override
+    public void advisoryDelete(final SRMUser user, final URI surl,
                                final AdvisoryDeleteCallbacks callback)
     {
         _log.debug("Storage.advisoryDelete");
@@ -1841,91 +1838,65 @@ public final class Storage
             return;
         }
 
-        RemoveFileCallbacks removeFileCallback;
-        if (callback != null) {
-            removeFileCallback = new RemoveFileCallbacks() {
-                    public void RemoveFileSucceeded()
-                    {
-                        callback.AdvisoryDeleteSuccesseded();
-                    }
+        RemoveFileCallbacks removeFileCallback = new RemoveFileCallbacks() {
+                public void RemoveFileSucceeded()
+                {
+                    callback.AdvisoryDeleteSuccesseded();
+                }
 
-                    public void RemoveFileFailed(String reason)
-                    {
-                        callback.AdvisoryDeleteFailed(reason);
-                    }
+                public void RemoveFileFailed(String reason)
+                {
+                    callback.AdvisoryDeleteFailed(reason);
+                }
 
-                    public void FileNotFound(String error)
-                    {
-                        callback.AdvisoryDeleteFailed(error);
-                    }
+                public void FileNotFound(String error)
+                {
+                    callback.AdvisoryDeleteFailed(error);
+                }
 
-                    public void Exception(Exception e)
-                    {
-                        callback.Exception(e);
-                    }
+                public void Exception(Exception e)
+                {
+                    callback.Exception(e);
+                }
 
-                    public void Timeout()
-                    {
-                        callback.Timeout();
-                    }
+                public void Timeout()
+                {
+                    callback.Timeout();
+                }
 
-                    public void PermissionDenied()
-                    {
-                        callback.AdvisoryDeleteFailed("Permission denied");
-                    }
-                };
-        } else {
-            removeFileCallback = new RemoveFileCallbacks() {
-                    public void RemoveFileSucceeded()
-                    {
-                        _log.debug("advisoryDelete("+user+","+path+") succeeded");
-                    }
+                public void PermissionDenied()
+                {
+                    callback.AdvisoryDeleteFailed("Permission denied");
+                }
+            };
 
-                    public void RemoveFileFailed(String reason)
-                    {
-                        _log.error("advisoryDelete("+user+","+path+") failed: "+reason);
-                    }
-
-                    public void FileNotFound(String error)
-                    {
-                        _log.info("advisoryDelete("+user+","+path+") failed: "+error);
-                    }
-
-                    public void Exception(Exception e)
-                    {
-                        _log.error("advisoryDelete("+user+","+path+") Exception :"+e);
-                    }
-
-                    public void Timeout()
-                    {
-                        _log.error("advisoryDelete("+user+","+path+") timeout");
-                    }
-
-                    public void PermissionDenied()
-                    {
-                        _log.warn("advisoryDelete("+user+","+path+"): Permission denied");
-                    }
-                };
+        try {
+            RemoveFileCompanion.removeFile((AuthorizationRecord) user,
+                                           getPath(surl).toString(),
+                                           removeFileCallback,
+                                           _pnfsStub,
+                                           getCellEndpoint());
+        } catch (SRMInvalidPathException e) {
+            callback.AdvisoryDeleteFailed(e.getMessage());
         }
-
-        RemoveFileCompanion.removeFile((AuthorizationRecord) user,
-                                       getPath(path).toString(),
-                                       removeFileCallback,
-                                       _pnfsStub,
-                                       getCellEndpoint());
     }
 
+    @Override
     public void removeFile(final SRMUser user,
-                           final String path,
+                           final URI surl,
                            RemoveFileCallbacks callbacks)
     {
         _log.debug("Storage.removeFile");
 
-        RemoveFileCompanion.removeFile((AuthorizationRecord)user,
-                                       getPath(path).toString(),
-                                       callbacks,
-                                       _pnfsStub,
-                                       getCellEndpoint());
+        try {
+            RemoveFileCompanion.removeFile((AuthorizationRecord)user,
+                                           getPath(surl).toString(),
+                                           callbacks,
+                                           _pnfsStub,
+                                           getCellEndpoint());
+        } catch (SRMInvalidPathException e) {
+            callbacks.FileNotFound(e.getMessage());
+        }
     }
 
     public void removeDirectory(SRMUser user, Vector tree)
@@ -1952,7 +1923,8 @@ public final class Storage
         }
     }
 
-    public void createDirectory(SRMUser user, String directory)
+    @Override
+    public void createDirectory(SRMUser user, URI surl)
         throws SRMException
     {
         _log.debug("Storage.createDirectory");
@@ -1961,7 +1933,7 @@ public final class Storage
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
 
         try {
-            handler.createPnfsDirectory(getPath(directory).toString());
+            handler.createPnfsDirectory(getPath(surl).toString());
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
@@ -1975,14 +1947,15 @@ public final class Storage
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");
         } catch (CacheException e) {
-            _log.error("Failed to create directory " + directory + ": "
+            _log.error("Failed to create directory " + surl + ": "
                        + e.getMessage());
             throw new SRMException(String.format("Failed to create directory [rc=%d,msg=%s]",
                                                  e.getRc(), e.getMessage()));
         }
     }
 
-    public void moveEntry(SRMUser user, String from, String to)
+    @Override
+    public void moveEntry(SRMUser user, URI from, URI to)
         throws SRMException
     {
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
@@ -2008,7 +1981,6 @@ public final class Storage
                 }
 
                 toPath = new FsPath(toPath, fromPath.getName());
-                to = to + "/" + fromPath.getName();
             } catch (FileNotFoundCacheException e) {
                 /* Destination name does not exist; not a problem.
                  */
@@ -2023,7 +1995,7 @@ public final class Storage
             /* The parent of the target name did not exist or was not
              * a directory.
              */
-            String parent = (new File(to)).getParent();
+            FsPath parent = toPath.getParent();
             throw new SRMInvalidPathException("No such directory: " +
                                               parent, e);
         } catch (PermissionDeniedCacheException e) {
@@ -2155,22 +2127,25 @@ public final class Storage
     /**
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
      * @throws SRMException
      * @return copy handler id
      */
+    @Override
     public String getFromRemoteTURL(SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
-            SRMUser remoteUser,
-            Long remoteCredentialId,
-            String spaceReservationId,
-            long size,
-            CopyCallbacks callbacks) throws SRMException{
-        FsPath path = getPath(actualFilePath);
+                                    URI remoteTURL,
+                                    URI surl,
+                                    SRMUser remoteUser,
+                                    Long remoteCredentialId,
+                                    String spaceReservationId,
+                                    long size,
+                                    CopyCallbacks callbacks)
+        throws SRMException
+    {
+        FsPath path = getPath(surl);
         _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
         return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
@@ -2181,13 +2156,16 @@ public final class Storage
 
     }
 
+    @Override
     public String getFromRemoteTURL(SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
-            SRMUser remoteUser,
-            Long remoteCredentialId,
-            CopyCallbacks callbacks) throws SRMException{
-        FsPath path = getPath(actualFilePath);
+                                    URI remoteTURL,
+                                    URI surl,
+                                    SRMUser remoteUser,
+                                    Long remoteCredentialId,
+                                    CopyCallbacks callbacks)
+        throws SRMException
+    {
+        FsPath path = getPath(surl);
         _log.debug(" getFromRemoteTURL from "+remoteTURL+" to " +path);
         return performRemoteTransfer(user,remoteTURL,path,true,
                 remoteUser,
@@ -2200,7 +2178,7 @@ public final class Storage
 
     /**
      * @param user
-     * @param filePath
+     * @param surl
      * @param remoteTURL
      * @param remoteUser
      * @param remoteCredetial
@@ -2208,15 +2186,17 @@ public final class Storage
      * @throws SRMException
      * @return copy handler id
      */
+    @Override
     public String putToRemoteTURL(SRMUser user,
-            String filePath,
-            String remoteTURL,
-            SRMUser remoteUser,
-            Long remoteCredentialId,
-            CopyCallbacks callbacks)
-            throws SRMException{
-        FsPath path = getPath(filePath);
-        _log.debug(" putToRemoteTURL from "+path+" to " +remoteTURL);
+                                  URI surl,
+                                  URI remoteTURL,
+                                  SRMUser remoteUser,
+                                  Long remoteCredentialId,
+                                  CopyCallbacks callbacks)
+        throws SRMException
+    {
+        FsPath path = getPath(surl);
+        _log.debug(" putToRemoteTURL from "+path+" to " +surl);
         return performRemoteTransfer(user,remoteTURL,path,false,
                 remoteUser,
                 remoteCredentialId,
@@ -2227,6 +2207,7 @@ public final class Storage
 
     }
 
+    @Override
     public void killRemoteTransfer(String transferId) {
 
         try {
@@ -2246,7 +2227,7 @@ public final class Storage
     }
 
     private String performRemoteTransfer(SRMUser user,
-                                         String remoteTURL,
+                                         URI remoteTURL,
                                          FsPath actualFilePath,
                                          boolean store,
                                          SRMUser remoteUser,
@@ -2262,7 +2243,7 @@ public final class Storage
                                                 " is not subpath of the user's root");
         }
 
-        if (remoteTURL.startsWith("gsiftp://")) {
+        if (remoteTURL.getScheme().equals("gsiftp")) {
             AuthorizationRecord duser = (AuthorizationRecord)user;
 
             //call this for the sake of checking that user is reading
@@ -2287,7 +2268,7 @@ public final class Storage
             if (store && spaceReservationId != null && size != null) {
                 gsiftpTransferRequest =
                     new RemoteGsiftpTransferManagerMessage(duser,
-                                                           remoteTURL,
+                                                           remoteTURL.toString(),
                                                            actualFilePath.toString(),
                                                            store,
                                                            remoteCredentialId,
@@ -2301,7 +2282,7 @@ public final class Storage
             } else {
                 gsiftpTransferRequest =
                     new RemoteGsiftpTransferManagerMessage(duser,
-                                                           remoteTURL,
+                                                           remoteTURL.toString(),
                                                            actualFilePath.toString(),
                                                            store,
                                                            remoteCredentialId,
@@ -2398,7 +2379,7 @@ public final class Storage
         if (message instanceof TransferCompleteMessage ) {
             TransferCompleteMessage complete =
                     (TransferCompleteMessage)message;
-            info.callbacks.copyComplete(null,null);
+            info.callbacks.copyComplete(null);
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
         } else if(message instanceof TransferFailedMessage) {

@@ -28,11 +28,11 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.RemoveFileCallbacks;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
-import org.apache.axis.types.URI;
 import org.dcache.srm.util.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  *
@@ -40,7 +40,6 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmRm {
-	private final static String SFN_STRING = "?SFN=";
         private static Logger logger =
             LoggerFactory.getLogger(SrmRm.class);
 
@@ -73,9 +72,9 @@ public class SrmRm {
 
             try {
                 response = srmRm();
-            } catch(MalformedURIException mue) {
-                logger.debug(" malformed uri : "+mue.getMessage());
-                response = getResponse(" malformed uri : "+mue.getMessage(),
+            } catch(URISyntaxException e) {
+                logger.debug(" malformed uri : "+e.getMessage());
+                response = getResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
             } catch(SRMException srme) {
                 logger.error(srme.toString());
@@ -106,8 +105,9 @@ public class SrmRm {
      * implementation of srm rm
      */
 
-	public SrmRmResponse srmRm() throws SRMException,
-		MalformedURIException {
+	public SrmRmResponse srmRm()
+                throws SRMException, URISyntaxException
+        {
 		if(request==null) {
 			return getResponse(" null request passed to SrmRm()",
 					   TStatusCode.SRM_INVALID_REQUEST);
@@ -116,7 +116,8 @@ public class SrmRm {
 			return getResponse("null array of Surls",
 					   TStatusCode.SRM_INVALID_REQUEST);
 		}
-		URI[] surls       = request.getArrayOfSURLs().getUrlArray();
+		org.apache.axis.types.URI[] surls =
+                        request.getArrayOfSURLs().getUrlArray();
 		if (surls == null || surls.length==0) {
 			return getResponse("empty array of Surl Infos",
 					   TStatusCode.SRM_INVALID_REQUEST);
@@ -138,13 +139,8 @@ public class SrmRm {
 		while(end<=callbacks.length) {
 			for ( int i=start;i<end;i++) {
 				try {
-					String path = surls[i].getPath(true,true);
-					int indx = path.indexOf(SFN_STRING);
-					if ( indx != -1 ) {
-						path=path.substring(indx+SFN_STRING.length());
-					}
-					storage.removeFile(user,path,callbacks[i]);
-
+                                        URI surl = new URI(surls[i].toString());
+					storage.removeFile(user,surl,callbacks[i]);
 				}
 				catch(RuntimeException re) {
 					logger.error(re.toString());

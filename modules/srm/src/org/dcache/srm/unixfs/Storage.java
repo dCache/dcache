@@ -265,7 +265,7 @@ public class Storage
   }
 
   /** */
-  public void getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser,
+  private void getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser,
     Long remoteCredentialId) throws SRMException {
           if(!(user instanceof UnixfsUser) ){
               throw new SRMException("user is not instance of UnixfsUser");
@@ -273,38 +273,39 @@ public class Storage
           }
           UnixfsUser duser = (UnixfsUser)user;
 
+          String path = getPath(surl);
           try
           {
             /**@todo # Implement getFromRemoteTURL() method */
-              GlobusURL url = new GlobusURL(remoteTURL);
-              if(!url.getProtocol().equalsIgnoreCase("gsiftp") &&
-                 !url.getProtocol().equalsIgnoreCase("gridftp") )
+              if(!remoteTURL.getScheme().equalsIgnoreCase("gsiftp") &&
+                 !remoteTURL.getScheme().equalsIgnoreCase("gridftp") )
               {
-                  throw new SRMException("unsupported protocol : "+url.getProtocol());
+                  throw new SRMException("unsupported protocol : " + remoteTURL.getScheme());
               }
               GSSCredential remoteCredential = RequestCredential.getRequestCredential(remoteCredentialId).getDelegatedCredential();
-              GridftpClient client = new GridftpClient(url.getHost(),
-                url.getPort(), config.getTcp_buffer_size(),
+              GridftpClient client = new GridftpClient(remoteTURL.getHost(),
+                                                       remoteTURL.getPort(),
+                                                       config.getTcp_buffer_size(),
                 remoteCredential);
               client.setStreamsNum(config.getParallel_streams());
 
               try
               {
-		client.gridFTPRead(url.getPath(),actualFilePath , true,true);
+		client.gridFTPRead(remoteTURL.getPath(), path, true, true);
               }
             finally {
                 client.close();
                 client = null;
             }
               // now file is copied, we need to change the owner/group to the user's
-              changeOwnership(actualFilePath,duser.getUid(),duser.getGid());
+              changeOwnership(path,duser.getUid(),duser.getGid());
 
 
           }
           catch(Exception e)
           {
               logger.error(e.toString());
-              throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
+              throw new SRMException("remote turl "+remoteTURL+" to local file "+surl+" transfer failed",e);
           }
 
 
@@ -315,25 +316,28 @@ public class Storage
   }
 
   /** */
-  public void putToRemoteTURL(SRMUser user, String actualFilePath, String remoteTURL, SRMUser remoteUser, Long remoteCredentialId) throws SRMException {
+  private void putToRemoteTURL(SRMUser user, URI surl, URI remoteTURL, SRMUser remoteUser, Long remoteCredentialId) throws SRMException {
+
+          String path = getPath(surl);
           try
           {
-              GlobusURL url = new GlobusURL(remoteTURL);
-              if(!url.getProtocol().equalsIgnoreCase("gsiftp") &&
-                 !url.getProtocol().equalsIgnoreCase("gridftp") )
+              if(!remoteTURL.getScheme().equalsIgnoreCase("gsiftp") &&
+                 !remoteTURL.getScheme().equalsIgnoreCase("gridftp") )
               {
-                  throw new SRMException("unsupported protocol : "+url.getProtocol());
+                  throw new SRMException("unsupported protocol : "+remoteTURL.getScheme());
               }
               GSSCredential remoteCredential = RequestCredential.getRequestCredential(remoteCredentialId).getDelegatedCredential();
 
-              GridftpClient client = new GridftpClient(url.getHost(),
-                url.getPort(), config.getTcp_buffer_size(),
-                remoteCredential);
+              GridftpClient client =
+                new GridftpClient(remoteTURL.getHost(),
+                                  remoteTURL.getPort(),
+                                  config.getTcp_buffer_size(),
+                                  remoteCredential);
               client.setStreamsNum(config.getParallel_streams());
 
               try
               {
-		client.gridFTPWrite(actualFilePath,url.getPath(),true,true,true);
+		client.gridFTPWrite(path,remoteTURL.getPath(),true,true,true);
               }
             finally {
                 client.close();
@@ -345,7 +349,7 @@ public class Storage
           catch(Exception e)
           {
               logger.error(e.toString());
-              throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
+              throw new SRMException("remote turl "+remoteTURL+" to local file "+surl+" transfer failed",e);
           }
     /**@todo # Implement putToRemoteTURL() method */
 //    SRMException srmEx = new SRMException(
@@ -358,16 +362,18 @@ public class Storage
   private final static String localCopyCommand = "/bin/cp";
 
   /** */
-  public void localCopy(SRMUser user, String actualFromFilePath,
-                        String actualToFilePath)
+  @Override
+  public void localCopy(SRMUser user,
+                        URI fromSurl,
+                        URI toSurl)
       throws SRMException
   {
     /**@todo + localCopy() -- user; check path; set owner & group */
 
     String[] cmd = new String[3];
     cmd[0] = localCopyCommand;
-    cmd[1] = actualFromFilePath;
-    cmd[2] = actualToFilePath;
+    cmd[1] = getPath(fromSurl);
+    cmd[2] = getPath(toSurl);
 
     Process proc;
 
@@ -400,19 +406,10 @@ public class Storage
   /**
    * Checks Transfer URL has the same IP as the Local host.
    */
-  public boolean isLocalTransferUrl(String urlArg)
+  @Override
+  public boolean isLocalTransferUrl(URI url)
       throws SRMException {
     /**@todo isLocalTransferUrl(): check against multiple hostnames [getAllByName()] */
-
-    GlobusURL url = null;
-    try {
-      url = new GlobusURL(urlArg);
-    }
-    catch (MalformedURLException ex) {
-      throw new SRMException("Malformed URL argument to isLocalTransferUrl(),"+
-                       " URL=" + urlArg );
-    }
-
 
     if( myInetAddr == null )
       throw new SRMException("InetAddress.getLocalHost(),"+
@@ -641,7 +638,8 @@ public class Storage
   }
 
   /** */
-  public void advisoryDelete(SRMUser user, String filePath,
+  @Override
+  public void advisoryDelete(SRMUser user, URI surl,
                              AdvisoryDeleteCallbacks callbacks) {
     /**@todo advisoryDelete() - user, async */
     if( ! ( callbacks instanceof AdvisoryDeleteCallbacks ) )
@@ -654,7 +652,7 @@ public class Storage
     try {
       /**@todo advisoryDelete() - _getFile(filePath) assumes fileID == filePath */
       // fileId is Canonical path
-      File file = _getFile(filePath);
+      File file = _getFile(getPath(surl));
       deleted   = file.delete();
       if( ! deleted )
         reason = "delete file operation failed";
@@ -838,15 +836,16 @@ public class Storage
   }
   private Map copyThreads = new HashMap();
 
-  public String getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
-   return this.getFromRemoteTURL( user,  remoteTURL,  actualFilePath,  remoteUser,  remoteCredentialId,  null,0, callbacks);
+  @Override
+  public String getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
+   return this.getFromRemoteTURL( user,  remoteTURL,  surl,  remoteUser,  remoteCredentialId,  null,0, callbacks);
 
   }
 
   /**
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
@@ -855,8 +854,8 @@ public class Storage
      */
     public String getFromRemoteTURL(
         final SRMUser user,
-        final String remoteTURL,
-        final String actualFilePath,
+        final URI remoteTURL,
+        final URI surl,
         final SRMUser remoteUser,
         final Long remoteCredentialId,
         String spaceReservationId,
@@ -869,9 +868,9 @@ public class Storage
                 try
                 {
                     logger.debug("calling getFromRemoteTURL from a copy thread");
-                    getFromRemoteTURL(user, remoteTURL,actualFilePath, remoteUser, remoteCredentialId);
-                    logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, _getFileMetaData(user,actualFilePath));
+                    getFromRemoteTURL(user, remoteTURL,surl, remoteUser, remoteCredentialId);
+                    logger.debug("calling callbacks.copyComplete for path="+surl);
+                    callbacks.copyComplete(getFileMetaData(user, surl, false));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -879,7 +878,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+actualFilePath);
+        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+surl);
 
         copyThreads.put(id, t);
         t.start();
@@ -895,7 +894,8 @@ public class Storage
      * @throws SRMException
      * @return transfer id
      */
-    public String putToRemoteTURL(final SRMUser user, final String actualFilePath,final String remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
+    @Override
+    public String putToRemoteTURL(final SRMUser user, final URI surl,final URI remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
     throws SRMException {
 
        Thread t = new Thread(){
@@ -905,9 +905,9 @@ public class Storage
                 try
                 {
                     logger.debug("calling putToRemoteTURL from a copy thread");
-                    putToRemoteTURL(user, actualFilePath,remoteTURL, remoteUser, remoteCredentialId);
-                    logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, _getFileMetaData(user,actualFilePath));
+                    putToRemoteTURL(user, surl,remoteTURL, remoteUser, remoteCredentialId);
+                    logger.debug("calling callbacks.copyComplete for path="+surl);
+                    callbacks.copyComplete(getFileMetaData(user,surl, true));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -915,7 +915,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.debug("putToRemoteTURL assigned id ="+id+"for transfer from "+actualFilePath+" to "+remoteTURL);
+        logger.debug("putToRemoteTURL assigned id ="+id+"for transfer from "+surl+" to "+remoteTURL);
 
         copyThreads.put(id, t);
         t.start();
@@ -939,19 +939,20 @@ public class Storage
       callbacks.SpaceReserved("dummy", spaceSize);
   }
 
-
-
+      @Override
       public void removeFile(final SRMUser user,
-			     final String path,
+			     final URI path,
 			     RemoveFileCallbacks callbacks) {
       }
 
+      @Override
       public void removeDirectory(final SRMUser user,
 				  final Vector tree)  throws SRMException {
       }
 
+      @Override
       public void createDirectory(final SRMUser user,
-				  final String directory) throws SRMException {
+				  final URI directory) throws SRMException {
       }
 
 	public String[] listNonLinkedDirectory(SRMUser user, String directoryName) throws SRMException {
@@ -1080,9 +1081,10 @@ public class Storage
         return result;
     }
 
-
-	public void moveEntry(SRMUser user, String from,
-			       String to) throws SRMException {
+        @Override
+	public void moveEntry(SRMUser user, URI from, URI to)
+          throws SRMException
+        {
 	}
 
     public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,org.dcache.srm.SrmReserveSpaceCallbacks callbacks) {

@@ -373,7 +373,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
             else {
                 from_url_is_local = getStorage().isLocalTransferUrl(
-                        from_urls[0].getURL());
+                            URI.create(from_urls[0].getURL()));
             }
 
             if(to_url_is_srm) {
@@ -387,7 +387,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
             }
             else {
                 to_url_is_local = getStorage().isLocalTransferUrl(
-                        to_urls[0].getURL());
+                            URI.create(to_urls[0].getURL()));
             }
 
             logger.debug(" from_url_is_srm = "+from_url_is_srm);

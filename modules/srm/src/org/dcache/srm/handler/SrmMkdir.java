@@ -28,7 +28,8 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  *
@@ -59,9 +60,9 @@ public class SrmMkdir {
 		if(response != null ) return response;
 		try {
 			response = srmMkdir();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -91,8 +92,9 @@ public class SrmMkdir {
 	 * implementation of srm mkdir
      */
 
-	public SrmMkdirResponse srmMkdir() throws SRMException,
-            MalformedURIException {
+	public SrmMkdirResponse srmMkdir()
+            throws SRMException, URISyntaxException
+        {
 		SrmMkdirResponse response  = new SrmMkdirResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -101,16 +103,9 @@ public class SrmMkdir {
 		return getFailedResponse(" null request passed to SrmRm()");
 		}
 		org.apache.axis.types.URI surl = request.getSURL();
-		int port    = surl.getPort();
-		String host = surl.getHost();
-		String path = surl.getPath(true,true);
-		int indx    = path.indexOf(SFN_STRING);
-		if ( indx != -1 ) {
-			path=path.substring(indx+SFN_STRING.length());
-		}
 		try {
-			storage.createDirectory(user,path);
-		}
+                        storage.createDirectory(user, new URI(surl.toString()));
+                }
         catch (SRMDuplicationException srmde) {
             logger.debug("srmMkdir duplication : "+srmde.toString());
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
