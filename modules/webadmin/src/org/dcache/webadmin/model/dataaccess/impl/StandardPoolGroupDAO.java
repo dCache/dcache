@@ -23,7 +23,7 @@ public class StandardPoolGroupDAO implements PoolGroupDAO {
 
     public static final List<String> POOLGROUPS_PATH = Arrays.asList("poolgroups");
     private static final Logger _log = LoggerFactory.getLogger(StandardPoolGroupDAO.class);
-    private PoolGroupXmlToObjectMapper _xmlProcessor = new PoolGroupXmlToObjectMapper();
+    private PoolGroupXmlToObjectMapper _xmlToObjectMapper = new PoolGroupXmlToObjectMapper();
     private CommandSenderFactory _commandSenderFactory;
 
     public StandardPoolGroupDAO(CommandSenderFactory commandSenderFactory) {
@@ -45,8 +45,8 @@ public class StandardPoolGroupDAO implements PoolGroupDAO {
     private Set<String> tryToGetPoolGroupNames() throws ParsingException, DataGatheringException {
 
         String serialisedXML = getXmlForStatePath(POOLGROUPS_PATH);
-        Document xmlDocument = _xmlProcessor.createXMLDocument(serialisedXML);
-        return _xmlProcessor.parsePoolGroupNamesDocument(xmlDocument);
+        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
+        return _xmlToObjectMapper.parsePoolGroupNamesDocument(xmlDocument);
     }
 
     private String getXmlForStatePath(List<String> statePath) throws DataGatheringException {
