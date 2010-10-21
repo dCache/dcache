@@ -387,4 +387,16 @@ public abstract class FileRequest extends Job {
         return configuration;
     }
 
+    protected boolean isProtocolSupported(String[] protocols)
+        throws SRMException
+    {
+        for (String supported: getStorage().supportedGetProtocols()) {
+            for (String protocol: protocols) {
+                if (supported.equals(protocol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

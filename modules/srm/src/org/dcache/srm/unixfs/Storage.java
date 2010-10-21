@@ -22,7 +22,6 @@ import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
 import diskCacheV111.srm.StorageElementInfo;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
-import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.PinCallbacks;
@@ -530,67 +529,45 @@ public class Storage
   //-------------- Async methods ----------------
 
   /** */
-  public void getFileInfo(SRMUser user, URI surl, boolean read,
-                          GetFileInfoCallbacks callbacks)
-  {
-    /**@todo getFileInfo() - async, lost fileId */
-      String filePath;
-      try {
-        filePath = getPath(surl);
-      } catch (SRMInvalidPathException e) {
-        callbacks.FileNotFound(e.getMessage());
-        return;
-      }
-
-    if( ! ( callbacks instanceof GetFileInfoCallbacks ) )
-      throw new java.lang.IllegalArgumentException(
-          "Method getFileInfo() has wrong callback argument type.");
-
-    FileMetaData fmd    = null;
-    String       fileId = null;
-
-    try {
-      fmd    = _getFileMetaData( user, filePath );
-      fileId = filePath;
-    }
-    catch (Exception ex) {
-      logger.error(ex.toString());
-
-      String erStr = "getFileInfo() got exception for the filePath=" +filePath +".";
-      callbacks.GetStorageInfoFailed( erStr );
-      return;
-    }
-
-    logger.debug( "getFileInfo(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
-    callbacks.StorageInfoArrived(fileId, fmd);
-  }
-
-
-  /** */
+  @Override
   public void pinFile(SRMUser user,
-          String fileId,
-          String clientHost,
-          FileMetaData fmd,
-          long pinLifetime,
-          long requestId,
-          PinCallbacks callbacks) {
+                      URI surl,
+                      String clientHost,
+                      long pinLifetime,
+                      long requestId,
+                      PinCallbacks callbacks) {
     /**@todo - pinFile() - check authorization, do timeout */
 
-    if( ! (callbacks instanceof PinCallbacks ) )
-      throw new java.lang.IllegalArgumentException(
-          "Method pinFile() has wrong callback argument type.");
 
     boolean pinned = false;
     String  reason = null;
     String  pinId  = null;
+    FileMetaData fmd;
 
     try {
-      File file = _getFile(fileId, fmd);
+        fmd = getFileMetaData(user, surl, true);
+    } catch (SRMInvalidPathException e) {
+        callbacks.FileNotFound(e.getMessage());
+        return;
+    } catch (SRMException ex) {
+        logger.error(ex.toString());
+        callbacks.PinningFailed("Got exception for " + surl);
+        return;
+    }
+
+
+    if (fmd.isDirectory) {
+        callbacks.FileNotFound("Path is a directory");
+        return;
+    }
+
+    try {
+      File file = _getFile(fmd.fileId, fmd);
       pinned = file.exists();
       logger.debug("file exists is "+pinned);
       if( pinned )
 
-        pinId = fileId;
+        pinId = fmd.fileId;
       else
         reason = "file does not exist";
     }
@@ -601,7 +578,7 @@ public class Storage
 
    // Return filedId as PinId
    if( pinned )
-     callbacks.Pinned( pinId );
+     callbacks.Pinned(fmd, pinId);
    else
      callbacks.PinningFailed( reason );
   }

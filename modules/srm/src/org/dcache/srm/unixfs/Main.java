@@ -15,7 +15,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorization;
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
-import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.ReserveSpaceCallbacks;
@@ -61,7 +60,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         System.out.println("reading configuration from "+config_file);
         config = new Configuration(config_file);
         PrintStream out,err;
-        
+
         if ( args.length >6) {
             String logfile = args[6];
             System.out.println("Logging to "+logfile);
@@ -76,27 +75,27 @@ public class Main extends CommandInterpreter implements  Runnable {
         }
         authorization = UnixfsAuthorization.getAuthorization(config.getKpwdfile());
         config.setAuthorization(authorization);
-        Storage storage = 
+        Storage storage =
             new Storage(gridftphost,gridftpport,config,stat,chown,out,err);
         config.setStorage(storage);
-        
+
         srm = SRM.getSRM(config,name);
-         new Thread(this).start();    
-        
-        
-            
+         new Thread(this).start();
+
+
+
     }
-    
-    
-    public void run() 
+
+
+    public void run()
     { int failures = 0;
         while(failures < 100)
         {
-            
-        
+
+
         try
         {
-        
+
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String nextCommand =null;
         System.out.println("<<<<Welcome to srm server admin shell>>>");
@@ -120,7 +119,7 @@ public class Main extends CommandInterpreter implements  Runnable {
             e.printStackTrace();
             failures++;
         }
-        
+
         }
         System.err.println("too many falures, exiting command interpreter loop");
     }
@@ -132,7 +131,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         args[0].equalsIgnoreCase("-h")  ||
         args[0].equalsIgnoreCase("-help")  ||
         args[0].equalsIgnoreCase("--h")  ||
-        args[0].equalsIgnoreCase("--help")  
+        args[0].equalsIgnoreCase("--help")
         )
         {
             System.err.println("Usage: java [-classpath <CLASSPATH to all srm jars>] org.dcache.srm.unixfs  <configuration file> <instance_name> <gridftp server host> <gridftp server port> <stat command path> <chown path> [logfile] \n" +
@@ -144,7 +143,7 @@ public class Main extends CommandInterpreter implements  Runnable {
         new Main(args);
     }
 
-           
+
         public void getInfo( java.io.PrintWriter printWriter ) {
             StringBuilder sb = new StringBuilder();
             sb.append("SRM Cell");
@@ -160,16 +159,16 @@ public class Main extends CommandInterpreter implements  Runnable {
             }
             printWriter.println( sb.toString()) ;
         }
-        
+
        public String getInfo(){
          StringWriter stringWriter = new StringWriter() ;
-         PrintWriter   printWriter = new PrintWriter( stringWriter ) ; 
+         PrintWriter   printWriter = new PrintWriter( stringWriter ) ;
 
          getInfo( printWriter ) ;
          printWriter.flush() ;
          return stringWriter.getBuffer().toString()  ;
        }
-       
+
         public String fh_cancel= " Syntax: cancel <id> ";
         public String hh_cancel= " <id> ";
         public String ac_cancel_$_1(Args args) {
@@ -183,7 +182,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 return e.toString();
             }
         }
-        
+
         public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-l] [<id>] "+
         "#will list all requests";
         public String hh_ls= " [-get] [-put] [-copy] [-l] [<id>]";
@@ -208,7 +207,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                         get=true;
                         put=true;
                         copy=true;
-                        
+
                     }
                     if(get) {
                         sb.append("Get Requests:\n");
@@ -243,7 +242,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 boolean copy=args.getOpt("copy") != null;
                 boolean longformat = args.getOpt("l") != null;
                 StringBuilder sb = new StringBuilder();
-                 
+
                 if( !get && !put && !copy ) {
                     get=true;
                     put=true;
@@ -278,7 +277,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                 return t.toString();
             }
         }
-        
+
         public String fh_ls_completed= " Syntax: ls completed [-get] [-put] [-copy] [-l] [max_count]"+
         " #will list completed (done, failed or canceled) requests, if max_count is not specified, it is set to 50";
         public String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
@@ -291,12 +290,12 @@ public class Main extends CommandInterpreter implements  Runnable {
             if(args.argc() == 1) {
                 max_count = Integer.parseInt(args.argv(0));
             }
-            
+
             if( !get && !put && !copy ) {
                 get=true;
                 put=true;
                 copy=true;
-                
+
             }
             StringBuilder sb = new StringBuilder();
             if(get) {
@@ -327,5 +326,5 @@ public class Main extends CommandInterpreter implements  Runnable {
             System.exit(0);
             return "exiting";
         }
- 
+
 }

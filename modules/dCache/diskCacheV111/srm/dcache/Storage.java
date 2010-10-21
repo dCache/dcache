@@ -158,7 +158,6 @@ import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.FileMetaData;
-import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
@@ -1008,17 +1007,24 @@ public final class Storage
     }
 
     public void pinFile(SRMUser user,
-        String fileId,
-        String clientHost,
-        FileMetaData fmd,
-        long pinLifetime,
-        long requestId,
-        PinCallbacks callbacks) {
-        DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
-        PinCompanion.pinFile((AuthorizationRecord)user,
-            fileId,
-            clientHost,
-            callbacks, dfmd, pinLifetime, requestId, _pinManagerStub);
+                        URI surl,
+                        String clientHost,
+                        long pinLifetime,
+                        long requestId,
+                        PinCallbacks callbacks)
+    {
+        try {
+            PinCompanion.pinFile((AuthorizationRecord) user,
+                                 getPath(surl),
+                                 clientHost,
+                                 callbacks,
+                                 pinLifetime,
+                                 requestId,
+                                 _pnfsStub,
+                                 _pinManagerStub);
+        } catch (SRMInvalidPathException e) {
+            callbacks.FileNotFound(e.getMessage());
+        }
     }
 
     public void unPinFile(SRMUser user,String fileId,
@@ -1554,25 +1560,6 @@ public final class Storage
                 throw new java.net.UnknownHostException(e.getMessage());
             }
         }
-
-    @Override
-    public void getFileInfo(SRMUser user, URI surl, boolean read,
-        GetFileInfoCallbacks callbacks) {
-        try {
-            FsPath actualPnfsPath = getPath(surl);
-            if (!verifyUserPathIsRootSubpath(actualPnfsPath,user)) {
-                callbacks.GetStorageInfoFailed("user's path ["+actualPnfsPath+
-                                               "] is not a subpath of user's root ");
-            }
-            GetFileInfoCompanion.getFileInfo((AuthorizationRecord) user,
-                                             actualPnfsPath.toString(),
-                                             read,
-                                             callbacks,
-                                             _pnfsStub);
-        } catch (SRMInvalidPathException e) {
-            callbacks.FileNotFound(e.getMessage());
-        }
-    }
 
     @Override
     public void prepareToPut(SRMUser user,

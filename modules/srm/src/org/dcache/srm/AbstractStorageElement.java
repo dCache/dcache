@@ -170,29 +170,6 @@ public interface AbstractStorageElement {
     public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
         throws SRMException;
 
-    /**
-     * Retrieves the FileMetaData of a file.
-     *
-     * The method is asynchronous and the result is reported via a
-     * callback.
-     *
-     * An implementation may check whether the user sufficient
-     * privileges. If the user lacks sufficient privileges, a
-     * SRMAuthorizationException is delivered through the callback. If
-     * the read parameter is true, an implementation is requested to
-     * check whether the user is allowed to read the file in addition
-     * to retrieving the FileMetaData. If the read parameter is false,
-     * then only permission to retrieve the FileMetaData is checked.
-     *
-     * @param user User ID
-     * @param surl SURL
-     * @param read True if read permission are required, false otherwise
-     * @param callbacks Callback for delivering the result of the
-     *                  asynchronous operation.
-     */
-    public void getFileInfo(SRMUser user, URI surl, boolean read,
-                            GetFileInfoCallbacks callbacks);
-
     /** Method must be nonblocking -- when called it creates thread and returns immediately,
      *         result will be sent thru callbacks
      * @param user User ID
@@ -208,10 +185,9 @@ public interface AbstractStorageElement {
     /** This method allows to pin file in the Storage Element,
      * i.e. put the file in "fast access state"
      * @param user User ID
-     * @param fileId Storage Element internal file ID
+     * @param surl
      * @param network address from which file will be read
      *        null, if unknown
-     * @param fmd File metadata returned by getFileMetaData
      * @param pinLifetime Requested pin operation lifetime in millis
      * @param requestId - ping will save request id
      *        so that unping by file name and request id can take place
@@ -221,9 +197,8 @@ public interface AbstractStorageElement {
 
 
     public void pinFile(SRMUser user,
-           String fileId,
+           URI surl,
            String clientHost,
-           FileMetaData fmd,
            long pinLifetime,
            long requestId,
            PinCallbacks callbacks);

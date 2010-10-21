@@ -83,7 +83,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.util.Tools;
-import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.scheduler.State;
@@ -438,28 +437,17 @@ public final class GetFileRequest extends FileRequest {
     public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
         logger.debug("run()");
         try {
-            if(getFileId() == null) {
-                logger.debug("fileId is null, asking to get a fileId");
-                askFileId();
-                if(getFileId() == null) {
-                    setState(State.ASYNCWAIT, "getting file Id");
-                    logger.debug("GetFileRequest: waiting async notification about fileId...");
-                    return;
-                }
-            }
-            logger.debug("fileId = "+getFileId());
-
             if(getPinId() == null) {
-                // do not check explicitely if we can read the file
-                // this is done by pnfs manager when we call askFileId()
-                logger.debug("pinId is null, asking to pin ");
                 pinFile();
                 if(getPinId() == null) {
-                    setState(State.ASYNCWAIT,"pinning file");
+                    setState(State.ASYNCWAIT, "pinning file");
                     logger.debug("GetFileRequest: waiting async notification about pinId...");
                     return;
                 }
             }
+        } catch (SRMException e) {
+            logger.error(e.getMessage());
+            throw new NonFatalJobFailure(e.toString());
         } catch(IllegalStateTransition ist) {
             throw new NonFatalJobFailure("Illegal State Transition : " +ist.getMessage());
         }
@@ -467,61 +455,22 @@ public final class GetFileRequest extends FileRequest {
 
     }
 
-    public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
-        try {
+    public void pinFile()
+        throws NonFatalJobFailure, FatalJobFailure, SRMException
+    {
+        GetRequest request = (GetRequest) Job.getJob(requestId);
+        if (!isProtocolSupported(request.protocols)) {
+            throw new FatalJobFailure("Transfer protocols not supported");
+        }
 
-            logger.debug(" proccessing the file request id "+getId());
-            URI surl = getSurl();
-            logger.debug(" path is "+surl);
-            // if we can not read this path for some reason
-            //(not in ftp root for example) this will throw exception
-            // we do not care about the return value yet
-            logger.debug("calling Job.getJob("+requestId+")");
-            GetRequest request = (GetRequest) Job.getJob(requestId);
-            logger.debug("this file request's request is  "+request);
-            //this will fail if the protocols are not supported
-            String[] supported_prots = getStorage().supportedGetProtocols();
-            boolean found_supp_prot=false;
-            mark1:
-            for(int i=0; i< supported_prots.length;++i) {
-                for(int j=0; j<request.protocols.length; ++j) {
-                    if(supported_prots[i].equals(request.protocols[j])) {
-                        found_supp_prot = true;
-                        break mark1;
-                    }
-                }
-            }
-            if(!found_supp_prot) {
-                throw new FatalJobFailure("transfer protocols not supported");
-            }
-            //storage.getGetTurl(getUser(),path,request.protocols);
-            logger.debug("storage.prepareToGet("+surl+",...)");
-            GetFileInfoCallbacks callbacks = new GetCallbacks(getId());
-            getStorage().getFileInfo(getUser(),
-                                     getSurl(),
-                                     true,
-                                     callbacks);
-        }
-        catch(Exception e) {
-            logger.error(e.toString());
-            throw new NonFatalJobFailure(e.toString());
-        }
-    }
-
-    public void pinFile() throws NonFatalJobFailure, FatalJobFailure {
-        try {
-
-            PinCallbacks callbacks = new ThePinCallbacks(getId());
-            logger.info("storage.pinFile("+getFileId()+",...)");
-            getStorage().pinFile(getUser(),
-                getFileId(),getRequest().getClient_host(), getFileMetaData(),
-                lifetime,
-                    getRequestId().longValue() ,callbacks);
-        }
-        catch(Exception e) {
-            logger.error(e.toString());
-            throw new NonFatalJobFailure(e.toString());
-        }
+        URI surl = getSurl();
+        logger.info("Pinning {}", surl);
+        getStorage().pinFile(getUser(),
+                             surl,
+                             getRequest().getClient_host(),
+                             lifetime,
+                             getRequestId(),
+                             new ThePinCallbacks(getId()));
     }
 
     @Override
@@ -673,25 +622,18 @@ public final class GetFileRequest extends FileRequest {
         }
     }
 
-
-
-    private  static class GetCallbacks implements GetFileInfoCallbacks
-
-    {
+    private  static class ThePinCallbacks implements PinCallbacks {
 
         Long fileRequestJobId;
 
-        public GetCallbacks(Long fileRequestJobId) {
+        public ThePinCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
-        private GetFileRequest getGetFileRequest()
-                throws java.sql.SQLException, SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (GetFileRequest) job;
-            }
-            return null;
+        public GetFileRequest getGetFileRequest()
+            throws SRMInvalidRequestException
+        {
+            return (GetFileRequest) Job.getJob(fileRequestJobId);
         }
 
         public void FileNotFound(String reason) {
@@ -710,131 +652,6 @@ public final class GetFileRequest extends FileRequest {
             catch(Exception e) {
                 logger.error(e.toString());
             }
-        }
-
-        public void Error( String error) {
-            try {
-                GetFileRequest fr = getGetFileRequest();
-                try {
-                    fr.setState(State.FAILED,error);
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("GetCallbacks error: "+ error);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
-            }
-        }
-
-        public void Exception( Exception e) {
-            try {
-                GetFileRequest fr = getGetFileRequest();
-                try {
-                    fr.setState(State.FAILED,e.toString());
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-                logger.error("GetCallbacks exception",e);
-            }
-            catch(Exception e1) {
-                logger.error(e1.toString());
-            }
-        }
-
-        public void GetStorageInfoFailed(String reason) {
-            try {
-                GetFileRequest fr = getGetFileRequest();
-                try {
-                    fr.setState(State.FAILED,reason);
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-
-                logger.error("GetCallbacks error: "+ reason);
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
-            }
-
-        }
-
-
-
-        public void StorageInfoArrived(String fileId,FileMetaData fileMetaData) {
-            try {
-                if (fileMetaData.isDirectory) {
-                    FileNotFound("Path is a directory");
-                    return;
-                }
-
-                GetFileRequest fr = getGetFileRequest();
-                logger.debug("StorageInfoArrived: FileId:"+fileId);
-                State state ;
-                synchronized(fr) {
-                    state = fr.getState();
-                }
-
-                if(state == State.ASYNCWAIT || state == State.RUNNING) {
-                    fr.setFileId(fileId);
-                    fr.setFileMetaData(fileMetaData);
-
-                    if(state == State.ASYNCWAIT) {
-                        Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                        try {
-                            scheduler.schedule(fr);
-                        }
-                        catch(Exception ie) {
-                            logger.error(ie.toString());
-                        }
-                    }
-                }
-
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
-            }
-        }
-
-
-        public void Timeout() {
-            try {
-                GetFileRequest fr = getGetFileRequest();
-                try {
-                    fr.setState(State.FAILED,"GetCallbacks Timeout");
-                }
-                catch(IllegalStateTransition ist) {
-                    logger.warn("Illegal State Transition : " +ist.getMessage());
-                }
-
-                logger.error("GetCallbacks Timeout");
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
-            }
-        }
-
-    }
-
-
-    private  static class ThePinCallbacks implements PinCallbacks {
-
-        Long fileRequestJobId;
-
-        public ThePinCallbacks(Long fileRequestJobId) {
-            this.fileRequestJobId = fileRequestJobId;
-        }
-
-        public GetFileRequest getGetFileRequest()
-                throws java.sql.SQLException,SRMInvalidRequestException  {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (GetFileRequest) job;
-            }
-            return null;
         }
 
         public void Error( String error) {
@@ -889,29 +706,34 @@ public final class GetFileRequest extends FileRequest {
             }
         }
 
-        public void Pinned(String pinId) {
+        public void Pinned(FileMetaData fileMetaData, String pinId) {
             try {
+                logger.debug("File pinned (pinId={})", pinId);
+
                 GetFileRequest fr = getGetFileRequest();
-                State state;
-                synchronized(fr ) {
-                    state = fr.getState();
-                }
-                logger.debug("ThePinCallbacks: Pinned() pinId:"+pinId);
-                if(state == State.ASYNCWAIT || state == State.RUNNING) {
-                    fr.setPinId(pinId);
-                    if(state == State.ASYNCWAIT) {
-                        Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                        try {
+                fr.wlock();
+                try {
+                    State state = fr.getState();
+                    if (state == State.ASYNCWAIT || state == State.RUNNING) {
+                        fr.setFileId(fileMetaData.fileId);
+                        fr.setFileMetaData(fileMetaData);
+                        fr.setPinId(pinId);
+                        if (state == State.ASYNCWAIT) {
+                            Scheduler scheduler =
+                                Scheduler.getScheduler(fr.getSchedulerId());
                             scheduler.schedule(fr);
                         }
-                        catch(Exception ie) {
-                            logger.error(ie.toString());
-                        }
                     }
+                } finally {
+                    fr.wunlock();
                 }
-            }
-            catch(Exception e) {
-                logger.error(e.toString());
+            } catch (InterruptedException e) {
+                logger.error(e.getMessage());
+                Thread.currentThread().interrupt();
+            } catch (SRMInvalidRequestException e) {
+                logger.error("BringOnlineFileRequest failed: {}", e.getMessage());
+            } catch (IllegalStateTransition e) {
+                logger.warn("Illegal State Transition: {}", e.getMessage());
             }
         }
 
