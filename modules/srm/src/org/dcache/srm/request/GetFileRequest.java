@@ -214,7 +214,7 @@ public final class GetFileRequest extends FileRequest {
         return getPinId() != null;
     }
 
-    private final URI getSurl() {
+    public URI getSurl() {
         rlock();
         try {
             return surl;
@@ -223,7 +223,7 @@ public final class GetFileRequest extends FileRequest {
         }
     }
 
-    private final URI getTurl() {
+    public URI getTurl() {
         rlock();
         try {
             return turl;

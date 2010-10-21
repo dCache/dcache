@@ -76,6 +76,7 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import java.util.HashSet;
 import java.util.Date;
+import java.net.URI;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
@@ -204,12 +205,12 @@ public final class PutRequest extends ContainerRequest{
 
     }
 
-    public FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException{
+    public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
         for(int i =0; i<fileRequests.length;++i) {
-            if(((PutFileRequest)fileRequests[i]).getSurlString().equals(surl)) {
+            if(((PutFileRequest)fileRequests[i]).getSurl().equals(surl)) {
                 return (PutFileRequest)fileRequests[i];
             }
         }
@@ -373,7 +374,7 @@ public final class PutRequest extends ContainerRequest{
     }
 
     public  final SrmStatusOfPutRequestResponse getSrmStatusOfPutRequestResponse(
-            String[] surls)
+            URI[] surls)
     throws SRMException, java.sql.SQLException {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
 
@@ -401,7 +402,7 @@ public final class PutRequest extends ContainerRequest{
         return getId().toString();
     }
 
-    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(String[] surls) throws SRMException,java.sql.SQLException {
+    private TPutRequestFileStatus[] getArrayOfTPutRequestFileStatus(URI[] surls) throws SRMException,java.sql.SQLException {
          int len = surls == null ? getNumOfFileRequest():surls.length;
         TPutRequestFileStatus[] putFileStatuses
             = new TPutRequestFileStatus[len];
@@ -421,7 +422,7 @@ public final class PutRequest extends ContainerRequest{
     }
 
 
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

@@ -135,13 +135,14 @@ public abstract class FileRequest extends Job {
 
    /** Creates new FileRequest */
     protected FileRequest(Long requestId,
-    Long  requestCredentalId,long lifetime,
-    int maxNumberOfRetries) throws Exception {
+                          Long requestCredentalId,
+                          long lifetime,
+                          int maxNumberOfRetries)
+    {
         super(lifetime, maxNumberOfRetries);
         this.credentialId = requestCredentalId;
         this.requestId = requestId;
         logger.debug("created");
-
     }
 
     /** this constructor is used for restoring the previously

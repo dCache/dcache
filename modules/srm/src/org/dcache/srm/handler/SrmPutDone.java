@@ -22,7 +22,8 @@ import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.FileMetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 /**
  *
@@ -67,9 +68,9 @@ public class SrmPutDone {
         if(response != null ) return response;
         try {
             response = srmPutDone();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
             logger.error(sqle.toString());
@@ -101,18 +102,29 @@ public class SrmPutDone {
         return srmPutDoneResponse;
     }
 
+    private static URI[] toUris(org.apache.axis.types.URI[] uris)
+        throws URISyntaxException
+    {
+        URI[] result = new URI[uris.length];
+        for (int i = 0; i < uris.length; i++) {
+            result[i] = new URI(uris[i].toString());
+        }
+        return result;
+    }
+
     public SrmPutDoneResponse srmPutDone()
 	throws SRMException,
-	MalformedURIException,
-	SQLException,
-	IllegalStateTransition {
+               URISyntaxException,
+               SQLException,
+               IllegalStateTransition
+    {
         String requestToken = srmPutDoneRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
         }
-        Long requestId;
+        long requestId;
         try {
-            requestId = new Long( requestToken);
+            requestId = Long.parseLong(requestToken);
         } catch (NumberFormatException nfe){
             return getFailedResponse(" requestToken \""+
                     requestToken+"\"is not valid",
@@ -133,13 +145,12 @@ public class SrmPutDone {
 
         }
         PutRequest putRequest = (PutRequest) request;
-        org.apache.axis.types.URI [] surls;
+        URI[] surls;
         if(srmPutDoneRequest.getArrayOfSURLs() ==null) {
             surls = null;
         } else {
-            surls = srmPutDoneRequest.getArrayOfSURLs().getUrlArray();
+            surls = toUris(srmPutDoneRequest.getArrayOfSURLs().getUrlArray());
         }
-        String[] surl_strings = null;
 	TReturnStatus status = new TReturnStatus();
         SrmPutDoneResponse srmPutDoneResponse = new SrmPutDoneResponse();
 
@@ -229,13 +240,11 @@ public class SrmPutDone {
 					return getFailedResponse("0 lenght SiteURLs array",
 								 TStatusCode.SRM_INVALID_REQUEST);
 				}
-				surl_strings = new String[surls.length];
 				int fail_counter=0;
 				int success_counter=0;
 				for(int i = 0; i< surls.length; ++i) {
 					if(surls[i] != null ) {
-						surl_strings[i] =surls[i].toString();
-						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surl_strings[i]);
+						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surls[i]);
 						synchronized(fileRequest) {
 							if ( !State.isFinalState(fileRequest.getState())) {
 								if ( fileRequest.getTurlString()==null) {
@@ -327,11 +336,9 @@ public class SrmPutDone {
 				}
 			}
 			else {
-				surl_strings = new String[surls.length];
 				for(int i = 0; i< surls.length; ++i) {
 					if(surls[i] != null ) {
-						surl_strings[i] =surls[i].toString();
-						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surl_strings[i]);
+						PutFileRequest fileRequest = (PutFileRequest) putRequest.getFileRequestBySurl(surls[i]);
 						synchronized(fileRequest) {
 							if (fileRequest.getState()==State.DONE) {
 								success_counter++;
@@ -374,7 +381,7 @@ public class SrmPutDone {
 		if(surls != null) {
 			srmPutDoneResponse.setArrayOfFileStatuses(
 				new ArrayOfTSURLReturnStatus(
-					putRequest.getArrayOfTSURLReturnStatus(surl_strings)));
+					putRequest.getArrayOfTSURLReturnStatus(surls)));
 		}
 		srmPutDoneResponse.setReturnStatus(status);
 	}

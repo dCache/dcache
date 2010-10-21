@@ -1073,7 +1073,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         return response;
     }
 
-    public final FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException {
+    public final FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException {
         if(surl == null ) {
            throw new SRMException("surl is null");
         }
@@ -1087,7 +1087,7 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
         " is not found");
     }
 
-    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException, java.sql.SQLException {
+    public final TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException, java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {

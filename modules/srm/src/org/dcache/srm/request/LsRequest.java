@@ -18,6 +18,7 @@ import org.dcache.srm.util.RequestStatusTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Date;
+import java.net.URI;
 
 public final class LsRequest extends ContainerRequest {
     private final static Logger logger =
@@ -123,14 +124,14 @@ public final class LsRequest extends ContainerRequest {
 
         }
 
-        public FileRequest getFileRequestBySurl(String surl)
+        public FileRequest getFileRequestBySurl(URI surl)
                 throws java.sql.SQLException,
                 SRMException{
                 if(surl == null) {
                         throw new SRMException("surl is null");
                 }
                 for(int i=0; i<fileRequests.length;++i) {
-                        if(((LsFileRequest)fileRequests[i]).getSurlString().equals(surl)) {
+                        if(((LsFileRequest)fileRequests[i]).getSurl().equals(surl)) {
                                 return fileRequests[i];
                         }
                 }
@@ -468,7 +469,7 @@ public final class LsRequest extends ContainerRequest {
                 }
         }
 
-        public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls)
+        public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls)
                 throws SRMException,java.sql.SQLException {
                 return null;
         }

@@ -1626,13 +1626,15 @@ public final class CopyFileRequest extends FileRequest {
 	}
 
 
-	public TSURLReturnStatus  getTSURLReturnStatus(String surl ) throws java.sql.SQLException{
+	public TSURLReturnStatus getTSURLReturnStatus(URI surl)
+                throws java.sql.SQLException
+        {
 		if(surl == null) {
-			surl = getToURL();
+			surl = getTo_surl();
 		}
 		org.apache.axis.types.URI tsurl;
 		try {
-			tsurl=new org.apache.axis.types.URI(surl);
+			tsurl=new org.apache.axis.types.URI(surl.toString());
 		}
 		catch (Exception e) {
 			logger.error(e.toString());

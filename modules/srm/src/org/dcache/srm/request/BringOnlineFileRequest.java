@@ -118,20 +118,20 @@ public final class BringOnlineFileRequest extends FileRequest {
 
     /** Creates new FileRequest */
     public BringOnlineFileRequest(Long requestId,
-    Long  requestCredentalId,
-    String url,
-    long lifetime,
-    int maxNumberOfRetries
-
-    ) throws Exception {
+                                  Long requestCredentalId,
+                                  URI surl,
+                                  long lifetime,
+                                  int maxNumberOfRetries)
+    {
         super(requestId,
                 requestCredentalId,
                 lifetime,
                 maxNumberOfRetries);
         logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
-        surl = URI.create(url);
+        this.surl = surl;
         updateMemoryCache();
     }
+
     /**
      * restore constructore, used for restoring the existing
      * file request from the database
@@ -344,18 +344,6 @@ public final class BringOnlineFileRequest extends FileRequest {
         logger.debug("run()");
         try {
             if(getFileId() == null) {
-                try {
-                    if(!Tools.sameHost(getConfiguration().getSrmHosts(),
-                    getSurl().getHost())) {
-                        String error ="surl is not local : "+getSurl();
-                        logger.error(error);
-                        throw new FatalJobFailure(error);
-                    }
-                }
-                catch(java.net.UnknownHostException uhe) {
-                    logger.error(uhe.toString());
-                    throw new FatalJobFailure(uhe.toString());
-                }
                 logger.debug("fileId is null, asking to get a fileId");
                 askFileId();
                 if(getFileId() == null) {
@@ -1100,8 +1088,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         AbstractStorageElement storage,
         final SRMUser user,
         final long id,
-        final String surl_string) throws SRMException {
-        java.net.URI surl = URI.create(surl_string);
+        final URI surl) throws SRMException {
 
         FileMetaData fmd =
             storage.getFileMetaData(user,surl,true);
@@ -1118,16 +1105,16 @@ public final class BringOnlineFileRequest extends FileRequest {
                     if(unpinCallbacks.isSuccess()) {
                         return;
                     } else
-                    throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                    throw new SRMException("unpinning of "+surl+" by SrmRequestId "+id+
                         " failed :"+unpinCallbacks.getError());
                 } else {
-                    throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                    throw new SRMException("unpinning of "+surl+" by SrmRequestId "+id+
                         " took too long");
 
                 }
             } catch( InterruptedException ie) {
                 logger.error(ie.toString());
-                throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                throw new SRMException("unpinning of "+surl+" by SrmRequestId "+id+
                         " got interrupted");
             }
          }
@@ -1136,9 +1123,8 @@ public final class BringOnlineFileRequest extends FileRequest {
     public static void unpinBySURL(
         AbstractStorageElement storage,
         final SRMUser user,
-        final String surl_string)
+        final URI surl)
         throws SRMException {
-        java.net.URI surl = URI.create(surl_string);
         FileMetaData fmd =
             storage.getFileMetaData(user,surl,true);
         String fileId = fmd.fileId;
@@ -1153,16 +1139,16 @@ public final class BringOnlineFileRequest extends FileRequest {
                     if(unpinCallbacks.isSuccess()) {
                         return;
                     } else {
-                        throw new SRMException("unpinning of "+surl_string+
+                        throw new SRMException("unpinning of "+surl+
                             " failed :"+unpinCallbacks.getError());
                     }
                 } else {
-                        throw new SRMException("unpinning of "+surl_string+
+                        throw new SRMException("unpinning of "+surl+
                             " took too long");
                 }
             } catch( InterruptedException ie) {
                 logger.error(ie.toString());
-                throw new SRMException("unpinning of "+surl_string+
+                throw new SRMException("unpinning of "+surl+
                         " got interrupted");
             }
          }

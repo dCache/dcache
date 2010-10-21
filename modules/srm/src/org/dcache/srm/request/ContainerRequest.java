@@ -83,6 +83,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.commons.util.AtomicCounter;
 import java.util.Date;
+import java.net.URI;
 
 /**
  * This abstract class represents an "SRM request"
@@ -127,12 +128,13 @@ public abstract class ContainerRequest extends Request {
      * max number of retries
      */
     public ContainerRequest(SRMUser user,
-    Long requestCredentalId,
-    int max_number_of_retries,
-    long max_update_period,
-    long lifetime,
-    String description,
-    String client_host) throws Exception{
+                            Long requestCredentalId,
+                            int max_number_of_retries,
+                            long max_update_period,
+                            long lifetime,
+                            String description,
+                            String client_host)
+    {
          super(user ,
          requestCredentalId,
          max_number_of_retries,
@@ -736,8 +738,8 @@ public abstract class ContainerRequest extends Request {
         }
     }
 
-    public abstract FileRequest getFileRequestBySurl(String surl)  throws java.sql.SQLException, SRMException ;
-    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException;
+    public abstract FileRequest getFileRequestBySurl(URI surl)  throws java.sql.SQLException, SRMException ;
+    public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException;
 
     public FileRequest[] getFileRequests()  {
 	return fileRequests;

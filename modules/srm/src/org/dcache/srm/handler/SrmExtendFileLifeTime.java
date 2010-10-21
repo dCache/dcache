@@ -211,7 +211,7 @@ public class SrmExtendFileLifeTime {
 
             try {
                 fileRequest =
-                        containerRequest.getFileRequestBySurl(surls[i].toString());
+                    containerRequest.getFileRequestBySurl(URI.create(surls[i].toString()));
             } catch (Exception e) {
                 String error = "request for requestToken \""+
                     token+"\" for surl="+surls[i] +"can't be found:"+e;

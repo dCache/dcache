@@ -23,7 +23,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.SRM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 
 /**
@@ -73,9 +74,9 @@ public class SrmStatusOfPutRequest {
         if(response != null ) return response;
         try {
             response = srmPutStatus();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
             logger.error(sqle.toString());
@@ -104,12 +105,23 @@ public class SrmStatusOfPutRequest {
         srmPrepareToPutResponse.setReturnStatus(status);
         return srmPrepareToPutResponse;
     }
+
+    private static URI[] toUris(org.apache.axis.types.URI[] uris)
+        throws URISyntaxException
+    {
+        URI[] result = new URI[uris.length];
+        for (int i = 0; i < uris.length; i++) {
+            result[i] = new URI(uris[i].toString());
+        }
+        return result;
+    }
+
     /**
      * implementation of srm put status
      */
     public SrmStatusOfPutRequestResponse srmPutStatus()
-    throws SRMException,MalformedURIException,
-            SQLException {
+        throws SRMException,URISyntaxException, SQLException
+    {
         String requestToken = statusOfPutRequestRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
@@ -141,19 +153,10 @@ public class SrmStatusOfPutRequest {
             return putRequest.getSrmStatusOfPutRequestResponse();
         }
 
-        org.apache.axis.types.URI [] surls = statusOfPutRequestRequest.getArrayOfTargetSURLs().getUrlArray();
-
+        URI[] surls = toUris(statusOfPutRequestRequest.getArrayOfTargetSURLs().getUrlArray());
         if(surls.length == 0) {
             return putRequest.getSrmStatusOfPutRequestResponse();
         }
-
-        String[] surlStrings = new String[surls.length];
-        for(int i = 0; i< surls.length; ++i) {
-            surlStrings[i] = surls[i].toString();
-        }
-
-        return putRequest.getSrmStatusOfPutRequestResponse(surlStrings);
+        return putRequest.getSrmStatusOfPutRequestResponse(surls);
     }
-
-
 }

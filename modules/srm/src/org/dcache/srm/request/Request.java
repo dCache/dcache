@@ -105,7 +105,7 @@ public abstract class Request extends Job {
     long lifetime,
     String description,
     String client_host
-        ) throws Exception{
+        ) {
         super(lifetime,max_number_of_retries);
         this.credentialId = requestCredentalId;
         this.max_update_period = max_update_period;

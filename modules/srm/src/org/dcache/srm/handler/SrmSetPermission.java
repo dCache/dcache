@@ -27,10 +27,10 @@ import java.util.Iterator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
-import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URISyntaxException;
+import java.net.URI;
 
 
 
@@ -62,9 +62,9 @@ public class SrmSetPermission {
 		if(response != null ) return response;
 		try {
 			response = srmSetPermission();
-                } catch(MalformedURIException mue) {
-                    logger.debug(" malformed uri : "+mue.getMessage());
-                    response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+                } catch(URISyntaxException e) {
+                    logger.debug(" malformed uri : "+e.getMessage());
+                    response = getFailedResponse(" malformed uri : "+e.getMessage(),
                             TStatusCode.SRM_INVALID_REQUEST);
                 } catch(SRMException srme) {
                     logger.error(srme.toString());
@@ -94,8 +94,9 @@ public class SrmSetPermission {
 	 * implementation of srm set permission
 	 */
 
-	public SrmSetPermissionResponse srmSetPermission() throws SRMException,
-                MalformedURIException {
+	public SrmSetPermissionResponse srmSetPermission()
+                throws SRMException, URISyntaxException
+        {
 		SrmSetPermissionResponse response  = new SrmSetPermissionResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -103,10 +104,9 @@ public class SrmSetPermission {
 		if(request==null) {
 			return getFailedResponse(" null request passed to SrmSetPermission()");
 		}
-		java.net.URI surl =
-                    java.net.URI.create(request.getSURL().toString());
+		URI surl = new URI(request.getSURL().toString());
 		try {
-                    FileMetaData fmd= storage.getFileMetaData(user,surl,false);
+                        FileMetaData fmd= storage.getFileMetaData(user,surl,false);
 			String owner    = fmd.owner;
 			int permissions = fmd.permMode;
 			int groupid = Integer.parseInt(fmd.group);
