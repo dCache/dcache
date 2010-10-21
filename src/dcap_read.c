@@ -35,6 +35,7 @@
 #include "node_plays.h"
 #include "system_io.h"
 #include "debug_level.h"
+#include "dcap_lcb.h"
 
 ssize_t
 dc_read(int fd, void *buff, size_t buflen)
@@ -56,7 +57,18 @@ dc_read(int fd, void *buff, size_t buflen)
 		return system_read(fd, buff, buflen);
 	}
 
-	n = dc_real_read(node, buff, buflen);
+	if ( node->lcb ) {
+		n = dc_lcb_read( node, buff, buflen );
+		if ( n < 0 ) {
+			/* print error */
+			dc_debug(DC_ERROR, "lcb_read: problems reading %d read, %d requsted, giving up lcb", n, buflen );
+			dc_lcb_clean( node );
+			n = dc_real_read(node, buff, buflen);
+		}
+	} else {
+		n = dc_real_read(node, buff, buflen);
+	}
+
 	m_unlock(&node->mux);
 
 	return n;
@@ -91,7 +103,11 @@ dc_pread64(int fd, void *buff, size_t buflen, off64_t offset)
 	}
 
 	if( dc_real_lseek(node, offset, SEEK_SET) >=0 ) {
-		n = dc_real_read(node, buff, buflen);
+		if ( node->lcb ) {
+			n = dc_lcb_read(node, buff, buflen);
+		} else {
+			n = dc_real_read(node, buff, buflen);
+		}
 	}
 
 	m_unlock(&node->mux);

@@ -75,6 +75,29 @@ typedef struct {
 	int       isDirty;
 } ioBuffer;
 
+/* Addon for local cache-buffer */
+
+/* buffer index struct */
+typedef struct cb_index {
+	struct cb_index *prev;
+	struct cb_index *next;
+	char *bpo;              /* pointer to buffer */
+	size_t blen;            /* actual length of this buffer */
+	unsigned long lastused; /* last access number */
+	unsigned long nused;    /* access frequency */
+	off64_t bnum;           /* seq num of buffer in file */
+} cbindex_t;
+
+typedef struct {
+	size_t buflen;          /* length of buffer block */
+	cbindex_t *cbi;         /* array to stored buffer access info */
+	long nbuf;              /* num of buf blocks */
+	long nbcache;           /* num of cached buf blocks */
+	unsigned long nbread;   /* block read counter */
+	cbindex_t *currentcb;   /* pointer to current buffer-index */
+} local_cache_buffer_t;
+
+
 typedef struct vsp_node {
 	int dataFd;		/* data socket descriptor */
 	int fd;			/* contorl socket descriptor */
@@ -118,6 +141,8 @@ typedef struct vsp_node {
 #ifndef NOT_THREAD_SAFE
 	pthread_mutex_t mux;
 #endif /* NOT_THREAD_SAFE */
+
+	local_cache_buffer_t *lcb;
 
 }               vsp_Node;
 
