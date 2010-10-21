@@ -134,6 +134,7 @@ public class PerformanceTest extends Thread
         String fileName = args.argv(0);
         String factoryName = args.argv(1);
         args.shift();
+        args.shift();
 
 	ops = getOps(args);
         int concurrency =
