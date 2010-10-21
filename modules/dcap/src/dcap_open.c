@@ -26,6 +26,7 @@
 #include "dcap_checksum.h"
 #include "dcap_mqueue.h"
 #include "dcap_url.h"
+#include "dcap_lcb.h"
 #include "gettrace.h"
 #include "links.h"
 #include "node_plays.h"
@@ -61,6 +62,8 @@ dc_open(const char *fname, int flags,...)
 	char             *stamp;
 
 	int             isTrunc = 0;
+	int enableReadAhead;
+	int enableLocalCache = 0;
 	char *tmpName = NULL;
 	int tmpIndex;
 #ifdef WIN32
@@ -305,13 +308,21 @@ dc_open(const char *fname, int flags,...)
 
 	/* to be fast on the read use read-ahead,  so enable it
 	   the actual magick done in the dc_read */
-
+	enableReadAhead =
 #ifdef WIN32
-	if( (flags == O_RDONLY) || (flags == O_BINARY)) {
-#else
-	if( flags == O_RDONLY) {
-#endif  /* WIN32 */
+		flags == O_BINARY ||
+#endif
+		flags == O_RDONLY;
 
+	if(enableReadAhead && !(flags & DC_STAGE) &&
+	   getenv("DC_LOCAL_CACHE_BUFFER") != NULL) {
+			enableReadAhead = 0;
+			enableLocalCache = 1;
+			dc_debug(DC_INFO, "Switching off read-ahead; switching on local-cache buffer.");
+	}
+
+
+	if(enableReadAhead) {
 			dc_debug(DC_INFO, "Switching on read ahead.");
 			node->ahead = (ioBuffer *)malloc(sizeof(ioBuffer));
 			if(node->ahead == NULL) {
@@ -356,6 +367,22 @@ dc_open(const char *fname, int flags,...)
 	}
 
 	m_unlock(&node->mux);
+
+	if( enableLocalCache) {
+
+	  /* REVISIT: Gerd, I see the cache is allocated per open
+	     file. It would be nice to have a shared cache for open
+	     files. That would
+
+	     a) limit total memory usage rather than allocating a huge
+	        amount of memory for applications have many open
+	        files.
+
+	     b) improve utilization of the memory by providing LRU
+	        semantics across all open files rather than per
+	        file. */
+	  dc_lcb_init( node );
+	}
 
 	dc_debug(DC_TIME, "Cache open succeeded in %2.4fs.",
 #ifndef WIN32

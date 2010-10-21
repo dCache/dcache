@@ -23,6 +23,7 @@
 #include "dcap_fsync.h"
 #include "dcap_functions.h"
 #include "dcap_protocol.h"
+#include "dcap_lcb.h"
 #include "dcap_poll.h"
 #include "dcap_mqueue.h"
 #include "dcap_reconnect.h"
@@ -132,6 +133,10 @@ dc_close(int fd)
 		return system_close(fd);
 	}
 
+
+	if ( node->lcb != NULL ) {
+		dc_lcb_clean( node );
+	}
 
 	dc_real_fsync( node );
 

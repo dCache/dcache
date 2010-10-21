@@ -33,6 +33,7 @@ dcap_dup.c  \
 dcap_error.c  \
 dcap_fsync.c  \
 dcap_interpreter.c  \
+dcap_lcb.c  \
 dcap_lseek.c  \
 dcap_mkdir.c  \
 dcap_mqueue.c  \
@@ -67,6 +68,7 @@ xutil.c
 h_internal = sysdep.h \
 system_io.h \
 dcap_error.h \
+dcap_lcb.h \
 dcap_types.h \
 dcap_protocol.h \
 dcap_poll.h \
