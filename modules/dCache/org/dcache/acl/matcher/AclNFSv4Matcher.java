@@ -281,7 +281,7 @@ public class AclNFSv4Matcher extends AclMatcher {
             if ( isDir == null )
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
 
-            if ( isDir == Boolean.FALSE ) {
+            if ( isDir.equals( Boolean.FALSE) ) {
                 allowed = isAllowed(defMask, allowMask, AccessMask.READ_DATA.getValue());
                 if ( allowed != null ) {
                     if ( logger.isDebugEnabled() )
@@ -326,7 +326,7 @@ public class AclNFSv4Matcher extends AclMatcher {
             if ( isDir == null )
                 throw new IllegalArgumentException("Argument isDir is NULL, attribute: " + attribute);
 
-            if ( isDir == Boolean.FALSE )
+            if ( isDir.equals( Boolean.FALSE) )
                 accessMask = AccessMask.EXECUTE.getValue();
             break;
 
