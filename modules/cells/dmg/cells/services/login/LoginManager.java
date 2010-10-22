@@ -28,12 +28,10 @@ public class       LoginManager
        extends     CellAdapter
        implements  UserValidatable {
 
-  private final String       _cellName ;
   private final CellNucleus  _nucleus ;
   private final Args         _args ;
   private final ListenThread _listenThread ;
   private int          _connectionRequestCounter   = 0 ;
-  private int          _connectionAcceptionCounter = 0 ;
   private int          _connectionDeniedCounter    = 0 ;
   private String       _locationManager   = null ;
   private int          _loginCounter = 0 , _loginFailures = 0 ;
@@ -103,7 +101,6 @@ public class       LoginManager
 
       super( name , argString , false ) ;
 
-      _cellName = name ;
       _nucleus  = getNucleus() ;
       _args     = getArgs() ;
       try{
@@ -117,36 +114,21 @@ public class       LoginManager
            " [-keepAlive=<seconds>]"+
            " [-acceptErrorWait=<msecs>]"+
            " [args givenToLoginClass]" ) ;
-         //
-         // get the protocol
-         //
+
          _protocol = args.getOpt("prot") ;
-         if( _protocol == null )_protocol = "telnet" ;
+         checkProtocol();
+         _log.info( "Using Protocol : {}",_protocol ) ;
 
-         if( ! ( _protocol.equals("ssh")     ||
-                 _protocol.equals("telnet" ) ||
-                 _protocol.equals("raw" )        ) )
-                 throw new
-                 IllegalArgumentException(
-                 "Protocol must be telnet or ssh or raw" ) ;
-
-         _log.info( "Using Protocol : "+_protocol ) ;
-         //
-         // get the listen port.
-         //
          int listenPort    = Integer.parseInt( args.argv(0) ) ;
          args.shift() ;
-         //
+
          // which cell to start
-         //
          if( args.argc() > 0 ){
             _loginClass = Class.forName( args.argv(0) ) ;
-            _log.info( "Using login class : "+_loginClass.getName() ) ;
+            _log.info( "Using login class : {}", _loginClass.getName() ) ;
             args.shift() ;
          }
-         //
          // get the authentication
-         //
          _authenticator = args.getOpt("authenticator") ;
          _authenticator = _authenticator == null ? "pam" : _authenticator ;
 
@@ -197,28 +179,23 @@ public class       LoginManager
                _maxLogin = Integer.parseInt(maxLogin);
             }catch(NumberFormatException ee){/* bad values ignored */}
          }
-         //
+
          //  using the LoginBroker ?
-         //
          _loginBrokerHandler = new LoginBrokerHandler() ;
          addCommandListener( _loginBrokerHandler ) ;
-         //
+
          // enforce 'maxLogin' if 'loginBroker' is defined
-         //
          if( ( _loginBrokerHandler.isActive() ) &&
              ( _maxLogin < 0                  )    ) _maxLogin=100000 ;
-         //
+
          if( _maxLogin < 0 ){
             _log.info("MaxLogin feature disabled") ;
          }else{
-
             _nucleus.addCellEventListener( new LoginEventListener() ) ;
-
             _log.info("Maximum Logins set to :"+_maxLogin ) ;
          }
-         //
+
          // keep alive
-         //
          String keepAliveValue = args.getOpt("keepAlive");
          long   keepAlive      = 0L ;
          try{
@@ -230,20 +207,16 @@ public class       LoginManager
          _log.info("Keep Alive set to "+keepAlive+" seconds") ;
          keepAlive *= 1000L ;
          _keepAlive = new KeepAliveThread(keepAlive) ;
-         //
+
          // get the location manager
-         //
          _locationManager = args.getOpt("lm") ;
-         //
 
          _listenThread  = new ListenThread( listenPort ) ;
          _log.info( "Listening on port "+_listenThread.getListenPort() ) ;
 
 
          _nucleus.newThread( _listenThread , "listen" ).start() ;
-
          _nucleus.newThread( new LocationThread() , "Location" ).start() ;
-
          _nucleus.newThread( _keepAlive , "KeepAlive" ).start() ;
 
       }catch( Exception e ){
@@ -253,10 +226,21 @@ public class       LoginManager
          throw e ;
       }
 
-      start() ;
-
+      start();
   }
-  @Override
+
+    private void checkProtocol() throws IllegalArgumentException {
+        if (_protocol == null) {
+            _protocol = "telnet";
+        }
+        if (!(_protocol.equals("ssh") ||
+                _protocol.equals("telnet") ||
+                _protocol.equals("raw"))) {
+            throw new IllegalArgumentException("Protocol must be telnet or ssh or raw");
+        }
+    }
+
+    @Override
 public CellVersion getCellVersion(){
      try{
 
@@ -277,6 +261,7 @@ public CellVersion getCellVersion(){
      private double _brokerUpdateOffset = 0.1 ;
      private LoginBrokerInfo _info      = null ;
      private double _currentLoad        = 0.0 ;
+
      private LoginBrokerHandler(){
 
         _loginBroker = _args.getOpt( "loginBroker" ) ;
@@ -389,7 +374,6 @@ public CellVersion getCellVersion(){
         _info.setLoad(_currentLoad);
         try{
            sendMessage(new CellMessage(new CellPath(_loginBroker),_info));
-//           _log.info("Updated : "+_info);
         }catch(Exception ee){}
      }
      public void getInfo( PrintWriter pw ){
@@ -556,9 +540,8 @@ public CellVersion getCellVersion(){
         }
      }
   }
-  //
+
   // the cell implementation
-  //
   @Override
 public String toString(){
      return
@@ -618,7 +601,6 @@ public void cleanUp(){
      private int          _listenPort   = 0 ;
      private ServerSocket _serverSocket = null ;
      private boolean      _shutdown     = false ;
-     private boolean      _active       = true ;
      private Thread       _this         = null ;
      private long         _acceptErrorTimeout = 0L ;
      private boolean      _isDedicated  = false;
@@ -723,10 +705,7 @@ public void cleanUp(){
              }
          }else{
 
-             /**
-              *  put all local Ip addresses, except loopback
-              */
-
+//            put all local Ip addresses, except loopback
              try {
                  Enumeration<NetworkInterface> ifList = NetworkInterface.getNetworkInterfaces();
 
@@ -759,10 +738,12 @@ public void cleanUp(){
             try{
                socket = _serverSocket.accept() ;
                socket.setKeepAlive(true);
-            	if( _logSocketIO.isDebugEnabled() ) {
-            		_logSocketIO.debug("Socket OPEN (ACCEPT) remote = " + socket.getInetAddress() + ":" + socket.getPort() +
-            					" local = " +socket.getLocalAddress() + ":" + socket.getLocalPort() );
-            	}
+                if (_logSocketIO.isDebugEnabled()) {
+                    _logSocketIO.debug("Socket OPEN (ACCEPT) remote = " +
+                            socket.getInetAddress() + ":" + socket.getPort() +
+                            " local = " + socket.getLocalAddress() + ":" +
+                            socket.getLocalPort());
+                }
                _log.info("Nio Channel (accept) : "+(socket.getChannel()!=null));
 
 
@@ -770,14 +751,13 @@ public void cleanUp(){
                int currentChildHash = 0 ;
                 synchronized( _childHash ){ currentChildHash = _childCount ; }
                _log.info("New connection : "+currentChildHash);
-               if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
-						_connectionDeniedCounter++;
-						_log.warn("Connection denied " + currentChildHash + " > "
-								+ _maxLogin);
-						_logSocketIO.warn("number of allowed logins exceeded.");
-						new ShutdownEngine(socket);
-						continue;
-					}
+                if ((_maxLogin > 0) && (currentChildHash > _maxLogin)) {
+                    _connectionDeniedCounter++;
+                    _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
+                    _logSocketIO.warn("number of allowed logins exceeded.");
+                    new ShutdownEngine(socket);
+                    continue;
+                }
                _log.info( "Connection request from "+socket.getInetAddress() ) ;
                 synchronized( _childHash ){ _childCount ++; }
                _nucleus.newThread(
@@ -869,9 +849,11 @@ public void cleanUp(){
         _shutdown = true ;
 
         try{
-         	if( _logSocketIO.isDebugEnabled() ) {
-        		_logSocketIO.debug("Socket SHUTDOWN local = " + _serverSocket.getInetAddress() + ":" + _serverSocket.getLocalPort() );
-        	}
+            if (_logSocketIO.isDebugEnabled()) {
+                _logSocketIO.debug("Socket SHUTDOWN local = " +
+                        _serverSocket.getInetAddress() + ":" +
+                        _serverSocket.getLocalPort());
+            }
             _serverSocket.close() ; }
         catch(Exception ee){
             _log.warn( "ServerSocket close : "+ee  ) ;
@@ -925,8 +907,7 @@ public void cleanUp(){
           String userName = Subjects.getDisplayName(engine.getSubject());
           _log.info( "acceptThread ("+t+"): connection created for user "+userName ) ;
           Object [] args ;
-          //
-          //
+
           int p = userName.indexOf('@');
 
           if( p > -1 )userName = p == 0 ? "unknown" : userName.substring(0,p);
