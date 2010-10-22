@@ -8,6 +8,7 @@ import ch.qos.logback.core.spi.FilterReply;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 
+import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -31,7 +32,8 @@ public class CellThresholdFilterCompanion extends Filter<ILoggingEvent>
             return FilterReply.NEUTRAL;
         }
 
-        String cell = event.getMdc().get(CDC.MDC_CELL);
+        Map<String,String> mdc = event.getMdc();
+        String cell = (mdc == null) ? null : mdc.get(CDC.MDC_CELL);
         CellNucleus nucleus = CellNucleus.getLogTargetForCell(cell);
         if (nucleus == null) {
             return FilterReply.NEUTRAL;
