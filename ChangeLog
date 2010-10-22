@@ -1,3 +1,839 @@
+2010-10-07 14:27  pmillar
+
+	* src/Makefile.am: dcap: fix building on Solaris
+	  
+	  A previous commit (committed as r14667) broke compilation on
+	  Solaris machines when using the
+	  Solaris compiler. This patch fixes that problem.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2487/
+	  Acked-by: Owen
+
+2010-10-07 13:33  pmillar
+
+	* src/Makefile.am, src/dccp.c, src/print_size.c, src/print_size.h,
+	  src/sigfig.c, src/sigfig.h: dcap: add -H option to dccp that
+	  provides feedback during transfer
+	  
+	  Whilst in Karlsruhe for GridKa school, I was talking to someone
+	  about their experience of dCache
+	  being very slow when copying files into and from dCache via dccp.
+	  The user was unable to answer
+	  simple questions that might indicate what is the problem (where
+	  you waiting for a mover? was the
+	  checksum taking a long time? was the transfer slow on-average, or
+	  did it "stutter"?). I released
+	  that this information is currently difficult (or impossible) to
+	  obtain with dccp. Moreover, without
+	  any feedback during a transfer, one must have blind faith that
+	  the transfer is proceeding.
+	  
+	  This patch addresses this issue. It provides some feedback to the
+	  user during a transfer. The
+	  feedback uses the (old) method of writing output without the
+	  line-feed character ('\n') but using the
+	  carriage-return character ('\r') instead. Repeated use of such
+	  output gives the user the impression
+	  of a single line of text is being updated with new information.
+	  Some care is needed to append spaces
+	  to the end of the new version of the line if it has shrunk. This
+	  is to hide character(s) from the
+	  previous line.
+	  
+	  The transfer feedback line contains a progress bar followed by
+	  zero or more items. The items are:
+	  percentage of file transferred, number of bytes transferred and
+	  the average transfer rate. The code
+	  determines the width (number of columns) of the terminal
+	  dynamically and scales the output
+	  accordingly. If the terminal has sufficient width then all items
+	  are displayed and the bar is scaled
+	  to take (almost) all of the line's remaining capacity. If the
+	  width is too small to allow this then
+	  items are progressively switched off to provide additional space,
+	  allowing the progress bar to grow
+	  in size. This continues until a minimum width of the progress bar
+	  is achieved or all items are
+	  switched off (whichever happens first).
+	  
+	  The progress bar is a sequence of characters the first being the
+	  open square-bracket and the last
+	  being the close square-bracket. Those in between are either a
+	  dash ('-') or a hash ('#') and form
+	  the part that indicates the transfer's progress.
+	  
+	  If the size of the file being transferred is known in advance,
+	  the progress bar is a "percentage
+	  progress bar". This shows information as a sequence of zero or
+	  more hash symbols followed by zero or
+	  more dashes. The total number of symbols is fixed, for given a
+	  progress bar size. The number of
+	  hash- and dash- symbols is chosen to be proportional to the
+	  amount of data written and still to write
+	  respectively. The result is an ASCII-art version of the familiar
+	  GUI progress-bar. It is also how
+	  the rpm command shows progress.
+	  
+	  The following is an example line when the file size is known and
+	  the terminal is sufficiently wide to
+	  allow all items:
+	  
+	  [#######---------------------------------------------------------------]
+	  11% 45.0 MiB (4.09 MiB/s)
+	  
+	  If the size of the transfer isn't known in advance (e.g., data is
+	  taken from stdin) then it is
+	  impossible to show a "percentage activity bar". Instead, the
+	  progress bar is an "activity progress
+	  bar". This indicates bytes transferred as a shorter bar (made up
+	  of some five hashes). This shorter
+	  bar is initially left-most within the progress bar and "moves to
+	  the right" as data is written. When
+	  the shorter bar reaches the end of the activity bar, it wraps.
+	  (This similar to how Firefox shows
+	  progress under similar circumstances.)
+	  
+	  The following is an example when the transfer size is unknown and
+	  the terminal is sufficiently wide
+	  to allow all items:
+	  
+	  [-----#####----------------------------------------------------------------]
+	  8.00 MiB (4.00 MiB/s)
+	  
+	  In writing this support, I adding a function for formatting file
+	  sizes using SI binary prefixes (kiB,
+	  MiB, etc), taking care of aesthetics. The patch also updates the
+	  final line of output (which gives a
+	  summary of the transfer) to also use the new function.
+	  
+	  The following is an example of current dccp's final output line:
+	  
+	  417488294 bytes in 78 seconds (5226.97 KB/sec)
+	  
+	  This is an example of final output line after patch:
+	  
+	  417488294 bytes (398 MiB) in 76 seconds (5.24 MiB/s)
+	  
+	  Current limitations and future work:
+	  o no user feedback when the transfer stalls,
+	  o could add an estimate of the time remaining until the transfer
+	  finishes.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2400/
+	  Acked-by: Gerd
+	  Acked-by: Owen
+	  
+
+2010-09-23 08:08  pmillar
+
+	* src/dcap_error.c: dcap: fix type casting of type-punning
+	  
+	  In dcap_error.c, the support for thread-local variable,
+	  t_getspecific macro,
+	  which is a simple wrapper around pthread_getspecific(), is used
+	  in dcap_error to
+	  obtain a ptr to the thread-local errno. The dcap_error casts this
+	  pointer to a
+	  (void *), rather than (int *).
+	  
+	  Assigning to a type-punning, like this, is not allowed by C89/C90
+	  standard but
+	  historically, compilers turn a blind eye to them.
+	  
+	  It's legal to assign a (void *) point to any other kind of
+	  pointer without
+	  casting. The pthread_getspecific() function returns a (void *)
+	  pointer, so the
+	  explicit casts in dcap_error are actually unnecessary.
+	  
+	  The proposed patch fixes the "dereferencing type-punned pointer
+	  will break
+	  strict-aliasing rules" warnings.
+	  
+	  Patch: http://rb.dcache.org/r/2452/
+	  Target: trunk
+	  Acked-by: Gerd
+
+2010-09-23 08:02  pmillar
+
+	* src/dccp.c: dcap: fix possible use of uninitialised variable
+	  
+	  The copyfile method in dccp is responsible for copying the data
+	  from source to
+	  destination. This function allocates a buffer to hold an amount
+	  of data. If
+	  this allocation fails then the file size is not set and the
+	  corresponding print
+	  statements use an uninitialised value for the transferred size.
+	  
+	  This patch fixes this by initialising size to zero.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2457/
+	  Acked-by: Gerd
+
+2010-09-23 07:59  pmillar
+
+	* src/dcap_dirent.c: dcap: remove unused function declared in
+	  dcap_dirent
+	  
+	  The char2dirent is not used anywhere in dcap code. This patch
+	  removes it.
+	  
+	  Patch: http://rb.dcache.org/r/2458/
+	  Target: trunk
+	  Acked-by: Gerd
+
+2010-09-23 07:57  pmillar
+
+	* src/dcap_read.c: dcap: fix (void *) pointer arithmetic in
+	  dcap_read
+	  
+	  The buffer argument to dcap_real_read function is defined to be
+	  (void *), i.e., a
+	  pointer to some absolute location in memory.
+	  
+	  However, the dcap_real_read implementation treats the buffer
+	  pointer as if it
+	  pointed to an array of bytes, which is natural. However, in doing
+	  this, the code
+	  increments the pointer as data is read. This doesn't make sense
+	  for a (void *)
+	  pointer, it only makes sense for a pointer to an array of some
+	  type with
+	  well-defined length.
+	  
+	  This patch fixes this by accepting a (void *) pointer as an
+	  argument but
+	  assigning the value to a (char *) variable. This makes explicit
+	  the semantics
+	  currently only tacit in the code.
+	  
+	  Patch: http://rb.dcache.org/r/2460/
+	  Target: trunk
+	  Acked-by: Gerd
+
+2010-09-22 13:08  pmillar
+
+	* src/dcsuck.c: Silence compiler warning
+	  
+	  gcc emits a warning about possible misunderstanding of
+	  arithmetic bitwise operator precedence (AND has higher
+	  precedence than OR). It suggests putting parentheses around the
+	  term to make the logic explicit.
+	  
+	  This patch follows the compilers advice.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2459
+	  Acked-by: Tigran
+
+2010-09-22 10:17  pmillar
+
+	* ., config, plugins, plugins/gssapi, plugins/ssl, plugins/telnet,
+	  src: Teach SVN to ignore generated files.
+	  
+	  Tigran, Owen and Gerd are all happy with this.
+
+2010-09-21 12:29  pmillar
+
+	* src/io.c: dcap: remove two dead functions
+	  
+	  The file io.c contains two functions "writeln" and "readln" that
+	  are not used
+	  anywhere in dcap. This patch removes them.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2445/
+	  Acked-by: Owen
+
+2010-09-21 12:27  pmillar
+
+	* src/dcap_write.c: dcap: fix dc_writev bug
+	  
+	  The dc_writev function wraps the POSIX writev vector write (a.k.a
+	  "gather write")
+	  function. It loops over the vector and builds a complete buffer
+	  that is sent to the
+	  mover.
+	  
+	  The loop depends on the variable iobuf_pos, which is incremented
+	  when processing the
+	  elements of the vector; however, iobuf_pos is not initialised to
+	  zero so may take an
+	  arbitrary value.
+	  
+	  This patch fixes this by initialising iobuf_pos to zero.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2444/
+	  Acked-by: Owen
+
+2010-09-21 12:25  pmillar
+
+	* src/dcap_stream.c: dcap: fix bug in dc_fgets
+	  
+	  The function dc_fgets is the dcap wrapper of the POSIX fgets. The
+	  implementation
+	  contains a bug: if the size argument is zero then the return
+	  value depends on an
+	  uninitialised variable: n. If the uninitialised value of n is
+	  less than zero then
+	  the function returns the wrong value.
+	  
+	  The patch fixes this by initialising n to zero.
+	  
+	  Patch: http://rb.dcache.org/r/2443/
+	  Target: trunk
+	  Acked-by: Owen
+
+2010-09-21 12:22  pmillar
+
+	* src/dcap.c: dcap: fix hostname label initialisation
+	  
+	  In dcap, if the hostname of the door did not resolve then the
+	  logging would attempt
+	  to record an uninitialised string.
+	  
+	  This patch fixes this.
+	  
+	  Target: trunk
+	  Patch: http://rb.dcache.org/r/2441/
+	  Acked-by: Owen
+
+2010-09-21 12:20  pmillar
+
+	* src/dcap.c: dcap: ensure ConfirmationBlock is initialised before
+	  replying
+	  
+	  The compiler noticed that the ConfirmationBlock variable "reply"
+	  is not completely
+	  initialised in the error case.
+	  
+	  This patch fixes this by initialising the structure to an
+	  all-zeros state before
+	  writing the code part.
+	  
+	  Patch: http://rb.dcache.org/r/2440/
+	  Acked-by: Owen
+	  Target: trunk
+
+2010-09-21 12:17  pmillar
+
+	* src/dcap.c: dcap: add missing return type in function declaration
+	  
+	  A previous commit added a function declaration without including
+	  the return-type of
+	  the function; whilst technically legal, it is not good practice
+	  and results in a
+	  compiler warning.
+	  
+	  This patch fixes this issue by adding the return-type for the
+	  function.
+	  
+	  Patch: http://rb.dcache.org/r/2439/
+	  Target: trunk
+	  Acked-by: Owen
+
+2010-09-21 12:01  pmillar
+
+	* src/dcap_acl.c: dcap: fix Solaris building (second part)
+	  
+	  The file debug_level.h has a dual purpose: it contains the
+	  definitions of the
+	  various debug levels and it also is the entry-point for the HAVE_
+	  macros that the
+	  autoconf system builds.
+	  
+	  In future, these two purposes need to be separated; however, for
+	  now, we fix the
+	  compilation problem by accepting the dual-role of this file and
+	  including it when we
+	  need to know the value of the HAVE_ macros.
+	  
+	  Patch: http://rb.dcache.org/r/2451
+	  Acked-by: Tigran
+	  Target: trunk
+
+2010-09-21 10:31  pmillar
+
+	* src/dcap.h.in, src/dcap_preload.c: dcap: fix compilation on
+	  Solaris
+	  
+	  There were two problems when trying to compile dcap for Solaris
+	  that a previous
+	  patch introduced.
+	  
+	  The first problem is trivial: the man-page for the stat(2)
+	  command states that
+	  sys/types.h, sys/stat.h and unistd.h must be included. However,
+	  it doesn't state in
+	  which header file struct stat is defined.
+	  
+	  The dcap.h file includes function prototypes using struct stat.
+	  It includes
+	  sys/types.h, but not sys/stat.h. On GNU systems, including
+	  sys/types.h is
+	  sufficient for a definition of struct stat; however, on Solaris
+	  machines sys/stat.h
+	  must be included for the definition of struct stat.
+	  
+	  The fix is to include sys/stat.h in dcap.h
+	  
+	  The second problem is slightly more complex: on Solaris, the
+	  stat(2), lstat(2) and
+	  fstat(2) methods are defined, in the header sys/stat_impl.h, as
+	  static local
+	  functions. This means that each compiled object file will include
+	  its own
+	  implementation of the stat, lstat and fstat functions. These
+	  implementations are
+	  simply a wrapper around "x"-versions of the functions (_xstat,
+	  _lxstat, _fxstat
+	  respectively). The purpose is to encode a hard-coded version
+	  number as an argument
+	  to these methods as a backwards compatibility measure.
+	  
+	  However, this means that, in dcap_preload.c, there are two
+	  definitions for each of
+	  the three stat-functions (stat, lstat, fstat). The first set of
+	  definitions come
+	  from sys/stat_impl.h and the second set comes from dcap_preload.c
+	  itself. The
+	  proposed solution is to move the definition of stat, lstat and
+	  fstat into the
+	  corresponding #else clause. This allows the "built-in" wrapper in
+	  Solaris to
+	  operate, mapping (for example) stat --> _xstat. The _xstat
+	  implementation is
+	  overloaded by dcap_preload.c, which will handle the request using
+	  dcap's
+	  implementation of stat.
+	  
+	  Patch: http://rb.dcache.org/r/2449/
+	  Target: trunk
+	  Acked-by: Tigran
+
+2010-09-20 17:01  pmillar
+
+	* src/dcap_poll.c: dcap: fix strict C90 compliance in dcap_poll.c
+	  
+	  Strict C90 compliance requires that variable declaration and code
+	  may not be mixed.
+	  
+	  This is not true for dcap_poll.c
+	  
+	  This patch fixes this.
+	  
+	  Patch: http://rb.dcache.org/r/2442/
+	  Target: trunk
+	  Acked-by: Owen
+
+2010-09-20 14:28  pmillar
+
+	* src/Makefile.am, src/array.c, src/br.c, src/char2crc.c,
+	  src/char2crc.h, src/dcap.c, src/dcap.dsp, src/dcap_accept.c,
+	  src/dcap_access.c, src/dcap_acl.c, src/dcap_ahead.c,
+	  src/dcap_ahead.h, src/dcap_checksum.c, src/dcap_checksum.h,
+	  src/dcap_chmod.c, src/dcap_chown.c, src/dcap_close.c,
+	  src/dcap_close.h, src/dcap_command.c, src/dcap_debug.c,
+	  src/dcap_debug.h, src/dcap_dirent.c, src/dcap_dup.c,
+	  src/dcap_error.c, src/dcap_error.h, src/dcap_fsync.c,
+	  src/dcap_fsync.h, src/dcap_functions.h, src/dcap_interpreter.c,
+	  src/dcap_lib.dsp, src/dcap_lseek.c, src/dcap_lseek.h,
+	  src/dcap_mkdir.c, src/dcap_mqueue.c, src/dcap_nodes.h,
+	  src/dcap_open.c, src/dcap_poll.c, src/dcap_poll.h,
+	  src/dcap_preload.c, src/dcap_preload64.c, src/dcap_protocol.c,
+	  src/dcap_protocol.h, src/dcap_read.c, src/dcap_read.h,
+	  src/dcap_reconnect.c, src/dcap_rename.c, src/dcap_shared.h,
+	  src/dcap_signal.c, src/dcap_signal.h, src/dcap_stat.c,
+	  src/dcap_stream.c, src/dcap_test.c, src/dcap_types.h,
+	  src/dcap_unix2win.c, src/dcap_unix2win.h, src/dcap_unlink.c,
+	  src/dcap_url-test.c, src/dcap_url.c, src/dcap_url.h,
+	  src/dcap_version.c.in, src/dcap_win32.h, src/dcap_write.c,
+	  src/dcap_write.h, src/dccp.c, src/dccp_linux_directio.c,
+	  src/dcsuck.c, src/dispatcher.c, src/fnal_thread.c,
+	  src/gettrace.c, src/gettrace.h, src/input_parser.c, src/io.c,
+	  src/io.h, src/ioTunnel.h, src/lineparser.c, src/lineparser.h,
+	  src/linux_trace.c, src/node_plays.c, src/node_plays.h,
+	  src/parser.c, src/passive.c, src/passive.h, src/pnfs.c,
+	  src/readv_test.c, src/socket_nio.c, src/stack_trace.h,
+	  src/str2errno.h, src/string2stat.c, src/string2stat.h,
+	  src/system_io.c, src/thread_test.c, src/trace_back.h,
+	  src/tunnelManager.c, src/wdccp.c, src/win32_dlfcn.h,
+	  src/win32_libdl.c, src/win32_libdl.h: dcap: rationalise header
+	  file usage
+	  
+	  Currently, dcap's code base has somewhat confused use of header
+	  files and
+	  prototypes.
+	  
+	  The dcap.h file contains all public material (macros, prototypes,
+	  etc).
+	  This file doesn't #include any other files and is intended for
+	  distribution
+	  with the library.
+	  
+	  Prototypes for non-public, shared functions are found one or more
+	  of these
+	  places:
+	  o in the dcap_shared.h file (either directly or by this file's
+	  #include of
+	  additional header files),
+	  o individual header files corresponding to the source file (e.g.,
+	  functions
+	  defined in dcap_foo.c are prototyped in dcap_foo.h),
+	  o individual header files with dissimilar names (functions
+	  defined in
+	  dcap_foo.c are prototyped in dcap_bar.h),
+	  o locally, in C files often just before they are used.
+	  
+	  For some functions, the prototypes are duplicated (some dcap code
+	  sees one
+	  prototype others see a different prototype). Some functions are
+	  declared in
+	  files that don't have access to (can't "see") that function's
+	  prototype.
+	  Both practises leave open the risk that the function
+	  implementation and code
+	  calling the function have different idea of the function's
+	  signature ...
+	  something the compiler could issue a warning about.
+	  
+	  Another issue with the current dcap code is with functions that
+	  are only
+	  used in the file that declares them. Most of these are declared
+	  statically
+	  (so the function's name isn't exposed to the linker). However
+	  some
+	  functions have been missed. These missed functions pollute the
+	  function
+	  namespace and make it harder to spot dead code.
+	  
+	  Yet another issue is that some macros and constant were
+	  duplicated: any
+	  mismatch between the declarations would lead to
+	  difficult-to-diagnose bugs.
+	  
+	  This patch tries to rationalise the header file usage in dcap.
+	  After the
+	  patch ...
+	  
+	  The dcap.h file contains all public material (as before),
+	  
+	  Each C file has a corresponding header file with the .c replaced
+	  with .h
+	  (e.g., foo.c --> foo.h). The exception is for dcap.c. The
+	  corresponding file cannot be called dcap.h since that file
+	  already
+	  exists; instead, dcap_functions.h is used instead.
+	  
+	  All functions are prototyped in precisely one location. That
+	  location
+	  depends on how the function is used:
+	  
+	  For functions that are not public and are used only in the
+	  file that declares them, the prototype is near the beginning
+	  of that file and is static (the actual declaration doesn't
+	  have to be static).
+	  
+	  For functions that are not public and are shared (used in a
+	  file other than where the function is declared) the
+	  prototype is in the corresponding header file (e.g.,
+	  dcap_foo.h for functions declared in dcap_foo.c).
+	  
+	  For functions that are public, the prototype is in the file
+	  dcap.h.
+	  
+	  All declarations of a function have access to that file's
+	  (single)
+	  prototype (e.g., via a #include). This allows the compiler to
+	  emit a
+	  warning if the declaration doesn't match the prototype.
+	  
+	  Where it makes sense, the declaration of some structures has
+	  moved to
+	  the corresponding header file; for example, the declaration of
+	  the
+	  checksum structure is now in dcap_checksum.h. However, for now,
+	  the
+	  majority of the structures remain in dcap_types.h (may fix this
+	  with
+	  later patches).
+	  
+	  Files that no longer have any content are deleted; in particular,
+	  the dcap_shared.h file.
+	  
+	  All include statements for dcap header files use the double-quote
+	  form:
+	  for example, #include "dcap_foo.h"
+	  
+	  All system library includes use the angle-bracket form; for
+	  example,
+	  #include <stdlib.h>
+	  
+	  All preprocessor define statements (declaring a macro or
+	  constants) are
+	  declared in precisely one location.
+	  
+	  Acked-by: Gerd
+	  Acked-by: Owen
+	  Target: Trunk
+	  Patch: http://rb.dcache.org/r/2380/
+
+2010-09-17 12:55  omsynge
+
+	* src/dcap.c, src/dcap_open.c: dcap invalid parsing error catching
+	  moved to later stage to unify as suggested by Charles.
+	  
+	  Since the old error checking did not handle all cases of renaming
+	  files or stat I have moved the error handling to where Charles
+	  suggested.
+	  
+	  Signed-off by: Tigran and Paul
+	  http://rb.dcache.org/r/2431/
+
+2010-09-16 15:38  omsynge
+
+	* configure.ac: bumping the version number
+
+2010-09-16 15:26  omsynge
+
+	* src/dcap_open.c: dcap: name_invalid error throwing.
+	  
+	  The characters '\n' and an un escaped '"' will cause errors for
+	  dcap causing a protocol violation and the code hanging.
+	  
+	  This code checks for invalid file names.
+	  
+	  The code checks in two places, as it should not effect local file
+	  system names.
+	  
+	  Signed-off by: Tigran Mkrtchyan
+	  http://rb.dcache.org/r/2426/
+
+2010-09-16 13:18  omsynge
+
+	* src/dcap_open.c: removing accidentally commited code
+
+2010-09-16 13:16  omsynge
+
+	* src/dcap.c, src/dcap_open.c: removing accidently commited debug
+	  information
+
+2010-09-16 12:42  omsynge
+
+	* src/dcap.c: dcap: copy and paste error on changes.
+	  
+	  Fis to a clear error, which occurs on transfers without debugging
+	  but not with debugging.
+	  
+	  This fix is clearly needed, and fixing it fixes behavior without
+	  debugging.
+	  
+	  Signed-off by: Tigran Mkrtchyan
+	  http://rb.dcache.org/r/2422/
+
+2010-09-15 12:11  omsynge
+
+	* src/dcap.c, src/dcap_str_util.c: dcap:Simple logic error when not
+	  having to increase string length.
+	  
+	  the buffers are being swapped so that the output buffer can be
+	  re-used as an input buffer for subsequent calls to this routine.
+	  The old code only did this when the allocation buffer was growing
+	  larger.
+	  
+	  Signed-off by: Paul
+	  http://rb.dcache.org/r/2414/
+
+2010-09-13 16:11  omsynge
+
+	* src/dcap.c, src/dcap_str_util.c, src/dcap_str_util.h: dcap :
+	  memory issues Protection against message truncation
+	  
+	  Charles Waldman was getting messages of character lengths in the
+	  region of 3220. Along with messages from dcache saying missing
+	  parameters.
+	  
+	  http://rt.dcache.org/Ticket/Display.html?id=5774
+	  
+	  I looked at the previous patch, http://rb.dcache.org/r/2027 which
+	  addressed the issue of over running the buffer, but did not solve
+	  the message truncation issue. This patch solves both the issues
+	  solved in http://rb.dcache.org/r/2027
+	  
+	  Like the previous patch I based this one on the error handling
+	  from the man page from snprintf, I also solve the issue that the
+	  C language specification says that the, for s*printf family of
+	  functions, the output buffer must not overlap with the inputs. If
+	  they do the result is undefined.
+	  
+	  Signed-off by: Paul and Tigran
+	  http://rb.dcache.org/r/2356/
+
+2010-09-10 16:00  omsynge
+
+	* dcap.spec.in: mock dcap build issue adding BuildRequires:
+	  zlib-devel to rpm and srpm
+	  
+	  is needed to make "mock" work correctly, Brian Bockelman is using
+	  "mock" to build dcap for OSG.
+	  
+	  Signed-off by: Tigran
+	  http://rb.dcache.org/r/2399/
+
+2010-09-03 15:01  pmillar
+
+	* src/win32_dlfcn.h: Whitespace-only change: convert DOS ^M^J line
+	  endings to unix-style ^J
+
+2010-09-03 14:58  pmillar
+
+	* src/win32_libdl.c: Whitespace-only change: convert DOS ^M^J line
+	  endings to unix-style ^J
+
+2010-09-03 09:00  pmillar
+
+	* src/dcap_unix2win.c: Whitespace-only change: convert DOS ^M^J
+	  line endings to unix-style ^J
+
+2010-09-03 07:08  pmillar
+
+	* src/currentThread.c: dcap: remove file and function that isn't
+	  used anywhere
+	  
+	  The file currentThread.c contains a single function that isn't
+	  used anywhere. The file itself isn't
+	  compiled.
+	  
+	  Patch: http://rb.dcache.org/r/2370/
+	  Target: trunk
+	  Acked-by: Tigran Mkrtchyan
+
+2010-09-01 10:27  omsynge
+
+	* AUTHORS, COPYING, ChangeLog, INSTALL, Makefile.am, README,
+	  configure.ac, dcap.spec.in: dcap packaging fixes, some files
+	  where removed preventing rpm build succeeding.
+	  
+	  
+	  Add some basic documentation to fix lack of rpm build, maybe the
+	  error handling patches shoudl be removed but wanted to store them
+	  some where safe,
+	  
+	  rpm building now works again.
+	  
+	  Signed-off by: Paul and Tigran
+	  http://rb.dcache.org/r/2311
+
+2010-08-30 13:59  pmillar
+
+	* src/Makefile.am, src/dcap.c, src/dcap_poll.c,
+	  src/dcap_str_util.c, src/dcap_str_util.h, src/dcap_url.c,
+	  src/dccp.c, src/dcsuck.c: Ticket #5690:
+	  
+	  http://rt.dcache.org/Ticket/Display.html?id=5690
+	  
+	  describes how dcap library has code of the form:
+	  
+	  sprintf(s, "%s ...", s, ...);
+	  
+	  Ostensibly, this code will append some text to the end of s;
+	  however, the code
+	  is broken. The C language specification says that the, for
+	  s*printf family of
+	  functions, the output buffer must not overlap with the inputs. If
+	  they do the
+	  result is undefined.
+	  
+	  For many platforms, the above construct would work as expected:
+	  the string s
+	  would be appended. However, when gcc is invoked with
+	  -Wp,-D_FORTIFY_SOURCE=2
+	  flag and -O2 then the above construct produces unexpected
+	  results. These
+	  options for gcc are those used when creating official Fedora
+	  packages.
+	  
+	  This patch removes the reliance on this non-portable behaviour.
+	  It introduces
+	  two new functions: dc_safe_strncat and dc_snaprintf.
+	  
+	  dc_safe_strncat is similar to strncat except that the size
+	  parameter refers to
+	  the size of the destination string's storage. A canonical usage
+	  is:
+	  
+	  char dst [100];
+	  
+	  dc_safe_strncat( dst, sizeof(dst), src);
+	  
+	  This will append dst with src without overflowing dst. dst is
+	  expected to be
+	  '\0'-terminated on entering the function and will be
+	  '\0'-terminated when the
+	  function returns.
+	  
+	  dc_snaprintf() is a variation on snprintf(). The parameters have
+	  the same
+	  meaning as snprintf() but the string resulting from the
+	  formatting is appended
+	  on the end of the first argument string rather than replacing any
+	  existing
+	  content. Thus a call like:
+	  
+	  char dst [100];
+	  strcpy( dst, "Example:");
+	  dc_snaprintf( dst, sizeof(dst), " %d", 10);
+	  printf( "%s\n", dst);
+	  
+	  will produce output:
+	  
+	  Example: 10
+	  
+	  In addition to removing the dependency on sprintf for appending a
+	  string, the
+	  code also removes the risk of overflowing the string buffer when
+	  building the
+	  dcap command.
+	  
+	  The patch also removes a bug in dcap_poll.c where a poll event
+	  tagged
+	  POLLRDBAND would be processed twice.
+	  
+	  Patch: http://rb.dcache.org/r/2027/
+	  Acked-by: Thomas
+	  Acked-by: Tigran
+	  Target: trunk
+
+2010-08-25 16:26  omsynge
+
+	* AUTHORS, Makefile.am, dcap.spec.in, src/dcap.c,
+	  src/dcap_command.c, src/dcap_poll.c, src/dcap_reconnect.c:
+	  reverting patch applied in error
+
+2010-08-25 16:22  omsynge
+
+	* AUTHORS, Makefile.am, configure.ac, dcap.spec.in, src/dcap.c,
+	  src/dcap_command.c, src/dcap_poll.c, src/dcap_reconnect.c: dcap
+	  build process configure error with no value set for
+	  LD_LIBRARY_PATH preventing globus plugin being detected as
+	  possible to compile
+	  
+	  It seems a LD_LIBRARY_PATH of the value ":/opt/globus/lib/" does
+	  not allow compilation correctly thsi coudl be set by configure
+	  when no LD_LIBRARY_PATH was set.
+	  
+	  This patch makes it so when no LD_LIBRARY_PATH is set the value
+	  for test linking of globus will be set to the value
+	  --with-globus-lib set as rather than the value :/globus/lib/dir
+	  
+	  Signed-off by: Paul
+	  http://rb.dcache.org/r/2305
+
 2010-08-11 13:59  behrmann
 
 	* dcap.spec.in: libs: Upgrade to Apache Active MQ 5.3.2
@@ -262,7 +1098,7 @@
 	  Signed-off by: Paul
 	  http://rb.dcache.org/r/1712/
 
-2010-03-26 10:00  omsyngeCX
+2010-03-26 10:00  omsynge
 
 	* configure.ac, dcache-dcap.spec.in, dcap.spec.in: packaging to
 	  sort out yum repos
