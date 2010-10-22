@@ -12,7 +12,6 @@
        For each of these jar files there are targets below -->
 
     <property name="dcache.jar" location="${classesDir}/dcache.jar" />
-    <property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 
 	<target name="-isUptodate.dcache.jar" depends="-isUptodate.dcache.jar-classes,-isUptodate.dcache.jar-confs">
 		<condition property="dcache.jar.upToDate">
@@ -44,19 +43,6 @@
                     <srcfiles dir="${dcache.src}">
                         <include name="**/*.xml" />
                         <include name="**/*.jdo" />
-                    </srcfiles>
-                </uptodate>
-            </and>
-        </condition>
-    </target>
-
-    <target name="-isUptodate.xrootd-tokenauthz.jar">
-        <condition property="xrootd-tokenauthz.jar.upToDate">
-            <and>
-                <available file="${xrootd-tokenauthz.jar}" type="file" />
-                <uptodate targetfile="${xrootd-tokenauthz.jar}">
-                    <srcfiles dir="${dcache.src}">
-                        <include name="**/*.java" />
                     </srcfiles>
                 </uptodate>
             </and>
@@ -143,11 +129,6 @@
         <path refid="dependency.classpath" />
     </path>
 
-    <!-- Classpath for xrootd-tokenauthz.jar -->
-
-    <path id="xrootd-tokenauthz.classpath">
-        <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
-    </path>
 
     <!--
         Targets for dcache.jar
@@ -223,8 +204,6 @@
             <include name="org/**" />
             <exclude name="diskCacheV111/scripts/**" />
             <exclude name="diskCacheV111/tomcat/**" />
-            <exclude name="org/dcache/xrootd/security/plugins/**" />
-            <exclude name="org/dcache/xrootd/tests/**" />
         </javac>
 
     </target>
@@ -298,44 +277,6 @@
                 <attribute name="Package-Title" value="dmg.util" />
                 <attribute name="Package-Version" value="${release.name}" />
                 <attribute name="Package-Vendor" value="${vendor}" />
-            </manifest>
-        </jar>
-
-    </target>
-
-    <!-- xrootd-tokenauthorization plugin -->
-    <target name="-xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" depends="-dcache.jar">
-
-        <mkdir dir="${buildDir}/xrootd-tokenauthz" />
-
-        <javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-            <src path="${dcache.src}" />
-
-            <classpath refid="cells.classpath" />
-            <classpath refid="dcache.classpath" />
-            <classpath refid="xrootd-tokenauthz.classpath" />
-
-            <include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
-        </javac>
-    </target>
-
-    <!--
-        build xrootd-tokenauthz.jar, compile if required
-    -->
-    <target name="-xrootd-tokenauthz.jar" depends="-isUptodate.xrootd-tokenauthz.jar,-xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate">
-
-        <jar jarfile="${xrootd-tokenauthz.jar}">
-            <fileset dir="${buildDir}/xrootd-tokenauthz" />
-
-            <manifest>
-                <section name="Shared">
-                    <attribute name="Title" value="dCache-xrootd tokenauthorization plugin" />
-                    <attribute name="Vendor" value="${vendor}" />
-                    <attribute name="Date" value="${jar.timestamp}" />
-                </section>
-                <section name="Copyright">
-                    <attribute name="Copy" value="${copyright}" />
-                </section>
             </manifest>
         </jar>
 
@@ -578,15 +519,6 @@
             <!-- This mapper strips off all leading directory information -->
             <mapper type="flatten" />
          </copy>
-
-    </target>
-
-    <target name="-xrootd-tokenauthz.bin" depends="-xrootd-tokenauthz.jar">
-
-        <mkdir dir="${server.bin.dir}/classes" />
-
-        <!-- jar file  -->
-        <copy file="${classesDir}/xrootd-tokenauthz.jar" todir="${server.bin.dir}/classes" />
 
     </target>
 

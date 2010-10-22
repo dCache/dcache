@@ -7,8 +7,8 @@
 
     <property name="findbugs.home" value="${libDir}/findbugs" />
     <property name="findbugs.jvmargs" value="-Xmx512M" />
-    
-    <target name="findbugs" depends="-srm.bin,-xrootd-tokenauthz.bin,-javatunnel.bin" description="bug hunting">
+
+    <target name="findbugs" depends="-srm.bin,-javatunnel.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar" />
         <findbugs home="${findbugs.home}"
             output="html" outputFile="${distDir}/findbugs.html"
@@ -21,12 +21,11 @@
             <class location="${classesDir}/dcache.jar" />
             <class location="${classesDir}/srm.jar" />
             <class location="${classesDir}/javatunnel.jar" />
-            <class location="${classesDir}/xrootd-tokenauthz.jar" />
             <class location="${webappBuildDir}/webadmin.jar" />
         </findbugs>
     </target>
 
-    <target name="findbugs-testbuild" depends="-srm.bin,dcache,-xrootd-tokenauthz.bin,-javatunnel.bin" description="bug hunting">
+    <target name="findbugs-testbuild" depends="-srm.bin,dcache,-javatunnel.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar" />
         <findbugs home="${findbugs.home}"
             output="xml:withMessages"
@@ -39,7 +38,6 @@
             <class location="${classesDir}/dcache.jar" />
             <class location="${classesDir}/srm.jar" />
             <class location="${classesDir}/javatunnel.jar" />
-            <class location="${classesDir}/xrootd-tokenauthz.jar" />
             <class location="${webappBuildDir}/webadmin.jar" />
             <sourcePath path="modules/cells" />
             <sourcePath path="modules/dCache" />

@@ -102,7 +102,6 @@
 	<include name="cells-protocols.jar"/>
 	<include name="javatunnel.jar"/>
 	<include name="srm.jar"/>
-	<include name="xrootd-tokenauthz.jar"/>
       </patternset>
 
       <!-- all other jar files are external libraries -->

@@ -11,7 +11,6 @@
         <pathelement location="${classesDir}/dcache.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${classesDir}/xrootd-tokenauthz.jar" />
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${libDir}/Chimera/chimera-core.jar" />
         <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
