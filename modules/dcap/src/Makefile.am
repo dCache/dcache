@@ -66,11 +66,26 @@ tunnelManager.c  \
 xutil.c
 
 h_internal = sysdep.h \
+char2crc.h \
 system_io.h \
 dcap_error.h \
 dcap_lcb.h \
 dcap_types.h \
 dcap_protocol.h \
+dcap_functions.h \
+dcap_fsync.h \
+str2errno.h \
+string2stat.h \
+dcap_read.h \
+dcap_write.h \
+sigfig.h \
+print_size.h \
+dcap_close.h \
+dcap_lseek.h \
+passive.h \
+gettrace.h \
+lineparser.h \
+node_plays.h \
 dcap_poll.h \
 dcap_mqueue.h \
 array.h \
