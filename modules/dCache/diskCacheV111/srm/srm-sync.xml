@@ -35,7 +35,7 @@
     <property name="encrypt" value="true"/>
     <property name="requireClientAuth" value="true"/>
     <property name="acceptNoClientCerts" value="false"/>
-    <property name="gssMode" value="gsi"/>
+    <property name="gssMode" value="${srmGssMode}"/>
     <property name="handshakeTimeout" value="10000" />
     <property name="millisecBetweenHostCertRefresh" value="#{ ${hostCertificateRefreshPeriod} * 1000 }" />
     <property name="millisecBetweenTrustAnchorRefresh" value="#{ ${trustAnchorRefreshPeriod} * 1000 }" />

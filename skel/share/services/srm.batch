@@ -6,6 +6,7 @@
 #   Make sure we got what we need.
 #
 check -strong port
+check -strong srmGssMode
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
 check -strong srmJettyConnectorType
@@ -265,6 +266,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -export \
         -srmPort=${port} \
         -srmHost=${srmHost} \
+        -srmGssMode=${srmGssMode} \
         -localSrmHosts=${localSrmHosts} \
         -srmTimeout=${srmTimeout} \
         -srmPnfsManager=${srmPnfsManager} \
