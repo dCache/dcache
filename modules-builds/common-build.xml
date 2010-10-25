@@ -92,12 +92,8 @@
         <!-- <mkdir dir="${server.bin.dir}/classes/dcache-common" /> -->
         <copy file="${classesDir}/dcache-common.jar" todir="${server.bin.dir}/classes" />
 	<copy todir="${server.bin.dir}/classes/batik">
-            <fileset dir="${libDir}/batik-1.7/">
-                <and>
-                    <filename name="**/*.jar"/>
-                </and>
-            </fileset>
+            <fileset dir="${libDir}/batik-1.7/" includes="**/*.jar"
+                     excludes="lib/xml-apis.jar,lib/xerces_2_5_0.jar"/>
         </copy>
-
     </target>
 </project>

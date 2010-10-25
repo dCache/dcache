@@ -42,6 +42,8 @@
 
         <remoteRepository id="dcache.repository"
                           url="http://www.dcache.org/nexus/content/groups/public" />
+        <remoteRepository id="datanucleus.repository"
+                          url="http://www.datanucleus.org/downloads/maven2"/>
 
         <!-- Suppress some dependencies: Dependencies with scope
              'provided' are not included in the runtime classpath. We
@@ -77,6 +79,14 @@
         <dependency groupId="org.glite" artifactId="glite-security-trustmanager" version="1.8.16-1.norefresh" />
         <dependency groupId="org.glite" artifactId="glite-security-util-java" version="1.4.0-1" />
         <dependency groupId="org.glite" artifactId="glite-security-voms-api-java" version="1.9.8-1" />
+        <dependency groupId="javax.jdo" artifactId="jdo2-api" version="2.3-ec"/>
+        <dependency groupId="org.apache.geronimo.specs" artifactId="geronimo-jpa_2.0_spec" version="1.1"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-core" version="2.1.2"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-cache" version="2.1.2"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-connectionpool" version="2.0.3"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-enhancer" version="2.1.1"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-jpa" version="2.1.1"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.1.2"/>
     </artifact:dependencies>
 
     <property name="cog.libDir" value="${libDir}/cog" />

@@ -99,6 +99,7 @@ public abstract class TransferManager extends AbstractCell {
 	/**      */
 	public TransferManager(String cellName, String argString) throws Exception {
 		super(cellName, argString);
+
 		log.debug("Calling constructor(TransferManager) : "+cellName);
 		Args _args = new Args(argString);
 
@@ -147,7 +148,7 @@ public abstract class TransferManager extends AbstractCell {
 			try {
 				Properties properties = new Properties();
 				properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-						       "org.jpox.PersistenceManagerFactoryImpl");
+						       "org.datanucleus.jdo.JDOPersistenceManagerFactory");
 				properties.setProperty("javax.jdo.option.ConnectionDriverName", jdbcDriver);
 				properties.setProperty("javax.jdo.option.ConnectionURL",jdbcUrl);
 				properties.setProperty("javax.jdo.option.ConnectionUserName",user);
@@ -165,13 +166,13 @@ public abstract class TransferManager extends AbstractCell {
 				//   javax.jdo.option.RestoreValues: false
 				//   javax.jdo.option.IgnoreCache: false
 				//   javax.jdo.option.Multithreaded: false
-				properties.setProperty("org.jpox.autoCreateSchema","true");
-				properties.setProperty("org.jpox.validateTables","false");
-				properties.setProperty("org.jpox.validateConstraints","false");
-				properties.setProperty("org.jpox.autoCreateColumns","true");
+				properties.setProperty("datanucleus.autoCreateSchema","true");
+				properties.setProperty("datanucleus.validateTables","false");
+				properties.setProperty("datanucleus.validateConstraints","false");
+				properties.setProperty("datanucleus.autoCreateColumns","true");
 
 // below is default, supported are "LowerCase", "PreserveCase"
-//                properties.setProperty("org.jpox.identifier.case","UpperCase");
+//                properties.setProperty("datanucleus.identifier.case","UpperCase");
 
 				PersistenceManagerFactory pmf =
 					JDOHelper.getPersistenceManagerFactory(properties);
@@ -306,7 +307,7 @@ public abstract class TransferManager extends AbstractCell {
 			try {
 				Properties properties = new Properties();
 				properties.setProperty("javax.jdo.PersistenceManagerFactoryClass",
-						       "org.jpox.PersistenceManagerFactoryImpl");
+						       "org.datanucleus.jdo.JDOPersistenceManagerFactory");
 				properties.setProperty("javax.jdo.option.ConnectionDriverName", jdbcDriver);
 				properties.setProperty("javax.jdo.option.ConnectionURL",jdbcUrl);
 				properties.setProperty("javax.jdo.option.ConnectionUserName",user);
@@ -316,12 +317,12 @@ public abstract class TransferManager extends AbstractCell {
 				properties.setProperty("javax.jdo.option.NontransactionalRead","true");
 				properties.setProperty("javax.jdo.option.RetainValues","true");
 				properties.setProperty("javax.jdo.option.Multithreaded","true");
-				properties.setProperty("org.jpox.autoCreateSchema","true");
-				properties.setProperty("org.jpox.validateTables","false");
-				properties.setProperty("org.jpox.validateConstraints","false");
-				properties.setProperty("org.jpox.autoCreateColumns","true");
+				properties.setProperty("datanucleus.autoCreateSchema","true");
+				properties.setProperty("datanucleus.validateTables","false");
+				properties.setProperty("datanucleus.validateConstraints","false");
+				properties.setProperty("datanucleus.autoCreateColumns","true");
 // below is default, supported are "LowerCase", "PreserveCase"
-//                properties.setProperty("org.jpox.identifier.case","UpperCase");
+//                properties.setProperty("datanucleus.identifier.case","UpperCase");
 				PersistenceManagerFactory pmf =
 					JDOHelper.getPersistenceManagerFactory(properties);
 				pm = pmf.getPersistenceManager();

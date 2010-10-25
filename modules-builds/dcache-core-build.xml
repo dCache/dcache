@@ -119,12 +119,7 @@
 
     <path id="dcache-srm-enhance.classpath">
         <pathelement location="${classesDir}/cells.jar" />
-        <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
-        <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/logback-config" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
-        <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement path="${dcache.build.dir}" />
         <path refid="dependency.classpath" />
     </path>
@@ -210,15 +205,8 @@
 
     <path id="dcache-auth-enhance.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${libDir}/jpox/bcel-5.1.jar" />
-        <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
-        <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
-        <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
         <fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
-        <pathelement location="${libDir}/asm/asm-3.1.jar" />
         <pathelement location="${dcache.build.dir}" />
         <path refid="dependency.classpath" />
     </path>
@@ -241,13 +229,17 @@
         <copy file="${dcache.src}/diskCacheV111/config/persistence.xml" todir="${dcache.build.dir}/META-INF" />
         <copy file="${dcache.src}/org/dcache/auth/AuthRecordORM.xml" todir="${dcache.build.dir}/org/dcache/auth/" />
         <!-- define the task enhancer -->
-        <taskdef name="enhancer" classname="org.jpox.enhancer.tools.EnhancerTask">
-            <classpath refid="dcache-auth-enhance.classpath" />
-        </taskdef>
+
+        <taskdef name="enhance" classpathref="dcache-auth-enhance.classpath"
+                 classname="org.datanucleus.enhancer.tools.EnhancerTask" />
 
         <!-- enhance -->
-        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${dcache.build.dir}"
-                  api="JPA" persistenceUnit="AuthRecordPersistenceUnit"/>
+        <enhance classpathref="dcache-auth-enhance.classpath"
+                 dir="${dcache.build.dir}"
+                 api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
+          <sysproperty key="logback.configurationFile"
+                       value="file:modules-builds/logback.xml"/>
+        </enhance>
     </target>
 
     <!--
@@ -288,10 +280,18 @@
         generate JDO persistency backend
     -->
     <target name="-dcache.enhance" depends="-dcache.compile">
-            <java classname="org.jpox.enhancer.JPOXEnhancer" classpathref="dcache-srm-enhance.classpath" fork="true" failonerror="true">
-            <arg value="${dcache.src}/diskCacheV111/services/package.jdo" />
-            <sysproperty key="log4j.configuration" value="file:${dcache.src}/diskCacheV111/services/log4j.properties" />
-        </java>
+
+      <taskdef name="enhance" classpathref="dcache-srm-enhance.classpath"
+               classname="org.datanucleus.enhancer.tools.EnhancerTask" />
+
+      <enhance classpathref="dcache-srm-enhance.classpath"
+               dir="${dcache.build.dir}">
+        <fileset dir="${dcache.src}/diskCacheV111/services/">
+          <include name="package.jdo"/>
+        </fileset>
+        <sysproperty key="logback.configurationFile"
+                     value="file:modules-builds/logback.xml"/>
+      </enhance>
     </target>
 
 
@@ -473,12 +473,6 @@
                 <include name="*.jar" />
             </fileset>
         </copy>
-
-        <!-- jpox -->
-        <mkdir dir="${server.bin.dir}/classes/jpox" />
-        <copy file="${libDir}/jpox/jdo2-api-2.0.jar" todir="${server.bin.dir}/classes/jpox" />
-        <copy file="${libDir}/jpox/jpox-core-1.2.2.jar" todir="${server.bin.dir}/classes/jpox" />
-        <copy file="${libDir}/jpox/jpox-rdbms-1.2.2.jar" todir="${server.bin.dir}/classes/jpox" />
 
         <!-- bouncy castle -->
         <mkdir dir="${server.bin.dir}/classes/security" />

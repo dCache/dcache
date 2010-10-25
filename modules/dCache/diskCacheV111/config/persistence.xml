@@ -22,9 +22,9 @@
             <property name="javax.jdo.option.ConnectionURL" value="jdbc:postgresql://localhost/dcache"/>
             <property name="javax.jdo.option.ConnectionUserName" value="srmdcache"/>
             <property name="javax.jdo.option.ConnectionPassword" value=""/>
-            <property name="org.jpox.autoCreateSchema" value="true"/>
-            <property name="org.jpox.validateTables" value="false"/>
-            <property name="org.jpox.validateConstraints" value="false"/> -->
+            <property name="datanucleus.autoCreateSchema" value="true"/>
+            <property name="datanucleus.validateTables" value="false"/>
+            <property name="datanucleus.validateConstraints" value="false"/> -->
         </properties>
     </persistence-unit>
 

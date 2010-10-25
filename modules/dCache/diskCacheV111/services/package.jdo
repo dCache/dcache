@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE jdo SYSTEM "file:/javax/jdo/jdo.dtd">
-<jdo>
+<jdo xmlns="http://java.sun.com/xml/ns/jdo/jdo"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://java.sun.com/xml/ns/jdo/jdo
+        http://java.sun.com/xml/ns/jdo/jdo_2_0.xsd">
      <package name="diskCacheV111.services">
         <class name="TransferManagerHandler" detachable="true" identity-type="application" table="remotetransfers">
             <field name="id" primary-key="true" null-value="exception">
@@ -94,6 +96,7 @@
 	    <field name="transitionTime">
                 <column name="transitiontime" jdbc-type="BIGINT" />
             </field>
+            <field name="causedByError" column="CAUSED_BY_ERROR"/>
             <field name="description">
 		<column name="description" length="32672" jdbc-type="VARCHAR"   />
             </field>
