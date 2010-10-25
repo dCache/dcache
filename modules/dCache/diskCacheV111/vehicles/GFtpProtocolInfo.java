@@ -189,7 +189,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
         return _size;
     }
     public boolean isFileCheckRequired() {
-        return true;
+        return false;
     }
 
     /**
