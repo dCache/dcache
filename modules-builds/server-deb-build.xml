@@ -25,15 +25,6 @@
           <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z" />
         </tstamp>
 
-        <!-- timestamps for quilt -->
-        <tstamp>
-           <format property="quilt-timestamp-orig" offset="-5" unit="second"
-               pattern="yyyy-MM-dd HH:mm:ss" />
-        </tstamp>
-        <tstamp>
-          <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
-        </tstamp>
-
         <!--  copy the package control files, replace variables -->
         <copy todir="${server.debControlDir}" overwrite="true">
             <fileset dir="${server.debTemplateDir}">
@@ -46,16 +37,6 @@
                 <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
                 <filter token="Timestamp" value="${timestamp}" />
                 <filter token="PackageName" value="${server.packageName}" />
-            </filterset>
-        </copy>
-
-        <mkdir dir="${server.debPatchDir}" />
-        <copy todir="${server.debPatchDir}">
-            <fileset dir="${server.debPatchSourceDir}" />
-            <filterset>
-                <filter token="DebPatchRoot" value="${server.debPatchRoot}" />
-                <filter token="TimestampOrig" value="${quilt-timestamp-orig}" />
-                <filter token="Timestamp" value="${quilt-timestamp}" />
             </filterset>
         </copy>
 

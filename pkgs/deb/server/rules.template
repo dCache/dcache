@@ -7,26 +7,13 @@ install_app_data:
 	dh_testroot
 	dh_prep
 	dh_installdirs
-	dh_quilt_patch
-	cp -Rf opt/d-cache/etc/* debian/@PackageName@/etc/d-cache/
-	cp -Rf opt/d-cache/config debian/@PackageName@/etc/d-cache/
+	cp -Rf opt/ debian/@PackageName@/
 
 	cp -Rf opt/d-cache/share/man/man8/* debian/@PackageName@/usr/share/man/man8/
 	# manpages on debian should be gzipped
 	gzip -9 debian/@PackageName@/usr/share/man/man8/*
 	# don't copy the man-folder into the normal share directory
 	rm -Rf opt/d-cache/share/man
-
-	cp -Rf opt/d-cache/share/doc/* debian/@PackageName@/usr/share/doc/d-cache/
-	rm -Rf opt/d-cache/share/doc
-
-	cp -Rf opt/d-cache/share debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/bin debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/classes debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/docs/* debian/@PackageName@/usr/share/doc/d-cache/
-	cp -Rf opt/d-cache/install debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/jobs debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/libexec debian/@PackageName@/usr/share/d-cache/
 
 install_package_data:
 	dh_installchangelogs
@@ -41,9 +28,6 @@ install_package_data:
 
 clean:
 	dh_testdir
-	# get rid of the quilt patch state, invalid after rebuild
-	rm -Rf .pc
-	dh_quilt_unpatch
 	dh_testroot
 	dh_clean
 
