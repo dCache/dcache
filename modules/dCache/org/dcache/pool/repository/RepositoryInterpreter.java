@@ -249,6 +249,7 @@ public class RepositoryInterpreter
                         boolean sticky    = format.indexOf('s')  > -1;
                         boolean used      = format.indexOf('u')  > -1;
                         boolean broken    = format.indexOf('e')  > -1;
+                        boolean cached    = format.indexOf('c')  > -1;
 
                         for (PnfsId id: _repository) {
                             try {
@@ -259,6 +260,7 @@ public class RepositoryInterpreter
                                     (precious && state == EntryState.PRECIOUS) ||
                                     (sticky && entry.isSticky()) ||
                                     (broken && state == EntryState.BROKEN) ||
+                                    (cached && state == EntryState.CACHED) ||
                                     (used && entry.getLinkCount() > 0)) {
 
                                     sb.append(entry).append('\n');
