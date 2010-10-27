@@ -889,21 +889,15 @@ public void cleanUp(){
        try{
           _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
 
-          Object [] argList = new Object[2] ;
-          Object auth = null ;
-          if( _authConstructor != null ){
-             argList[0]  = _nucleus ;
-             argList[1]  = getArgs().clone() ;
-             auth        = _authConstructor.newInstance( argList ) ;
+          StreamEngine engine = null;
+          if (_authConstructor != null) {
+               engine = StreamEngineFactory.newStreamEngine(_socket, _protocol,
+                       _nucleus, getArgs());
+          } else {
+               engine = StreamEngineFactory.newStreamEngineWithoutAuth(_socket,
+                       _protocol);
           }
-          StreamEngine engine = null ;
-          if( _protocol.equals( "ssh" ) ){
-              engine = new SshStreamEngine( _socket , (SshServerAuthentication)auth ) ;
-          }else if( _protocol.equals( "raw" ) ){
-              engine = new DummyStreamEngine( _socket ) ;
-          }else if( _protocol.equals( "telnet" ) ){
-              engine = new TelnetStreamEngine( _socket , (TelnetServerAuthentication)auth ) ;
-          }
+
           String userName = Subjects.getDisplayName(engine.getSubject());
           _log.info( "acceptThread ("+t+"): connection created for user "+userName ) ;
           Object [] args ;
