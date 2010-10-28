@@ -3130,7 +3130,7 @@ public final class Storage
      */
     private FsPath getPath(String path)
     {
-        return new FsPath(new FsPath(config.getSrm_root()), new FsPath(path));
+        return new FsPath(new FsPath(config.getSrm_root()), path);
     }
 
     /**
