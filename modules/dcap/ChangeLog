@@ -1,3 +1,250 @@
+2010-10-22 12:08  omsynge
+
+	* ChangeLog: Updating Chnage log
+
+2010-10-22 11:58  omsynge
+
+	* src/Makefile.am: dcap header reorganization missed adding header
+	  files to Makefile.am
+	  
+	  The build target "make dist" no longer contained all the header
+	  files required to build dcap.
+	  
+	  This caused the build target "make rpm" to fail.
+	  
+	  http://svn.dcache.org/build/job/dcapBuildPackage_VDT_x64_SL_5.4_trunk/4/console
+	  
+	  With this patch, the target "make rpm" now works.
+	  
+	  
+	  Signed-off-by: Paul
+	  Patch: http://rb.dcache.org/r/2568/
+
+2010-10-21 15:31  pmillar
+
+	* src/Makefile.am, src/dcap_close.c, src/dcap_lcb.c,
+	  src/dcap_lcb.h, src/dcap_open.c, src/dcap_read.c,
+	  src/dcap_types.h: dcap: add initial support for local caching
+	  (dcap++)
+	  
+	  This patch adds support for a simple LRU cache: a Local Cache
+	  Buffer (LCB).
+	  
+	  It is a reworked version of the patch from Guenter Duckeck
+	  <Guenter.Duckeck@physik.uni-muenchen.de>. When reworking it, I've
+	  tried to make
+	  the algorithm more readable by splitting the functionality into
+	  separate
+	  functions. I've also removed code-duplication (as much as
+	  possible), those
+	  variables and structure members that weren't actually used, all
+	  the commented-out
+	  code and the (logical) dead-code.
+	  
+	  I've tried to fix some of the issues Gerd raised in his initial
+	  review; however,
+	  some of these issues, whilst certainly valid, may not be worth
+	  fixing here.
+	  Instead, we can address them with a rewrite of dcap so it has a
+	  generic caching
+	  layer (as Tigran proposes).
+	  
+	  I've copied Gerd's comments that are still outstanding into the
+	  code as comments
+	  prefixed with "REVISIT".
+	  
+	  I'm aware of a number of limitations with the code as-is:
+	  a) the first cache block (block-number 0) must always be cached,
+	  
+	  b) the algorithm is O(n), where n is the number of blocks,
+	  
+	  c) behaviour under error conditions [either dc_real_read() fails
+	  returning -1 or it read fewer bytes than requested when not
+	  at EOF] is poor.
+	  
+	  d) the code disables read-ahead (RA) which, I believe isn't
+	  necessary.
+	  Current implementation of LCB+RA is suboptimal, but should be
+	  functional.
+	  
+	  e) if LCB+RA is not allowed, then client code can subvert this
+	  by explicit call to dc_setBufferSize().
+	  
+	  Patch: http://rb.dcache.org/r/2475/
+	  Target: trunk
+	  Acked-by: Gerd
+	  Acked-by: Tigran
+	  Acked-by: Owen
+
+2010-10-18 08:45  pmillar
+
+	* src/dcap_test.c: dcap: update test program
+	  
+	  The program dcap_test provides a basis for testing the dcap
+	  library. It uses a
+	  specially formatted file, creating it if necessary, where the
+	  file contains offset
+	  information stored as 4-byte integer values. This allows the test
+	  to verify the
+	  contents of the data when reading.
+	  
+	  The patch alters the format of the data in two ways:
+	  
+	  1) the byte-order of the integers is fixed to be
+	  network-byte-order. Previously it was host byte-order,
+	  which lead to ambiguity that had to be worked around.
+	  
+	  2) the offset had a somewhat counter-intuitive meaning:
+	  the offset recorded in the file is the offset of the
+	  following byte.
+	  
+	  After the patch, the integer value of a 4-byte sequence is the
+	  offset of the first
+	  of the four bytes. The first 32 bytes of the file are now:
+	  
+	  00 00 00 00 00 00 00 04 00 00 00 08 00 00 00 0c
+	  00 00 00 10 00 00 00 14 00 00 00 18 00 00 00 1c
+	  
+	  The dcap_test program tests the ability to read data by
+	  repeatedly reads a (fixed)
+	  block of data and skipping forward a small, random amount until
+	  the file is
+	  exhausted. The data read is verified by checking it against the
+	  expected values.
+	  
+	  This patch enhances the tests. It decouples the access patterns
+	  from the mechanism
+	  for running the pattern. In addition to the existing access
+	  pattern (now called
+	  "walking forward"), the patch introduces additional
+	  access-patterns: "walking
+	  forward with random initial offset", "walking backward", "random
+	  4-byte reads" and
+	  "random block reads".
+	  
+	  The patch includes one "runner" that implements a round-robin
+	  selection of the
+	  selected access patterns. Any number of access patterns may be
+	  given. This allows
+	  multiple patterns to be stacked; for example, "walking forward" +
+	  "walking backward"
+	  gives a cross-like access pattern.
+	  
+	  The access-patterns are written to externalise their state, so
+	  multiple instances of
+	  the same access-pattern may be used by a runner. Combining two
+	  "walking forward
+	  with random initial offset" simulates the ATLAS ROOT access
+	  pattern.
+	  
+	  The round-robin runner has a selectable terminate conditions.
+	  There are three
+	  possible termination conditions: after the first access-pattern
+	  completes, after the
+	  last access-pattern completes, or after a fixed number of
+	  iterations. If an
+	  access-pattern terminates before the runner terminate condition
+	  then that
+	  access-pattern is disabled and the runner will continue with the
+	  remaining
+	  access-patterns.
+	  
+	  Possible future work is described at the beginning of the file.
+	  These include
+	  adding a multithreaded runner, to test dcap when used by multiple
+	  threads
+	  concurrently; and adding support for testing multiple file
+	  descriptors concurrently.
+	  
+	  Patch: http://rb.dcache.org/r/2478/
+	  Target: trunk
+	  Acked-by: Owen
+	  Acked-by: Tigran
+
+2010-10-13 14:22  pmillar
+
+	* src/dcap_debug.h: dcap: fix compilation on Solaris
+	  
+	  Patch committed as r.14673 broke compilation on Solaris. This
+	  patch fixes this.
+	  
+	  Patch: http://rb.dcache.org/r/2517
+	  Acked-by: Owen
+	  Target: trunk
+
+2010-10-13 12:11  pmillar
+
+	* src/dcap_debug.c, src/dcap_debug.h: dcap: refactor dcap debugging
+	  slightly
+	  
+	  dcap library provides a debugging support where different
+	  channels ("levels") of output
+	  may selected.
+	  
+	  This patch adds two additional methods: dc_vdebug and
+	  dc_is_debug_level_enabled. Both
+	  are exposed to other components within the dcap library but are
+	  not listed as public
+	  methods.
+	  
+	  The dc_vdebug method is a var-args version of the dc_debug
+	  method. This is similar to
+	  the 'v' version of the printf family of functions (printf vs
+	  vprintf, etc).
+	  
+	  The dc_is_debug_level_enabled returns True (1) if the supplied
+	  level is enabled, False
+	  (0) if not. This is intended to allow external modules to avoid
+	  work that will not be
+	  used in generating output.
+	  
+	  Patch: http://rb.dcache.org/r/2510/
+	  Target: trunk
+	  Acked-by: Gerd
+
+2010-10-12 17:05  pmillar
+
+	* bootstrap.sh: Reverting commit 14671 as Solaris packaging is more
+	  broken than I thought
+
+2010-10-12 15:09  pmillar
+
+	* bootstrap.sh: dcap: fix bootstrap.sh to work on Solaris
+	  
+	  Solaris packaging provides tools like aclocal and automake as
+	  filenames with a
+	  version-specific suffix (e.g., aclocal-1.11, automake-1.9, etc);
+	  moreover, we cannot
+	  necessarily mix-and-match. We must use tools with a consistent
+	  version; for example,
+	  running v1.11 of aclocal with automake.
+	  
+	  The current implementation of bootstrap.sh simply invokes
+	  "aclocal" and "automake"
+	  without any version-specific suffix. This doesn't work on
+	  Solaris. There is
+	  commented-out lines in the current bootstrap.sh that include a
+	  version-specific suffix,
+	  suggesting this issue is known but not addressed.
+	  
+	  This patch fixes the problem. It looks for a set of consistently
+	  named tools with a
+	  version-specific prefix, in decreasing version numbers (1.11,
+	  then 1.10, then 1.9). If
+	  these all fail, it tries again without any version-specific
+	  suffix. If none of these
+	  succeed then the script fails with a suitable error message.
+	  
+	  The output (on the terminal) from running bootstrap.sh should be
+	  identical to
+	  previously. The behaviour on running bootstrap.sh should be
+	  identical, including that
+	  it terminates immediately after any failing step.
+	  
+	  Patch: http://rb.dcache.org/r/2465/
+	  Acked-by: Owen
+	  Target: trunk
+
 2010-10-07 14:27  pmillar
 
 	* src/Makefile.am: dcap: fix building on Solaris
