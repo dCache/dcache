@@ -511,16 +511,18 @@ public class XrootdDoor
                     transfer.selectPool();
                     try {
                         transfer.startMover(_ioQueue);
-                        address = transfer.waitForRedirect(_moverTimeout);
-                        if (address == null) {
-                            _log.error("Pool failed to open TCP socket");
-                        }
                     } catch (TimeoutCacheException e) {
                         throw e;
                     } catch (CacheException e) {
-                        _log.warn("Pool error: " + e.getMessage());
+                        _log.warn("Pool error: {}", e.getMessage());
                     }
-                } while (address == null);
+                } while (!transfer.hasMover());
+
+                address = transfer.waitForRedirect(_moverTimeout);
+                if (address == null) {
+                    throw new CacheException(transfer.getPool() + " failed to open TCP socket");
+                }
+
                 transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                    transfer.getMoverId() + ": Receiving");
             } finally {
