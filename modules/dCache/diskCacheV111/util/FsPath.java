@@ -71,8 +71,6 @@ public class FsPath {
         while (st.hasMoreTokens()) {
             addSingleItem(st.nextToken());
         }
-        return;
-
     }
 
     private void addSingleItem(String item) {
@@ -137,6 +135,33 @@ public class FsPath {
             }
         }
         return true;
+    }
+
+    /**
+     * Relativizes the given FsPath against this FsPath.
+     *
+     * The relativization of the given FsPath against this FsPath is
+     * computed as follows:
+     *
+     * 1. If the path of this FsPath is not a prefix of the path of
+     *    the given FsPath, then IllegalArgumentException is thrown.
+     *
+     * 2. Otherwise a new relative FsPath is constructed with a path
+     *    computed by removing this FsPath's path from the beginning
+     *    of the given FsPath's path.
+     *
+     * @param path The FsPath to be relativized against this FsPath
+     * @return The resulting FsPath
+     * @throw NullPointerException If path is null
+     * @throw IllegalArgumentException If this FsPath is not a prefix
+     * of the given FsPath
+     */
+    public FsPath relativize(FsPath path)
+    {
+        if (!path.startsWith(this)) {
+            throw new IllegalArgumentException(toString() + " is not a prefix of " + path);
+        }
+        return new FsPath(path._list.subList(_list.size(), path._list.size()));
     }
 
     /**
