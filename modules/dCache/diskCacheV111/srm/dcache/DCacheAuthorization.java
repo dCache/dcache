@@ -289,7 +289,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
             Subject subject = new Subject();
             if (name != null && !name.isEmpty()) {
-                subject.getPrincipals().add(new UserNamePrincipal(name));
+                subject.getPrincipals().add(new LoginNamePrincipal(name));
             }
             if (secureId != null && !secureId.isEmpty()) {
                 /* Technically, the secureId could be a

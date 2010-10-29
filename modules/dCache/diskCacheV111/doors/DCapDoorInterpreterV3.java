@@ -27,7 +27,7 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
-import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.cells.CellStub;
 import diskCacheV111.util.PnfsHandler;
 import java.security.Principal;
@@ -321,13 +321,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             subject = new Subject();
             subject.getPublicCredentials().addAll(_authenticatedSubject.getPublicCredentials());
             subject.getPrivateCredentials().addAll(_authenticatedSubject.getPrivateCredentials());
-            subject.getPrincipals().add(new UserNamePrincipal(user));
-
-            for (Principal principal: _authenticatedSubject.getPrincipals()) {
-                if (!(principal instanceof UserNamePrincipal)) {
-                    subject.getPrincipals().add(principal);
-                }
-            }
+            subject.getPrincipals().addAll(_authenticatedSubject.getPrincipals());
+            subject.getPrincipals().add(new LoginNamePrincipal(user));
         } else {
             subject = _authenticatedSubject;
         }

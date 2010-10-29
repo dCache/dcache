@@ -3,7 +3,10 @@ package org.dcache.auth;
 import java.security.Principal;
 import java.io.Serializable;
 
-public class GidPrincipal implements Principal, Serializable
+/**
+ * This Principal represents the GID of a person.
+ */
+public class GidPrincipal implements GroupPrincipal, Serializable
 {
     static final long serialVersionUID = 7812225739755920892L;
 
@@ -11,6 +14,9 @@ public class GidPrincipal implements Principal, Serializable
     private boolean _isPrimaryGroup;
 
     public GidPrincipal(long gid, boolean isPrimary) {
+        if (gid < 0) {
+            throw new IllegalArgumentException("GID must be non-negative");
+        }
         _gid = gid;
         _isPrimaryGroup = isPrimary;
     }
@@ -19,6 +25,7 @@ public class GidPrincipal implements Principal, Serializable
         this(Long.parseLong(gid), isPrimary);
     }
 
+    @Override
     public boolean isPrimaryGroup() {
         return _isPrimaryGroup;
     }

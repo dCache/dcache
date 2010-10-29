@@ -22,9 +22,9 @@ import org.dcache.auth.attributes.ReadOnly;
  *
  * Supports login for Subjects with
  *
- *   - KeberosPrincipal and optional UserNamePrincipal
- *   - GlobusPrincipal and optional UserNamePrincipal
- *   - UserNamePrincipal and Password as a private credential.
+ *   - KeberosPrincipal and optional LoginNamePrincipal
+ *   - GlobusPrincipal and optional LoginNamePrincipal
+ *   - LoginNamePrincipal and Password as a private credential.
  */
 public class KauthFileLoginStrategy implements LoginStrategy
 {
@@ -41,7 +41,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
 
     public LoginReply login(Subject subject) throws CacheException
     {
-        String user = Subjects.getUserName(subject);
+        String user = Subjects.getLoginName(subject);
 
         for (KerberosPrincipal principal: subject.getPrincipals(KerberosPrincipal.class)) {
             return loginByUserNameAndId(user, principal.getName());
@@ -93,7 +93,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
     private LoginReply loginByUserName(Subject subject)
         throws CacheException
     {
-        String user = Subjects.getUserName(subject);
+        String user = Subjects.getLoginName(subject);
         if (user == null) {
             throw new IllegalArgumentException("Subject is not supported by KAuthFileLoginStrategy");
         }

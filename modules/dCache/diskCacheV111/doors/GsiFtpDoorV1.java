@@ -31,7 +31,7 @@ import org.globus.gsi.gssapi.GSSConstants;
 
 import org.dcache.cells.Option;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.LoginNamePrincipal;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -150,7 +150,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             subject.getPrincipals().add(_origin);
 
             if (!arg.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-                subject.getPrincipals().add(new UserNamePrincipal(arg));
+                subject.getPrincipals().add(new LoginNamePrincipal(arg));
             }
 
             if (!(_serviceContext instanceof ExtendedGSSContext)) {

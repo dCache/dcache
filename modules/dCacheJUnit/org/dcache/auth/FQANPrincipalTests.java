@@ -40,13 +40,13 @@ public class FQANPrincipalTests {
     @Test
     public void testCreatePrimary() {
         FQANPrincipal principal = new FQANPrincipal( TEST_FQAN, true);
-        assertTrue( "Check principal is primary", principal.isPrimary());
+        assertTrue( "Check principal is primary", principal.isPrimaryGroup());
     }
 
     @Test
     public void testCreateNonPrimary() {
         FQANPrincipal principal = new FQANPrincipal( TEST_FQAN, false);
-        assertFalse( "Check principal is not primary", principal.isPrimary());
+        assertFalse( "Check principal is not primary", principal.isPrimaryGroup());
     }
 
     @Test
