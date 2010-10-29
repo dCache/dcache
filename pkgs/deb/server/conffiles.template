@@ -1,0 +1,8 @@
+/opt/d-cache/etc/dcache.conf
+/opt/d-cache/etc/layouts/head.conf
+/opt/d-cache/etc/layouts/single.conf
+/opt/d-cache/etc/layouts/pool.conf
+/opt/d-cache/etc/tc-config.xml
+/opt/d-cache/etc/dcachesrm-gplazma.policy
+/opt/d-cache/etc/logback.xml
+/opt/d-cache/config/chimera-config.xml
