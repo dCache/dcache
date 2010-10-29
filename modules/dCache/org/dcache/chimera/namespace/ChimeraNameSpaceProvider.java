@@ -168,8 +168,11 @@ public class ChimeraNameSpaceProvider
 
         try {
             File newEntryFile = new File(path);
-
-            FsInode parent = _fs.path2inode(newEntryFile.getParent());
+            String parentPath = newEntryFile.getParent();
+            if (parentPath == null) {
+                throw new FileExistsCacheException("File exists: " + path);
+            }
+            FsInode parent = _fs.path2inode(parentPath);
 
             if (uid == DEFAULT) {
                 if (Subjects.isNobody(subject) || _inheritFileOwnership) {
