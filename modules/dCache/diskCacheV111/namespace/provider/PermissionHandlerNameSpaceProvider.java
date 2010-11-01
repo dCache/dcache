@@ -80,17 +80,19 @@ public class PermissionHandlerNameSpaceProvider
             File file = new File(path);
             File parent = file.getParentFile();
 
-            PnfsId parentId =
-                pathToPnfsid(subject, parent.toString(), true);
-            FileAttributes attributes =
-                getFileAttributesForPermissionHandler(parentId);
-            if (isDirectory) {
-                if (_handler.canCreateSubDir(subject, attributes) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + path);
-                }
-            } else {
-                if (_handler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + path);
+            if (parent != null) {
+                PnfsId parentId =
+                    pathToPnfsid(subject, parent.toString(), true);
+                FileAttributes attributes =
+                    getFileAttributesForPermissionHandler(parentId);
+                if (isDirectory) {
+                    if (_handler.canCreateSubDir(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
+                } else {
+                    if (_handler.canCreateFile(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
                 }
             }
         }
@@ -133,27 +135,29 @@ public class PermissionHandlerNameSpaceProvider
             File file = new File(path);
             File parent = file.getParentFile();
 
-            PnfsId fileId =
-                pathToPnfsid(subject, file.toString(), false);
-            PnfsId parentId =
-                super.pathToPnfsid(subject, parent.toString(), true);
+            if (parent != null) {
+                PnfsId fileId =
+                    pathToPnfsid(subject, file.toString(), false);
+                PnfsId parentId =
+                    super.pathToPnfsid(subject, parent.toString(), true);
 
-            FileAttributes parentAttributes =
-                getFileAttributesForPermissionHandler(parentId);
-            FileAttributes fileAttributes =
-                getFileAttributesForPermissionHandler(fileId, TYPE);
+                FileAttributes parentAttributes =
+                    getFileAttributesForPermissionHandler(parentId);
+                FileAttributes fileAttributes =
+                    getFileAttributesForPermissionHandler(fileId, TYPE);
 
-            if (fileAttributes.getFileType() == DIR) {
-                if (_handler.canDeleteDir(subject,
-                                          parentAttributes,
-                                          fileAttributes) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + path);
-                }
-            } else {
-                if (_handler.canDeleteFile(subject,
-                                           parentAttributes,
-                                           fileAttributes) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + path);
+                if (fileAttributes.getFileType() == DIR) {
+                    if (_handler.canDeleteDir(subject,
+                                              parentAttributes,
+                                              fileAttributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
+                } else {
+                    if (_handler.canDeleteFile(subject,
+                                               parentAttributes,
+                                               fileAttributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
                 }
             }
         }
