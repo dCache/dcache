@@ -3194,7 +3194,7 @@ public final class Storage
      */
     private String getFullPath(String path)
     {
-        FsPath fullPath = new FsPath(config.getSrm_root() + "/" + path);
-        return fullPath.toString();
+        return new FsPath(new FsPath(config.getSrm_root()), new
+FsPath(path)).toString();
     }
 }
