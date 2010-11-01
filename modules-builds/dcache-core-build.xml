@@ -90,8 +90,8 @@
     	<pathelement location="${libDir}/rrd4j/rrd4j-2.0.5.jar" />
     	<pathelement location="${web-dcache.lib}/xbean.jar"/>
     	<pathelement location="${web-dcache.lib}/commons-digester-1.6.jar"/>
-    	
-    	
+
+
     </path>
     <path id="dcache.classpath">
         <path refid="cells.classpath" />
@@ -418,10 +418,6 @@
         <!-- DBCP for Replica Manager -->
         <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
         <copy file="${libDir}/dbcp/commons-pool.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
-
-        <!-- TopLink files -->
-        <mkdir dir="${server.bin.dir}/classes/toplink" />
-        <copy file="${libDir}/toplink/toplink-essentials.jar" todir="${server.bin.dir}/classes/toplink" />
 
         <!-- opensaml -->
         <mkdir dir="${server.bin.dir}/classes/opensaml" />

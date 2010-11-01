@@ -44,6 +44,8 @@
                           url="http://www.dcache.org/nexus/content/groups/public" />
         <remoteRepository id="datanucleus.repository"
                           url="http://www.datanucleus.org/downloads/maven2"/>
+        <remoteRepository id="toplink.repository"
+                          url="http://download.java.net/maven/1/toplink.essentials"/>
 
         <!-- Suppress some dependencies: Dependencies with scope
              'provided' are not included in the runtime classpath. We
@@ -87,6 +89,7 @@
         <dependency groupId="org.datanucleus" artifactId="datanucleus-enhancer" version="2.1.1"/>
         <dependency groupId="org.datanucleus" artifactId="datanucleus-jpa" version="2.1.1"/>
         <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.1.2"/>
+        <dependency groupId="toplink.essentials" artifactId="toplink-essentials" version="2.1-60f"/>
     </artifact:dependencies>
 
     <property name="cog.libDir" value="${libDir}/cog" />
