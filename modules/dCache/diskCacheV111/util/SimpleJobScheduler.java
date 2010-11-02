@@ -17,6 +17,10 @@ import org.slf4j.LoggerFactory;
 import org.dcache.commons.util.NDC;
 
 import dmg.cells.nucleus.CDC;
+import org.dcache.util.FifoPriorityComparator;
+import org.dcache.util.IoPrioritizable;
+import org.dcache.util.IoPriority;
+import org.dcache.util.LifoPriorityComparator;
 
 public class SimpleJobScheduler implements JobScheduler, Runnable
 {
@@ -46,19 +50,19 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
      */
     private final ExecutorService _jobExecutor;
 
-    private class SJob implements Job, Runnable, Comparable<SJob> {
+    private class SJob implements Job, Runnable, IoPrioritizable {
 
         private final long _submitTime = System.currentTimeMillis();
         private long _startTime = 0;
         private int _status = WAITING;
         private final Runnable _runnable;
         private final int _id;
-        private final Priority _priority;
+        private final IoPriority _priority;
         private Future _future;
         private CDC _cdc;
         private final long _ctime;
 
-        private SJob(Runnable runnable, int id, Priority priority) {
+        private SJob(Runnable runnable, int id, IoPriority priority) {
             _runnable = runnable;
             _id = id;
             _priority = priority;
@@ -163,45 +167,13 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
 
         @Override
-        public int compareTo(SJob o) {
-            if (_priority != o._priority) {
-                return _priority.compareTo(o._priority);
-            }
-
-            /*
-             * entry with lower ctime have to be taken first.
-             */
-            if (_ctime < o._ctime) {
-                return 1;
-            }
-            if (_ctime > o._ctime) {
-                return -1;
-            }
-            return 0;
+        public IoPriority getPriority() {
+            return _priority;
         }
-    }
-
-    public class FifoComparator implements Comparator<SJob> {
 
         @Override
-        public int compare(SJob o1, SJob o2) {
-            if (o1._priority != o2._priority) {
-                return o1._priority.compareTo(o2._priority);
-            }
-
-            return o1.compareTo(o2);
-        }
-    }
-
-    public class LifoComparator implements Comparator<SJob> {
-
-        @Override
-        public int compare(SJob o1, SJob o2) {
-            if (o1._priority != o2._priority) {
-                return o1._priority.compareTo(o2._priority);
-            }
-
-            return o2.compareTo(o1);
+        public long getCreateTime() {
+            return _ctime;
         }
     }
 
@@ -220,8 +192,8 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     public SimpleJobScheduler(ThreadFactory factory, String name, boolean fifo)
     {
         _name = name;
-        _queue = new PriorityQueue<SJob>(16, fifo? new FifoComparator() :
-            new LifoComparator());
+        _queue = new PriorityQueue<SJob>(16, fifo? new FifoPriorityComparator() :
+            new LifoPriorityComparator());
 
         _jobExecutor =
             Executors.newCachedThreadPool(new CDCThreadFactory(factory) {
@@ -251,10 +223,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     public int add(Runnable runnable) throws InvocationTargetException {
-        return add(runnable, Priority.REGULAR);
+        return add(runnable, IoPriority.REGULAR);
     }
 
-    public int add(Runnable runnable, Priority priority)
+    public int add(Runnable runnable, IoPriority priority)
             throws InvocationTargetException {
         synchronized (_lock) {
 

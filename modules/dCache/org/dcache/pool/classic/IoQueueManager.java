@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.dcache.util.IoPriority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,12 +91,12 @@ class IoQueueManager {
         return getQueueByJobId(id).getJobInfo(id);
     }
 
-    public synchronized int add(String queueName, PoolIORequest request, JobScheduler.Priority priority) throws InvocationTargetException {
+    public synchronized int add(String queueName, PoolIORequest request, IoPriority priority) throws InvocationTargetException {
         JobScheduler js = (queueName == null) ? null : _hash.get(queueName);
         return (js == null) ? add(request, priority) : js.add(request, priority);
     }
 
-    public synchronized int add(PoolIORequest request, JobScheduler.Priority priority) throws InvocationTargetException {
+    public synchronized int add(PoolIORequest request, IoPriority priority) throws InvocationTargetException {
         return getDefaultScheduler().add(request, priority);
     }
 

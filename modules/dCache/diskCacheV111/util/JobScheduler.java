@@ -4,11 +4,9 @@ import diskCacheV111.vehicles.* ;
 
 import java.util.* ;
 import java.lang.reflect.InvocationTargetException ;
+import org.dcache.util.IoPriority;
 
 public interface JobScheduler {
-    public enum Priority {
-        LOW, REGULAR, HIGH
-    }
 
     public interface Job {
        public long getSubmitTime() ;
@@ -20,7 +18,7 @@ public interface JobScheduler {
 
     public int  add( Runnable runnable )
            throws InvocationTargetException ;
-    public int  add( Runnable runnable , Priority priority )
+    public int  add( Runnable runnable , IoPriority priority )
            throws InvocationTargetException ;
     public void kill( int jobId, boolean force )
         throws NoSuchElementException;

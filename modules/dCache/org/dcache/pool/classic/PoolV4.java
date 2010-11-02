@@ -90,6 +90,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 import java.util.Arrays;
+import org.dcache.util.IoPriority;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -658,11 +659,11 @@ public class PoolV4
         String queueName = message.getIoQueueName();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.add(queueName, request, JobScheduler.Priority.HIGH);
+            return _ioQueue.add(queueName, request, IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.add(P2P_QUEUE_NAME, request, JobScheduler.Priority.HIGH);
+            return _ioQueue.add(P2P_QUEUE_NAME, request, IoPriority.HIGH);
         } else {
-            return _ioQueue.add(queueName, request, JobScheduler.Priority.REGULAR);
+            return _ioQueue.add(queueName, request, IoPriority.REGULAR);
         }
     }
 
