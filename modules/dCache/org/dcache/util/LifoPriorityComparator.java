@@ -1,5 +1,6 @@
 package org.dcache.util;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -9,7 +10,9 @@ import java.util.Comparator;
  *
  * @since 1.9.11
  */
-public class LifoPriorityComparator implements Comparator<IoPrioritizable> {
+public class LifoPriorityComparator implements Comparator<IoPrioritizable>, Serializable {
+
+    static final long serialVersionUID = 7821220520017866828L;
 
     @Override
     public int compare(IoPrioritizable o1, IoPrioritizable o2) {
