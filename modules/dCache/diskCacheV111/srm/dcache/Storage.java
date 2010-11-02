@@ -2623,9 +2623,8 @@ public final class Storage
              ? DcacheFileMetaData.getKnownAttributes()
              : EnumSet.of(SIZE, SIMPLE_TYPE));
         if (verbose) {
-            required.add(LOCATIONS);
+            required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
         }
-        required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
         String directory = getPathOfSurl(surl);
         final String prefix = addTrailingSlash(directory);
         final List<FileMetaData> result = new ArrayList<FileMetaData>();
