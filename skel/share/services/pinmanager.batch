@@ -29,8 +29,6 @@ set context -c pinManagerMaxActiveJdbcConnections    50
 set context -c pinManagerMaxJdbcConnectionsWaitSec   180
 set context -c pinManagerMaxIdleJdbcConnections      10
 
-set context -c toplink.application-location ${dcache.paths.etc}
-
 onerror shutdown
 
 create org.dcache.services.pinmanager1.PinManager PinManager \
