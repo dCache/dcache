@@ -57,6 +57,7 @@ define context PoolDefaults endDefine
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
    movermap define NFS4-4  org.dcache.chimera.nfsv41.mover.NFSv41ProtocolMover
    movermap define Xrootd-2  org.dcache.xrootd2.pool.XrootdProtocol_3
+   movermap define Http-1  org.dcache.http.HttpProtocol_2
 endDefine
 
 create org.dcache.cells.UniversalSpringCell "${cell.name}" \
@@ -82,6 +83,14 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -xrootd-mover-max-memory=\"${xrootdMoverMaxMemory}\" \
     -xrootd-mover-max-frame-size=\"${xrootdMoverMaxFrameSize}\" \
     -xrootd-mover-idle-client-timeout=\"${xrootd.mover.timeout.idle}\" \
+    -http-mover-disk-threads=\"${httpMoverDiskThreads}\" \
+    -http-mover-socket-threads=\"${httpMoverSocketThreads}\" \
+    -http-mover-max-memory-per-connection=\"${httpMoverConnectionMaxMemory}\" \
+    -http-mover-max-memory=\"${httpMoverMaxMemory}\" \
+    -http-mover-keep-alive-period=\"${httpMoverKeepAlivePeriod}\" \
+    -http-mover-connect-timeout=\"${httpMoverConnectTimeout}\" \
+    -http-mover-max-chunk-size=\"${httpMoverMaxChunkSize}\" \
+    -http-mover-chunk-size=\"${httpMoverChunkSize}\" \
     -callbackExecutor=callbackThreadPool \
     -messageExecutor=messageThreadPool \
     -replicateOnArrival=\"${replicateOnArrival}\" \
