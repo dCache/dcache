@@ -11,20 +11,15 @@
         <class>org.dcache.auth.GroupList</class>
         <class>org.dcache.auth.Group</class>
         <properties>
-<property name="toplink.jdbc.user" value="srmdcache"/>
-      <property name="toplink.jdbc.password" value=""/>
-      <property name="toplink.jdbc.url" value="jdbc:postgresql://localhost/dcache"/>
-      <property name="toplink.jdbc.driver" value="org.postgresql.Driver"/>
-      <property name="toplink.ddl-generation" value="create-tables"/>
-      <property name="toplink.create-ddl-jdbc-file-name" value="createDDL.jdbc"/>
-      <property name="toplink.drop-ddl-jdbc-file-name" value="dropDDL.jdbc"/>
-<!--            <property name="javax.jdo.option.ConnectionDriverName" value="org.postgresql.Driver"/>
-            <property name="javax.jdo.option.ConnectionURL" value="jdbc:postgresql://localhost/dcache"/>
-            <property name="javax.jdo.option.ConnectionUserName" value="srmdcache"/>
-            <property name="javax.jdo.option.ConnectionPassword" value=""/>
-            <property name="datanucleus.autoCreateSchema" value="true"/>
-            <property name="datanucleus.validateTables" value="false"/>
-            <property name="datanucleus.validateConstraints" value="false"/> -->
+            <property name="toplink.jdbc.user" value="srmdcache"/>
+            <property name="toplink.jdbc.password" value=""/>
+            <property name="toplink.jdbc.url" value="jdbc:postgresql://localhost/dcache"/>
+            <property name="toplink.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="toplink.ddl-generation" value="create-tables"/>
+            <property name="toplink.ddl-generation.output-mode" value="database"/>
+            <property name="toplink.create-ddl-jdbc-file-name" value="createDDL.jdbc"/>
+            <property name="toplink.drop-ddl-jdbc-file-name" value="dropDDL.jdbc" />
+            <property name="toplink.application-location" value="/tmp" />
         </properties>
     </persistence-unit>
 
