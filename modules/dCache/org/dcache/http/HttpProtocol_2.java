@@ -38,6 +38,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
+import org.dcache.pool.movers.IoMode;
 
 /**
  * Netty-based HTTP-mover. The mover generates an UUID that identifies it upon
@@ -162,7 +163,7 @@ public class HttpProtocol_2 implements MoverProtocol
                       StorageInfo storage,
                       PnfsId pnfsId,
                       Allocator allocator,
-                      int access) throws Exception {
+                      IoMode access) throws Exception {
         _protocolInfo = (HttpProtocolInfo) protocol;
 
         _logger.debug("Starting xrootd server");

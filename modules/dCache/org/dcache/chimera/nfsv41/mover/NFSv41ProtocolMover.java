@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.ManualMover;
 import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.PnfsId;
@@ -18,6 +17,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.XdrBuffer;
@@ -31,7 +31,7 @@ public class NFSv41ProtocolMover implements ManualMover {
     private long _started = 0;
     private long _ended = 0;
 
-    private int _ioMode = MoverProtocol.READ;
+    private IoMode _ioMode = IoMode.READ;
     private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class);
 
     private static NFSv4MoverHandler _nfsIO;
@@ -112,10 +112,10 @@ public class NFSv41ProtocolMover implements ManualMover {
 	@Override
     public void runIO(RandomAccessFile raf, ProtocolInfo protocol,
             StorageInfo storage, PnfsId pnfsId,
-            Allocator allocator, int access)
+            Allocator allocator, IoMode access)
             throws Exception {
 
-        _log.debug("new IO request for {} access: {}", pnfsId, (access == MoverProtocol.READ ? "r" : "w"));
+        _log.debug("new IO request for {} access: {}", pnfsId, access);
 
         if( _nfsIO == null ) {
             throw new IllegalStateException("NFS mover not ready");
@@ -200,7 +200,7 @@ public class NFSv41ProtocolMover implements ManualMover {
      */
 	@Override
     public boolean wasChanged() {
-        return  ((_ioMode & MoverProtocol.WRITE) == MoverProtocol.WRITE) &&  (getBytesTransferred() > 0);
+        return  _ioMode == IoMode.WRITE && (getBytesTransferred() > 0);
     }
 
 

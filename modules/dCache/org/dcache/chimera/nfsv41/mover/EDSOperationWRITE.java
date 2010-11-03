@@ -21,6 +21,7 @@ import org.dcache.chimera.nfs.v4.xdr.stable_how4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
+import org.dcache.pool.movers.IoMode;
 
 import org.dcache.pool.movers.MoverProtocol;
 
@@ -50,7 +51,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
                         "No mover associated with given stateid");
             }
 
-            if( (moverBridge.getIoMode() & MoverProtocol.WRITE) != MoverProtocol.WRITE ) {
+            if( moverBridge.getIoMode() != IoMode.WRITE ) {
                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_PERM, "an attermp to write without IO mode enabled");
             }
 

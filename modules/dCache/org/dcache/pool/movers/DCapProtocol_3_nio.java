@@ -301,7 +301,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                       StorageInfo  storage,
                       PnfsId       pnfsId,
                       Allocator    allocator,
-                      int          access  )
+                      IoMode          access  )
 
         throws Exception {
 
@@ -468,7 +468,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 
-                    }else if((access & MoverProtocol.WRITE) != 0){
+                    }else if(access == IoMode.WRITE){
 
                         //
                         //   The 'REQUEST ACK'
@@ -550,8 +550,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     long offset = requestBlock.nextLong();
                     int  whence = requestBlock.nextInt();
 
-                    doTheSeek(fileChannel , whence, offset,
-                               (access & MoverProtocol.WRITE) != 0 );
+                    doTheSeek(fileChannel , whence, offset, (access == IoMode.WRITE) );
 
                     if(_io_ok){
 
@@ -585,8 +584,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ);
                         socketChannel.write(cntOut.buffer());
 
-                        doTheSeek(fileChannel, whence, offset,
-                                   (access & MoverProtocol.WRITE) != 0 );
+                        doTheSeek(fileChannel, whence, offset, (access == IoMode.WRITE) );
 
                         if(_io_ok)doTheRead(fileChannel, cntOut, socketChannel, blockSize);
 
@@ -622,8 +620,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE);
                         socketChannel.write(cntOut.buffer());
 
-                        doTheSeek(fileChannel, whence, offset,
-                                   (access & MoverProtocol.WRITE) != 0);
+                        doTheSeek(fileChannel, whence, offset, (access == IoMode.WRITE) );
 
                         if(_io_ok)
                             doTheWrite(fileChannel,

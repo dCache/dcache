@@ -433,7 +433,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 		      StorageInfo  storage,
 		      PnfsId       pnfsId,
 		      Allocator    allocator,
-		      int          access)
+		      IoMode          access)
 	throws Exception
     {
         if (!(protocol instanceof GFtpProtocolInfo)) {
@@ -441,8 +441,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
         GFtpProtocolInfo gftpProtocolInfo    = (GFtpProtocolInfo)protocol;
 
-	Role role = (access & MoverProtocol.WRITE) != 0
-	    ? Role.Receiver : Role.Sender;
+	Role role = access == IoMode.WRITE ? Role.Receiver : Role.Sender;
         int    version     = gftpProtocolInfo.getMajorVersion();
 	String host        = gftpProtocolInfo.getHost();
 	int    port        = gftpProtocolInfo.getPort();

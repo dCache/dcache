@@ -248,7 +248,7 @@ public class RemoteGsiftpTransferProtocol_1
                       StorageInfo storage,
                       PnfsId pnfsId,
                       Allocator allocator,
-                      int access)
+                      IoMode access)
         throws CacheException, IOException,
                NoRouteToCellException,
                ServerException, ClientException,
@@ -258,7 +258,7 @@ public class RemoteGsiftpTransferProtocol_1
         _log.debug("runIO()\n\tprotocol="
             + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
             + pnfsId + ",\n\taccess ="
-            + (((access & MoverProtocol.WRITE) != 0) ? "WRITE" : "READ"));
+            + access );
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
         }
@@ -270,7 +270,7 @@ public class RemoteGsiftpTransferProtocol_1
 
         createFtpClient(remoteGsiftpProtocolInfo);
 
-        if ((access & MoverProtocol.WRITE) != 0) {
+        if ( access == IoMode.WRITE) {
             gridFTPRead(remoteGsiftpProtocolInfo,
                         storage,
                         allocator);

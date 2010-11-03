@@ -73,7 +73,7 @@ public class HttpProtocol_1 implements MoverProtocol
                        StorageInfo  storage,
                        PnfsId       pnfsId ,
                        Allocator    allocator,
-                       int          access)
+                       IoMode       access)
         throws Exception
     {
         say("runIO("+diskFile+",\n"+

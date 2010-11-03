@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.mover;
 import java.nio.channels.FileChannel;
 import diskCacheV111.util.PnfsId;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
 import org.dcache.pool.repository.Allocator;
 
@@ -18,13 +19,13 @@ class MoverBridge {
     private final ManualMover _mover;
     private final PnfsId _pnfsId;
     private final FileChannel _fileChannel;
-    private final int _ioMode;
+    private final IoMode _ioMode;
     private final Allocator _allocator;
     private final stateid4 _stateid;
     private long _allocated;
 
     MoverBridge(ManualMover mover, PnfsId pnfsId, stateid4 stateid, FileChannel fileChannel,
-            int  ioMode, Allocator allocator) {
+            IoMode  ioMode, Allocator allocator) {
 
         _mover = mover;
         _pnfsId = pnfsId;
@@ -67,7 +68,7 @@ class MoverBridge {
     /**
      * @return the ioMode
      */
-    public int getIoMode() {
+    public IoMode getIoMode() {
         return _ioMode;
     }
 

@@ -12,6 +12,7 @@ import org.dcache.pool.movers.MoverProtocol;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
+import org.dcache.pool.movers.IoMode;
 
 /**
  * Encapsulates a read transfer, that is, sending a file. It acts as a
@@ -53,7 +54,7 @@ public class PoolIOReadTransfer
                              _storageInfo,
                              _pnfsId,
                              null,
-                             MoverProtocol.READ);
+                             IoMode.READ);
             } finally {
                 /* This may throw an IOException, although it
                  * is not clear when this would happen. If it

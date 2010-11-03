@@ -56,12 +56,12 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                        StorageInfo  storage,
                        PnfsId       pnfsId ,
                        Allocator    allocator,
-                       int          access)
+                       IoMode       access)
         throws Exception
     {
         say("runIO()\n\tprotocol="+
             protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
-            ",\n\taccess ="+(((access & MoverProtocol.WRITE) != 0)?"WRITE":"READ"));
+            ",\n\taccess ="+ access);
         if(! (protocol instanceof RemoteHttpDataTransferProtocolInfo))
             {
                 throw new  CacheException(
@@ -89,7 +89,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                                                   userPassEncoding);
             }
 
-        if((access & MoverProtocol.WRITE) != 0)
+        if( access == IoMode.WRITE)
             {
                 httpconnection.setDoInput(true);
                 httpconnection.setDoOutput(false);

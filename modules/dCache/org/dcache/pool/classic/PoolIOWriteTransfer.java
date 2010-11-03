@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.SyncFailedException;
 import java.util.List;
 import java.util.Collections;
+import org.dcache.pool.movers.IoMode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +102,7 @@ public class PoolIOWriteTransfer
                      _storageInfo,
                      _pnfsId,
                      _handle,
-                     MoverProtocol.WRITE
-                     | MoverProtocol.READ);
+                     IoMode.WRITE);
     }
 
     public void transfer()

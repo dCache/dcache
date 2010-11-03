@@ -40,6 +40,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
+import org.dcache.pool.movers.IoMode;
 
 import org.dcache.xrootd2.protocol.messages.*;
 import org.dcache.xrootd2.util.FileStatus;
@@ -404,7 +405,7 @@ public class XrootdProtocol_3
                       StorageInfo storage,
                       PnfsId pnfsId,
                       Allocator allocator,
-                      int access)
+                      IoMode access)
         throws Exception
     {
         _protocolInfo = (XrootdProtocolInfo) protocol;
@@ -692,9 +693,9 @@ public class XrootdProtocol_3
      * regard the transfer as successul. In any case, all open descriptors
      * must have been closed.
      */
-    private boolean isTransferSuccessful(int access)
+    private boolean isTransferSuccessful(IoMode access)
     {
-        boolean isRead = (access & MoverProtocol.WRITE) == 0;
+        boolean isRead = access == IoMode.READ;
         return _openedDescriptors.isEmpty() && (_hasOpenedDescriptor || isRead);
     }
 
