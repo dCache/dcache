@@ -132,7 +132,7 @@ AC_TYPE_UID_T
 AC_C_BIGENDIAN
 
 
-dnl Store the compile flags prior to testing the presance.
+dnl Store the compile flags prior to testing the presence.
 
 _cppflags="${CPPFLAGS}"
 _ldflags="${LDFLAGS}"
@@ -151,7 +151,7 @@ dnl === Manage variables ===
 CPPFLAGS=${_cppflags}
 LDFLAGS=${_ldflags}
 dnl Should not be needed but becasue globus libraries
-dnl linking is soem what problematic this is needed.
+dnl linking is somewhat problematic this is needed.
 export LD_LIBRARY_PATH=${_ldlibpath}
 
 
@@ -298,7 +298,7 @@ EPEL_LIBS_NOT=1
 ])
 
 
-dnl == 64pthreads libary checking version ==
+dnl == 64pthreads library checking version ==
 
 AC_CHECK_LIB(globus_common_gcc64pthr, globus_version_print, [
 GLOBUS_GCC64PTHR_LIBS="-lglobus_common_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
@@ -362,10 +362,12 @@ GCC64PTHR_LIBS_NOT=1
 
 AC_CHECK_LIB(globus_gssapi_gsi_gcc64pthr,gss_wrap, [
 GLOBUS_GCC64PTHR_LIBS="-lglobus_gssapi_gsi_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
+],[
+GCC64PTHR_LIBS_NOT=1
 ])
 
 
-dnl == 64dbgpthr libary checking version ==
+dnl == 64dbgpthr library checking version ==
 
 AC_CHECK_LIB(globus_common_gcc64dbgpthr, globus_version_print, [
 GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_common_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
@@ -434,7 +436,7 @@ GCC64DBGPTHR_LIBS_NOT=1
 ])
 
 
-dnl == 32pthreads libary checking version ==
+dnl == 32pthreads library checking version ==
 
 AC_CHECK_LIB(globus_common_gcc32pthr, globus_version_print, [
 GLOBUS_GCC32PTHR_LIBS="-lglobus_common_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
@@ -503,7 +505,7 @@ GCC32PTHR_LIBS_NOT=1
 ])
 
 
-dnl == 32dbgpthr libary checking version ==
+dnl == 32dbgpthr library checking version ==
 
 AC_CHECK_LIB(globus_common_gcc32dbgpthr, globus_version_print, [
 GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_common_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
@@ -572,7 +574,7 @@ GCC32DBGPTHR_LIBS_NOT=1
 ])
 
 
-dnl set the verion of globus fully detected and the library linking.
+dnl set the version of globus fully detected and the library linking.
 want_globus=no
 if test "0" = "${GCC32DBGPTHR_LIBS_NOT}" ; then
 GLOBUS_LIBS=${GLOBUS_GCC32DBGPTHR_LIBS}
@@ -621,7 +623,7 @@ export LD_LIBRARY_PATH=${_ldlibpath}
 
 
 
-dnl == MIT Kerberous ==
+dnl == MIT Kerberos ==
 
 AC_ARG_WITH(krb5-gssapi-include,
 [ --with-krb5-gssapi-include[[=DIR]] use krb5 gssapi includedir],[
@@ -853,8 +855,8 @@ AC_DEFINE_UNQUOTED(READV_SYM,"$READV_SYM",[native function for native or local f
 AC_DEFINE_UNQUOTED(ACL_SYM,"$ACL_SYM",[native function for native or local file system access.])
 AC_DEFINE_UNQUOTED(FACL_SYM,"$FACL_SYM",[native function for native or local file system access.])
 
-dnl We dont test for the dependacies for the telnet plugin
-dnl as their apear to be no major ones.
+dnl We dont test for the dependencies for the telnet plugin
+dnl as there appear to be no major ones.
 
 notelnet="0"
 
@@ -871,7 +873,7 @@ AM_CONDITIONAL([PKG_DEP_EPEL], [test "${PKGDEPEPEL}" = "1"])
 
 AC_SUBST(GSSAPI_TARGETS)
 
-dnl Passing configre variables to spec file for rpm to build.
+dnl Passing configure variables to spec file for rpm to build.
 
 AC_SUBST(GLOBUS_INCLUDE_DIR)
 AC_SUBST(GLOBUS_LIB_DIR)
