@@ -1998,7 +1998,15 @@ public class PoolV4
     public Object ac_p2p_ls_$_0_1(Args args)
     {
         JobScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
-        return mover_ls(p2pQueue, args.getOpt("binary") != null);
+
+        boolean binary = args.getOpt("binary") != null;
+        if (binary && args.argc() > 0) {
+            int id = Integer.parseInt(args.argv(0));
+            JobScheduler js = _ioQueue.getQueueByJobId(id);
+            return js.getJobInfo(id);
+        }
+
+        return mover_ls(p2pQueue, binary);
     }
 
     private Object mover_ls(JobScheduler js, boolean binary) {
