@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (c) 1997 - 2002 Kungliga Tekniska Högskolan (Royal Institute of
+ * Copyright (c) 1997 - 2002 Kungliga Tekniska HÃ¶gskolan (Royal Institute of
  * Technology, Stockholm, Sweden). All rights reserved.
  */
 
