@@ -149,7 +149,7 @@ public abstract class Job  {
     // memory
     private static final SharedMemoryCache sharedMemoryCache =
             new SharedMemoryCache();
-    
+
     // this instance is not registered as a terracotta root
     // the objects put in this cache are guaranteed to present in
     // local memory, for as long as their state is not final
@@ -1229,8 +1229,8 @@ public abstract class Job  {
      */
     private void notifySchedulerOfStateChange(State oldState, State newState) {
         // we need to lock again, even if the call is from the setState method
-        // where weh have locked already. The method is configured to run in 
-        // multiple jvms though "dsitributed method" invocation, which means 
+        // where weh have locked already. The method is configured to run in
+        // multiple jvms though "dsitributed method" invocation, which means
         // the method can be called on its own by terracotta framework
         wlock();
         try {
