@@ -2,6 +2,7 @@
 
 package diskCacheV111.pools ;
 import java.util.* ;
+import org.dcache.pool.classic.IoQueueManager;
 
 public class PoolCostInfo implements java.io.Serializable {
 
@@ -11,7 +12,7 @@ public class PoolCostInfo implements java.io.Serializable {
                           _mover = null  , _p2p     = null ,
                           _p2pClient = null ;
     private Map<String, NamedPoolQueueInfo>           _extendedMoverHash = null ;
-    private String        _defaultQueueName  = null ;
+    private final String  _defaultQueueName  = IoQueueManager.DEFAULT_QUEUE ;
     private PoolSpaceInfo _space  = null ;
     private final String        _poolName ;
     public PoolCostInfo( String poolName ){ _poolName = poolName ; }
@@ -150,7 +151,6 @@ public class PoolCostInfo implements java.io.Serializable {
     }
     public void addExtendedMoverQueueSizes( String name , int moverActive   , int moverMaxActive   , int moverQueued ){
        if( _extendedMoverHash == null ){
-           _defaultQueueName  = name ;
            _extendedMoverHash = new HashMap<String, NamedPoolQueueInfo>() ;
        }
        _extendedMoverHash.put( name, new NamedPoolQueueInfo( name, moverActive, moverMaxActive, moverQueued ));
