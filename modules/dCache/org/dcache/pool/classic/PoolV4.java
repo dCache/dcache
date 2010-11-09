@@ -1505,19 +1505,13 @@ public class PoolV4
 
         info.getSpaceInfo().setParameter(_breakEven, _gap);
 
-        info.setQueueSizes(_ioQueue.getActiveJobs(), _ioQueue
-                           .getMaxActiveJobs(), _ioQueue.getQueueSize(), _storageHandler
-                            .getFetchScheduler().getActiveJobs(), _suppressHsmLoad ? 0
-                            : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
-                            _storageHandler.getFetchScheduler().getQueueSize(),
-                            _storageHandler.getStoreScheduler().getActiveJobs(),
-                            _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler()
-                            .getMaxActiveJobs(), _storageHandler
-                            .getStoreScheduler().getQueueSize()
-
-                           );
-
         for (JobScheduler js : _ioQueue.getSchedulers()) {
+            /*
+             * we skip p2p and regular queues as it handled differently
+             * FIXME: no special cases
+             */
+            if(js.getSchedulerName().equals(P2P_QUEUE_NAME)) continue;
+            if(js.getSchedulerName().equals(IoQueueManager.DEFAULT_QUEUE)) continue;
             info.addExtendedMoverQueueSizes(js.getSchedulerName(),
                     js.getActiveJobs(), js.getMaxActiveJobs(), js.getQueueSize());
         }
@@ -1529,6 +1523,18 @@ public class PoolV4
         info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
                 p2pQueue.getMaxActiveJobs(), p2pQueue.getQueueSize());
 
+        info.setQueueSizes(_ioQueue.getActiveJobs() - p2pQueue.getActiveJobs(), _ioQueue
+                           .getMaxActiveJobs() - p2pQueue.getMaxActiveJobs(),
+                           _ioQueue.getQueueSize() - p2pQueue.getQueueSize(), _storageHandler
+                            .getFetchScheduler().getActiveJobs(), _suppressHsmLoad ? 0
+                            : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
+                            _storageHandler.getFetchScheduler().getQueueSize(),
+                            _storageHandler.getStoreScheduler().getActiveJobs(),
+                            _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler()
+                            .getMaxActiveJobs(), _storageHandler
+                            .getStoreScheduler().getQueueSize()
+
+                           );
         return info;
     }
 
