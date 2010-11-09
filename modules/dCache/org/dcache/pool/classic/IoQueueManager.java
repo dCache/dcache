@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class IoQueueManager {
+public class IoQueueManager {
 
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
