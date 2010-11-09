@@ -1507,11 +1507,11 @@ public class PoolV4
 
         for (JobScheduler js : _ioQueue.getSchedulers()) {
             /*
-             * we skip p2p and regular queues as it handled differently
+             * we skip p2p queue as it handled differently
              * FIXME: no special cases
              */
             if(js.getSchedulerName().equals(P2P_QUEUE_NAME)) continue;
-            if(js.getSchedulerName().equals(IoQueueManager.DEFAULT_QUEUE)) continue;
+
             info.addExtendedMoverQueueSizes(js.getSchedulerName(),
                     js.getActiveJobs(), js.getMaxActiveJobs(), js.getQueueSize());
         }
