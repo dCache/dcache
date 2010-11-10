@@ -45,7 +45,7 @@ public class ModeE extends Mode
     private long _currentPosition;
 
     /**
-     * Number of bytes that have been transferred. Used by the sender.
+     * Number of bytes that have to be transferred. Used by the sender.
      */
     private long _currentCount;
 
@@ -341,6 +341,13 @@ public class ModeE extends Mode
         _currentCount    = getSize();
         _eodc            = 0;
         _blockSize       = blockSize;
+    }
+
+    public void setPartialRetrieveParameters(long position, long size)
+    {
+        super.setPartialRetrieveParameters(position, size);
+        _currentPosition = getStartPosition();
+        _currentCount    = getSize();
     }
 
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
