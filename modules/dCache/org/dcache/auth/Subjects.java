@@ -109,6 +109,11 @@ public class Subjects extends dmg.util.Subjects
         throws IllegalArgumentException
     {
         T result = null;
+
+        if( subject == null) {
+            return null;
+        }
+
         for (Principal principal: subject.getPrincipals()) {
             if (type.isInstance(principal)) {
                 if (result != null) {
