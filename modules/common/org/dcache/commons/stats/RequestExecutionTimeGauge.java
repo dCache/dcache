@@ -149,7 +149,7 @@ public class RequestExecutionTimeGauge {
 
         formatter.format("%-34s %12d\u00B1%10f %12d %12d %12d %12d %12d",
                 aName, averageExecutionTime,getStandardError(),
-                minExecutionTime,maxExecutionTime, 
+                minExecutionTime,maxExecutionTime,
                 getStandardDeviation(), updateNum, updatePeriod);
         formatter.flush();
         formatter.close();
@@ -192,7 +192,7 @@ public class RequestExecutionTimeGauge {
     }
 
     /**
-     * 
+     *
      * @return standard error of the mean
      */
     public synchronized double getStandardError() {
