@@ -25,6 +25,15 @@
           <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z" />
         </tstamp>
 
+        <!-- timestamps for quilt -->
+        <tstamp>
+           <format property="quilt-timestamp-orig" offset="-5" unit="second"
+               pattern="yyyy-MM-dd HH:mm:ss" />
+        </tstamp>
+        <tstamp>
+          <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
+        </tstamp>
+
         <!--  copy the package control files, replace variables -->
         <copy todir="${server.debControlDir}" overwrite="true">
             <fileset dir="${server.debTemplateDir}">
@@ -40,6 +49,16 @@
             </filterset>
         </copy>
 
+        <mkdir dir="${server.debPatchDir}" />
+        <copy todir="${server.debPatchDir}">
+            <fileset dir="${server.debPatchSourceDir}" />
+            <filterset>
+                <filter token="DebPatchRoot" value="${server.debPatchRoot}" />
+                <filter token="TimestampOrig" value="${quilt-timestamp-orig}" />
+                <filter token="Timestamp" value="${quilt-timestamp}" />
+            </filterset>
+        </copy>
+
         <chmod file="${server.debControlDir}/rules" perm="0755" />
 
 
@@ -51,5 +70,44 @@
 
         <!--  delete temporary files -->
         <delete dir="${server.debDistDir}" />
+    </target>
+
+    <target name="server-fhs.deb" depends="install-server"
+            description="Build a Debian FHS policy compliant .deb">
+
+    </target>
+
+    <target name="chimera-config.deb"
+            description="Build the Chimera configuration package">
+           <!--  copy the package control files, replace variables -->
+            <copy todir="${chimera.debControlDir}" overwrite="true">
+                <fileset dir="${chimera.debTemplateDir}">
+                    <filename name="*.template" />
+                </fileset>
+                <mapper type="glob" from="*.template" to="*" />
+                <filterset>
+                    <filter token="Version" value="${version}-${patch}" />
+                    <filter token="MaintainerName" value="${server.debMaintainer}" />
+                    <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
+                    <filter token="Timestamp" value="${timestamp}" />
+                    <filter token="ServerPackageName" value="${server.packageName}" />
+                    <filter token="PackageName" value="${chimera.packageName}" />
+                </filterset>
+            </copy>
+
+            <concat destfile="${chimera.debDistDir}/chimera-user.psql">
+                <filelist dir="${chimera.sqlDir}"
+                          files="${chimera.dbCreateScript}, ${chimera.dbProcScript}" />
+            </concat>
+
+            <copy todir="${chimera.debDistDir}" file="${chimera.debTemplateDir}/chimera-admin.psql" />
+
+            <exec executable="dpkg-buildpackage" failonerror="true"
+                dir="${chimera.debDistDir}">
+                <arg line="-rfakeroot -uc -A" />
+            </exec>
+
+             <!--  delete temporary files -->
+             <delete dir="${chimera.debDistDir}" />
     </target>
 </project>
