@@ -2573,19 +2573,21 @@ public final class Storage
                                    FileMetaData fileMetaData)
         throws SRMException
     {
-        final File path = new File(getPath(surl).toString());
+        final FsPath path = getPath(surl);
         final List<URI> result = new ArrayList<URI>();
         final String base = addTrailingSlash(surl.toString());
         Subject subject = Subjects.getSubject((AuthorizationRecord) user);
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
             {
+                @Override
                 public Set<FileAttribute> getRequiredAttributes()
                 {
                     return EnumSet.noneOf(FileAttribute.class);
                 }
 
-                public void print(FileAttributes dirAttr, DirectoryEntry entry)
+                @Override
+                public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
                 {
                     result.add(URI.create(base + entry.getName()));
                 }
@@ -2625,22 +2627,23 @@ public final class Storage
         if (verbose) {
             required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
         }
-        String directory = getPathOfSurl(surl);
-        final String prefix = addTrailingSlash(directory);
+        final FsPath rootPath = new FsPath(config.getSrm_root());
         final List<FileMetaData> result = new ArrayList<FileMetaData>();
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
             {
+                @Override
                 public Set<FileAttribute> getRequiredAttributes()
                 {
                     return required;
                 }
 
-                public void print(FileAttributes dirAttr, DirectoryEntry entry)
+                @Override
+                public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
                 {
                     FileAttributes attributes = entry.getFileAttributes();
                     DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
-                    fmd.SURL = prefix + entry.getName();
+                    fmd.SURL = rootPath.relativize(new FsPath(dir, entry.getName())).toString();
 
                     if (verbose && attributes.getFileType() != FileType.DIR) {
                         PnfsId pnfsId = attributes.getPnfsId();
@@ -2683,7 +2686,7 @@ public final class Storage
             };
 
         try {
-            File path = new File(getPath(surl).toString());
+            FsPath path = getPath(surl);
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
             _listSource.printDirectory(subject, printer, path, null,
                                        new Interval(offset, offset + count - 1));

@@ -2777,7 +2777,6 @@ public abstract class AbstractFtpDoorV1
         }
 
         FsPath path = absolutePath(arg);
-        File f = new File(path.toString());
 
         try {
             _commandQueue.enableInterrupt();
@@ -2800,11 +2799,11 @@ public abstract class AbstractFtpDoorV1
                     : new ShortListPrinter(writer);
 
                 try {
-                    total = _listSource.printDirectory(null, printer, f, null, null);
+                    total = _listSource.printDirectory(null, printer, path, null, null);
                 } catch (NotDirCacheException e) {
-                    /* f exists, but it is not a directory.
+                    /* path exists, but it is not a directory.
                      */
-                    _listSource.printFile(null, printer, f);
+                    _listSource.printFile(null, printer, path);
                     total = 1;
                 } catch (FileNotFoundCacheException e) {
                     /* If f does not exist, then it could be a
@@ -2812,8 +2811,8 @@ public abstract class AbstractFtpDoorV1
                      * repeat the list.
                      */
                     total =
-                        _listSource.printDirectory(null, printer, f.getParentFile(),
-                                                   new Glob(f.getName()), null);
+                        _listSource.printDirectory(null, printer, path.getParent(),
+                                                   new Glob(path.getName()), null);
                 }
 
                 writer.close();
@@ -2874,7 +2873,7 @@ public abstract class AbstractFtpDoorV1
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
                 total = _listSource.printDirectory(null, new ShortListPrinter(writer),
-                                                   new File(path.toString()), null, null);
+                                                   path, null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
@@ -2916,10 +2915,9 @@ public abstract class AbstractFtpDoorV1
             FsPath path = absolutePath(arg);
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            File f = new File(path.toString());
             pw.println("250- Listing " + arg + "\r\n");
             pw.print(' ');
-            _listSource.printFile(null, new FactPrinter(pw), f);
+            _listSource.printFile(null, new FactPrinter(pw), path);
             pw.print("250 End");
             reply(sw.toString());
         } catch (InterruptedException e) {
@@ -2972,7 +2970,7 @@ public abstract class AbstractFtpDoorV1
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
                 total = _listSource.printDirectory(null, new FactPrinter(writer),
-                                                   new File(path.toString()), null, null);
+                                                   path, null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
@@ -3618,12 +3616,14 @@ public abstract class AbstractFtpDoorV1
             _out = writer;
         }
 
+        @Override
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             return EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             _out.append(entry.getName()).append("\r\n");
         }
@@ -3647,6 +3647,7 @@ public abstract class AbstractFtpDoorV1
             _userName = Subjects.getUserName(_subject);
         }
 
+        @Override
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             Set<org.dcache.namespace.FileAttribute> attributes =
@@ -3655,7 +3656,8 @@ public abstract class AbstractFtpDoorV1
             return attributes;
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             StringBuilder mode = new StringBuilder();
             FileAttributes attr = entry.getFileAttributes();
@@ -3722,6 +3724,7 @@ public abstract class AbstractFtpDoorV1
             _out = writer;
         }
 
+        @Override
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             Set<org.dcache.namespace.FileAttribute> attributes =
@@ -3751,7 +3754,8 @@ public abstract class AbstractFtpDoorV1
             return attributes;
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             if (!_currentFacts.isEmpty()) {
                 AccessType access;

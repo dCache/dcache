@@ -9,7 +9,6 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.io.Serializable;
-import java.io.File;
 import java.io.IOException;
 
 import diskCacheV111.util.CacheException;
@@ -17,6 +16,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FsPath;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
@@ -72,7 +72,7 @@ public class ListDirectoryHandler
      */
     @Override
     public DirectoryStream
-        list(Subject subject, File path, Glob pattern, Interval range)
+        list(Subject subject, FsPath path, Glob pattern, Interval range)
         throws InterruptedException, CacheException
     {
         return list(subject, path, pattern, range,
@@ -90,7 +90,7 @@ public class ListDirectoryHandler
      */
     @Override
     public DirectoryStream
-        list(Subject subject, File path, Glob pattern, Interval range,
+        list(Subject subject, FsPath path, Glob pattern, Interval range,
              Set<FileAttribute> attributes)
         throws InterruptedException, CacheException
     {
@@ -122,7 +122,7 @@ public class ListDirectoryHandler
 
     @Override
     public void printFile(Subject subject, DirectoryListPrinter printer,
-                          File path)
+                          FsPath path)
         throws InterruptedException, CacheException
     {
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
@@ -131,14 +131,14 @@ public class ListDirectoryHandler
         FileAttributes attributes =
             handler.getFileAttributes(path.toString(), required);
         FileAttributes dirAttr =
-            handler.getFileAttributes(path.getParent(), required);
-        printer.print(dirAttr,
+            handler.getFileAttributes(path.getParent().toString(), required);
+        printer.print(path.getParent(), dirAttr,
                       new DirectoryEntry(path.getName(), attributes));
     }
 
     @Override
     public int printDirectory(Subject subject, DirectoryListPrinter printer,
-                              File path, Glob glob, Interval range)
+                              FsPath path, Glob glob, Interval range)
         throws InterruptedException, CacheException
     {
         Set<org.dcache.namespace.FileAttribute> required =
@@ -150,7 +150,7 @@ public class ListDirectoryHandler
         try {
             int total = 0;
             for (DirectoryEntry entry: stream) {
-                printer.print(dirAttr, entry);
+                printer.print(path, dirAttr, entry);
                 total++;
             }
             return total;
