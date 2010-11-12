@@ -110,6 +110,7 @@ class Pinner extends SMCTask
         info("findReadPool for "+_job.getPnfsId()+" host="+host);
         DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap", 3, 0, host, 0);
+        pinfo.fileCheckRequired(false);
 
         PoolMgrSelectReadPoolMsg request =
             new PoolMgrSelectReadPoolMsg(_job.getPnfsId(),

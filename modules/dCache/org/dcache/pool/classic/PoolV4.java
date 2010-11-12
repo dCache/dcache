@@ -1113,7 +1113,7 @@ public class PoolV4
 
             _log.warn("PoolIoFileMessage request rejected due to "
                       + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
         msg.setReply();
@@ -1126,7 +1126,7 @@ public class PoolV4
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
             _log.warn("Pool2PoolTransferMsg request rejected due to "
                        + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
         String poolName = msg.getPoolName();
@@ -1157,11 +1157,11 @@ public class PoolV4
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             _log.warn("PoolFetchFileMessage request rejected due to "
                        + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
             _log.warn("PoolFetchFileMessage request rejected due to LFS mode");
-            throw new CacheException(104, "Pool has no tape backend");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool has no tape backend");
         }
 
         PnfsId pnfsId = msg.getPnfsId();
@@ -1193,11 +1193,11 @@ public class PoolV4
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
             _log.warn("PoolRemoveFilesFromHsmMessage request rejected due to "
                       + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
             _log.warn("PoolRemoveFilesFromHsmMessage request rejected due to LFS mode");
-            throw new CacheException(104, "Pool has no tape backend");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool has no tape backend");
         }
 
         _storageHandler.remove(envelope);
@@ -1240,7 +1240,7 @@ public class PoolV4
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
             _log.warn("PoolRemoveFilesMessage request rejected due to "
                       + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
         String[] fileList = msg.getFiles();
@@ -1340,7 +1340,7 @@ public class PoolV4
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)) {
             _log.warn("PoolSetStickyMessage request rejected due to "
                       + _poolMode);
-            throw new CacheException(104, "Pool is disabled");
+            throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
         _repository.setSticky(msg.getPnfsId(),

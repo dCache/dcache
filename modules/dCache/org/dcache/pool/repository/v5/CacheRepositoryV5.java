@@ -576,7 +576,16 @@ public class CacheRepositoryV5
 
         assertInitialized();
 
-        MetaDataRecord entry = getMetaDataRecord(id);
+        MetaDataRecord entry;
+        try {
+            entry = getMetaDataRecord(id);
+        } catch (FileNotInCacheException e) {
+            /* Attempts to set a sticky bit on a missing file may
+             * indicate a stale registration in the name space.
+             */
+            _pnfs.clearCacheLocation(id);
+            throw e;
+        }
 
         /* We synchronize on 'this' because setSticky below is
          * synchronized; and 'this' has to be locked before entry.
