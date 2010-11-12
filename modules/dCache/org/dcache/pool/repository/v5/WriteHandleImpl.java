@@ -10,7 +10,7 @@ import diskCacheV111.util.CacheException;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.FileSizeMismatchException;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.MetaDataRecord;
@@ -27,7 +27,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
-class WriteHandleImpl implements WriteHandle
+class WriteHandleImpl implements ReplicaDescriptor
 {
     enum HandleState
     {

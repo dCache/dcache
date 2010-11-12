@@ -1,7 +1,5 @@
 package org.dcache.pool.repository;
 
-import java.util.concurrent.TimeoutException;
-
 /**
  * An allocator supports methods for allocating and freeing space.
  */

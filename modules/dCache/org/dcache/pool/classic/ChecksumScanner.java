@@ -18,8 +18,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.namespace.FileAttribute;
 
-import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.ReplicaDescriptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +80,7 @@ public class ChecksumScanner
 
             for (PnfsId id: _repository) {
                 try {
-                    ReadHandle handle = _repository.openEntry(id);
+                    ReplicaDescriptor handle = _repository.openEntry(id);
                     try {
                         Checksum file, replica;
 
@@ -140,7 +140,7 @@ public class ChecksumScanner
         {
             _fileCRC = null;
             _infoCRC = null;
-            ReadHandle handle = _repository.openEntry(_pnfsId);
+            ReplicaDescriptor handle = _repository.openEntry(_pnfsId);
             try {
                 _fileCRC = checkFile(handle.getFile());
                 StorageInfo info = handle.getEntry().getStorageInfo();

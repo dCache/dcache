@@ -15,8 +15,7 @@ import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
-import org.dcache.pool.repository.ReadHandle;
-import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
@@ -427,7 +426,7 @@ public class CacheRepositoryV5
     }
 
     @Override
-    public WriteHandle createEntry(PnfsId id,
+    public ReplicaDescriptor createEntry(PnfsId id,
                                    StorageInfo info,
                                    EntryState transferState,
                                    EntryState targetState,
@@ -483,7 +482,7 @@ public class CacheRepositoryV5
     }
 
     @Override
-    public ReadHandle openEntry(PnfsId id)
+    public ReplicaDescriptor openEntry(PnfsId id)
         throws CacheException, InterruptedException
     {
         /* TODO: Refine the exceptions. Throwing FileNotInCacheException
@@ -493,7 +492,7 @@ public class CacheRepositoryV5
         assertInitialized();
 
         try {
-            ReadHandle handle;
+            ReplicaDescriptor handle;
 
             MetaDataRecord entry = getMetaDataRecord(id);
             synchronized (entry) {

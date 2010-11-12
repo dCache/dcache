@@ -1,6 +1,6 @@
 package org.dcache.pool.classic;
 
-import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
@@ -41,7 +41,7 @@ public class PoolIOWriteTransfer
     private final static Logger _log =
         LoggerFactory.getLogger(PoolIOWriteTransfer.class);
 
-    private final WriteHandle _handle;
+    private final ReplicaDescriptor _handle;
     private final File _file;
     private final ChecksumModuleV1 _checksumModule;
 

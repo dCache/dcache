@@ -27,7 +27,7 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.ReadHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.IllegalTransitionException;
 import static org.dcache.pool.repository.EntryState.*;
 
@@ -339,7 +339,7 @@ public class MigrationModuleServer
         {
             try {
                 if (_computeChecksumOnUpdate) {
-                    ReadHandle handle = _repository.openEntry(_pnfsId);
+                    ReplicaDescriptor handle = _repository.openEntry(_pnfsId);
                     try {
                         File file = handle.getFile();
                         ChecksumFactory factory =

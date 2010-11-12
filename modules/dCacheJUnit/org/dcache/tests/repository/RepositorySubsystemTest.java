@@ -33,8 +33,7 @@ import org.dcache.pool.classic.SpaceSweeper2;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
 import static org.dcache.pool.repository.EntryState.*;
-import org.dcache.pool.repository.ReadHandle;
-import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -108,7 +107,7 @@ public class RepositorySubsystemTest
             protected void run()
                 throws CacheException, IOException, InterruptedException
             {
-                WriteHandle handle =
+                ReplicaDescriptor handle =
                     repository.createEntry(id,
                                            info,
                                            EntryState.FROM_CLIENT,
@@ -285,7 +284,7 @@ public class RepositorySubsystemTest
     private void assertCanOpen(PnfsId id, long size, EntryState state)
     {
         try {
-            ReadHandle handle = repository.openEntry(id);
+            ReplicaDescriptor handle = repository.openEntry(id);
             try {
                 assertEquals(new File(dataDir, id.toString()), handle.getFile());
                 assertCacheEntry(handle.getEntry(), id, size, state);
@@ -487,7 +486,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        ReadHandle handle = repository.openEntry(id1);
+        ReplicaDescriptor handle = repository.openEntry(id1);
         handle.close();
         handle.close();
     }
@@ -500,7 +499,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        ReadHandle handle = repository.openEntry(id1);
+        ReplicaDescriptor handle = repository.openEntry(id1);
         handle.close();
         handle.getFile();
     }
@@ -513,7 +512,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        ReadHandle handle = repository.openEntry(id1);
+        ReplicaDescriptor handle = repository.openEntry(id1);
         handle.close();
         handle.getEntry();
     }
@@ -590,7 +589,7 @@ public class RepositorySubsystemTest
                 throws CacheException, InterruptedException,
                        IllegalTransitionException
             {
-                ReadHandle handle1 = repository.openEntry(id1);
+                ReplicaDescriptor handle1 = repository.openEntry(id1);
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertNoStateChangeEvent();
@@ -626,11 +625,11 @@ public class RepositorySubsystemTest
                 throws CacheException, InterruptedException,
                        IllegalTransitionException
             {
-                ReadHandle h1 = repository.openEntry(id1);
+                ReplicaDescriptor h1 = repository.openEntry(id1);
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertStep("Cache location should have been cleared", 1);
-                ReadHandle h2 = repository.openEntry(id1);
+                ReplicaDescriptor h2 = repository.openEntry(id1);
                 h1.close();
                 assertNoStateChangeEvent();
                 h2.close();
@@ -708,7 +707,7 @@ public class RepositorySubsystemTest
                        IOException
             {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                WriteHandle handle =
+                ReplicaDescriptor handle =
                     repository.createEntry(id4, info4, transferState,
                                            finalState, stickyRecords);
                 try {
@@ -810,7 +809,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        WriteHandle handle =
+        ReplicaDescriptor handle =
             repository.createEntry(id4, info4, FROM_CLIENT, PRECIOUS, null);
         handle.allocate(-1);
     }

@@ -21,7 +21,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.classic.ChecksumModuleV1;
@@ -243,7 +243,7 @@ class Companion
     public void transfer(DataInputStream in, DataOutputStream out)
         throws IllegalStateException
     {
-        WriteHandle handle;
+        ReplicaDescriptor handle;
         synchronized (this) {
             try {
                 CompanionContext.CompanionState state = _fsm.getState();

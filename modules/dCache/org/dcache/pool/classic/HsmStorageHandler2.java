@@ -58,8 +58,7 @@ import diskCacheV111.vehicles.StorageInfoMessage;
 
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.WriteHandle;
-import org.dcache.pool.repository.ReadHandle;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
@@ -415,7 +414,7 @@ public class HsmStorageHandler2
 
     private class FetchThread extends Info implements Batchable
     {
-        private final WriteHandle _handle;
+        private final ReplicaDescriptor _handle;
         private final StorageInfoMessage _infoMsg;
         private long _timestamp = 0;
         private int _id;
@@ -619,7 +618,7 @@ public class HsmStorageHandler2
             }
         }
 
-        private void doChecksum(WriteHandle handle)
+        private void doChecksum(ReplicaDescriptor handle)
             throws CacheException, InterruptedException, NoRouteToCellException
         {
             /* Return early without opening the entry if we don't need
@@ -934,7 +933,7 @@ public class HsmStorageHandler2
                 }
 
                 StorageInfo storageInfo;
-                ReadHandle handle = _repository.openEntry(pnfsId);
+                ReplicaDescriptor handle = _repository.openEntry(pnfsId);
                 try {
                     doChecksum(handle);
 
@@ -1088,7 +1087,7 @@ public class HsmStorageHandler2
             }
         }
 
-        private void doChecksum(ReadHandle handle)
+        private void doChecksum(ReplicaDescriptor handle)
             throws CacheException, IOException, InterruptedException
         {
             if (!_checksumModule.checkOnFlush())

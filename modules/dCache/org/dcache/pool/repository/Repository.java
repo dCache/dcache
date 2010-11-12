@@ -61,7 +61,7 @@ public interface Repository
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
      */
-    WriteHandle createEntry(PnfsId id,
+    ReplicaDescriptor createEntry(PnfsId id,
                             StorageInfo info,
                             EntryState transferState,
                             EntryState targetState,
@@ -88,7 +88,7 @@ public interface Repository
      * in which it cannot be opened
      * @throws CacheException in case of other errors
      */
-    ReadHandle openEntry(PnfsId id)
+    ReplicaDescriptor openEntry(PnfsId id)
         throws CacheException,
                InterruptedException;
 

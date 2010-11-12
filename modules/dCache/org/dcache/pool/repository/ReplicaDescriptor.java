@@ -1,31 +1,39 @@
 package org.dcache.pool.repository;
 
 import diskCacheV111.util.CacheException;
-import org.dcache.util.Checksum;
-import java.util.concurrent.TimeoutException;
 import java.io.File;
+import org.dcache.util.Checksum;
 
 
 
 /**
- * Repository handle providing write access to an entry.
+ * Repository replica IO descriptor providing read or write access to an entry.
  *
- * The only way to create a new entry is through a write handle.  A
- * handle must be explicitly committed and closed after the write has
- * completed. Failure to create the file is signaled by closing the
- * handle without committing it first.
+ * A descriptor must be explicitly closed when access id no longer desired.
+ * Opened for the write descriptor have to be committed prior closing it.
  *
- * The write handle provides methods for allocating space for the
+ * Two or more read descriptors for the same entry can be open
+ * simultaneously. An open read descriptor does not prevent entry state
+ * changes.
+ *
+ * The descriptor provides methods for allocating space for the
  * entry. Space must be allocated before it is consumed on the
- * disk. It is the responsibility of the write handle to release any
+ * disk. It is the responsibility of the handle to release any
  * over allocation after the transfer has completed.
  */
-public interface WriteHandle extends Allocator
+public interface ReplicaDescriptor extends Allocator
 {
+    /*
+     * TODO:
+     * for now commit is not called only in case of checksum errors.
+     * As checksum semanting will be changed, there will ne no need
+     * for an extra commit step prior close().
+     */
+
     /**
-     * Signal successful creation of the replica.
+     * Commit changes on file.
      *
-     * The file must not be modified after the handle has been
+     * The file must not be modified after the descriptor has been
      * committed.
      *
      * Committing adjusts space reservation to match the actual file
@@ -38,14 +46,14 @@ public interface WriteHandle extends Allocator
      * thrown. If no checksum was known, the checksum is stored in the
      * storage info and in PNFS.
      *
-     * In case of problems, the handle is not closed and an exception
+     * In case of problems, the descriptor is not closed and an exception
      * is thrown.
      *
-     * Committing a handle multiple times causes an
+     * Committing a descriptor multiple times causes an
      * IllegalStateException.
      *
      * @param checksum Checksum of the replica. May be null.
-     * @throws IllegalStateException if the handle is already
+     * @throws IllegalStateException if the descriptor is already
      * committed or closed.
      * @throws FileSizeMismatchException if file size does not match
      * the expected size.
@@ -53,21 +61,19 @@ public interface WriteHandle extends Allocator
      * not be updated.
      */
     void commit(Checksum checksum)
-        throws IllegalStateException, InterruptedException, CacheException;
+        throws IllegalStateException, InterruptedException, FileSizeMismatchException, CacheException;
 
     /**
-     * Closes the write handle. The file must not be modified after
-     * the handle has been closed and the handle itself must be
-     * discarded.
+     * Closes the descriptor. Once descriptor is closed it can't be used any more.
      *
-     * If the handle was not committed, closing the handle will mark
+     * If the descriptor was not committed, closing the descriptor will mark
      * the replica broken or delete it. The action taken depends on
-     * the handle state and possibly configuration settings.
+     * the descriptor state and possibly configuration settings.
      *
-     * Closing a handle multiple times causes an
+     * Closing a descriptor multiple times causes an
      * IllegalStateException.
      *
-     * @throws IllegalStateException if the handle is closed.
+     * @throws IllegalStateException if the descriptor is closed.
      */
     void close() throws IllegalStateException;
 

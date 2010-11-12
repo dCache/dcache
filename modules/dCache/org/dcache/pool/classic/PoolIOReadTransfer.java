@@ -1,6 +1,5 @@
 package org.dcache.pool.classic;
 
-import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.Repository;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
@@ -13,6 +12,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.ReplicaDescriptor;
 
 /**
  * Encapsulates a read transfer, that is, sending a file. It acts as a
@@ -21,7 +21,7 @@ import org.dcache.pool.movers.IoMode;
 public class PoolIOReadTransfer
     extends PoolIOTransfer
 {
-    private final ReadHandle _handle;
+    private final ReplicaDescriptor _handle;
     private final long _size;
 
     public PoolIOReadTransfer(PnfsId pnfsId,

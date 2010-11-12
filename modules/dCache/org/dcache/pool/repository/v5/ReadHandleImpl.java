@@ -5,11 +5,12 @@ import java.util.concurrent.TimeoutException;
 import java.io.File;
 
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.util.Checksum;
 
-class ReadHandleImpl implements ReadHandle
+class ReadHandleImpl implements ReplicaDescriptor
 {
     private final CacheRepositoryV5 _repository;
     private final MetaDataRecord _entry;
@@ -81,5 +82,17 @@ class ReadHandleImpl implements ReadHandle
             throw new RuntimeException("Internal repository error: "
                                        + e.getMessage());
         }
+    }
+
+    public void commit(Checksum checksum) throws IllegalStateException, InterruptedException, CacheException {
+        // NOP
+    }
+
+    public void allocate(long size) throws IllegalStateException, IllegalArgumentException, InterruptedException {
+        throw new IllegalStateException("Read-Only Handle");
+    }
+
+    public void free(long size) throws IllegalStateException, IllegalArgumentException {
+        throw new IllegalStateException("Read-Only Handle");
     }
 }
