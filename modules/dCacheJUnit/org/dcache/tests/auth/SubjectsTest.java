@@ -1,6 +1,7 @@
 package org.dcache.tests.auth;
 
 import static org.junit.Assert.*;
+
 import org.junit.*;
 
 import org.dcache.auth.*;
@@ -194,6 +195,12 @@ public class SubjectsTest
     public void testGetPrimaryGidWithNoPrimaryGid()
     {
         Subjects.getPrimaryGid(_subject2);
+    }
+
+    @Test
+    public void testGetUserNameWithNull()
+    {
+        assertNull(Subjects.getUserName(null));
     }
 
     @Test
