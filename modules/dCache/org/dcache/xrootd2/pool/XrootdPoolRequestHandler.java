@@ -44,7 +44,6 @@ import org.dcache.xrootd2.util.OpaqueStringParser;
 import org.dcache.xrootd2.util.ParseException;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -74,7 +73,6 @@ import org.slf4j.LoggerFactory;
  * Synchronisation is currently not ensured by the handler; it relies on the
  * synchronization by the underlying channel execution handler.
  */
-@ChannelPipelineCoverage("one")
 public class XrootdPoolRequestHandler extends XrootdRequestHandler
 {
     private final static Logger _log =

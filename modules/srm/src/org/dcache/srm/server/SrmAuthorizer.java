@@ -177,11 +177,16 @@ public class SrmAuthorizer {
        String role,
        GSSContext context) throws SRMAuthorizationException {
 
+       org.apache.axis.MessageContext mctx =
+           org.apache.axis.MessageContext.getCurrentContext();
+       String remoteIP = (String) mctx.getProperty(REMOTE_ADDR);
+
       org.dcache.srm.SRMUser requestUser =
          authorization.authorize(requestCredential.getId(),
          requestCredential.getCredentialName(),
          role,
-         context);
+         context,
+         remoteIP);
 
       return requestUser;
    }

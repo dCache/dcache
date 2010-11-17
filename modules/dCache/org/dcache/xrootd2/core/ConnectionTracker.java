@@ -1,6 +1,7 @@
 package org.dcache.xrootd2.core;
 
 import java.io.PrintWriter;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -9,7 +10,7 @@ import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.ChannelHandler.Sharable;;
 import org.jboss.netty.channel.Channel;
 
 import org.dcache.cells.CellCommandListener;
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * Channel handler that keeps track of connected channels. Provides
  * administrative commands for listing and killing connections.
  */
-@ChannelPipelineCoverage("all")
+@Sharable
 public class ConnectionTracker
     extends SimpleChannelHandler
     implements CellCommandListener,

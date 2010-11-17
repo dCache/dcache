@@ -1,10 +1,11 @@
 package org.dcache.xrootd2.core;
 
 import static org.jboss.netty.channel.Channels.*;
+
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.ChannelHandler.Sharable;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
@@ -13,7 +14,7 @@ import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
  * Downstream ChannelHandler encoding AbstractResponseMessage objects
  * into ChannelBuffer objects.
  */
-@ChannelPipelineCoverage("all")
+@Sharable
 public class XrootdEncoder extends SimpleChannelHandler
 {
     @Override

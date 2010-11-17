@@ -42,7 +42,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileMetaData.Permissions;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -61,7 +60,6 @@ import org.slf4j.LoggerFactory;
  * Should possibly be renamed as only open requests are
  * redirected. Other requests can be handled locally.
  */
-@ChannelPipelineCoverage("one")
 public class XrootdRedirectHandler extends XrootdRequestHandler
 {
     private final static Logger _log =
