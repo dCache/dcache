@@ -254,10 +254,12 @@ then
     SRMCP_OPTIONS="-conf=$SRM_CONFIG $SRMCP_OPTIONS"
   fi
 fi
-cmd="$java_location -cp $SRM_CP $OPTIONS gov.fnal.srm.util.SRMDispatcher  $SRMCP_OPTIONS $args"
+cmd="$java_location $OPTIONS gov.fnal.srm.util.SRMDispatcher $SRMCP_OPTIONS $args"
 if [ "$DEBUG" = "true" ]
     then
+    echo "CLASSPATH: $SRM_CP"
+    echo
     echo $cmd
 fi
-$cmd
+CLASSPATH="$SRM_CP" $cmd
 
