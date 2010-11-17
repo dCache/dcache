@@ -639,20 +639,21 @@ public class DcacheResourceFactory
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
             {
+                @Override
                 public Set<FileAttribute> getRequiredAttributes()
                 {
                     return REQUIRED_ATTRIBUTES;
                 }
 
-                public void print(FileAttributes dirAttr, DirectoryEntry entry)
+                @Override
+                public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
                 {
                     result.add(getResource(new FsPath(path, entry.getName()),
                                            entry.getFileAttributes()));
                 }
             };
 
-        _list.printDirectory(getSubject(), printer,
-                             new File(path.toString()), null, null);
+        _list.printDirectory(getSubject(), printer, path, null, null);
         return result;
     }
 
@@ -670,7 +671,7 @@ public class DcacheResourceFactory
                         return EnumSet.of(MODIFICATION_TIME, TYPE);
                     }
 
-                    public void print(FileAttributes dirAttr, DirectoryEntry entry) {
+                    public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry) {
                         FileAttributes attr = entry.getFileAttributes();
                         Date mtime = new Date(attr.getModificationTime());
                         w.open("tr");
@@ -768,8 +769,7 @@ public class DcacheResourceFactory
         w.close("tr");
         w.close("thead");
         w.open("tbody");
-        _list.printDirectory(getSubject(), printer,
-                new File(path.toString()), null, null);
+        _list.printDirectory(getSubject(), printer, path, null, null);
         w.close("tbody");
         w.close("table");
         w.close("div");

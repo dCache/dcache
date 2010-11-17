@@ -18,9 +18,6 @@ import org.dcache.cells.CellInfoProvider;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellInfo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Channel handler that keeps track of connected channels. Provides
  * administrative commands for listing and killing connections.
@@ -31,16 +28,14 @@ public class ConnectionTracker
     implements CellCommandListener,
                CellInfoProvider
 {
-    private final static Logger _log =
-        LoggerFactory.getLogger(ConnectionTracker.class);
-
-    private Map<Integer, Channel> _channels = new ConcurrentHashMap();
+    private Map<Integer, Channel> _channels = new ConcurrentHashMap<Integer, Channel>();
     private AtomicInteger _counter = new AtomicInteger();
 
     public ConnectionTracker()
     {
     }
 
+    @Override
     public void channelConnected(ChannelHandlerContext ctx,
                                  ChannelStateEvent e)
         throws Exception
@@ -51,6 +46,7 @@ public class ConnectionTracker
         _counter.getAndIncrement();
     }
 
+    @Override
     public void channelDisconnected(ChannelHandlerContext ctx,
                                     ChannelStateEvent e)
         throws Exception
@@ -59,11 +55,13 @@ public class ConnectionTracker
         super.channelDisconnected(ctx, e);
     }
 
+    @Override
     public CellInfo getCellInfo(CellInfo info)
     {
         return info;
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println(String.format("Active : %d", _channels.size()));

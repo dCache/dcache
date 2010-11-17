@@ -496,9 +496,9 @@ public interface AbstractStorageElement {
      * entry.
      *
      * The path of each file is provided in the SURL field of the
-     * FileMetaDataObject. The <code>directory</code> parameter is a
-     * prefix of all paths and hence the SURL field is not a complete
-     * SURL.
+     * FileMetaDataObject. The path of the <code>surl</code> parameter
+     * is a prefix of all paths and hence the SURL field is not a
+     * complete SURL.
      *
      * If verbose listing is requested, additional fields such as the
      * spaceTokens and isCached fields of the FileMetaData object will

@@ -118,8 +118,8 @@ public class DCapProtocolInfo implements IpProtocolInfo {
         return _fileCheck;
     }
 
-    public void fileCheckRequaried(boolean isRequaried) {
-        _fileCheck = isRequaried;
+    public void fileCheckRequired(boolean isRequired) {
+        _fileCheck = isRequired;
     }
 
     public boolean isPassive() {

@@ -558,8 +558,8 @@ public abstract class AbstractFtpDoorV1
 
     protected Subject _subject;
     protected boolean _isUserReadOnly;
-    protected String _pathRoot;
-    protected String _curDirV;
+    protected FsPath _pathRoot = new FsPath();
+    protected String _cwd = "/";    // Relative to _pathRoot
     protected String _xferMode = "S";
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
@@ -1198,9 +1198,9 @@ public abstract class AbstractFtpDoorV1
 
         for (LoginAttribute attribute: login.getLoginAttributes()) {
             if (attribute instanceof RootDirectory) {
-                _pathRoot = ((RootDirectory) attribute).getRoot();
+                _pathRoot = new FsPath(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
-                _curDirV = ((HomeDirectory) attribute).getHome();
+                _cwd = ((HomeDirectory) attribute).getHome();
             } else if (attribute instanceof ReadOnly) {
                 _isUserReadOnly = ((ReadOnly) attribute).isReadOnly();
             }
@@ -1723,10 +1723,9 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String pnfsPath = absolutePath(arg);
-
+        FsPath path = absolutePath(arg);
         try {
-            _pnfs.deletePnfsEntry(pnfsPath,
+            _pnfs.deletePnfsEntry(path.toString(),
                                   EnumSet.of(FileType.REGULAR, FileType.LINK));
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
@@ -1736,7 +1735,7 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied, reason: " + e);
             return;
         }
-        sendRemoveInfoToBilling(pnfsPath);
+        sendRemoveInfoToBilling(path);
         reply("200 file deleted");
     }
 
@@ -1802,27 +1801,11 @@ public abstract class AbstractFtpDoorV1
     //                                                                       //
 
 
-    private String absolutePath(String relCwdPath)
+    private FsPath absolutePath(String path)
     {
-        if (_pathRoot == null)
-            return null;
-
-        _curDirV = (_curDirV == null ? "/" : _curDirV);
-        FsPath relativeToRootPath = new FsPath(_curDirV);
-        relativeToRootPath.add(relCwdPath);
-
-
-        FsPath absolutePath = new FsPath(_pathRoot);
-        String rootPath = absolutePath.toString();
-        absolutePath.add("./" + relativeToRootPath.toString());
-        String absolutePathStr = absolutePath.toString();
-        _logger.debug("Absolute Path is \"{}\", root is {}",
-                      absolutePathStr, _pathRoot);
-        if (!absolutePathStr.startsWith(rootPath)) {
-            _logger.debug("AbsolutePath didn't start with root");
-            return null;
-        }
-        return absolutePathStr;
+        FsPath relativePath = new FsPath(_cwd);
+        relativePath.add(path);
+        return new FsPath(_pathRoot, relativePath);
     }
 
     public void ac_rmd(String arg)
@@ -1852,14 +1835,9 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String pnfsPath = absolutePath(arg);
-        if (pnfsPath == null) {
-            reply("553 Cannot determine full directory pathname in PNFS: " + arg);
-            return;
-        }
-
         try {
-            _pnfs.deletePnfsEntry(pnfsPath, EnumSet.of(FileType.DIR));
+            FsPath path = absolutePath(arg);
+            _pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.DIR));
             reply("200 OK");
         } catch (FileNotFoundCacheException e) {
             reply("550 File not found");
@@ -1898,19 +1876,14 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String pnfsPath = absolutePath(arg);
-        if (pnfsPath == null) {
-            reply("553 Cannot create directory in PNFS: " + arg);
-            return;
-        }
-
         try {
-            _pnfs.createPnfsDirectory(pnfsPath);
+            FsPath path = absolutePath(arg);
+            _pnfs.createPnfsDirectory(path.toString());
             reply("200 OK");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
-        } catch(CacheException ce) {
-            reply("553 Permission denied, reason: "+ce);
+        } catch (CacheException e) {
+            reply("553 Permission denied, reason: " + e);
         }
     }
 
@@ -1963,21 +1936,16 @@ public abstract class AbstractFtpDoorV1
             reply(err("PWD",arg));
             return;
         }
-        reply("257 \"" + _curDirV + "\" is current directory");
+        reply("257 \"" + _cwd + "\" is current directory");
     }
 
     public void ac_cwd(String arg)
     {
         try {
-            String newcwd = absolutePath(arg);
-            if (newcwd == null)
-                newcwd = _pathRoot;
-
+            FsPath newcwd = absolutePath(arg);
             checkIsDirectory(newcwd);
-            _curDirV = newcwd.substring(_pathRoot.length());
-            if (_curDirV.length() == 0)
-                _curDirV = "/";
-            reply("250 CWD command succcessful. New CWD is <" + _curDirV + ">");
+            _cwd = _pathRoot.relativize(newcwd).toString();
+            reply("250 CWD command succcessful. New CWD is <" + _cwd + ">");
         } catch (NotDirCacheException e) {
             reply("550 Not a directory: " + arg);
         } catch (FileNotFoundCacheException e) {
@@ -2147,7 +2115,8 @@ public abstract class AbstractFtpDoorV1
             ChecksumFactory cf =
                 ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
             FileAttributes attributes =
-                _pnfs.getFileAttributes(absolutePath(path), EnumSet.of(CHECKSUM));
+                _pnfs.getFileAttributes(absolutePath(path).toString(),
+                                        EnumSet.of(CHECKSUM));
             Checksum checksum = cf.find(attributes.getChecksums());
             if (checksum == null) {
                 throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
@@ -2214,25 +2183,14 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String pnfsPath = absolutePath(path);
-        if (pnfsPath == null) {
-            reply("553 Cannot determine full directory pathname in PNFS: " + path);
-            return;
-        }
-
-        int newperms;
-        try {
-            newperms = Integer.parseInt(permstring, 8); // Assume octal regardless of string
-        } catch (NumberFormatException ex) {
-            reply("501 permissions argument must be an octal integer");
-            return;
-        }
-
-        // Get meta-data for this file/directory
         FileAttributes attributes;
         try {
+            // Assume octal regardless of string
+            int newperms = Integer.parseInt(permstring, 8);
+
+            // Get meta-data for this file/directory
             attributes =
-                _pnfs.getFileAttributes(pnfsPath,
+                _pnfs.getFileAttributes(absolutePath(path).toString(),
                                         EnumSet.of(PNFSID, TYPE,
                                                    OWNER, OWNER_GROUP));
 
@@ -2251,15 +2209,15 @@ public abstract class AbstractFtpDoorV1
 
             FileMetaData newMetaData =
                 new FileMetaData(isADir,myUid,myGid,newperms);
-            _pnfs.pnfsSetFileMetaData(myPnfsId,newMetaData);
+            _pnfs.pnfsSetFileMetaData(myPnfsId, newMetaData);
 
             reply("200 OK");
+        } catch (NumberFormatException ex) {
+            reply("501 permissions argument must be an octal integer");
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
-            return;
         } catch (CacheException ce) {
             reply("550 Permission denied, reason: " + ce);
-            return;
         }
     }
 
@@ -2485,7 +2443,7 @@ public abstract class AbstractFtpDoorV1
                       boolean reply127, int version)
     {
         FtpTransfer transfer =
-            new FtpTransfer(new FsPath(absolutePath(file)),
+            new FtpTransfer(absolutePath(file),
                             offset, size,
                             mode,
                             xferMode,
@@ -2622,7 +2580,7 @@ public abstract class AbstractFtpDoorV1
                        boolean reply127, int version)
     {
         FtpTransfer transfer =
-            new FtpTransfer(new FsPath(absolutePath(file)),
+            new FtpTransfer(absolutePath(file),
                             0, 0,
                             mode,
                             xferMode,
@@ -2723,11 +2681,11 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String path = absolutePath(arg);
+        FsPath path = absolutePath(arg);
         long filelength = 0;
         try {
             FileAttributes attributes =
-                _pnfs.getFileAttributes(path, EnumSet.of(SIZE));
+                _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIZE));
             filelength = attributes.getSize();
         } catch (PermissionDeniedCacheException e) {
             reply("550 Permission denied");
@@ -2752,15 +2710,11 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            String path = absolutePath(arg);
-            if (path == null) {
-                reply("550 File not found");
-                return;
-            }
+            FsPath path = absolutePath(arg);
 
             long modification_time;
             FileAttributes attributes =
-                _pnfs.getFileAttributes(path,
+                _pnfs.getFileAttributes(path.toString(),
                                         EnumSet.of(MODIFICATION_TIME));
             modification_time = attributes.getModificationTime();
             String time_val =
@@ -2822,14 +2776,7 @@ public abstract class AbstractFtpDoorV1
             arg = args.argv(0);
         }
 
-        String absolutepath = absolutePath(arg);
-        if (absolutepath == null) {
-            FsPath relativeToRootPath = new FsPath(_curDirV);
-            relativeToRootPath.add(arg);
-            reply("550 " + relativeToRootPath + " not found.");
-            return;
-        }
-        File f = new File(absolutepath);
+        FsPath path = absolutePath(arg);
 
         try {
             _commandQueue.enableInterrupt();
@@ -2852,11 +2799,11 @@ public abstract class AbstractFtpDoorV1
                     : new ShortListPrinter(writer);
 
                 try {
-                    total = _listSource.printDirectory(null, printer, f, null, null);
+                    total = _listSource.printDirectory(null, printer, path, null, null);
                 } catch (NotDirCacheException e) {
-                    /* f exists, but it is not a directory.
+                    /* path exists, but it is not a directory.
                      */
-                    _listSource.printFile(null, printer, f);
+                    _listSource.printFile(null, printer, path);
                     total = 1;
                 } catch (FileNotFoundCacheException e) {
                     /* If f does not exist, then it could be a
@@ -2864,8 +2811,8 @@ public abstract class AbstractFtpDoorV1
                      * repeat the list.
                      */
                     total =
-                        _listSource.printDirectory(null, printer, f.getParentFile(),
-                                                   new Glob(f.getName()), null);
+                        _listSource.printDirectory(null, printer, path.getParent(),
+                                                   new Glob(path.getName()), null);
                 }
 
                 writer.close();
@@ -2903,15 +2850,7 @@ public abstract class AbstractFtpDoorV1
         try {
             _commandQueue.enableInterrupt();
 
-            /* 550 is not a valid reply for NLST. However other FTP
-             * servers use this return code for NLST. Gerd and Timur
-             * decided to follow their example and violate the spec.
-             */
-            String path = absolutePath(arg);
-            if (path == null) {
-                reply("550 Access denied");
-                return;
-            }
+            FsPath path = absolutePath(arg);
 
             /* RFC 3659 seems to imply that we have to report on
              * illegal arguments (ie attempts to list files) before
@@ -2934,7 +2873,7 @@ public abstract class AbstractFtpDoorV1
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
                 total = _listSource.printDirectory(null, new ShortListPrinter(writer),
-                                                   new File(path), null, null);
+                                                   path, null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
@@ -2943,6 +2882,10 @@ public abstract class AbstractFtpDoorV1
         } catch (InterruptedException e) {
             reply("451 Operation cancelled");
         } catch (FileNotFoundCacheException e) {
+            /* 550 is not a valid reply for NLST. However other FTP
+             * servers use this return code for NLST. Gerd and Timur
+             * decided to follow their example and violate the spec.
+             */
             reply("550 Directory not found");
         } catch (NotDirCacheException e) {
             reply("550 Not a directory");
@@ -2968,28 +2911,13 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        String path;
-        if (arg.length() == 0) {
-            path = absolutePath(".");
-        } else {
-            path = absolutePath(arg);
-        }
-
-        if (path == null) {
-            reply("550 Access denied");
-            return;
-        }
-
-        FsPath tvfsPath = new FsPath(_curDirV == null ? "/" : _curDirV);
-        tvfsPath.add(arg);
-
         try {
+            FsPath path = absolutePath(arg);
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            File f = new File(path);
             pw.println("250- Listing " + arg + "\r\n");
             pw.print(' ');
-            _listSource.printFile(null, new FactPrinter(pw), f);
+            _listSource.printFile(null, new FactPrinter(pw), path);
             pw.print("250 End");
             reply(sw.toString());
         } catch (InterruptedException e) {
@@ -3014,16 +2942,11 @@ public abstract class AbstractFtpDoorV1
         try {
             _commandQueue.enableInterrupt();
 
-            String path;
+            FsPath path;
             if (arg.length() == 0) {
-                path = absolutePath(".") + "/";
+                path = absolutePath(".");
             } else {
-                path = absolutePath(arg) + "/";
-            }
-
-            if (path == null) {
-                reply("501 Directory not found");
-                return;
+                path = absolutePath(arg);
             }
 
             /* RFC 3659 seems to imply that we have to report on
@@ -3047,7 +2970,7 @@ public abstract class AbstractFtpDoorV1
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
                 total = _listSource.printDirectory(null, new FactPrinter(writer),
-                                                   new File(path), null, null);
+                                                   path, null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
@@ -3164,11 +3087,11 @@ public abstract class AbstractFtpDoorV1
      * directory. Throws FileNotFoundCacheException if the path does
      * not exist.
      */
-    private void checkIsDirectory(String path)
+    private void checkIsDirectory(FsPath path)
         throws CacheException
     {
         FileAttributes attributes =
-            _pnfs.getFileAttributes(path, EnumSet.of(SIMPLE_TYPE));
+            _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIMPLE_TYPE));
         if (attributes.getFileType() != FileType.DIR) {
             throw new NotDirCacheException("Not a directory");
         }
@@ -3665,7 +3588,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void sendRemoveInfoToBilling(String pathInPnfs) {
+    private void sendRemoveInfoToBilling(FsPath path) {
         try {
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
@@ -3673,7 +3596,7 @@ public abstract class AbstractFtpDoorV1
             infoRemove.setOwner(getUser());
             infoRemove.setGid((int) Subjects.getPrimaryGid(_subject));
             infoRemove.setUid((int) Subjects.getUid(_subject));
-            infoRemove.setPath(pathInPnfs);
+            infoRemove.setPath(path.toString());
             infoRemove.setClient(_client_data_host);
 
             _billingStub.send(infoRemove);
@@ -3693,12 +3616,14 @@ public abstract class AbstractFtpDoorV1
             _out = writer;
         }
 
+        @Override
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             return EnumSet.noneOf(org.dcache.namespace.FileAttribute.class);
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             _out.append(entry.getName()).append("\r\n");
         }
@@ -3722,6 +3647,7 @@ public abstract class AbstractFtpDoorV1
             _userName = Subjects.getUserName(_subject);
         }
 
+        @Override
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             Set<org.dcache.namespace.FileAttribute> attributes =
@@ -3730,7 +3656,8 @@ public abstract class AbstractFtpDoorV1
             return attributes;
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             StringBuilder mode = new StringBuilder();
             FileAttributes attr = entry.getFileAttributes();
@@ -3797,6 +3724,7 @@ public abstract class AbstractFtpDoorV1
             _out = writer;
         }
 
+        @Override
         public Set<org.dcache.namespace.FileAttribute> getRequiredAttributes()
         {
             Set<org.dcache.namespace.FileAttribute> attributes =
@@ -3826,7 +3754,8 @@ public abstract class AbstractFtpDoorV1
             return attributes;
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             if (!_currentFacts.isEmpty()) {
                 AccessType access;

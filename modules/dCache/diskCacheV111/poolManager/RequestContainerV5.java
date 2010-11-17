@@ -381,6 +381,12 @@ public class RequestContainerV5
        return "" ;
     }
 
+    public String fh_rc_set_max_restore = "Limit total number of concurrent restores.  If the total number of\n" +
+                                          "restores reaches this limit then any additional restores will fail;\n" +
+                                          "when the total number of restores drops below limit then additional\n" +
+                                          "restores will be accepted.  Setting the limit to \"0\" will result in\n" +
+                                          "all restores failing; setting the limit to \"unlimited\" will remove\n" +
+                                          "the limit.";
     public String hh_rc_set_max_restore = "<maxNumberOfRestores>" ;
     public String ac_rc_set_max_restore_$_1( Args args ){
        if( args.argv(0).equals("unlimited") ){

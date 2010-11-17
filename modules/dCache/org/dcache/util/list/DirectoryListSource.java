@@ -1,8 +1,8 @@
 package org.dcache.util.list;
 
 import java.util.Set;
-import java.io.File;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
 import org.dcache.util.Interval;
@@ -34,9 +34,9 @@ public interface DirectoryListSource
      * @param glob Glob to limit the result set; may be null
      * @param range The range of entries to return; may be null
      * @return A DirectoryStream of the entries in the directory
-     * @see #list(File path, Glob pattern, Interval range, Set<FileAttribute> attrs)
+     * @see #list(FsPath path, Glob pattern, Interval range, Set<FileAttribute> attrs)
      */
-    DirectoryStream list(Subject subject, File path,
+    DirectoryStream list(Subject subject, FsPath path,
                          Glob pattern, Interval range)
         throws InterruptedException, CacheException;
 
@@ -64,7 +64,7 @@ public interface DirectoryListSource
      * @param attrs The file attributes to query for each entry
      * @return A DirectoryStream of the entries in the directory
      */
-    DirectoryStream list(Subject subject, File path,
+    DirectoryStream list(Subject subject, FsPath path,
                          Glob pattern, Interval range,
                          Set<FileAttribute> attrs)
         throws InterruptedException, CacheException;
@@ -76,7 +76,7 @@ public interface DirectoryListSource
      * @param printer The ListPrinter used to print the directory entry
      * @param path The path to the entry to print
      */
-    void printFile(Subject subject, DirectoryListPrinter printer, File path)
+    void printFile(Subject subject, DirectoryListPrinter printer, FsPath path)
         throws InterruptedException, CacheException;
 
     /**
@@ -93,6 +93,6 @@ public interface DirectoryListSource
      * @return The number of entries in the directory
      */
     int printDirectory(Subject subject, DirectoryListPrinter printer,
-                       File path, Glob glob, Interval range)
+                       FsPath path, Glob glob, Interval range)
         throws InterruptedException, CacheException;
 }

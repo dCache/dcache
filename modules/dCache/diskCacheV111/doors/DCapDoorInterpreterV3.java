@@ -1869,7 +1869,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _truncFile      = args.getOpt("truncate");
             _truncate       = ( _truncFile != null ) && _truncateAllowed  ;
             _fileCheck      = args.getOpt("skip-file-check") == null;
-            _protocolInfo.fileCheckRequaried(_fileCheck);
+            _protocolInfo.fileCheckRequired(_fileCheck);
 
             _passive        = args.getOpt("passive") != null;
             _protocolInfo.isPassive(_passive);

@@ -60,12 +60,12 @@ public class	FTPTransactionLog
 		GotMiddle = false;
 	}
 
-	public void finalize()
+	public synchronized void finalize()
 	{
 		error("Transaction abandoned");
 	}
 
-	private void addLine(String line)
+	private synchronized void addLine(String line)
 	{
 		if( LWriter == null )
 			return; 	// it's closed already
@@ -81,7 +81,7 @@ public class	FTPTransactionLog
                 }
 	}
 
-	public void begin(String user, String ftp_type, String rw,
+	public synchronized void begin(String user, String ftp_type, String rw,
 		String path, InetAddress addr)
 	{
 		if( root == null )
@@ -129,20 +129,20 @@ public class	FTPTransactionLog
                 }
 	}
 
-	public void middle(long size)
+	public synchronized void middle(long size)
 	{
 		addLine(""+size);
 		GotMiddle = true;
 	}
 
-	public void error(String status)
+	public synchronized void error(String status)
 	{
 		if( !GotMiddle )	middle(0);
 		addLine("ERROR " + status);
 		close();
 	}
 
-	public void success()
+	public synchronized void success()
 	{
 		if( !GotMiddle )	middle(0);
 		addLine("OK");

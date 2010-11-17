@@ -14,6 +14,11 @@ public class CacheException extends Exception {
     private final String _message;
 
     /**
+     * Requested operation is disabled in pool.
+     */
+    public final static int POOL_DISABLED = 104;
+
+    /**
      * Disk I/O error.
      */
     public final static int ERROR_IO_DISK = 204 ;

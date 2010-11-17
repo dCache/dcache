@@ -3,7 +3,6 @@
 package diskCacheV111.pools;
 
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -22,6 +21,7 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
@@ -93,7 +93,7 @@ public class DirectoryLookUpPool extends AbstractCell
     /**
      * List a directory.
      */
-    private String list(File path)
+    private String list(FsPath path)
         throws InterruptedException, CacheException
     {
         StringBuilder sb = new StringBuilder();
@@ -103,8 +103,7 @@ public class DirectoryLookUpPool extends AbstractCell
         } catch (FileNotFoundCacheException e) {
             sb.append("Path " + path + " does not exist.");
         } catch (NotDirCacheException e) {
-            _list.printFile(null, new FilePrinter(sb, path.getParentFile()),
-                            path);
+            _list.printFile(null, new FilePrinter(sb), path);
         }
         return sb.toString();
     }
@@ -121,12 +120,14 @@ public class DirectoryLookUpPool extends AbstractCell
             _out = out;
         }
 
+        @Override
         public Set<FileAttribute> getRequiredAttributes()
         {
             return EnumSet.of(PNFSID, TYPE, SIZE);
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             FileAttributes attr = entry.getFileAttributes();
             _out.append(attr.getPnfsId());
@@ -151,24 +152,24 @@ public class DirectoryLookUpPool extends AbstractCell
     class FilePrinter implements DirectoryListPrinter
     {
         private final StringBuilder _out;
-        private final File _dir;
 
-        public FilePrinter(StringBuilder out, File dir)
+        public FilePrinter(StringBuilder out)
         {
             _out = out;
-            _dir = dir;
         }
 
+        @Override
         public Set<FileAttribute> getRequiredAttributes()
         {
             return EnumSet.of(TYPE, SIZE);
         }
 
-        public void print(FileAttributes dirAttr, DirectoryEntry entry)
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
             FileAttributes attr = entry.getFileAttributes();
             if (attr.getFileType() == REGULAR) {
-                _out.append(new File(_dir, entry.getName()));
+                _out.append(new FsPath(dir, entry.getName()));
                 _out.append(" : ").append(attr.getSize());
             }
         }
@@ -179,9 +180,9 @@ public class DirectoryLookUpPool extends AbstractCell
      */
     class ListThread extends DelayedReply implements Runnable
     {
-        private final File _path;
+        private final FsPath _path;
 
-        public ListThread(File path)
+        public ListThread(FsPath path)
         {
             _path = path;
         }
@@ -207,7 +208,7 @@ public class DirectoryLookUpPool extends AbstractCell
     public DelayedReply ac_ls_$_1(Args args)
         throws CacheException, InterruptedException
     {
-        File path = new File(args.argv(0));
+        FsPath path = new FsPath(args.argv(0));
         ListThread thread = new ListThread(path);
         new Thread(thread, "list[" + path + "]").start();
         return thread;
@@ -263,7 +264,7 @@ public class DirectoryLookUpPool extends AbstractCell
 
             try {
                 String path = _pnfs.getPathByPnfsId(pnfsId);
-                String dirList = list(new File(path));
+                String dirList = list(new FsPath(path));
 
                 connectToClinet();
 

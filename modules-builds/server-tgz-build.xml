@@ -2,7 +2,19 @@
 
     <target name="server.tgz" depends="install-server" description="Build the dcache-server-xxx.tar">
 
-        <tar destfile="${distDir}/dcache-server-${version}-${patch}.tgz" basedir="${package.root.dir}/server" compression="gzip" />
+        <tar destfile="${distDir}/dcache-server-${version}-${patch}.tgz" compression="gzip">
+            <tarfileset dir="${package.root.dir}/server" filemode="755">
+                <include name="**/*.sh"/>
+                <include name="**/bin/*" />
+                <include name="**/libexec/**/*" />
+            </tarfileset>
+            <tarfileset dir="${package.root.dir}/server">
+                <include name="**/*"/>
+                <exclude name="**/*.sh"/>
+                <exclude name="**/bin/*" />
+                <exclude name="**/libexec/**/*" />
+            </tarfileset>
+        </tar>
     </target>
 
 </project>

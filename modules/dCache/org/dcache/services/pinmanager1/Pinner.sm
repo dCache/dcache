@@ -7,6 +7,7 @@
 %package org.dcache.services.pinmanager1
 %access package
 %import diskCacheV111.vehicles.*
+%import static diskCacheV111.util.CacheException.*
 
 %start PinnerFSM::Init
 %map PinnerFSM
@@ -91,6 +92,12 @@ Entry
                 Done
                 {
                         succeed();
+                }
+        answerArrived(message: PoolSetStickyMessage)
+                [ message.getReturnCode() == POOL_DISABLED ||
+                  message.getReturnCode() == FILE_NOT_IN_REPOSITORY ]
+                FindingReadPool
+                {
                 }
         answerArrived(message: PoolSetStickyMessage)
                 Done
