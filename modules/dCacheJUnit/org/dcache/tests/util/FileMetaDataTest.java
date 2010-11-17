@@ -89,6 +89,20 @@ public class FileMetaDataTest {
     }
 
     @Test
+    public void testTypeIsDirectory() {
+        FileMetaData fm = new FileMetaData(true, 0, 0, 0755);
+        assertTrue("should be a directory", fm.isDirectory());
+        assertFalse("should not be a file", fm.isRegularFile());
+    }
+
+    @Test
+    public void testTypeIsFile() {
+        FileMetaData fm = new FileMetaData(false, 0, 0, 0755);
+        assertTrue("should be a file", fm.isRegularFile());
+        assertFalse("should not be a directory", fm.isDirectory());
+    }
+
+    @Test
     public void testTypes() {
 
 

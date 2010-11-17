@@ -128,7 +128,6 @@ public class FileMetaData implements Serializable {
     public FileMetaData(boolean isDirectory, int uid, int gid, int permission) {
         _uid = uid;
         _gid = gid;
-        _isDirectory = isDirectory;
         _user = new Permissions((permission >> 6) & 0x7);
         _group = new Permissions((permission >> 3) & 0x7);
         _world = new Permissions(permission & 0x7);
@@ -139,6 +138,7 @@ public class FileMetaData implements Serializable {
         _isGroupPermissionSet = true;
         _isWorldPermissionSet = true;
 
+        setFileType(!isDirectory, isDirectory, false);
     }
 
     /**
