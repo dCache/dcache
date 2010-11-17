@@ -22,13 +22,16 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class LsFileRequest extends FileRequest {
         private static final Logger logger =
                 LoggerFactory.getLogger(LsFileRequest.class);
-        private org.apache.axis.types.URI surl;
+        private static final String SFN_STRING="?SFN=";
+        private URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
                 new Comparator<FileMetaData>() {
@@ -50,7 +53,7 @@ public final class LsFileRequest extends FileRequest {
                       requestCredentalId,
                       lifetime,
                       maxNumberOfRetries);
-                this.surl=url;
+                this.surl = URI.create(url.toString());
                 updateMemoryCache();
         }
 
@@ -87,16 +90,11 @@ public final class LsFileRequest extends FileRequest {
                       requestId,
                       requestCredentalId,
                       statusCodeString);
-                try {
-                        this.surl = new org.apache.axis.types.URI(SURL);
-                }
-                catch(org.apache.axis.types.URI.MalformedURIException murle) {
-                        throw new IllegalArgumentException(murle.toString());
-                }
+                this.surl = URI.create(SURL);
         }
 
-        public String getPath() {
-                String path = surl.getPath(true,true);
+        public String getPath(URI uri) {
+                String path = uri.getPath();
                 int indx=path.indexOf(SFN_STRING);
                 if( indx != -1) {
                         path=path.substring(indx+SFN_STRING.length());
@@ -107,9 +105,9 @@ public final class LsFileRequest extends FileRequest {
                 return path;
         }
 
-        public org.apache.axis.types.URI getSurl() {
+        public URI getSurl() {
                 return surl;
-         }
+        }
 
         public String getSurlString() {
                 return surl.toString();
@@ -140,7 +138,6 @@ public final class LsFileRequest extends FileRequest {
 
 
         public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
-                String path = getPath();
                 try {
                         LsRequest parent = (LsRequest)getRequest();
                         long t0=0;
@@ -149,7 +146,7 @@ public final class LsFileRequest extends FileRequest {
                         }
 
                         metaDataPathDetail =
-                                getMetaDataPathDetail(path,
+                                getMetaDataPathDetail(surl,
                                                       0,
                                                       parent.getOffset(),
                                                       parent.getCount(),
@@ -192,12 +189,15 @@ public final class LsFileRequest extends FileRequest {
                                         setStatusCode(TStatusCode.SRM_INVALID_PATH);
                                 }
                                 else {
+                                        if (e instanceof RuntimeException) {
+                                                logger.error(e.toString(), e);
+                                        }
                                         status = new TReturnStatus(TStatusCode.SRM_FAILURE,
                                                                    msg);
                                         setStatusCode(TStatusCode.SRM_FAILURE);
                                 }
                                 metaDataPathDetail =  new TMetaDataPathDetail();
-                                metaDataPathDetail.setPath(path);
+                                metaDataPathDetail.setPath(getPath(surl));
                                 metaDataPathDetail.setStatus(status);
                                 setState(State.FAILED,e.toString());
                         }
@@ -263,18 +263,19 @@ public final class LsFileRequest extends FileRequest {
                 return metaDataPathDetail;
         }
 
-        public final TMetaDataPathDetail getMetaDataPathDetail(String path,
+        public final TMetaDataPathDetail getMetaDataPathDetail(URI surl,
                                                                int depth,
                                                                long offset,
                                                                long count,
                                                                int recursionDepth,
                                                                boolean longFormat)
-                throws SRMException {
+                throws SRMException, URISyntaxException
+        {
                 FileMetaData fmd = getStorage().getFileMetaData(getUser(),
-                                                                path,
+                                                                surl,
                                                                 false);
                 TMetaDataPathDetail aMetaDataPathDetail=
-                        convertFileMetaDataToTMetaDataPathDetail(path,
+                        convertFileMetaDataToTMetaDataPathDetail(surl,
                                                                  fmd,
                                                                  depth,
                                                                  longFormat);
@@ -308,19 +309,22 @@ public final class LsFileRequest extends FileRequest {
                 return aMetaDataPathDetail;
         }
 
-        public final void getMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
-                                                long offset,
-                                                long count,
-                                                boolean longFormat)
-                throws SRMException {
+        private void getMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
+                                           long offset,
+                                           long count,
+                                           boolean longFormat)
+                throws SRMException, URISyntaxException
+        {
                 List<FileMetaData> directoryList;
                 //
                 // simplify things for the most common case when people perform
                 // ls on directory w/o specifying recursionDepth
                 //
+                URI surl =
+                    new URI(null, null, metaDataPathDetail.getPath(), null);
                 directoryList =
                         getStorage().listDirectory(getUser(),
-                                                   metaDataPathDetail.getPath(),
+                                                   surl,
                                                    longFormat,
                                                    offset,
                                                    count);
@@ -328,7 +332,7 @@ public final class LsFileRequest extends FileRequest {
                 List<TMetaDataPathDetail> metadataPathDetailList =
                         new LinkedList<TMetaDataPathDetail>();
                 for (FileMetaData md : directoryList) {
-                        String subpath = md.SURL;
+                        URI subpath = new URI(null, null, md.SURL, null);
                         TMetaDataPathDetail dirMetaDataPathDetail=
                                 convertFileMetaDataToTMetaDataPathDetail(subpath,
                                                                          md,
@@ -355,16 +359,19 @@ public final class LsFileRequest extends FileRequest {
                 metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(metadataPathDetailList.toArray(new TMetaDataPathDetail[0])));
         }
 
-        public final void getRecursiveMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
-                                                         final FileMetaData fmd,
-                                                         int depth,
-                                                         long offset,
-                                                         long count,
-                                                         int recursionDepth,
-                                                         boolean longFormat)
-                throws SRMException {
+        private void getRecursiveMetaDataPathDetail(TMetaDataPathDetail metaDataPathDetail,
+                                                    FileMetaData fmd,
+                                                    int depth,
+                                                    long offset,
+                                                    long count,
+                                                    int recursionDepth,
+                                                    boolean longFormat)
+                throws SRMException, URISyntaxException
+        {
                 if (!fmd.isDirectory || depth >= recursionDepth)  return;
                 List<FileMetaData> directoryList;
+                URI surl =
+                        new URI(null, null, metaDataPathDetail.getPath(), null);
                 //
                 // cannot use offset or count in this case since
                 // we are trying to flatten tree structure.
@@ -376,7 +383,7 @@ public final class LsFileRequest extends FileRequest {
                         //
                         directoryList =
                                 getStorage().listDirectory(getUser(),
-                                                           metaDataPathDetail.getPath(),
+                                                           surl,
                                                            longFormat,
                                                            0,
                                                            count);
@@ -390,7 +397,7 @@ public final class LsFileRequest extends FileRequest {
                         //
                         directoryList =
                                 getStorage().listDirectory(getUser(),
-                                                           metaDataPathDetail.getPath(),
+                                                           surl,
                                                            false,
                                                            0,
                                                            Long.MAX_VALUE);
@@ -405,7 +412,7 @@ public final class LsFileRequest extends FileRequest {
                 List<TMetaDataPathDetail> metadataPathDetailList =
                         new LinkedList<TMetaDataPathDetail>();
                 for (FileMetaData md : directoryList) {
-                        String subpath = md.SURL;
+                        URI subpath = new URI(null, null, md.SURL, null);
                         TMetaDataPathDetail dirMetaDataPathDetail;
                         if (offset==0) {
                                 dirMetaDataPathDetail=
@@ -547,14 +554,14 @@ public final class LsFileRequest extends FileRequest {
         }
 
         private final TMetaDataPathDetail
-                convertFileMetaDataToTMetaDataPathDetail(final String path,
+                convertFileMetaDataToTMetaDataPathDetail(final URI path,
                                                          final FileMetaData fmd,
                                                          final int depth,
                                                          final boolean verbose)
                 throws SRMException {
                 TMetaDataPathDetail metaDataPathDetail =
                         new TMetaDataPathDetail();
-                metaDataPathDetail.setPath(path);
+                metaDataPathDetail.setPath(getPath(path));
                 metaDataPathDetail.setLifetimeAssigned(-1);
                 metaDataPathDetail.setLifetimeLeft(-1);
                 metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));

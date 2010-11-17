@@ -79,6 +79,7 @@ package org.dcache.srm;
 import diskCacheV111.srm.StorageElementInfo;
 import java.util.Vector;
 import java.util.List;
+import java.net.URI;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 
@@ -124,28 +125,26 @@ public interface AbstractStorageElement {
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param protocols List of SE supported protocols
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getPutTurl(SRMUser user,String filePath,
-            String[] protocols)
-            throws SRMException;
+    public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
+        throws SRMException;
 
     /** To accomodate the property of dcache that requires that the same client get all
      * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
      * this siganture.
      * The previous_turl is the turl that was obtained by the client before.
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param previous_turl The transport URL received from the previous call of getPutTurl
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getPutTurl(SRMUser user,String filePath,
-            String previous_turl)
-            throws SRMException;
+    public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
+        throws SRMException;
 
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
@@ -155,66 +154,40 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getGetTurl(SRMUser user,String filePath,
-            String[] protocols)
-            throws SRMException;
+    public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
+        throws SRMException;
 
     /** To accomodate the property of dcache that requires that the same client get all
      * dcap transfers though the same dcap door, we put the get(Get/Put)Turl which has
      * this siganture.
      * The previous_turl is the turl that was obtained by the client before.
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param previous_turl The transport URL received from the previous call of getPutTurl
      * @throws SRMException
      * @return Transport URL for file operation
      */
-    public String getGetTurl(SRMUser user, String filePath,
-            String previous_turl)
-            throws SRMException;
-
-    /**
-     * Retrieves the FileMetaData of a file.
-     *
-     * The method is asynchronous and the result is reported via a
-     * callback.
-     *
-     * An implementation may check whether the user sufficient
-     * privileges. If the user lacks sufficient privileges, a
-     * SRMAuthorizationException is delivered through the callback. If
-     * the read parameter is true, an implementation is requested to
-     * check whether the user is allowed to read the file in addition
-     * to retrieving the FileMetaData. If the read parameter is false,
-     * then only permission to retrieve the FileMetaData is checked.
-     *
-     * @param user User ID
-     * @param filePath File path
-     * @param read True if read permission are required, false otherwise
-     * @param callbacks Callback for delivering the result of the
-     *                  asynchronous operation.
-     */
-    public void getFileInfo(SRMUser user, String filePath, boolean read,
-            GetFileInfoCallbacks callbacks);
+    public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
+        throws SRMException;
 
     /** Method must be nonblocking -- when called it creates thread and returns immediately,
      *         result will be sent thru callbacks
      * @param user User ID
-     * @param filePath File path
+     * @param surl SURL
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * @param overwrite allow overwrite if true
      * various actions performed to put file from the storage
      */
-    public void prepareToPut(SRMUser user, String filePath,
+    public void prepareToPut(SRMUser user, URI surl,
             PrepareToPutCallbacks callbacks,
             boolean overwrite);
 
     /** This method allows to pin file in the Storage Element,
      * i.e. put the file in "fast access state"
      * @param user User ID
-     * @param fileId Storage Element internal file ID
+     * @param surl
      * @param network address from which file will be read
      *        null, if unknown
-     * @param fmd File metadata returned by getFileMetaData
      * @param pinLifetime Requested pin operation lifetime in millis
      * @param requestId - ping will save request id
      *        so that unping by file name and request id can take place
@@ -224,9 +197,8 @@ public interface AbstractStorageElement {
 
 
     public void pinFile(SRMUser user,
-           String fileId,
+           URI surl,
            String clientHost,
-           FileMetaData fmd,
            long pinLifetime,
            long requestId,
            PinCallbacks callbacks);
@@ -260,7 +232,7 @@ public interface AbstractStorageElement {
      *
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
@@ -270,8 +242,8 @@ public interface AbstractStorageElement {
      */
     public String getFromRemoteTURL(
             SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
+            URI remoteTURL,
+            URI surl,
             SRMUser remoteUser,
             Long requestCredentialId,
             CopyCallbacks callbacks)
@@ -287,7 +259,7 @@ public interface AbstractStorageElement {
      *
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
@@ -297,8 +269,8 @@ public interface AbstractStorageElement {
      */
     public String getFromRemoteTURL(
             SRMUser user,
-            String remoteTURL,
-            String actualFilePath,
+            URI remoteTURL,
+            URI surl,
             SRMUser remoteUser,
             Long requestCredentialId,
             String spaceReservationId,
@@ -312,7 +284,7 @@ public interface AbstractStorageElement {
      * completeon of the transfer asynchronously, though the callbacks interface
      *
      * @param user User ID
-     * @param actualFilePath
+     * @param surl
      * @param remoteTURL
      * @param remoteUser
      * @param callbacks
@@ -322,8 +294,8 @@ public interface AbstractStorageElement {
      *    an id to the pending tranfer that can be used to cancel the transfer via killRemoteTransfer
      */
     public String putToRemoteTURL(SRMUser user,
-            String actualFilePath,
-            String remoteTURL,
+            URI surl,
+            URI remoteTURL,
             SRMUser remoteUser,
             Long requestCredentialId,
             CopyCallbacks callbacks)
@@ -338,19 +310,19 @@ public interface AbstractStorageElement {
 
     /**
      * @param user User ID
-     * @param actualFromFilePath
-     * @param actualToFilePath
+     * @param fromSurl
+     * @param toSurl
      * @throws SRMException
      */
-    public void localCopy(SRMUser user,String actualFromFilePath, String actualToFilePath)
+    public void localCopy(SRMUser user, URI fromSurl, URI toSurl)
     throws SRMException;
 
     /**
-     * @param url User ID
+     * @param url
      * @throws SRMException
      * @return
      */
-    public boolean isLocalTransferUrl(String url) throws SRMException;
+    public boolean isLocalTransferUrl(URI url) throws SRMException;
 
     /**
      * Retrieves the FileMetaData of a file.
@@ -372,7 +344,7 @@ public interface AbstractStorageElement {
      * @throws SRMInternalErrorException in case of transient errors
      * @throws SRMException for any other error
      */
-    public FileMetaData getFileMetaData(SRMUser user,String path,boolean read)
+    public FileMetaData getFileMetaData(SRMUser user,URI surl,boolean read)
         throws SRMException;
 
     /**
@@ -416,40 +388,36 @@ public interface AbstractStorageElement {
     /** This method tells SE that the specified file can be removed from the storage.
      * This is up to SE to decide when the file will be deleted
      * @param user User ID
-     * @param path File path
+     * @param surl
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void advisoryDelete(SRMUser user, String path,AdvisoryDeleteCallbacks callbacks);
+    public void advisoryDelete(SRMUser user, URI surl,AdvisoryDeleteCallbacks callbacks);
 
     /**
      *
      * @param user User ID
-     * @param path File path
+     * @param surl
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void removeFile(SRMUser user, String path,RemoveFileCallbacks callbacks);
+    public void removeFile(SRMUser user, URI surl,RemoveFileCallbacks callbacks);
 
     /**
-     *
      * @param user User ID
-     * @param path File path
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to remove file from the storage
+     * @param surls List of SURLs
      */
-
-    public void removeDirectory(SRMUser user,
-            Vector tree) throws SRMException;
+    public void removeDirectory(SRMUser user, List<URI> surls)
+        throws SRMException;
 
     /**
      *
      * @param user
-     * @param directory
+     * @param surl
      * @throws org.dcache.srm.SRMException
      */
     public void createDirectory(SRMUser user,
-            String directory) throws SRMException;
+                                URI surl) throws SRMException;
 
     /**
      *
@@ -458,8 +426,9 @@ public interface AbstractStorageElement {
      * @param to
      * @throws org.dcache.srm.SRMException
      */
-    public void moveEntry(SRMUser user, String from,
-            String to) throws SRMException;
+    public void moveEntry(SRMUser user,
+                          URI from,
+                          URI to) throws SRMException;
 
 
 
@@ -498,31 +467,28 @@ public interface AbstractStorageElement {
     public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException;
 
     /**
+     * Provides a directory listing of surl if and only if surl is not
+     * a symbolic link. As a side effect, the method checks that surl
+     * can be deleted by the user.
      *
-     * @param user
-     * @param directoryName
-     * @throws org.dcache.srm.SRMException
-     * @return
+     * @param user The SRMUser performing the operation; this myst be
+     * of type AuthorizationRecord
+     * @param surl The directory to delete
+     * @return The array of directory entries or null if directoryName
+     * is a symbolic link
      */
-    public String[] listNonLinkedDirectory(SRMUser user,String directoryName) throws SRMException;
+    public List<URI> listNonLinkedDirectory(SRMUser user, URI surl)
+        throws SRMException;
+
     /**
      *
      * @param user
-     * @param directoryName
+     * @param surl
      * @param fileMetaData
      * @throws org.dcache.srm.SRMException
      * @return
      */
-    public String[] listDirectory(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
-    /**
-     *
-     * @param user
-     * @param directoryName
-     * @param fileMetaData
-     * @throws org.dcache.srm.SRMException
-     * @return
-     */
-    public java.io.File[] listDirectoryFiles(SRMUser user,String directoryName,FileMetaData fileMetaData) throws SRMException;
+    public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException;
 
     /**
      * Lists directory contents. The contents is provided as a list of
@@ -539,7 +505,7 @@ public interface AbstractStorageElement {
      * be filled. Those fields may be more expensive to retrieve.
      *
      * @param user The user requesting the list operation
-     * @param directory The path of the directory to list
+     * @param surl The path of the directory to list
      * @param verbose Whether to include fields that are expensive to
      *                retrieve
      * @param offset The first entry in the directory to retrieve
@@ -554,7 +520,7 @@ public interface AbstractStorageElement {
      * @throws SRMException for other failures.
      */
     List<FileMetaData>
-        listDirectory(SRMUser user, String directory, boolean verbose,
+        listDirectory(SRMUser user, URI surl, boolean verbose,
                       long offset, long count)
         throws SRMException;
 
@@ -592,30 +558,30 @@ public interface AbstractStorageElement {
      *
      * @param user
      * @param spaceToken
-     * @param fileName
+     * @param surl
      * @param sizeInBytes
      * @param useLifetime
      * @param callbacks
      */
     public void srmMarkSpaceAsBeingUsed(SRMUser user,
-            String spaceToken,
-            String fileName,
-            long sizeInBytes,
-            long useLifetime,
-            boolean overwrite,
-            SrmUseSpaceCallbacks callbacks);
+                                        String spaceToken,
+                                        URI surl,
+                                        long sizeInBytes,
+                                        long useLifetime,
+                                        boolean overwrite,
+                                        SrmUseSpaceCallbacks callbacks);
 
     /**
      *
      * @param user
      * @param spaceToken
-     * @param fileName
+     * @param surl
      * @param callbacks
      */
     public void srmUnmarkSpaceAsBeingUsed(SRMUser user,
-            String spaceToken,
-            String fileName,
-            SrmCancelUseOfSpaceCallbacks callbacks);
+                                          String spaceToken,
+                                          URI surl,
+                                          SrmCancelUseOfSpaceCallbacks callbacks);
 
     /**
      *
@@ -660,10 +626,10 @@ public interface AbstractStorageElement {
      * @return long lifetime left in milliseconds
      *   -1 stands for infinite lifetime
      */
-    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime)
+    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime)
     throws SRMException;
 
     public String getStorageBackendVersion();
 
-    public boolean exists(SRMUser user, String path) throws SRMException;
+    public boolean exists(SRMUser user, URI surl) throws SRMException;
 }

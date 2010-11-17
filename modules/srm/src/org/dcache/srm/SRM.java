@@ -98,6 +98,7 @@ import java.util.Iterator;
 import java.io.IOException;
 import java.io.File;
 import java.net.InetAddress;
+import java.net.URI;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.State;
@@ -446,43 +447,42 @@ public class SRM {
         private boolean done = false;
         private boolean success = true;
         SRMUser user;
-        String path;
+        URI surl;
         String error;
 
-        public TheAdvisoryDeleteCallbacks(SRMUser user,
-                String path) {
+        public TheAdvisoryDeleteCallbacks(SRMUser user, URI surl) {
             this.user = user;
-            this.path = path;
+            this.surl = surl;
         }
 
         public void AdvisoryDeleteFailed(String reason) {
-            error = " advisoryDelete(" + user + "," + path + ") AdvisoryDeleteFailed: " + reason;
+            error = " advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteFailed: " + reason;
             success = false;
             logger.error(error);
             done();
         }
 
         public void AdvisoryDeleteSuccesseded() {
-            logger.debug(" advisoryDelete(" + user + "," + path + ") AdvisoryDeleteSuccesseded");
+            logger.debug(" advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteSuccesseded");
             done();
         }
 
         public void Exception(Exception e) {
-            error = " advisoryDelete(" + user + "," + path + ") Exception :" + e;
+            error = " advisoryDelete(" + user + "," + surl + ") Exception :" + e;
             logger.error(error);
             success = false;
             done();
         }
 
         public void Timeout() {
-            error = " advisoryDelete(" + user + "," + path + ") Timeout ";
+            error = " advisoryDelete(" + user + "," + surl + ") Timeout ";
             logger.error(error);
             success = false;
             done();
         }
 
         public void Error(String error) {
-            this.error = " advisoryDelete(" + user + "," + path + ") Error " + error;
+            this.error = " advisoryDelete(" + user + "," + surl + ") Error " + error;
             logger.error(this.error);
             success = false;
             done();
@@ -497,7 +497,7 @@ public class SRM {
                         return success;
                     } else {
                         if ((System.currentTimeMillis() - starttime) > timeout) {
-                            error = " advisoryDelete(" + user + "," + path + ") Timeout";
+                            error = " advisoryDelete(" + user + "," + surl + ") Timeout";
                             return false;
                         }
                     }
@@ -527,38 +527,14 @@ public class SRM {
             throw new IllegalArgumentException(error);
         }
 
-        for (int i = 0; i < SURLS.length; ++i) {
-            try {
-                GlobusURL gurl = new GlobusURL(SURLS[i]);
-                if (!Tools.sameHost(configuration.getSrmHosts(),
-                        gurl.getHost())) {
-                    String error = "advisoryDelete: surl is not local : " + gurl.getURL();
-                    logger.error(error);
-                    throw new IllegalArgumentException(error);
-                }
-            } catch (RuntimeException re) {
-                logger.error(re.toString());
-                throw re;
-            } catch (Exception e) {
-                logger.error(e.toString());
-            }
-        }
-
         final StringBuilder sb = new StringBuilder();
         TheAdvisoryDeleteCallbacks callabacks_array[] =
                 new TheAdvisoryDeleteCallbacks[SURLS.length];
         for (int i = 0; i < SURLS.length; ++i) {
             try {
-                GlobusURL gurl = new GlobusURL(SURLS[i]);
-                String surlpath = gurl.getPath();
-                int indx = surlpath.indexOf(SFN_STRING);
-                if (indx != -1) {
-
-                    surlpath = surlpath.substring(indx + SFN_STRING.length());
-                }
-
-                callabacks_array[i] = new TheAdvisoryDeleteCallbacks(user, surlpath);
-                storage.advisoryDelete(user, surlpath, callabacks_array[i]);
+                URI surl = new URI(SURLS[i]);
+                callabacks_array[i] = new TheAdvisoryDeleteCallbacks(user, surl);
+                storage.advisoryDelete(user, surl, callabacks_array[i]);
 
 
             } catch (RuntimeException re) {
@@ -785,8 +761,6 @@ public class SRM {
      *         the array of SURLs of files of interest
      * @return FileMetaData array assosiated with these SURLs
      */
-    private final static String SFN_STRING = "?SFN=";
-
     public FileMetaData[] getFileMetaData(SRMUser user, RequestCredential credential, String[] SURLS) {
         StringBuilder sb = new StringBuilder();
         sb.append("getFileMetaData(");
@@ -807,24 +781,9 @@ public class SRM {
         // call getFileMetaData(String path) for each SURL in array
         for (int i = 0; i < len; ++i) {
             try {
-                GlobusURL url = new GlobusURL(SURLS[i]);
-                if (!Tools.sameHost(configuration.getSrmHosts(),
-                        url.getHost())) {
-                    String error = "getFileMetaData: surl is not local : " + url.getURL();
-                    logger.error(error);
-                    throw new IllegalArgumentException(error);
-                }
-
-                String surlpath = url.getPath();
-                int indx = surlpath.indexOf(SFN_STRING);
-                if (indx != -1) {
-
-                    surlpath = surlpath.substring(indx + SFN_STRING.length());
-                }
-
-                logger.debug("getFileMetaData(String[]) calling FileMetaData(" + surlpath + ")");
-
-                FileMetaData fmd = storage.getFileMetaData(user, surlpath, false);
+                URI surl = new URI(SURLS[i]);
+                logger.debug("getFileMetaData(String[]) calling FileMetaData({})", surl);
+                FileMetaData fmd = storage.getFileMetaData(user, surl, false);
                 fmd.SURL = SURLS[i];
                 fmds[i] = new FileMetaData(fmd);
                 logger.debug("FileMetaData[" + i + "]=" + fmds[i]);
@@ -1058,7 +1017,7 @@ public class SRM {
                         PutFileRequest pfr = (PutFileRequest) fr;
                         if (pfr.getTurlString() != null) {
                             try {
-                                if (storage.exists(user, pfr.getPath())) {
+                                if (storage.exists(user, pfr.getSurl())) {
                                     fr.setStatus(state);
                                 } else {
                                     pfr.setState(State.FAILED, "file transfer was not performed on SURL");

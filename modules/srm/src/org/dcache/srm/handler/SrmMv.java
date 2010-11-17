@@ -29,7 +29,8 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  *
@@ -37,14 +38,14 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmMv {
-        private static Logger logger = 
+        private static Logger logger =
                 LoggerFactory.getLogger(SrmMv.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmMvRequest           request;
 	SrmMvResponse          response;
 	SRMUser            user;
-	
+
 	public SrmMv(SRMUser user,
 		     RequestCredential credential,
 		     SrmMvRequest request,
@@ -55,14 +56,14 @@ public class SrmMv {
 		this.user = user;
 		this.storage = storage;
 	}
-	
+
 	public SrmMvResponse getResponse() {
 		if(response != null ) return response;
 		try {
 			response = srmMv();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -70,11 +71,11 @@ public class SrmMv {
         }
 		return response;
 	}
-	
+
 	public static final SrmMvResponse getFailedResponse(String error) {
 		return getFailedResponse(error,null);
 	}
-	
+
 	public static final  SrmMvResponse getFailedResponse(String error,TStatusCode statusCode) {
 		if(statusCode == null) {
 			statusCode =TStatusCode.SRM_FAILURE;
@@ -86,13 +87,14 @@ public class SrmMv {
 		response.setReturnStatus(status);
 		return response;
 	}
-	
+
 	/**
 	 * implementation of srm mv
 	 */
-	
-	public SrmMvResponse srmMv() throws SRMException,
-            MalformedURIException {
+
+	public SrmMvResponse srmMv()
+                throws SRMException, URISyntaxException
+        {
 		SrmMvResponse response      = new SrmMvResponse();
 		TReturnStatus returnStatus  = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -100,43 +102,33 @@ public class SrmMv {
 		if(request==null) {
 			return getFailedResponse(" null request passed to SrmRm()");
 		}
-		org.apache.axis.types.URI to_surl   =request.getToSURL();
-		org.apache.axis.types.URI from_surl = request.getFromSURL();
+		URI to_surl = new URI(request.getToSURL().toString());
+		URI from_surl = new URI(request.getFromSURL().toString());
 		if (to_surl==null || from_surl==null) {
 			return getFailedResponse(" target or destination are not defined");
 		}
-		String to_path   = to_surl.getPath(true,true);
-		String from_path = from_surl.getPath(true,true);
-		int to_indx      = to_path.indexOf(SFN_STRING);
-		int from_indx    = from_path.indexOf(SFN_STRING);
-		if ( to_indx != -1 ) {
-			to_path=to_path.substring(to_indx+SFN_STRING.length());
-		}
-		if ( from_indx != -1 ) { 
-			from_path=from_path.substring(from_indx+SFN_STRING.length());
-		} 
 		try {
-			storage.moveEntry(user,from_path,to_path);
-                } 
-		catch (Exception e) { 
+                        storage.moveEntry(user, from_surl, to_surl);
+                }
+		catch (Exception e) {
 		    logger.warn(e.toString());
 		    response.getReturnStatus().setExplanation(e.getMessage());
-		    if ( e instanceof SRMDuplicationException) { 
+		    if ( e instanceof SRMDuplicationException) {
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
 		    }
-		    else if ( e instanceof  SRMInternalErrorException) { 
+		    else if ( e instanceof  SRMInternalErrorException) {
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
 		    }
-		    else if ( e instanceof  SRMInvalidPathException ) { 
+		    else if ( e instanceof  SRMInvalidPathException ) {
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INVALID_PATH);
 		    }
-		    else if ( e instanceof SRMAuthorizationException ) { 
+		    else if ( e instanceof SRMAuthorizationException ) {
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
 		    }
-		    else if ( e instanceof SRMException ) { 
+		    else if ( e instanceof SRMException ) {
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
 		    }
-		    else { 
+		    else {
 			response.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
 		    }
 		    return response;
@@ -144,5 +136,5 @@ public class SrmMv {
 		response.getReturnStatus().setExplanation("success");
 		return response;
 	}
-	
+
 }

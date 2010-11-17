@@ -92,7 +92,7 @@ import org.dcache.srm.v2_2.SrmBringOnlineResponse;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
-import org.apache.axis.types.URI;
+import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /*
@@ -106,16 +106,16 @@ public final class BringOnlineRequest extends ContainerRequest {
 
 
     public BringOnlineRequest(SRMUser user,
-    Long requestCredentialId,
-    String[] surls,
-    String[] protocols,
-    long lifetime,
-    long desiredOnlineLifetimeInSeconds,
-    long max_update_period,
-    int max_number_of_retries,
-    String description,
-    String client_host
-    ) throws Exception {
+                              Long requestCredentialId,
+                              URI[] surls,
+                              String[] protocols,
+                              long lifetime,
+                              long desiredOnlineLifetimeInSeconds,
+                              long max_update_period,
+                              int max_number_of_retries,
+                              String description,
+                              String client_host)
+    {
         super(user,requestCredentialId,
             max_number_of_retries,
             max_update_period,
@@ -137,16 +137,14 @@ public final class BringOnlineRequest extends ContainerRequest {
         len = surls.length;
         fileRequests = new FileRequest[len];
         for(int i = 0; i<len; ++i) {
-            BringOnlineFileRequest fileRequest =
-            new BringOnlineFileRequest(getId(),
-                    requestCredentialId,
-                    surls[i],
-                    lifetime,
-                    max_number_of_retries);
-
-            fileRequests[i] = fileRequest;
+            fileRequests[i] =
+                new BringOnlineFileRequest(getId(),
+                                           requestCredentialId,
+                                           surls[i],
+                                           lifetime,
+                                           max_number_of_retries);
         }
-         updateMemoryCache();
+        updateMemoryCache();
     }
 
     /**
@@ -200,12 +198,12 @@ public final class BringOnlineRequest extends ContainerRequest {
 
     }
 
-      public FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException{
+    public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
         for(int i =0; i<fileRequests.length;++i) {
-            if(((BringOnlineFileRequest)fileRequests[i]).getSurlString().equals(surl)) {
+            if(((BringOnlineFileRequest)fileRequests[i]).getSurl().equals(surl)) {
                 return fileRequests[i];
             }
         }
@@ -348,7 +346,7 @@ public final class BringOnlineRequest extends ContainerRequest {
 
     public final SrmStatusOfBringOnlineRequestResponse
             getSrmStatusOfBringOnlineRequestResponse(
-            String[] surls)
+            URI[] surls)
     throws SRMException, java.sql.SQLException {
         SrmStatusOfBringOnlineRequestResponse response =
                 new SrmStatusOfBringOnlineRequestResponse();
@@ -381,7 +379,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
     */
 
-    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(String[] surls) throws SRMException,java.sql.SQLException {
+    private TBringOnlineRequestFileStatus[] getArrayOfTBringOnlineRequestFileStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len = surls == null ? getNumOfFileRequest():surls.length;
          TBringOnlineRequestFileStatus[] getFileStatuses
             = new TBringOnlineRequestFileStatus[len];
@@ -400,7 +398,7 @@ public final class BringOnlineRequest extends ContainerRequest {
         return getFileStatuses;
     }
 
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {
@@ -426,8 +424,9 @@ public final class BringOnlineRequest extends ContainerRequest {
         return surlLReturnStatuses;
     }
 
-    public SrmReleaseFilesResponse
-            releaseFiles(URI[] surls,String[] surl_strings) throws SRMInvalidRequestException {
+    public SrmReleaseFilesResponse releaseFiles(URI[] surls)
+        throws SRMInvalidRequestException
+    {
         logger.debug("releaseFiles");
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
@@ -447,24 +446,28 @@ public final class BringOnlineRequest extends ContainerRequest {
             }
         } else {
             for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr = null;
-               logger.debug("releaseFiles, releasing file "+surl_strings[i]);
-                try{
-                    fr =(BringOnlineFileRequest)getFileRequestBySurl(surl_strings[i]);
+                org.apache.axis.types.URI surl;
+                try {
+                    surl = new org.apache.axis.types.URI(surls[i].toString());
+                } catch (org.apache.axis.types.URI.MalformedURIException e) {
+                    throw new SRMInvalidRequestException("Invalid surl: " + e.getMessage());
+                }
+                logger.debug("releaseFiles, releasing file " + surl);
+                BringOnlineFileRequest fr;
+                try {
+                    fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);
                 } catch (SRMFileRequestNotFoundException sfrnfe ) {
                     try {
-                        String surl_string = surl_strings[i];
                         SRMUser user =(SRMUser) getUser();
                         long theId =getId();
                         BringOnlineFileRequest.unpinBySURLandRequestId(
-                            getStorage(),user, theId, surl_string);
+                            getStorage(),user, theId, surls[i]);
                         TSURLReturnStatus surlStatus = new TSURLReturnStatus();
                         TReturnStatus surlReturnStatus = new TReturnStatus();
                         surlReturnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
-                        surlStatus.setSurl(surls[i]);
+                        surlStatus.setSurl(surl);
                         surlStatus.setStatus(surlReturnStatus);
                         surlLReturnStatuses[i] = surlStatus;
-                        continue;
                     } catch (Exception e) {
                         TSURLReturnStatus surlStatus = new TSURLReturnStatus();
                         TReturnStatus surlReturnStatus = new TReturnStatus();
@@ -472,11 +475,11 @@ public final class BringOnlineRequest extends ContainerRequest {
                         surlReturnStatus.setExplanation(
                             "could not release file, neither file request " +
                             "for surl, nor pin is found: "+e);
-                        surlStatus.setSurl(surls[i]);
+                        surlStatus.setSurl(surl);
                         surlStatus.setStatus(surlReturnStatus);
                         surlLReturnStatuses[i] = surlStatus;
                     }
-
+                    continue;
                 }
                 catch (Exception e) {
                     TSURLReturnStatus surlStatus = new TSURLReturnStatus();
@@ -484,9 +487,10 @@ public final class BringOnlineRequest extends ContainerRequest {
                     surlReturnStatus.setStatusCode(TStatusCode.SRM_INVALID_PATH);
                     surlReturnStatus.setExplanation(
                         "error retrieving a file request for an surl: "+e);
-                    surlStatus.setSurl(surls[i]);
+                    surlStatus.setSurl(surl);
                     surlStatus.setStatus(surlReturnStatus);
                     surlLReturnStatuses[i] = surlStatus;
+                    continue;
                 }
 
                 try {
@@ -497,7 +501,7 @@ public final class BringOnlineRequest extends ContainerRequest {
                     TReturnStatus surlReturnStatus = new TReturnStatus();
                     surlReturnStatus.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
                     surlReturnStatus.setExplanation("could not releaseFile file: "+e);
-                    surlStatus.setSurl(surls[i]);
+                    surlStatus.setSurl(surl);
                     surlStatus.setStatus(surlReturnStatus);
                     surlLReturnStatuses[i] = surlStatus;
                 }

@@ -21,10 +21,10 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
-import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  *
@@ -34,7 +34,6 @@ import org.apache.axis.types.URI.MalformedURIException;
 public class SrmGetPermission {
         private static Logger logger =
                 LoggerFactory.getLogger(SrmGetPermission.class);
-	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
 	SrmGetPermissionRequest request;
 	SrmGetPermissionResponse response;
@@ -55,9 +54,9 @@ public class SrmGetPermission {
 		if(response != null ) return response;
 		try {
 			response = srmGetPermission();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -87,8 +86,9 @@ public class SrmGetPermission {
 	 * implementation of srm get permission
 	 */
 
-	public SrmGetPermissionResponse srmGetPermission() throws SRMException,
-            MalformedURIException {
+	public SrmGetPermissionResponse srmGetPermission()
+                throws SRMException, URISyntaxException
+        {
 		SrmGetPermissionResponse response  = new SrmGetPermissionResponse();
 		TReturnStatus returnStatus = new TReturnStatus();
 		returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -98,31 +98,26 @@ public class SrmGetPermission {
 			return getFailedResponse(" null request passed to SrmGetPermission()");
 		}
 		ArrayOfAnyURI anyuriarray = request.getArrayOfSURLs();
-		URI[] uriarray            = anyuriarray.getUrlArray();
+		org.apache.axis.types.URI[] uriarray = anyuriarray.getUrlArray();
 		int length = uriarray.length;
 		if (length==0) {
 			return getFailedResponse(" zero length array of URLS");
 		}
-		String path[]=new String[length];
 		ArrayOfTPermissionReturn permissionarray=new ArrayOfTPermissionReturn();
 		TPermissionReturn permissionsArray[] =new TPermissionReturn[length];
 		permissionarray.setPermissionArray(permissionsArray);
 		boolean haveFailure = false;
 		int nfailed = 0;
 		for(int i=0;i <length;i++){
-            logger.debug("SURL["+i+"]= "+uriarray[i]);
-            path[i]  = uriarray[i].getPath(true,true);
-			int indx = path[i].indexOf(SFN_STRING);
+                        logger.debug("SURL["+i+"]= "+uriarray[i]);
+                        URI surl = new URI(uriarray[i].toString());
 			TReturnStatus rs = new TReturnStatus();
 			rs.setStatusCode(TStatusCode.SRM_SUCCESS);
 			TPermissionReturn p = new TPermissionReturn();
 			p.setStatus(rs);
 			p.setSurl(uriarray[i]);
-			if(indx != -1) {
-				path[i]=path[i].substring(indx+SFN_STRING.length());
-			}
 			try {
-                            FileMetaData fmd= storage.getFileMetaData(user,path[i], false);
+                                FileMetaData fmd= storage.getFileMetaData(user,surl, false);
 				String owner    = fmd.owner;
 				int permissions = fmd.permMode;
 				TPermissionMode  upm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));

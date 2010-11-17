@@ -25,7 +25,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  *
@@ -79,9 +80,9 @@ public class SrmBringOnline {
         if(response != null ) return response;
         try {
             response = srmBringOnline();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -110,7 +111,8 @@ public class SrmBringOnline {
      * implementation of srm ls
      */
     public SrmBringOnlineResponse srmBringOnline()
-    throws SRMException,MalformedURIException {
+        throws SRMException, URISyntaxException
+    {
         String [] protocols = null;
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfTransferProtocols() != null ) {
@@ -137,7 +139,7 @@ public class SrmBringOnline {
             return getFailedResponse("request contains no file requests",
                 TStatusCode.SRM_INVALID_REQUEST);
         }
-        String[] surls = new String[fileRequests.length];
+        URI[] surls = new URI[fileRequests.length];
         long lifetimeInSeconds = 0;
         if( request.getDesiredTotalRequestTime() != null ) {
             long reqLifetime = (long)request.getDesiredTotalRequestTime().intValue();
@@ -168,16 +170,11 @@ public class SrmBringOnline {
                 return getFailedResponse("file request #"+i+" is null",
                         TStatusCode.SRM_INVALID_REQUEST);
             }
-            String nextSurl =null;
-            if(nextRequest.getSourceSURL() != null) {
-
-                nextSurl = nextRequest.getSourceSURL().toString();
-            }
-            if(nextSurl == null) {
+            if (nextRequest.getSourceSURL() == null) {
                 return getFailedResponse("can't get surl of file request #"+i+"  null",
                         TStatusCode.SRM_INVALID_REQUEST);
             }
-            surls[i] = nextSurl;
+            surls[i] = new URI(nextRequest.getSourceSURL().toString());
         }
         //for bring online request we do not limit lifetime from above for bring online request
         try {

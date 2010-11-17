@@ -34,9 +34,9 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
 
-    public PreparedStatement getStatement(Connection connection, 
-                                          String query, 
-                                          Job job) throws SQLException { 
+    public PreparedStatement getStatement(Connection connection,
+                                          String query,
+                                          Job job) throws SQLException {
         CopyFileRequest request = (CopyFileRequest)job;
         PreparedStatement stmt = getPreparedStatement(connection,
                                   query,
@@ -55,8 +55,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
                                   request.getStatusCodeString(),
                                   request.getFromURL(),
                                   request.getToURL(),
-                                  (request.getFrom_turl()!=null?request.getFrom_turl().getURL():null),
-                                  (request.getTo_turl()!=null?request.getTo_turl().getURL():null),
+                                  (request.getFrom_turl()!=null?request.getFrom_turl().toString():null),
+                                  (request.getTo_turl()!=null?request.getTo_turl().toString():null),
                                   request.getLocal_from_path(),
                                   request.getLocal_to_path(),
                                   request.getSize(),//20
@@ -87,10 +87,10 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
             "SPACERESERVATIONID=? , "+
             "TRANSFERID=?   "+
             "WHERE ID=? ";//27
-    
-    public PreparedStatement getUpdateStatement(Connection connection, 
-                                                Job job) 
-        throws SQLException { 
+
+    public PreparedStatement getUpdateStatement(Connection connection,
+                                                Job job)
+        throws SQLException {
         if(job == null || !(job instanceof CopyFileRequest)) {
             throw new IllegalArgumentException("job is not CopyFileRequest" );
         }
@@ -129,9 +129,9 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
             "VALUES (?,?,?,?,?,?,?,?,?,?," +
                     "?,?,?,?,?,?,?,?,?,?," +
                     "?,?,?,?,?,?,?)";
-    
-    public PreparedStatement getCreateStatement(Connection connection, 
-                                                Job job) 
+
+    public PreparedStatement getCreateStatement(Connection connection,
+                                                Job job)
         throws SQLException {
         if(job == null || !(job instanceof CopyFileRequest)) {
             throw new IllegalArgumentException("fr is not CopyFileRequest" );
@@ -155,8 +155,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
                                   request.getStatusCodeString(),
                                   request.getFromURL(),
                                   request.getToURL(),
-                                  (request.getFrom_turl()!=null?request.getFrom_turl().getURL():null),
-                                  (request.getTo_turl()!=null?request.getTo_turl().getURL():null),
+                                  (request.getFrom_turl()!=null?request.getFrom_turl().toString():null),
+                                  (request.getTo_turl()!=null?request.getTo_turl().toString():null),
                                   request.getLocal_from_path(),
                                   request.getLocal_to_path(),
                                   request.getSize(),
@@ -169,12 +169,12 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         return stmt;
     }
 
-    
+
     /** Creates a new instance of CopyFileRequestStorage */
     public CopyFileRequestStorage(Configuration configuration) throws SQLException {
         super(configuration        );
     }
-    
+
     protected FileRequest getFileRequest(
     Connection _con,
     Long ID,
@@ -193,7 +193,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException {
-            
+
         String FROMURL = set.getString(next_index++);
         String TOURL = set.getString(next_index++);
         String FROMTURL = set.getString(next_index++);
@@ -207,10 +207,10 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         String REMOTEFILEID = set.getString(next_index++);
         String SPACERESERVATIONID = set.getString(next_index++);
         String TRANSFERID = set.getString(next_index);
-        Job.JobHistory[] jobHistoryArray = 
+        Job.JobHistory[] jobHistoryArray =
         getJobHistory(ID,_con);
-        
-   
+
+
            return new CopyFileRequest(
             ID,
             NEXTJOBID ,
@@ -242,9 +242,9 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
              SPACERESERVATIONID,
              TRANSFERID);
     }
-    
+
     public String getFileRequestCreateTableFields() {
-        return                     
+        return
         ","+
         "FROMURL "+  stringType+
         ","+
@@ -276,12 +276,12 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
     public String getTableName() {
         return TABLE_NAME;
     }
-    
-   
+
+
      public String getRequestTableName() {
           return CopyRequestStorage.TABLE_NAME;
-     }     
-     
+     }
+
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*","+
         ","+
@@ -317,7 +317,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
         else if(columnIndex == nextIndex+1)
         {
             verifyStringType("TOURL",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+2)
         {
@@ -371,9 +371,9 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
                     " this column should not be present!!!");
         }
      }
-     
+
      protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }
-     
+
 }

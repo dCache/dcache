@@ -77,6 +77,7 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import java.util.HashSet;
 import java.util.Date;
+import java.net.URI;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
@@ -182,12 +183,12 @@ public final class GetRequest extends ContainerRequest {
 
     }
 
-      public FileRequest getFileRequestBySurl(String surl) throws java.sql.SQLException, SRMException{
+      public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
         for(int i =0; i<fileRequests.length;++i) {
-            if(((GetFileRequest)fileRequests[i]).getSurlString().equals(surl)) {
+            if(((GetFileRequest)fileRequests[i]).getSurl().equals(surl)) {
                 return fileRequests[i];
             }
         }
@@ -340,8 +341,7 @@ public final class GetRequest extends ContainerRequest {
         return getSrmStatusOfGetRequestResponse(null);
     }
 
-    public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(
-            String[] surls)
+    public final SrmStatusOfGetRequestResponse getSrmStatusOfGetRequestResponse(URI[] surls)
     throws SRMException, java.sql.SQLException {
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
         // getTReturnStatus should be called before we get the
@@ -374,7 +374,7 @@ public final class GetRequest extends ContainerRequest {
         return getArrayOfTGetRequestFileStatus(null);
     }
     */
-    private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(String[] surls)
+    private TGetRequestFileStatus[] getArrayOfTGetRequestFileStatus(URI[] surls)
             throws SRMException,java.sql.SQLException {
         int len = surls == null ? getNumOfFileRequest():surls.length;
         TGetRequestFileStatus[] getFileStatuses
@@ -398,7 +398,7 @@ public final class GetRequest extends ContainerRequest {
         return null;
     }
      */
-    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(String[] surls) throws SRMException,java.sql.SQLException {
+    public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
 

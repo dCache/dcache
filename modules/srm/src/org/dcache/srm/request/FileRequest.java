@@ -110,7 +110,6 @@ public abstract class FileRequest extends Job {
     // for get and put it means that file turl
     // is not available yet
     //for copy - file is being copied
-    public static final String SFN_STRING="?SFN=";
 
     //request which contains this fileRequest (which is different from request number)
     protected final Long requestId;
@@ -136,13 +135,14 @@ public abstract class FileRequest extends Job {
 
    /** Creates new FileRequest */
     protected FileRequest(Long requestId,
-    Long  requestCredentalId,long lifetime,
-    int maxNumberOfRetries) throws Exception {
+                          Long requestCredentalId,
+                          long lifetime,
+                          int maxNumberOfRetries)
+    {
         super(lifetime, maxNumberOfRetries);
         this.credentialId = requestCredentalId;
         this.requestId = requestId;
         logger.debug("created");
-
     }
 
     /** this constructor is used for restoring the previously
@@ -339,20 +339,6 @@ public abstract class FileRequest extends Job {
         }
     }
 
-    public static String getPath(GlobusURL surl) {
-        String path = surl.getPath();
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-
-            path=path.substring(indx+SFN_STRING.length());
-        }
-
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        return path;
-    }
-
     /**
      *
      * @return
@@ -401,4 +387,16 @@ public abstract class FileRequest extends Job {
         return configuration;
     }
 
+    protected boolean isProtocolSupported(String[] protocols)
+        throws SRMException
+    {
+        for (String supported: getStorage().supportedGetProtocols()) {
+            for (String protocol: protocols) {
+                if (supported.equals(protocol)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

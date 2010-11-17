@@ -18,10 +18,10 @@ import org.dcache.srm.AbstractStorageElement;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMAuthorizationException;
 import diskCacheV111.srm.StorageElementInfo;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
-import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.PinCallbacks;
@@ -37,6 +37,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;
+import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 import org.ietf.jgss.GSSCredential;
 //import java.io.*;
@@ -45,6 +46,7 @@ import java.io.IOException;
 
 import java.net.InetAddress;
 //import java.net.URL;
+import java.net.URI;
 import org.globus.util.GlobusURL;
 //import java.net.*;
 import java.net.UnknownHostException;
@@ -66,6 +68,8 @@ public class Storage
   private static final Logger logger =
           LoggerFactory.getLogger(Storage.class);
   private final static String cvsId = "$Id:";
+
+  private final static String SFN_STRING = "?SFN=";
 
   private boolean debug = true; // Turns on/off debug messages
   private String gridftphost;
@@ -178,16 +182,18 @@ public class Storage
   }
 
   /** */
-  public String getPutTurl(SRMUser user, String filePath, String[] protocols)
+  public URI getPutTurl(SRMUser user, URI surl, String[] protocols)
       throws SRMException {
     /**@todo # Implement getPutTurl() method */
 
+    String filePath = getPath(surl);
+
     for(int i= 0; i<protocols.length; ++i) {
         if(protocols[i].equals("gridftp") || protocols[i].equals("gsiftp") ) {
-            return "gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath;
+            return URI.create("gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
         if(protocols[i].equals("enstore")) {
-            return "enstore://"+gridftphost+":"+gridftpport+"/"+filePath;
+            return URI.create("enstore://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
     }
     throw new SRMException("no sutable protocol found");
@@ -202,9 +208,9 @@ public class Storage
    * This is a feature of dCache implementation of SRM SE for DCAP protocol.
    * */
 
-  public String getPutTurl(SRMUser user, String filePath, String previous_turl)
+  public URI getPutTurl(SRMUser user, URI surl, URI previous_turl)
       throws SRMException {
-    return  getPutTurl(user,filePath,new String[]{previous_turl});
+      return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
     /*
     String erStr1 = "Method getPutTurl(..., previous_turl) not implemented.";
     String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
@@ -218,15 +224,16 @@ public class Storage
   }
 
   /** */
-  public String getGetTurl(SRMUser user, String filePath, String[] protocols)
+  public URI getGetTurl(SRMUser user, URI surl, String[] protocols)
       throws SRMException {
     /**@todo # Implement getGetTurl() method */
+    String filePath = getPath(surl);
     for(int i= 0; i<protocols.length; ++i) {
         if(protocols[i].equals("gridftp") || protocols[i].equals("gsiftp") ) {
-	    return "gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath;
+	    return URI.create("gsiftp://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
         if(protocols[i].equals("enstore")) {
-            return "enstore://"+gridftphost+":"+gridftpport+"/"+filePath;
+            return URI.create("enstore://"+gridftphost+":"+gridftpport+"/"+filePath);
         }
 
     }
@@ -242,9 +249,9 @@ public class Storage
    * This is a feature of dCache implementation of SRM SE for DCAP protocol.
    * */
 
-  public String getGetTurl(SRMUser user, String filePath, String previous_turl)
+  public URI getGetTurl(SRMUser user, URI surl, URI previous_turl)
       throws SRMException {
-    return  getPutTurl(user,filePath,new String[]{previous_turl});
+      return  getPutTurl(user,surl,new String[]{previous_turl.getScheme()});
 /*
     String erStr1 = "Method getGetTurl(..., previous_turl) not implemented.";
     String erStr2 = "This method is a feature of implementation dCache SRM SE and "+
@@ -257,7 +264,7 @@ public class Storage
   }
 
   /** */
-  public void getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser,
+  private void getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser,
     Long remoteCredentialId) throws SRMException {
           if(!(user instanceof UnixfsUser) ){
               throw new SRMException("user is not instance of UnixfsUser");
@@ -265,38 +272,39 @@ public class Storage
           }
           UnixfsUser duser = (UnixfsUser)user;
 
+          String path = getPath(surl);
           try
           {
             /**@todo # Implement getFromRemoteTURL() method */
-              GlobusURL url = new GlobusURL(remoteTURL);
-              if(!url.getProtocol().equalsIgnoreCase("gsiftp") &&
-                 !url.getProtocol().equalsIgnoreCase("gridftp") )
+              if(!remoteTURL.getScheme().equalsIgnoreCase("gsiftp") &&
+                 !remoteTURL.getScheme().equalsIgnoreCase("gridftp") )
               {
-                  throw new SRMException("unsupported protocol : "+url.getProtocol());
+                  throw new SRMException("unsupported protocol : " + remoteTURL.getScheme());
               }
               GSSCredential remoteCredential = RequestCredential.getRequestCredential(remoteCredentialId).getDelegatedCredential();
-              GridftpClient client = new GridftpClient(url.getHost(),
-                url.getPort(), config.getTcp_buffer_size(),
+              GridftpClient client = new GridftpClient(remoteTURL.getHost(),
+                                                       remoteTURL.getPort(),
+                                                       config.getTcp_buffer_size(),
                 remoteCredential);
               client.setStreamsNum(config.getParallel_streams());
 
               try
               {
-		client.gridFTPRead(url.getPath(),actualFilePath , true,true);
+		client.gridFTPRead(remoteTURL.getPath(), path, true, true);
               }
             finally {
                 client.close();
                 client = null;
             }
               // now file is copied, we need to change the owner/group to the user's
-              changeOwnership(actualFilePath,duser.getUid(),duser.getGid());
+              changeOwnership(path,duser.getUid(),duser.getGid());
 
 
           }
           catch(Exception e)
           {
               logger.error(e.toString());
-              throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
+              throw new SRMException("remote turl "+remoteTURL+" to local file "+surl+" transfer failed",e);
           }
 
 
@@ -307,25 +315,28 @@ public class Storage
   }
 
   /** */
-  public void putToRemoteTURL(SRMUser user, String actualFilePath, String remoteTURL, SRMUser remoteUser, Long remoteCredentialId) throws SRMException {
+  private void putToRemoteTURL(SRMUser user, URI surl, URI remoteTURL, SRMUser remoteUser, Long remoteCredentialId) throws SRMException {
+
+          String path = getPath(surl);
           try
           {
-              GlobusURL url = new GlobusURL(remoteTURL);
-              if(!url.getProtocol().equalsIgnoreCase("gsiftp") &&
-                 !url.getProtocol().equalsIgnoreCase("gridftp") )
+              if(!remoteTURL.getScheme().equalsIgnoreCase("gsiftp") &&
+                 !remoteTURL.getScheme().equalsIgnoreCase("gridftp") )
               {
-                  throw new SRMException("unsupported protocol : "+url.getProtocol());
+                  throw new SRMException("unsupported protocol : "+remoteTURL.getScheme());
               }
               GSSCredential remoteCredential = RequestCredential.getRequestCredential(remoteCredentialId).getDelegatedCredential();
 
-              GridftpClient client = new GridftpClient(url.getHost(),
-                url.getPort(), config.getTcp_buffer_size(),
-                remoteCredential);
+              GridftpClient client =
+                new GridftpClient(remoteTURL.getHost(),
+                                  remoteTURL.getPort(),
+                                  config.getTcp_buffer_size(),
+                                  remoteCredential);
               client.setStreamsNum(config.getParallel_streams());
 
               try
               {
-		client.gridFTPWrite(actualFilePath,url.getPath(),true,true,true);
+		client.gridFTPWrite(path,remoteTURL.getPath(),true,true,true);
               }
             finally {
                 client.close();
@@ -337,7 +348,7 @@ public class Storage
           catch(Exception e)
           {
               logger.error(e.toString());
-              throw new SRMException("remote turl "+remoteTURL+" to local file "+actualFilePath+" transfer failed",e);
+              throw new SRMException("remote turl "+remoteTURL+" to local file "+surl+" transfer failed",e);
           }
     /**@todo # Implement putToRemoteTURL() method */
 //    SRMException srmEx = new SRMException(
@@ -350,16 +361,18 @@ public class Storage
   private final static String localCopyCommand = "/bin/cp";
 
   /** */
-  public void localCopy(SRMUser user, String actualFromFilePath,
-                        String actualToFilePath)
+  @Override
+  public void localCopy(SRMUser user,
+                        URI fromSurl,
+                        URI toSurl)
       throws SRMException
   {
     /**@todo + localCopy() -- user; check path; set owner & group */
 
     String[] cmd = new String[3];
     cmd[0] = localCopyCommand;
-    cmd[1] = actualFromFilePath;
-    cmd[2] = actualToFilePath;
+    cmd[1] = getPath(fromSurl);
+    cmd[2] = getPath(toSurl);
 
     Process proc;
 
@@ -392,19 +405,10 @@ public class Storage
   /**
    * Checks Transfer URL has the same IP as the Local host.
    */
-  public boolean isLocalTransferUrl(String urlArg)
+  @Override
+  public boolean isLocalTransferUrl(URI url)
       throws SRMException {
     /**@todo isLocalTransferUrl(): check against multiple hostnames [getAllByName()] */
-
-    GlobusURL url = null;
-    try {
-      url = new GlobusURL(urlArg);
-    }
-    catch (MalformedURLException ex) {
-      throw new SRMException("Malformed URL argument to isLocalTransferUrl(),"+
-                       " URL=" + urlArg );
-    }
-
 
     if( myInetAddr == null )
       throw new SRMException("InetAddress.getLocalHost(),"+
@@ -486,10 +490,10 @@ public class Storage
   }
 
   /** */
-    public FileMetaData getFileMetaData(SRMUser user, String filePath, boolean read) throws SRMException{
+  public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read) throws SRMException{
 
     /**@todo getFileMetaData() - process exception */
-    return _getFileMetaData(user, filePath);
+    return _getFileMetaData(user, getPath(surl));
   }
 
   /** */
@@ -525,59 +529,45 @@ public class Storage
   //-------------- Async methods ----------------
 
   /** */
-    public void getFileInfo(SRMUser user, String filePath, boolean read,
-                          GetFileInfoCallbacks callbacks) {
-    /**@todo getFileInfo() - async, lost fileId */
-
-    if( ! ( callbacks instanceof GetFileInfoCallbacks ) )
-      throw new java.lang.IllegalArgumentException(
-          "Method getFileInfo() has wrong callback argument type.");
-
-    FileMetaData fmd    = null;
-    String       fileId = null;
-
-    try {
-      fmd    = _getFileMetaData( user, filePath );
-      fileId = filePath;
-    }
-    catch (Exception ex) {
-      logger.error(ex.toString());
-
-      String erStr = "getFileInfo() got exception for the filePath=" +filePath +".";
-      callbacks.GetStorageInfoFailed( erStr );
-      return;
-    }
-
-    logger.debug( "getFileInfo(): StorageInfoArrived, fileId="+fileId + "fmd=" + fmd );
-    callbacks.StorageInfoArrived(fileId, fmd);
-  }
-
-
-  /** */
+  @Override
   public void pinFile(SRMUser user,
-          String fileId,
-          String clientHost,
-          FileMetaData fmd,
-          long pinLifetime,
-          long requestId,
-          PinCallbacks callbacks) {
+                      URI surl,
+                      String clientHost,
+                      long pinLifetime,
+                      long requestId,
+                      PinCallbacks callbacks) {
     /**@todo - pinFile() - check authorization, do timeout */
 
-    if( ! (callbacks instanceof PinCallbacks ) )
-      throw new java.lang.IllegalArgumentException(
-          "Method pinFile() has wrong callback argument type.");
 
     boolean pinned = false;
     String  reason = null;
     String  pinId  = null;
+    FileMetaData fmd;
 
     try {
-      File file = _getFile(fileId, fmd);
+        fmd = getFileMetaData(user, surl, true);
+    } catch (SRMInvalidPathException e) {
+        callbacks.FileNotFound(e.getMessage());
+        return;
+    } catch (SRMException ex) {
+        logger.error(ex.toString());
+        callbacks.PinningFailed("Got exception for " + surl);
+        return;
+    }
+
+
+    if (fmd.isDirectory) {
+        callbacks.FileNotFound("Path is a directory");
+        return;
+    }
+
+    try {
+      File file = _getFile(fmd.fileId, fmd);
       pinned = file.exists();
       logger.debug("file exists is "+pinned);
       if( pinned )
 
-        pinId = fileId;
+        pinId = fmd.fileId;
       else
         reason = "file does not exist";
     }
@@ -588,7 +578,7 @@ public class Storage
 
    // Return filedId as PinId
    if( pinned )
-     callbacks.Pinned( pinId );
+     callbacks.Pinned(fmd, pinId);
    else
      callbacks.PinningFailed( reason );
   }
@@ -625,7 +615,8 @@ public class Storage
   }
 
   /** */
-  public void advisoryDelete(SRMUser user, String filePath,
+  @Override
+  public void advisoryDelete(SRMUser user, URI surl,
                              AdvisoryDeleteCallbacks callbacks) {
     /**@todo advisoryDelete() - user, async */
     if( ! ( callbacks instanceof AdvisoryDeleteCallbacks ) )
@@ -638,7 +629,7 @@ public class Storage
     try {
       /**@todo advisoryDelete() - _getFile(filePath) assumes fileID == filePath */
       // fileId is Canonical path
-      File file = _getFile(filePath);
+      File file = _getFile(getPath(surl));
       deleted   = file.delete();
       if( ! deleted )
         reason = "delete file operation failed";
@@ -687,13 +678,21 @@ public class Storage
   }
 
   /** */
-  public void prepareToPut(SRMUser user, String filePath,
+  public void prepareToPut(SRMUser user, URI surl,
                            PrepareToPutCallbacks callbacks,
-                           boolean overwrite ) {
+                           boolean overwrite )
+  {
    // the type of callback is already specified in the function declaration
    // if( ! ( callbacks instanceof PrepareToPutCallbacks ) )
    //   throw new java.lang.IllegalArgumentException(
    //       "Method prepareToPut() has wrong callback argument type.");
+    String filePath;
+    try {
+      filePath = getPath(surl);
+    } catch (SRMInvalidPathException e) {
+      callbacks.InvalidPathError(e.getMessage());
+      return;
+    }
 
     String       parentPath;
     File         file   = null;
@@ -814,15 +813,16 @@ public class Storage
   }
   private Map copyThreads = new HashMap();
 
-  public String getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
-   return this.getFromRemoteTURL( user,  remoteTURL,  actualFilePath,  remoteUser,  remoteCredentialId,  null,0, callbacks);
+  @Override
+  public String getFromRemoteTURL(SRMUser user, URI remoteTURL, URI surl, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
+   return this.getFromRemoteTURL( user,  remoteTURL,  surl,  remoteUser,  remoteCredentialId,  null,0, callbacks);
 
   }
 
   /**
      * @param user User ID
      * @param remoteTURL
-     * @param actualFilePath
+     * @param surl
      * @param remoteUser
      * @param remoteCredetial
      * @param callbacks
@@ -831,8 +831,8 @@ public class Storage
      */
     public String getFromRemoteTURL(
         final SRMUser user,
-        final String remoteTURL,
-        final String actualFilePath,
+        final URI remoteTURL,
+        final URI surl,
         final SRMUser remoteUser,
         final Long remoteCredentialId,
         String spaceReservationId,
@@ -845,9 +845,9 @@ public class Storage
                 try
                 {
                     logger.debug("calling getFromRemoteTURL from a copy thread");
-                    getFromRemoteTURL(user, remoteTURL,actualFilePath, remoteUser, remoteCredentialId);
-                    logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath, false));
+                    getFromRemoteTURL(user, remoteTURL,surl, remoteUser, remoteCredentialId);
+                    logger.debug("calling callbacks.copyComplete for path="+surl);
+                    callbacks.copyComplete(getFileMetaData(user, surl, false));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -855,7 +855,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+actualFilePath);
+        logger.debug("getFromRemoteTURL assigned id ="+id+"for transfer from "+remoteTURL+" to "+surl);
 
         copyThreads.put(id, t);
         t.start();
@@ -871,7 +871,8 @@ public class Storage
      * @throws SRMException
      * @return transfer id
      */
-    public String putToRemoteTURL(final SRMUser user, final String actualFilePath,final String remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
+    @Override
+    public String putToRemoteTURL(final SRMUser user, final URI surl,final URI remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
     throws SRMException {
 
        Thread t = new Thread(){
@@ -881,9 +882,9 @@ public class Storage
                 try
                 {
                     logger.debug("calling putToRemoteTURL from a copy thread");
-                    putToRemoteTURL(user, actualFilePath,remoteTURL, remoteUser, remoteCredentialId);
-                    logger.debug("calling callbacks.copyComplete for path="+actualFilePath);
-                    callbacks.copyComplete(actualFilePath, getFileMetaData(user,actualFilePath, false));
+                    putToRemoteTURL(user, surl,remoteTURL, remoteUser, remoteCredentialId);
+                    logger.debug("calling callbacks.copyComplete for path="+surl);
+                    callbacks.copyComplete(getFileMetaData(user,surl, true));
                 }
                 catch (Exception e){
                     callbacks.copyFailed(e);
@@ -891,7 +892,7 @@ public class Storage
             }
         };
         String id = getUniqueId();
-        logger.debug("putToRemoteTURL assigned id ="+id+"for transfer from "+actualFilePath+" to "+remoteTURL);
+        logger.debug("putToRemoteTURL assigned id ="+id+"for transfer from "+surl+" to "+remoteTURL);
 
         copyThreads.put(id, t);
         t.start();
@@ -915,23 +916,26 @@ public class Storage
       callbacks.SpaceReserved("dummy", spaceSize);
   }
 
-
-
+      @Override
       public void removeFile(final SRMUser user,
-			     final String path,
+			     final URI path,
 			     RemoveFileCallbacks callbacks) {
       }
 
+      @Override
       public void removeDirectory(final SRMUser user,
-				  final Vector tree)  throws SRMException {
+				  final List<URI> surls)  throws SRMException {
       }
 
+      @Override
       public void createDirectory(final SRMUser user,
-				  final String directory) throws SRMException {
+				  final URI directory) throws SRMException {
       }
 
-	public String[] listNonLinkedDirectory(SRMUser user, String directoryName) throws SRMException {
-            FileMetaData fmd = getFileMetaData(user, directoryName, false);
+        @Override
+	public List<URI> listNonLinkedDirectory(SRMUser user, URI surl) throws SRMException {
+            String directoryName = getPath(surl);
+            FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -963,49 +967,18 @@ public class Storage
          if(!f.isDirectory()) {
              throw new SRMException("not a directory");
          }
-         return f.list();
-
+         String base = addTrailingSlash(surl.toString());
+         List<URI> result = new ArrayList<URI>();
+         for (String file: f.list()) {
+             result.add(URI.create(base + file));
+         }
+         return result;
 	}
 
-      public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-          FileMetaData fmd = getFileMetaData(user, directoryName,false);
-         int uid = Integer.parseInt(fmd.owner);
-         int gid = Integer.parseInt(fmd.group);
-         int permissions = fmd.permMode;
-
-         if(permissions == 0 ) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!Permissions.worldCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(uid == -1 || gid == -1) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(user == null ) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!fmd.isGroupMember(user) || !Permissions.groupCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-
-         if(!fmd.isOwner(user) || !Permissions.userCanRead(permissions)) {
-            throw new SRMException ("permission denied");
-         }
-         File f = new File(directoryName);
-         if(!f.isDirectory()) {
-             throw new SRMException("not a directory");
-         }
-         return f.listFiles();
-
-      }
-
-      public String[] listDirectory(SRMUser user, String directoryName, FileMetaData fileMetaData) throws SRMException {
-          FileMetaData fmd = getFileMetaData(user, directoryName, false);
+      @Override
+      public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException {
+          String directoryName = getPath(surl);
+          FileMetaData fmd = _getFileMetaData(user, directoryName);
          int uid = Integer.parseInt(fmd.owner);
          int gid = Integer.parseInt(fmd.group);
          int permissions = fmd.permMode;
@@ -1037,40 +1010,48 @@ public class Storage
          if(!f.isDirectory()) {
              throw new SRMException("not a directory");
          }
-         return f.list();
-
+         String base = addTrailingSlash(surl.toString());
+         List<URI> result = new ArrayList<URI>();
+         for (String file: f.list()) {
+             result.add(URI.create(base + file));
+         }
+         return result;
       }
 
     @Override
     public List<FileMetaData>
-        listDirectory(SRMUser user, String directory, final boolean verbose,
+        listDirectory(SRMUser user, URI surl, final boolean verbose,
                       long offset, long count)
         throws SRMException
     {
-        String[] list = listDirectory(user, directory, null);
+        List<URI> list = listDirectory(user, surl, null);
         List<FileMetaData> result = new ArrayList<FileMetaData>();
-        for (long i = offset; i < list.length && i < offset + count; i++) {
-            result.add(getFileMetaData(user, directory + "/" + list[(int)i], false));
+        for (long i = offset; i < list.size() && i < offset + count; i++) {
+            result.add(getFileMetaData(user, list.get((int) i), false));
         }
-
         return result;
     }
 
-
-	public void moveEntry(SRMUser user, String from,
-			       String to) throws SRMException {
+        @Override
+	public void moveEntry(SRMUser user, URI from, URI to)
+          throws SRMException
+        {
 	}
 
+    @Override
     public void srmReserveSpace(SRMUser user, long sizeInBytes, long spaceReservationLifetime, String retentionPolicy, String accessLatency, String description,org.dcache.srm.SrmReserveSpaceCallbacks callbacks) {
     }
 
-    public void srmUnmarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, SrmCancelUseOfSpaceCallbacks callbacks) {
+    @Override
+    public void srmUnmarkSpaceAsBeingUsed(SRMUser user, String spaceToken, URI surl, SrmCancelUseOfSpaceCallbacks callbacks) {
     }
 
+    @Override
     public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallbacks callbacks) {
     }
 
-    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, long sizeInBytes, long useLifetime,
+    @Override
+    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, URI surl, long sizeInBytes, long useLifetime,
         boolean overwrite,
         SrmUseSpaceCallbacks callbacks) {
     }
@@ -1082,6 +1063,7 @@ public class Storage
      * @throws org.dcache.srm.SRMException
      * @return
      */
+    @Override
     public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user, String[] spaceTokens)
         throws SRMException {
         return null;
@@ -1092,11 +1074,13 @@ public class Storage
      * @throws org.dcache.srm.SRMException
      * @return
      */
+    @Override
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException {
         return null;
     }
 
+    @Override
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException{
         return null;
@@ -1110,8 +1094,9 @@ public class Storage
      * @return long lifetime left in seconds
      *   -1 stands for infinite lifetime
      */
-    public int srmExtendSurlLifetime(SRMUser user, String fileName, int newLifetime) throws SRMException {
-        FileMetaData fmd = getFileMetaData(user,fileName, false);
+    @Override
+    public int srmExtendSurlLifetime(SRMUser user, URI surl, int newLifetime) throws SRMException {
+        FileMetaData fmd = getFileMetaData(user,surl, true);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
@@ -1141,16 +1126,20 @@ public class Storage
 
     }
 
+    @Override
     public long extendPinLifetime(SRMUser user, String fileId, String pinId, long newPinLifetime) throws SRMException {
         return newPinLifetime;
     }
 
+    @Override
     public long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime) throws SRMException {
         return newReservationLifetime;
     }
 
+    @Override
     public String getStorageBackendVersion() { return "$Revision: 1.35 $"; }
 
+    @Override
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
         UnpinCallbacks callbacks,
         long srmRequestId)   {
@@ -1167,12 +1156,57 @@ public class Storage
      * various actions performed to "unpin" file in the storage
      * @param srmRequestId id given to the storage  during pinFile operation
      */
+    @Override
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks) {
         callbacks.Unpinned(fileId);
 
     }
-    public boolean exists(SRMUser user, String path)  throws SRMException {
+
+    @Override
+    public boolean exists(SRMUser user, URI surl)  throws SRMException {
             return true;
     }
+
+    /**
+     * Adds a trailing slash to a string unless the string already has
+     * a trailing slash.
+     */
+    private String addTrailingSlash(String s)
+    {
+        if (!s.endsWith("/")) {
+            s = s + "/";
+        }
+        return s;
+    }
+
+    /**
+     * Given a path relative to the root path, this method returns a
+     * full PNFS path.
+     */
+    private String getPath(URI surl)
+        throws SRMInvalidPathException
+    {
+        try {
+            String path = surl.getPath();
+            String scheme = surl.getScheme();
+            if (scheme != null) {
+                if (!scheme.equalsIgnoreCase("srm")) {
+                    throw new SRMInvalidPathException("Invalid scheme: " + scheme);
+                }
+                if (!Tools.sameHost(config.getSrmHosts(), surl.getHost())) {
+                    throw new SRMInvalidPathException("SURL is not local: " + surl);
+                }
+
+                int i = path.indexOf(SFN_STRING);
+                if (i != -1) {
+                    path = path.substring(i + SFN_STRING.length());
+                }
+            }
+            return path;
+        } catch (UnknownHostException e) {
+            throw new SRMInvalidPathException(e.getMessage());
+        }
+    }
+
 }

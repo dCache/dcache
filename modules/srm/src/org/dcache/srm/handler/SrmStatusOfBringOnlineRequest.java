@@ -23,7 +23,8 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.SRM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 
 
@@ -32,10 +33,10 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmStatusOfBringOnlineRequest {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfBringOnlineRequest.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmStatusOfBringOnlineRequestRequest statusOfBringOnlineRequest;
@@ -64,10 +65,10 @@ public class SrmStatusOfBringOnlineRequest {
         this.storage = storage;
         this.srmBringOnlineScheduler = srm.getBringOnlineRequestScheduler();
         this.configuration = srm.getConfiguration();
-        
-        
+
+
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -76,9 +77,9 @@ public class SrmStatusOfBringOnlineRequest {
         if(response != null ) return response;
         try {
             response = srmStatusOfBringOnlineRequestResponse();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SQLException sqle) {
             logger.error(sqle.toString());
@@ -87,14 +88,14 @@ public class SrmStatusOfBringOnlineRequest {
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
-        }        
+        }
         return response;
     }
-    
+
     public static final SrmStatusOfBringOnlineRequestResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmStatusOfBringOnlineRequestResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -106,13 +107,23 @@ public class SrmStatusOfBringOnlineRequest {
         srmPrepareToGetResponse.setReturnStatus(status);
         return srmPrepareToGetResponse;
     }
+
+    private static URI[] toUris(org.apache.axis.types.URI[] uris)
+        throws URISyntaxException
+    {
+        URI[] result = new URI[uris.length];
+        for (int i = 0; i < uris.length; i++) {
+            result[i] = new URI(uris[i].toString());
+        }
+        return result;
+    }
+
     /**
      * implementation of srm ls
      */
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequestResponse()
-    throws SRMException, 
-            MalformedURIException,
-            SQLException {
+        throws SRMException, URISyntaxException, SQLException
+    {
         String requestToken = statusOfBringOnlineRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
@@ -125,38 +136,30 @@ public class SrmStatusOfBringOnlineRequest {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_FAILURE);
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not found",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         if ( !(request instanceof BringOnlineRequest) ){
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not srmPrepareToGet request",
                     TStatusCode.SRM_FAILURE);
-            
+
         }
         BringOnlineRequest getRequest = (BringOnlineRequest) request;
-        if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null 
+        if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null
             || statusOfBringOnlineRequest.getArrayOfSourceSURLs().getUrlArray() == null){
             return getRequest.getSrmStatusOfBringOnlineRequestResponse();
         }
-        
-        org.apache.axis.types.URI [] surls = statusOfBringOnlineRequest.getArrayOfSourceSURLs().getUrlArray();
+
+        URI[] surls = toUris(statusOfBringOnlineRequest.getArrayOfSourceSURLs().getUrlArray());
         if(surls.length == 0) {
             return getRequest.getSrmStatusOfBringOnlineRequestResponse();
         }
-        
-        String[] surlStrings = new String[surls.length];
-        for(int i = 0; i< surls.length; ++i) {
-            surlStrings[i] = surls[i].toString();
-        }
-        
-        return getRequest.getSrmStatusOfBringOnlineRequestResponse(surlStrings);
+        return getRequest.getSrmStatusOfBringOnlineRequestResponse(surls);
     }
-    
-    
 }

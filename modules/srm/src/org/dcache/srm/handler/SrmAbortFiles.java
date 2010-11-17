@@ -26,7 +26,8 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 
 
@@ -35,10 +36,10 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmAbortFiles {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmAbortFiles.class);
-    
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmAbortFilesRequest srmAbortFilesRequest;
@@ -65,7 +66,7 @@ public class SrmAbortFiles {
         this.getScheduler = srm.getGetRequestScheduler();
         this.configuration = srm.getConfiguration();
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -74,7 +75,7 @@ public class SrmAbortFiles {
         if(response != null ) return response;
         try {
             response = srmAbortFiles();
-        } catch(MalformedURIException mue) {
+        } catch(URISyntaxException mue) {
             logger.debug(" malformed uri : "+mue.getMessage());
             response = getFailedResponse(" malformed uri : "+mue.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
@@ -95,11 +96,11 @@ public class SrmAbortFiles {
         }
         return response;
     }
-    
+
     public static final SrmAbortFilesResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmAbortFilesResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -111,12 +112,24 @@ public class SrmAbortFiles {
         srmAbortFilesResponse.setReturnStatus(status);
         return srmAbortFilesResponse;
     }
+
+    private static URI[] toUris(org.apache.axis.types.URI[] uris)
+        throws URISyntaxException
+    {
+        URI[] result = new URI[uris.length];
+        for (int i = 0; i < uris.length; i++) {
+            result[i] = new URI(uris[i].toString());
+        }
+        return result;
+    }
+
     /**
      * implementation of srm ls
      */
     public SrmAbortFilesResponse srmAbortFiles()
-    throws SRMException,MalformedURIException,
-            SQLException, IllegalStateTransition {
+        throws SRMException,URISyntaxException,
+               SQLException, IllegalStateTransition
+    {
         String requestToken = srmAbortFilesRequest.getRequestToken();
         if( requestToken == null ) {
             return getFailedResponse("request contains no request token");
@@ -129,42 +142,36 @@ public class SrmAbortFiles {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        
+
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
             return getFailedResponse("request for requestToken \""+
                     requestToken+"\"is not found",
                     TStatusCode.SRM_INVALID_REQUEST);
-            
+
         }
-        org.apache.axis.types.URI [] surls ;
+        URI[] surls;
         if(  srmAbortFilesRequest.getArrayOfSURLs() == null ){
             return getFailedResponse("request does not contain any SURLs",
                     TStatusCode.SRM_INVALID_REQUEST);
-            
+
         }  else {
-            surls = srmAbortFilesRequest.getArrayOfSURLs().getUrlArray();
+            surls = toUris(srmAbortFilesRequest.getArrayOfSURLs().getUrlArray());
         }
-        String surl_stings[] = null;
         if(surls.length == 0) {
-            return getFailedResponse("0 lenght SiteURLs array",
+            return getFailedResponse("0 length SiteURLs array",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        surl_stings = new String[surls.length];
-        for(int i = 0; i< surls.length; ++i) {
-            if(surls[i] == null ) {
-                return getFailedResponse("surls["+i+"]=null");
-            }
-            surl_stings[i] = surls[i].toString();
-            FileRequest fileRequest = request.getFileRequestBySurl(surl_stings[i]);
+        for (URI surl: surls) {
+            FileRequest fileRequest = request.getFileRequestBySurl(surl);
             fileRequest.setState(State.CANCELED,"SrmAbortFiles called");
         }
-        
+
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(TStatusCode.SRM_SUCCESS);
         SrmAbortFilesResponse srmAbortFilesResponse = new SrmAbortFilesResponse();
         srmAbortFilesResponse.setReturnStatus(status);
-        TSURLReturnStatus[] surlReturnStatusArray =  request.getArrayOfTSURLReturnStatus(surl_stings);
+        TSURLReturnStatus[] surlReturnStatusArray =  request.getArrayOfTSURLReturnStatus(surls);
         for (TSURLReturnStatus surlReturnStatus:surlReturnStatusArray) {
             if(surlReturnStatus.getStatus().getStatusCode() == TStatusCode.SRM_ABORTED) {
                 surlReturnStatus.getStatus().setStatusCode(TStatusCode.SRM_SUCCESS);
@@ -177,8 +184,8 @@ public class SrmAbortFiles {
         request.getTReturnStatus();
 
         return srmAbortFilesResponse;
-        
+
     }
-    
-    
+
+
 }

@@ -37,17 +37,20 @@ import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.ContainerRequest;
-import org.apache.axis.types.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.axis.types.URI.MalformedURIException;
+
+import java.net.URISyntaxException;
+import java.net.URI;
+
+
 /**
  *
  * @author  litvinse
  */
 
 public class SrmExtendFileLifeTime {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmExtendFileLifeTime.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -55,7 +58,7 @@ public class SrmExtendFileLifeTime {
     SrmExtendFileLifeTimeResponse          response;
     SRMUser            user;
     Configuration configuration;
-    
+
     public SrmExtendFileLifeTime(SRMUser user,
             RequestCredential credential,
             SrmExtendFileLifeTimeRequest request,
@@ -67,14 +70,14 @@ public class SrmExtendFileLifeTime {
         this.storage = storage;
         this.configuration = srm.getConfiguration();
     }
-    
+
     public SrmExtendFileLifeTimeResponse getResponse() {
         if(response != null ) return response;
         try {
             response = srmExtendFileLifeTime();
-        } catch(MalformedURIException mue) {
-            logger.debug(" malformed uri : "+mue.getMessage());
-            response = getFailedResponse(" malformed uri : "+mue.getMessage(),
+        } catch(URISyntaxException e) {
+            logger.debug(" malformed uri : "+e.getMessage());
+            response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
@@ -82,11 +85,11 @@ public class SrmExtendFileLifeTime {
         }
         return response;
     }
-    
+
     public final SrmExtendFileLifeTimeResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public final  SrmExtendFileLifeTimeResponse
             getFailedResponse(String error,TStatusCode statusCode) {
         logger.debug("getFailedResponse("+error+","+statusCode+")");
@@ -100,9 +103,9 @@ public class SrmExtendFileLifeTime {
         response.setReturnStatus(status);
         return response;
     }
-    
-    
-    URI surls[];
+
+
+    org.apache.axis.types.URI surls[];
     Integer newFileLifetime ;
     Integer newPinLifetime ;
     String token ;
@@ -111,25 +114,22 @@ public class SrmExtendFileLifeTime {
     /**
      * implementation of srm expend file life time
      */
-    public SrmExtendFileLifeTimeResponse srmExtendSURLLifeTime() {
+    public SrmExtendFileLifeTimeResponse srmExtendSURLLifeTime()
+        throws URISyntaxException
+    {
         int failuresCount = 0;
         int len = surls.length;
         TSURLLifetimeReturnStatus surlStatus[] =
                 new TSURLLifetimeReturnStatus[len];
         for(int i = 0; i<len; ++i) {
-            
+
             surlStatus[i] = new TSURLLifetimeReturnStatus();
             surlStatus[i].setSurl(surls[i]);
-            String path   = surls[i].getPath(true,true);
-            int indx      = path.indexOf(SFN_STRING);
-            
-            if ( indx != -1 ) {
-                path=path.substring(indx+SFN_STRING.length());
-            }
-            
+
+            URI surl = new URI(surls[i].toString());
             try{
                 int lifetimeLeft =
-                        storage.srmExtendSurlLifetime(user,path,newFileLifetime);
+                    storage.srmExtendSurlLifetime(user,surl,newFileLifetime);
                 surlStatus[i].setFileLifetime(lifetimeLeft);
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_SUCCESS,"ok"));
@@ -159,7 +159,7 @@ public class SrmExtendFileLifeTime {
         response.getReturnStatus().setExplanation("success");
         return response;
     }
-    
+
     public SrmExtendFileLifeTimeResponse srmExtendTURLorPinLifeTime()
             throws SRMInvalidRequestException {
         try {
@@ -169,9 +169,9 @@ public class SrmExtendFileLifeTime {
                     token+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        
+
         job = Job.getJob(requestId);
-        
+
         if(job == null ) {
             return getFailedResponse("request for requestToken \""+
                     token+"\"is not found",
@@ -192,7 +192,7 @@ public class SrmExtendFileLifeTime {
         } else if (containerRequest instanceof BringOnlineRequest) {
             configMaximumLifetime = configuration.getBringOnlineLifetime();
         } else {
-            configMaximumLifetime = configuration.getGetLifetime();            
+            configMaximumLifetime = configuration.getGetLifetime();
         }
         newLifetimeInMillis =
             newPinLifetime>0
@@ -208,10 +208,10 @@ public class SrmExtendFileLifeTime {
             surlStatus[i] = new TSURLLifetimeReturnStatus();
             surlStatus[i].setSurl(surls[i]);
             FileRequest fileRequest = null;
-            
+
             try {
                 fileRequest =
-                        containerRequest.getFileRequestBySurl(surls[i].toString());
+                    containerRequest.getFileRequestBySurl(URI.create(surls[i].toString()));
             } catch (Exception e) {
                 String error = "request for requestToken \""+
                     token+"\" for surl="+surls[i] +"can't be found:"+e;
@@ -229,13 +229,13 @@ public class SrmExtendFileLifeTime {
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_INVALID_PATH,err));
                 continue;
-                
+
             }
-            
+
             try{
                 long lifetimeLeftMillis =
                         fileRequest.extendLifetime(newLifetimeInMillis);
-                int lifetimeLeftSec = lifetimeLeftMillis>=0 
+                int lifetimeLeftSec = lifetimeLeftMillis>=0
                     ?(int)(lifetimeLeftMillis/1000)
                     :(int)lifetimeLeftMillis;
                 surlStatus[i].setFileLifetime(lifetimeLeftSec);
@@ -262,7 +262,7 @@ public class SrmExtendFileLifeTime {
                 logger.warn(error.toString());
                 surlStatus[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_ABORTED,error));
-                
+
             } catch(SRMException e) {
                 failuresCount++;
                 String error = "request for requestToken \""+
@@ -272,7 +272,7 @@ public class SrmExtendFileLifeTime {
                         TStatusCode.SRM_FAILURE,error));
             }
         }
-        
+
         SrmExtendFileLifeTimeResponse response =
                 new SrmExtendFileLifeTimeResponse();
         response.setArrayOfFileStatuses(
@@ -286,11 +286,12 @@ public class SrmExtendFileLifeTime {
                         TStatusCode.SRM_PARTIAL_SUCCESS);
         response.setReturnStatus(returnStatus);
         return response;
-        
+
     }
-    
+
     public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime()
-    throws SRMException,MalformedURIException {
+        throws SRMException, URISyntaxException
+    {
         if(request==null) {
             return getFailedResponse(" null request passed to SrmRm()",
                     TStatusCode.SRM_INVALID_REQUEST);
@@ -314,10 +315,10 @@ public class SrmExtendFileLifeTime {
                 return getFailedResponse(" requestToken is not null and newPinLifetime is null",
                         TStatusCode.SRM_INVALID_REQUEST);
             }
-            
+
             return srmExtendTURLorPinLifeTime();
         }
-        
+
     }
-    
+
 }
