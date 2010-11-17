@@ -136,12 +136,12 @@ public class FileMetaData implements Serializable {
     public FileMetaData(boolean isDirectory, int uid, int gid, int permission) {
         _uid = uid;
         _gid = gid;
-        _isDirectory = isDirectory;
 
         _isUidSet = true;
         _isGidSet = true;
 
         setMode(permission);
+        setFileType(!isDirectory, isDirectory, false);
     }
 
     public FileMetaData(FileAttributes attributes)
