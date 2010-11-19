@@ -1,14 +1,13 @@
 package org.dcache.auth;
 
-import java.util.Set;
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.Set;
+
 import javax.security.auth.Subject;
-import java.security.Principal;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
 
@@ -378,7 +377,7 @@ public class Subjects extends dmg.util.Subjects
 
         boolean primary = true;
         for (int gid: user.GIDs) {
-            principals.add(new GidPrincipal(user.GID, primary));
+            principals.add(new GidPrincipal(gid, primary));
             primary = false;
         }
 
@@ -392,11 +391,13 @@ public class Subjects extends dmg.util.Subjects
             principals.add(new GlobusPrincipal(dn));
         }
 
-        String fqan = user.getFqan().toString();
-        if (fqan != null && !fqan.isEmpty()) {
-            principals.add(new FQANPrincipal(fqan, true));
+        FQAN fqan = user.getFqan();
+        if (fqan!=null) {
+            String fqanstr = fqan.toString();
+            if (fqanstr != null && !fqanstr.isEmpty()) {
+                principals.add(new FQANPrincipal(fqanstr, true));
+            }
         }
-
         return subject;
     }
 
