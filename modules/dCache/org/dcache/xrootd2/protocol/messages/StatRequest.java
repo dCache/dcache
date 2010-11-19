@@ -23,9 +23,9 @@ public class StatRequest extends AbstractRequestMessage
         int end = 24 + dlen;
         int pos = buffer.indexOf(24, end, (byte)0x3f);
         if (pos > -1) {
-            path = buffer.toString(24, pos - 24, "ASCII");
+            path = buffer.toString(24, pos - 24, XROOTD_CHARSET);
         } else {
-            path = buffer.toString(24, end - 24, "ASCII");
+            path = buffer.toString(24, end - 24, XROOTD_CHARSET);
         }
     }
 

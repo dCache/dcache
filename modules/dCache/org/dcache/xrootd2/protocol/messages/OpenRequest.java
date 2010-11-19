@@ -27,12 +27,19 @@ public class OpenRequest extends AbstractRequestMessage
         // opaque information (see xrootd-protocol spec.)
         int dlen = buffer.getInt(20);
         int end = 24 + dlen;
+
         int pos = buffer.indexOf(24, end, (byte)0x3f);
         if (pos > -1) {
-            path = buffer.toString(24, pos - 24, "ASCII");
-            opaque = buffer.toString(pos + 1, end - (pos + 1), "ASCII");
+            path = buffer.toString(24,
+                                   pos - 24,
+                                   XROOTD_CHARSET);
+            opaque = buffer.toString(pos + 1,
+                                     end - (pos + 1),
+                                     XROOTD_CHARSET);
         } else {
-            path = buffer.toString(24, end - 24, "ASCII");
+            path = buffer.toString(24,
+                                   end - 24,
+                                   XROOTD_CHARSET);
             opaque = null;
         }
 
@@ -112,24 +119,6 @@ public class OpenRequest extends AbstractRequestMessage
     {
         return checksum;
     }
-
-    //	public boolean isReadOnly() {
-    //
-    //		int options = getOptions() & (XrootdProtocol.kXR_new +
-    //				  XrootdProtocol.kXR_open_read +
-    //				  XrootdProtocol.kXR_open_updt);
-    //
-    //		return options == XrootdProtocol.kXR_open_read;
-    //	}
-
-    //	public boolean isReadWrite() {
-    //
-    //		int flags = XrootdProtocol.kXR_new + XrootdProtocol.kXR_open_updt;
-    //		int options = getOptions() & (flags);
-    //
-    //		return options == flags;
-    //	}
-
 
     public String toString()
     {
