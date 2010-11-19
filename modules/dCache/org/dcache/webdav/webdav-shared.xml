@@ -74,7 +74,7 @@
   </bean>
 
   <bean id="response-handler"
-        class="com.bradmcevoy.http.webdav.DefaultWebDavResponseHandler">
+        class="org.dcache.webdav.DcacheResponseHandler">
     <description>Generates WebDAV responses</description>
     <constructor-arg ref="authentication-service"/>
   </bean>
