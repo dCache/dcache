@@ -2625,8 +2625,8 @@ public final class Storage
         try {
             FsPath path = getPath(surl);
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
-            ListPrinter printer =
-                verbose ? new VerboseListPrinter() : new ConciseListPrinter();
+            FmdListPrinter printer =
+                verbose ? new VerboseListPrinter() : new FmdListPrinter();
             _listSource.printDirectory(subject, printer, path, null,
                                        new Interval(offset, offset + count - 1));
             return printer.getResult();
@@ -2652,7 +2652,7 @@ public final class Storage
      * Custom DirectoryListPrinter that collects the list result as a
      * list of FileMetaData.
      */
-    private class ConciseListPrinter implements DirectoryListPrinter
+    private class FmdListPrinter implements DirectoryListPrinter
     {
         protected final List<FileMetaData> _result =
             new ArrayList<FileMetaData>();
@@ -2693,7 +2693,7 @@ public final class Storage
      * Custom DirectoryListPrinter that collects the list result as a
      * list of FileMetaData.
      */
-    private class VerboseListPrinter extends ListPrinter
+    private class VerboseListPrinter extends FmdListPrinter
     {
         private final static int PIPELINE_DEPTH = 40;
 
@@ -2718,7 +2718,7 @@ public final class Storage
             throws InterruptedException
         {
             DcacheFileMetaData fmd = super.toFmd(dir, entry);
-            if (!fmd.isDirectory()) {
+            if (!fmd.isDirectory) {
                 lookupLocality(entry.getFileAttributes(), fmd);
                 lookupTokens(entry.getFileAttributes(), fmd);
             }
