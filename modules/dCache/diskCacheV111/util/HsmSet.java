@@ -176,7 +176,7 @@ public class HsmSet
      */
     private void _scanOptions(HsmInfo info, Args args)
     {
-        for (Map.Entry<String,String> e: args.options().entrySet()) {
+        for (Map.Entry<String,String> e: args.options().entries()) {
             String optName  = e.getKey();
             String optValue = e.getValue();
 

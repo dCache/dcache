@@ -1,77 +1,129 @@
 package dmg.util ;
 
-import java.util.* ;
 import java.io.Serializable;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 
 /**
- * TODO: Write JavaDoc!
+ * Argument parser.
+ *
+ * Supports single and multi character options, although both start
+ * with a single hyphen. Options may have an optional value using the
+ * equal sign to separate key and value.
+ *
+ * Supports single and double quoted valus and uses backslash as an
+ * escape symbol.
+ *
+ * An optional double hyphen argument separator separates options from
+ * arguments. Any argument following the separator will not be
+ * interpreted as an option.
+ *
+ * Option and argument order is preserved with some limitations:
+ * Option and argument interleaving is not preserved. Repeated options
+ * are preserved, including the order of their values, however all
+ * values appear at the place of the first use of that option.
  */
 public class Args
-    implements Serializable, Cloneable
+    implements Cloneable
 {
+    private final ImmutableListMultimap<String,String> _options;
+    private final String _oneChar;
+    private ImmutableList<String> _arguments;
 
-   static final long serialVersionUID = -8950082352156787965L;
-   private final Map<String, String> _optHash = CollectionFactory.newHashMap();
-   private final List<String>    _optv  = new Vector<String>();
-   private final List<String>    _argv  = new Vector<String>();
-   private String _oneChar;
-   public Args( String args ) {
-
-       new Scanner(args).scan();
-   }
-   public Args( String [] args ) {
-
-      StringBuilder sb = new StringBuilder() ;
-      for( int i = 0 ; i < args.length ; i++ )
-         sb.append(args[i]).append(" ");
-
-      new Scanner(sb).scan();
-   }
-   Args( Args in ){
-     _argv.addAll(in._argv);
-     _optv.addAll( in._optv );
-     _optHash.putAll( in._optHash );
-     _oneChar = in._oneChar;
-   }
-   public boolean isOneCharOption( char c ){
-     return _oneChar.indexOf(c) > -1 ;
-   }
-   public int argc(){ return _argv.size() ; }
-   public int optc(){ return _optv.size() ; }
-   public String getOpt( String optName ){ return _optHash.get( optName ) ; }
-   public String argv( int i ){
-
-	   String value = null;
-       if( i < _argv.size() ) {
-         value =  _argv.get(i) ;
-       }
-
-       return value;
-
-   }
-   public String optv( int i ){
-	   String value = null;
-
-      if( i < _optv.size() ){
-        value =  _optv.get(i) ;
-      }
-
-      return value;
-   }
-   public void shift(){
-
-      if( !_argv.isEmpty() ) {
-        _argv.remove(0);
-      }
-
-   }
-
-    public Map<String, String>  options()
+    public Args(CharSequence args)
     {
-        return Collections.unmodifiableMap(_optHash);
+        Scanner scanner = new Scanner(args);
+        scanner.scan();
+        _options = scanner.options.build();
+        _arguments = scanner.arguments.build();
+        _oneChar = scanner.oneChar.toString();
     }
 
-   public Object clone(){ return new Args( this ) ; }
+    public Args(String [] args)
+    {
+        this(Joiner.on(' ').join(args));
+    }
+
+    public Args(Args in)
+    {
+        _arguments = in._arguments;
+        _options = in._options;
+        _oneChar = in._oneChar;
+    }
+
+    public boolean isOneCharOption(char c)
+    {
+        return _oneChar.indexOf(c) > -1;
+    }
+
+    public int argc()
+    {
+        return _arguments.size();
+    }
+
+    public int optc()
+    {
+        return _options.size();
+    }
+
+    public String getOpt(String name)
+    {
+        return getOption(name);
+    }
+
+    public String getOption(String name)
+    {
+        ImmutableList<String> values = _options.get(name);
+        return values.isEmpty() ? null : values.get(values.size() - 1);
+    }
+
+    public ImmutableList<String> getOptions(String name)
+    {
+        return _options.get(name);
+    }
+
+    public String argv(int i)
+    {
+        return (i < _arguments.size()) ? _arguments.get(i) : null;
+    }
+
+    public String optv(int i)
+    {
+        ImmutableMultiset<String> keys = _options.keys();
+        return (i < keys.size()) ? keys.asList().get(i) : null;
+    }
+
+    public void shift()
+    {
+        if (!_arguments.isEmpty()) {
+            _arguments = _arguments.subList(1, _arguments.size());
+        }
+    }
+
+    public ImmutableListMultimap<String,String> options()
+    {
+        return _options;
+    }
+
+    public ImmutableMap<String,String> optionsAsMap()
+    {
+        ImmutableMap.Builder builder = new ImmutableMap.Builder();
+        for (Map.Entry<String,String> e: _options.entries()) {
+            builder.put(e.getKey(), e.getValue());
+        }
+        return builder.build();
+    }
+
+    public Object clone()
+    {
+        return new Args(this);
+    }
 
     public boolean equals(Object other)
     {
@@ -83,15 +135,14 @@ public class Args
         }
 
         Args args = (Args) other;
-        return args._optHash.equals(_optHash)
-            && args._optv.equals(_optv)
-            && args._argv.equals(_argv)
+        return args._options.equals(_options)
+            && args._arguments.equals(_arguments)
             && args._oneChar.equals(_oneChar);
     }
 
     public int hashCode()
     {
-        return _optHash.hashCode() ^ _argv.hashCode();
+        return Objects.hashCode(_options, _arguments);
     }
 
     private void quote(String in, StringBuilder out)
@@ -124,10 +175,9 @@ public class Args
     {
         StringBuilder s = new StringBuilder();
 
-        for (Map.Entry<String,String> e: _optHash.entrySet()) {
+        for (Map.Entry<String,String> e: _options.entries()) {
             String key = e.getKey();
             String value = e.getValue();
-
             s.append('-');
             quote(key, s);
             if (value.length() > 0) {
@@ -141,33 +191,31 @@ public class Args
             s.append("-- ");
         }
 
-        for (int i = 0; i < argc(); i++) {
-            quote(argv(i), s);
-            s.append(' ');
-        }
+        Joiner.on(' ').appendTo(s, _arguments);
 
         return s.toString();
     }
 
-   public String getInfo(){
-      StringBuilder sb = new StringBuilder() ;
+    public String getInfo()
+    {
+        StringBuilder sb = new StringBuilder();
 
-      sb.append( "Positional :\n" );
-      for( int i= 0 ; i < _argv.size() ; i++ ){
-         sb.append(i).append(" -> ").append(_argv.get(i)).append("\n") ;
-      }
-      sb.append( "Options :\n" );
-      for( int i= 0 ; i < _optv.size() ; i++ ){
-         String key = _optv.get(i) ;
-         String val = _optHash.get(key) ;
-         sb.append(key) ;
-         if( val != null )
-            sb.append( " -> " ).append(val) ;
-         sb.append("\n") ;
-      }
+        sb.append("Positional :\n");
+        for (int i = 0; i < _arguments.size(); i++) {
+            sb.append(i).append(" -> ").append(_arguments.get(i)).append("\n");
+        }
+        sb.append("Options :\n");
 
-      return sb.toString() ;
-   }
+        for (Map.Entry<String,String> option: _options.entries()) {
+            sb.append(option.getKey());
+            if (option.getValue() != null) {
+                sb.append(" -> ").append(option.getValue());
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
 
    public static void main( String [] args )throws Exception {
       if( args.length < 1 ){
@@ -193,8 +241,12 @@ public class Args
      * processing.  Any arguments after the -- are treated as regular
      * arguments.
      */
-    class Scanner
+    private static class Scanner
     {
+        ImmutableListMultimap.Builder<String,String> options;
+        ImmutableList.Builder<String> arguments;
+        StringBuilder oneChar;
+
         private final CharSequence _line;
         private int _position;
 
@@ -234,32 +286,33 @@ public class Args
 
         public void scan()
         {
-            StringBuilder oneChar = new StringBuilder();
             boolean isAtEndOfOptions = false;
+
+            options = new ImmutableListMultimap.Builder<String,String>();
+            arguments = new ImmutableList.Builder<String>();
+            oneChar = new StringBuilder();
+
             scanWhitespace();
             while (!isEof()) {
                 if (!isAtEndOfOptions && peek() == '-') {
                     readChar();
                     String key = scanKey();
                     if (key.isEmpty()) {
-                        _argv.add("-");
+                        arguments.add("-");
                     } else if (peek() == '=') {
                         readChar();
-                        _optv.add(key) ;
-                        _optHash.put(key, scanWord());
+                        options.put(key, scanWord());
                     } else if (key.equals("-")) {
                         isAtEndOfOptions = true;
                     } else {
-                        _optv.add(key) ;
-                        _optHash.put(key, "");
+                        options.put(key, "");
                         oneChar.append(key);
                     }
                 } else {
-                    _argv.add(scanWord());
+                    arguments.add(scanWord());
                 }
                 scanWhitespace();
             }
-            _oneChar = oneChar.toString();
         }
 
         /**

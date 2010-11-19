@@ -32,7 +32,7 @@ public class OptionShell {
     public String ac_show_options(Args args)
     {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String,String> e: _args.options().entrySet()) {
+        for (Map.Entry<String,String> e: _args.options().entries()) {
             sb.append(e.getKey());
             sb.append(" -> ");
             sb.append(e.getValue());
