@@ -63,7 +63,6 @@
 
     <path id="dcache.external.classpath">
         <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-        <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
@@ -390,14 +389,6 @@
 		<include name="*.jar" />
             </fileset>
 	</copy>
-
-        <!-- Milton -->
-        <mkdir dir="${server.bin.dir}/classes/milton/" />
-        <copy todir="${server.bin.dir}/classes/milton">
-            <fileset dir="${libDir}/milton/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
 
         <!-- SMC -->
         <mkdir dir="${server.bin.dir}/classes/smc/" />

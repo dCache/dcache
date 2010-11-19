@@ -46,6 +46,8 @@
                           url="http://www.datanucleus.org/downloads/maven2"/>
         <remoteRepository id="toplink.repository"
                           url="http://download.java.net/maven/1/toplink.essentials"/>
+        <remoteRepository id="ettrema-repo"
+                          url="http://www.ettrema.com/maven2"/>
 
         <!-- Suppress some dependencies: Dependencies with scope
              'provided' are not included in the runtime classpath. We
@@ -53,6 +55,8 @@
              through other means.
         -->
         <dependency groupId="commons-logging" artifactId="commons-logging" version="1.1.1" scope="provided"/>
+        <dependency groupId="org.springframework" artifactId="spring" version="2.5.6" scope="provided"/>
+        <dependency groupId="org.springframework" artifactId="spring-webmvc" version="2.5.6" scope="provided"/>
 
         <!-- external dependencies -->
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
@@ -92,6 +96,8 @@
         <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.1.2"/>
         <dependency groupId="toplink.essentials" artifactId="toplink-essentials" version="2.1-60f"/>
         <dependency groupId="com.google.guava" artifactId="guava" version="r07"/>
+        <dependency groupId="com.ettrema" artifactId="milton-api" version="1.5.4"/>
+        <dependency groupId="com.ettrema" artifactId="milton-servlet" version="1.5.4"/>
     </artifact:dependencies>
 
     <property name="cog.libDir" value="${libDir}/cog" />
