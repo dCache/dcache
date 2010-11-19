@@ -5,8 +5,11 @@
 <project name="server-deb-build-new">
     <property file="common/deb.properties" />
 
-    <target name="server.deb" depends="install-server"
-            description="Build the dcache-server-xxx.deb">
+    <target name="-server.deb-common" depends="install-server">
+        <!--  timestamp for the changelog -->
+        <tstamp>
+            <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z" />
+        </tstamp>
 
         <!--  copy the package contents -->
         <copy todir="${server.debDistDir}"
@@ -19,24 +22,56 @@
             <filelist dir="${server.debFilesDir}"
                       files="${server.debExecutableFiles}" />
         </chmod>
+    </target>
 
-        <!--  timestamp for the changelog -->
-        <tstamp>
-          <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z" />
-        </tstamp>
-
-        <!-- timestamps for quilt -->
-        <tstamp>
-           <format property="quilt-timestamp-orig" offset="-5" unit="second"
-               pattern="yyyy-MM-dd HH:mm:ss" />
-        </tstamp>
-        <tstamp>
-          <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
-        </tstamp>
+    <target name="server.deb" depends="-server.deb-common"
+        description="Build the dcache-server-xxx.deb">
 
         <!--  copy the package control files, replace variables -->
         <copy todir="${server.debControlDir}" overwrite="true">
             <fileset dir="${server.debTemplateDir}">
+                <filename name="*.template" />
+            </fileset>
+            <mapper type="glob" from="*.template" to="*" />
+            <filterset>
+                <filter token="Version" value="${version}-${patch}" />
+                <filter token="MaintainerName" value="${server.debMaintainer}" />
+                <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
+                <filter token="Timestamp" value="${timestamp}" />
+                <filter token="PackageName" value="${server.packageName}" />
+            </filterset>
+        </copy>
+
+        <chmod file="${server.debControlDir}/rules" perm="0755" />
+
+        <exec executable="dpkg-buildpackage" failonerror="true"
+              dir="${server.debDistDir}">
+            <!--  don't produce any source packages  -->
+            <arg line="-rfakeroot -uc -A" />
+        </exec>
+
+        <!--  delete temporary files -->
+        <delete dir="${server.debDistDir}" />
+    </target>
+
+    <!-- debian package with debian compliant file structure -->
+    <target name="server-fhs.deb" depends="-server.deb-common"
+        description="Build a Debian FHS policy compliant dcache-server-xxx.deb">
+        <tstamp>
+            <format property="quilt-timestamp-orig" offset="-5" unit="second" pattern="yyyy-MM-dd HH:mm:ss" />
+        </tstamp>
+        <tstamp>
+            <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
+        </tstamp>
+
+        <!-- copy the copyright and compat from the server folder (same for
+              all types of packages) -->
+        <copy todir="${server.debControlDir}" overwrite="true">
+            <filelist dir="${server.debTemplateDir}"
+                      files="changelog.template,
+                             compat.template,
+                             copyright.template" />
+            <fileset dir="${server.debFHSTemplateDir}">
                 <filename name="*.template" />
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
@@ -61,7 +96,6 @@
 
         <chmod file="${server.debControlDir}/rules" perm="0755" />
 
-
         <exec executable="dpkg-buildpackage" failonerror="true"
               dir="${server.debDistDir}">
             <!--  don't produce any source packages  -->
@@ -70,44 +104,5 @@
 
         <!--  delete temporary files -->
         <delete dir="${server.debDistDir}" />
-    </target>
-
-    <target name="server-fhs.deb" depends="install-server"
-            description="Build a Debian FHS policy compliant .deb">
-
-    </target>
-
-    <target name="chimera-config.deb"
-            description="Build the Chimera configuration package">
-           <!--  copy the package control files, replace variables -->
-            <copy todir="${chimera.debControlDir}" overwrite="true">
-                <fileset dir="${chimera.debTemplateDir}">
-                    <filename name="*.template" />
-                </fileset>
-                <mapper type="glob" from="*.template" to="*" />
-                <filterset>
-                    <filter token="Version" value="${version}-${patch}" />
-                    <filter token="MaintainerName" value="${server.debMaintainer}" />
-                    <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
-                    <filter token="Timestamp" value="${timestamp}" />
-                    <filter token="ServerPackageName" value="${server.packageName}" />
-                    <filter token="PackageName" value="${chimera.packageName}" />
-                </filterset>
-            </copy>
-
-            <concat destfile="${chimera.debDistDir}/chimera-user.psql">
-                <filelist dir="${chimera.sqlDir}"
-                          files="${chimera.dbCreateScript}, ${chimera.dbProcScript}" />
-            </concat>
-
-            <copy todir="${chimera.debDistDir}" file="${chimera.debTemplateDir}/chimera-admin.psql" />
-
-            <exec executable="dpkg-buildpackage" failonerror="true"
-                dir="${chimera.debDistDir}">
-                <arg line="-rfakeroot -uc -A" />
-            </exec>
-
-             <!--  delete temporary files -->
-             <delete dir="${chimera.debDistDir}" />
     </target>
 </project>
