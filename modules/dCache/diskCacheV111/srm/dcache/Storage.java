@@ -77,6 +77,7 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
@@ -146,6 +147,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.Semaphore;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
@@ -2620,77 +2622,14 @@ public final class Storage
                       long offset, long count)
         throws SRMException
     {
-        final Set<FileAttribute> required =
-            (verbose
-             ? DcacheFileMetaData.getKnownAttributes()
-             : EnumSet.of(SIZE, SIMPLE_TYPE));
-        if (verbose) {
-            required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
-        }
-        final FsPath rootPath = new FsPath(config.getSrm_root());
-        final List<FileMetaData> result = new ArrayList<FileMetaData>();
-        DirectoryListPrinter printer =
-            new DirectoryListPrinter()
-            {
-                @Override
-                public Set<FileAttribute> getRequiredAttributes()
-                {
-                    return required;
-                }
-
-                @Override
-                public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
-                {
-                    FileAttributes attributes = entry.getFileAttributes();
-                    DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
-                    fmd.SURL = rootPath.relativize(new FsPath(dir, entry.getName())).toString();
-
-                    if (verbose && attributes.getFileType() != FileType.DIR) {
-                        PnfsId pnfsId = attributes.getPnfsId();
-                        try {
-                            PoolManagerGetFileLocalityMessage localityMsg =
-                                new PoolManagerGetFileLocalityMessage(attributes, config.getSrmHost());
-                            FileLocality locality =
-                                _poolManagerStub.sendAndWait(localityMsg).getFileLocality();
-                            fmd.locality = locality.toTFileLocality();
-                            switch (locality) {
-                            case NEARLINE:
-                            case ONLINE_AND_NEARLINE:
-                                fmd.isCached = true;
-                            }
-
-                            try {
-                                GetFileSpaceTokensMessage tokensMsg =
-                                    new GetFileSpaceTokensMessage(pnfsId);
-                                fmd.spaceTokens =
-                                    _spaceManagerStub.sendAndWait(tokensMsg).getSpaceTokens();
-                            } catch (TimeoutCacheException e) {
-                                /* SpaceManager is optional, so we
-                                 * don't clasify this as an error.
-                                 */
-                                _log.info(e.getMessage());
-                            }
-                        } catch (TimeoutCacheException e) {
-                            _log.error(e.getMessage());
-                        } catch (CacheException e) {
-                            _log.error(e.getMessage());
-                        } catch (InterruptedException e) {
-                            /* Propagate the interrupt to the caller.
-                             */
-                            Thread.currentThread().interrupt();
-                        }
-                    }
-
-                    result.add(fmd);
-                }
-            };
-
         try {
             FsPath path = getPath(surl);
             Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+            ListPrinter printer =
+                verbose ? new VerboseListPrinter() : new ConciseListPrinter();
             _listSource.printDirectory(subject, printer, path, null,
                                        new Interval(offset, offset + count - 1));
-            return result;
+            return printer.getResult();
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (InterruptedException e) {
@@ -2706,6 +2645,184 @@ public final class Storage
         } catch (CacheException e) {
             throw new SRMException(String.format("List failed [rc=%d,msg=%s]",
                                                  e.getRc(), e.getMessage()));
+        }
+    }
+
+    /**
+     * Custom DirectoryListPrinter that collects the list result as a
+     * list of FileMetaData.
+     */
+    private class ConciseListPrinter implements DirectoryListPrinter
+    {
+        protected final List<FileMetaData> _result =
+            new ArrayList<FileMetaData>();
+        protected final FsPath _root =
+            new FsPath(config.getSrm_root());
+
+        @Override
+        public Set<FileAttribute> getRequiredAttributes()
+        {
+            return EnumSet.of(SIZE, SIMPLE_TYPE);
+        }
+
+        protected DcacheFileMetaData toFmd(FsPath dir, DirectoryEntry entry)
+            throws InterruptedException
+        {
+            FileAttributes attributes = entry.getFileAttributes();
+            DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
+            fmd.SURL = _root.relativize(new FsPath(dir, entry.getName())).toString();
+            return fmd;
+        }
+
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
+            throws InterruptedException
+        {
+            _result.add(toFmd(dir, entry));
+        }
+
+        public List<FileMetaData> getResult()
+            throws InterruptedException
+        {
+            return _result;
+        }
+    }
+
+
+    /**
+     * Custom DirectoryListPrinter that collects the list result as a
+     * list of FileMetaData.
+     */
+    private class VerboseListPrinter extends ListPrinter
+    {
+        private final static int PIPELINE_DEPTH = 40;
+
+        private final Semaphore _available =
+            new Semaphore(PIPELINE_DEPTH);
+        private final Set<FileAttribute> _required;
+
+        public VerboseListPrinter()
+        {
+            _required = DcacheFileMetaData.getKnownAttributes();
+            _required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
+        }
+
+        @Override
+        public Set<FileAttribute> getRequiredAttributes()
+        {
+            return _required;
+        }
+
+        @Override
+        protected DcacheFileMetaData toFmd(FsPath dir, DirectoryEntry entry)
+            throws InterruptedException
+        {
+            DcacheFileMetaData fmd = super.toFmd(dir, entry);
+            if (!fmd.isDirectory()) {
+                lookupLocality(entry.getFileAttributes(), fmd);
+                lookupTokens(entry.getFileAttributes(), fmd);
+            }
+            return fmd;
+        }
+
+        public List<FileMetaData> getResult()
+            throws InterruptedException
+        {
+            _available.acquire(PIPELINE_DEPTH);
+            try {
+                return _result;
+            } finally {
+                _available.release(PIPELINE_DEPTH);
+            }
+        }
+
+        private void lookupLocality(FileAttributes attributes,
+                                    final DcacheFileMetaData fmd)
+            throws InterruptedException
+        {
+            PnfsId pnfsId = attributes.getPnfsId();
+            PoolManagerGetFileLocalityMessage message =
+                new PoolManagerGetFileLocalityMessage(attributes, config.getSrmHost());
+
+            _available.acquire();
+            _poolManagerStub.send(
+                 message,
+                 PoolManagerGetFileLocalityMessage.class,
+                 new MessageCallback<PoolManagerGetFileLocalityMessage>() {
+                      @Override
+                      public void success(PoolManagerGetFileLocalityMessage message)
+                      {
+                           _available.release();
+                           FileLocality locality = message.getFileLocality();
+                           fmd.locality = locality.toTFileLocality();
+                           switch (locality) {
+                           case NEARLINE:
+                           case ONLINE_AND_NEARLINE:
+                                fmd.isCached = true;
+                           }
+                      }
+
+                      @Override
+                      public void failure(int rc, Object error)
+                      {
+                           _available.release();
+                           _log.error("Locality lookup failed: {} [{}]", error, rc);
+                      }
+
+                      @Override
+                      public void noroute()
+                      {
+                           _available.release();
+                           _log.error("No route to PoolManager");
+                      }
+
+                      @Override
+                      public void timeout()
+                      {
+                           _available.release();
+                           _log.error("GetFileLocality timed out");
+                      }
+                 });
+        }
+
+        private void lookupTokens(FileAttributes attributes,
+                                  final DcacheFileMetaData fmd)
+            throws InterruptedException
+        {
+            _available.acquire();
+            _spaceManagerStub.send(
+                 new GetFileSpaceTokensMessage(attributes.getPnfsId()),
+                 GetFileSpaceTokensMessage.class,
+                 new MessageCallback<GetFileSpaceTokensMessage>() {
+                      @Override
+                      public void success(GetFileSpaceTokensMessage message)
+                      {
+                           _available.release();
+                           fmd.spaceTokens = message.getSpaceTokens();
+                      }
+
+                      @Override
+                      public void failure(int rc, Object error)
+                      {
+                           _available.release();
+                           _log.error("Locality lookup failed: {} [{}]",
+                                      error, rc);
+                      }
+
+                      @Override
+                      public void noroute()
+                      {
+                           _available.release();
+                           _log.info("No route to SpaceManager");
+                      }
+
+                      @Override
+                      public void timeout()
+                      {
+                           _available.release();
+                           _log.error("GetFileLocality timed out");
+                      }
+                 });
         }
     }
 
