@@ -14,10 +14,10 @@ javapath=""
 big=0
 correctjavapath=""
 version=0
+
 getVersion() {
                 javapath=$1/bin/java
-                version=`$javapath -version  2>&1 >/dev/null | tr -d "\"" | awk '/java version/{print
-$3 }'`
+                version=`$javapath -version  2>&1 >/dev/null | tr -d "\"" | awk '/java version/{print $3 }'`
                 #echo "$version found in $javapath"
 		#echo ""
                 #echo "big before is $big"
@@ -140,13 +140,19 @@ for i in $SRM_PATH/lib/log4j/*.jar
 done
 
 
+
 for i in $SRM_PATH/lib/security/*.jar
   do
   SRM_CP=$SRM_CP:$i
 done
 
+if [ "${SRM_JAVA_OPTIONS}" = "" ]
+    then
+    SRM_JAVA_OPTIONS="-Xms64m -Xmx64m"
+fi
 
-OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
+OPTIONS=" ${SRM_JAVA_OPTIONS} -Djava.protocol.handler.pkgs=org.globus.net.protocol"
+
 SRMCP_OPTIONS=""
 if [ "$DEBUG" = "true" ]
     then
@@ -261,7 +267,6 @@ then
     SRMCP_OPTIONS="-conf=$SRM_CONFIG $SRMCP_OPTIONS"
   fi
 fi
-#cd $SRM_PATH/bin
 cmd="$java_location -cp $SRM_CP $OPTIONS gov.fnal.srm.util.SRMDispatcher  $SRMCP_OPTIONS $args"
 if [ "$DEBUG" = "true" ]
     then
