@@ -1,13 +1,27 @@
 package org.dcache.tests.auth;
 
-import static org.junit.Assert.*;
-import org.junit.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
-import org.dcache.auth.*;
-import org.globus.gsi.jaas.GlobusPrincipal;
 import javax.security.auth.Subject;
 
-import java.util.*;
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.UserNamePrincipal;
+import org.globus.gsi.jaas.GlobusPrincipal;
+import org.junit.Before;
+import org.junit.Test;
 
 public class SubjectsTest
 {
@@ -234,13 +248,13 @@ public class SubjectsTest
                      Subjects.getFqans(Subjects.ROOT));
         assertEquals("Subject with primary FQAN must have correct FQAN",
                      asSet(FQAN1),
-                     new HashSet(Subjects.getFqans(_subject1)));
+                     new HashSet<String>(Subjects.getFqans(_subject1)));
         assertEquals("Subject with no primary FQAN must have correct FQAN",
                      asSet(FQAN2),
-                     new HashSet(Subjects.getFqans(_subject2)));
+                     new HashSet<String>(Subjects.getFqans(_subject2)));
         assertEquals("Subject with multiple FQANs must have correct FQANs",
                      asSet(FQAN1, FQAN2, FQAN3),
-                     new HashSet(Subjects.getFqans(_subject3)));
+                     new HashSet<String>(Subjects.getFqans(_subject3)));
     }
 
     @Test
@@ -346,5 +360,19 @@ public class SubjectsTest
     public void testGetAuthorizationRecordWithTwoUids()
     {
         Subjects.getAuthorizationRecord(_subject3);
+    }
+
+    @Test
+    public void testGetSubjectWithMulitipleGids()
+    {
+        UserAuthRecord authRecord = new UserAuthRecord();
+        authRecord.UID = (int)UID1;
+
+        authRecord.GIDs = new int[] { (int)GID1, (int)GID2 };
+        Subject subject = Subjects.getSubject(authRecord);
+        long[] gids = Subjects.getGids(subject);
+
+        assertEquals(GID1, gids[0]);
+        assertEquals(GID2, gids[1]);
     }
 }
