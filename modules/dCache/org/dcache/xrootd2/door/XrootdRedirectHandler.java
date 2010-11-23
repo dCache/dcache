@@ -2,9 +2,8 @@ package org.dcache.xrootd2.door;
 
 import java.net.InetSocketAddress;
 
-
-
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -12,19 +11,25 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.UUID;
 import java.nio.channels.ClosedChannelException;
-import java.security.SecureRandom;
-
 import org.dcache.cells.MessageCallback;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
+import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
+import org.dcache.xrootd2.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd2.protocol.messages.CloseRequest;
+import org.dcache.xrootd2.protocol.messages.ErrorResponse;
+import org.dcache.xrootd2.protocol.messages.LoginRequest;
+import org.dcache.xrootd2.protocol.messages.LoginResponse;
 import org.dcache.xrootd2.protocol.messages.OpenRequest;
 import org.dcache.xrootd2.protocol.messages.RedirectResponse;
 import org.dcache.xrootd2.protocol.messages.StatRequest;
 import org.dcache.xrootd2.protocol.messages.StatResponse;
 import org.dcache.xrootd2.protocol.messages.StatxRequest;
 import org.dcache.xrootd2.protocol.messages.StatxResponse;
+import org.dcache.xrootd2.security.AbstractAuthenticationFactory;
+import org.dcache.xrootd2.security.AuthenticationHandler;
 import org.dcache.xrootd2.security.AuthorizationHandler;
+import org.dcache.xrootd2.security.plugins.authn.InvalidHandlerConfigurationException;
 import org.dcache.xrootd2.util.FileStatus;
 import org.dcache.xrootd2.util.OpaqueStringParser;
 import org.dcache.xrootd2.util.ParseException;
@@ -65,12 +70,17 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     private final static Logger _log =
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
-    /**
-     * Secure random number generator used for making login tokens.
-     */
-    private final static SecureRandom _random = new SecureRandom();
+    /** variables needed for session-tracking */
+    private static final int SESSION_ID_BYTES = 16;
+    private static final SecureRandom _random = new SecureRandom();
+    private byte[] _sessionBytes = new byte[SESSION_ID_BYTES];
 
     private final XrootdDoor _door;
+    /** class used for creating authentication handler.
+     *  FIXME: Support more than just one authentication plugin
+     */
+    private final AbstractAuthenticationFactory _factory;
+    private AuthenticationHandler _handler;
 
     /**
      * The set of threads which currently process an xrootd request
@@ -78,11 +88,13 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      * is disonnected.
      */
     private final Set<Thread> _threads =
-        Collections.synchronizedSet(new HashSet());
+        Collections.synchronizedSet(new HashSet<Thread>());
 
-    public XrootdRedirectHandler(XrootdDoor door)
+    public XrootdRedirectHandler(XrootdDoor door,
+                                 AbstractAuthenticationFactory factory)
     {
         _door = door;
+        _factory = factory;
     }
 
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
@@ -124,16 +136,51 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         // channel.
     }
 
-    protected void doOnLogin(ChannelHandlerContext ctx, MessageEvent e, LoginRequest msg)
-    {
-        _log.debug("login attempt, access granted");
-        respond(ctx, e, new OKResponse(msg.getStreamID()));
+    @Override
+    protected void doOnLogin(ChannelHandlerContext context,
+                             MessageEvent event,
+                             LoginRequest msg) {
+        AbstractResponseMessage response;
+        _random.nextBytes(_sessionBytes);
+
+        try {
+            if (_handler == null) {
+                _handler = _factory.getAuthnHandler();
+            }
+
+             response = new LoginResponse(msg.getStreamID(),
+                                         _sessionBytes,
+                                         _handler.getProtocol());
+        } catch (InvalidHandlerConfigurationException ihce) {
+            _log.error("Could not instantiate authN handler: {}", ihce);
+            response = new ErrorResponse(msg.getStreamID(),
+                                         kXR_ServerError,
+                                         "Internal server error");
+        }
+
+        respond(context, event, response);
     }
 
-    protected void doOnAuthentication(ChannelHandlerContext ctx, MessageEvent e, AuthenticationRequest msg)
-    {
-        _log.debug("authentication passed");
-        respond(ctx, e, new OKResponse(msg.getStreamID()));
+    @Override
+    protected void doOnAuthentication(ChannelHandlerContext context,
+                                      MessageEvent event,
+                                      AuthenticationRequest msg) {
+
+        AbstractResponseMessage response;
+        try {
+            if (_handler == null) {
+                _handler = _factory.getAuthnHandler();
+            }
+
+            response = _handler.authenticate(msg);
+        } catch (InvalidHandlerConfigurationException ihce) {
+            _log.error("Could not instantiate authN handler: {}", ihce);
+            response = new ErrorResponse(msg.getStreamID(),
+                                         kXR_ServerError,
+                                         "Internal server error");
+        }
+
+        respond(context, event, response);
     }
 
     /**
@@ -656,8 +703,9 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
             try {
                 isAuthorized =
-                    authzHandler.checkAuthz(path, opaqueMap, neededPerm,
-                                            localAddress);
+                    authzHandler.checkAuthz(path,
+                                            opaqueMap,
+                                            neededPerm, localAddress);
             } catch (GeneralSecurityException e) {
                 throw new PermissionDeniedCacheException("authorization check"
                                                          + "failed: " +

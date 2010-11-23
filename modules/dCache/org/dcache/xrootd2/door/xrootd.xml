@@ -82,6 +82,7 @@
     <property name="channelFactory" ref="channel-factory"/>
     <property name="connectionTracker" ref="connection-tracker"/>
     <property name="door" ref="door"/>
+    <property name="authenticationFactory" ref="${xrootdAuthNPlugin}-factory" />
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -105,6 +106,20 @@
     <description>Authorization plugin</description>
     <property name="keystore" value="${xrootdAuthzKeystore}"/>
     <property name="noStrongAuthorization" value="${nostrongauthorization}"/>
+  </bean>
+
+  <bean id="none-factory" class="org.dcache.xrootd2.security.plugins.authn.none.NoAuthenticationFactory">
+    <description>Authentication factory that produces dummy (no authN) handlers</description>
+  </bean>
+
+  <bean id="gsi-factory" class="org.dcache.xrootd2.security.plugins.authn.gsi.GSIAuthenticationFactory">
+    <description>Authentication factory that creates GSI handlers</description>
+    <property name="hostKeyPath" value="/etc/grid-security/hostkey.pem" />
+    <property name="hostCertificatePath" value="/etc/grid-security/hostcert.pem" />
+    <property name="caCertificatePath" value="/etc/grid-security/certificates" />
+    <property name="hostCertRefreshInterval" value="${hostCertificateRefreshPeriod}" />
+    <property name="trustAnchorRefreshInterval" value="${trustAnchorRefreshPeriod}" />
+    <property name="verifyHostCertificateChain" value="${verifyHostCertificateChain}" />
   </bean>
 
   <bean id="door" class="org.dcache.xrootd2.door.XrootdDoor"

@@ -99,6 +99,8 @@ public class XrootdDecoder extends FrameDecoder
             return new MvRequest(frame);
         case kXR_dirlist:
             return new DirListRequest(frame);
+        case kXR_auth:
+            return new AuthenticationRequest(frame);
         default:
             return new UnknownRequest(frame);
         }
