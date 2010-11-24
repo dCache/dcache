@@ -12,10 +12,10 @@ public class IoJobInfo extends JobInfo  {
    
    private static final long serialVersionUID = -7987228538353684951L;
    
-   IoJobInfo( JobScheduler.Job job ){
+   public IoJobInfo( JobScheduler.Job job ){
       super( job ) ;
    }
-   void setIoInfo( PnfsId pnfsId , 
+   public void setIoInfo( PnfsId pnfsId ,
                    long bytesTransferred , 
                    long transferTime ,
                    long lastTransferred ){

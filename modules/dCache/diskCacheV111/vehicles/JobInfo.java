@@ -40,7 +40,7 @@ public class JobInfo implements java.io.Serializable {
       _status     = job.getStatusString() ; 
       _jobId      = job.getJobId() ;
    }
-   void setClient( String clientName , long clientId ){
+   public void setClient( String clientName , long clientId ){
       _client   = clientName ;
       _clientId = clientId ;
    }

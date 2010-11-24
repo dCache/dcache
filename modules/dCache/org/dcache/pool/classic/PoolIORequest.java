@@ -1,7 +1,5 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.IoBatchable;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
@@ -11,13 +9,11 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import java.io.IOException;
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
+import java.util.concurrent.Future;
 import org.dcache.pool.FaultListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import static org.dcache.pool.classic.IoRequestState.*;
 /**
  * PoolIORequest encapsulates queuing, execution and notification
  * of a file transfer.
@@ -28,7 +24,7 @@ import org.slf4j.LoggerFactory;
  * Billing and door notifications are send after completed or
  * failed transfer, or upon dequeuing the request.
  */
-public class PoolIORequest implements IoBatchable {
+public class PoolIORequest implements IoProcessable {
 
     private final PoolIOTransfer _transfer;
     private final long _id;
@@ -38,9 +34,21 @@ public class PoolIORequest implements IoBatchable {
     private final String _initiator;
     private CellPath _billingCell;
     private final CellEndpoint _cellEndpoint;
-    private Thread _thread;
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
+
+    private Future _future = null;
+    /**
+     * Request creation time.
+     */
+    private final long _ctime = System.currentTimeMillis();
+
+    /**
+     * Transfer start time.
+     */
+    private volatile long _startTime = 0;
+
+    private volatile IoRequestState _state = CREATED;
 
     /**
      * @param transfer the read or write transfer to execute
@@ -69,7 +77,7 @@ public class PoolIORequest implements IoBatchable {
         _faultListener = faultListener;
     }
 
-    private void sendBillingMessage(int rc, String message) {
+    void sendBillingMessage(int rc, String message) {
         MoverInfoMessage info =
                 new MoverInfoMessage(_cellEndpoint.getCellInfo().getCellName() + "@" + _cellEndpoint.getCellInfo().getDomainName(),
                 getPnfsId());
@@ -89,7 +97,7 @@ public class PoolIORequest implements IoBatchable {
         }
     }
 
-    private void sendFinished(int rc, String msg) {
+    void sendFinished(int rc, String msg) {
         DoorTransferFinishedMessage finished =
                 new DoorTransferFinishedMessage(getClientId(),
                 getPnfsId(),
@@ -138,31 +146,6 @@ public class PoolIORequest implements IoBatchable {
         return _transfer.getPnfsId();
     }
 
-    public void queued(int id) {
-    }
-
-    public void unqueued() {
-        /* Closing the transfer object should not throw an
-         * exception when the transfer has not begun yet. If it
-         * does, we log the error, but otherwise there is not much
-         * we can do. REVISIT: Consider to disable the pool.
-         */
-        try {
-            _transfer.close();
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to cancel transfer: " + e);
-        } catch (CacheException e) {
-            _log.error("Failed to cancel transfer: " + e);
-        } catch (IOException e) {
-            _log.error("Failed to cancel transfer: " + e);
-        } catch (InterruptedException e) {
-            _log.error("Failed to cancel transfer: " + e);
-        }
-
-        sendFinished(CacheException.DEFAULT_ERROR_CODE,
-                "Transfer was killed");
-    }
-
     public String getClient() {
         return _door.getDestinationAddress().toString();
     }
@@ -171,35 +154,23 @@ public class PoolIORequest implements IoBatchable {
         return _id;
     }
 
-    private synchronized void setThread(Thread thread) {
-        _thread = thread;
-    }
-
     public synchronized boolean kill() {
-        if (_thread == null) {
+        _state = CANCELED;
+        if (_future == null) {
             return false;
         }
 
-        _thread.interrupt();
+        _future.cancel(true);
         return true;
     }
 
-    private void transfer()
-            throws Exception {
-        try {
-            _transfer.transfer();
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            _log.error("Transfer failed due to unexpected exception", e);
-            throw e;
-        } catch (Exception e) {
-            _log.warn("Transfer failed: " + e);
-            throw e;
-        }
+    synchronized void transfer(MoverExecutorService moverExecutorService, CompletionHandler completionHandler) {
+        _startTime = System.currentTimeMillis();
+        _state = RUNNING;
+        _future = moverExecutorService.execute(_transfer, completionHandler);
     }
 
-    private void close()
+    void close()
             throws Exception {
         try {
             _transfer.close();
@@ -212,50 +183,28 @@ public class PoolIORequest implements IoBatchable {
         }
     }
 
-    public void run() {
-        int rc;
-        String msg;
-        try {
-            setThread(Thread.currentThread());
-            try {
-                transfer();
-            } finally {
-                /* Surpress thread interruptions after this point.
-                 */
-                setThread(null);
-                Thread.interrupted();
-                close();
-            }
+    public void setState( IoRequestState state) {
+        _state = state;
+    }
 
-            rc = 0;
-            msg = "";
-        } catch (InterruptedException e) {
-            rc = CacheException.DEFAULT_ERROR_CODE;
-            msg = "Transfer was killed";
-        } catch (CacheException e) {
-            rc = e.getRc();
-            msg = e.getMessage();
-            if (rc == CacheException.ERROR_IO_DISK) {
-                _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, msg, e));
-            }
-            rc = e.getRc();
-            msg = e.getMessage();
-        } catch (RuntimeException e) {
-            rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
-            msg = "Transfer failed due to unexpected exception: " + e;
-        } catch (Exception e) {
-            rc = CacheException.DEFAULT_ERROR_CODE;
-            msg = "Transfer failed: " + e.getMessage();
-        }
+    public IoRequestState getState() {
+        return _state;
+    }
 
-        sendFinished(rc, msg);
-        sendBillingMessage(rc, msg);
+    public long getCreationTime() {
+        return _ctime;
+    }
+
+    public long getStartTime() {
+        return _startTime;
+    }
+
+    public FaultListener getFaultListener() {
+        return _faultListener;
     }
 
     @Override
     public String toString() {
-        return _transfer.toString();
+        return _state + " : " + _transfer.toString();
     }
 }
-
-

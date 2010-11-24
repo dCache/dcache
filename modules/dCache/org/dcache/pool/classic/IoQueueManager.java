@@ -1,7 +1,5 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.JobScheduler;
-import diskCacheV111.util.SimpleJobScheduler;
 import diskCacheV111.vehicles.JobInfo;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -21,8 +19,8 @@ public class IoQueueManager {
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
     public static final String DEFAULT_QUEUE = "regular";
-    private List<JobScheduler> _list = new ArrayList<JobScheduler>();
-    private Map<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
+    private List<IoScheduler> _list = new ArrayList<IoScheduler>();
+    private Map<String, IoScheduler> _hash = new HashMap<String, IoScheduler>();
 
     public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] queues) {
 
@@ -49,25 +47,24 @@ public class IoQueueManager {
         if (_hash.get(queueName) == null) {
             _log.info("adding queue: {}", queueName);
             int id = _list.size();
-            JobScheduler job = new SimpleJobScheduler(queueName, fifo);
+            IoScheduler job = new SimpleIoScheduler(queueName, id, fifo);
             _list.add(job);
             _hash.put(queueName, job);
-            job.setSchedulerId(id);
             jobTimeoutManager.addScheduler(queueName, job);
         }else{
             _log.warn("Queue not created, name already exists: " + queueName);
         }
     }
 
-    public synchronized JobScheduler getDefaultScheduler() {
+    public synchronized IoScheduler getDefaultScheduler() {
         return _list.get(0);
     }
 
-    public synchronized Collection<JobScheduler> getSchedulers() {
+    public synchronized Collection<IoScheduler> getSchedulers() {
         return Collections.unmodifiableCollection(_list);
     }
 
-    public synchronized JobScheduler getQueue(String queueName) {
+    public synchronized IoScheduler getQueue(String queueName) {
         return _hash.get(queueName);
     }
 
@@ -75,24 +72,20 @@ public class IoQueueManager {
      * Get {@link List} of defined {@link JobScheduler}s.
      * @return schedulers.
      */
-    public synchronized List<JobScheduler> getQueues() {
-        return new ArrayList<JobScheduler>(_list);
+    public synchronized List<IoScheduler> getQueues() {
+        return new ArrayList<IoScheduler>(_list);
     }
 
-    public synchronized JobScheduler getQueueByJobId(int id) {
-        int pos = id % 10;
+    public synchronized IoScheduler getQueueByJobId(int id) {
+        int pos = id >> 24;
         if (pos >= _list.size()) {
             throw new IllegalArgumentException("Invalid id (doesn't below to any known scheduler)");
         }
         return _list.get(pos);
     }
 
-    public synchronized JobInfo getJobInfo(int id) {
-        return getQueueByJobId(id).getJobInfo(id);
-    }
-
     public synchronized int add(String queueName, PoolIORequest request, IoPriority priority) throws InvocationTargetException {
-        JobScheduler js = (queueName == null) ? null : _hash.get(queueName);
+        IoScheduler js = (queueName == null) ? null : _hash.get(queueName);
         return (js == null) ? add(request, priority) : js.add(request, priority);
     }
 
@@ -100,17 +93,13 @@ public class IoQueueManager {
         return getDefaultScheduler().add(request, priority);
     }
 
-    public synchronized void kill(int jobId, boolean force) throws NoSuchElementException {
-        getQueueByJobId(jobId).kill(jobId, force);
-    }
-
-    public synchronized void remove(int jobId) throws NoSuchElementException {
-        getQueueByJobId(jobId).remove(jobId);
+    public synchronized void cancel(int jobId) throws NoSuchElementException {
+        getQueueByJobId(jobId).cancel(jobId);
     }
 
     public synchronized int getMaxActiveJobs() {
         int sum = 0;
-        for (JobScheduler s : _list) {
+        for (IoScheduler s : _list) {
             sum += s.getMaxActiveJobs();
         }
         return sum;
@@ -118,7 +107,7 @@ public class IoQueueManager {
 
     public synchronized int getActiveJobs() {
         int sum = 0;
-        for (JobScheduler s : _list) {
+        for (IoScheduler s : _list) {
             sum += s.getActiveJobs();
         }
         return sum;
@@ -126,7 +115,7 @@ public class IoQueueManager {
 
     public synchronized int getQueueSize() {
         int sum = 0;
-        for (JobScheduler s : _list) {
+        for (IoScheduler s : _list) {
             sum += s.getQueueSize();
         }
         return sum;
@@ -134,15 +123,15 @@ public class IoQueueManager {
 
     public synchronized List<JobInfo> getJobInfos() {
         List<JobInfo> list = new ArrayList<JobInfo>();
-        for (JobScheduler s : _list) {
+        for (IoScheduler s : _list) {
             list.addAll(s.getJobInfos());
         }
         return list;
     }
 
     public synchronized void printSetup(PrintWriter pw) {
-        for (JobScheduler s : _list) {
-            pw.println("mover set max active -queue=" + s.getSchedulerName() + " " + s.getMaxActiveJobs());
+        for (IoScheduler s : _list) {
+            pw.println("mover set max active -queue=" + s.getName() + " " + s.getMaxActiveJobs());
         }
     }
 
@@ -156,7 +145,7 @@ public class IoQueueManager {
     }
 
     public synchronized void shutdown() {
-        for (JobScheduler s : _list) {
+        for (IoScheduler s : _list) {
             s.shutdown();
         }
     }

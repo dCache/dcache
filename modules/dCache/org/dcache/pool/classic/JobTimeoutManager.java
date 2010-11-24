@@ -3,7 +3,6 @@ package org.dcache.pool.classic;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import diskCacheV111.util.JobScheduler;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import org.dcache.cells.CellCommandListener;
@@ -15,7 +14,7 @@ import org.slf4j.LoggerFactory;
 class SchedulerEntry
 {
     private final String _name;
-    private JobScheduler _scheduler;
+    private IoScheduler _scheduler;
     private long _lastAccessed = 0L;
     private long _total = 0L;
 
@@ -29,12 +28,12 @@ class SchedulerEntry
         return _name;
     }
 
-    synchronized void setScheduler(JobScheduler scheduler)
+    synchronized void setScheduler(IoScheduler scheduler)
     {
         _scheduler = scheduler;
     }
 
-    synchronized JobScheduler getScheduler()
+    synchronized IoScheduler getScheduler()
     {
         return _scheduler;
     }
@@ -100,7 +99,7 @@ public class JobTimeoutManager
         _worker.start();
     }
 
-    public void addScheduler(String type, JobScheduler scheduler)
+    public void addScheduler(String type, IoScheduler scheduler)
     {
         say("Adding scheduler : " + type);
         SchedulerEntry entry = findOrCreate(type);
@@ -215,7 +214,7 @@ public class JobTimeoutManager
 
                 long now = System.currentTimeMillis();
                 for (SchedulerEntry entry: _schedulers) {
-                    JobScheduler jobs = entry.getScheduler();
+                    IoScheduler jobs = entry.getScheduler();
                     if (jobs == null)
                         continue;
 
@@ -224,7 +223,7 @@ public class JobTimeoutManager
                         if (entry.isExpired(info, now)) {
                             esay("Trying to kill <" + entry.getName()
                                  + "> id=" + jobId);
-                            jobs.kill(jobId, false);
+                            jobs.cancel(jobId);
                         }
                     }
                 }
