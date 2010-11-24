@@ -1,4 +1,4 @@
-package org.dcache.xrootd2.security.plugins.none;
+package org.dcache.xrootd2.security.plugins.authn.none;
 
 import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd2.protocol.messages.AuthenticationRequest;

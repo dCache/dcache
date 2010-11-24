@@ -1,4 +1,4 @@
-package org.dcache.xrootd2.security.plugins.none;
+package org.dcache.xrootd2.security.plugins.authn.none;
 
 import org.dcache.xrootd2.security.AbstractAuthenticationFactory;
 import org.dcache.xrootd2.security.AuthenticationHandler;
