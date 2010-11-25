@@ -23,6 +23,19 @@
     </property>
   </bean>
 
+    <!--
+        Convert protperies with multiple values separated by comma into an array of strings:
+        key=value1,value2,value3 : String[] {value1, value2, value3}
+    -->
+    <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+        <property name="customEditors">
+            <map>
+                <entry key="java.lang.String[]"
+                    value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
+            </map>
+        </property>
+    </bean>
+
   <!-- The lock protects the pool from being accessed by multiple
        instances. If the lock cannot be acquired, pool creation will
        fail with an exception. Although the wrapper script will
@@ -47,9 +60,7 @@
         destroy-method="cleanUp">
     <description>Main pool component</description>
     <constructor-arg index="0" value="${poolname}"/>
-    <constructor-arg index="1" value="
-        -io-queues=${poolIoQueue}
-        ${arguments}"/>
+    <constructor-arg index="1" value="${arguments}"/>
 
     <property name="baseDir"
               value="${pooldir}"/>
@@ -78,6 +89,7 @@
               value="#{ '${lfs}' == 'volatile' or '${lfs}' == 'transient' }"/>
     <property name="hasTapeBackend"
               value="#{ '${lfs}' == 'none' }"/>
+    <property name="ioQueueManager" ref="io-queue-manager" />
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -301,5 +313,11 @@
         class="org.dcache.pool.classic.FairQueueAllocation">
     <description>Space allocation policy</description>
     <property name="account" ref="account"/>
+  </bean>
+
+  <bean id="io-queue-manager" class="org.dcache.pool.classic.IoQueueManager">
+    <description>Requests IO manager</description>
+    <constructor-arg ref="jtm" />
+    <constructor-arg value="p2p,${poolIoQueue}" />
   </bean>
 </beans>

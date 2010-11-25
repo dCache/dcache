@@ -371,6 +371,10 @@ public class PoolV4
         }
     }
 
+    public void setIoQueueManager(IoQueueManager ioQueueManager)
+    {
+        _ioQueue = ioQueueManager;
+    }
     /**
      * Initialize remaining pieces.
      *
@@ -394,18 +398,6 @@ public class PoolV4
         if (_isVolatile && _hasTapeBackend) {
             throw new IllegalStateException("Volatile pool cannot have a tape backend");
         }
-
-        String ioQueues = _args.getOpt("io-queues");
-        String queues[];
-        if(ioQueues != null && !ioQueues.isEmpty()) {
-            queues = ioQueues.split(",");
-        }else{
-            queues = new String[0];
-        }
-        queues = Arrays.copyOf(queues, queues.length +1);
-        queues[queues.length -1] = P2P_QUEUE_NAME;
-
-        _ioQueue = new IoQueueManager(_timeoutManager, queues);
 
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
