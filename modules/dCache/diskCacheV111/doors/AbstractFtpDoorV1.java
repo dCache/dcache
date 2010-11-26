@@ -2915,7 +2915,7 @@ public abstract class AbstractFtpDoorV1
             FsPath path = absolutePath(arg);
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            pw.println("250- Listing " + arg + "\r\n");
+            pw.print("250- Listing " + arg + "\r\n");
             pw.print(' ');
             _listSource.printFile(null, new FactPrinter(pw), path);
             pw.print("250 End");
