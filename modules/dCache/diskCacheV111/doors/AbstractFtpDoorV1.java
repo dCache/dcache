@@ -3791,7 +3791,7 @@ public abstract class AbstractFtpDoorV1
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             File f = new File(path);
-            pw.println("250- Listing " + arg + "\r\n");
+            pw.print("250- Listing " + arg + "\r\n");
             pw.print(' ');
             _listSource.printFile(null, new FactPrinter(pw), f);
             pw.print("250 End");
