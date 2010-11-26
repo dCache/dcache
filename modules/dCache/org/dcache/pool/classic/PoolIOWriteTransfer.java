@@ -187,4 +187,16 @@ public class PoolIOWriteTransfer
     {
         return _file.length();
     }
+
+    @Override
+    public ReplicaDescriptor getIoHandle()
+    {
+        return _handle;
+    }
+
+    @Override
+    public IoMode getIoMode()
+    {
+        return IoMode.WRITE;
+    }
 }

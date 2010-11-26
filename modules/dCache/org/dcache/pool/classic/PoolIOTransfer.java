@@ -9,6 +9,8 @@ import org.dcache.pool.movers.MoverProtocol;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.io.IOException;
+import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.ReplicaDescriptor;
 
 /**
  * Abstract bridge between repository and movers. PoolIOTransfer
@@ -25,7 +27,7 @@ import java.io.IOException;
  * PoolIOTransfer does not depent on the repository, but its
  * subclasses do.
  */
-abstract class PoolIOTransfer
+public abstract class PoolIOTransfer
 {
     protected final MoverProtocol _mover;
     protected final PnfsId _pnfsId;
@@ -80,6 +82,10 @@ abstract class PoolIOTransfer
         return _mover.getLastTransferred();
     }
 
+    public MoverProtocol getMover() {
+        return _mover;
+    }
+
     @Override
         public String toString()
     {
@@ -118,4 +124,8 @@ abstract class PoolIOTransfer
      * be called before <code>close</code>.
      */
     public abstract long getFileSize();
+
+    public abstract ReplicaDescriptor getIoHandle();
+
+    public abstract IoMode getIoMode();
 }

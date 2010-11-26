@@ -67,24 +67,24 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 
-    private final MoverExecutorService _moverExecutorService = new LegacyMoverExecutorService();
-    private final PostTransferExecutionService _postTransferExecutionService = new ClassicPostExecutionService();
+    private final MoverExecutorServices _executorServices;
 
-    public SimpleIoScheduler(String name, int queueId) {
-        this(Executors.defaultThreadFactory(), name, queueId);
+    public SimpleIoScheduler(String name, MoverExecutorServices executorServices, int queueId) {
+        this(Executors.defaultThreadFactory(), name, executorServices, queueId);
     }
 
-    public SimpleIoScheduler(String name, int queueId, boolean fifo) {
-        this(Executors.defaultThreadFactory(), name, queueId, fifo);
+    public SimpleIoScheduler(String name, MoverExecutorServices executorServices, int queueId, boolean fifo) {
+        this(Executors.defaultThreadFactory(), name, executorServices, queueId, fifo);
     }
 
-    public SimpleIoScheduler(ThreadFactory factory, String name, int queueId) {
-        this(factory, name, queueId, true);
+    public SimpleIoScheduler(ThreadFactory factory, String name, MoverExecutorServices executorServices, int queueId) {
+        this(factory, name, executorServices, queueId, true);
     }
 
-    public SimpleIoScheduler(ThreadFactory factory, String name, int queueId, boolean fifo)
+    public SimpleIoScheduler(ThreadFactory factory, String name, MoverExecutorServices executorServices, int queueId, boolean fifo)
     {
         _name = name;
+        _executorServices = executorServices;
         _queueId = queueId;
         _queue = new PriorityBlockingQueue<PrioritizedRequest>(16, fifo? new FifoPriorityComparator() :
             new LifoPriorityComparator());
@@ -210,7 +210,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                     _semaphore.acquire();
 
                     final PoolIORequest request = wrapp.getRequest();
-                    request.transfer(_moverExecutorService, new CompletionHandler() {
+                    final String protocolName = request.getProtocolInfo().getProtocol() + "-"
+                        + request.getProtocolInfo().getMajorVersion();
+                        request.transfer(_executorServices.getExecutorService(protocolName),
+                        new CompletionHandler() {
 
                         @Override
                         public void completed(Object result, Object attachment) {
@@ -243,7 +246,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                             _jobs.remove(wrapp.getId());
                             request.setState(IoRequestState.DONE);
                             request.sendBillingMessage(rc, msg);
-                            _postTransferExecutionService.execute(request);
+                            _executorServices.getPostExecutorService(protocolName).execute(request);
                         }
                     });
                 }catch(InterruptedException e) {

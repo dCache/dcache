@@ -167,7 +167,7 @@ public class PoolIORequest implements IoProcessable {
     synchronized void transfer(MoverExecutorService moverExecutorService, CompletionHandler completionHandler) {
         _startTime = System.currentTimeMillis();
         _state = RUNNING;
-        _future = moverExecutorService.execute(_transfer, completionHandler);
+        _future = moverExecutorService.execute(this, completionHandler);
     }
 
     void close()
@@ -181,6 +181,14 @@ public class PoolIORequest implements IoProcessable {
             _log.warn("Transfer failed in post-processing: " + e);
             throw e;
         }
+    }
+
+    public PoolIOTransfer getTransfer() {
+        return _transfer;
+    }
+
+    public CellEndpoint getCellEndpoint() {
+        return _cellEndpoint;
     }
 
     public void setState( IoRequestState state) {

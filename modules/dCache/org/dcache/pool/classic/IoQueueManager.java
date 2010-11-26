@@ -20,26 +20,28 @@ public class IoQueueManager {
 
     public static final String DEFAULT_QUEUE = "regular";
     private List<IoScheduler> _list = new ArrayList<IoScheduler>();
-    private Map<String, IoScheduler> _hash = new HashMap<String, IoScheduler>();
+    private final Map<String, IoScheduler> _hash = new HashMap<String, IoScheduler>();
 
-    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] queues) {
+    public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] queues,
+            MoverExecutorServices executorServices) {
 
         if(queues == null) {
             throw new IllegalArgumentException("queue names can't be null");
         }
 
-        addQueue(DEFAULT_QUEUE, jobTimeoutManager);
+        addQueue(DEFAULT_QUEUE, jobTimeoutManager, executorServices);
         for (String queueName : queues) {
             queueName = queueName.trim();
             if(queueName.isEmpty()) continue;
 
-            addQueue(queueName, jobTimeoutManager);
+            addQueue(queueName, jobTimeoutManager, executorServices);
         }
 
         _log.info("Defined IO queues {}: " + _hash.keySet());
     }
 
-    private void addQueue(String queueName, JobTimeoutManager jobTimeoutManager) {
+    private void addQueue(String queueName, JobTimeoutManager jobTimeoutManager,
+            MoverExecutorServices executorServices ) {
         boolean fifo = !queueName.startsWith("-");
         if (!fifo) {
             queueName = queueName.substring(1);
@@ -47,7 +49,7 @@ public class IoQueueManager {
         if (_hash.get(queueName) == null) {
             _log.info("adding queue: {}", queueName);
             int id = _list.size();
-            IoScheduler job = new SimpleIoScheduler(queueName, id, fifo);
+            IoScheduler job = new SimpleIoScheduler(queueName, executorServices, id, fifo);
             _list.add(job);
             _hash.put(queueName, job);
             jobTimeoutManager.addScheduler(queueName, job);

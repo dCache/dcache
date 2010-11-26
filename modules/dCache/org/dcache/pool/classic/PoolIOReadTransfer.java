@@ -90,4 +90,15 @@ public class PoolIOReadTransfer
     {
         return _size;
     }
+
+    @Override
+    public ReplicaDescriptor getIoHandle()
+    {
+        return _handle;
+    }
+
+    @Override
+    public IoMode getIoMode() {
+        return IoMode.READ;
+    }
 }

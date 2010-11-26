@@ -26,13 +26,13 @@ public class LegacyMoverExecutorService implements MoverExecutorService {
             });
 
     @Override
-    public Future execute(final PoolIOTransfer transfer, final CompletionHandler completionHandler) {
+    public Future execute(final PoolIORequest request, final CompletionHandler completionHandler) {
         return _executor.submit(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    transfer.transfer();
+                    request.getTransfer().transfer();
                     completionHandler.completed(null, null);
                 } catch (Throwable e) {
                     _log.error("Transfer failed", e);

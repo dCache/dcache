@@ -13,7 +13,6 @@ import java.io.InterruptedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.acplt.oncrpc.OncRpcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.chimera.ChimeraFsException;
@@ -36,6 +35,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.util.PortRange;
+import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.RpcDispatchable;
 import org.dcache.xdr.RpcDispatcher;
@@ -64,9 +64,8 @@ public class NFSv4MoverHandler {
     private final NFSServerV41 _embededDS;
 
     public NFSv4MoverHandler(PortRange portRange)
-            throws OncRpcException,
-                IOException,
-                org.dcache.xdr.OncRpcException,
+            throws IOException,
+                OncRpcException,
                 ChimeraFsException {
 
         _embededDS = new NFSServerV41(_operationFactory, new DeviceManager(), null, _fs, null);
