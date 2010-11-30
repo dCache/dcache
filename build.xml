@@ -268,9 +268,9 @@
     -->
     <target name="eclipse" description="creates eclipse .classpath and .project files"
         depends="eclipse-classpath,eclipse-project,server.rpm"/>
-    	
-  
-    	
+
+
+
 
     <target name="eclipse-classpath" description="creates an eclipse .classpath file">
         <pathconvert property="eclipse.entries" refid="dcache.external.classpath"
@@ -326,7 +326,7 @@
    <!-- ========================================================================
             DEBUG STAFF
    ==========================================================================-->
-	
+
 
     <target name="debug">
         <echoproperties />
