@@ -12,15 +12,11 @@ import java.net.UnknownHostException;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,6 +25,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
 
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
@@ -45,20 +42,12 @@ import org.dcache.pool.movers.IoMode;
 import org.dcache.xrootd2.protocol.messages.*;
 import org.dcache.xrootd2.util.FileStatus;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.dcache.util.ConfigurationUtil;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.PortRange;
 
 
 /**
@@ -67,13 +56,12 @@ import org.dcache.util.PortRange;
  * The xrootd mover contains a static method for constructing a netty server
  * that will listen for incoming connections on the xrootd port. The purpose
  * of the server is to relay xrootd requests on the pool to the right mover.
- * The first mover that is started by the door will start the netty server
- * that is handling the pool requests; if there are no client connections to
- * the server left and no mover is still active, the server is shut down again,
- * thus unblocking the port.
  *
  * The mover responsible for a client connection is selected based on an opaque
  * UUID included by the client in redirect from the door.
+ * The mover will register itself with a netty server handling the client
+ * connections after starting. The registration will also start the server,
+ * if it is not yet running.
  *
  * Once the mover is invoked, it will wait (on a count down latch)
  * for incoming requests from the started netty server. If the no open
@@ -86,12 +74,6 @@ import org.dcache.util.PortRange;
  * the RandomAccessFile and the Allocator. Closing those will cause any
  * threads stuck in IO or space allocation to break out.
  *
- * If the mover is killed, then the intertransfer-timeout will eventually
- * unblock the latch, which will remove the mover from the map
- * (the intertransfer-timeout-handler is served from a different thread pool
- * than the normal mover). The netty handler will return an error to the
- * client during the next operation and the client will disconnect, which will
- * shut down the server, once there are no active client connections left.
  *
  * A transfer is considered to have succeeded if at least one file was
  * opened and all opened files were closed again.
@@ -122,17 +104,9 @@ import org.dcache.util.PortRange;
 public class XrootdProtocol_3
     implements MoverProtocol
 {
-    private static final long DEFAULT_CLIENT_IDLE_TIMEOUT =
-        TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
-
-    private static final int DEFAULT_DISK_THREAD_POOL_SIZE = 20;
-    private static final int DEFAULT_PER_CHANNEL_LIMIT = 16 * (1 << 20);
-    private static final int DEFAULT_TOTAL_LIMIT = 64 * (1 << 20);
     private static final int DEFAULT_FILESTATUS_ID = 0;
     private static final int DEFAULT_FILESTATUS_FLAGS = 0;
     private static final int DEFAULT_FILESTATUS_MODTIME = 0;
-
-    private static final int[] DEFAULT_PORTRANGE = { 20000, 25000 };
 
     /**
      * If the client connection dies without closing the file, we will have
@@ -155,52 +129,11 @@ public class XrootdProtocol_3
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdProtocol_3.class);
 
-    /**
-     * Maximum frame size of a read or readv reply. Does not include
-     * the size of the frame header.
-     */
-    private static int _maxFrameSize = 2 << 20;
+
 
     private static final Logger _logSpaceAllocation =
         LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                          XrootdProtocol_3.class.getName());
-
-    /**
-     * Shared thread pool accepting TCP connections.
-     */
-    private static Executor _acceptExecutor;
-
-    /**
-     * Shared thread pool performing non-blocking socket IO.
-     */
-    private static Executor _socketExecutor;
-
-    /**
-     * Shared thread pool performing blocking disk IO.
-     */
-    private static Executor _diskExecutor;
-
-    /**
-     * Used to generate channel-idle events for the pool handler
-     */
-    private static Timer _timer;
-    private static long _clientIdleTimeout;
-
-    /**
-     * Shared Netty channel factory.
-     */
-    private static ChannelFactory _channelFactory;
-
-    /**
-     * Shared Netty server channel
-     */
-    private static Channel _serverChannel;
-
-    /**
-     * mapping from tokens (opaque information) to movers
-     */
-    private static final Map<UUID, XrootdProtocol_3> _moversPerToken =
-        new ConcurrentHashMap<UUID, XrootdProtocol_3>();
 
     /**
      * Communication endpoint.
@@ -216,6 +149,14 @@ public class XrootdProtocol_3
      * The file served by this mover.
      */
     private RandomAccessFile _file;
+
+
+    /**
+     * The netty server that will be used for serving client requests. In
+     * order for clients to be able to communicate with this mover, it
+     * must register itself with this server.
+     */
+    private static XrootdPoolNettyServer _server;
 
     /**
      * Protocol specific information provided by the door.
@@ -261,6 +202,12 @@ public class XrootdProtocol_3
     private volatile long _transferStarted;
 
     /**
+     * Maximum frame size of a read or readv reply. Does not include the size
+     * of the frame header.
+     */
+    private static int _maxFrameSize = 2 << 20;
+
+    /**
      * Timestamp of when the last block was transferred - also updated by
      * any thread invoking the callback.
      */
@@ -279,13 +226,6 @@ public class XrootdProtocol_3
         Collections.synchronizedSet(new HashSet<FileDescriptor>());
 
     /**
-     * If both the number of client connections as well as waiting movers are
-     * 0, we can shut down the xrootd server. Use this variable to synchronize
-     * that. The only accessor to this variable is synchronized.
-     */
-    private static int _endpoints = 0;
-
-    /**
      * Switch Netty to slf4j for logging. Should be moved somewhere
      * else.
      */
@@ -294,109 +234,39 @@ public class XrootdProtocol_3
         InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
     }
 
-    /* Initialises the shared resources like a thread pool and the
-     * Netty ChannelFactory.
-     */
-    private static synchronized void
-        initSharedResources(CellEndpoint endpoint)
-    {
-        /* The disk executor handles the Xrootd request
-         * processing. This boils down to reading and writing from
-         * disk.
-         */
-        if (_diskExecutor == null) {
-            int threads;
-            String s = endpoint.getArgs().getOpt("xrootd-mover-disk-threads");
-            if (s != null && !s.isEmpty()) {
-                threads = Integer.parseInt(s);
+    private static synchronized void initSharedResources(Args args) {
+        if (_server == null) {
+            int threads = ConfigurationUtil.getIntOption(args,
+                                                         "xrootd-mover-disk-threads");
+            int perChannelLimit = ConfigurationUtil.getIntOption(args,
+                                                                 "xrootd-mover-max-memory-per-connection");
+            int totalLimit = ConfigurationUtil.getIntOption(args,
+                                                            "xrootd-mover-max-memory");
+
+            int clientIdleTimeout = ConfigurationUtil.getIntOption(args,
+                                                                   "xrootd-mover-idle-client-timeout");
+
+            String socketThreads = args.getOpt("xrootd-mover-socket-threads");
+
+            if (socketThreads == null || socketThreads.isEmpty()) {
+                _server = new XrootdPoolNettyServer(threads,
+                                                    perChannelLimit,
+                                                    totalLimit,
+                                                    clientIdleTimeout);
             } else {
-                threads = DEFAULT_DISK_THREAD_POOL_SIZE;
+                _server = new XrootdPoolNettyServer(threads,
+                                                      perChannelLimit,
+                                                      totalLimit,
+                                                      clientIdleTimeout,
+                                                      Integer.parseInt(socketThreads));
             }
-
-            int perChannelLimit;
-            s = endpoint.getArgs().getOpt("xrootd-mover-max-memory-per-connection");
-            if (s != null && !s.isEmpty()) {
-                perChannelLimit = Integer.parseInt(s);
-            } else {
-                perChannelLimit = DEFAULT_PER_CHANNEL_LIMIT;
-            }
-
-            int totalLimit;
-            s = endpoint.getArgs().getOpt("xrootd-mover-max-memory");
-            if (s != null && !s.isEmpty()) {
-                totalLimit = Integer.parseInt(s);
-            } else {
-                totalLimit = DEFAULT_TOTAL_LIMIT;
-            }
-
-            s = endpoint.getArgs().getOpt("xrootd-mover-max-channel-memory");
-
-            _diskExecutor =
-                new OrderedMemoryAwareThreadPoolExecutor(threads,
-                                                         perChannelLimit,
-                                                         totalLimit);
-
-            s = endpoint.getArgs().getOpt("xrootd-mover-max-frame-size");
-            if (s != null && !s.isEmpty()) {
-                _maxFrameSize = Integer.parseInt(s);
-            }
-
-        }
-
-        /* The accept executor is used for accepting TCP
-         * connections. An accept task will be submitted per server
-         * socket.
-         */
-        if (_acceptExecutor == null) {
-            _acceptExecutor = Executors.newCachedThreadPool();
-        }
-
-        /* The socket executor handles socket IO. Netty submits a
-         * number of workers to this executor and each worker is
-         * assigned a share of the connections.
-         */
-        if (_socketExecutor == null) {
-            _socketExecutor = Executors.newCachedThreadPool();
-        }
-
-        if (_channelFactory == null) {
-            String s = endpoint.getArgs().getOpt("xrootd-mover-socket-threads");
-            if (s != null && !s.isEmpty()) {
-                _channelFactory =
-                    new NioServerSocketChannelFactory(_acceptExecutor,
-                                                      _socketExecutor,
-                                                      Integer.parseInt(s));
-            } else {
-                _channelFactory =
-                    new NioServerSocketChannelFactory(_acceptExecutor,
-                                                      _socketExecutor);
-            }
-        }
-
-        if (_timer == null) {
-            String s = endpoint.getArgs().getOpt("xrootd-mover-idle-client-timeout");
-
-            if (s != null && !s.isEmpty()) {
-
-                try {
-                    _clientIdleTimeout = Long.parseLong(s);
-                } catch (NumberFormatException nfex) {
-                    _log.warn("xrootd-mover-client-idle-timeout contains invalid " +
-                              "value: {}", nfex);
-                    _clientIdleTimeout = DEFAULT_CLIENT_IDLE_TIMEOUT;
-                }
-            } else {
-                _clientIdleTimeout = DEFAULT_CLIENT_IDLE_TIMEOUT;
-            }
-
-            _timer = new HashedWheelTimer();
         }
     }
 
     public XrootdProtocol_3(CellEndpoint endpoint)
     {
         _endpoint = endpoint;
-        initSharedResources(_endpoint);
+        initSharedResources(_endpoint.getArgs());
     }
 
     @Override
@@ -412,20 +282,20 @@ public class XrootdProtocol_3
         _doorAddress = _protocolInfo.getDoorAddress();
 
         UUID uuid = _protocolInfo.getUUID();
+
         _log.debug("Received opaque information {}", uuid);
-        _moversPerToken.put(uuid, this);
 
         boolean transferSuccess;
-        incrementEndpointsToggleServer();
 
         try {
+            _server.register(uuid, this);
+
             _file = diskFile;
             _allocator = allocator;
             _transferStarted  = System.currentTimeMillis();
             _lastTransferred.set(_transferStarted);
 
-            InetSocketAddress address =
-                (InetSocketAddress) _serverChannel.getLocalAddress();
+            InetSocketAddress address = _server.getServerAddress();
             sendAddressToDoor(address.getPort());
 
             _log.debug("Starting xrootd server");
@@ -442,7 +312,7 @@ public class XrootdProtocol_3
                 _closeLatch.await();
             }
         } finally {
-            _moversPerToken.remove(uuid);
+            _server.unregister(uuid);
             /* this effectively closes all file descriptors obtained via this
              * mover */
             _file = null;
@@ -452,7 +322,6 @@ public class XrootdProtocol_3
             transferSuccess = isTransferSuccessful(access);
 
             _openedDescriptors.clear();
-            decrementEndpointsToggleServer();
         }
 
        if (!transferSuccess) {
@@ -462,32 +331,6 @@ public class XrootdProtocol_3
 
         _log.debug("Xrootd transfer completed, transferred {} bytes.",
                    _bytesTransferred.get());
-    }
-
-    /**
-     * Binds a new netty server to the xrootd port. This netty server will
-     * translate xrootd protocol requests to mover operations.
-     */
-    private static void bindServerChannel() throws IOException
-    {
-        String portRange = System.getProperty("org.dcache.net.tcp.portrange");
-        PortRange range;
-        if (portRange != null) {
-            range = PortRange.valueOf(portRange);
-        } else {
-            range = new PortRange(DEFAULT_PORTRANGE[0], DEFAULT_PORTRANGE[1]);
-        }
-
-        _log.info("Binding a new server channel.");
-        ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
-        bootstrap.setOption("child.tcpNoDelay", false);
-        bootstrap.setOption("child.keepAlive", true);
-
-        bootstrap.setPipelineFactory(new XrootdPoolPipelineFactory(_timer,
-                                                                   _diskExecutor,
-                                                                   _clientIdleTimeout));
-
-        _serverChannel= range.bind(bootstrap);
     }
 
     /**
@@ -607,11 +450,6 @@ public class XrootdProtocol_3
 
     RandomAccessFile getFile() {
         return _file;
-    }
-
-    static XrootdProtocol_3 getMover(UUID uuid)
-    {
-        return _moversPerToken.get(uuid);
     }
 
     /**
@@ -742,51 +580,5 @@ public class XrootdProtocol_3
     static int getMaxFrameSize()
     {
         return _maxFrameSize;
-    }
-
-    /**
-     * Decrement the number of endpoints. If they become zero, meaning that
-     * neither the server endpoint nor the client endpoint is needing a
-     * connection anymore, shut down the server listening for client requests.
-     * @throws IOException If shutting down the server fails for some reason
-     */
-    static void decrementEndpointsToggleServer() throws IOException
-    {
-        changeEndpointsToggleServer(-1);
-    }
-
-    /**
-     * Increment the number of endpoints by one. If the server is not yet
-     * running, start it.
-     * @throws IOException Starting the server fails for some reason
-     */
-    static void incrementEndpointsToggleServer() throws IOException
-    {
-        changeEndpointsToggleServer(1);
-    }
-
-    /**
-     * Add delta to the number of active endpoints. If the number of endpoints
-     * is 0 and the server channel is still open, close it. If the number of
-     * endpoints is larger than zero and the server channel does not exist,
-     * open a new server channel.
-     * @param delta The delta by which the number of endpoints should be
-     *              changed.
-     * @throws IOException Starting or stopping the server fails for some
-     *                     reason.
-     */
-    private synchronized static void changeEndpointsToggleServer(int delta)
-        throws IOException
-    {
-        _endpoints += delta;
-
-        if (_endpoints > 0 && _serverChannel == null) {
-            bindServerChannel();
-        } else if (_endpoints == 0 && _serverChannel != null) {
-            _log.info("No open client channels or waiting movers, closing " +
-                      "down the server.");
-            _serverChannel.close();
-            _serverChannel = null;
-        }
     }
 }

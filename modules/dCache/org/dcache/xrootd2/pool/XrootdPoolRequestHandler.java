@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
+
+import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.xrootd2.core.XrootdRequestHandler;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.AbstractRequestMessage;
@@ -103,6 +105,15 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
     private InetSocketAddress _redirectingDoor = null;
 
     /**
+     * The server on which this request handler is running.
+     */
+    private AbstractNettyServer<XrootdProtocol_3> _server;
+
+    public XrootdPoolRequestHandler(AbstractNettyServer<XrootdProtocol_3> server) {
+        _server = server;
+    }
+
+    /**
      * @throws IOException opening a server socket to handle the connection
      *                     fails
      */
@@ -111,7 +122,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                             ChannelStateEvent event)
         throws IOException
     {
-        XrootdProtocol_3.incrementEndpointsToggleServer();
+        _server.clientConnected();
     }
 
     @Override
@@ -149,7 +160,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             }
         }
 
-        XrootdProtocol_3.decrementEndpointsToggleServer();
+        _server.clientDisconnected();
         _readers.clear();
     }
 
@@ -230,7 +241,7 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
                 return;
             }
 
-            XrootdProtocol_3 mover = XrootdProtocol_3.getMover(uuid);
+            XrootdProtocol_3 mover = _server.getMover(uuid);
 
             if (mover == null) {
                 _log.error("Could not find a mover for opaque UUID {}",
