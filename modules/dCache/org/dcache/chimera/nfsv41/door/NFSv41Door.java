@@ -28,7 +28,6 @@ import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFS4Client;
-import org.dcache.chimera.nfs.v4.NFSv4StateHandler;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
 import org.dcache.chimera.nfs.v4.xdr.device_addr4;
 import org.dcache.chimera.nfs.v4.xdr.layoutiomode4;
@@ -119,6 +118,11 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final AclHandler _aclHandler = org.dcache.chimera.posix.UnixPermissionHandler.getInstance();
 
     /**
+     * embedded nfs server
+     */
+    private NFSServerV41 _nfs4;
+
+    /**
      * RPC service
      */
     private  OncRpcSvc _rpcService;
@@ -157,7 +161,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         _rpcService = new OncRpcSvc(DEFAULT_PORT);
 
-        NFSServerV41 nfs4 = new NFSServerV41(new MDSOperationFactory(),
+        _nfs4 = new NFSServerV41(new MDSOperationFactory(),
                 _dm, _aclHandler, _fileFileSystemProvider, _exportFile);
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
@@ -183,7 +187,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             _log.error("Failed to register NFSv4 service within portmap.");
         }
 
-        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), nfs4);
+        _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
         _rpcService.start();
 
@@ -449,7 +453,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         pw.println();
         pw.println("  Known clients:");
-        for (NFS4Client client : NFSv4StateHandler.getInstace().getClients()) {
+        for (NFS4Client client : _nfs4.getClients()) {
             pw.println( String.format("    %s", client ));
         }
     }
