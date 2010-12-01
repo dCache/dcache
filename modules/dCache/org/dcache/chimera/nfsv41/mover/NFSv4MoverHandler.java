@@ -1,21 +1,12 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import com.sun.grizzly.BaseSelectionKeyHandler;
-import com.sun.grizzly.Controller;
-import com.sun.grizzly.DefaultProtocolChain;
-import com.sun.grizzly.DefaultProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolChain;
-import com.sun.grizzly.ProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolFilter;
-import com.sun.grizzly.TCPSelectorHandler;
 import java.io.IOException;
-import java.io.InterruptedIOException;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.DeviceManager;
@@ -35,12 +26,11 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.util.PortRange;
+import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
+import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.RpcDispatchable;
-import org.dcache.xdr.RpcDispatcher;
-import org.dcache.xdr.RpcParserProtocolFilter;
-import org.dcache.xdr.RpcProtocolFilter;
 
 /**
  *
@@ -53,10 +43,10 @@ public class NFSv4MoverHandler {
 
     private final FileSystemProvider _fs = new DummyFileSystemProvider();
 
-    /*
-     * TCP port number used by Handler
+    /**
+     * RPC service
      */
-    private final int _localPort;
+    private final OncRpcSvc _rpcService;
 
     private final Map<stateid4, MoverBridge> _activeIO = new HashMap<stateid4, MoverBridge>();
     private final NFSv4OperationFactory _operationFactory =
@@ -64,64 +54,17 @@ public class NFSv4MoverHandler {
     private final NFSServerV41 _embededDS;
 
     public NFSv4MoverHandler(PortRange portRange)
-            throws IOException,
-                OncRpcException,
-                ChimeraFsException {
+            throws IOException , OncRpcException {
 
         _embededDS = new NFSServerV41(_operationFactory, new DeviceManager(), null, _fs, null);
+        _rpcService = new OncRpcSvc(
+                new com.sun.grizzly.PortRange((int)portRange.getLower(), (int)portRange.getUpper()),
+                IpProtocolType.TCP, false, "Embedded NFSv4.1 DS");
 
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
         programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
-
-        final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
-        final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
-        final ProtocolFilter rpcDispatcher = new RpcDispatcher(programs);
-
-        final Controller controller = new Controller();
-        final TCPSelectorHandler tcp_handler = new TCPSelectorHandler();
-        tcp_handler.setPortRange(new com.sun.grizzly.PortRange(
-                (int)portRange.getLower(), (int)portRange.getUpper()));
-        tcp_handler.setSelectionKeyHandler(new BaseSelectionKeyHandler());
-
-        controller.addSelectorHandler(tcp_handler);
-        controller.setReadThreadsCount(5);
-
-        final ProtocolChain protocolChain = new DefaultProtocolChain();
-        protocolChain.addFilter(rpcFilter);
-        protocolChain.addFilter(rpcProcessor);
-        protocolChain.addFilter(rpcDispatcher);
-
-        ((DefaultProtocolChain) protocolChain).setContinuousExecution(true);
-
-        ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
-
-            @Override
-            public ProtocolChain poll() {
-                return protocolChain;
-            }
-
-            @Override
-            public boolean offer(ProtocolChain pc) {
-                return false;
-            }
-        };
-
-        controller.setProtocolChainInstanceHandler(pciHandler);
-
-        new Thread(controller, "NFSv4.1 DS thread").start();
-        /*
-         * Wait untill grizzly is ready.
-         */
-        while( tcp_handler.getPort() < 0 ) {
-            try {
-                Thread.sleep(500);
-            }catch(InterruptedException e) {
-                _log.error("Grizzly initialization interrupted:" + e);
-                throw new InterruptedIOException("Failed to initialize Grizzly NIO engine" + e);
-            }
-        }
-        _localPort = tcp_handler.getPort();
-        _log.debug("NFSv4MoverHandler created on port: {}", tcp_handler.getPort());
+        _rpcService.setPrograms(programs);
+        _rpcService.start();
     }
 
     /**
@@ -187,7 +130,7 @@ public class NFSv4MoverHandler {
      * Get TCP port number used by handler.
      * @return port number.
      */
-    public int getLocalPort(){
-        return _localPort;
+    public InetSocketAddress getLocalAddress(){
+        return _rpcService.getInetSocketAddress(IpProtocolType.TCP);
     }
 }

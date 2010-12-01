@@ -74,7 +74,7 @@ public class NfsExcecutionService implements MoverExecutorService {
             byte[] d = xdr.body().array();
 
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage(request.getCellEndpoint().getCellInfo().getCellName(),
-                    new InetSocketAddress(localAddress, _nfsIO.getLocalPort()), d);
+                    new InetSocketAddress(localAddress, _nfsIO.getLocalAddress().getPort()), d);
 
             CellPath cellpath = nfs4ProtocolInfo.door();
             request.getCellEndpoint().sendMessage(new CellMessage(cellpath, msg));
