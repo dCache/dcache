@@ -95,6 +95,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -messageExecutor=messageThreadPool \
     -replicateOnArrival=\"${replicateOnArrival}\" \
     -lfs=\"${lfs}\" \
+    -waitForFiles=\"${waitForFiles}\" \
     -tags=\"${tags}\""
 
 

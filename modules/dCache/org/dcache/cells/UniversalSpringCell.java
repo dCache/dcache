@@ -249,8 +249,8 @@ public class UniversalSpringCell
         throws InterruptedException
     {
         String s = getArgs().getOpt("waitForFiles");
-        if (s != null) {
-            String[] paths = s.split(":");
+        if (s != null && !s.trim().isEmpty()) {
+            String[] paths = s.trim().split(":");
             File[] files = new File[paths.length];
             for (int i = 0; i < paths.length; i++) {
                 files[i] = new File(paths[i]);
