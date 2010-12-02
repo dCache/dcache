@@ -526,7 +526,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         private final stateid4 _stateid;
         private final InetAddress _client;
-        private PoolDS _dataserver = null;
         private final NFS4ProtocolInfo _protocolInfo;
 
         NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path, InetAddress client,
