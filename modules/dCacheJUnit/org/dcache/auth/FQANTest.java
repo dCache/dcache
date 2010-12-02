@@ -10,6 +10,28 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
+ * This class provides test-cases for the FQAN class.
+ *
+ * From page 6 of
+ *
+ *   http://www.ogf.org/Public_Comment_Docs/Documents/2009-06/VOMSACv10-editor-1.doc.pdf
+ *
+ *    "This information is encoded in a Fully Qualified Attribute Name (FQAN),
+ *    in the following format:
+ *
+ *            <group name>/Role=<role name>/Capability=<capability name>
+ *
+ *    This syntax means that the user holds the role <role name> in the group
+ *    <group name>. If no specific role is held, the <role name> is NULL. The
+ *    /Capability=<capability name> part is deprecated and will disappear in
+ *    the future: conforming applications SHOULD be able to handle FQANs where
+ *    it is absent and SHOULD NOT rely on its presence.
+ *
+ *    Future compatibility issue: It is possible that in the future a
+ *    /Role=NULL component may be omitted in its entirety. The same goes for a
+ *    /Capability=NULL part. Conforming applications SHOULD be prepared to
+ *    handle these cases."
+ *
  * @author jans
  * @author Paul Millar <paul.millar@desy.de>
  */
