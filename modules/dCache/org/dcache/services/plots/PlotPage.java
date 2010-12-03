@@ -20,7 +20,7 @@ public class PlotPage {
     protected String queryString;
     protected HttpRequest httpRequest;
     protected final String DATE_FORMAT = "yyyy-MM-dd HH:mm";
-    protected final static String PLOTDIR = "plots";
+    protected final static String PLOTDIR = "/plots";
     protected final static String TRANSFERRATE_PAGE = "transferrate";
     protected final static String CONNECTIONTIME_PAGE = "connectiontime";
     protected final static String CACHEHITS_PAGE = "cachehits";
