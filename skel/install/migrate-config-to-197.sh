@@ -573,7 +573,7 @@ if [ ! -d "$DCACHE_HOME" ]; then
 fi
 
 # Load libraries
-. ${DCACHE_HOME}/share/lib/loadConfig.sh -q
+. ${DCACHE_HOME}/share/lib/loadConfig.sh
 . ${DCACHE_LIB}/utils.sh
 
 # Check preconditions

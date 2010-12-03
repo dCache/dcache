@@ -37,7 +37,7 @@ BASE_DIR=$(cd $(dirname $0); pwd)
 
 #  Ask dCache for the externalLibsClassPath.
 ${DCACHE_HOME:=$default_home}
-. $DCACHE_HOME/share/lib/loadConfig.sh -q
+. $DCACHE_HOME/share/lib/loadConfig.sh
 
 LOG4J_FILE=${DCACHE_CONFIG}/log4j.properties
 
