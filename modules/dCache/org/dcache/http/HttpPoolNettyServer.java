@@ -3,6 +3,7 @@ package org.dcache.http;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -26,6 +27,9 @@ import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
+import org.jboss.netty.handler.timeout.IdleStateHandler;
+import org.jboss.netty.util.Timer;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,19 +47,19 @@ public class HttpPoolNettyServer {
     private Map<UUID, HttpProtocol_2> _moversPerUUID =
         new HashMap<UUID, HttpProtocol_2>();
 
-    /* The accept executor is used for accepting TCP
+    /** The accept executor is used for accepting TCP
      * connections. An accept task will be submitted per server
      * socket.
      */
     private final Executor _acceptExecutor;
 
-    /* The socket executor handles socket IO. Netty submits a
+    /** The socket executor handles socket IO. Netty submits a
      * number of workers to this executor and each worker is
      * assigned a share of the connections.
      */
     private final Executor _socketExecutor;
 
-    /* The disk executor handles the Xrootd request
+    /** The disk executor handles the Xrootd request
      * processing. This boils down to reading and writing from
      * disk.
      */
@@ -63,9 +67,19 @@ public class HttpPoolNettyServer {
 
     private final ChannelFactory _channelFactory;
 
+    /**
+     * Keep alive (idle) timeouts
+     */
+    private final Timer _timer;
+
     private final int _maxChunkSize;
 
     private static Channel _serverChannel;
+    /**
+     * Timeout for the interval that the server handler will keep waiting for
+     * further requests to enable HTTP Keep Alive. Its value is in seconds.
+     */
+    private final int _clientIdleTimeout;
 
     private static final int DEFAULT_PORTRANGE_LOWER_BOUND = 20000;
     private static final int DEFAULT_PORTRANGE_UPPER_BOUND = 25000;
@@ -73,14 +87,21 @@ public class HttpPoolNettyServer {
     public HttpPoolNettyServer(int threadPoolSize,
                                int memoryPerConnection,
                                int maxMemory,
-                               int maxChunkSize) {
-        this(threadPoolSize, memoryPerConnection, maxMemory, maxChunkSize, -1);
+                               int maxChunkSize,
+                               int clientIdleTimeout) {
+        this(threadPoolSize,
+             memoryPerConnection,
+             maxMemory,
+             maxChunkSize,
+             clientIdleTimeout,
+             -1);
     }
 
     public HttpPoolNettyServer(int threadPoolSize,
                                int memoryPerConnection,
                                int maxMemory,
                                int maxChunkSize,
+                               int clientIdleTimeout,
                                int socketThreads) {
         /* The disk executor handles the http request
          * processing. This boils down to reading and writing from
@@ -106,6 +127,9 @@ public class HttpPoolNettyServer {
         }
 
         _maxChunkSize = maxChunkSize;
+
+        _clientIdleTimeout = clientIdleTimeout;
+        _timer = new HashedWheelTimer();
     }
 
     /**
@@ -221,7 +245,8 @@ public class HttpPoolNettyServer {
             }
             pipeline.addLast("executor",
                              new ExecutionHandler(_diskExecutor));
-
+            pipeline.addLast("idle-state-handler",
+                             new IdleStateHandler(_timer, 0, 0, _clientIdleTimeout));
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
             pipeline.addLast("transfer", new HttpPoolRequestHandler(HttpPoolNettyServer.this));
 

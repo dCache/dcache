@@ -10,8 +10,9 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.nio.channels.FileChannel;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +21,6 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.util.ConfigurationUtil;
 import org.dcache.util.NetworkUtils;
 import org.jboss.netty.handler.stream.ChunkedInput;
-import org.jboss.netty.handler.stream.ChunkedNioFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,14 +75,7 @@ public class HttpProtocol_2 implements MoverProtocol
     private RandomAccessFile _diskFile;
 
 
-    private final CountDownLatch _firstConnectionCloseLatch = new CountDownLatch(1);
-    private final CountDownLatch _keepAliveLatch = new CountDownLatch(1);
-
-    /**
-     * Timeout for the interval that the mover will stay alive waiting for
-     * further requests to enable HTTP Keep Alive
-     */
-    private final long _keepAliveTimeout;
+    private final CountDownLatch _connectLatch = new CountDownLatch(1);
 
     /**
      * Timeout for the interval that the mover will wait for any client to
@@ -103,7 +96,6 @@ public class HttpProtocol_2 implements MoverProtocol
     private static HttpPoolNettyServer _server;
     private long _transferStarted;
 
-    private boolean _inProgress = false;
     private volatile boolean _wasChanged = false;
 
     private final HttpResourceMonitor _httpMonitor = new HttpResourceMonitor();
@@ -124,18 +116,23 @@ public class HttpProtocol_2 implements MoverProtocol
             int maxChunkSize =  ConfigurationUtil.getIntOption(args,
                                                                "http-mover-max-chunk-size");
 
+            int clientIdleTimeout = ConfigurationUtil.getIntOption(args,
+                                                                   "http-mover-client-idle-timeout");
+
             String socketThreads = args.getOpt("http-mover-socket-threads");
 
             if (socketThreads == null || socketThreads.isEmpty()) {
                 _server = new HttpPoolNettyServer(threads,
                                                   perChannelLimit,
                                                   totalLimit,
-                                                  maxChunkSize);
+                                                  maxChunkSize,
+                                                  clientIdleTimeout);
             } else {
                 _server = new HttpPoolNettyServer(threads,
                                                   perChannelLimit,
                                                   totalLimit,
                                                   maxChunkSize,
+                                                  clientIdleTimeout,
                                                   Integer.parseInt(socketThreads));
             }
         }
@@ -145,9 +142,6 @@ public class HttpProtocol_2 implements MoverProtocol
         _endpoint = endpoint;
 
         Args args = _endpoint.getArgs();
-        long keepAlive = ConfigurationUtil.getLongOption(args,
-                                                         "http-mover-keep-alive-period");
-        _keepAliveTimeout = keepAlive * 1000;
         long connect = ConfigurationUtil.getLongOption(args,
                                                        "http-mover-connect-timeout");
         _connectTimeout = connect*1000;
@@ -169,40 +163,32 @@ public class HttpProtocol_2 implements MoverProtocol
         _logger.debug("Starting xrootd server");
 
         UUID uuid = UUID.randomUUID();
-        _server.register(uuid, this);
 
         try {
+            _httpMonitor.setInProgress(true);
+            _server.register(uuid, this);
+
             InetSocketAddress address = _server.getServerAddress();
             sendAddressToDoor(address.getPort(), uuid,  pnfsId);
             _diskFile = diskFile;
             _transferStarted  = System.currentTimeMillis();
             _httpMonitor.updateLastTransferred();
 
-            _inProgress = true;
-
-            if (!_firstConnectionCloseLatch.await(_connectTimeout, TimeUnit.MILLISECONDS)) {
-
-                if (!_httpMonitor.hasConnected()) {
-                    _logger.warn("HTTP mover started, but no connection from HTTP client!");
-                    throw new TimeoutCacheException("No connection from HTTP client after " +
-                                                    TimeUnit.MILLISECONDS.toSeconds(_connectTimeout) +
-                                                    " seconds. Giving up.");
-                }
+            if (!_connectLatch.await(_connectTimeout, TimeUnit.MILLISECONDS)) {
+                /* if connect timeout has elapsed, fail if no connection yet */
+                _httpMonitor.guardHasConnected();
             }
 
-            _firstConnectionCloseLatch.await();
-
-            while ((System.currentTimeMillis() - _httpMonitor.getLastTransferred())
-                    < _keepAliveTimeout) {
-
-                _keepAliveLatch.await(_keepAliveTimeout, TimeUnit.MILLISECONDS);
-            }
-
+            /*
+             * shutdown the mover if
+             *    - all attached server handlers called close
+             *      (count reaches zero and await returns true)
+             */
+            while (!_connectLatch.await(_connectTimeout, TimeUnit.MILLISECONDS));
         } finally {
-            _logger.debug("Shutting down the mover.");
+            _logger.debug("Shutting down the mover: {}", uuid);
             _server.unregister(uuid);
             _diskFile = null;
-            _inProgress = false;
         }
     }
 
@@ -300,32 +286,41 @@ public class HttpProtocol_2 implements MoverProtocol
      *         netty and representing the requested parts.
      * @throws IOException Accessing the mover file fails
      * @throws IllegalArgumentException Request is illegal
+     * @throws TimeoutCacheException Mover has shutdown.
      */
     ChunkedInput read(String requestedPath, long lowerRange, long upperRange)
-        throws IOException, IllegalArgumentException {
+        throws IOException, IllegalArgumentException, TimeoutCacheException {
 
-        _httpMonitor.updateLastTransferred();
-        _httpMonitor.setHasConnected();
+        if (!_httpMonitor.isInProgess()) {
+            throw new TimeoutCacheException("Can not read from mover as it has shut down.");
+        }
 
         checkRequestPath(requestedPath);
         ChunkedInput content = null;
 
         /* need to count position 0 as well */
         long length = (upperRange - lowerRange) + 1;
+
         content = new ReusableChunkedNioFile(_diskFile.getChannel(),
-                                             lowerRange, length, _chunkSize);
-
-        _httpMonitor.updateBytesTransferred(length);
-
+                                             lowerRange, length, _chunkSize,
+                                             this);
         return content;
 
+    }
+
+    void updateBytesTransferred(long length) {
+        _httpMonitor.updateBytesTransferred(length);
+    }
+
+    void updateLastTransferred() {
+        _httpMonitor.updateLastTransferred();
     }
 
     /**
      * @see #read(String, long, long)
      */
     ChunkedInput read(String requestedPath)
-        throws IllegalArgumentException, IOException {
+        throws IllegalArgumentException, IOException, TimeoutCacheException {
 
         return read(requestedPath, 0, _diskFile.length() - 1);
     }
@@ -336,28 +331,6 @@ public class HttpProtocol_2 implements MoverProtocol
      */
     long getFileSize() throws IOException {
         return _diskFile.length();
-    }
-
-    /**
-     * With a normal ChunkedNioFile, netty at some point receives a
-     * "connection closed by peer" signal and closes the file, trying to
-     * release the resources. As this closes the disk-file, the mover becomes
-     * useless despite keep-alive. To avoid this, we are using the following
-     * extension to ChunkedNioFile, which turns close into a no-op.
-     *
-     */
-    static class ReusableChunkedNioFile extends ChunkedNioFile {
-        public ReusableChunkedNioFile(FileChannel channel,
-                                          long offset,
-                                          long length,
-                                          int chunkSize) throws IOException {
-            super(channel, offset, length, chunkSize);
-        }
-
-        @Override
-        public void close() {
-            /* we are going to close the backing stream ourselves */
-        }
     }
 
     /**
@@ -392,21 +365,20 @@ public class HttpProtocol_2 implements MoverProtocol
     }
 
     /**
-     * Count-down both connect and keep-alive latches. Will cause the mover
-     * to terminate.
+     * Try to add the handler to the set of connected handlers. Set hasConnected
+     * true, if it is the first handler. Fail if mover not running.
+     * @throws TimeoutCacheException Mover has shutdown
      */
-    void close() {
-        _firstConnectionCloseLatch.countDown();
-        _keepAliveLatch.countDown();
+    void open(HttpPoolRequestHandler handler) throws TimeoutCacheException {
+        _httpMonitor.connectHandler(handler);
     }
 
     /**
-     * Count down the connect latch. This will cause the mover to wait on the
-     * keep-alive latch, if the keep alive is defined to be longer than zero.
-     * If not, the mover will terminate.
+     * Count-down connect latch. Mover will terminate when count reaches
+     * zero.
      */
-    void keepAlive() {
-        _firstConnectionCloseLatch.countDown();
+    void close(HttpPoolRequestHandler handler) {
+        _httpMonitor.disconnectHandlerToggleMover(handler);
     }
 
     @Override
@@ -425,7 +397,7 @@ public class HttpProtocol_2 implements MoverProtocol
 
     @Override
     public long getTransferTime() {
-        return (_inProgress ? System.currentTimeMillis() : _httpMonitor.getLastTransferred()
+        return (_httpMonitor.isInProgess() ? System.currentTimeMillis() : _httpMonitor.getLastTransferred()
                 - _transferStarted);
     }
 
@@ -449,17 +421,33 @@ public class HttpProtocol_2 implements MoverProtocol
         private long _lastTransferred;
         private long _bytesTransferred = 0;
         private boolean _hasConnected = false;
+        private final Set<HttpPoolRequestHandler> _connectedHandlers =
+            new HashSet<HttpPoolRequestHandler>();
+        private boolean _inProgress = false;
 
-        synchronized boolean hasConnected() {
-            return _hasConnected;
-        }
-
-        synchronized void setHasConnected() {
-            _hasConnected = true;
+        /**
+         * Set inProgress to false and fail if no client has connected.
+         */
+        synchronized void guardHasConnected() throws TimeoutCacheException {
+            if (!_hasConnected) {
+                _inProgress = false;
+                _logger.warn("HTTP mover started, but no connection from HTTP client!");
+                throw new TimeoutCacheException("No connection from HTTP client after " +
+                                                TimeUnit.MILLISECONDS.toSeconds(_connectTimeout) +
+                                                " seconds. Giving up.");
+            }
         }
 
         synchronized void updateLastTransferred() {
             _lastTransferred = System.currentTimeMillis();
+        }
+
+        synchronized boolean isInProgess() {
+            return _inProgress;
+        }
+
+        synchronized void setInProgress(boolean inProgress) {
+            _inProgress = inProgress;
         }
 
         synchronized long getLastTransferred() {
@@ -472,6 +460,24 @@ public class HttpProtocol_2 implements MoverProtocol
 
         synchronized void updateBytesTransferred(long additional) {
             _bytesTransferred += additional;
+        }
+
+        synchronized void connectHandler(HttpPoolRequestHandler handler) throws TimeoutCacheException{
+            if (!_inProgress) {
+                throw new TimeoutCacheException("Can not open mover, as it is shutting down.");
+            }
+
+            _hasConnected = true;
+            _connectedHandlers.add(handler);
+        }
+
+        synchronized void disconnectHandlerToggleMover(HttpPoolRequestHandler handler) {
+            _connectedHandlers.remove(handler);
+
+            if (_connectedHandlers.isEmpty()) {
+                _inProgress = false;
+                _connectLatch.countDown();
+            }
         }
     }
 }

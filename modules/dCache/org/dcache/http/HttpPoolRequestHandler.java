@@ -4,8 +4,10 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.jboss.netty.channel.ChannelFuture;
@@ -17,10 +19,13 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.jboss.netty.handler.stream.ChunkedInput;
+import org.jboss.netty.handler.timeout.IdleState;
+import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
+import diskCacheV111.util.TimeoutCacheException;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication and pass
@@ -37,11 +42,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
-    /** the mover that was accessed - will be used to inform the mover that it
-     * does not need to wait for further messages for clients that send the
+    /** the movers that were accessed - will be used to inform the movers that
+     * they don't need to wait for further messages for clients that send the
      * "Connection: close" header.
      */
-    HttpProtocol_2 _mover;
+    private final Set<HttpProtocol_2> _movers;
     /**
      * The server in the context of which this handler is executed
      */
@@ -49,30 +54,37 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     public HttpPoolRequestHandler(HttpPoolNettyServer executionServer) {
         _executionServer = executionServer;
+        _movers = new HashSet<HttpProtocol_2>();
     }
 
-    /**
-     * If no keep-alive, also tell the associated mover to shut down.
-     *
-     * @param ctx ChannelHandlerContext
-     * @param event The event that caused the channel close
-     */
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent event)
-        throws IOException {
+    public void channelClosed(ChannelHandlerContext ctx,
+                              ChannelStateEvent event) {
 
-        if (isKeepAlive()) {
-
-            if (_mover != null) {
-                _mover.keepAlive();
-            }
-        } else {
-            _logger.debug("Client requested connection close, doing that.");
-
-            if (_mover != null) {
-                _mover.close();
-            }
+        _logger.debug("Called channelClosed.");
+        for (HttpProtocol_2 mover : _movers) {
+            mover.close(this);
         }
+
+        _movers.clear();
+    }
+
+    @Override
+    public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent event)
+        throws Exception {
+
+        if (event.getState() == IdleState.ALL_IDLE) {
+
+            if (_logger.isInfoEnabled()) {
+                long idleTime = System.currentTimeMillis() -
+                    event.getLastActivityTimeMillis();
+                _logger.info("Closing idling connection without opened files." +
+                          " Connection has been idle for {} ms.", idleTime);
+            }
+
+            ctx.getChannel().close();
+        }
+
     }
 
     /**
@@ -88,10 +100,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                            HttpRequest request) {
 
         ChannelFuture future = null;
+        HttpProtocol_2 mover = null;
 
         try {
-            HttpProtocol_2 mover = getMoverForRequest(request);
-            _mover = mover;
+
+            mover = getMoverForRequest(request);
+            _movers.add(mover);
+
+            mover.open(this);
 
             ChunkedInput responseContent;
             long fileSize = mover.getFileSize();
@@ -108,8 +124,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             } else {
 
                 responseContent = mover.read(request.getUri(),
-                                     range.getLower(),
-                                     range.getUpper());
+                                              range.getLower(),
+                                              range.getUpper());
                 sendHTTPPartialHeader(context,
                                       event,
                                       range.getLower(),
@@ -122,6 +138,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
         } catch (java.text.ParseException pe) {
             future = sendHTTPError(context, event, BAD_REQUEST, pe.getMessage());
+        } catch (TimeoutCacheException tcex) {
+            future = sendHTTPError(context,
+                                   event,
+                                   REQUEST_TIMEOUT,
+                                   tcex.getMessage());
+            _movers.remove(mover);
+
         } catch (IllegalArgumentException iaex) {
             future = sendHTTPError(context, event, BAD_REQUEST, iaex.getMessage());
         } catch (IOException ioexp) {
@@ -135,8 +158,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                                    INTERNAL_SERVER_ERROR,
                                    rtex.getMessage());
         } finally {
-            if (future != null && !isKeepAlive()) {
-                future.addListener(ChannelFutureListener.CLOSE);
+
+            if (!isKeepAlive() && future != null) {
+                    future.addListener(ChannelFutureListener.CLOSE);
             }
         }
     }

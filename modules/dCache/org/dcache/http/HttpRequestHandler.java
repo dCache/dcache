@@ -17,18 +17,19 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
 
-public class HttpRequestHandler extends SimpleChannelHandler
+public class HttpRequestHandler extends IdleStateAwareChannelHandler
 {
     private static final String RANGE_SEPARATOR = " - ";
     private static final String RANGE_PRE_TOTAL = "/";
@@ -44,10 +45,7 @@ public class HttpRequestHandler extends SimpleChannelHandler
         if (event.getMessage() instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) event.getMessage();
 
-            String connection = request.getHeader(CONNECTION);
-
-            _logger.debug("Received the following connection string: {}", connection);
-            _isKeepAlive = (connection == null || !connection.equals("close"));
+            _isKeepAlive = HttpHeaders.isKeepAlive(request);
 
             if (request.getMethod() == HttpMethod.GET) {
                 doOnGet(ctx, event, request);
