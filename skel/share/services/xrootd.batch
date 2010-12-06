@@ -45,6 +45,10 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -xrootdPoolManagerTimeout=${xrootdPoolManagerTimeout} \
        -xrootdMoverTimeout=${xrootdMoverTimeout} \
        -xrootdAuthzPlugin=${xrootdAuthzPlugin} \
+       -xrootdAuthNPlugin=${xrootdAuthNPlugin} \
+       -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod} \
+       -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod} \
+       -verifyHostCertificateChain=${verifyHostCertificateChain} \
        -xrootdIoQueue=${xrootdIoQueue} \
        -xrootdAuthzKeystore=${xrootdAuthzKeystore} \
        -xrootdIsReadOnly=${xrootdIsReadOnly} \
