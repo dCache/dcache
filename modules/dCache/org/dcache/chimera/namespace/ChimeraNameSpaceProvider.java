@@ -3,6 +3,7 @@
  */
 package org.dcache.chimera.namespace;
 
+import com.mchange.v2.c3p0.DataSources;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
@@ -27,7 +28,6 @@ import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.posix.Stat;
 
@@ -45,6 +45,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import java.io.IOException;
+import javax.sql.DataSource;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
@@ -74,9 +75,14 @@ public class ChimeraNameSpaceProvider
 
     public ChimeraNameSpaceProvider( Args args, CellNucleus nucleus) throws Exception {
 
-	    XMLconfig config = new XMLconfig( new File( args.getOpt("chimeraConfig") ) );
-	    _fs = new JdbcFs(  config );
-	    _args = args;
+        // FIXME: the initialization have to go into spring xml file
+        Class.forName(args.getOpt("chimera.db.driver"));
+
+        DataSource dataSource = DataSources.unpooledDataSource(args.getOpt("chimera.db.url"),
+                args.getOpt("chimera.db.user"), args.getOpt("chimera.db.password"));
+
+        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), args.getOpt("chiemra.db.dialect"));
+        _args = args;
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
             if( accessLatensyOption != null && accessLatensyOption.length() > 0) {

@@ -1,5 +1,6 @@
 package org.dcache.tests.namespace;
 
+import com.mchange.v2.c3p0.DataSources;
 import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
@@ -21,7 +22,6 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.tests.cells.CellAdapterHelper;
 
@@ -45,6 +45,7 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
+import javax.sql.DataSource;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -99,7 +100,11 @@ public class PnfsManagerTest {
             "-namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
             "-storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
             "-cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-            "-chimeraConfig=modules/external/Chimera/test-config.xml " +
+            "-chimera.db.user=sa " +
+            "-chimera.db.password= " +
+            "-chimera.db.url=jdbc:hsqldb:mem:chimeramem " +
+            "-chimera.db.driver=org.hsqldb.jdbcDriver " +
+            "-chimera.db.dialect=HsqlDB " +
             "-aclEnabled=false " +
             "-aclTable=t_acl " +
             "-aclConnDriver=org.hsqldb.jdbcDriver " +
@@ -109,8 +114,14 @@ public class PnfsManagerTest {
 
         _pnfsManager =  new PnfsManagerV3("testPnfsManager", args);
 
+        // FIXME: make it configurable
+        Class.forName("org.hsqldb.jdbcDriver");
 
-        _fs = new JdbcFs(new XMLconfig(new File("modules/external/Chimera/test-config.xml")));
+        DataSource dataSource = DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem",
+                "sa", "");
+
+        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
+
         _fs.mkdir("/pnfs");
         FsInode baseInode = _fs.mkdir("/pnfs/testRoot");
         byte[] sGroupTagData = "chimera".getBytes();

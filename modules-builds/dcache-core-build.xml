@@ -56,7 +56,6 @@
     <!-- Classpath for dcache.jar -->
 
     <path id="chimera.classpath">
-        <pathelement location="${libDir}/Chimera/chimera-core.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/Chimera/portmap.jar" />
     </path>
@@ -349,8 +348,6 @@
 
         <!-- Chimera -->
         <mkdir dir="${server.bin.dir}/classes/chimera" />
-        <copy file="${libDir}/Chimera/chimera-core.jar" todir="${server.bin.dir}/classes/chimera" />
-        <copy file="${libDir}/Chimera/chimera-config.xml" todir="${server.bin.dir}/config" />
         <copy file="${libDir}/Chimera/oncrpc.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/portmap.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${server.bin.dir}/classes/chimera" />

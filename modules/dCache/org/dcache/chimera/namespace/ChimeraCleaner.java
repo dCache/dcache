@@ -31,8 +31,6 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
-import org.dcache.chimera.DbConnectionInfo;
-import org.dcache.chimera.XMLconfig;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
@@ -72,12 +70,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     private static final Logger _log =
         LoggerFactory.getLogger(ChimeraCleaner.class);
-
-    @Option(
-        name="chimeraConfig",
-        description="Chimera configuration file",
-        required=true)
-    protected File _chimeraConfigFile;
 
     @Option(
         name="refresh",
@@ -176,10 +168,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         _executor = Executors.newScheduledThreadPool(_threadPoolSize);
 
-        // for now we are looking for fsid==0 only
-        XMLconfig config = new XMLconfig(_chimeraConfigFile);
-        DbConnectionInfo dbinfo = config.getDbInfo(0);
-        dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass());
+        dbInit(getArgs().getOpt("chimera.db.url"), getArgs().getOpt("chimera.db.driver"),
+                getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
 
         if (!_reportTo.equals("none")) {
             _broadcasterStub = new CellStub();

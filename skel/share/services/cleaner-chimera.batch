@@ -18,7 +18,10 @@ create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
          -reportRemove=broadcast \
          -poolTimeout=${cleanerPoolTimeout}   \
          -processFilesPerRun=${cleanerProcessFilesPerRun} \
-         -chimeraConfig=${config}/chimera-config.xml \
+         -chimera.db.user=${chimera.db.user} \
+         -chimera.db.password=${chimera.db.password} \
+         -chimera.db.url=${chimera.db.url} \
+         -chimera.db.driver=${chimera.db.driver} \
          -hsmCleaner=${hsmCleaner} \
          -hsmCleanerRequest=${hsmCleanerRequest} \
          -hsmCleanerTimeout=${hsmCleanerTimeout} \

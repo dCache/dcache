@@ -40,7 +40,11 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -aclConnUser=${aclConnUser} \
         -aclConnPswd=${aclConnPswd} \
         -folding=${pnfsFolding} \
-        -chimeraConfig=${config}/chimera-config.xml \
+        -chimera.db.user=${chimera.db.user} \
+        -chimera.db.password=${chimera.db.password} \
+        -chimera.db.url=${chimera.db.url} \
+        -chimera.db.driver=${chimera.db.driver} \
+        -chimera.db.dialect=${chimera.db.dialect} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -inheritFileOwnership=${pnfsInheritFileOwnership} \

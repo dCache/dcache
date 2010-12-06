@@ -103,7 +103,6 @@ fi
 %attr(0755,root,root) /opt/d-cache/bin/chimera-set-acl.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
-%config(noreplace) /opt/d-cache/config/chimera-config.xml
 %config(noreplace) /opt/d-cache/etc/logback.xml
 %config(noreplace) /opt/d-cache/etc/dcachesrm-gplazma.policy
 %config(noreplace) /opt/d-cache/etc/tc-config.xml

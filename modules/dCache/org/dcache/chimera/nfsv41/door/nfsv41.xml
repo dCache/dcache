@@ -15,7 +15,6 @@
                 ioQueue=""
                 pnfsManager=PnfsManager
                 pnfsManagerTimeout=28000
-                chimeraConfig=${config}/chimera-config.xml
             </value>
         </property>
     </bean>
@@ -44,18 +43,18 @@
         <constructor-arg value="1"/>
     </bean>
 
-    <bean id="chimeraXmlConfig" class="java.io.File">
-        <description>Chimera XML config File</description>
-        <constructor-arg value="${chimeraConfig}"/>
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="user" value="${chimera.db.user}"/>
+        <property name="password" value="${chimera.db.password}"/>
+        <property name="driverClass" value="${chimera.db.driver}"/>
+        <property name="jdbcUrl" value="${chimera.db.url}"/>
     </bean>
 
     <bean id="fileSystem" class="org.dcache.chimera.JdbcFs">
         <description>Chimera Filesystem</description>
-        <constructor-arg>
-            <bean class="org.dcache.chimera.XMLconfig">
-                <constructor-arg ref="chimeraXmlConfig"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg ref="dataSource" />
+        <constructor-arg value="${chimera.db.dialect}" />
     </bean>
 
     <bean id="export" class="org.dcache.chimera.nfs.ExportFile">

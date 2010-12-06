@@ -1,10 +1,10 @@
 package org.dcache.tests.repository;
 
+import com.mchange.v2.c3p0.DataSources;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -15,10 +15,10 @@ import org.dcache.chimera.HFile;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.XMLconfig;
 import org.dcache.pool.repository.FileStore;
 
 import diskCacheV111.util.PnfsId;
+import javax.sql.DataSource;
 import org.dcache.commons.util.SqlHelper;
 
 public class RepositoryHealerTestChimeraHelper implements FileStore {
@@ -32,9 +32,13 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     RepositoryHealerTestChimeraHelper() throws Exception {
 
 
+        // FIXME: make it configurable
         Class.forName("org.hsqldb.jdbcDriver");
 
-        _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeramem", "sa", "");
+        DataSource dataSource = DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem",
+                "sa", "");
+
+        _conn = dataSource.getConnection();
 
         File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb.sql");
         StringBuilder sql = new StringBuilder();
@@ -53,7 +57,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
             SqlHelper.tryToClose(st);
         }
 
-        _fs = new JdbcFs(new XMLconfig(new File("modules/external/Chimera/test-config.xml")));
+        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
         _rootInode = _fs.path2inode("/");
     }
 

@@ -122,12 +122,6 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     @Override
-    public FileSystemProvider getFs(int arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public int getFsId() {
         // TODO Auto-generated method stub
         return 0;
@@ -458,12 +452,6 @@ public class DummyFileSystemProvider implements FileSystemProvider {
             throws ChimeraFsException {
         // TODO Auto-generated method stub
         return 0;
-    }
-
-    @Override
-    public void shutdown() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
