@@ -1,0 +1,48 @@
+/*
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Library General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with this program (see the file COPYING.LIB for more
+ * details); if not, write to the Free Software Foundation, Inc.,
+ * 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+package org.dcache.chimera;
+
+import org.dcache.chimera.posix.Stat;
+
+public class HimeraDirectoryEntry {
+
+    private final String _name;
+    private final Stat _stat;
+    private final FsInode _inode;
+
+    public HimeraDirectoryEntry(String name, FsInode inode) throws ChimeraFsException {
+        this(name, inode, inode.statCache());
+    }
+
+    public HimeraDirectoryEntry(String name, FsInode inode, Stat stat) {
+        _inode = inode;
+        _name = name;
+        _stat = stat;
+    }
+
+    public FsInode getInode() {
+        return _inode;
+    }
+
+    public String getName() {
+        return _name;
+    }
+
+    public Stat getStat() {
+        return _stat;
+    }
+}
