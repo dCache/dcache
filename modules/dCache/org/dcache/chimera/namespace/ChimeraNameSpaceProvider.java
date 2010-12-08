@@ -6,7 +6,6 @@ package org.dcache.chimera.namespace;
 import com.mchange.v2.c3p0.DataSources;
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -68,8 +67,8 @@ public class ChimeraNameSpaceProvider
 
     private static final Logger _log =  LoggerFactory.getLogger(ChimeraNameSpaceProvider.class);
 
-    private final diskCacheV111.util.AccessLatency _defaultAccessLatency;
-    private final diskCacheV111.util.RetentionPolicy _defaultRetentionPolicy;
+    private final AccessLatency _defaultAccessLatency;
+    private final RetentionPolicy _defaultRetentionPolicy;
 
     private final boolean _inheritFileOwnership;
 
@@ -89,7 +88,7 @@ public class ChimeraNameSpaceProvider
                 /*
                  * IllegalArgumentException thrown if option is invalid
                  */
-                _defaultAccessLatency = diskCacheV111.util.AccessLatency.getAccessLatency(accessLatensyOption);
+                _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
             }else{
                 _defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
             }
@@ -99,7 +98,7 @@ public class ChimeraNameSpaceProvider
                 /*
                  * IllegalArgumentException thrown if option is invalid
                  */
-                _defaultRetentionPolicy = diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+                _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
             }else{
                 _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
             }
@@ -648,10 +647,10 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case ACCESS_LATENCY:
-                        _fs.setAccessLatency(inode,  org.dcache.chimera.store.AccessLatency.valueOf(attr.getAccessLatency().getId()));
+                        _fs.setAccessLatency(inode, attr.getAccessLatency());
                         break;
                     case RETENTION_POLICY:
-                        _fs.setRetentionPolicy(inode, org.dcache.chimera.store.RetentionPolicy.valueOf(attr.getRetentionPolicy().getId()));
+                        _fs.setRetentionPolicy(inode, attr.getRetentionPolicy());
                         break;
                     case DEFAULT_ACCESS_LATENCY:
                         /*
@@ -665,7 +664,7 @@ public class ChimeraNameSpaceProvider
                             if (dir == null) {
                                 dir = _extractor.getStorageInfo(inode);
                             }
-                            _fs.setAccessLatency(inode, org.dcache.chimera.store.AccessLatency.valueOf(dir.getAccessLatency().getId()));
+                            _fs.setAccessLatency(inode, dir.getAccessLatency());
                         }
                         break;
                     case DEFAULT_RETENTION_POLICY:
@@ -680,7 +679,7 @@ public class ChimeraNameSpaceProvider
                             if (dir == null) {
                                 dir = _extractor.getStorageInfo(inode);
                             }
-                            _fs.setRetentionPolicy(inode, org.dcache.chimera.store.RetentionPolicy.valueOf(dir.getRetentionPolicy().getId()));
+                            _fs.setRetentionPolicy(inode, dir.getRetentionPolicy());
                         }
                         break;
                     case FLAGS:

@@ -16,13 +16,13 @@
  */
 package org.dcache.chimera;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.Closeable;
 import java.util.List;
 
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.store.RetentionPolicy;
 
 public interface FileSystemProvider extends Closeable {
 

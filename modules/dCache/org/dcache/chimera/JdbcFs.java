@@ -16,6 +16,8 @@
  */
 package org.dcache.chimera;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -27,9 +29,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.store.RetentionPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.dcache.commons.util.SqlHelper.*;

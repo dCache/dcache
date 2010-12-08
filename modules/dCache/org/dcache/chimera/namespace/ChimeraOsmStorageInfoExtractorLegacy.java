@@ -3,9 +3,9 @@
  */
 package org.dcache.chimera.namespace;
 
+import diskCacheV111.util.AccessLatency;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInode_TAG;
-import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.ChimeraFsException;
 
@@ -13,6 +13,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HsmLocation;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.util.OsmLocationExtractor;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -26,8 +27,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.store.AccessLatency;
-import org.dcache.chimera.store.RetentionPolicy;
+
 
 /**
  *
@@ -187,8 +187,8 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
             int arg3) throws CacheException {
 
 
-    	RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
-    	AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
+        RetentionPolicy retentionPolicy = dCacheStorageInfo.getRetentionPolicy();
+        AccessLatency accessLatency = dCacheStorageInfo.getAccessLatency();
 
     	InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
     			dCacheStorageInfo.getHsm(),

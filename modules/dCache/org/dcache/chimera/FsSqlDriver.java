@@ -16,6 +16,8 @@
  */
 package org.dcache.chimera;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -30,9 +32,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.store.RetentionPolicy;
 import org.dcache.commons.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1954,7 +1954,7 @@ class FsSqlDriver {
 
             alResultSet = stGetAccessLatency.executeQuery();
             if (alResultSet.next()) {
-                accessLatency = AccessLatency.valueOf(alResultSet.getInt("iaccessLatency"));
+                accessLatency = AccessLatency.getAccessLatency(alResultSet.getInt("iaccessLatency"));
             }
 
         } finally {
@@ -1986,7 +1986,7 @@ class FsSqlDriver {
 
             rpResultSet = stRetentionPolicy.executeQuery();
             if (rpResultSet.next()) {
-                retentionPolicy = RetentionPolicy.valueOf(rpResultSet.getInt("iretentionPolicy"));
+                retentionPolicy = RetentionPolicy.getRetentionPolicy(rpResultSet.getInt("iretentionPolicy"));
             }
 
         } finally {
@@ -2101,8 +2101,8 @@ class FsSqlDriver {
                 String hsmName = storageInfoResult.getString("ihsmName");
                 String storageGroup = storageInfoResult.getString("istoragegroup");
                 String storageSubGroup = storageInfoResult.getString("istoragesubgroup");
-                AccessLatency accessLatency = AccessLatency.valueOf(storageInfoResult.getInt("iaccessLatency"));
-                RetentionPolicy retentionPolicy = RetentionPolicy.valueOf(storageInfoResult.getInt("iretentionPolicy"));
+                AccessLatency accessLatency = AccessLatency.getAccessLatency(storageInfoResult.getInt("iaccessLatency"));
+                RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(storageInfoResult.getInt("iretentionPolicy"));
 
                 storageInfo = new InodeStorageInformation(inode, hsmName, storageGroup, storageSubGroup,
                         accessLatency, retentionPolicy);

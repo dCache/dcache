@@ -1,5 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import java.util.List;
 
@@ -11,9 +13,7 @@ import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.store.RetentionPolicy;
 import org.dcache.chimera.DirectoryStreamB;
 
 public class DummyFileSystemProvider implements FileSystemProvider {

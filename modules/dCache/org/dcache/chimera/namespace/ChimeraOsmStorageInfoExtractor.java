@@ -3,6 +3,7 @@
  */
 package org.dcache.chimera.namespace;
 
+import diskCacheV111.util.AccessLatency;
 import java.io.BufferedReader;
 import java.io.CharArrayReader;
 import java.io.IOException;
@@ -20,13 +21,12 @@ import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.InodeStorageInformation;
-import org.dcache.chimera.store.RetentionPolicy;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.HsmLocationExtractorFactory;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -122,12 +122,12 @@ public class ChimeraOsmStorageInfoExtractor implements
                  *   while AL and RP are bound to file
                  */
                 if(al != null) {
-                    info.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency(al.getId()));
+                    info.setAccessLatency(AccessLatency.getAccessLatency(al.getId()));
                 }
 
                 RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
                 if( rp != null ) {
-                    info.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy(rp.getId()));
+                    info.setRetentionPolicy(rp);
                 }
             } else {
 
@@ -138,8 +138,8 @@ public class ChimeraOsmStorageInfoExtractor implements
                         inodeStorageInfo.storageSubGroup() );
 
                 info.setIsNew(false);
-                info.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency( inodeStorageInfo.accessLatency().getId() ) );
-                info.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy( inodeStorageInfo.retentionPolicy().getId() ) );
+                info.setAccessLatency(inodeStorageInfo.accessLatency() );
+                info.setRetentionPolicy(inodeStorageInfo.retentionPolicy() );
 
                 for(StorageLocatable location: locations) {
                     if( location.isOnline() ) {
@@ -266,12 +266,12 @@ public class ChimeraOsmStorageInfoExtractor implements
         try {
 
             if( dCacheStorageInfo.isSetAccessLatency() ) {
-                AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
+                AccessLatency accessLatency = dCacheStorageInfo.getAccessLatency();
                 inode.getFs().setAccessLatency(inode, accessLatency);
             }
 
             if( dCacheStorageInfo.isSetRetentionPolicy() ) {
-                RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
+                RetentionPolicy retentionPolicy = dCacheStorageInfo.getRetentionPolicy();
                 inode.getFs().setRetentionPolicy(inode, retentionPolicy);
             }
 

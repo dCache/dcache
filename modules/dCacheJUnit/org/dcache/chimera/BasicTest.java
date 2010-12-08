@@ -1,5 +1,7 @@
 package org.dcache.chimera;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -9,8 +11,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.AccessLatency;
-import org.dcache.chimera.store.RetentionPolicy;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 
