@@ -13,19 +13,19 @@ import java.util.TreeMap;
  *
  * The class is thread safe.
  */
-public class BlockLog 
-{    
+public class BlockLog
+{
     private SortedMap<Long,Long> _blocks = new TreeMap<Long,Long>();
     private boolean _eof = false;
-    
+
     private static final String _overlapMsg
-	= "Overlapping block detected between ({0}, {1}) and ({2}, {3}).";
+	= "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
 
     private ErrorListener _errorListener;
 
     private long _limit;
 
-    public BlockLog(ErrorListener errorListener) 
+    public BlockLog(ErrorListener errorListener)
     {
 	_errorListener = errorListener;
         _limit = Long.MAX_VALUE;
@@ -38,7 +38,7 @@ public class BlockLog
      * @param position A non-negative starting posisiton
      * @param size     A non-negative block size
      * @throws FTPException if blocks overlap
-     */ 
+     */
     public synchronized void addBlock(long position, long size)
 	throws FTPException
     {
@@ -56,10 +56,10 @@ public class BlockLog
 	    long prevBegin = headMap.lastKey();
 	    long prevEnd = _blocks.get(prevBegin);
 
-	    /* Consistency check. 
+	    /* Consistency check.
 	     */
 	    if (prevEnd > begin) {
-		String err = 
+		String err =
 		    MessageFormat.format(_overlapMsg,
 					 begin, end, prevBegin, prevEnd);
 		throw new FTPException(err);
@@ -76,15 +76,15 @@ public class BlockLog
 	    long nextBegin = tailMap.firstKey();
 	    long nextEnd   = _blocks.get(nextBegin);
 
-	    /* Consistency check. 
+	    /* Consistency check.
 	     */
 	    if (end > nextBegin) {
-		String err = 
-		    MessageFormat.format(_overlapMsg, 
+		String err =
+		    MessageFormat.format(_overlapMsg,
 					 begin, end, nextBegin, nextEnd);
 		throw new FTPException(err);
 	    }
-	    
+
 	    /* Merge blocks.
 	     */
 	    if (end == nextBegin) {
@@ -115,7 +115,7 @@ public class BlockLog
      * Indicates that the end of the transfer has been reached. The
      * main purpose is to make sure that waitCompleted() returns.
      */
-    public synchronized void setEof() 
+    public synchronized void setEof()
     {
 	_eof = true;
 	notifyAll();
@@ -124,7 +124,7 @@ public class BlockLog
     /**
      * Returns true when setEof() has been called.
      */
-    public synchronized boolean isEof() 
+    public synchronized boolean isEof()
     {
 	return _eof;
     }
@@ -134,7 +134,7 @@ public class BlockLog
      * of the file for which either the byte before or the byte after
      * the area has not been received.
      */
-    public synchronized int getFragments() 
+    public synchronized int getFragments()
     {
         return _blocks.size();
     }
@@ -153,17 +153,17 @@ public class BlockLog
      * Returns the number of consecutive bytes from the beginning of
      * the file that have been transferred.
      */
-    public synchronized long getCompleted() 
+    public synchronized long getCompleted()
     {
 	return !_blocks.containsKey(0L) ? 0L : _blocks.get(0L);
     }
 
     /**
      * Blocks until getCompleted() returns a value larger than or
-     * equal to position or until setEof() has been called. 
+     * equal to position or until setEof() has been called.
      */
-    public synchronized void waitCompleted(long position) 
-	throws InterruptedException 
+    public synchronized void waitCompleted(long position)
+	throws InterruptedException
     {
         if (_limit < position) {
             setLimit(position);
@@ -181,7 +181,7 @@ public class BlockLog
         return _limit;
     }
 
-    /** 
+    /**
      * Sets the current transfer limit.
      *
      * The <code>addBlock</code> method will block as soon as
