@@ -416,6 +416,30 @@ printPoolsInDomain() # in $1 = Pool domain
     cat $poolFile
 }
 
+
+# Convert the chimera.properties defaults to a XML file
+buildChimeraDefaultsXml()  # out $1 = variable to store filename of XML file
+{
+    _file=$(mktemp)
+    sed -n '1 i <defaults>
+s%.*\(url\|user\|password\|dialect\|driver\) *= *\([^ ]*\) *$%  <\1>\2</\1>%p
+$ a </defaults>' < "$(getProperty dcache.paths.share)/defaults/chimera.properties" > $_file
+    cmd=$1=$_file
+    eval $cmd
+}
+
+
+# Print the Chimera options that are different from the defaults
+printChimeraOptions()
+{
+    buildChimeraDefaultsXml xmlFile
+    xsltproc --stringparam defaults-uri "$xmlFile" \
+        "$(getProperty dcache.paths.share)/xml/xslt/convert-chimera-config.xsl" \
+        "${DCACHE_CONFIG}/chimera-config.xml"
+    rm $xmlFile
+}
+
+
 disclaimer()
 {
   echo "${1}DISCLAIMER: Please inspect the generated configuration. The import is"
@@ -790,6 +814,9 @@ printp "Converting ${DCACHE_ETC}/node_config
             chimera|pnfs)
                 echo "[namespaceDomain]"
                 echo "[namespaceDomain/pnfsmanager]"
+                if [ $SERVICE = chimera ]; then
+                    printChimeraOptions
+                fi
                 echo "[namespaceDomain/cleaner]"
                 echo "[namespaceDomain/acl]"
                 ;;
