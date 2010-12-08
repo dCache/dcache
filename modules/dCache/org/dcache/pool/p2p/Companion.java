@@ -31,6 +31,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.FireAndForgetTask;
 import diskCacheV111.util.Adler32;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
@@ -511,7 +512,8 @@ class Companion
                 }
             };
         _timerTask =
-            _executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+            _executor.schedule(new FireAndForgetTask(task),
+                               delay, TimeUnit.MILLISECONDS);
     }
 
     /** FSM Action */
@@ -588,7 +590,7 @@ class Companion
 
             final Object error = _error;
 
-            _executor.execute(new Runnable() {
+            _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {
                         Throwable t;
 
@@ -601,7 +603,7 @@ class Companion
                         }
                         _callback.cacheFileAvailable(_pnfsId, t);
                     }
-                });
+                }));
         }
     }
 
@@ -627,46 +629,46 @@ class Companion
     {
         public void success(T message)
         {
-            _executor.execute(new Runnable() {
+            _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.success();
                         }
                     }
-                });
+                }));
         }
 
         public void failure(final int rc, final Object cause)
         {
-            _executor.execute(new Runnable() {
+            _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.failure(rc, cause);
                         }
                     }
-                });
+                }));
         }
 
         public void timeout()
         {
-            _executor.execute(new Runnable() {
+            _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.timeout();
                         }
                     }
-                });
+                }));
         }
 
         public void noroute()
         {
-            _executor.execute(new Runnable() {
+            _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {
                         synchronized (Companion.this) {
                             _fsm.noroute();
                         }
                     }
-                });
+                }));
         }
     }
 }
