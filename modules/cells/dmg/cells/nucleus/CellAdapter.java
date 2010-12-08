@@ -927,8 +927,6 @@ public class   CellAdapter
                         o = e.getCause();
                     } catch (CommandException ce) {
                         o = ce;
-                    } catch (Throwable te) {
-                        o = te;
                     } finally {
                         EventLogger.deliverEnd(msg.getSession(), uoid);
                         _currentMessage = null;
@@ -1015,8 +1013,6 @@ public class   CellAdapter
                     return command(new AuthorizedArgs((Authorizable)command));
                 } catch (CommandException ce) {
                     throw ce;
-                } catch (Throwable xe) {
-                    throw new CommandException(1, "Unknown : "+xe.toString());
                 }
             } else {
                 return autoCommand(command);
@@ -1029,8 +1025,6 @@ public class   CellAdapter
                     return command(new Args((String)command));
                 } catch (CommandException ce) {
                     throw ce;
-                } catch (Throwable xe) {
-                    throw new CommandException(1, "Unknown : "+xe.toString());
                 }
             } else {
                 return autoCommand((String)command);
@@ -1041,8 +1035,6 @@ public class   CellAdapter
                 return command((CommandRequestable)command);
             } catch (CommandException ce) {
                 throw ce;
-            } catch (Throwable xe) {
-                throw new CommandException(1,"Unknown : "+xe.toString());
             }
         } else
             throw new
