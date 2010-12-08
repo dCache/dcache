@@ -12,7 +12,7 @@
        For each of these jar files there are targets below -->
 
     <property name="dcache-common.jar" location="${classesDir}/dcache-common.jar" />
-    
+
     <!--
         check is jar file up to date
     -->
@@ -47,9 +47,7 @@
         <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
         <fileset dir="${libDir}/dcache-common" includes="**/*.jar" /> -->
         <path refid="dependency.classpath" />
-        <fileset dir="${libDir}/logback" includes="*.jar" />
         <fileset dir="${libDir}/rrd4j" includes="**/*.jar" />
-	<fileset dir="${libDir}/logback" includes="*.jar" />
 	<fileset dir="${libDir}/batik-1.7" includes="*.jar" />
     </path>
 

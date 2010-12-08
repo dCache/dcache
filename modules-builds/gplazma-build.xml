@@ -39,7 +39,6 @@
         <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
         <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
         <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
-        <fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
         <path refid="dependency.classpath" />

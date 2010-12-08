@@ -15,7 +15,6 @@
         <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
-        <fileset dir="${libDir}/logback/" includes="*.jar" />
         <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <fileset dir="${libDir}/parboiled4j" includes="**/*.jar" />

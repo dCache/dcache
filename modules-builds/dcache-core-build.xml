@@ -71,7 +71,6 @@
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
         <fileset dir="${libDir}/batik-1.7" includes="*.jar" />
-        <fileset dir="${libDir}/logback" includes="*.jar" />
         <path refid="dependency.classpath" />
         <path refid="chimera.classpath" />
     	<!-- new add -->
@@ -112,7 +111,6 @@
 
     <path id="dcache-srm-enhance.classpath">
         <pathelement location="${classesDir}/cells.jar" />
-        <fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement path="${dcache.build.dir}" />
         <path refid="dependency.classpath" />
     </path>
@@ -198,7 +196,6 @@
 
     <path id="dcache-auth-enhance.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
-        <fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${dcache.build.dir}" />
         <path refid="dependency.classpath" />
@@ -363,14 +360,6 @@
 
         <!-- ACL -->
         <!--<copy file="${buildTop}/common/acl.properties" todir="${server.bin.dir}/config" /> -->
-
-        <!-- logback -->
-        <mkdir dir="${server.bin.dir}/classes/logback" />
-        <copy todir="${server.bin.dir}/classes/logback">
-          <fileset dir="${libDir}/logback/">
-            <include name="*.jar" />
-          </fileset>
-        </copy>
 
         <!-- Wicket -->
         <mkdir dir="${server.bin.dir}/classes/wicket" />

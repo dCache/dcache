@@ -22,7 +22,6 @@
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
-        <fileset dir="${libDir}/logback" includes="*.jar" />
         <path refid="dependency.classpath" />
     </path>
 

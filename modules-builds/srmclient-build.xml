@@ -59,6 +59,7 @@
         <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
+        <dependency groupId="ch.qos.logback" artifactId="logback-classic" version="0.9.26"/>
         <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
         <dependency groupId="axis" artifactId="axis" version="1.3" />
         <dependency groupId="org.glite" artifactId="glite-security-trustmanager" version="1.8.16-1.norefresh" />
@@ -71,7 +72,6 @@
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
-	<fileset dir="${libDir}/logback" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${classesDir}/cells.jar" />
         <path refid="srmclient.maven.classpath" />
@@ -288,14 +288,6 @@
 
 
         <!-- external jars -->
-
-        <!-- logback -->
-        <mkdir dir="${srmclient.bin.dir}/lib/logback" />
-        <copy todir="${srmclient.bin.dir}/lib/logback">
-            <fileset dir="${libDir}/logback">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
 
         <!-- cog -->
         <!-- know as globus :) -->
