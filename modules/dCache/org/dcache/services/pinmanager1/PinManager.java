@@ -17,6 +17,7 @@ import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellEndpoint;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PinManagerMessage;
 import diskCacheV111.vehicles.PinManagerPinMessage;
@@ -268,8 +269,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
         pinManagerPolicy = (PinManagerPolicy)
             Class.forName(pinManagerPolicyClass).getConstructor().newInstance();
-        db = new PinManagerDatabase(this,
-                                    jdbcUrl,
+        db = new PinManagerDatabase(jdbcUrl,
                                     jdbcDriver,
                                     dbUser,
                                     dbPass,
@@ -300,6 +300,11 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     public void stop() {
         kill();
+    }
+
+    public CellEndpoint getCellEndpoint()
+    {
+        return this;
     }
 
     public long getMaxPinDuration()

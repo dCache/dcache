@@ -128,7 +128,6 @@ class PinManagerDatabase
     private final String _jdbcClass;
     private final String _user;
     private final String _pass;
-    private final PinManager _manager;
 
     /**
      * Connection pool for talking to the database.
@@ -149,8 +148,7 @@ class PinManagerDatabase
 
     private AuthRecordPersistenceManager authRecordPM;
 
-    public PinManagerDatabase(PinManager manager,
-                              String url, String driver,
+    public PinManagerDatabase(String url, String driver,
                               String user, String password,
                               String passwordfile,
                               int maxActive,
@@ -166,7 +164,6 @@ class PinManagerDatabase
 
         _jdbcUrl = url;
         _jdbcClass = driver;
-        _manager = manager;
         _user = user;
         _pass = password;
 
@@ -1591,7 +1588,7 @@ class PinManagerDatabase
                     " jdbcUrl jdbcClass user pass ");
             System.exit(1);
         }
-        PinManagerDatabase db = new PinManagerDatabase(null,args[0],
+        PinManagerDatabase db = new PinManagerDatabase(args[0],
                 args[1],
                 args[2],
                 args[3],

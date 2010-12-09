@@ -6,6 +6,8 @@ import diskCacheV111.vehicles.*;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.AuthorizationRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Background task used to perform the actual pinning operation. To do
@@ -16,6 +18,9 @@ import org.dcache.auth.AuthorizationRecord;
  */
 class Pinner extends SMCTask
 {
+    private static final Logger _logger =
+        LoggerFactory.getLogger(SMCTask.class);
+
     private final Pin _pin;
     private final PinManagerJob _job;
     private final PinnerContext _fsm;
@@ -23,6 +28,7 @@ class Pinner extends SMCTask
     private final CellPath _poolManager;
     private String _readPoolName;
     private long _expiration;
+    private final PinManager _manager;
 
     /**
      * Pool manager allowed stated for this request.
@@ -41,7 +47,8 @@ class Pinner extends SMCTask
         long orginalPinRequestId,
         int allowedStates)
     {
-        super(manager);
+        super(manager.getCellEndpoint());
+        _manager = manager;
         _job = job;
         _pnfsManager = manager.getPnfsManager();
         _poolManager = manager.getPoolManager();
@@ -55,19 +62,7 @@ class Pinner extends SMCTask
         }
         job.setSMCTask(this);
 
-        info("Pinner constructor done");
-    }
-
-    private PinManager getManager() {
-        return (PinManager)_cell;
-    }
-
-    private void info(String s) {
-        getManager().info("Pinner: "+s);
-    }
-
-    private void error(String s) {
-        getManager().error("Pinner: "+s);
+        _logger.info("Pinner constructor done");
     }
 
     /** Returns the current state of the pinner. */
@@ -78,25 +73,25 @@ class Pinner extends SMCTask
 
     public StorageInfo getStorageInfo()
     {
-        info("getStorageInfo");
+        _logger.info("getStorageInfo");
         return _job.getStorageInfo();
     }
 
     public void setStorageInfo(StorageInfo info)
     {
-        info("setStorageInfo");
+        _logger.info("setStorageInfo");
         _job.setStorageInfo(info);
     }
 
     public void setReadPool(String name)
     {
-        info("setReadPool");
+        _logger.info("setReadPool");
         _readPoolName = name;
     }
 
     void retrieveStorageInfo()
     {
-        info("retrieveStorageInfo");
+        _logger.info("retrieveStorageInfo");
         sendMessage(_pnfsManager,
                     new PnfsGetStorageInfoMessage(_job.getPnfsId()),
                     5 * 60 * 1000);
@@ -107,7 +102,7 @@ class Pinner extends SMCTask
         String host = _job.getClientHost() == null ?
             "localhost":
             _job.getClientHost();
-        info("findReadPool for "+_job.getPnfsId()+" host="+host);
+        _logger.info("findReadPool for "+_job.getPnfsId()+" host="+host);
         DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap", 3, 0, host, 0);
         pinfo.fileCheckRequired(false);
@@ -130,7 +125,7 @@ class Pinner extends SMCTask
         } else {
             _expiration = System.currentTimeMillis() +_job.getLifetime();
         }
-        info("markSticky "+_job.getPnfsId()+" in pool "+_readPoolName+
+        _logger.info("markSticky "+_job.getPnfsId()+" in pool "+_readPoolName+
                ( _expiration==-1?" forever":" until epoc "+_expiration));
         long stickyBitExpiration = _expiration;
         if(stickyBitExpiration > 0) {
@@ -152,25 +147,25 @@ class Pinner extends SMCTask
 
     void succeed()
     {
-        info("succeed, file pinned in "+_readPoolName);
+        _logger.info("succeed, file pinned in "+_readPoolName);
         try {
-            getManager().pinSucceeded(_pin,
+            _manager.pinSucceeded(_pin,
                 _readPoolName,
                 _expiration,
                 _orginalPinRequestId);
         } catch (PinException pe) {
-            error(pe.toString());
+            _logger.error(pe.toString());
         }
         //_pin.pinSucceeded();
     }
 
     void fail(Object reason)
     {
-        error("failed: "+reason);
+        _logger.error("failed: "+reason);
         try {
-            getManager().pinFailed(_pin,reason);
+            _manager.pinFailed(_pin,reason);
         } catch (PinException pe) {
-           error(pe.toString());
+           _logger.error(pe.toString());
         }
        // _pin.pinFailed(reason);
     }
