@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+      </value>
+    </property>
+  </bean>
+
+  <bean id="messageThreadPool"
+        class="java.util.concurrent.ThreadPoolExecutor"
+        destroy-method="shutdown">
+    <description>Thread pool for message processing</description>
+    <constructor-arg value="${threadsCore}"/>
+    <constructor-arg value="${threadsMax}"/>
+    <constructor-arg value="${threadsKeepAliveTime}"/>
+    <constructor-arg value="#{ T(java.util.concurrent.TimeUnit).SECONDS }"/>
+    <constructor-arg>
+      <bean class="java.util.concurrent.ArrayBlockingQueue">
+        <constructor-arg value="${threadsQueueMax}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="pinmanager" class="org.dcache.services.pinmanager1.PinManager"
+        init-method="init">
+      <property name="expirationFrequency" value="${expirationFrequency}"/>
+      <property name="maxPinDuration" value="${maxPinDuration}"/>
+      <property name="pnfsManager">
+          <bean class="dmg.cells.nucleus.CellPath">
+              <constructor-arg value="${pnfsManager}"/>
+          </bean>
+      </property>
+      <property name="poolManager">
+          <bean class="dmg.cells.nucleus.CellPath">
+              <constructor-arg value="${poolManager}"/>
+          </bean>
+      </property>
+      <property name="db" ref="db"/>
+      <property name="pinManagerPolicy" ref="policy"/>
+      <property name="stagePermission" ref="stage-permission"/>
+  </bean>
+
+  <bean id="policy" class="${pinManagerPolicy}"/>
+
+  <bean id="db" class="org.dcache.services.pinmanager1.PinManagerDatabase">
+      <constructor-arg value="${jdbcUrl}"/>
+      <constructor-arg value="${jdbcDriver}"/>
+      <constructor-arg value="${dbUser}"/>
+      <constructor-arg value="${dbPass}"/>
+      <constructor-arg value="${pgPass}"/>
+      <constructor-arg value="${maxActiveJdbcConnections}"/>
+      <constructor-arg value="${maxJdbcConnectionsWaitSec}"/>
+      <constructor-arg value="${maxIdleJdbcConnections}"/>
+  </bean>
+
+  <bean id="stage-permission" class="diskCacheV111.util.CheckStagePermission">
+      <constructor-arg value="${stageConfigurationFilePath}"/>
+  </bean>
+</beans>

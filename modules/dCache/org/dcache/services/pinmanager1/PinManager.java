@@ -15,8 +15,6 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
-import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellEndpoint;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PinManagerMessage;
@@ -47,7 +45,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.cells.Option;
-import org.dcache.cells.AbstractCell;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
 import javax.security.auth.Subject;
@@ -85,144 +85,19 @@ import diskCacheV111.vehicles.StorageInfo;
  *
  * @author  timur
  */
-public class PinManager extends AbstractCell implements Runnable  {
+public class PinManager
+    extends AbstractCellComponent
+    implements Runnable, CellMessageReceiver, CellCommandListener
+{
+    private static final Logger logger =
+        LoggerFactory.getLogger(PinManager.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(PinManager.class);
-
-    @Option(
-        name = "expirationFrequency",
-        description = "Frequency of running pin expiration routine",
-        defaultValue = "60000", // every minute
-        unit = "ms"
-    )
     protected long expirationFrequency;
 
-    @Option(
-        name = "maxPinDuration",
-        description = "Max. lifetime of a pin",
-        defaultValue = "86400000", // one day
-        unit = "ms"
-    )
     private long maxPinDuration;
 
-    @Option(
-        name = "pnfsManager",
-        defaultValue = "PnfsManager",
-        description = "PNFS manager name"
-    )
-    protected String pnfsManager;
-
-    @Option(
-        name = "poolManager",
-        defaultValue = "PoolManager",
-        description = "Pool manager name"
-    )
-    protected String poolManager;
-
-    @Option(
-        name = "jdbcUrl",
-        required = true
-    )
-    protected String jdbcUrl;
-
-    @Option(
-        name = "jdbcDriver",
-        required = true
-    )
-    protected String jdbcDriver;
-
-    @Option(
-        name = "dbUser",
-        required = true
-    )
-    protected String dbUser;
-
-    @Option(
-        name = "dbPass",
-        log = false
-    )
-    protected String dbPass;
-
-    @Option(
-        name = "pgPass"
-    )
-    protected String pgPass;
-
-
-    @Option(
-        name = "maxActiveJdbcConnections",
-        defaultValue = "50", // half of default postgres max of 100
-        description = "max number of active jdbc connections"
-    )
-    protected int maxActiveJdbcConnections;
-
-
-    @Option(
-        name = "maxJdbcConnectionsWaitSec",
-        defaultValue = "180", // 3 min
-        description = "max number of idle jdbc connections",
-        unit = "sec"
-    )
-    protected long maxJdbcConnectionsWaitSec;
-
-    @Option(
-        name = "maxIdleJdbcConnections",
-        defaultValue = "10",
-        description = "max number of idle jdbc connections"
-    )
-    protected int maxIdleJdbcConnections;
-
-
-    @Option(
-        name = "pinManagerPolicy",
-        defaultValue="org.dcache.services.pinmanager1.SimplePinManagerPolicyImpl"
-    )
-    protected String pinManagerPolicyClass;
-
-     /**
-     * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
-     * (i.e. allowed to copy file from dCache in case file is stored on tape but not on disk).
-     * /opt/d-cache/config/StageConfiguration.conf
-     * By default, such file does not exist, so that tape protection feature is not in use.
-     */
-    @Option(
-        name = "stageConfigurationFilePath",
-        description = "File containing DNs and FQANs for which staging is allowed",
-        defaultValue = ""
-    )
-    protected String _stageConfigurationFilePath;
-
-    @Option(
-        name="threadsCore",
-        description="Number of message threads",
-        defaultValue="20",
-        unit="threads"
-    )
-    protected int _threadsCore;
-
-    @Option(
-        name="threadsMax",
-        description="Maximum number of message threads",
-        defaultValue="200",
-        unit="threads"
-    )
-    protected int _threadsMax;
-
-    @Option(
-        name="threadsKeepAliveTime",
-        description="Time to keep idle threads alive",
-        defaultValue="60",
-        unit="seconds"
-    )
-    protected long _threadsKeepAliveTime;
-
-    @Option(
-        name="threadsQueueMax",
-        description="Maximum queue length before messages are rejected",
-        defaultValue="1000",
-        unit="messages"
-    )
-    protected int _threadsQueueMax;
+    protected CellPath pnfsManager;
+    protected CellPath poolManager;
 
     // all database oprations will be done in the lazy
     // fassion in a low priority thread
@@ -252,59 +127,44 @@ public class PinManager extends AbstractCell implements Runnable  {
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
 
-    /** Creates a new instance of PinManager */
-    public PinManager(String name , String argString)
-        throws InterruptedException, ExecutionException
-    {
-        super(name, argString);
-        doInit();
-    }
-
-    @Override
-    protected void init()
+    public void init()
         throws Exception
     {
-        super.init();
-
-
-        pinManagerPolicy = (PinManagerPolicy)
-            Class.forName(pinManagerPolicyClass).getConstructor().newInstance();
-        db = new PinManagerDatabase(jdbcUrl,
-                                    jdbcDriver,
-                                    dbUser,
-                                    dbPass,
-                                    pgPass,
-                                    maxActiveJdbcConnections,
-                                    maxJdbcConnectionsWaitSec,
-                                    maxIdleJdbcConnections
-                                    );
-        expireRequests =
-            getNucleus().newThread(this,"ExpireRequestsThread");
+        expireRequests = new Thread( "ExpireRequestsThread");
         //databaseUpdateThread.setPriority(Thread.MIN_PRIORITY);
         expireRequests.start();
 
-        CellNucleus nucleus = getNucleus();
-        ExecutorService executor =
-            new ThreadPoolExecutor(_threadsCore, _threadsMax,
-                                   _threadsKeepAliveTime, TimeUnit.SECONDS,
-                                   new ArrayBlockingQueue<Runnable>(_threadsQueueMax));
-        nucleus.setCallbackExecutor(executor);
-        nucleus.setMessageExecutor(executor);
-
         runInventoryBeforeStartPart();
-        start();
-        runInventoryAfterStartPart();
-
-        _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
     }
 
-    public void stop() {
-        kill();
+    @Override
+    public void afterStart()
+    {
+        try {
+            runInventoryAfterStartPart();
+        } catch (PinDBException e) {
+            throw new RuntimeException("Startup failed:" + e.toString(), e);
+        }
     }
 
     public CellEndpoint getCellEndpoint()
     {
-        return this;
+        return super.getCellEndpoint();
+    }
+
+    public void setDb(PinManagerDatabase db)
+    {
+        this.db = db;
+    }
+
+    public void setExpirationFrequency(long frequency)
+    {
+        expirationFrequency = frequency;
+    }
+
+    public void setMaxPinDuration(long duration)
+    {
+        maxPinDuration = duration;
     }
 
     public long getMaxPinDuration()
@@ -312,22 +172,35 @@ public class PinManager extends AbstractCell implements Runnable  {
         return maxPinDuration;
     }
 
+    public void setPinManagerPolicy(PinManagerPolicy policy)
+    {
+        pinManagerPolicy = policy;
+    }
+
+    public void setStagePermission(CheckStagePermission checker)
+    {
+        _checkStagePermission = checker;
+    }
+
+    public void setPnfsManager(CellPath path)
+    {
+        pnfsManager = path;
+    }
+
     public CellPath getPnfsManager()
     {
-        return new CellPath(pnfsManager);
+        return pnfsManager;
+    }
+
+    public void setPoolManager(CellPath path)
+    {
+        poolManager = path;
     }
 
     public CellPath getPoolManager()
     {
-        return new CellPath(poolManager);
+        return poolManager;
     }
-
-    @Override
-    public CellVersion getCellVersion(){
-        return new CellVersion(
-            diskCacheV111.util.Version.getVersion(),"$Revision: 1.42 $" );
-    }
-
 
     public final static String hh_pin_pnfsid = "<pnfsId> <seconds> " +
         "# pin a file by pnfsid for <seconds> seconds" ;
@@ -598,9 +471,9 @@ public class PinManager extends AbstractCell implements Runnable  {
     public void getInfo( java.io.PrintWriter printWriter ) {
         StringBuilder sb = new StringBuilder();
         sb.append("PinManager\n");
-        sb.append("\tjdbcDriver=").append(jdbcDriver).append('\n');
-        sb.append("\tjdbcUrl=").append(jdbcUrl).append('\n');
-        sb.append("\tdbUser=").append(dbUser).append('\n');
+        // sb.append("\tjdbcDriver=").append(jdbcDriver).append('\n');
+        // sb.append("\tjdbcUrl=").append(jdbcUrl).append('\n');
+        // sb.append("\tdbUser=").append(dbUser).append('\n');
         sb.append("\tmaxPinDuration=").
                 append(maxPinDuration).append(" milliseconds \n");
         //sb.append("\tnumber of files pinned=").append(pnfsIdToPins.size());
@@ -643,7 +516,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
     private void forceUnpinning(final Pin pin, boolean retry) {
-        debug("forceUnpinning "+pin);
+        logger.debug("forceUnpinning "+pin);
         Collection<PinRequest> pinRequests = pin.getRequests();
         if(pinRequests.isEmpty()) {
             PinManagerJob job =
@@ -667,7 +540,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     job.setPinRequestId(pinRequest.getId());
                     unpin(job,true);
                 } catch (Exception e) {
-                    error("unpinAllInitiallyUnpinnedPins "+e);
+                    logger.error("unpinAllInitiallyUnpinnedPins "+e);
                 }
             }
         }
@@ -703,13 +576,6 @@ public class PinManager extends AbstractCell implements Runnable  {
                                PinManagerMovePinMessage message)
     {
         movePin(message, envelope);
-    }
-
-    @Override
-    public void exceptionArrived(ExceptionEvent ee) {
-        error("Exception Arrived: "+ee);
-        error(ee.getException().toString());
-        super.exceptionArrived(ee);
     }
 
     private void pin(PinManagerPinMessage pinRequest, CellMessage cellMessage)
@@ -749,12 +615,12 @@ public class PinManager extends AbstractCell implements Runnable  {
     private  void pin(PinManagerJobImpl job)
     throws PinException {
          assert(job.getType()==PinManagerJobType.PIN);
-        info("pin pnfsId="+job.getPnfsId()+" lifetime="+job.getLifetime()+
+        logger.info("pin pnfsId="+job.getPnfsId()+" lifetime="+job.getLifetime()+
             " srmRequestId="+job.getSrmRequestId());
 
         if(getMaxPinDuration() != -1 && job.getLifetime() > getMaxPinDuration()) {
             job.setLifetime( getMaxPinDuration());
-            info("Pin lifetime exceeded maxPinDuration, " +
+            logger.info("Pin lifetime exceeded maxPinDuration, " +
                 "new lifetime is set to "+job.getLifetime());
         }
         db.initDBConnection();
@@ -766,13 +632,13 @@ public class PinManager extends AbstractCell implements Runnable  {
                     job.getSrmRequestId(),
                     job.getAuthorizationRecord());
             Pin pin = pinRequest.getPin();
-            info("insertPinRequestIntoNewOrExistingPin gave Pin = "+pin+
+            logger.info("insertPinRequestIntoNewOrExistingPin gave Pin = "+pin+
                 " PinRequest= "+pinRequest);
             job.setPinRequestId(pinRequest.getId());
             if(pin.getState().equals(PinManagerPinState.PINNED) ){
                 // we are  done here
                 // pin is pinned already
-                info("pinning is already pinned");
+                logger.info("pinning is already pinned");
                 if( pin.getExpirationTime() == -1 ||
                     pinRequest.getExpirationTime() != -1 &&
                      pin.getExpirationTime() >= pinRequest.getExpirationTime()
@@ -781,7 +647,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     return;
                 }
 
-               info("need to extend the lifetime of the request");
+               logger.info("need to extend the lifetime of the request");
                db.commitDBOperations();
                 new Extender(this,pin,pinRequest,
                         job,
@@ -789,12 +655,12 @@ public class PinManager extends AbstractCell implements Runnable  {
                 return;
             }
             else if(pin.getState().equals(PinManagerPinState.PINNING)) {
-                info("pinning is in progress, store this request in pinRequestToJobMap");
+                logger.info("pinning is in progress, store this request in pinRequestToJobMap");
                 pinRequestToJobMap.put(job.getPinRequestId(),job);
                 return;
             }
             else if(pin.getState().equals(PinManagerPinState.INITIAL)) {
-                info("pinning will begin, store this request in pinRequestToJobMap");
+                logger.info("pinning will begin, store this request in pinRequestToJobMap");
                 pinRequestToJobMap.put(pinRequest.getId(),job);
 
                 //start a new pinner
@@ -818,9 +684,9 @@ public class PinManager extends AbstractCell implements Runnable  {
                                  RequestContainerV5.allStates :
                                  RequestContainerV5.allStatesExceptStage;
                 } catch (PatternSyntaxException ex) {
-                     error("failed to get allowed pool manager states: " + ex);
+                     logger.error("failed to get allowed pool manager states: " + ex);
                 } catch (IOException ex) {
-                     error("failed to get allowed pool manager states: " + ex);
+                     logger.error("failed to get allowed pool manager states: " + ex);
                 }
                 new Pinner(this, job, pin,
                    pinRequest.getId(), allowedStates);
@@ -1008,7 +874,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             }
             db.commitDBOperations();
         } catch (PinDBException pdbe ) {
-            error("Exception in pinSucceeded: "+pdbe);
+            logger.error("Exception in pinSucceeded: "+pdbe);
             db.rollbackDBOperations();
         }
         finally {
@@ -1046,10 +912,10 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
     public void failResponse(Object reason,int rc, PinManagerMessage request ) {
-        error("failResponse: "+reason);
+        logger.error("failResponse: "+reason);
 
         if(request == null  ) {
-            error("can not return failed response: pinManagerMessage is null ");
+            logger.error("can not return failed response: pinManagerMessage is null ");
             return;
         }
         if( reason != null && !(reason instanceof java.io.Serializable)) {
@@ -1067,10 +933,10 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
     public void returnResponse(
             PinManagerMessage request,CellMessage cellMessage ) {
-        info("returnResponse");
+        logger.info("returnResponse");
 
         if(request == null ||cellMessage == null ) {
-            error("can not return  response: pinManagerMessage is null ");
+            logger.error("can not return  response: pinManagerMessage is null ");
             return;
         }
 
@@ -1080,8 +946,8 @@ public class PinManager extends AbstractCell implements Runnable  {
             sendMessage(cellMessage);
         }
         catch(Exception e) {
-            error("can not send a response");
-            error(e.toString());
+            logger.error("can not send a response");
+            logger.error(e.toString());
         }
     }
 
@@ -1125,11 +991,11 @@ public class PinManager extends AbstractCell implements Runnable  {
     private void extendLifetime(PinManagerJobImpl job)
             throws PinException
     {
-        info("extend lifetime pnfsId="+job.getPnfsId()+" pinRequestId="+job.getPinRequestId()+
+        logger.info("extend lifetime pnfsId="+job.getPnfsId()+" pinRequestId="+job.getPinRequestId()+
                 " new lifetime="+job.getLifetime());
         if(getMaxPinDuration() !=-1 && job.getLifetime() > getMaxPinDuration()) {
             job.setLifetime(getMaxPinDuration());
-            info("Pin newLifetime exceeded maxPinDuration, " +
+            logger.info("Pin newLifetime exceeded maxPinDuration, " +
                     "newLifetime is set to "+job.getLifetime() );
         }
         db.initDBConnection();
@@ -1169,7 +1035,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             long expiration = pinRequest.getExpirationTime();
             if(expiration == -1) {
                // lifetime is already infinite
-                info("extend: lifetime is already infinite");
+                logger.info("extend: lifetime is already infinite");
                 job.returnResponse();
                return;
             }
@@ -1178,7 +1044,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             if(job.getLifetime() != -1 && remainingTime >= job.getLifetime()) {
 
                //nothing to be done here
-               info( "extendLifetime: remainingTime("+remainingTime+
+               logger.info( "extendLifetime: remainingTime("+remainingTime+
                    ") >= newLifetime("+job.getLifetime()+")");
                job.returnResponse();
                return;
@@ -1189,17 +1055,17 @@ public class PinManager extends AbstractCell implements Runnable  {
                   expiration != -1 &&
                   pin.getExpirationTime() > expiration)) {
                 db.updatePinRequest(pinRequest.getId(),expiration);
-                info( "extendLifetime:  overall pin lifetime " +
+                logger.info( "extendLifetime:  overall pin lifetime " +
                         "does not need extention");
                 job.returnResponse();
                 return;
             }
-            info("need to extend the lifetime of the request");
-            info("starting extender");
+            logger.info("need to extend the lifetime of the request");
+            logger.info("starting extender");
             new Extender(this,pin,pinRequest,job,
                     expiration);
         } catch (PinDBException pdbe ) {
-            error("extend lifetime: "+pdbe);
+            logger.error("extend lifetime: "+pdbe);
             db.rollbackDBOperations();
             job.returnFailedResponse(pdbe);
         }
@@ -1213,7 +1079,7 @@ public class PinManager extends AbstractCell implements Runnable  {
            PinRequest pinRequest,
            PinManagerJob extendJob ,
            long expiration ) throws PinException {
-        info("extendSucceeded pin="+pin+" pinRequest="+pinRequest +
+        logger.info("extendSucceeded pin="+pin+" pinRequest="+pinRequest +
             " new expiration "+expiration);
         boolean success = true;
         String error =null;
@@ -1311,7 +1177,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             new Pinner(this, newPinJob, newPin,0, RequestContainerV5.allStates);
 
         } catch (PinDBException pdbe ) {
-            error("repinFile: "+pdbe.toString());
+            logger.error("repinFile: "+pdbe.toString());
             db.rollbackDBOperations();
             return;
         }
@@ -1358,7 +1224,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     public void unpinAllRequestForUser(PinManagerJob job,
         boolean force)
     throws PinException {
-        info("unpin all requests for pnfsId="+job.getPnfsId());
+        logger.info("unpin all requests for pnfsId="+job.getPnfsId());
         assert job.getPinId()==null &&
                job.getSrmRequestId() ==0;
 
@@ -1401,7 +1267,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 unpinedAtLeastOne = true;
                 pinReqIndx++;
                 if( pinReqIndx < setSize || skippedPins ) {
-                   info("unpin: more  requests left in this pin, " +
+                   logger.info("unpin: more  requests left in this pin, " +
                            "just deleting the request");
                     db.deletePinRequest(pinRequestId);
                 } else{
@@ -1411,7 +1277,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                             pinRequestIdLong,job);
                     db.updatePin(pin.getId(),null,null,
                             PinManagerPinState.UNPINNING);
-                    info("starting unpinnerfor request with id = "+pinRequestId);
+                    logger.info("starting unpinnerfor request with id = "+pinRequestId);
                     db.commitDBOperations();
                     // we need to commit the new state before we start
                     // processing
@@ -1442,7 +1308,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
 
         } catch (PinDBException pdbe ) {
-            error("unpin: "+pdbe.toString());
+            logger.error("unpin: "+pdbe.toString());
             db.rollbackDBOperations();
             job.returnFailedResponse(pdbe);
             if(pinRequestIdLong != null) {
@@ -1464,7 +1330,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     public void unpin(PinManagerJob job,
         boolean force)
     throws PinException {
-        info("unpin pnfsId="+job.getPnfsId()+
+        logger.info("unpin pnfsId="+job.getPnfsId()+
                 " pinRequestId="+job.getPinRequestId()+
                 " srmRequestId="+job.getSrmRequestId());
 
@@ -1476,7 +1342,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     db.getPinRequestIdByByPnfsIdandSrmRequestId(
                         job.getPnfsId(),job.getSrmRequestId()));
             } catch (PinDBException pdbe ) {
-                error("unpin: "+pdbe.toString());
+                logger.error("unpin: "+pdbe.toString());
                 db.rollbackDBOperations();
                 job.returnFailedResponse(pdbe);
                 return;
@@ -1532,7 +1398,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
             }
             if(pinRequests.size() > 1) {
-               info("unpin: more than one requests in this pin, " +
+               logger.info("unpin: more than one requests in this pin, " +
                        "just deleting the request");
                db.deletePinRequest(job.getPinRequestId());
                job.returnResponse();
@@ -1545,7 +1411,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     pinRequestIdLong,job);
             db.updatePin(pin.getId(),null,null,
                     PinManagerPinState.UNPINNING);
-            info("starting unpinner for request with id = "+job.getPinRequestId());
+            logger.info("starting unpinner for request with id = "+job.getPinRequestId());
             db.commitDBOperations();
             // we need to commit the new state before we start
             // processing
@@ -1565,7 +1431,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             new Unpinner(this,unpinJob,pin,false);
             return;
         } catch (PinDBException pdbe ) {
-            error("unpin: "+pdbe.toString());
+            logger.error("unpin: "+pdbe.toString());
             db.rollbackDBOperations();
             job.returnFailedResponse(pdbe);
             if(job.getPinManagerMessage()  != null) {
@@ -1582,7 +1448,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
 
     public void unpinSucceeded ( Pin pin ) throws PinException {
-        info("unpinSucceeded for "+pin);
+        logger.info("unpinSucceeded for "+pin);
         boolean success = true;
         String error =null;
         Set<PinRequest> pinRequests ;
@@ -1617,7 +1483,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
     public void unpinFailed ( Pin pin ) throws PinException {
-        error("unpinFailed for "+pin);
+        logger.error("unpinFailed for "+pin);
         Set<PinRequest> pinRequests ;
         db.initDBConnection();
         try {
@@ -1696,7 +1562,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
 
         for(PinRequest pinRequest:expiredPinRequests) {
-           debug("expiring pin request "+pinRequest);
+           logger.debug("expiring pin request "+pinRequest);
            PinManagerJob job =
                    new PinManagerJobImpl(PinManagerJobType.UNPIN,
                    null,null,pinRequest.getPin().getPnfsId(),
@@ -1730,31 +1596,31 @@ public class PinManager extends AbstractCell implements Runnable  {
                 try {
                     retryFailedUnpinnings();
                 } catch(PinException pdbe) {
-                    error("retryFailedUnpinnings failed: " +pdbe);
+                    logger.error("retryFailedUnpinnings failed: " +pdbe);
                 }
 
                 try {
                     expirePinRequests();
                 } catch(PinException pdbe) {
-                    error("expirePinRequests failed: " +pdbe);
+                    logger.error("expirePinRequests failed: " +pdbe);
                 }
                 try {
                     expirePinsWithoutRequests();
                 } catch(PinException pdbe) {
-                    error("expirePinsWithoutRequests failed: " +pdbe);
+                    logger.error("expirePinsWithoutRequests failed: " +pdbe);
                 }
 
                 try {
                     repinErrorPins();
                 } catch(PinException pdbe) {
-                    error("repinErrorPins failed: " +pdbe);
+                    logger.error("repinErrorPins failed: " +pdbe);
                 }
 
                 try {
                     Thread.sleep(expirationFrequency);
                 }
                 catch(InterruptedException ie) {
-                    error("expireRequests Thread interrupted, quiting");
+                    logger.error("expireRequests Thread interrupted, quiting");
                     return;
                 }
 
@@ -1773,7 +1639,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             try {
               pnfsId =  new PnfsId(pnfsIdString);
             } catch (Exception e) {
-                super.error("removeFiles: PoolRemoveFilesMessage has an invalid pnfsid: "+pnfsIdString);
+                logger.error("removeFiles: PoolRemoveFilesMessage has an invalid pnfsid: "+pnfsIdString);
                 continue;
             }
 
@@ -1784,7 +1650,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     Set<Pin> pins = db.allPinsByPnfsId(pnfsId);
 
                     for(Pin apin : pins) {
-                        info(pnfsIdString+" is  deleted, removing pin request" +apin );
+                        logger.info(pnfsIdString+" is  deleted, removing pin request" +apin );
                         Pin pin = db.getPinForUpdate(apin.getId());// this locks the
                                                                               // the pin
                         for(PinRequest pinRequest:pin.getRequests()) {
@@ -1801,7 +1667,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     db.commitDBOperations();
                 }
             } catch (PinDBException pdbe) {
-                error(pdbe);
+                logger.error(pdbe.toString());
             }
         }
     }
@@ -1836,19 +1702,19 @@ public class PinManager extends AbstractCell implements Runnable  {
         String dstPool = movePin.getTargetPool();
 
         if(pnfsId == null ) {
-            error("pnfsid is not set");
+            logger.error("pnfsid is not set");
             movePin.setFailed(CacheException.INVALID_ARGS,"pnfsid is not set");
             returnResponse(movePin, envelope);
             return;
         }
         if(srcPool == null ) {
-            error(" source pool is not set");
+            logger.error(" source pool is not set");
             movePin.setFailed(CacheException.INVALID_ARGS,"source pool is not set");
             returnResponse(movePin, envelope);
             return;
         }
         if(dstPool == null ) {
-            error("destination pool is not set");
+            logger.error("destination pool is not set");
             movePin.setFailed(CacheException.INVALID_ARGS,"destination pool is not set");
             returnResponse(movePin, envelope);
             return;
@@ -1866,20 +1732,20 @@ public class PinManager extends AbstractCell implements Runnable  {
                     }
                 }
                 if(pinsToMove.isEmpty()) {
-                    warn("pins for "+pnfsId+" in "+srcPool+
+                    logger.warn("pins for "+pnfsId+" in "+srcPool+
                             " in pinned state are not  found," +
                             " removing sticky flags");
                     try {
                         cleanPoolStickyBitsUnknownToPinManager(movePin);
                     } catch(NoRouteToCellException nrtce) {
-                        error(nrtce);
+                        logger.error(nrtce.toString());
                     }
                     movePin.setFailed(1,"pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
                     returnResponse(movePin, envelope);
                     return;
                 }
                 if(pinsToMove.size() >1) {
-                    error("more than one pin found, which is not yet supported ");
+                    logger.error("more than one pin found, which is not yet supported ");
                     movePin.setFailed(1,"more than one pin found, which is not yet supported ");
                     returnResponse(movePin, envelope);
                     return;
@@ -1887,7 +1753,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
                 for(Pin srcPin : pinsToMove) {
                         long expirationTime = srcPin.getExpirationTime();
-                        info(" file "+pnfsId+" is  being moved, changing pin request" +srcPin );
+                        logger.info(" file "+pnfsId+" is  being moved, changing pin request" +srcPin );
                         Pin dstPin =
                             db.newPinForPinMove(pnfsId,dstPool,expirationTime);
                         new PinMover(this,
@@ -1903,7 +1769,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 db.commitDBOperations();
             }
         } catch (PinDBException pdbe) {
-            error(pdbe);
+            logger.error(pdbe.toString());
         }
     }
 
@@ -1921,7 +1787,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         PinManagerMovePinMessage movePin,
         CellMessage  envelope)
         throws PinException {
-        debug("pinMoveToNewPoolPinSucceeded, srcPin="+srcPin+
+        logger.debug("pinMoveToNewPoolPinSucceeded, srcPin="+srcPin+
             " dstPin="+dstPin+
             " pool="+pool+
             " expiration="+expiration);
@@ -1932,7 +1798,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         try {
             srcPin = db.getPinForUpdate(srcPin.getId());
             if(srcPin == null) {
-                warn("src pin "+srcPin+" has been removed by the time move succeeded");
+                logger.warn("src pin "+srcPin+" has been removed by the time move succeeded");
 
                 // there are no more requests pinning the original file
                 // so the target should not be pinned either
@@ -1968,21 +1834,21 @@ public class PinManager extends AbstractCell implements Runnable  {
             }
             pinRequests = srcPin.getRequests();
             //new pin is pinned
-            debug("change dst pin"+dstPin+" to PINNED state");
+            logger.debug("change dst pin"+dstPin+" to PINNED state");
 
             db.updatePin(dstPin.getId(),null,null,PinManagerPinState.PINNED);
 
             // move the requests to the new pin
-            debug("move src pin requests to dest pin");
+            logger.debug("move src pin requests to dest pin");
             for(PinRequest pinRequest:pinRequests) {
                 db.movePinRequest(pinRequest.getId(),dstPin.getId());
-                debug("pinRequest "+pinRequest+" moved");
+                logger.debug("pinRequest "+pinRequest+" moved");
             }
-            debug("change src pin"+srcPin+" to UNPINNING state");
+            logger.debug("change src pin"+srcPin+" to UNPINNING state");
             db.updatePin(srcPin.getId(),null,null,
                 PinManagerPinState.UNPINNING);
          } catch (PinDBException pdbe ) {
-            error("Exception in pinMoveSucceeded: "+pdbe);
+            logger.error("Exception in pinMoveSucceeded: "+pdbe);
             db.rollbackDBOperations();
             pinMoveFailed(dstPin,movePin,envelope,
                 "Exception in pinMoveSucceeded: "+pdbe);
@@ -1991,7 +1857,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 cleanMovedStickyFlag(dstPin);
 
             } catch (PinDBException pdbe1) {
-                 error("Exception in cleanMovedStickyFlag: "+pdbe1);
+                 logger.error("Exception in cleanMovedStickyFlag: "+pdbe1);
 
             } finally {
                 db.commitDBOperations();
@@ -2017,7 +1883,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         PinManagerMovePinMessage movePin,
         CellMessage  envelope)
         throws PinException {
-        debug("pinMoveSucceeded, srcPin="+srcPin+
+        logger.debug("pinMoveSucceeded, srcPin="+srcPin+
             " dstPin="+dstPin+
             " pool="+pool+
             " expiration="+expiration);
@@ -2028,16 +1894,16 @@ public class PinManager extends AbstractCell implements Runnable  {
         try {
             srcPin = db.getPinForUpdate(srcPin.getId());
             if(srcPin == null) {
-                warn("src pin "+srcPin+" has been removed by the time move succeeded");
+                logger.warn("src pin "+srcPin+" has been removed by the time move succeeded");
 
                 //return succes
                 returnResponse(movePin, envelope);
                 return;
             }
-            debug("pinMoveSucceeded, deleting original pin");
+            logger.debug("pinMoveSucceeded, deleting original pin");
             db.deletePin(srcPin.getId());
          } catch (PinDBException pdbe ) {
-            error("Exception in pinMoveSucceeded: "+pdbe);
+            logger.error("Exception in pinMoveSucceeded: "+pdbe);
             db.rollbackDBOperations();
 
             //return success anyway, as the pin was unpined in the source, but
@@ -2054,7 +1920,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     private void cleanMovedStickyFlag(final Pin dstPin) throws PinDBException {
         if(dstPin == null ) {
-            error("cleanMovedStickyFlag: dstPin is null");
+            logger.error("cleanMovedStickyFlag: dstPin is null");
             return;
         }
         // start removing of the sticky flag we just set
@@ -2082,7 +1948,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         PinManagerMovePinMessage movePin,
         CellMessage  envelope,
         Object error) throws PinException {
-        error("pinMoveFailed, error="+error+" srcPin="+srcPin+
+        logger.error("pinMoveFailed, error="+error+" srcPin="+srcPin+
             " dstPin="+dstPin+
             " pool="+pool+
             " expiration="+expiration);
@@ -2324,7 +2190,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
 
         public void returnResponse( ) {
-            info("returnResponse");
+            logger.info("returnResponse");
             state = PinManagerJobState.COMPLETED;
             if(pinManagerMessage != null &&
                cellMessage != null       &&
@@ -2340,8 +2206,8 @@ public class PinManager extends AbstractCell implements Runnable  {
                     cellMessage = null;
                 }
                 catch(NoRouteToCellException nrtce) {
-                    error("can not send a response, no route to cell "+cellMessage.getDestinationAddress());
-                    error(nrtce.getMessage());
+                    logger.error("can not send a response, no route to cell "+cellMessage.getDestinationAddress());
+                    logger.error(nrtce.getMessage());
                 }
             }
         }

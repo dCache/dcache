@@ -24,6 +24,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.tests.cells.CellAdapterHelper;
+import org.dcache.cells.UniversalSpringCell;
 
 import org.dcache.services.pinmanager1.PinManager;
 import diskCacheV111.util.CacheException;
@@ -47,7 +48,7 @@ public class PinManagerTest {
      */
     private static  final CellAdapterHelper SYSTEM_CELL_HOLDER = new CellAdapterHelper("PinManagerTest", "");
 
-    private  static PinManager pinManager;
+    private  static UniversalSpringCell pinManager;
     private static EchoCellHelper echoCell;
 
     private static String driver="org.postgresql.Driver";
@@ -73,16 +74,15 @@ public class PinManagerTest {
         System.out.println("got connection");
         conn.close();
         String args =
-        " -jdbcDriver="+driver+
-        " -jdbcUrl="+dburl+
-        " -dbUser="+dbuser+
-        " -dbPass=\"\" "+
-        " -poolManager=EchoCell "+
-        " -pnfsManager=EchoCell ";
+            "classpath:org/dcache/services/pinmanager1/pinmanager.xml " +
+            " -jdbcDriver="+driver+
+            " -jdbcUrl="+dburl+
+            " -dbUser="+dbuser+
+            " -dbPass=\"\" "+
+            " -poolManager=EchoCell "+
+            " -pnfsManager=EchoCell ";
 
-
-
-        pinManager =  new PinManager("testPinManager", args);
+        pinManager = new UniversalSpringCell("testPinManager", args);
 
     }
 
