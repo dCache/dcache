@@ -70,7 +70,6 @@
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
         <pathelement location="${libDir}/jdom/jdom.jar" />
         <pathelement location="${libDir}/Chimera/commons-cli-1.0.jar" />
-        <fileset dir="${libDir}/batik-1.7" includes="*.jar" />
         <path refid="dependency.classpath" />
         <path refid="chimera.classpath" />
     	<!-- new add -->
@@ -190,6 +189,7 @@
             <include name="org/**" />
             <exclude name="diskCacheV111/scripts/**" />
             <exclude name="diskCacheV111/tomcat/**" />
+            <exclude name="org/dcache/services/plots/**/*.java" />
         </javac>
 
     </target>

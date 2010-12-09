@@ -39,7 +39,6 @@ define context httpdSetup endDefine
    set alias queueInfo context poolQueueTable.html -onError=offline
    set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3
    set alias billing  class diskCacheV111.cells.HttpBillingEngine
-   set alias plots  class org.dcache.services.plots.BillingPlotsHttpEngine
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    set alias statistics directory ${statisticsLocation}
