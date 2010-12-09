@@ -433,9 +433,15 @@ $ a </defaults>' < "$(getProperty dcache.paths.share)/defaults/chimera.propertie
 printChimeraOptions()
 {
     buildChimeraDefaultsXml xmlFile
-    xsltproc --stringparam defaults-uri "$xmlFile" \
-        "$(getProperty dcache.paths.share)/xml/xslt/convert-chimera-config.xsl" \
-        "${DCACHE_CONFIG}/chimera-config.xml"
+
+    saxonDir=$(getProperty saxonDir)
+    xsltDir="$(getProperty dcache.paths.share)/xml/xslt"
+
+    "${JAVA}" -classpath "${saxonDir}/saxon.jar" com.icl.saxon.StyleSheet  \
+        "${DCACHE_CONFIG}/chimera-config.xml"  \
+        "${xsltDir}/convert-chimera-config.xsl" \
+	"defaults-uri=$xmlFile"
+
     rm $xmlFile
 }
 
