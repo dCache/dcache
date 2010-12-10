@@ -100,7 +100,9 @@ isFileEmpty() # $1 = file
 # Returns whether a process with a given PID is running
 isRunning()# $1 = pid
 {
-    ps -p "$1" 1>/dev/null 2>/dev/null
+    rc=0
+    ps -p "$1" 1>/dev/null 2>/dev/null || rc=1
+    return $rc
 }
 
 
