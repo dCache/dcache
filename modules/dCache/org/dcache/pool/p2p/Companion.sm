@@ -1,5 +1,5 @@
 %{
-// 
+//
 %}
 
 
@@ -145,7 +145,7 @@ Connected
                 }
         cancel(error: Object)
                 Cancelling
-                { 
+                {
                         setError(error);
                 }
 }
@@ -171,11 +171,19 @@ Entry
         interrupt();
 }
 {
+        messageArrived(message: DoorTransferFinishedMessage)
+                nil
+                {
+                }
         disconnected(error: Object)
                 [ error == null ]
                 Done
                 {
                         clearError();
+                }
+        cancel(error: Object)
+                Cancelling
+                {
                 }
 }
 
@@ -224,7 +232,7 @@ Default
                 {
                         // A number of events are irrelevant
                         // at various points. To keep the rest
-                        // of the state machine simple we simply 
+                        // of the state machine simple we simply
                         // ignore them here.
                 }
 }
