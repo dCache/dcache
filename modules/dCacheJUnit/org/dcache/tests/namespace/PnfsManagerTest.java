@@ -45,11 +45,13 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
+import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.PnfsSetFileAttributes;
 
 public class PnfsManagerTest {
 
@@ -466,6 +468,25 @@ public class PnfsManagerTest {
 
         assertEquals("failed to get storageInfo for a directory without tags", 0,pnfsGetStorageInfoMessage.getReturnCode() );
 
+    }
+
+    @Test
+    public void testSetFilePermissions() throws Exception {
+        FsInode base = _fs.path2inode("/pnfs");
+        FsInode inode = _fs.createFile(base, "afile");
+        Stat stat = _fs.stat(inode);
+
+        int mode = 0222;
+        FileAttributes attr = new FileAttributes();
+        attr.setMode(mode);
+
+        PnfsSetFileAttributes pnfsSetFileAttributes =
+                new PnfsSetFileAttributes(new PnfsId(inode.toString()), attr);
+        _pnfsManager.setFileAttributes(pnfsSetFileAttributes);
+
+        Stat new_stat = _fs.stat(inode);
+        assertEquals("setFileAttributes change file type",
+                stat.getMode() & ~UnixPermission.S_PERMS | mode , new_stat.getMode());
     }
 
     @AfterClass
