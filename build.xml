@@ -85,14 +85,11 @@
     <target name="srm" depends="common,gplazma,-srm.bin"
                   description="Compile srm package and create srm.jar" />
 
-    <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image,-xrootd-tokenauthz.bin, webadminPackage, -compile.junit"
+    <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image, webadminPackage, -compile.junit"
                   description="Compile dcache package and create dcache.jar" />
 
     <target name="webadmin" depends="webadminPackage"
                  description="Compile and create webadmin.war" />
-
-    <target name="xrootd-tokenauthz" depends="dcache,-xrootd-tokenauthz.bin"
-                  description="Compile xrootd tokenauthorization package and create xrootd-tokenauthz.jar" />
 
     <target name="javatunnel" depends="gplazma,-javatunnel.bin"
                   description="Compile javatunnel package and create javatunnel.jar" />
@@ -100,7 +97,7 @@
     <target name="srmclient" depends="srm,-srmclient.bin"
                   description="Compile srmclient package" />
 
-    <target name="test" depends="dcache,-xrootd-tokenauthz.bin" description="Run Unit tests" >
+    <target name="test" depends="dcache" description="Run Unit tests" >
         <antcall target="-run.junit" />
     </target>
 
@@ -116,7 +113,7 @@
     </target>
 
     <target name="install-server"
-            depends="dcache,xrootd-tokenauthz,javatunnel,
+            depends="dcache,javatunnel,
                      -dcache-copy-skel,-dcache-classpath"
             description="build deploy-ready server package">
         <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
@@ -234,8 +231,6 @@
        <echo message="     dcache            : Compile dcache and dependent packages" />
        <echo message="" />
        <echo message="     webadmin          : Compile webadmin and dcache" />
-       <echo message="" />
-       <echo message="     xrootd-tokenauthz : Compile xrootd-tokenauthz and dependent packages" />
        <echo message="" />
        <echo message="     javatunnel        : Compile javatunnel and dependent packages" />
        <echo message="" />

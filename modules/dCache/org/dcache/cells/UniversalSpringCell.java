@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.io.ByteArrayOutputStream;
@@ -26,6 +27,8 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.lang.reflect.InvocationTargetException;
 import java.beans.PropertyDescriptor;
+
+import com.google.common.collect.ImmutableMultimap;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -815,7 +818,7 @@ public class UniversalSpringCell
             properties.setProperty("thisCell", getCellName());
             properties.setProperty("thisDomain", getCellDomainName());
             mergeProperties(properties, getDomainContext());
-            mergeProperties(properties, args.options());
+            mergeProperties(properties, args.optionsAsMap());
 
             /* Convert to byte array form such that we can make it
              * available as a Spring resource.
@@ -877,12 +880,12 @@ public class UniversalSpringCell
     /**
      * Merges a map into a property set.
      */
-    private void mergeProperties(Properties properties, Map<?,?> map)
+    private void mergeProperties(Properties properties, Map<String,?> entries)
     {
-        for (Map.Entry<?,?> e: map.entrySet()) {
-            Object key = e.getKey();
+        for (Map.Entry<String,?> e: entries.entrySet()) {
+            String key = e.getKey();
             Object value = e.getValue();
-            properties.setProperty(key.toString(), value.toString());
+            properties.setProperty(key, value.toString());
         }
     }
 

@@ -21,9 +21,13 @@ public class LoginRequest extends AbstractRequestMessage
         int pos =
             buffer.indexOf(8, 16, (byte)0); // User name is padded with '\0'
         if (pos > -1) {
-            username = buffer.toString(8, pos - 8, "ASCII");
+            username = buffer.toString(8,
+                                       pos - 8,
+                                       XROOTD_CHARSET);
         } else {
-            username = buffer.toString(8, 8, "ASCII");
+            username = buffer.toString(8,
+                                       8,
+                                       XROOTD_CHARSET);
         }
 
         pid = buffer.getInt(4);
@@ -31,7 +35,7 @@ public class LoginRequest extends AbstractRequestMessage
         role = buffer.getUnsignedByte(19);
 
         int tlen = buffer.getInt(20);
-        token = buffer.toString(24, tlen, "ASCII");
+        token = buffer.toString(24, tlen, XROOTD_CHARSET);
     }
 
     public String getUserName()

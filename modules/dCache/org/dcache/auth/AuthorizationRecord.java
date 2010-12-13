@@ -126,7 +126,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
                 setUid((int) ((UidPrincipal) principal).getUid());
             } else if (principal instanceof FQANPrincipal) {
                 FQANPrincipal fqanPrincipal = (FQANPrincipal) principal;
-                if (fqanPrincipal.isPrimary() && primaryGroupList.getAttribute() == null) {
+                if (fqanPrincipal.isPrimaryGroup() && primaryGroupList.getAttribute() == null) {
                     primaryGroupList.setAttribute(fqanPrincipal.getName());
                 } else {
                     GroupList groupList = new GroupList();

@@ -28,12 +28,22 @@ public class MvRequest extends AbstractRequestMessage
         }
 
         if (osep > -1) {
-            sourcePath = buffer.toString(24, psep - 24, "ASCII");
-            targetPath = buffer.toString(psep+1, osep - (psep + 1), "ASCII");
-            opaque = buffer.toString(osep + 1, end - (osep + 1), "ASCII");
+            sourcePath = buffer.toString(24,
+                                         psep - 24,
+                                         XROOTD_CHARSET);
+            targetPath = buffer.toString(psep+1,
+                                         osep - (psep + 1),
+                                         XROOTD_CHARSET);
+            opaque = buffer.toString(osep + 1,
+                                     end - (osep + 1),
+                                     XROOTD_CHARSET);
         } else {
-            sourcePath = buffer.toString(24, psep - 24, "ASCII");
-            targetPath = buffer.toString(psep+1, end - (psep + 1), "ASCII");
+            sourcePath = buffer.toString(24,
+                                         psep - 24,
+                                         XROOTD_CHARSET);
+            targetPath = buffer.toString(psep+1,
+                                         end - (psep + 1),
+                                         XROOTD_CHARSET);
             opaque = null;
         }
     }

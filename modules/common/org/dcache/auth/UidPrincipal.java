@@ -3,6 +3,9 @@ package org.dcache.auth;
 import java.security.Principal;
 import java.io.Serializable;
 
+/**
+ * This Principal represents the UID of a person.
+ */
 public class UidPrincipal implements Principal, Serializable
 {
     static final long serialVersionUID = 1489893133915358418L;
@@ -10,6 +13,9 @@ public class UidPrincipal implements Principal, Serializable
     private long _uid;
 
     public UidPrincipal(long uid) {
+        if (uid < 0) {
+            throw new IllegalArgumentException("UID must be non-negative");
+        }
         _uid = uid;
     }
 

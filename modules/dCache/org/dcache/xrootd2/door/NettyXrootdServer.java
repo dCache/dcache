@@ -1,30 +1,21 @@
 package org.dcache.xrootd2.door;
 
 import java.net.InetSocketAddress;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.Inet4Address;
-import java.net.SocketException;
-import java.util.Enumeration;
-import java.util.ArrayList;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelFactory;
 import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.springframework.beans.factory.annotation.Required;
 
 import org.dcache.xrootd2.core.XrootdEncoder;
 import org.dcache.xrootd2.core.XrootdDecoder;
 import org.dcache.xrootd2.core.XrootdHandshakeHandler;
-import org.dcache.xrootd2.core.XrootdRequestHandler;
 import org.dcache.xrootd2.core.ConnectionTracker;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
-
-import diskCacheV111.util.FsPath;
+import org.dcache.xrootd2.security.AbstractAuthenticationFactory;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
@@ -36,6 +27,7 @@ public class NettyXrootdServer
     private int _backlog;
     private Executor _requestExecutor;
     private XrootdDoor _door;
+    private AbstractAuthenticationFactory _authenticationFactory;
     private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
 
@@ -74,6 +66,11 @@ public class NettyXrootdServer
         _door = door;
     }
 
+    @Required
+    public void setAuthenticationFactory(AbstractAuthenticationFactory factory) {
+        _authenticationFactory = factory;
+    }
+
     public void init()
     {
         ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
@@ -90,7 +87,8 @@ public class NettyXrootdServer
                     pipeline.addLast("decoder", new XrootdDecoder());
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                     pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
-                    pipeline.addLast("redirector", new XrootdRedirectHandler(_door));
+                    pipeline.addLast("redirector", new XrootdRedirectHandler(_door,
+                                                                             _authenticationFactory));
                     return pipeline;
                 }
             });

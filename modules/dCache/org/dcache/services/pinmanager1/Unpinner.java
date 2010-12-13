@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Background task used to perform the actual unpinning operation.
  *
@@ -22,6 +25,10 @@ import java.util.EnumSet;
  */
 class Unpinner extends SMCTask
 {
+    private static final Logger _logger =
+        LoggerFactory.getLogger(Unpinner.class);
+
+    protected final PinManager _manager;
     protected final PinManagerJob _job;
     protected final Pin _pin;
     protected final UnpinnerContext _fsm;
@@ -32,7 +39,8 @@ class Unpinner extends SMCTask
 
     public Unpinner(PinManager manager, PinManagerJob job, Pin pin, boolean retry)
     {
-        super(manager);
+        super(manager.getCellEndpoint());
+        _manager = manager;
         _retry = retry;
         _job = job;
         _pin = pin;
@@ -49,20 +57,9 @@ class Unpinner extends SMCTask
             _fsm.go();
         }
         job.setSMCTask(this);
-        info("Unpinner constructor done, isOldStylePin="+isOldStylePin);
+        _logger.info("Unpinner constructor done, isOldStylePin="+isOldStylePin);
     }
 
-    private void info(String s) {
-        getManager().info("Unpinner: "+s);
-    }
-
-    private void error(String s) {
-        getManager().error("Unpinner: "+s);
-    }
-
-    private PinManager getManager() {
-        return (PinManager)_cell;
-    }
     boolean isOldStylePin() {
         return isOldStylePin;
     }
@@ -78,22 +75,22 @@ class Unpinner extends SMCTask
 
     void fail(Object reason)
     {
-        error(" failed: "+reason);
+        _logger.error(" failed: "+reason);
         //_pin.unpinFailed(reason);
         try {
-            getManager().unpinFailed(_pin);
+            _manager.unpinFailed(_pin);
         } catch (PinException pe) {
-            error(pe.toString());
+            _logger.error(pe.toString());
         }
     }
 
     void succeed()
     {
-        info("succeeded");
+        _logger.info("succeeded");
         try {
-            getManager().unpinSucceeded(_pin);
+            _manager.unpinSucceeded(_pin);
         } catch (PinException pe) {
-            error(pe.toString());
+            _logger.error(pe.toString());
         }
 
         //_pin.unpinSucceeded();
@@ -101,11 +98,11 @@ class Unpinner extends SMCTask
 
     void fileRemoved()
     {
-        info("fileRemoved, make unpin succeed");
+        _logger.info("fileRemoved, make unpin succeed");
         try {
-            getManager().unpinSucceeded(_pin);
+            _manager.unpinSucceeded(_pin);
         } catch (PinException pe) {
-            error(pe.toString());
+            _logger.error(pe.toString());
         }
 
         //_pin.unpinSucceeded();
@@ -113,7 +110,7 @@ class Unpinner extends SMCTask
 
     void deletePnfsFlags()
     {
-        info("deletePnfsFlags");
+        _logger.info("deletePnfsFlags");
         PnfsFlagMessage pfm = new PnfsFlagMessage(
                 _job.getPnfsId(), "s", PnfsFlagMessage.FlagOperation.REMOVE);
         pfm.setValue("*");
@@ -123,7 +120,7 @@ class Unpinner extends SMCTask
 
     void checkThatFileExists()
     {
-        info("checkThatFileExists");
+        _logger.info("checkThatFileExists");
         PnfsGetFileAttributes message =
             new PnfsGetFileAttributes(_job.getPnfsId(),
                                       EnumSet.noneOf(FileAttribute.class));
@@ -133,7 +130,7 @@ class Unpinner extends SMCTask
 
     void findCacheLocations()
     {
-        info("findCacheLocations");
+        _logger.info("findCacheLocations");
         PnfsGetCacheLocationsMessage request =
             new PnfsGetCacheLocationsMessage(_job.getPnfsId());
         sendMessage(_pnfsManager, request, 5*60*1000);
@@ -141,10 +138,10 @@ class Unpinner extends SMCTask
 
     void setLocations(List<String> locations) {
         if(locations != null) {
-            info("setLocations");
+            _logger.info("setLocations");
             this.locations.addAll(locations);
         } else {
-            info("setLocations - no locations found");
+            _logger.info("setLocations - no locations found");
         }
     }
 
@@ -154,7 +151,7 @@ class Unpinner extends SMCTask
             String stickyBitName = getCellName()+
                     Long.toString(_pin.getId());
             String oldStickyBitName = getCellName();
-            info("unsetStickyFlags in "+poolName+" for "+
+            _logger.info("unsetStickyFlags in "+poolName+" for "+
                 _job.getPnfsId()+" stickyBitNameName:"+stickyBitName);
 
             PoolSetStickyMessage setStickyRequest =
@@ -173,7 +170,7 @@ class Unpinner extends SMCTask
                     // unpin using old format
                     sendMessage(new CellPath(poolName), setStickyRequest);
                 } catch (NoRouteToCellException e) {
-                    error("PoolSetStickyMessage (false) failed : " + e.getMessage());
+                    _logger.error("PoolSetStickyMessage (false) failed : " + e.getMessage());
                 }
             }
         }

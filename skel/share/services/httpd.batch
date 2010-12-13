@@ -163,15 +163,12 @@ create diskCacheV111.cells.TransferObserverV1 TransferObserver \
                -mapFile=/etc/passwd "
 
 
-# PoolInfoObserverV2 collects information about pool groups
+# PoolInfoObserverV3 collects information about pool groups
 ####################################################################
 
 onerror shutdown
-create diskCacheV111.services.web.PoolInfoObserverV2 poolCollector \
-               "PoolManager \
-                -config=${config}/PoolCollector.conf \
-                -pool-refresh-time=60 \
-                -poolManager-refresh-time=300 \
+create diskCacheV111.services.web.PoolInfoObserverV3 poolCollector \
+               "-refresh-time=60 \
                "
 
 # WebCollectorV3 collects information about cells and pools

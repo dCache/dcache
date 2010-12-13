@@ -1,12 +1,15 @@
 package org.dcache.xrootd2.protocol.messages;
 
-import org.dcache.xrootd2.protocol.XrootdProtocol;
+import java.nio.charset.Charset;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 
 public abstract class AbstractRequestMessage
 {
     protected final int streamId;
     protected final int requestId;
+
+    protected final static Charset XROOTD_CHARSET = Charset.forName("ASCII");
 
     public AbstractRequestMessage()
     {

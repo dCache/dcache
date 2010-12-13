@@ -12,7 +12,6 @@
        For each of these jar files there are targets below -->
 
     <property name="dcache.jar" location="${classesDir}/dcache.jar" />
-    <property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 
 	<target name="-isUptodate.dcache.jar" depends="-isUptodate.dcache.jar-classes,-isUptodate.dcache.jar-confs">
 		<condition property="dcache.jar.upToDate">
@@ -50,19 +49,6 @@
         </condition>
     </target>
 
-    <target name="-isUptodate.xrootd-tokenauthz.jar">
-        <condition property="xrootd-tokenauthz.jar.upToDate">
-            <and>
-                <available file="${xrootd-tokenauthz.jar}" type="file" />
-                <uptodate targetfile="${xrootd-tokenauthz.jar}">
-                    <srcfiles dir="${dcache.src}">
-                        <include name="**/*.java" />
-                    </srcfiles>
-                </uptodate>
-            </and>
-        </condition>
-    </target>
-
     <target name="-isDependPresent">
         <whichresource class="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask" property="depend.present" />
     </target>
@@ -84,14 +70,10 @@
         <pathelement location="${classesDir}/cells.jar" />
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-        <fileset dir="${libDir}/milton/" includes="*.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
-        <pathelement location="${libDir}/dbcp/commons-pool.jar" />
-        <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
         <path refid="authz.classpath" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
@@ -130,11 +112,6 @@
         <path refid="dependency.classpath" />
     </path>
 
-    <!-- Classpath for xrootd-tokenauthz.jar -->
-
-    <path id="xrootd-tokenauthz.classpath">
-        <pathelement location="${libDir}/security/bcprov-jdk15-143.jar" />
-    </path>
 
     <!--
         Targets for dcache.jar
@@ -210,8 +187,6 @@
             <include name="org/**" />
             <exclude name="diskCacheV111/scripts/**" />
             <exclude name="diskCacheV111/tomcat/**" />
-            <exclude name="org/dcache/xrootd/security/plugins/**" />
-            <exclude name="org/dcache/xrootd/tests/**" />
             <exclude name="org/dcache/services/plots/**/*.java" />
         </javac>
 
@@ -286,44 +261,6 @@
                 <attribute name="Package-Title" value="dmg.util" />
                 <attribute name="Package-Version" value="${release.name}" />
                 <attribute name="Package-Vendor" value="${vendor}" />
-            </manifest>
-        </jar>
-
-    </target>
-
-    <!-- xrootd-tokenauthorization plugin -->
-    <target name="-xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" depends="-dcache.jar">
-
-        <mkdir dir="${buildDir}/xrootd-tokenauthz" />
-
-        <javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-            <src path="${dcache.src}" />
-
-            <classpath refid="cells.classpath" />
-            <classpath refid="dcache.classpath" />
-            <classpath refid="xrootd-tokenauthz.classpath" />
-
-            <include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
-        </javac>
-    </target>
-
-    <!--
-        build xrootd-tokenauthz.jar, compile if required
-    -->
-    <target name="-xrootd-tokenauthz.jar" depends="-isUptodate.xrootd-tokenauthz.jar,-xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate">
-
-        <jar jarfile="${xrootd-tokenauthz.jar}">
-            <fileset dir="${buildDir}/xrootd-tokenauthz" />
-
-            <manifest>
-                <section name="Shared">
-                    <attribute name="Title" value="dCache-xrootd tokenauthorization plugin" />
-                    <attribute name="Vendor" value="${vendor}" />
-                    <attribute name="Date" value="${jar.timestamp}" />
-                </section>
-                <section name="Copyright">
-                    <attribute name="Copy" value="${copyright}" />
-                </section>
             </manifest>
         </jar>
 
@@ -407,8 +344,6 @@
         <copy file="${libDir}/Chimera/oncrpc.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/portmap.jar" todir="${server.bin.dir}/classes/chimera" />
         <copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${server.bin.dir}/classes/chimera" />
-        <copy file="${libDir}/dbcp/c3p0.properties" todir="${server.bin.dir}/config" />
-        <copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${server.bin.dir}/classes/dbcp" />
         <copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-get-acl.sh" />
         <copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-set-acl.sh" />
         <copy file="${libDir}/Chimera/chimera-cli.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-cli.sh" />
@@ -448,14 +383,6 @@
             </fileset>
 	</copy>
 
-        <!-- Milton -->
-        <mkdir dir="${server.bin.dir}/classes/milton/" />
-        <copy todir="${server.bin.dir}/classes/milton">
-            <fileset dir="${libDir}/milton/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
-
         <!-- SMC -->
         <mkdir dir="${server.bin.dir}/classes/smc/" />
         <copy file="${libDir}/smc/statemap.jar" todir="${server.bin.dir}/classes/smc/" />
@@ -467,14 +394,6 @@
                 <include name="*.jar" />
             </fileset>
         </copy>
-
-        <!-- JDBC -->
-        <mkdir dir="${server.bin.dir}/classes/jdbc-drivers" />
-        <copy file="${libDir}/postgres-jdbc/postgresql-8.4-701.jdbc3.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
-
-        <!-- DBCP for Replica Manager -->
-        <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
-        <copy file="${libDir}/dbcp/commons-pool.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
 
         <!-- TopLink files -->
         <mkdir dir="${server.bin.dir}/classes/toplink" />
@@ -576,15 +495,6 @@
             <!-- This mapper strips off all leading directory information -->
             <mapper type="flatten" />
          </copy>
-
-    </target>
-
-    <target name="-xrootd-tokenauthz.bin" depends="-xrootd-tokenauthz.jar">
-
-        <mkdir dir="${server.bin.dir}/classes" />
-
-        <!-- jar file  -->
-        <copy file="${classesDir}/xrootd-tokenauthz.jar" todir="${server.bin.dir}/classes" />
 
     </target>
 

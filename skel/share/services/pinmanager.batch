@@ -31,9 +31,11 @@ set context -c pinManagerMaxIdleJdbcConnections      10
 
 onerror shutdown
 
-create org.dcache.services.pinmanager1.PinManager PinManager \
-       "default \
+create org.dcache.cells.UniversalSpringCell PinManager \
+       "classpath:org/dcache/services/pinmanager1/pinmanager.xml \
         -export  \
+        -callbackExecutor=messageThreadPool \
+        -messageExecutor=messageThreadPool \
         -jdbcDriver=org.postgresql.Driver \
         -jdbcUrl=jdbc:postgresql://${pinManagerDbHost}/${pinManagerDbName} \
         -dbUser=${pinManagerDbUser} \
@@ -44,4 +46,12 @@ create org.dcache.services.pinmanager1.PinManager PinManager \
         -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
         -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
         -stageConfigurationFilePath=${stageConfigurationFilePath} \
+        -expirationFrequency=60000 \
+        -pnfsManager=PnfsManager \
+        -poolManager=PoolManager \
+        -pinManagerPolicy=org.dcache.services.pinmanager1.SimplePinManagerPolicyImpl \
+        -threadsCore=20 \
+        -threadsMax=200 \
+        -threadsKeepAliveTime=60 \
+        -threadsQueueMax=1000 \
        "

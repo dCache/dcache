@@ -22,7 +22,8 @@
 
         <!--  timestamp for the changelog -->
         <tstamp>
-          <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z" />
+          <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z"
+                  locale="en,UK"/>
         </tstamp>
 
         <!--  copy the package control files, replace variables -->

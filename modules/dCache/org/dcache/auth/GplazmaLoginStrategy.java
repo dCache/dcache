@@ -29,12 +29,12 @@ import org.dcache.auth.attributes.RootDirectory;
  * Supports login for Subjects with the following principals:
  *
  *    - A GlobusPrincipal, one or more FQANPrincipals and an
- *      optional UserNamePrincipal
- *    - A KerberosPrincipal and a UserNamePrincipal
+ *      optional LoginNamePrincipal
+ *    - A KerberosPrincipal and a LoginNamePrincipal
  *
  * Alternatively login can be made with a X509Certificate[]
  * certificate chain as a public credential and an optional
- * UserNamePrincipal.
+ * LoginNamePrincipal.
  */
 public class GplazmaLoginStrategy implements LoginStrategy
 {
@@ -83,7 +83,7 @@ public class GplazmaLoginStrategy implements LoginStrategy
              * The old and the new interface do not fit very well
              * together, so this is essentially a big hack.
              */
-            String user = Subjects.getUserName(subject);
+            String user = Subjects.getLoginName(subject);
 
             /* Attempt to login using the X509Certificate chain.
              */

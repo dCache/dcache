@@ -3,6 +3,10 @@ package org.dcache.services.pinmanager1;
 import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Background task used to perform the actual unpinning operation.
  *
@@ -11,19 +15,25 @@ import dmg.cells.nucleus.CellPath;
  */
 class Extender extends SMCTask
 {
+    private static final Logger _logger =
+        LoggerFactory.getLogger(Extender.class);
+
     protected final PinRequest _pinRequest;
     protected final Pin _pin;
     private final PinManagerJob _job;
     protected final ExtenderContext _fsm;
     protected final long _expiration;
+    protected final PinManager _manager;
+
     public Extender(PinManager manager,
         Pin pin,
         PinRequest pinRequest,
         PinManagerJob job,
         long expiration)
     {
-        super(manager);
+        super(manager.getCellEndpoint());
 
+        _manager = manager;
         _pin = pin;
         _pinRequest = pinRequest;
 
@@ -35,19 +45,7 @@ class Extender extends SMCTask
             _fsm.go();
         }
         job.setSMCTask(this);
-        info("Extender constructor done ");
-    }
-
-    private void info(String s) {
-        getManager().info("Extender: "+s);
-    }
-
-    private void error(String s) {
-        getManager().error("Extender: "+s);
-    }
-
-    private PinManager getManager() {
-        return (PinManager)_cell;
+        _logger.info("Extender constructor done ");
     }
 
     @Override
@@ -58,28 +56,28 @@ class Extender extends SMCTask
 
     void fail(Object reason)
     {
-        error(" failed: "+reason);
+        _logger.error(" failed: "+reason);
         //_pin.unpinFailed(reason);
         try {
-            getManager().extendFailed(_pin,
+            _manager.extendFailed(_pin,
                     _pinRequest,
                     _job,
                     reason);
         } catch (PinException pe) {
-            error(pe.toString());
+            _logger.error(pe.toString());
         }
     }
 
     void succeed()
     {
-        info("succeeded");
+        _logger.info("succeeded");
         try {
-            getManager().extendSucceeded(_pin,
+            _manager.extendSucceeded(_pin,
                 _pinRequest,
                 _job,
                 _expiration);
         } catch (PinException pe) {
-            error(pe.toString());
+            _logger.error(pe.toString());
         }
 
         //_pin.unpinSucceeded();
@@ -93,7 +91,7 @@ class Extender extends SMCTask
         String poolName = _pin.getPool();
             String stickyBitName = getCellName()+
                                Long.toString(_pin.getId());
-           info("extend sticky flag  in "+poolName+" for "+
+           _logger.info("extend sticky flag  in "+poolName+" for "+
                 _pin.getPnfsId()+" stickyBitNameName:"+stickyBitName);
 
             PoolSetStickyMessage setStickyRequest =

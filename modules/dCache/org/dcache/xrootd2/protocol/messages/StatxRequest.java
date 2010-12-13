@@ -15,7 +15,7 @@ public class StatxRequest extends AbstractRequestMessage
             throw new IllegalArgumentException("doesn't seem to be a kXR_statx message");
 
         int dlen = buffer.getInt(20);
-        paths = buffer.toString(24, dlen, "ASCII").split("\n");
+        paths = buffer.toString(24, dlen, XROOTD_CHARSET).split("\n");
     }
 
     public String[] getPaths()

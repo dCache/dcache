@@ -4,9 +4,10 @@ import java.security.Principal;
 import java.io.Serializable;
 
 /**
- * This Principal represents the trustet username of a signed in
- * person. In contrast to a LoginName which is not yet authenticated
- * and points out a desire to become that name as a username.
+ * This Principal represents the trusted username of a signed in
+ * person. This is in contrast to a LoginName which is not yet
+ * authenticated.
+ *
  * @author jans
  */
 public class UserNamePrincipal implements Principal, Serializable
@@ -16,6 +17,9 @@ public class UserNamePrincipal implements Principal, Serializable
     private String _username;
 
     public UserNamePrincipal(String username) {
+        if (username == null) {
+            throw new NullPointerException();
+        }
         _username = username;
     }
 

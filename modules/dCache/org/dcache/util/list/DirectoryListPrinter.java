@@ -22,5 +22,6 @@ public interface DirectoryListPrinter
      * @param dirAttr The FileAttributes of the directory containing entry
      * @param entry The DirectoryEntry to print
      */
-    void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry);
+    void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
+        throws InterruptedException;
 }

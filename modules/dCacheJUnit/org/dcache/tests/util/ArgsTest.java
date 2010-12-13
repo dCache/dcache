@@ -57,8 +57,7 @@ public class ArgsTest {
         Args args =  new Args("-opt1 -opt2 -opt3 -opt4=opt4-1 -opt4=opt4-2");
 
         assertEquals("Invalid number of arguments", 0, args.argc() );
-        assertEquals("Invalid number of options", 4, args.options().size() );
-
+        assertEquals("Invalid number of options", 5, args.options().size() );
     }
 
     @Test

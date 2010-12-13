@@ -229,7 +229,7 @@ public class Subjects extends dmg.util.Subjects
             subject.getPrincipals(FQANPrincipal.class);
         String fqan = null;
         for (FQANPrincipal principal: principals) {
-            if (principal.isPrimary()) {
+            if (principal.isPrimaryGroup()) {
                 if (fqan != null) {
                     throw new IllegalArgumentException("Subject has multiple primary FQANs");
                 }
@@ -267,6 +267,20 @@ public class Subjects extends dmg.util.Subjects
     {
         UserNamePrincipal principal =
             getUniquePrincipal(subject, UserNamePrincipal.class);
+        return (principal == null) ? null : principal.getName();
+    }
+
+    /**
+     * Returns the the login name of a subject. If LoginNamePrincipal
+     * is not defined then null is returned.
+     *
+     * @throw IllegalArgumentException if subject has more than one
+     *        login name
+     */
+    public static String getLoginName(Subject subject)
+    {
+        LoginNamePrincipal principal =
+            getUniquePrincipal(subject, LoginNamePrincipal.class);
         return (principal == null) ? null : principal.getName();
     }
 

@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -24,11 +24,13 @@ class SMCTask implements CellMessageAnswerable
         LoggerFactory.getLogger(SMCTask.class);
 
     private FSMContext _fsm;
-    protected CellAdapter _cell;
+    protected CellEndpoint _cell;
+    protected String _cellName;
 
-    public SMCTask(CellAdapter cell)
+    public SMCTask(CellEndpoint cell)
     {
         _cell = cell;
+        _cellName = _cell.getCellInfo().getCellName();
     }
 
     protected void setContext(FSMContext o)
@@ -82,8 +84,7 @@ class SMCTask implements CellMessageAnswerable
 
     public void sendMessage(CellPath path, Message message, long timeout)
     {
-        _cell.sendMessage(new CellMessage(path, message),
-                          true, true, this, timeout);
+        _cell.sendMessage(new CellMessage(path, message), this, timeout);
     }
 
     public void sendMessage(CellPath path, Message message)
@@ -93,7 +94,7 @@ class SMCTask implements CellMessageAnswerable
     }
 
     public String getCellName() {
-        return _cell.getNucleus().getCellName();
+        return _cellName;
     }
 }
 

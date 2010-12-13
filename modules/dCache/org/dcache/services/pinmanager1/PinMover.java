@@ -6,6 +6,9 @@ import diskCacheV111.vehicles.*;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Background task used to perform the actual pinning operation. To do
  * this, it will talk to the PNFS manager, pool manager and pools.
@@ -15,6 +18,10 @@ import dmg.cells.nucleus.CellMessage;
  */
 class PinMover extends SMCTask
 {
+    private static final Logger _logger =
+        LoggerFactory.getLogger(PinMover.class);
+
+    private final PinManager _manager;
     private final Pin _srcPoolPin;
     private final Pin _dstPoolPin;
     private final PnfsId _pnfsId;
@@ -41,8 +48,9 @@ class PinMover extends SMCTask
         PinManagerMovePinMessage movePin,
         CellMessage envelope)
     {
-        super(manager);
+        super(manager.getCellEndpoint());
 
+        _manager = manager;
         _pnfsManager = manager.getPnfsManager();
         _poolManager = manager.getPoolManager();
         _pnfsId = pnfsId;
@@ -57,23 +65,7 @@ class PinMover extends SMCTask
         synchronized (this) {
             _fsm.go();
         }
-        info("PinMover constructor done");
-    }
-
-    private PinManager getManager() {
-        return (PinManager)_cell;
-    }
-
-    private void debug(String s) {
-        getManager().debug("PinMover: "+s);
-    }
-
-    private void info(String s) {
-        getManager().info("PinMover: "+s);
-    }
-
-    private void error(String s) {
-        getManager().error("PinMover: "+s);
+        _logger.info("PinMover constructor done");
     }
 
     /** Returns the current state of the pinner. */
@@ -85,7 +77,7 @@ class PinMover extends SMCTask
 
     void markSticky()
     {
-        info("markSticky");
+        _logger.info("markSticky");
         long stickyBitExpiration = _expiration;
         if(stickyBitExpiration > 0) {
             stickyBitExpiration += PinManager.POOL_LIFETIME_MARGIN;
@@ -110,7 +102,7 @@ class PinMover extends SMCTask
                 Long.toString(_srcPoolPin.getId());
         String oldStickyBitName = getCellName();
         String srcPoolName = _srcPoolPin.getPool();
-        info("unsetStickyFlags in "+srcPoolName+" for "+
+        _logger.info("unsetStickyFlags in "+srcPoolName+" for "+
             _pnfsId+" stickyBitNameName:"+stickyBitName);
 
         PoolSetStickyMessage setStickyRequest =
@@ -121,9 +113,9 @@ class PinMover extends SMCTask
     }
     boolean pinMoveSucceed()
     {
-        debug("pinMoveSucceed");
+        _logger.debug("pinMoveSucceed");
         try {
-            return getManager().pinMoveToNewPoolPinSucceeded(
+            return _manager.pinMoveToNewPoolPinSucceeded(
                 _srcPoolPin,
                 _dstPoolPin,
                 _dstPoolName,
@@ -131,7 +123,7 @@ class PinMover extends SMCTask
                 _movePin,
                 _envelope);
         } catch (PinException pe) {
-            error(pe.toString());
+           _logger.error(pe.toString());
             return false;
         }
         //_pin.pinSucceeded();
@@ -140,9 +132,9 @@ class PinMover extends SMCTask
 
     void succeed()
     {
-        info("succeed");
+        _logger.info("succeed");
         try {
-            getManager().pinMoveSucceeded(
+            _manager.pinMoveSucceeded(
                 _srcPoolPin,
                 _dstPoolPin,
                 _dstPoolName,
@@ -150,16 +142,16 @@ class PinMover extends SMCTask
                 _movePin,
                 _envelope);
         } catch (PinException pe) {
-            error(pe.toString());
+           _logger.error(pe.toString());
         }
         //_pin.pinSucceeded();
     }
 
     void fail(Object reason)
     {
-        error("failed: "+reason);
+       _logger.error("failed: "+reason);
         try {
-            getManager().pinMoveFailed(                _srcPoolPin,
+            _manager.pinMoveFailed(_srcPoolPin,
                 _dstPoolPin,
                 _dstPoolName,
                 _expiration,
@@ -168,7 +160,7 @@ class PinMover extends SMCTask
                 reason);
 
         } catch (PinException pe) {
-           error(pe.toString());
+          _logger.error(pe.toString());
         }
        // _pin.pinFailed(reason);
     }

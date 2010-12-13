@@ -11,14 +11,12 @@
         <pathelement location="${classesDir}/dcache.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
         <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${classesDir}/xrootd-tokenauthz.jar" />
         <pathelement location="${classesDir}/srm.jar" />
         <pathelement location="${libDir}/Chimera/chimera-core.jar" />
         <pathelement location="${libDir}/Chimera/grizzly-rpc.jar" />
         <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
         <pathelement location="${libDir}/Chimera/oncrpc.jar" />
         <pathelement location="${libDir}/Chimera/hsqldb.jar" />
-        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
         <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
         <fileset dir="${libDir}/logback/" includes="*.jar" />
         <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />

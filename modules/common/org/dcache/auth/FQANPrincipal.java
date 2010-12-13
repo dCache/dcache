@@ -9,7 +9,7 @@ import java.security.Principal;
  * org.glite.security.voms.FQAN, except that the latter does not
  * implement the Principal and Serializable interfaces.
  */
-public class FQANPrincipal implements Principal, Serializable
+public class FQANPrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = -4242349585261079835L;
 
@@ -30,7 +30,8 @@ public class FQANPrincipal implements Principal, Serializable
         _primary = primary;
     }
 
-    public boolean isPrimary()
+    @Override
+    public boolean isPrimaryGroup()
     {
         return _primary;
     }
