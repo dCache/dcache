@@ -80,7 +80,7 @@ public class ChimeraNameSpaceProvider
         DataSource dataSource = DataSources.unpooledDataSource(args.getOpt("chimera.db.url"),
                 args.getOpt("chimera.db.user"), args.getOpt("chimera.db.password"));
 
-        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), args.getOpt("chiemra.db.dialect"));
+        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), args.getOpt("chimera.db.dialect"));
         _args = args;
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
