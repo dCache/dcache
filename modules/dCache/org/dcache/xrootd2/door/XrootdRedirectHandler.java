@@ -1,5 +1,6 @@
 package org.dcache.xrootd2.door;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import java.security.GeneralSecurityException;
@@ -11,6 +12,14 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.UUID;
 import java.nio.channels.ClosedChannelException;
+
+import javax.security.auth.Subject;
+
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.Origin;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.MessageCallback;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
@@ -43,6 +52,7 @@ import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.util.FileMetaData.Permissions;
@@ -76,11 +86,19 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     private byte[] _sessionBytes = new byte[SESSION_ID_BYTES];
 
     private final XrootdDoor _door;
+
     /** class used for creating authentication handler.
      *  FIXME: Support more than just one authentication plugin
      */
     private final AbstractAuthenticationFactory _factory;
-    private AuthenticationHandler _handler;
+    private AuthenticationHandler _authenticationHandler;
+
+    private boolean _hasLoggedIn = false;
+    private boolean _isReadOnly = true;
+
+    /** empty subject before login has been called */
+    private Subject _subject = new Subject();
+    private FsPath _rootPath = new FsPath();
 
     /**
      * The set of threads which currently process an xrootd request
@@ -144,18 +162,40 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _random.nextBytes(_sessionBytes);
 
         try {
-            if (_handler == null) {
-                _handler = _factory.getAuthnHandler();
+            if (_authenticationHandler == null) {
+                _authenticationHandler = _factory.getAuthnHandler();
             }
 
-             response = new LoginResponse(msg.getStreamID(),
+            Subject subject = _authenticationHandler.getSubject();
+
+            Channel channel = event.getChannel();
+
+            InetAddress remoteAddress = ((InetSocketAddress) channel.getRemoteAddress()).getAddress();
+            subject.getPrincipals().add(new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
+                                        remoteAddress));
+
+            response = new LoginResponse(msg.getStreamID(),
                                          _sessionBytes,
-                                         _handler.getProtocol());
+                                         _authenticationHandler.getProtocol());
+
+             if (_authenticationHandler.isAuthenticationCompleted()) {
+                 authorizeUser(subject);
+             }
         } catch (InvalidHandlerConfigurationException ihce) {
             _log.error("Could not instantiate authN handler: {}", ihce);
             response = new ErrorResponse(msg.getStreamID(),
                                          kXR_ServerError,
                                          "Internal server error");
+        } catch (PermissionDeniedCacheException pdce) {
+            _log.error("User's credentials not authorized: {}", pdce);
+            response = new ErrorResponse(msg.getStreamID(),
+                                         kXR_NotAuthorized,
+                                         "Operation not authorized.");
+        } catch (CacheException ce) {
+            _log.error("Authorizing user failed: {}", ce);
+            response = new ErrorResponse(msg.getStreamID(),
+                                         kXR_ServerError,
+                                         "Authorization attempt failed.");
         }
 
         respond(context, event, response);
@@ -168,16 +208,30 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         AbstractResponseMessage response;
         try {
-            if (_handler == null) {
-                _handler = _factory.getAuthnHandler();
+            if (_authenticationHandler == null) {
+                _authenticationHandler = _factory.getAuthnHandler();
             }
 
-            response = _handler.authenticate(msg);
+            response = _authenticationHandler.authenticate(msg);
+
+            if (_authenticationHandler.isAuthenticationCompleted()) {
+                authorizeUser(_authenticationHandler.getSubject());
+            }
         } catch (InvalidHandlerConfigurationException ihce) {
             _log.error("Could not instantiate authN handler: {}", ihce);
             response = new ErrorResponse(msg.getStreamID(),
                                          kXR_ServerError,
                                          "Internal server error");
+        } catch (PermissionDeniedCacheException pdce) {
+            _log.error("User's credentials not authorized in dCache: {}", pdce);
+            response = new ErrorResponse(msg.getStreamID(),
+                                         kXR_NotAuthorized,
+                                         "Operation not authorized.");
+        } catch (CacheException ce) {
+            _log.error("Authorizing user failed {}", ce);
+            response = new ErrorResponse(msg.getStreamID(),
+                                         kXR_ServerError,
+                                         "Authorization attempt failed.");
         }
 
         respond(context, event, response);
@@ -191,6 +245,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnOpen(ChannelHandlerContext ctx, MessageEvent event,
                             OpenRequest req)
     {
+
         Channel channel = event.getChannel();
         InetSocketAddress localAddress =
             (InetSocketAddress) channel.getLocalAddress();
@@ -216,6 +271,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                       req.getPath(),
                                                       req.getOpaque(),
                                                       localAddress);
+
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
             UUID uuid = UUID.randomUUID();
@@ -233,10 +289,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
                 transfer =
                     _door.write(remoteAddress, authPath, checksum, uuid,
-                                createDir, overwrite, localAddress);
+                                createDir, overwrite, localAddress, _subject,
+                                _rootPath);
             } else {
                 transfer =
-                    _door.read(remoteAddress, authPath, checksum, uuid, localAddress);
+                    _door.read(remoteAddress, authPath, checksum, uuid,
+                               localAddress, _subject, _rootPath);
             }
 
             // ok, open was successful
@@ -303,9 +361,15 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnStat(ChannelHandlerContext ctx, MessageEvent event,
                             StatRequest req)
     {
+        if (!_hasLoggedIn) {
+            respondWithError(ctx, event, req,
+                             kXR_NotAuthorized,
+                             "Please call login/auth first.");
+        }
+
         String path = req.getPath();
         try {
-            FileMetaData meta = _door.getFileMetaData(path);
+            FileMetaData meta = _door.getFileMetaData(path, _subject, _rootPath);
             FileStatus fs = convertToFileStatus(meta); // FIXME
             respond(ctx, event, new StatResponse(req.getStreamID(), fs));
         } catch (CacheException e) {
@@ -347,6 +411,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent event,
                              StatxRequest req)
     {
+        if (!_hasLoggedIn) {
+            respondWithError(ctx, event, req,
+                             kXR_NotAuthorized,
+                             "Please call login/auth first.");
+        }
+
         if (req.getPaths().length == 0) {
             respondWithError(ctx, event, req,
                              kXR_ArgMissing, "no paths specified");
@@ -355,7 +425,9 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         try {
             String[] paths = req.getPaths();
-            FileMetaData[] allMetas = _door.getMultipleFileMetaData(paths);
+            FileMetaData[] allMetas = _door.getMultipleFileMetaData(paths,
+                                                                    _subject,
+                                                                    _rootPath);
 
             int[] flags = new int[allMetas.length];
             for (int i =0; i < allMetas.length; i++) {
@@ -415,7 +487,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                        req.getOpaque(),
                                                        localAddress);
 
-            _door.deleteFile(authPath);
+            _door.deleteFile(authPath, _subject, _rootPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
                 respondWithError(ctx, e, req,
@@ -443,6 +515,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnRmDir(ChannelHandlerContext ctx, MessageEvent e,
                              RmDirRequest req)
     {
+
         Channel channel = e.getChannel();
         InetSocketAddress localAddress =
                             (InetSocketAddress) channel.getLocalAddress();
@@ -460,7 +533,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                        req.getOpaque(),
                                                        localAddress);
 
-            _door.deleteDirectory(authPath);
+            _door.deleteDirectory(authPath, _subject, _rootPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
             respondWithError(ctx, e, req,
@@ -492,6 +565,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     @Override
     protected void doOnMkDir(ChannelHandlerContext ctx, MessageEvent e,
                              MkDirRequest req) {
+
         Channel channel = e.getChannel();
         InetSocketAddress localAddress =
                             (InetSocketAddress) channel.getLocalAddress();
@@ -509,7 +583,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                        req.getOpaque(),
                                                        localAddress);
 
-            _door.createDirectory(authPath, req.shouldMkPath());
+            _door.createDirectory(authPath,
+                                  req.shouldMkPath(),
+                                  _subject,
+                                  _rootPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
             respondWithError(ctx, e, req,
@@ -545,6 +622,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     @Override
     protected void doOnMv(ChannelHandlerContext ctx, MessageEvent e,
                           MvRequest req) {
+
         Channel channel = e.getChannel();
         InetSocketAddress localAddress =
                             (InetSocketAddress) channel.getLocalAddress();
@@ -576,7 +654,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                              req.getOpaque(),
                                                              localAddress);
 
-            _door.moveFile(authSourcePath, authTargetPath);
+            _door.moveFile(authSourcePath, authTargetPath, _subject, _rootPath);
             respond(ctx, e, new OKResponse(req.getStreamID()));
         } catch (TimeoutCacheException tce) {
             respondWithError(ctx, e, req,
@@ -636,7 +714,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             _log.info("Listing directory {}", authPath);
             MessageCallback<PnfsListDirectoryMessage> callback =
                                     new ListCallback(request, context, event);
-            _door.listPath(authPath, callback);
+            _door.listPath(authPath, _subject, callback);
 
         } catch (CacheException ce) {
 
@@ -682,49 +760,70 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                             String opaque,
                                             InetSocketAddress localAddress)
                                  throws PermissionDeniedCacheException {
-        AuthorizationHandler authzHandler =
-            _door.getAuthorizationFactory().getAuthzHandler();
 
-        if (authzHandler != null) {
-            // all information neccessary for checking authorization
-            // is found in opaque
-            Map<String, String> opaqueMap;
-            try {
-                opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
-            } catch (ParseException e) {
-                StringBuffer msg =
-                    new StringBuffer("invalid opaque data: ");
-                msg.append(e);
-                msg.append(" opaque=").append(opaque);
-                throw new PermissionDeniedCacheException(msg.toString());
+        if (!_hasLoggedIn) {
+            throw new PermissionDeniedCacheException ("Need to complete " +
+                                                      "kXR_login/kXR_auth first.");
+        }
+
+        /* check operation permissions via authorized login data, not via token */
+        if (_authenticationHandler.isStrongAuthentication()) {
+
+            if (_isReadOnly &&
+                    (neededPerm.ordinal() > FilePerm.READ.ordinal())) {
+
+                throw new PermissionDeniedCacheException("You have read-only " +
+                                                         "access.");
+
             }
 
-            boolean isAuthorized;
+        } else {
 
-            try {
-                isAuthorized =
-                    authzHandler.checkAuthz(path,
-                                            opaqueMap,
-                                            neededPerm, localAddress);
-            } catch (GeneralSecurityException e) {
-                throw new PermissionDeniedCacheException("authorization check"
-                                                         + "failed: " +
-                                                         e.getMessage());
-            }
+            // FIXME: maybe move this authorization to a strategy as well?
+            AuthorizationHandler authzHandler =
+                _door.getAuthorizationFactory().getAuthzHandler();
 
-            if (!isAuthorized) {
-                throw new PermissionDeniedCacheException("not authorized");
-            }
+            if (authzHandler != null) {
+                // all information neccessary for checking authorization
+                // is found in opaque
+                Map<String, String> opaqueMap;
+                try {
+                    opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
+                } catch (ParseException e) {
+                    StringBuffer msg =
+                        new StringBuffer("invalid opaque data: ");
+                    msg.append(e);
+                    msg.append(" opaque=").append(opaque);
+                    throw new PermissionDeniedCacheException(msg.toString());
+                }
 
-            // In case of enabled authorization, the path in the open
-            // request can refer to the lfn.  In this case the real
-            // path is delivered by the authz plugin
-            if (authzHandler.providesPFN()) {
-                _log.info("access granted for LFN={} PFN={}",
-                          path, authzHandler.getPFN());
+                boolean isAuthorized;
 
-                // get the real path (pfn) which we will open
-                return authzHandler.getPFN();
+                try {
+                    isAuthorized =
+                        authzHandler.checkAuthz(path,
+                                                opaqueMap,
+                                                neededPerm, localAddress);
+                } catch (GeneralSecurityException e) {
+                    throw new PermissionDeniedCacheException("authorization check"
+                                                             + "failed: " +
+                                                             e.getMessage());
+                }
+
+                if (!isAuthorized) {
+                    throw new PermissionDeniedCacheException("not authorized");
+                }
+
+                // In case of enabled authorization, the path in the open
+                // request can refer to the lfn.  In this case the real
+                // path is delivered by the authz plugin
+                if (authzHandler.providesPFN()) {
+                    _log.info("access granted for LFN={} PFN={}",
+                              path, authzHandler.getPFN());
+
+                    // get the real path (pfn) which we will open
+                    return authzHandler.getPFN();
+                }
             }
         }
 
@@ -957,6 +1056,30 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                              "Timeout when trying to list directory!");
 
         }
+    }
 
+    /**
+     * Execute login strategy to make an user authorization decision.
+     * @param loginSubject
+     * @throws PermissionDeniedCacheException
+     */
+    private void authorizeUser(Subject loginSubject)
+        throws PermissionDeniedCacheException, CacheException {
+
+        LoginReply reply = _door.login(loginSubject);
+
+        boolean isReadOnly = false;
+
+        for (LoginAttribute attribute : reply.getLoginAttributes()) {
+            if (attribute instanceof ReadOnly) {
+                isReadOnly = ((ReadOnly) attribute).isReadOnly();
+            } else if (attribute instanceof RootDirectory) {
+                _rootPath = new FsPath(((RootDirectory) attribute).getRoot());
+            }
+        }
+
+        _isReadOnly = isReadOnly;
+        _subject = reply.getSubject();
+        _hasLoggedIn = true;
     }
 }

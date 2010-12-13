@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.crypto.Cipher;
+import javax.security.auth.Subject;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 import static org.dcache.xrootd2.security.plugins.authn.XrootdSecurityProtocol.*;
 import static org.dcache.xrootd2.security.plugins.authn.XrootdSecurityProtocol.BucketType.*;
@@ -34,6 +34,7 @@ import org.dcache.xrootd2.security.plugins.authn.NestedBucketBuffer;
 import org.dcache.xrootd2.security.plugins.authn.StringBucket;
 import org.globus.gsi.CertificateRevocationLists;
 import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.jaas.GlobusPrincipal;
 import org.globus.gsi.proxy.ProxyPathValidator;
 import org.globus.gsi.proxy.ProxyPathValidatorException;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -94,10 +95,19 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
     private DHSession _dhSession;
 
     /**
+     * Container for principals and credentials found during the authentication
+     * process.
+     */
+    private Subject _subject;
+
+    private boolean _finished = false;
+
+    /**
      * @param hostCertificatePath
      * @param hostKeyPath
      * @param caCertDir
      * @param verifyHostCertificate
+     * @param endpoint CellEndpoint for communication with the login strategies
      */
     public GSIAuthenticationHandler(X509Certificate hostCertificate,
                                     PrivateKey privateKey,
@@ -108,6 +118,8 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
         _hostKey = privateKey;
         _trustedCerts = trustedCerts;
         _crls = crls;
+
+        _subject = new Subject();
     }
 
     class XrootdBucketContainer {
@@ -128,7 +140,6 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
         }
     }
 
-    @Override
     /**
      * dispatcher function that initializes the diffie-hellman key agreement
      * session, checks the request for the correct protocol and calls the
@@ -137,6 +148,7 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
      * @see #handleCertReqStep
      * @see #handleCertStep
      */
+    @Override
     public AbstractResponseMessage authenticate(AuthenticationRequest request) {
 
         try {
@@ -334,10 +346,18 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
 
             _logger.info("The proxy-cert has the following DN: {}",
                          proxyCert.getSubjectDN());
+
+            /* need a serializable subject DN for cell communication */
+
+            // TODO: Use the X500 principal directly
+            GlobusPrincipal dn =
+                new GlobusPrincipal(proxyCert.getSubjectX500Principal().getName());
+            _subject.getPrincipals().add(dn);
             _logger.info("Issuer-DN: {}", proxyCert.getIssuerDN());
 
             X509Certificate[] proxyCertChain =
                 clientCerts.toArray(new X509Certificate[0]);
+            _subject.getPublicCredentials().add(proxyCertChain);
 
             _proxyValidator.validate(proxyCertChain,
                                      _trustedCerts.getCertificates(),
@@ -357,6 +377,9 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
             if (_challenge.equals(rTagString)) {
                _logger.info("signature of challenge tag ok. Challenge: " +
                             "{}, rTagString: {}", _challenge, rTagString);
+
+               _finished = true;
+
                response = new OKResponse(request.getStreamID());
             } else {
                _logger.error("The challenge is {}, the serialized rTag is {}." +
@@ -513,11 +536,11 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
         return result;
     }
 
-    @Override
     /**
      * @return the protocol supported by this client. The protocol string also
      * contains metainformation such as the host-certificate subject hash.
      */
+    @Override
     public String getProtocol() {
         /* hashed principals are cached in CertUtil */
         String subjectHash =
@@ -528,5 +551,20 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
                           "c:" + CRYPTO_MODE + "," +
                           "ca:" + subjectHash;
         return protocol;
+    }
+
+    @Override
+    public Subject getSubject() {
+        return _subject;
+    }
+
+    @Override
+    public boolean isAuthenticationCompleted() {
+        return _finished;
+    }
+
+    @Override
+    public boolean isStrongAuthentication() {
+        return true;
     }
 }

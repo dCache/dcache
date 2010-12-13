@@ -30,6 +30,12 @@
     <property name="destination" value="billing"/>
   </bean>
 
+  <bean id="gPlazma-stub" class="org.dcache.cells.CellStub">
+    <description>gPlazma communication stub</description>
+    <property name="destination" value="gPlazma" />
+    <property name="timeout" value="30000" />
+  </bean>
+
   <bean id="scheduled-thread-pool"
         class="java.util.concurrent.Executors"
         factory-method="newScheduledThreadPool"
@@ -130,15 +136,25 @@
     <property name="billingStub" ref="billing-stub"/>
     <property name="writePaths" value="${xrootdWritePaths}"/>
     <property name="readPaths" value="${xrootdReadPaths}"/>
-    <property name="user" value="${xrootdUser}"/>
     <property name="authorizationFactory" ref="authorization-factory"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="readOnly" value="${xrootdIsReadOnly}"/>
     <property name="ioQueue" value="${xrootdIoQueue}"/>
-    <property name="rootPath" value="${xrootdRootPath}"/>
     <property name="moverTimeout" value="${xrootdMoverTimeout}"/>
     <property name="executor" ref="scheduled-thread-pool"/>
     <property name="dirlistTimeoutExecutor" ref="dirlist-timeout-executor" />
+    <property name="loginStrategy" ref="${xrootdAuthNPlugin}-loginstrategy" />
+  </bean>
+
+  <bean id="none-loginstrategy" class="org.dcache.auth.AnonymousLoginStrategy">
+    <description>Login strategy used for unauthenticated login</description>
+    <property name="user" value="${xrootdUser}"/>
+    <property name="readOnly" value="${xrootdIsReadOnly}"/>
+    <property name="rootPath" value="${xrootdRootPath}"/>
+  </bean>
+
+  <bean id="gsi-loginstrategy" class="org.dcache.services.login.RemoteLoginStrategy">
+    <description>Login strategy suitable for GSI</description>
+    <property name="cellStub" ref="gPlazma-stub" />
   </bean>
 
   <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
