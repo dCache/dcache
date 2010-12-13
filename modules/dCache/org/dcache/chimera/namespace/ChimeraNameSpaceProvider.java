@@ -153,7 +153,7 @@ public class ChimeraNameSpaceProvider
 			mode |= UnixPermission.S_IFREG;
 		}
 
-		stat.setMode(mode);
+		setModeOf(stat, mode);
 		stat.setUid(metaData.getUid());
 		stat.setGid(metaData.getGid());
 		stat.setSize(metaData.getFileSize());
@@ -622,7 +622,11 @@ public class ChimeraNameSpaceProvider
                         break;
                     case MODE:
                         if (stat == null) stat = inode.statCache();
-                        stat.setMode(attr.getMode());
+                        // FIXME this is temporary work-around: we must
+                        // preserve file type (high-order bits) that
+                        // the end-user doesn't provide.  This should
+                        // be fixed in Chimera.
+                        setModeOf(stat, attr.getMode());
                         break;
                     case OWNER:
                         if (stat == null) stat = inode.statCache();
@@ -700,6 +704,21 @@ public class ChimeraNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
+    }
+
+    /**
+     * Update provided Stat object with supplied Unix permission.
+     * FIXME This method is a work-around for a bug in Chimera's
+     * Stat.setMode where the client (us) must preserve the high-
+     * order bits (that encode the inode type).
+     * See RT ticket 5575
+     *         http://rt.dcache.org/Ticket/Display.html?id=5575
+     */
+    private static void setModeOf(Stat stat, int mode)
+    {
+        int newMode = (mode & UnixPermission.S_PERMS) |
+                (stat.getMode() & ~UnixPermission.S_PERMS);
+        stat.setMode(newMode);
     }
 
     public void list(Subject subject, String path, Glob glob, Interval range,

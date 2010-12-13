@@ -208,19 +208,23 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             Map<String, String> opaqueMap;
             UUID uuid;
 
+            _log.debug("Received the following opaque information " +
+                       "from the client: {}", opaque);
+
             try {
                 opaqueMap = OpaqueStringParser.getOpaqueMap(opaque);
                 String uuidString = opaqueMap.get(XrootdProtocol.UUID_PREFIX);
                 uuid = UUID.fromString(uuidString);
             } catch (ParseException pex) {
-                _log.error("Could not parse the opaque information from the" +
-                           "request. Need opaque UUID to retrieve mover.");
+                _log.error("Could not parse the opaque information from the " +
+                           "request. Need opaque UUID to retrieve mover: {}",
+                           pex);
                 respondWithError(ctx, event, msg, kXR_NotAuthorized,
                                  "Invalid client redirect.");
                 return;
             } catch (IllegalArgumentException iaex) {
                 _log.error("Could not construct the required UUID from the " +
-                           "UUID string.");
+                           "UUID string: {}", iaex);
                 respondWithError(ctx, event, msg, kXR_NotAuthorized,
                                  "Invalid client redirect.");
                 return;

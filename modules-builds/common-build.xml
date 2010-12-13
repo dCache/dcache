@@ -67,6 +67,9 @@
             <and>
                 <filename name="**/*.java" />
             </and>
+            <not>
+                <filename name="org/dcache/commons/plot/**/*.java" />
+            </not>
         </javac>
 
     </target>
@@ -91,6 +94,7 @@
     <target name="-dcache-common.bin" depends="-dcache-common.jar">
         <!-- <mkdir dir="${server.bin.dir}/classes/dcache-common" /> -->
         <copy file="${classesDir}/dcache-common.jar" todir="${server.bin.dir}/classes" />
+        <!--
 	<copy todir="${server.bin.dir}/classes/batik">
             <fileset dir="${libDir}/batik-1.7/">
                 <and>
@@ -98,6 +102,6 @@
                 </and>
             </fileset>
         </copy>
-
+        -->
     </target>
 </project>

@@ -573,7 +573,7 @@ if [ ! -d "$DCACHE_HOME" ]; then
 fi
 
 # Load libraries
-. ${DCACHE_HOME}/share/lib/loadConfig.sh -q
+. ${DCACHE_HOME}/share/lib/loadConfig.sh
 . ${DCACHE_LIB}/utils.sh
 
 # Check preconditions
@@ -599,6 +599,7 @@ if [ -z "$force" ]; then
 fi
 
 # Load old configuration
+ourHomeDir="${DCACHE_HOME}"
 readconf ${DCACHE_ETC}/node_config NODE_CONFIG_ ||
 readconf ${DCACHE_ETC}/door_config NODE_CONFIG_ ||
 fail 1 "Failed to read ${DCACHE_ETC}/node_config"

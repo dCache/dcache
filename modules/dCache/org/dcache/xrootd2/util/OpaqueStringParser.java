@@ -4,8 +4,43 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OpaqueStringParser {
+/**
+ * According to the xrootd specification, an opaque string has the following
+ * format
+ *
+ * opaque (Xrdv296 SPEC Section 3.13.1):
+ *     "Opaque information is passed by suffixing the path with a
+ *     question mark (?) and then coding the opaque information as a series of
+ *     ampersand prefixed (&) variable names immediately followed by an
+ *     equal sign (=) prefix value."
 
+ *
+ * token (follows the SPEC in Feichtinger, Peters: "Authorization of Data
+ *        Access in Distributed Systems", Section IIIA., page 3):
+ *      "The authorization envelope which is obtained from the catalogue
+ *      service is appended to an URL as opaque information following the
+ *      syntax:
+ *      URL : root : // < host -ip >:< port > // < file - path >?authz =
+ *      < acess - envelope > & vo = < vo -name >
+ *
+ * In summary, this yields the following format for opaque information and
+ * token:
+ *
+ * ?&opaqueKey1=value1&opaqueKey2=value2&opaqueKey3=value3?authz=sectoken&vo=
+ *  voname
+ *
+ * Experience shows that the first value after the question mark is not
+ * always ampersand-prefixed, despite the protocol specification.
+ *
+ * We have reported the following bug to the root developers:
+ *
+ *  https://savannah.cern.ch/bugs/?75478
+ *
+ * @author tzangerl
+ *
+ */
+public class OpaqueStringParser {
+    public final static char OPAQUE_STRING_PREFIX = '?';
     public final static char OPAQUE_PREFIX = '&';
     public final static char OPAQUE_SEPARATOR = '=';
 
@@ -14,6 +49,14 @@ public class OpaqueStringParser {
      * URL-encoding (&key1=val1&key2=val2...). This method translates that
      * encoding to a map, mapping from the keys found in the opaque string to
      * the values found in the opaque string.
+     *
+     * Due to ambiguity regarding specification of the opaque token and its
+     * use, the method will parse opaque strings in the forms
+     *
+     *  ?firstKey=firstValue&secondKey=secondValue
+     *  ?&firstKey=firstValue&secondKey=secondValue
+     *  firstKey=firstValue?&secondKey=secondValue
+     *  firstKey=firstValue?secondkey=secondValue
      *
      * @param opaque The opaque string, as usually attached to the path
      * @return Map from keys to values in the opaque string
@@ -26,32 +69,33 @@ public class OpaqueStringParser {
             return Collections.emptyMap();
         } else {
             Map<String,String> map = new HashMap<String,String>();
-            int tokenStart;
-            int tokenEnd = 0;
 
-            if (!opaque.startsWith(String.valueOf((OPAQUE_PREFIX)))) {
-                throw new ParseException("Opaque string must start " +
-                                         "with " + OPAQUE_PREFIX);
-            }
+            String [] prefixBlocks = opaque.split("\\?");
 
-            while ((tokenStart = opaque.indexOf(OPAQUE_PREFIX, tokenEnd))
-                    != -1) {
-                tokenEnd = opaque.indexOf(OPAQUE_PREFIX, ++tokenStart);
+            for (String prefixBlock : prefixBlocks) {
 
-                if (tokenEnd == -1) {
-                    tokenEnd = opaque.length();
+                if (prefixBlock.isEmpty()) {
+                    continue;
                 }
 
-                int delimiter = opaque.indexOf(OPAQUE_SEPARATOR,tokenStart);
-                if (delimiter == -1 || delimiter >= tokenEnd) {
-                    String variable = opaque.substring(tokenStart, tokenEnd);
-                    throw new ParseException("Opaque information is missing a"
-                                             + "value for variable " +
-                                              variable);
-                }
+                String [] prefixSubBlocks = prefixBlock.split("\\&");
 
-                map.put(opaque.substring(tokenStart, delimiter),
-                        opaque.substring(delimiter + 1, tokenEnd));
+                for (String prefixSubBlock : prefixSubBlocks) {
+
+                    if (prefixSubBlock.isEmpty()) {
+                        continue;
+                    }
+
+                    int delimiter = prefixSubBlock.indexOf(OPAQUE_SEPARATOR);
+                    if (delimiter == -1) {
+                        throw new ParseException("Opaque information is missing a"
+                                                 + "value for variable " +
+                                                  prefixSubBlock);
+                    }
+
+                    map.put(prefixSubBlock.substring(0, delimiter),
+                            prefixSubBlock.substring(delimiter + 1, prefixSubBlock.length()));
+                }
             }
 
             return map;

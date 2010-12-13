@@ -23,11 +23,6 @@ usage()
 
 }
 
-loadConfig()
-{
-    . ${DCACHE_HOME}/share/lib/loadConfig.sh "$@"
-}
-
 logmessage()
 {
   local ThisLogLevel
@@ -222,6 +217,6 @@ if [ ! -d "$DCACHE_HOME" ]; then
     exit 2
 fi
 
-loadConfig
+. ${DCACHE_HOME}/share/lib/loadConfig.sh
 dcacheCheckSshKeys
 dcacheInstallInitConfig
