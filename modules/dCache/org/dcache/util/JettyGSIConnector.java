@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 
@@ -591,12 +592,20 @@ public class JettyGSIConnector
             _out = new GsiOutputStream();
         }
 
+        @Override
+        public SocketAddress getRemoteSocketAddress()
+        {
+            return getWrappedSocket().getRemoteSocketAddress();
+        }
+
+        @Override
         public OutputStream getOutputStream()
             throws IOException
         {
             return _out;
         }
 
+        @Override
         public InputStream getInputStream()
             throws IOException
         {
