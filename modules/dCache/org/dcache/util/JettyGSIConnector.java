@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.security.cert.X509Certificate;
 
 import org.ietf.jgss.GSSCredential;
@@ -538,12 +539,20 @@ public class JettyGSIConnector
             _out = new GsiOutputStream();
         }
 
+        @Override
+        public SocketAddress getRemoteSocketAddress()
+        {
+            return getWrappedSocket().getRemoteSocketAddress();
+        }
+
+        @Override
         public OutputStream getOutputStream()
             throws IOException
         {
             return _out;
         }
 
+        @Override
         public InputStream getInputStream()
             throws IOException
         {
