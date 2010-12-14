@@ -18,7 +18,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.repository.Allocator;
-import org.dcache.util.ConfigurationUtil;
 import org.dcache.util.NetworkUtils;
 import org.jboss.netty.handler.stream.ChunkedInput;
 import org.slf4j.Logger;
@@ -107,17 +106,14 @@ public class HttpProtocol_2 implements MoverProtocol
         initSharedResources(Args args) {
 
         if (_server == null) {
-            int threads = ConfigurationUtil.getIntOption(args,
-                                                         "http-mover-disk-threads");
-            int perChannelLimit = ConfigurationUtil.getIntOption(args,
-                                                                 "http-mover-max-memory-per-connection");
-            int totalLimit = ConfigurationUtil.getIntOption(args,
-                                                            "http-mover-max-memory");
-            int maxChunkSize =  ConfigurationUtil.getIntOption(args,
-                                                               "http-mover-max-chunk-size");
+            int threads = args.getIntOption("http-mover-disk-threads");
 
-            int clientIdleTimeout = ConfigurationUtil.getIntOption(args,
-                                                                   "http-mover-client-idle-timeout");
+            int perChannelLimit = args.getIntOption("http-mover-max-memory-per-connection");
+
+            int totalLimit = args.getIntOption("http-mover-max-memory");
+            int maxChunkSize =  args.getIntOption("http-mover-max-chunk-size");
+
+            int clientIdleTimeout = args.getIntOption("http-mover-client-idle-timeout");
 
             String socketThreads = args.getOpt("http-mover-socket-threads");
 
@@ -142,11 +138,10 @@ public class HttpProtocol_2 implements MoverProtocol
         _endpoint = endpoint;
 
         Args args = _endpoint.getArgs();
-        long connect = ConfigurationUtil.getLongOption(args,
-                                                       "http-mover-connect-timeout");
+        long connect = args.getLongOption("http-mover-connect-timeout");
         _connectTimeout = connect*1000;
 
-        _chunkSize = ConfigurationUtil.getIntOption(args, "http-mover-chunk-size");
+        _chunkSize = args.getIntOption("http-mover-chunk-size");
 
         initSharedResources(args);
     }

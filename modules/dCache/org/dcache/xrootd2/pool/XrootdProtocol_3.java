@@ -46,7 +46,6 @@ import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.util.ConfigurationUtil;
 import org.dcache.util.NetworkUtils;
 
 
@@ -236,15 +235,11 @@ public class XrootdProtocol_3
 
     private static synchronized void initSharedResources(Args args) {
         if (_server == null) {
-            int threads = ConfigurationUtil.getIntOption(args,
-                                                         "xrootd-mover-disk-threads");
-            int perChannelLimit = ConfigurationUtil.getIntOption(args,
-                                                                 "xrootd-mover-max-memory-per-connection");
-            int totalLimit = ConfigurationUtil.getIntOption(args,
-                                                            "xrootd-mover-max-memory");
+            int threads = args.getIntOption("xrootd-mover-disk-threads");
+            int perChannelLimit = args.getIntOption("xrootd-mover-max-memory-per-connection");
+            int totalLimit = args.getIntOption("xrootd-mover-max-memory");
 
-            int clientIdleTimeout = ConfigurationUtil.getIntOption(args,
-                                                                   "xrootd-mover-idle-client-timeout");
+            int clientIdleTimeout = args.getIntOption("xrootd-mover-idle-client-timeout");
 
             String socketThreads = args.getOpt("xrootd-mover-socket-threads");
 

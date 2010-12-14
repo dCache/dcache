@@ -1,5 +1,7 @@
 package org.dcache.tests.util;
 
+import java.util.NoSuchElementException;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -8,6 +10,21 @@ import dmg.util.Args;
 
 public class ArgsTest {
 
+    private final static String PROPERTY_PREFIX = "-";
+    private final static String PROPERTY_KEY_VALUE_SEPARATOR = "=";
+    private final static String PROPERTY_SEPARATOR = " ";
+
+    private final static String PROPERTY_INT_KEY = "http-mover-client-idle-timeout";
+    private final static String PROPERTY_INT_VALUE = "300";
+    private final static int PROPERTY_INT_EXPECTED = 300;
+
+    private final static String PROPERTY_LONG_KEY = "http-mover-connection-max-memory";
+    private final static String PROPERTY_LONG_VALUE = "4294967297";
+    private final static long PROPERTY_LONG_EXPECTED = 4294967297L;
+
+    private final static String PROPERTY_STRING_KEY = "xrootd-authn-plugin";
+    private final static String PROPERTY_STRING_VALUE = "gsi";
+    private final static String PROPERTY_STRING_EXPECTED = PROPERTY_STRING_VALUE;
 
     @Test
     public void testNoArgs() {
@@ -360,5 +377,169 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('b'));
         assertTrue(args.isOneCharOption('a'));
         assertTrue(args.isOneCharOption('r'));
+    }
+
+    @Test
+    public void testIntOption()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_INT_VALUE;
+        Args args = new Args(argsString);
+
+        int parseResult = args.getIntOption(PROPERTY_INT_KEY);
+        assertEquals("Parsing of integer option does not match expected result.",
+                     PROPERTY_INT_EXPECTED,
+                     parseResult);
+    }
+
+    @Test
+    public void testLongOption()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+
+        Args args = new Args(argsString);
+
+        long parseResult = args.getLongOption(PROPERTY_LONG_KEY);
+        assertEquals("Parsing of long option does not match expected result.",
+                     PROPERTY_LONG_EXPECTED,
+                     parseResult);
+    }
+
+    @Test
+    public void testNumericAndNonNumericOptions()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE +
+                            PROPERTY_SEPARATOR + PROPERTY_PREFIX +
+                            PROPERTY_INT_KEY + PROPERTY_KEY_VALUE_SEPARATOR +
+                            PROPERTY_INT_VALUE + PROPERTY_SEPARATOR +
+                            PROPERTY_PREFIX + PROPERTY_LONG_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+
+        Args args = new Args(argsString);
+
+        String parsedString = args.getOpt(PROPERTY_STRING_KEY);
+        assertEquals("Parsing of string option does not match expected result.",
+                     PROPERTY_STRING_EXPECTED,
+                     parsedString);
+
+        int parsedInt = args.getIntOption(PROPERTY_INT_KEY);
+        assertEquals("Parsing of string option does not match expected result.",
+                     PROPERTY_INT_EXPECTED,
+                     parsedInt);
+
+        long parsedLong = args.getLongOption(PROPERTY_LONG_KEY);
+        assertEquals("Parsing of string option does not match expected result.",
+                     PROPERTY_LONG_EXPECTED,
+                     parsedLong);
+    }
+
+    @Test
+    public void testEmptyStringValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR;
+
+        Args args = new Args(argsString);
+
+        String parsedString = args.getOpt(PROPERTY_STRING_KEY);
+        assertEquals("Parsing of string option does not match expected result.",
+                     "",
+                     parsedString);
+    }
+
+    @Test(expected=NumberFormatException.class)
+    public void testNonNumericIntValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+
+        Args args = new Args(argsString);
+        args.getIntOption(PROPERTY_INT_KEY);
+    }
+
+    @Test(expected=NumberFormatException.class)
+    public void testIntOverflow()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+
+        Args args = new Args(argsString);
+        args.getIntOption(PROPERTY_INT_KEY);
+    }
+
+    @Test(expected=NumberFormatException.class)
+    public void testNonNumericLongValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+
+        Args args = new Args(argsString);
+        args.getIntOption(PROPERTY_LONG_KEY);
+    }
+
+    @Test(expected=NoSuchElementException.class)
+    public void testUndefinedIntValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_LONG_VALUE;
+
+        Args args = new Args(argsString);
+        args.getIntOption(PROPERTY_STRING_KEY);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testMissingIntValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_INT_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR;
+
+        Args args = new Args(argsString);
+
+        args.getIntOption(PROPERTY_INT_KEY, PROPERTY_INT_EXPECTED);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testMissingLongValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_LONG_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR;
+
+        Args args = new Args(argsString);
+
+        args.getLongOption(PROPERTY_LONG_KEY, PROPERTY_LONG_EXPECTED);
+    }
+
+    @Test
+    public void testDefaultIntValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+
+        Args args = new Args(argsString);
+
+        int parsedInt = args.getIntOption(PROPERTY_INT_KEY,
+                                          PROPERTY_INT_EXPECTED);
+
+        assertEquals("Parsing of integer does not match expected result.",
+                     PROPERTY_INT_EXPECTED,
+                     parsedInt);
+    }
+
+    @Test
+    public void testDefaultLongValue()
+    {
+        String argsString = PROPERTY_PREFIX + PROPERTY_STRING_KEY +
+                            PROPERTY_KEY_VALUE_SEPARATOR + PROPERTY_STRING_VALUE;
+
+        Args args = new Args(argsString);
+
+        long parsedLong = args.getLongOption(PROPERTY_LONG_KEY,
+                                             PROPERTY_LONG_EXPECTED);
+
+        assertEquals("Parsing of long does not match expected result.",
+                     PROPERTY_LONG_EXPECTED,
+                     parsedLong);
     }
 }

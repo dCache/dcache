@@ -1,7 +1,7 @@
 package dmg.util ;
 
-import java.io.Serializable;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.ImmutableListMultimap;
@@ -75,6 +75,58 @@ public class Args
     public String getOpt(String name)
     {
         return getOption(name);
+    }
+
+    public int getIntOption(String name)
+    {
+        String option = getOption(name);
+
+        if (option == null) {
+            throw new NoSuchElementException("Argument "
+                                             + name + " does not exist.");
+        }
+
+        return Integer.parseInt(option);
+    }
+
+    public int getIntOption(String name, int defaultValue)
+    {
+        String option = getOption(name);
+
+        if (option == null) {
+            return defaultValue;
+        } else if (option.isEmpty()) {
+            throw new IllegalArgumentException("Argument " + name +
+                                               " does not have a value.");
+        } else {
+            return Integer.parseInt(option);
+        }
+    }
+
+    public long getLongOption(String name)
+    {
+        String option = getOption(name);
+
+        if (option == null) {
+            throw new NoSuchElementException("Argument "
+                                             + name + " does not exist.");
+        }
+
+        return Long.parseLong(option);
+    }
+
+    public long getLongOption(String name, long defaultValue)
+    {
+        String option = getOption(name);
+
+        if (option == null) {
+            return defaultValue;
+        } else if (option.isEmpty()) {
+            throw new IllegalArgumentException("Argument " + name +
+                                               " does not have a value.");
+        } else {
+            return Long.parseLong(option);
+        }
     }
 
     public String getOption(String name)
