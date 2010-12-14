@@ -21,6 +21,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.tests.cells.CellAdapterHelper;
@@ -32,6 +33,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.StorageInfoExtractable;
+import diskCacheV111.util.FileMetaData;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
@@ -43,11 +45,13 @@ import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
+import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import java.net.URI;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 
 public class PnfsManagerTest {
@@ -450,6 +454,24 @@ public class PnfsManagerTest {
         _pnfsManager.getFileAttributes(message);
         assertEquals("Get attributes for non existing file have to return FILE_NOT_FOUND",
             CacheException.FILE_NOT_FOUND, message.getReturnCode() );
+    }
+
+    @Test
+    public void testSetFilePermissions() throws Exception {
+	FsInode base = _fs.path2inode("/pnfs");
+	FsInode inode = _fs.createFile(base,"afile");
+	Stat stat = _fs.stat(inode);
+
+	int mode = 0222;
+	FileMetaData metadata = new FileMetaData( stat.getUid(), stat.getGid(), mode);
+	PnfsSetFileMetaDataMessage msg = 
+	    new PnfsSetFileMetaDataMessage( new PnfsId(inode.toString()));
+	msg.setMetaData(metadata);
+	_pnfsManager.setFileMetaData(msg);
+
+	Stat new_stat = _fs.stat(inode);
+	assertEquals("setFileAttributes change file type",
+	        stat.getMode() & ~UnixPermission.S_PERMS | mode, new_stat.getMode());
     }
 
     @AfterClass

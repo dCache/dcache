@@ -166,7 +166,7 @@ public class ChimeraNameSpaceProvider
         	Stat metadataStat = fileMetadata2Stat(metaData, inode.isDirectory() );
 
             Stat inodeStat = inode.statCache();
-            inodeStat.setMode(metadataStat.getMode());
+            setModeOf(inodeStat, metadataStat.getMode());
             inodeStat.setUid(metadataStat.getUid());
             inodeStat.setGid(metadataStat.getGid());
             inodeStat.setSize(metadataStat.getSize() );
@@ -781,6 +781,22 @@ public class ChimeraNameSpaceProvider
         }
 
     }
+
+    /**
+     * Update provided Stat object with supplied Unix permission.
+     * FIXME This method is a work-around for a bug in Chimera's
+     * Stat.setMode where the client (us) must preserve the high-
+     * order bits (that encode the inode type).
+     * See RT ticket 5575
+     *         http://rt.dcache.org/Ticket/Display.html?id=5575
+     */
+    public static void setModeOf(Stat stat, int mode)
+    {
+	int newMode = (mode & UnixPermission.S_PERMS) |
+	    (stat.getMode() & ~UnixPermission.S_PERMS);
+	stat.setMode(newMode);
+    }
+
 
     public void list(Subject subject, String path, Glob glob, Interval range,
                      Set<FileAttribute> attrs, ListHandler handler)
