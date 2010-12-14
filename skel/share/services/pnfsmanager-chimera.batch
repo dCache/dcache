@@ -12,6 +12,7 @@ set context -c DefaultAccessLatency NEARLINE
 set context -c DefaultRetentionPolicy CUSTODIAL
 set context -c pnfsFolding       false
 set context -c pnfsInheritFileOwnership false
+
 onerror shutdown
 
 check -strong cell.name
@@ -23,7 +24,7 @@ check -strong aclConnUser
 check aclConnPswd
 
 create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
-        "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \
+        "${hsmStorageInfoExtractor} \
         -cmRelay=broadcast \
         -threads=${pnfsNumberOfThreads} \
         -threadGroups=${pnfsNumberOfThreadGroups} \
