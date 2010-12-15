@@ -20,7 +20,6 @@ import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 import static org.dcache.xrootd2.security.plugins.authn.XrootdSecurityProtocol.*;
 import static org.dcache.xrootd2.security.plugins.authn.XrootdSecurityProtocol.BucketType.*;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd2.protocol.messages.AuthenticationRequest;
@@ -210,7 +209,7 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
 
         try {
             _challengeCipher = Cipher.getInstance(SERVER_ASYNC_CIPHER_MODE,
-                                                  new BouncyCastleProvider());
+                                                  "BC");
 
             _challengeCipher.init(Cipher.ENCRYPT_MODE, _hostKey);
 

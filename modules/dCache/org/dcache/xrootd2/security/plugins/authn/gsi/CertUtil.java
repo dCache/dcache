@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
@@ -128,8 +129,10 @@ public class CertUtil {
    {
        MessageDigest md = null;
        try {
-           md = MessageDigest.getInstance("MD5");
+           md = MessageDigest.getInstance("MD5", "BC");
        } catch (NoSuchAlgorithmException e) {
+           throw new IllegalStateException(e);
+       } catch (NoSuchProviderException e) {
            throw new IllegalStateException(e);
        }
 
