@@ -550,18 +550,23 @@ public class XrootdDoor
      * the response is processed by the callback.
      *
      * @param path The path that is listed
+     * @param subject Representation of user that request listing
+     * @param rootPath The path relative to which listing should happen
      * @param callback The callback that will process the response
      * @throws PermissionDeniedCacheException
      * @throws CacheException Listing message can not be routed to PnfsManager.
      */
     public void listPath(String path,
                          Subject subject,
+                         FsPath rootPath,
                          MessageCallback<PnfsListDirectoryMessage> callback)
         throws PermissionDeniedCacheException
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
+        FsPath fullPath = createFullPath(path, rootPath);
+
         PnfsListDirectoryMessage msg =
-            new PnfsListDirectoryMessage(path, null, null,
+            new PnfsListDirectoryMessage(fullPath.toString(), null, null,
                                          EnumSet.noneOf(FileAttribute.class));
         UUID uuid = msg.getUUID();
 
