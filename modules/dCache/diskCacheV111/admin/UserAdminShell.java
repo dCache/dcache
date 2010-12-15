@@ -10,7 +10,11 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsId;
@@ -31,10 +35,12 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.AclException;
@@ -47,14 +53,11 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
   *
   *
-  * @author Patrick Fuhrmann
-  * @version 0.1, 1 May 2001
+ * @author Christian Bernardt, Patrick Fuhrmann
+ * @version 0.2, 10 December 2010
   */
 public class      UserAdminShell
 //       extends    dmg.cells.services.login.user.MinimalAdminShell {
@@ -66,15 +69,15 @@ public class      UserAdminShell
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
 
-    private CellNucleus _nucleus  = null ;
+    private final CellEndpoint cellEndPoint ;
     private String      _user     = null ;
     private String      _authUser = null ;
-    private CellPath    _path     = new CellPath("acm");
+    private final CellPath    _path     = new CellPath("acm");
     private long        _timeout  = 10000 ;
     private boolean     _fullException = false ;
     private final String      _instance ;
     private Position    _currentPosition = new Position() ;
-    private boolean     _debug    = false ;
+    private final boolean     _debug    = false ;
 
     private class Position {
         private CellPath    remote     = null ;
@@ -229,8 +232,8 @@ public class      UserAdminShell
             return sb.toString() ;
         }
     }
-    public UserAdminShell( String user , CellNucleus nucleus , Args args ){
-       _nucleus  = nucleus ;
+    public UserAdminShell(String user, CellEndpoint cellEndpoint, Args args) {
+        cellEndPoint = cellEndpoint;
        _user     = user ;
        _authUser = user ;
 
@@ -248,6 +251,57 @@ public class      UserAdminShell
            _instance = null;
        }
     }
+    public UserAdminShell(String user, final CellNucleus nucleus, final Args args) {
+        this(user, new CellEndpoint()   {
+
+            @Override
+            public void sendMessage(CellMessage envelope) throws SerializationException, NoRouteToCellException {
+                nucleus.sendMessage(envelope);
+            }
+
+            @Override
+            public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, long timeout) throws SerializationException {
+                nucleus.sendMessage(envelope, true, true, callback, timeout);
+            }
+
+            @Override
+            public CellMessage sendAndWait(CellMessage envelope, long timeout) throws SerializationException, NoRouteToCellException, InterruptedException {
+                return nucleus.sendAndWait(envelope, true, true, timeout);
+            }
+            private long timeUntil(long time) {
+                return time - System.currentTimeMillis();
+            }
+            private final static long RETRY_PERIOD = 30000; // 30 seconds
+            @Override
+            public CellMessage sendAndWaitToPermanent(CellMessage envelope, long timeout) throws SerializationException, InterruptedException {
+
+                long deadline = System.currentTimeMillis() + timeout;
+                while (true) {
+                    try {
+                        return sendAndWait(envelope, timeUntil(deadline));
+                    } catch (NoRouteToCellException e) {
+                        Thread.sleep(Math.min(timeUntil(deadline), RETRY_PERIOD));
+                    }
+                }
+            }
+
+            @Override
+            public CellInfo getCellInfo() {
+                return nucleus.getCellInfo();
+            }
+
+            @Override
+            public Map<String, Object> getDomainContext() {
+                return nucleus.getDomainContext();
+            }
+
+            @Override
+            public Args getArgs() {
+                return args;
+            }
+        },
+        args);
+    }
     protected String getUser(){ return _user ; }
     public void checkPermission( String aclName )
            throws AclException {
@@ -260,7 +314,7 @@ public class      UserAdminShell
          request[4] = aclName ;
          CellMessage reply = null ;
          try{
-            reply = _nucleus.sendAndWait(
+            reply = cellEndPoint.sendAndWait(
                          new CellMessage( _path , request ) ,
                          _timeout    ) ;
             if( reply == null )
@@ -351,23 +405,7 @@ public class      UserAdminShell
         return "Timeout = "+(_timeout/1000L) ;
 
     }
-    public String hh_load_shell = "system|<shellClass>" ;
-    public String ac_load_shell_$_1( Args args )throws Exception {
-        String shellName = args.argv(0) ;
 
-        try{
-           checkPermission( "shell.*.execute" ) ;
-        }catch( AclException acle ){
-           checkPermission( "shell."+shellName+".execute" ) ;
-        }
-        if( shellName.equals("system") ){
-           addCommandListener( new CellShell( _nucleus ) ) ;
-        }else{
-           addCommandListener( Class.forName(shellName).newInstance() ) ;
-        }
-        return "" ;
-
-    }
     public String hh_getpoolbylink = "<linkName> [-size=<filesize>] [-service=<serviceCellName]" ;
     public String ac_getpoolbylink_$_1( Args args ) throws Exception {
 
@@ -763,7 +801,7 @@ public class      UserAdminShell
                 new Pool2PoolTransferMsg( source , dest , pnfsId , null ) ;
 
 
-           _nucleus.sendMessage(
+            cellEndPoint.sendMessage(
                        new CellMessage( new CellPath(dest) , p2p )
                                ) ;
 
@@ -777,7 +815,7 @@ public class      UserAdminShell
                new PnfsGetStorageInfoMessage( pnfsId  ) ;
 
            CellMessage  msg = new CellMessage( new CellPath("PnfsManager") , stinfo ) ;
-           msg = _nucleus.sendAndWait( msg , 30000L )  ;
+            msg = cellEndPoint.sendAndWait( msg , 30000L )  ;
            if( msg == null )
                throw new
                Exception("Get storageinfo timed out");
@@ -803,7 +841,7 @@ public class      UserAdminShell
                          Long.parseLong(timeoutString)*1000L :
                          60000L ;
 
-          msg = _nucleus.sendAndWait( msg , timeout ) ;
+                    msg = cellEndPoint.sendAndWait( msg , timeout ) ;
 
           select = (PoolMgrReplicateFileMsg)msg.getMessageObject() ;
           if( select == null )
@@ -1114,7 +1152,7 @@ public class      UserAdminShell
     private void checkCellExists( CellPath remoteCell) {
         CellMessage checkMsg = new CellMessage( remoteCell , ADMIN_COMMAND_NOOP);
         try {
-            _nucleus.sendAndWait( checkMsg, CD_PROBE_MESSAGE_TIMEOUT_MS);
+            cellEndPoint.sendAndWait( checkMsg, CD_PROBE_MESSAGE_TIMEOUT_MS);
         } catch (SerializationException e) {
             throw new RuntimeException("Failed to serialise test message", e);
         } catch (NoRouteToCellException e) {
@@ -1194,7 +1232,7 @@ public class      UserAdminShell
    {
 
         CellMessage res =
-              _nucleus.sendAndWait(
+            cellEndPoint.sendAndWait(
                    new CellMessage( cellPath , object ) ,
               _timeout ) ;
           if( res == null )throw new Exception("Request timed out" ) ;
@@ -1213,7 +1251,7 @@ public class      UserAdminShell
 
         CellPath cellPath = new CellPath(destination);
         CellMessage res =
-              _nucleus.sendAndWait(
+            cellEndPoint.sendAndWait(
                    new CellMessage( cellPath ,
                                     new AuthorizedString( _user ,
                                                           command)
