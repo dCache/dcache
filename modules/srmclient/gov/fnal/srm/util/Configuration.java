@@ -82,6 +82,9 @@ import org.w3c.dom.Comment;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import org.dcache.srm.Logger;
+import org.dcache.srm.client.Transport;
+import org.dcache.srm.client.TransportUtil;
+
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -226,24 +229,6 @@ public class Configuration {
 
 
     @Option(
-            name = "gsissl",
-            description = "use http over gsi over ssl for SOAP invocations or plain http",
-            defaultValue = "true",
-            required=false,
-            log=true,
-            save=true
-    )
-    private boolean gsissl;
-
-    public boolean isGsissl() {
-        return gsissl;
-    }
-
-    public void setGsissl(boolean gsissl) {
-        this.gsissl = gsissl;
-    }
-
-    @Option(
             name = "mapfile",
             description = "path to the \"glue\" mapfile",
             defaultValue = "conf/SRMServerV1.map",
@@ -285,25 +270,6 @@ public class Configuration {
     public void setWebservice_path(String webservice_path) {
         this.webservice_path = webservice_path;
     }
-
-    @Option(
-            name = "webservice_protocol",
-            description = "srm webservice protocol",
-            defaultValue = "http",
-            required=false,
-            log=true,
-            save=true
-    )
-    private String webservice_protocol;
-
-    public java.lang.String getWebservice_protocol() {
-        return webservice_protocol;
-    }
-
-    public void setWebservice_protocol(java.lang.String webservice_protocol) {
-        this.webservice_protocol = webservice_protocol;
-    }
-
 
     @Option(
             name = "use_proxy",
@@ -1402,6 +1368,22 @@ public class Configuration {
         this.connect_to_wsdl = connect_to_wsdl;
     }
 
+    @Option(name = "transport",
+            description = "the transport to use when connecting to server.",
+            defaultValue = "gsi",
+            required=false,
+            log=true,
+            save=true)
+    private Transport transport;
+
+    public Transport getTransport() {
+        return transport;
+    }
+
+    public void setTransport(String transport) {
+        this.transport = Transport.transportFor(transport);
+    }
+
     @Option(
             name = "delegate",
             description =  "enables delegation of user credenital to the server",
@@ -1900,6 +1882,7 @@ public class Configuration {
                     "connect_to_wsdl",
                     "delegate",
                     "full_delegation",
+                    "transport",
                     "h",
             "help");
         if (getFileMetaData) {
@@ -2443,10 +2426,6 @@ public class Configuration {
         if (is_help) {
             help=true;
         }
-        if (gsissl)
-            this.webservice_protocol ="https";
-        else
-            this.webservice_protocol ="http";
 
         if (retry_timeout <= 0) {
             throw new IllegalArgumentException("illegal retry timeout : "+

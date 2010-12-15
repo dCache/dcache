@@ -71,6 +71,9 @@ import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.ISRM;
 import org.dcache.srm.client.SRMClientV1;
+import org.dcache.srm.client.Transport;
+import org.dcache.srm.client.TransportUtil;
+
 import java.io.IOException;
 import org.globus.util.GlobusURL;
 
@@ -79,9 +82,8 @@ import org.globus.util.GlobusURL;
  * @author  timur
  */
 public abstract class SRMClient {
-    private String glueprotocol;
+
     private String gluepath;
-    private boolean gsissl;
     protected boolean debug;
     protected ISRM srm;
     protected String urlcopy;
@@ -98,17 +100,16 @@ public abstract class SRMClient {
     public SRMClient(Configuration configuration) {
         this.configuration = configuration;
         logger = configuration.getLogger();
-        this.glueprotocol = configuration.getWebservice_protocol();
         this.gluepath = configuration.getWebservice_path();
-        this.gsissl = configuration.isGsissl();
         this.debug=configuration.isDebug();
         this.urlcopy=configuration.getUrlcopy();
         this.doDelegation = configuration.isDelegate();
         this.fullDelegation = configuration.isFull_delegation();
         this.gss_expected_name = configuration.getGss_expected_name();
 
+        Transport transport = configuration.getTransport();
         dsay("In SRMClient ExpectedName: "+gss_expected_name);
-        dsay("SRMClient("+glueprotocol+","+gluepath+","+gsissl+")");
+        dsay("SRMClient("+TransportUtil.uriSchemaFor(transport)+","+gluepath+","+transport.toString()+")");
     }
 
     public void setUrlcopy(String urlcopy) {
@@ -167,7 +168,12 @@ public abstract class SRMClient {
         try {
 
             SRMClientV1 client;
-            client = new SRMClientV1(srmUrl, getGssCredential(),configuration.getRetry_timeout(),configuration.getRetry_num(),doDelegation, fullDelegation,gss_expected_name,configuration.getWebservice_path());
+            client = new SRMClientV1(srmUrl, getGssCredential(),
+                    configuration.getRetry_timeout(),
+                    configuration.getRetry_num(),
+                    doDelegation, fullDelegation, gss_expected_name,
+                    configuration.getWebservice_path(),
+                    configuration.getTransport());
             dsay("connected to server, obtaining proxy");
 
             srm = client;

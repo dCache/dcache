@@ -10,6 +10,7 @@ check -strong srmGssMode
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
 check -strong srmJettyConnectorType
+check -strong srmClientTransport
 
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
@@ -369,4 +370,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmJettyThreadsMaxIdleTime=${srmJettyThreadsMaxIdleTime}\
         -srmJettyThreadsMaxQueued=${srmJettyThreadsMaxQueued}\
         -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod}\
-        -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod}"
+        -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod}\
+        -srmClientTransport=${srmClientTransport}"

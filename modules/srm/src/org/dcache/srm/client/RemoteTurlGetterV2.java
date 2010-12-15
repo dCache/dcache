@@ -98,6 +98,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     private String requestToken;
     private long lifetime;
     SrmPrepareToGetResponse srmPrepareToGetResponse;
+    private final Transport transport;
 
     long retry_timout;
     int retry_num;
@@ -106,13 +107,15 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     public RemoteTurlGetterV2(AbstractStorageElement storage,
                               RequestCredential credential,String[] SURLs,
                               String[] protocols,PropertyChangeListener listener,
-                              long retry_timeout,int retry_num , long lifetime) {
+                              long retry_timeout,int retry_num , long lifetime,
+                              Transport transport) {
         super(storage,credential,protocols);
         this.SURLs = SURLs;
         this.number_of_file_reqs = SURLs.length;
         this.retry_num = retry_num;
         this.retry_timout = retry_timeout;
         this.lifetime = lifetime;
+        this.transport = transport;
         addListener(listener);
     }
 
@@ -154,7 +157,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                     true,
                     true,
                     "host",
-            "srm/managerv1");
+                    "srm/managerv1",
+                    transport);
             int len = SURLs.length;
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
@@ -386,7 +390,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                                          String surl,
                                          String requestTokenString,
                                          long retry_timeout,
-                                         int retry_num) throws Exception
+                                         int retry_num,
+                                         Transport transport) throws Exception
     {
         SrmUrl srmUrl = new SrmUrl(surl);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
@@ -396,7 +401,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 true,
                 true,
                 "host",
-                "srm/managerv1");
+                "srm/managerv1",
+                transport);
         String requestToken = requestTokenString;
         String[] surl_strings = new String[1];
         surl_strings[0] = surl;

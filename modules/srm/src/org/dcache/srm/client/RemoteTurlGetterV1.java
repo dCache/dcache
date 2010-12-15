@@ -89,8 +89,9 @@ public final class RemoteTurlGetterV1 extends TurlGetterPutterV1 {
     public RemoteTurlGetterV1(AbstractStorageElement storage,
                               RequestCredential credential,String[] surls,
                               String[] protocols,PropertyChangeListener listener,
-                              long retry_timeout,int retry_num ) {
-        super(storage,credential,surls,protocols, retry_timeout,retry_num);
+                              long retry_timeout,int retry_num,
+                              Transport transport) {
+        super(storage,credential,surls,protocols, retry_timeout,retry_num, transport);
         addListener(listener);
     }
 

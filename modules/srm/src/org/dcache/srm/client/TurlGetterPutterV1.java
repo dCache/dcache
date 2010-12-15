@@ -110,17 +110,20 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     protected boolean createdMap;
     private long retry_timout;
     private int retry_num;
+    private final Transport transport;
 
     /** Creates a new instance of RemoteTurlGetter */
     public TurlGetterPutterV1(AbstractStorageElement storage,
                               RequestCredential credential, String[] SURLs,
-                              String[] protocols,long retry_timeout,int retry_num ) {
+                              String[] protocols,long retry_timeout,int retry_num,
+                              Transport transport) {
         super(storage,credential, protocols);
         this.SURLs = SURLs;
         this.number_of_file_reqs = SURLs.length;
         this.retry_num = retry_num;
         this.retry_timout = retry_timeout;
         logger.debug("TurlGetterPutter, number_of_file_reqs = "+number_of_file_reqs);
+        this.transport = transport;
     }
 
     @Override
@@ -134,7 +137,8 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
             remoteSRM = new SRMClientV1(
                     new SrmUrl(SURLs[0]),
                     credential.getDelegatedCredential(),
-                    retry_timout,retry_num,true,true,"host","srm/managerv1");
+                    retry_timout,retry_num,true,true,"host","srm/managerv1",
+                    transport);
         }
         catch(Exception e) {
             throw new SRMException("failed to connect to "+SURLs[0],e);
@@ -442,14 +446,16 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
                                            int fileId,
                                            String status,
                                            long retry_timeout,
-                                           int retry_num) throws Exception
+                                           int retry_num,
+                                           Transport transport) throws Exception
     {
         diskCacheV111.srm.ISRM remoteSRM;
 
-        // todo: extract web service path from surl if ?SFN= is present
+        // TODO extract web service path from surl if ?SFN= is present
         remoteSRM = new SRMClientV1(new SrmUrl(surl),
                 credential.getDelegatedCredential(),
-                retry_timeout, retry_num,true,true,"host","srm/managerv1");
+                retry_timeout, retry_num,true,true,"host","srm/managerv1",
+                transport);
 
         remoteSRM.setFileStatus(requestID,fileId,status);
     }

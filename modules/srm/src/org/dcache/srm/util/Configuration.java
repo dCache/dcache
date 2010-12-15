@@ -78,6 +78,8 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMUserPersistenceManager;
+import org.dcache.srm.client.Transport;
+import org.dcache.srm.client.TransportUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -109,6 +111,8 @@ public class Configuration {
     public static final String ON_RESTART_FAIL_REQUEST="fail";
     public static final String ON_RESTART_RESTORE_REQUEST="restore";
     public static final String ON_RESTART_WAIT_FOR_UPDATE_REQUEST="wait-update";
+
+    private static final String XML_LABEL_TRANSPORT_CLIENT = "client_transport";
 
     private static final String INFINITY = "infinity";
 
@@ -280,6 +284,7 @@ public class Configuration {
     private String srmCounterRrdDirectory = null;
     private String srmGaugeRrdDirectory = null;
     private boolean jdbcSaveCompletedRequestsOnly = false;
+    private Transport clientTransport = Transport.GSI;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -606,6 +611,10 @@ public class Configuration {
                 "vacuum_period_sec",
                 Long.toString(vacuum_period_sec),
                 "period between invocation of vacuum operations in seconds");
+        put(document,root,
+                XML_LABEL_TRANSPORT_CLIENT,
+                clientTransport.name(),
+                "transport to use when connecting to other SRM instances");
 
         Text t = document.createTextNode("\n");
         root.appendChild(t);
@@ -869,6 +878,8 @@ public class Configuration {
         	qosPluginClass = value;
         } else if(name.equals("qosConfigFile")) {
         	qosConfigFile = value;
+        } else if(name.equals( XML_LABEL_TRANSPORT_CLIENT)) {
+            clientTransport = Transport.transportFor( value);
         }
 
 
@@ -1419,7 +1430,7 @@ public class Configuration {
         sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
-
+        sb.append( "\n\tclientTransport=").append(clientTransport.name());
         return sb.toString();
     }
 
@@ -2848,5 +2859,15 @@ public class Configuration {
         this.jdbcEnabled = jdbcEnabled;
     }
 
+    public Transport getClientTransport() {
+        return clientTransport;
+    }
 
+    public void setClientTransport(Transport name) {
+        clientTransport = name;
+    }
+    
+    public void setClientTransportByName(String name) {
+        clientTransport = Transport.transportFor(name);
+    }
 }

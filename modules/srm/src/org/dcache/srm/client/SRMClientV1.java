@@ -141,7 +141,8 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                        boolean do_delegation,
                        boolean full_delegation,
                        String gss_expected_name,
-                       String webservice_path) throws
+                       String webservice_path,
+                       Transport transport) throws
                        IOException,InterruptedException,ServiceException{
 
         logger.debug("In Server Side: webservice_path= "+webservice_path);
@@ -167,11 +168,18 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
         int port = srmurl.getPort();
+        if( port == 80) {
+            /* FIXME: assigning the transport based on the port number is
+             * broken.  This code is here to preserve existing behaviour.
+             * However, it should be removed when we can confirm no one
+             * is relying on this behaviour. */
+            transport = Transport.TCP;
+        }
         String path = srmurl.getPath();
         if(path==null) {
             path="/";
         }
-        service_url = ((port == 80)?"http://":"httpg://")+host + ":" +port ;
+        service_url = TransportUtil.uriSchemaFor(transport) +"://"+host+":"+port;
         int indx=path.indexOf(SFN_STRING);
 
         if(indx >0) {
@@ -206,23 +214,18 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             // sets authorization type
             axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_AUTHORIZATION,
                     new PromiscuousHostAuthorization());
-            if (do_delegation) {
-                if(full_delegation) {
-                    // sets gsi mode
-                    axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_FULL_DELEG);
-                } else {
-                    axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_LIMITED_DELEG);
-                }
 
-            } else {
-                // sets gsi mode
-                axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_NO_DELEG);
+            if( TransportUtil.hasGsiMode(transport)) {
+                String gsiMode = TransportUtil.gsiModeFor(transport, do_delegation, full_delegation);
+                axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE, gsiMode);
             }
         }
         else {
             throw new java.io.IOException("can't set properties to the axis_isrm");
         }
     }
+
+
 
     @Override
     public diskCacheV111.srm.RequestStatus put( String[] sources,

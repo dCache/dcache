@@ -94,8 +94,9 @@ public final class RemoteTurlPutterV1 extends TurlGetterPutterV1
                               RequestCredential credential, String[] SURLs,
                               long sizes[],
                               String[] protocols,PropertyChangeListener listener,
-                              long retry_timeout,int retry_num ) {
-        super(storage,credential,SURLs,protocols, retry_timeout,retry_num);
+                              long retry_timeout,int retry_num,
+                              Transport transport) {
+        super(storage,credential,SURLs,protocols, retry_timeout,retry_num, transport);
         addListener(listener);
         this.sizes = sizes;
     }

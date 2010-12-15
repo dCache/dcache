@@ -36,7 +36,8 @@ public class SRMAbortRequestClientV2 extends SRMClient {
                 doDelegation,
                 fullDelegation,
                 gss_expected_name,
-                configuration.getWebservice_path());
+                configuration.getWebservice_path(),
+                configuration.getTransport());
     }
 
     @Override

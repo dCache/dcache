@@ -121,7 +121,8 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 doDelegation,
                 fullDelegation,
                 gss_expected_name,
-                configuration.getWebservice_path());
+                configuration.getWebservice_path(),
+                configuration.getTransport());
     }
 
     @Override

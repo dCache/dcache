@@ -256,6 +256,7 @@
 
     <property name="storage" ref="srm"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
+    <property name="clientTransportByName" value="${srmClientTransport}"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
