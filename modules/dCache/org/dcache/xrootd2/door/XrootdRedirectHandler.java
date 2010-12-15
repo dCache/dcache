@@ -714,7 +714,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             _log.info("Listing directory {}", authPath);
             MessageCallback<PnfsListDirectoryMessage> callback =
                                     new ListCallback(request, context, event);
-            _door.listPath(authPath, _subject, callback);
+            _door.listPath(authPath, _subject, _rootPath, callback);
 
         } catch (CacheException ce) {
 
