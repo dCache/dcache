@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertificateException;
@@ -60,6 +61,10 @@ public class GSIAuthenticationFactory implements AbstractAuthenticationFactory
 
     private ProxyPathValidator _proxyValidator = new ProxyPathValidator();
     private boolean _verifyHostCertificate;
+
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     @Override
     public AuthenticationHandler getAuthnHandler()
@@ -137,7 +142,7 @@ public class GSIAuthenticationFactory implements AbstractAuthenticationFactory
 
     private synchronized void loadServerCredentials(CertificateRevocationLists crls)
         throws CertificateException, IOException, NoSuchAlgorithmException,
-            InvalidKeySpecException, ProxyPathValidatorException {
+            InvalidKeySpecException, ProxyPathValidatorException, NoSuchProviderException {
         long timeSinceLastServerRefresh = (System.currentTimeMillis() -
                 _hostCertRefreshTimestamp);
 
@@ -161,11 +166,18 @@ public class GSIAuthenticationFactory implements AbstractAuthenticationFactory
     }
 
     private void loadHostCertificate()
-        throws CertificateException, IOException {
+        throws CertificateException, IOException, NoSuchProviderException {
+
         InputStream fis = new FileInputStream(_hostCertificatePath);
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        _hostCertificate = (X509Certificate) cf.generateCertificate(fis);
-        fis.close();
+
+        try {
+            CertificateFactory cf =
+                CertificateFactory.getInstance("X.509", "BC");
+
+            _hostCertificate = (X509Certificate) cf.generateCertificate(fis);
+        } finally {
+            fis.close();
+        }
     }
 
     private void loadHostKey()
@@ -174,7 +186,6 @@ public class GSIAuthenticationFactory implements AbstractAuthenticationFactory
          * BouncyCastle instead, as jGlobus does.
          */
         BufferedReader br = new BufferedReader(new FileReader(_hostKeyPath));
-        Security.addProvider(new BouncyCastleProvider());
         KeyPair kp = (KeyPair) new PEMReader(br).readObject();
         _hostKey = kp.getPrivate();
     }
