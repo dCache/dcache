@@ -76,7 +76,7 @@
   </bean>
 
   <bean id="db" class="org.dcache.services.pinmanager1.PinManagerDatabase"
-        init-method="init">
+        depends-on="liquibase">
       <description>Data access object</description>
       <property name="dataSource" ref="data-source"/>
       <property name="authRecordPersistenceManager" ref="auth-record-pm"/>
@@ -106,6 +106,14 @@
   <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
     <description>Transaction manager</description>
     <property name="dataSource" ref="data-source"/>
+  </bean>
+
+  <bean id="liquibase"
+        class="liquibase.spring.SpringLiquibase">
+    <description>Database schema manager</description>
+    <property name="dataSource" ref="data-source"/>
+    <property name="changeLog"
+              value="classpath:org/dcache/services/pinmanager1/changelog/db.changelog-master.xml"/>
   </bean>
 
   <bean id="stage-permission" class="diskCacheV111.util.CheckStagePermission">
