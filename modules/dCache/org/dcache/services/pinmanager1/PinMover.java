@@ -4,8 +4,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageReply;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ class PinMover extends SMCTask
     private String _dstPoolName;
     private long _expiration;
     private PinManagerMovePinMessage _movePin;
-    protected final CellMessage _envelope ;
+    protected final MessageReply _reply ;
     // We record this now in Pinner, since upon success
     // we need to change the original pin expiration time
     // which will be calcuated only after the file was
@@ -46,7 +46,7 @@ class PinMover extends SMCTask
                     String dstPoolName,
                     long expiration,
                     PinManagerMovePinMessage movePin,
-                    CellMessage envelope,
+                    MessageReply reply,
                     CellStub pool)
     {
         super(manager.getCellEndpoint());
@@ -59,7 +59,7 @@ class PinMover extends SMCTask
         _dstPoolPin = dstPoolPin;
         _expiration = expiration;
         _movePin = movePin;
-         _envelope = envelope;
+        _reply = reply;
         _fsm = new PinMoverContext(this);
         setContext(_fsm);
         synchronized (this) {
@@ -119,7 +119,7 @@ class PinMover extends SMCTask
                 _dstPoolName,
                 _expiration,
                 _movePin,
-                _envelope);
+                _reply);
         } catch (PinException pe) {
            _logger.error(pe.toString());
             return false;
@@ -138,7 +138,7 @@ class PinMover extends SMCTask
                 _dstPoolName,
                 _expiration,
                 _movePin,
-                _envelope);
+                _reply);
         } catch (PinException pe) {
            _logger.error(pe.toString());
         }
@@ -154,7 +154,7 @@ class PinMover extends SMCTask
                 _dstPoolName,
                 _expiration,
                 _movePin,
-                _envelope,
+                _reply,
                 reason);
 
         } catch (PinException pe) {

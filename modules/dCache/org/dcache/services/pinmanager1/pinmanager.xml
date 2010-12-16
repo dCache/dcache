@@ -54,6 +54,14 @@
       <property name="stagePermission" ref="stage-permission"/>
   </bean>
 
+  <bean id="pinmanager-cli" class="org.dcache.services.pinmanager1.PinManagerCLI">
+      <property name="pinManager" ref="pinmanager"/>
+  </bean>
+
+  <bean id="pinmanager-messages" class="org.dcache.services.pinmanager1.PinManagerMessageReceiver">
+      <property name="pinManager" ref="pinmanager"/>
+  </bean>
+
   <bean id="policy" class="${pinManagerPolicy}"/>
 
   <bean id="db" class="org.dcache.services.pinmanager1.PinManagerDatabase">

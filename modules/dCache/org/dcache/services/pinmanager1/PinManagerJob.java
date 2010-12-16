@@ -32,11 +32,6 @@ public interface PinManagerJob {
     Subject getSubject();
 
     /**
-     * @return the cellMessage
-     */
-    CellMessage getCellMessage();
-
-    /**
      * @return the clientHost
      */
     String getClientHost();
