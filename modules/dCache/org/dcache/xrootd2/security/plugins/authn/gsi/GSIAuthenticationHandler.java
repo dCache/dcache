@@ -374,8 +374,8 @@ public class GSIAuthenticationHandler implements AuthenticationHandler
 
             // check that the challenge sent in the previous step matches
             if (_challenge.equals(rTagString)) {
-               _logger.info("signature of challenge tag ok. Challenge: " +
-                            "{}, rTagString: {}", _challenge, rTagString);
+               _logger.debug("signature of challenge tag ok. Challenge: " +
+                             "{}, rTagString: {}", _challenge, rTagString);
 
                _finished = true;
 

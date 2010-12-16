@@ -73,7 +73,7 @@ public class NestedBucketBuffer extends XrootdBucket {
 
         int step = AuthenticationRequest.deserializeStep(buffer);
 
-        _logger.info("NestedBucketBuffer protocol: {}, step {}", protocol, step);
+        _logger.debug("NestedBucketBuffer protocol: {}, step {}", protocol, step);
 
         if (step < kXGC_certreq || step > kXGC_reserved) {
             /* reset buffer */
