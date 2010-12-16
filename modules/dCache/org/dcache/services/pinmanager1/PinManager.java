@@ -19,6 +19,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.InvalidMessageCacheException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
@@ -26,11 +27,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.PatternSyntaxException;
 import org.dcache.cells.Option;
 import org.dcache.cells.CellStub;
@@ -103,14 +99,14 @@ public class PinManager
 
     private PinManagerPolicy pinManagerPolicy;
 
-    private Map<Long, PinManagerJob> pinRequestToJobMap =
+    private final Map<Long, PinManagerJob> pinRequestToJobMap =
         new ConcurrentHashMap<Long, PinManagerJob>();
 
-    private Map<Long, PinManagerJob> pinRequestToUnpinJobMap =
+    private final Map<Long, PinManagerJob> pinRequestToUnpinJobMap =
         new ConcurrentHashMap<Long, PinManagerJob>();
 
+    private Collection<Pin> unconnectedPins;
 
-    /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
 
     public void init()
@@ -126,11 +122,7 @@ public class PinManager
     @Override
     public void afterStart()
     {
-        try {
-            runInventoryAfterStartPart();
-        } catch (PinDBException e) {
-            throw new RuntimeException("Startup failed:" + e.toString(), e);
-        }
+        runInventoryAfterStartPart();
     }
 
     @Override
@@ -193,22 +185,17 @@ public class PinManager
         _poolStub = stub;
     }
 
-
     @Override
-    public void getInfo( java.io.PrintWriter printWriter ) {
+    public void getInfo(PrintWriter printWriter)
+    {
         StringBuilder sb = new StringBuilder();
         sb.append("PinManager\n");
-        // sb.append("\tjdbcDriver=").append(jdbcDriver).append('\n');
-        // sb.append("\tjdbcUrl=").append(jdbcUrl).append('\n');
-        // sb.append("\tdbUser=").append(dbUser).append('\n');
         sb.append("\tmaxPinDuration=").
                 append(maxPinDuration).append(" milliseconds \n");
-        //sb.append("\tnumber of files pinned=").append(pnfsIdToPins.size());
+        // sb.append("\tnumber of files pinned=").append(pnfsIdToPins.size());
         printWriter.println(sb.toString());
 
     }
-
-    private  Collection<Pin> unconnectedPins=null;
 
     private void runInventoryBeforeStartPart() throws PinDBException {
         // we get all the problematic pins before the pin manager starts
@@ -223,14 +210,14 @@ public class PinManager
         }
     }
 
-    private void runInventoryAfterStartPart() throws PinDBException {
-
+    private void runInventoryAfterStartPart()
+    {
         // the rest can be done in parallel
-        new Thread(new Runnable() {
-                public void run() {
-                    unpinAllInitiallyUnpinnedPins();
-                }
-            }, getCellName() + "-init").start();
+        new Thread(getCellName() + "-init") {
+            public void run() {
+                unpinAllInitiallyUnpinnedPins();
+            }
+        }.start();
     }
 
     public InteractiveJob pin(PnfsId pnfsId, long lifetime)
@@ -978,7 +965,7 @@ public class PinManager
         Long pinRequestIdLong = null;
 
         try {
-            Pin pin = db.getAndLockActivePinWithRequestsByPnfstId(job.getPnfsId());
+            Pin pin = db.getAndLockActivePinWithRequestsByPnfsId(job.getPnfsId());
             if (pin == null) {
                 throw new PinException(1, "Pin requests for "+job.getPnfsId()+
                                          " is not found");

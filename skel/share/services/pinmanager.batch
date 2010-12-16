@@ -34,8 +34,8 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell PinManager \
        "classpath:org/dcache/services/pinmanager1/pinmanager.xml \
         -export  \
-        -callbackExecutor=messageThreadPool \
-        -messageExecutor=messageThreadPool \
+        -callbackExecutor=message-thread-pool \
+        -messageExecutor=message-thread-pool \
         -jdbcDriver=org.postgresql.Driver \
         -jdbcUrl=jdbc:postgresql://${pinManagerDbHost}/${pinManagerDbName} \
         -dbUser=${pinManagerDbUser} \

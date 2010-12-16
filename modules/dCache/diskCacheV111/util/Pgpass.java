@@ -17,7 +17,7 @@ public class Pgpass {
     private String _pwdfile;
     private String _hostname;
     private String _port;
-    private String _database; 
+    private String _database;
     private String _username;
 
     public Pgpass(String pwdfile) {
@@ -32,9 +32,9 @@ public class Pgpass {
 //             System.out.print(sa[i]+",");
 //         }
 //         System.out.println();
-            if (sa[0].equals("*") || sa[0].equals(hostname)) 
-                if (sa[1].equals("*") || sa[1].equals(port)) 
-                    if (sa[2].equals("*") || sa[2].equals(database)) 
+            if (sa[0].equals("*") || sa[0].equals(hostname))
+                if (sa[1].equals("*") || sa[1].equals(port))
+                    if (sa[2].equals("*") || sa[2].equals(database))
                         if (sa[3].equals("*") || sa[3].equals(username))
                             return sa[4];
         }
@@ -91,7 +91,7 @@ public class Pgpass {
                 System.out.println("Protection for '"+_pwdfile+"' must be '600'");
                 return null;
             }
-            /* 
+            /*
              * Here we can read and parse the password file
              */
             try {
@@ -132,5 +132,15 @@ public class Pgpass {
 
     public String getDatabase() {
         return _database;
+    }
+
+    public static String getPassword(String file,
+                                     String url, String user, String password)
+    {
+        if (file != null && file.trim().length() > 0) {
+            Pgpass pgpass = new Pgpass(file);
+            return pgpass.getPgpass(url, user);
+        }
+        return password;
     }
 }
