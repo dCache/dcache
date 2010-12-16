@@ -8,17 +8,18 @@ import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.ReflectionUtils;
+import org.dcache.cells.MessageCallback;
+import org.dcache.cells.CellStub;
 
 import statemap.FSMContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class SMCTask implements CellMessageAnswerable
+class SMCTask implements MessageCallback<Message>
 {
     private final static Logger _log =
         LoggerFactory.getLogger(SMCTask.class);
@@ -65,35 +66,39 @@ class SMCTask implements CellMessageAnswerable
         }
     }
 
-    public void answerArrived(CellMessage question, CellMessage answer)
+    public void success(Message message)
     {
-        transition("answerArrived", answer.getMessageObject());
+        transition("success", message);
     }
 
-    public void answerTimedOut(CellMessage request)
+    public void failure(int rc, Object error)
     {
-        _log.warn("Message timed out: " + request);
+        _log.warn("Error: {} [{}]", error, rc);
+        transition("failure", rc, error);
+    }
+
+    public void noroute()
+    {
+        transition("noroute");
+    }
+
+    public void timeout()
+    {
         transition("timeout");
     }
 
-    public void exceptionArrived(CellMessage request, Exception exception)
+    public void send(CellStub stub, Message message)
     {
-        _log.warn("Error: " + exception);
-        transition("exceptionArrived", exception);
+        stub.send(message, Message.class, this);
     }
 
-    public void sendMessage(CellPath path, Message message, long timeout)
+    public void send(CellStub stub, Message message, String destination)
     {
-        _cell.sendMessage(new CellMessage(path, message), this, timeout);
+        stub.send(new CellPath(destination), message, Message.class, this);
     }
 
-    public void sendMessage(CellPath path, Message message)
-        throws NoRouteToCellException
+    public String getCellName()
     {
-        _cell.sendMessage(new CellMessage(path, message));
-    }
-
-    public String getCellName() {
         return _cellName;
     }
 }

@@ -45,6 +45,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.dcache.cells.Option;
+import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
@@ -53,6 +54,7 @@ import org.dcache.auth.Subjects;
 import javax.security.auth.Subject;
 import org.dcache.pool.repository.StickyRecord;
 import diskCacheV111.vehicles.StorageInfo;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  *   <pre>
@@ -92,12 +94,13 @@ public class PinManager
     private static final Logger logger =
         LoggerFactory.getLogger(PinManager.class);
 
-    protected long expirationFrequency;
+    private long expirationFrequency;
 
     private long maxPinDuration;
 
-    protected CellPath pnfsManager;
-    protected CellPath poolManager;
+    private CellStub _pnfsManagerStub;
+    private CellStub _poolManagerStub;
+    private CellStub _poolStub;
 
     // all database oprations will be done in the lazy
     // fassion in a low priority thread
@@ -128,9 +131,9 @@ public class PinManager
     protected CheckStagePermission _checkStagePermission;
 
     public void init()
-        throws Exception
+        throws PinDBException
     {
-        expireRequests = new Thread( "ExpireRequestsThread");
+        expireRequests = new Thread(this, "ExpireRequestsThread");
         //databaseUpdateThread.setPriority(Thread.MIN_PRIORITY);
         expireRequests.start();
 
@@ -147,59 +150,64 @@ public class PinManager
         }
     }
 
+    @Override
     public CellEndpoint getCellEndpoint()
     {
         return super.getCellEndpoint();
     }
 
+    @Required
     public void setDb(PinManagerDatabase db)
     {
         this.db = db;
     }
 
+    @Required
     public void setExpirationFrequency(long frequency)
     {
         expirationFrequency = frequency;
     }
 
+    @Required
     public void setMaxPinDuration(long duration)
     {
         maxPinDuration = duration;
     }
 
+    @Required
     public long getMaxPinDuration()
     {
         return maxPinDuration;
     }
 
+    @Required
     public void setPinManagerPolicy(PinManagerPolicy policy)
     {
         pinManagerPolicy = policy;
     }
 
+    @Required
     public void setStagePermission(CheckStagePermission checker)
     {
         _checkStagePermission = checker;
     }
 
-    public void setPnfsManager(CellPath path)
+    @Required
+    public void setPnfsManagerStub(CellStub stub)
     {
-        pnfsManager = path;
+        _pnfsManagerStub = stub;
     }
 
-    public CellPath getPnfsManager()
+    @Required
+    public void setPoolManagerStub(CellStub stub)
     {
-        return pnfsManager;
+        _poolManagerStub = stub;
     }
 
-    public void setPoolManager(CellPath path)
+    @Required
+    public void setPoolStub(CellStub stub)
     {
-        poolManager = path;
-    }
-
-    public CellPath getPoolManager()
-    {
-        return poolManager;
+        _poolStub = stub;
     }
 
     public final static String hh_pin_pnfsid = "<pnfsId> <seconds> " +
@@ -529,7 +537,7 @@ public class PinManager
                     null,
                     null,
                     null);
-            new Unpinner(this,job,pin,retry);
+            new Unpinner(this,job,pin,retry, _pnfsManagerStub, _poolStub);
         }
         else {
             for(PinRequest pinRequest: pinRequests) {
@@ -650,8 +658,9 @@ public class PinManager
                logger.info("need to extend the lifetime of the request");
                db.commitDBOperations();
                 new Extender(this,pin,pinRequest,
-                        job,
-                    pinRequest.getExpirationTime());
+                             job,
+                             pinRequest.getExpirationTime(),
+                             _poolStub);
                 return;
             }
             else if(pin.getState().equals(PinManagerPinState.PINNING)) {
@@ -689,7 +698,8 @@ public class PinManager
                      logger.error("failed to get allowed pool manager states: " + ex);
                 }
                 new Pinner(this, job, pin,
-                   pinRequest.getId(), allowedStates);
+                           pinRequest.getId(), allowedStates,
+                           _pnfsManagerStub, _poolManagerStub, _poolStub);
             } else {
                 job.returnFailedResponse("pin returned is in the wrong state");
             }
@@ -870,7 +880,7 @@ public class PinManager
                         null,
                         null,
                         null);
-                new Unpinner(this,job,pin,false);
+                new Unpinner(this,job,pin,false, _pnfsManagerStub, _poolStub);
             }
             db.commitDBOperations();
         } catch (PinDBException pdbe ) {
@@ -1063,7 +1073,7 @@ public class PinManager
             logger.info("need to extend the lifetime of the request");
             logger.info("starting extender");
             new Extender(this,pin,pinRequest,job,
-                    expiration);
+                         expiration, _poolStub);
         } catch (PinDBException pdbe ) {
             logger.error("extend lifetime: "+pdbe);
             db.rollbackDBOperations();
@@ -1174,7 +1184,8 @@ public class PinManager
             if(job != null && job.getPinRequestId() != null) {
                 pinRequestToJobMap.put(job.getPinRequestId(),job);
             }
-            new Pinner(this, newPinJob, newPin,0, RequestContainerV5.allStates);
+            new Pinner(this, newPinJob, newPin,0, RequestContainerV5.allStates,
+                       _pnfsManagerStub, _poolManagerStub, _poolStub);
 
         } catch (PinDBException pdbe ) {
             logger.error("repinFile: "+pdbe.toString());
@@ -1295,7 +1306,7 @@ public class PinManager
                             null,
                             null,
                             null);
-                    new Unpinner(this,unpinJob,pin,false);
+                    new Unpinner(this,unpinJob,pin,false, _pnfsManagerStub, _poolStub);
                     return;
                 }
             }
@@ -1428,7 +1439,7 @@ public class PinManager
                     null,
                     null,
                     null);
-            new Unpinner(this,unpinJob,pin,false);
+            new Unpinner(this,unpinJob,pin,false, _pnfsManagerStub, _poolStub);
             return;
         } catch (PinDBException pdbe ) {
             logger.error("unpin: "+pdbe.toString());
@@ -1673,8 +1684,8 @@ public class PinManager
     }
 
     private void cleanPoolStickyBitsUnknownToPinManager(
-            PinManagerMovePinMessage movePin
-         ) throws NoRouteToCellException
+        PinManagerMovePinMessage movePin)
+        throws NoRouteToCellException
     {
         PnfsId pnfsId = movePin.getPnfsId();
         String srcPool = movePin.getSourcePool();
@@ -1683,16 +1694,12 @@ public class PinManager
             String stickyBitName = record.owner();
             if(stickyBitName.startsWith(getCellName())) {
                 PoolSetStickyMessage setStickyRequest =
-                   new PoolSetStickyMessage(srcPool,
+                    new PoolSetStickyMessage(srcPool,
                         pnfsId, false,stickyBitName,-1);
                 setStickyRequest.setReplyRequired(false);
-
-                this.sendMessage(
-                        new CellMessage(new CellPath(srcPool),
-                        setStickyRequest));
+                _poolStub.send(new CellPath(srcPool), setStickyRequest);
             }
         }
-
     }
 
     private void movePin(PinManagerMovePinMessage movePin,
@@ -1757,13 +1764,14 @@ public class PinManager
                         Pin dstPin =
                             db.newPinForPinMove(pnfsId,dstPool,expirationTime);
                         new PinMover(this,
-                            pnfsId,
-                            srcPin,
-                            dstPin,
-                            dstPool,
-                            expirationTime,
-                            movePin,
-                             envelope);
+                                     pnfsId,
+                                     srcPin,
+                                     dstPin,
+                                     dstPool,
+                                     expirationTime,
+                                     movePin,
+                                     envelope,
+                                     _poolStub);
                 }
             } finally {
                 db.commitDBOperations();
@@ -1937,7 +1945,7 @@ public class PinManager
                 null,
                 null,
                 null);
-        new Unpinner(this,unpinJob,dstPin,false);
+        new Unpinner(this,unpinJob,dstPin,false, _pnfsManagerStub, _poolStub);
     }
 
     public void pinMoveFailed (

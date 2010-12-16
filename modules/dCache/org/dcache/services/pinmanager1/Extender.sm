@@ -33,65 +33,55 @@ Entry
         extendStickyFlagLifetime();
 }
 {
-
-           timeout
+        timeout
                 nil
                 {
                         extendStickyFlagLifetime();
                 }
-
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() == 0 ]
+        succes(message: PoolSetStickyMessage)
                 Done
                 {
                         succeed();
-
                 }
-        answerArrived(message: PoolSetStickyMessage)
+        failure(rc: int, error: Object)
                 Done
                 {
-                       fail(message.getErrorObject());
-
+                       fail(error);
+                }
+        noroute
+                Done
+                {
+                        fail("No route to pool");
                 }
 }
 
 Done
 {
-
 }
 
 Default
 {
-        answerArrived(message: Message)
-                [ message.getReturnCode() != 0 ]
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail(message.getErrorObject());
+                        fail(error);
                 }
-        answerArrived(message: Message)
+        noroute
+                Done
+                {
+                        fail("Communication failure");
+                }
+        timeout
+                Done
+                {
+                        fail("Communication timeout");
+                }
+        success(message: PoolSetStickyMessage)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
-                }
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PoolSetStickyMessage)
-                Done
-                {
-                        fail("Unexpected answer received in state "
-                             + context.getState().getName()
-                             + ": " + context.getTransition());
-                }
-        exceptionArrived(exception: Exception)
-                Done
-                {
-                        fail(exception);
                 }
 }
 

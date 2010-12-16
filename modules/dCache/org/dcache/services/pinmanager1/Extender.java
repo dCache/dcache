@@ -3,6 +3,7 @@ package org.dcache.services.pinmanager1;
 import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
+import org.dcache.cells.CellStub;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,19 +25,21 @@ class Extender extends SMCTask
     protected final ExtenderContext _fsm;
     protected final long _expiration;
     protected final PinManager _manager;
+    protected final CellStub _pool;
 
     public Extender(PinManager manager,
-        Pin pin,
-        PinRequest pinRequest,
-        PinManagerJob job,
-        long expiration)
+                    Pin pin,
+                    PinRequest pinRequest,
+                    PinManagerJob job,
+                    long expiration,
+                    CellStub pool)
     {
         super(manager.getCellEndpoint());
 
         _manager = manager;
         _pin = pin;
         _pinRequest = pinRequest;
-
+        _pool = pool;
         _expiration = expiration;
         _job = job;
         _fsm = new ExtenderContext(this);
@@ -97,7 +100,6 @@ class Extender extends SMCTask
             PoolSetStickyMessage setStickyRequest =
                 new PoolSetStickyMessage(poolName,
                 _pin.getPnfsId(), true,stickyBitName,_expiration);
-            setStickyRequest.setReplyRequired(true);
-            sendMessage(new CellPath(poolName), setStickyRequest,90*1000);
+            send(_pool, setStickyRequest, poolName);
     }
 }

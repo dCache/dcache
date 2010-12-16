@@ -37,18 +37,22 @@ Entry
                         retrieveStorageInfo();
                 }
 
-        answerArrived(message: PnfsGetStorageInfoMessage)
+        success(message: PnfsGetStorageInfoMessage)
                 [ message.getReturnCode() == 0 ]
                 FindingReadPool
                 {
                         setStorageInfo(message.getStorageInfo());
                 }
 
-        answerArrived(message: PnfsGetStorageInfoMessage)
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail("could not get storage info: "+
-                         message.getErrorObject());
+                        fail("could not get storage info: " + error);
+                }
+        noroute
+                Done
+                {
+                        fail("No route to PnfsManager");
                 }
 }
 
@@ -64,16 +68,21 @@ Entry
                 {
                         findReadPool();
                 }
-        answerArrived(message: PoolMgrSelectReadPoolMsg)
-                [ message.getReturnCode() == 0 && message.getPoolName() != null ]
+        success(message: PoolMgrSelectReadPoolMsg)
+                [ message.getPoolName() != null ]
                 MarkingSticky
                 {
                         setReadPool(message.getPoolName());
                 }
-        answerArrived(message: PoolMgrSelectReadPoolMsg)
+        failure(rc: int, error: Object)
                 Done
                 {
                         fail("finding read pool failed");
+                }
+        noroute
+                Done
+                {
+                        fail("No route to PoolManager");
                 }
 }
 
@@ -87,22 +96,25 @@ Entry
                 FindingReadPool
                 {
                 }
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() == 0 ]
+        noroute
+                FindingReadPool
+                {
+                }
+        success(message: PoolSetStickyMessage)
                 Done
                 {
                         succeed();
                 }
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() == POOL_DISABLED ||
-                  message.getReturnCode() == FILE_NOT_IN_REPOSITORY ]
+        failure(rc: int, error: Object)
+                [ rc == POOL_DISABLED ||
+                  rc == FILE_NOT_IN_REPOSITORY ]
                 FindingReadPool
                 {
                 }
-        answerArrived(message: PoolSetStickyMessage)
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail(message.getErrorObject());
+                        fail(error);
                 }
 }
 
@@ -112,62 +124,41 @@ Done
 
 Default
 {
-        answerArrived(message: Message)
-                [ message.getReturnCode() != 0 ]
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail(message.getErrorObject());
+                        fail(error);
                 }
-        answerArrived(message: Message)
+        noroute
+                Done
+                {
+                        fail("Communication failure");
+                }
+        timeout
+                Done
+                {
+                        fail("Communication timeout");
+                }
+        success(message: PnfsGetStorageInfoMessage)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
-        answerArrived(message: PnfsGetStorageInfoMessage)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PnfsGetStorageInfoMessage)
+        success(message: PoolMgrSelectReadPoolMsg)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
-        answerArrived(message: PoolMgrSelectReadPoolMsg)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PoolMgrSelectReadPoolMsg)
+        success(message: PoolSetStickyMessage)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
-                }
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PoolSetStickyMessage)
-                Done
-                {
-                        fail("Unexpected answer received in state "
-                             + context.getState().getName()
-                             + ": " + context.getTransition());
-                }
-        exceptionArrived(exception: Exception)
-                Done
-                {
-                        fail(exception);
                 }
 }
 

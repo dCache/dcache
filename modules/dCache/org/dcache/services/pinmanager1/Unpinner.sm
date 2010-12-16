@@ -44,24 +44,28 @@ Entry
                 {
                         deletePnfsFlags();
                 }
-        answerArrived(message: PnfsFlagMessage)
-                [ message.getReturnCode() == 0 ]
+
+        success(message: PnfsFlagMessage)
                 FindingCacheLocations
                 {
-
                 }
 
-        answerArrived(message: PnfsFlagMessage)
+        failure(rc: int, error: Object)
                [ ctxt.isRetry() ]
                CheckingThatFileExists
                {
                }
 
-        answerArrived(message: PnfsFlagMessage)
+        failure(rc: int, error: Object)
                Done
                {
-                        fail(message.getErrorObject());
+                        fail(error);
                }
+        noroute
+                Done
+                {
+                        fail("No route to pool");
+                }
 }
 
 CheckingThatFileExists
@@ -75,23 +79,26 @@ Entry
                 {
                         checkThatFileExists();
                 }
-        answerArrived(message: PnfsGetFileAttributes)
-                [ message.getReturnCode() == CacheException.NOT_IN_TRASH ||
-                  message.getReturnCode() == CacheException.FILE_NOT_FOUND]
+        failure(rc: int, error: Object)
+                [ rc == CacheException.NOT_IN_TRASH ||
+                  rc == CacheException.FILE_NOT_FOUND]
                 Done
                 {
                         fileRemoved();
                 }
-        answerArrived(message: PnfsGetFileAttributes)
-                [ message.getReturnCode() != 0 ]
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail(message.getErrorObject());
+                        fail(error);
                 }
-        answerArrived(message: PnfsGetFileAttributes)
+        noroute
+                Done
+                {
+                        fail("No route to PnfsManager");
+                }
+        success(message: PnfsGetFileAttributes)
                 UnsettingStickyFlags
                 {
-
                 }
 }
 
@@ -107,18 +114,20 @@ Entry
                 {
                         findCacheLocations();
                 }
-        answerArrived(message: PnfsGetCacheLocationsMessage)
-                [ message.getReturnCode() == 0 ]
+        success(message: PnfsGetCacheLocationsMessage)
                 UnsettingStickyFlags
                 {
                         setLocations(message.getCacheLocations());
-
                 }
-        answerArrived(message: PnfsGetCacheLocationsMessage)
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail(message.getErrorObject());
-
+                        fail(error);
+                }
+        noroute
+                Done
+                {
+                        fail("No route to PnfsManager");
                 }
 }
 
@@ -134,106 +143,85 @@ Entry
                    succeed();
                 }
 
-           timeout
+        timeout
                 nil
                 {
                         unsetStickyFlags();
                 }
 
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() == 0 ||
-                  message.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY ]
+        success(message: PoolSetStickyMessage)
                 Done
                 {
                         succeed();
-
                 }
 
-        answerArrived(message: PoolSetStickyMessage)
+        failure(rc: int, error: Object)
+                [ rc == CacheException.FILE_NOT_IN_REPOSITORY ]
                 Done
                 {
-                        fail(message.getErrorObject());
-
+                        succeed();
                 }
 
+        failure(rc: int, error: Object)
+                Done
+                {
+                        fail(error);
+                }
+        noroute
+                Done
+                {
+                        fail("No route to pool");
+                }
 }
 
 Done
 {
-
 }
 
 Default
 {
-        answerArrived(message: Message)
-                [ message.getReturnCode() != 0 ]
+        failure(rc: int, error: Object)
                 Done
                 {
-                        fail(message.getErrorObject());
+                        fail(error);
                 }
-        answerArrived(message: Message)
+        noroute
+                Done
+                {
+                        fail("Communication failure");
+                }
+        timeout
+                Done
+                {
+                        fail("Communication timeout");
+                }
+        success(message: PnfsFlagMessage)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
-        answerArrived(message: PnfsFlagMessage)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PnfsFlagMessage)
+        success(message: PnfsGetFileAttributes)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
-        answerArrived(message: PnfsGetFileAttributes)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PnfsGetFileAttributes)
+        success(message: PnfsGetCacheLocationsMessage)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
-        answerArrived(message: PnfsGetCacheLocationsMessage)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PnfsGetCacheLocationsMessage)
+        success(message: PoolSetStickyMessage)
                 Done
                 {
                         fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
-                }
-        answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() != 0 ]
-                Done
-                {
-                        fail(message.getErrorObject());
-                }
-        answerArrived(message: PoolSetStickyMessage)
-                Done
-                {
-                        fail("Unexpected answer received in state "
-                             + context.getState().getName()
-                             + ": " + context.getTransition());
-                }
-        exceptionArrived(exception: Exception)
-                Done
-                {
-                        fail(exception);
                 }
 }
 

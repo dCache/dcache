@@ -28,20 +28,27 @@
     </constructor-arg>
   </bean>
 
+  <bean id="pnfs-manager-stub" class="org.dcache.cells.CellStub">
+      <property name="destination" value="${pnfsManager}"/>
+      <property name="timeout" value="300000"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+      <property name="destination" value="${poolManager}"/>
+      <property name="timeout" value="3600000"/>
+  </bean>
+
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+      <property name="timeout" value="90000"/>
+  </bean>
+
   <bean id="pinmanager" class="org.dcache.services.pinmanager1.PinManager"
         init-method="init">
       <property name="expirationFrequency" value="${expirationFrequency}"/>
       <property name="maxPinDuration" value="${maxPinDuration}"/>
-      <property name="pnfsManager">
-          <bean class="dmg.cells.nucleus.CellPath">
-              <constructor-arg value="${pnfsManager}"/>
-          </bean>
-      </property>
-      <property name="poolManager">
-          <bean class="dmg.cells.nucleus.CellPath">
-              <constructor-arg value="${poolManager}"/>
-          </bean>
-      </property>
+      <property name="pnfsManagerStub" ref="pnfs-manager-stub"/>
+      <property name="poolManagerStub" ref="pool-manager-stub"/>
+      <property name="poolStub" ref="pool-stub"/>
       <property name="db" ref="db"/>
       <property name="pinManagerPolicy" ref="policy"/>
       <property name="stagePermission" ref="stage-permission"/>

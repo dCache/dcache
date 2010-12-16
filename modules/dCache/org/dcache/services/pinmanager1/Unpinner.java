@@ -6,6 +6,7 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.cells.CellStub;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -32,23 +33,30 @@ class Unpinner extends SMCTask
     protected final PinManagerJob _job;
     protected final Pin _pin;
     protected final UnpinnerContext _fsm;
-    protected final CellPath _pnfsManager;
+    protected final CellStub _pnfsManager;
+    protected final CellStub _pool;
     protected final List<String> locations = new ArrayList<String>();
     protected final boolean isOldStylePin;
     protected final boolean _retry;
 
-    public Unpinner(PinManager manager, PinManagerJob job, Pin pin, boolean retry)
+    public Unpinner(PinManager manager,
+                    PinManagerJob job,
+                    Pin pin,
+                    boolean retry,
+                    CellStub pnfsManager,
+                    CellStub pool)
     {
         super(manager.getCellEndpoint());
         _manager = manager;
         _retry = retry;
         _job = job;
         _pin = pin;
-        _pnfsManager = manager.getPnfsManager();
-        String pool = _pin.getPool();
-        isOldStylePin = pool == null || pool.equals("unknown");
+        _pnfsManager = pnfsManager;
+        _pool = pool;
+        String poolName = _pin.getPool();
+        isOldStylePin = (poolName == null || poolName.equals("unknown"));
         if(!isOldStylePin) {
-            locations.add(pool);
+            locations.add(poolName);
         }
 
         _fsm = new UnpinnerContext(this);
@@ -114,8 +122,7 @@ class Unpinner extends SMCTask
         PnfsFlagMessage pfm = new PnfsFlagMessage(
                 _job.getPnfsId(), "s", PnfsFlagMessage.FlagOperation.REMOVE);
         pfm.setValue("*");
-        pfm.setReplyRequired(true);
-        sendMessage(_pnfsManager, pfm, 5*60*1000);
+        send(_pnfsManager, pfm);
     }
 
     void checkThatFileExists()
@@ -124,8 +131,7 @@ class Unpinner extends SMCTask
         PnfsGetFileAttributes message =
             new PnfsGetFileAttributes(_job.getPnfsId(),
                                       EnumSet.noneOf(FileAttribute.class));
-        message.setReplyRequired(true);
-        sendMessage(_pnfsManager, message, 5*60*1000);
+        send(_pnfsManager, message);
     }
 
     void findCacheLocations()
@@ -133,7 +139,7 @@ class Unpinner extends SMCTask
         _logger.info("findCacheLocations");
         PnfsGetCacheLocationsMessage request =
             new PnfsGetCacheLocationsMessage(_job.getPnfsId());
-        sendMessage(_pnfsManager, request, 5*60*1000);
+        send(_pnfsManager, request);
     }
 
     void setLocations(List<String> locations) {
@@ -158,17 +164,16 @@ class Unpinner extends SMCTask
                 new PoolSetStickyMessage(poolName,
                 _job.getPnfsId(), false,stickyBitName,-1);
             if(!isOldStylePin) {
-                setStickyRequest.setReplyRequired(true);
-                sendMessage(new CellPath(poolName), setStickyRequest,90*1000);
+                send(_pool, setStickyRequest, poolName);
             } else {
                 try {
                     // unpin using new format
-                    sendMessage(new CellPath(poolName), setStickyRequest);
+                    _pool.send(new CellPath(poolName), setStickyRequest);
                     setStickyRequest =
                         new PoolSetStickyMessage(poolName,
-                            _job.getPnfsId(), false,oldStickyBitName,-1);
+                            _job.getPnfsId(), false, oldStickyBitName, -1);
                     // unpin using old format
-                    sendMessage(new CellPath(poolName), setStickyRequest);
+                    _pool.send(new CellPath(poolName), setStickyRequest);
                 } catch (NoRouteToCellException e) {
                     _logger.error("PoolSetStickyMessage (false) failed : " + e.getMessage());
                 }

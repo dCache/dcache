@@ -6,6 +6,7 @@ import diskCacheV111.vehicles.*;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.AuthorizationRecord;
+import org.dcache.cells.CellStub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +25,9 @@ class Pinner extends SMCTask
     private final Pin _pin;
     private final PinManagerJob _job;
     private final PinnerContext _fsm;
-    private final CellPath _pnfsManager;
-    private final CellPath _poolManager;
+    private final CellStub _pnfsManager;
+    private final CellStub _poolManager;
+    private final CellStub _pool;
     private String _readPoolName;
     private long _expiration;
     private final PinManager _manager;
@@ -42,16 +44,20 @@ class Pinner extends SMCTask
     private long _orginalPinRequestId;
 
     public Pinner(PinManager manager,
-        PinManagerJob job,
-        Pin pin,
-        long orginalPinRequestId,
-        int allowedStates)
+                  PinManagerJob job,
+                  Pin pin,
+                  long orginalPinRequestId,
+                  int allowedStates,
+                  CellStub pnfsManager,
+                  CellStub poolManager,
+                  CellStub pool)
     {
         super(manager.getCellEndpoint());
         _manager = manager;
         _job = job;
-        _pnfsManager = manager.getPnfsManager();
-        _poolManager = manager.getPoolManager();
+        _pnfsManager = pnfsManager;
+        _poolManager = poolManager;
+        _pool = pool;
         _pin = pin;
         _orginalPinRequestId = orginalPinRequestId;
         _allowedStates = allowedStates;
@@ -92,9 +98,7 @@ class Pinner extends SMCTask
     void retrieveStorageInfo()
     {
         _logger.info("retrieveStorageInfo");
-        sendMessage(_pnfsManager,
-                    new PnfsGetStorageInfoMessage(_job.getPnfsId()),
-                    5 * 60 * 1000);
+        send(_pnfsManager, new PnfsGetStorageInfoMessage(_job.getPnfsId()));
     }
 
     void findReadPool()
@@ -115,7 +119,7 @@ class Pinner extends SMCTask
                                          _allowedStates);
         request.setSubject(_job.getSubject());
 
-        sendMessage(_poolManager, request, 60*60*1000);
+        send(_poolManager, request);
     }
 
     void markSticky()
@@ -141,8 +145,7 @@ class Pinner extends SMCTask
             // has arrived
             getCellName()+_pin.getId(),
             stickyBitExpiration);
-        sendMessage(new CellPath(_readPoolName), setStickyRequest,
-                    90 * 1000);
+        send(_pool, setStickyRequest, _readPoolName);
     }
 
     void succeed()

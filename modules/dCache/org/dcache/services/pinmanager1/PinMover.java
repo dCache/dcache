@@ -5,6 +5,7 @@ import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
+import org.dcache.cells.CellStub;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,7 @@ class PinMover extends SMCTask
     private final Pin _dstPoolPin;
     private final PnfsId _pnfsId;
     private final PinMoverContext _fsm;
-    private final CellPath _pnfsManager;
-    private final CellPath _poolManager;
+    private final CellStub _pool;
     private String _dstPoolName;
     private long _expiration;
     private PinManagerMovePinMessage _movePin;
@@ -40,19 +40,19 @@ class PinMover extends SMCTask
     private long _orginalPinRequestId;
 
     public PinMover(PinManager manager,
-        PnfsId pnfsId,
-        Pin srcPoolPin,
-        Pin dstPoolPin,
-        String dstPoolName,
-        long expiration,
-        PinManagerMovePinMessage movePin,
-        CellMessage envelope)
+                    PnfsId pnfsId,
+                    Pin srcPoolPin,
+                    Pin dstPoolPin,
+                    String dstPoolName,
+                    long expiration,
+                    PinManagerMovePinMessage movePin,
+                    CellMessage envelope,
+                    CellStub pool)
     {
         super(manager.getCellEndpoint());
 
         _manager = manager;
-        _pnfsManager = manager.getPnfsManager();
-        _poolManager = manager.getPoolManager();
+        _pool = pool;
         _pnfsId = pnfsId;
         _dstPoolName = dstPoolName;
         _srcPoolPin = srcPoolPin;
@@ -92,8 +92,7 @@ class PinMover extends SMCTask
             // has arrived
             getCellName()+_dstPoolPin.getId(),
             stickyBitExpiration);
-        sendMessage(new CellPath(_dstPoolName), setStickyRequest,
-                    90 * 1000);
+        send(_pool, setStickyRequest, _dstPoolName);
     }
 
     void unsetStickyFlags()
@@ -108,8 +107,7 @@ class PinMover extends SMCTask
         PoolSetStickyMessage setStickyRequest =
             new PoolSetStickyMessage(srcPoolName,
             _pnfsId, false,stickyBitName,-1);
-            setStickyRequest.setReplyRequired(true);
-            sendMessage(new CellPath(srcPoolName), setStickyRequest,90*1000);
+            send(_pool, setStickyRequest, srcPoolName);
     }
     boolean pinMoveSucceed()
     {
