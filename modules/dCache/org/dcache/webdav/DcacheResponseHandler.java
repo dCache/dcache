@@ -32,7 +32,7 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
 
         @Override
         public void respondHead(Resource resource, Response response, Request request ) {
-            setRespondContentCommonHeaders(response, resource);
+            setRespondContentCommonHeaders(response, resource, request.getAuthorization());
 
             if (resource instanceof GetableResource) {
                 GetableResource gr = (GetableResource) resource;
