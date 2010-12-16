@@ -450,7 +450,7 @@ public class RepositorySubsystemTest
             protected void run()
                     throws CacheException, InterruptedException {
                 List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle = repository.createEntry(id5, info5, FROM_STORE, CACHED, stickyRecords);
+                WriteHandle handle = repository.createEntry(id5, info5, FROM_STORE, CACHED, stickyRecords);
                 try {
                     handle.allocate(info5.getFileSize());
                     createFile(handle.getFile(), info5.getFileSize());
