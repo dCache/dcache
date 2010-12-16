@@ -301,7 +301,7 @@
                 <list>
                   <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>
                   <value>org.eclipse.jetty.plus.webapp.EnvConfiguration</value>
-                  <value>org.eclipse.jetty.plus.webapp.Configuration</value>
+                  <value>org.eclipse.jetty.plus.webapp.PlusConfiguration</value>
                   <value>org.eclipse.jetty.webapp.WebXmlConfiguration</value>
                   <value>org.eclipse.jetty.webapp.TagLibConfiguration</value>
                 </list>
