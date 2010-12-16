@@ -1065,29 +1065,32 @@ public class DcacheResourceFactory
         {
             setStatus("Mover " + getPool() + "/" + getMoverId() +
                       ": Opening data connection");
-            URL url = new URL(getRedirect());
-            HttpURLConnection connection =
-                (HttpURLConnection) url.openConnection();
             try {
-                if (range != null) {
-                    connection.addRequestProperty("Range", String.format("bytes=%d-%d", range.getStart(), range.getFinish()));
-                }
-
-                connection.connect();
-
-                InputStream inputStream = connection.getInputStream();
+                URL url = new URL(getRedirect());
+                HttpURLConnection connection =
+                    (HttpURLConnection) url.openConnection();
                 try {
-                    setStatus("Mover " + getPool() + "/" + getMoverId() +
-                              ": Sending data");
-
-                    byte[] buffer = new byte[_bufferSize];
-                    int read;
-                    while ((read = inputStream.read(buffer)) > -1) {
-                        outputStream.write(buffer, 0, read);
+                    if (range != null) {
+                        connection.addRequestProperty("Range", String.format("bytes=%d-%d", range.getStart(), range.getFinish()));
                     }
-                    outputStream.flush();
+
+                    connection.connect();
+                    InputStream inputStream = connection.getInputStream();
+                    try {
+                        setStatus("Mover " + getPool() + "/" + getMoverId() +
+                                  ": Sending data");
+
+                        byte[] buffer = new byte[_bufferSize];
+                        int read;
+                        while ((read = inputStream.read(buffer)) > -1) {
+                            outputStream.write(buffer, 0, read);
+                        }
+                        outputStream.flush();
+                    } finally {
+                        inputStream.close();
+                    }
                 } finally {
-                    inputStream.close();
+                    connection.disconnect();
                 }
 
                 if (!waitForMover(_transferConfirmationTimeout)) {
@@ -1097,7 +1100,6 @@ public class DcacheResourceFactory
                 throw new TimeoutCacheException("Server is busy (internal timeout)");
             } finally {
                 setStatus(null);
-                connection.disconnect();
             }
         }
 
