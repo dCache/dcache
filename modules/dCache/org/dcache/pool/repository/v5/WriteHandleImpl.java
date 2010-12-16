@@ -83,7 +83,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         _allocator = allocator;
         _pnfs = pnfs;
         _entry = entry;
-        _initialState = entry.getState();;
+        _initialState = entry.getState();
         _targetState = targetState;
         _stickyRecords = stickyRecords;
         _state = HandleState.OPEN;
@@ -294,16 +294,20 @@ class WriteHandleImpl implements ReplicaDescriptor
             }
 
             FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setSize(length);
+            if(_initialState == EntryState.FROM_CLIENT) {
+                fileAttributes.setAccessLatency(info.getAccessLatency());
+                fileAttributes.setRetentionPolicy(info.getRetentionPolicy());                
+                fileAttributes.setSize(length);
+            }
+
             fileAttributes.setLocations(Collections.singleton(_repository.getPoolName()));
-            fileAttributes.setAccessLatency(info.getAccessLatency());
-            fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
 
             /*
              * Update file size, checksum, location, access_latency and
              * retention_policy with in namespace (pnfs or chimera).
              */
             setFileAttributes(fileAttributes);
+
 
             setToTargetState();
 

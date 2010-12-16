@@ -19,6 +19,7 @@ import diskCacheV111.vehicles.*;
 import org.dcache.vehicles.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.CellStubHelper;
 import org.dcache.tests.cells.Message;
@@ -51,16 +52,19 @@ public class RepositorySubsystemTest
     private long size2 = 1024;
     private long size3 = 1024;
     private long size4 = 1024;
+    private long size5 = 1024;
 
     private PnfsId id1; // Precious
     private PnfsId id2; // Cached
     private PnfsId id3; // Cached + Sticky
     private PnfsId id4; // Non existing entry
+    private PnfsId id5; // Non existing entry
 
     private StorageInfo info1;
     private StorageInfo info2;
     private StorageInfo info3;
     private StorageInfo info4;
+    private StorageInfo info5;
 
     private PnfsHandler pnfs;
 
@@ -184,11 +188,13 @@ public class RepositorySubsystemTest
         id2 = new PnfsId("000000000002");
         id3 = new PnfsId("000000000003");
         id4 = new PnfsId("000000000004");
+        id5 = new PnfsId("000000000005");
 
         info1 = createStorageInfo(size1);
         info2 = createStorageInfo(size2);
         info3 = createStorageInfo(size3);
         info4 = createStorageInfo(0);
+        info5 = createStorageInfo(size5);
 
         root = File.createTempFile("dtest", null);
         if (!root.delete())
@@ -419,6 +425,40 @@ public class RepositorySubsystemTest
                 throws CacheException, InterruptedException
             {
                 repository.openEntry(id4);
+            }
+        };
+    }
+
+    @Test
+    public void testCreateEntryFromStore() throws Throwable {
+
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+        new CellStubHelper()  {
+
+            @Message(required = true, step = 1, cell = "pnfs")
+            public Object message(PnfsSetFileAttributes msg) {
+                if( msg.getFileAttributes().isDefined(FileAttribute.SIZE) ) {
+                    return new CacheException("");
+                }
+                msg.setSucceeded();
+                return msg;
+            }
+
+            protected void run()
+                    throws CacheException, InterruptedException {
+                List<StickyRecord> stickyRecords = Collections.emptyList();
+                ReplicaDescriptor handle = repository.createEntry(id5, info5, FROM_STORE, CACHED, stickyRecords);
+                try {
+                    handle.allocate(info5.getFileSize());
+                    createFile(handle.getFile(), info5.getFileSize());
+                    handle.commit(null);
+                }catch( IOException e) {
+                    throw new CacheException(CacheException.ERROR_IO_DISK, e.getMessage());
+                } finally {
+                    handle.close();
+                }
             }
         };
     }
