@@ -71,7 +71,7 @@ public class GSIAuthenticationFactory implements AbstractAuthenticationFactory
         throws InvalidHandlerConfigurationException {
 
         CertificateRevocationLists crls =
-            CertificateRevocationLists.getCertificateRevocationLists(_caCertificatePath);
+            CertificateRevocationLists.getDefaultCertificateRevocationLists();
 
         try {
             loadTrustAnchors();
