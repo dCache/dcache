@@ -352,40 +352,6 @@ public class RepositorySubsystemTest
     }
 
     @Test
-    public void testCreateEntryFromStore() throws Throwable {
-
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-        new CellStubHelper()  {
-
-            @Message(required = true, step = 1, cell = "pnfs")
-            public Object message(PnfsSetFileAttributes msg) {
-                if( msg.getFileAttributes().isDefined(FileAttribute.SIZE) ) {
-                    return new CacheException("");
-                }
-                msg.setSucceeded();
-                return msg;
-            }
-
-            protected void run()
-                    throws CacheException, InterruptedException {
-                List<StickyRecord> stickyRecords = Collections.emptyList();
-                ReplicaDescriptor handle = repository.createEntry(id5, info5, FROM_STORE, CACHED, stickyRecords);
-                try {
-                    handle.allocate(info5.getFileSize());
-                    createFile(handle.getFile(), info5.getFileSize());
-                    handle.commit(null);
-                }catch( IOException e) {
-                    throw new CacheException(CacheException.ERROR_IO_DISK, e.getMessage());
-                } finally {
-                    handle.close();
-                }
-            }
-        };
-    }
-
-    @Test
     public void testSetState()
         throws IllegalTransitionException
     {
