@@ -58,6 +58,7 @@
         <dependency groupId="org.springframework" artifactId="spring" version="2.5.6" scope="provided"/>
         <dependency groupId="org.springframework" artifactId="spring-webmvc" version="2.5.6" scope="provided"/>
         <dependency groupId="org.dcache.chimera" artifactId="chimera-core" version="0.0.9" scope="provided"/>
+        <dependency groupId="org.slf4j" artifactId="slf4j-log4j12" version="1.5.6" scope="provided"/>
 
         <!-- external dependencies -->
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
