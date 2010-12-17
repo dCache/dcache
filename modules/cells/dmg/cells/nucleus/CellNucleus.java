@@ -362,9 +362,17 @@ public class CellNucleus implements Runnable, ThreadFactory {
         // we will end up in a deadlock (NO LOCKS WHILE CALLING CALLBACKS)
         //
         for (CellLock lock: expired) {
-            CellMessage envelope = lock.getMessage();
-            EventLogger.sendEnd(envelope);
-            lock.getCallback().answerTimedOut(envelope);
+            try {
+                CellMessage envelope = lock.getMessage();
+                EventLogger.sendEnd(envelope);
+                lock.getCallback().answerTimedOut(envelope);
+            } catch (RuntimeException e) {
+                /* Don't let a problem in the callback prevent us from
+                 * expiring all messages.
+                 */
+                Thread t = Thread.currentThread();
+                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+            }
         }
 
         return size;
