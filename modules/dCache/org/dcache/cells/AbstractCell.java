@@ -329,11 +329,16 @@ public class AbstractCell extends CellAdapter
         _timeoutTask = new TimerTask() {
                 public void run()
                 {
-                    cdc.apply();
                     try {
-                        getNucleus().updateWaitQueue();
-                    } finally {
-                        cdc.clear();
+                        cdc.apply();
+                        try {
+                            getNucleus().updateWaitQueue();
+                        } finally {
+                            cdc.clear();
+                        }
+                    } catch (Throwable e) {
+                        Thread t = Thread.currentThread();
+                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
                     }
                 }
             };
