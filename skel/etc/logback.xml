@@ -43,7 +43,7 @@
        inheritance hirarchy is defined in the filter definition below
        as threshold-tags. Each tag defines a log level for a
        particular logger. The definition can be limited to a
-       particular appender or apply to apply appenders.
+       particular appender or apply to all appenders.
 
        Given a particular appender, the algorithm for determining the
        effective log level for a logger l and a cell c is:
@@ -58,8 +58,8 @@
           effective log level for c of the parent logger.
 
        Don't worry too much about the specific algorithm. You do not
-       need to understand it to adjust log levels at runtime through
-       the dCache admin shell.
+       need to understand it in details to adjust log levels at
+       runtime through the dCache admin shell.
   -->
 
   <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
@@ -96,12 +96,12 @@
     </encoder>
   </appender>
 
-  <appender name="transactionlog" class="ch.qos.logback.core.FileAppender">
-    <file>transaction.log</file>
+  <!-- appender name="transactionlog" class="ch.qos.logback.core.FileAppender">
+    <file>/tmp/transaction.log</file>
     <encoder>
       <pattern>%d{dd MMM yyyy HH:mm:ss} %m%n</pattern>
     </encoder>
-  </appender>
+  </appender-->
 
   <root>
     <appender-ref ref="stdout"/>
