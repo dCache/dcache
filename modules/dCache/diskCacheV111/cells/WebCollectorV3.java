@@ -214,22 +214,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             (_senderThread  = _nucleus.newThread(this, "sender")).start();
             _log.info("Sender started");
             _log.info("Collector will be started a bit delayed");
-            _nucleus.newThread(new Runnable() {
-                                   public void run() {
-                                       try {
-                                           Thread.sleep(30000L);
-                                       } catch (InterruptedException e) {
-                                           return;
-                                       }
-                                       _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
-                                       _collectThread.start();
-                                       _log.info("Collector now started as well");
-                                   }
-                               },
-                               "init"
-                              ).start();
-
-
+            _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
+            _collectThread.start();
         } catch (Exception e) {
             _log.warn("<init> of WebCollector reports : " + e.getMessage(), e);
             start();
@@ -265,6 +251,13 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private void runCollector()
     {
+        try {
+            Thread.sleep(30000L);
+        } catch (InterruptedException e1) {
+            return;
+        }
+        _log.info("Collector now started as well");
+
         try {
             while (!Thread.interrupted()) {
                 synchronized (_infoLock) {
