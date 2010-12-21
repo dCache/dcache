@@ -15,9 +15,6 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.dcache.srm.client.Transport;
-import org.dcache.srm.client.TransportUtil;
-
 public class OptionParser {
 
     public static Set<String> getOptions(Object o){
@@ -514,10 +511,6 @@ public class OptionParser {
                  else {
                      result = type.cast(i);
                  }
-             }
-             else if ( type == Transport.class) {
-                 Transport r = Transport.transportFor(so);
-                 result = type.cast(r);
              }
              else {
                  try {

@@ -15,7 +15,7 @@ public final class TransportUtil {
         } else {
             return "httpg";
         }
-        /* We return httpg for Transport.SSL since we're using JGlobus libraries.
+        /* TODO We return httpg for Transport.SSL since we're using JGlobus libraries.
          * When using standard libraries for SSL, this should be changed to
          * "https" once we switch away from JGlobus.
          */

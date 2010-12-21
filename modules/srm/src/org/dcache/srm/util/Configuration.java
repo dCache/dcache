@@ -79,7 +79,6 @@ import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
-import org.dcache.srm.client.TransportUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -284,7 +283,7 @@ public class Configuration {
     private String srmCounterRrdDirectory = null;
     private String srmGaugeRrdDirectory = null;
     private boolean jdbcSaveCompletedRequestsOnly = false;
-    private Transport clientTransport = Transport.GSI;
+    private String clientTransport = Transport.GSI.name();
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -613,7 +612,7 @@ public class Configuration {
                 "period between invocation of vacuum operations in seconds");
         put(document,root,
                 XML_LABEL_TRANSPORT_CLIENT,
-                clientTransport.name(),
+                clientTransport,
                 "transport to use when connecting to other SRM instances");
 
         Text t = document.createTextNode("\n");
@@ -875,11 +874,11 @@ public class Configuration {
         } else if(name.equals("vacuum_period_sec")) {
             vacuum_period_sec = Long.parseLong(value);
         } else if(name.equals("qosPluginClass")) {
-        	qosPluginClass = value;
+            qosPluginClass = value;
         } else if(name.equals("qosConfigFile")) {
-        	qosConfigFile = value;
+            qosConfigFile = value;
         } else if(name.equals( XML_LABEL_TRANSPORT_CLIENT)) {
-            clientTransport = Transport.transportFor( value);
+            clientTransport = Transport.transportFor(value).name();
         }
 
 
@@ -1430,7 +1429,7 @@ public class Configuration {
         sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
         sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
-        sb.append( "\n\tclientTransport=").append(clientTransport.name());
+        sb.append( "\n\tclientTransport=").append(clientTransport);
         return sb.toString();
     }
 
@@ -2860,14 +2859,14 @@ public class Configuration {
     }
 
     public Transport getClientTransport() {
-        return clientTransport;
+        return Transport.transportFor(clientTransport);
     }
 
-    public void setClientTransport(Transport name) {
-        clientTransport = name;
+    public void setClientTransport(Transport transport) {
+        clientTransport = transport.name();
     }
-    
+
     public void setClientTransportByName(String name) {
-        clientTransport = Transport.transportFor(name);
+        clientTransport = Transport.transportFor(name).name();
     }
 }

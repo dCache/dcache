@@ -1370,18 +1370,18 @@ public class Configuration {
 
     @Option(name = "transport",
             description = "the transport to use when connecting to server.",
-            defaultValue = "gsi",
+            defaultValue = "GSI",
             required=false,
             log=true,
             save=true)
-    private Transport transport;
+    private String transport;
 
     public Transport getTransport() {
-        return transport;
+        return Transport.transportFor(transport);
     }
 
     public void setTransport(String transport) {
-        this.transport = Transport.transportFor(transport);
+        this.transport = Transport.transportFor(transport).name();
     }
 
     @Option(
