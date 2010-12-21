@@ -74,7 +74,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="refresh",
         description="Refresh interval",
-        defaultValue="300",
+        required=true,
         unit="seconds"
     )
     protected long _refreshInterval;
@@ -82,7 +82,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="recover",
         description="",
-        defaultValue="1800",
+        required=true,
         unit="seconds"
     )
     protected long _recoverTimer;
@@ -90,7 +90,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="poolTimeout",
         description="",
-        defaultValue="10",
+        required=true,
         unit="seconds"
     )
     protected long _replyTimeout;
@@ -98,7 +98,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="processFilesPerRun",
         description="The number of files to process at once",
-        defaultValue="100",
+        required=true,
         unit="files"
     )
     protected int _processAtOnce;
@@ -106,21 +106,21 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="reportRemove",
         description="The cell to report removes to",
-        defaultValue="none"
+        required=true
     )
     protected String _reportTo;
 
     @Option(
         name="hsmCleaner",
         description="Whether to enable the HSM cleaner",
-        defaultValue="false"
+        required=true
     )
     protected boolean _hsmCleanerEnabled;
 
     @Option(
         name="hsmCleanerRequest",
         description="Maximum number of files to include in a single request",
-        defaultValue="100",
+        required=true,
         unit="files"
     )
     protected int _hsmCleanerRequest;
@@ -128,7 +128,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="hsmCleanerTimeout",
         description="Timeout in milliseconds for delete requests send to HSM-pools",
-        defaultValue="120",
+        required=true,
         unit="seconds"
     )
     protected long _hsmTimeout;
@@ -136,7 +136,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Option(
         name="threads",
         description="Size of thread pool",
-        defaultValue="5"
+        required=true
     )
     protected int _threadPoolSize;
 
