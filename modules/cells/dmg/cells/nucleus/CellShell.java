@@ -68,11 +68,11 @@ public class      CellShell
         return _environment;
     }
 
-   public String getReplacement( String name ){
-      Object o = getDictionaryEntry( name ) ;
-      return o == null ? null : o.toString() ;
+    public String getReplacement(String name)
+    {
+        return new RecursiveReplaceable().getReplacement(name);
+    }
 
-   }
    private static long __sequenceNumber = 1000000L ;
    private static synchronized long nextSequenceNumber(){
       return __sequenceNumber ++ ;
@@ -1885,6 +1885,34 @@ public class      CellShell
             throw new InterruptedIOException(e.toString());
         } catch (NoRouteToCellException e){
             throw new IOException("sendAndWait : " + e);
+        }
+    }
+
+    /**
+     * Utility class implementing the Replacable interface. Variables
+     * are replaced such that placeholders in values are replaced
+     * recursively. The replacement is fed by the dictionary of the
+     * outer CellShell.
+     */
+    private class RecursiveReplaceable implements Replaceable
+    {
+        private Stack<String> _stack = new Stack<String>();
+
+        public String getReplacement(String name)
+        {
+            Object o = getDictionaryEntry(name);
+            String value = (o == null) ? null : o.toString();
+            if (value != null) {
+                if (_stack.search(name) == -1) {
+                    _stack.push(name);
+                    try {
+                        value = Formats.replaceKeywords(value, this);
+                    } finally {
+                        _stack.pop();
+                    }
+                }
+            }
+            return value;
         }
     }
 }
