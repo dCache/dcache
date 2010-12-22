@@ -4,12 +4,12 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-           http://activemq.apache.org/schema/core 
+           http://activemq.apache.org/schema/core
            http://activemq.apache.org/schema/core/activemq-core.xsd">
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
-    <property name="location" value="domaincontext:"/>
+    <property name="location" value="arguments:"/>
   </bean>
 
   <broker id="broker"
@@ -40,7 +40,7 @@
     </managementContext>
 
     <persistenceAdapter>
-      <amqPersistenceAdapter syncOnWrite="false" directory="${amqSpool}" 
+      <amqPersistenceAdapter syncOnWrite="false" directory="${amqSpool}"
                              maxFileLength="20 mb"/>
     </persistenceAdapter>
 
@@ -48,7 +48,7 @@
     <sslContext>
       <sslContext keyStore="file:${activemq.base}/conf/broker.ks" keyStorePassword="password" trustStore="file:${activemq.base}/conf/broker.ts" trustStorePassword="password"/>
     </sslContext>
--->    
+-->
     <!--  The maximum about of space the broker will use before slowing down producers -->
     <systemUsage>
       <systemUsage>
@@ -69,7 +69,7 @@
     <transportConnectors>
       <transportConnector name="openwire" uri="tcp://0.0.0.0:${amqPort}"
                           discoveryUri="multicast://default"/>
-<!--     
+<!--
       <transportConnector name="ssl" uri="ssl://localhost:${jmsSSLPort}"/>
       <transportConnector name="stomp" uri="stomp://localhost:61613"/>
       <transportConnector name="xmpp" uri="xmpp://localhost:61222"/>

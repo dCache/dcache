@@ -6,14 +6,7 @@
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
-    <property name="location" value="domaincontext:"/>
-    <property name="properties">
-      <value>
-        srmGracefulShutdown=2000
-        loginBrokerUpdateTime=300
-        loginBrokerUpdateThreshold=0.1
-      </value>
-    </property>
+    <property name="location" value="arguments:"/>
   </bean>
 
   <import resource="srm-shared.xml" />

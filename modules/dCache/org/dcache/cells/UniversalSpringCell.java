@@ -806,7 +806,7 @@ public class UniversalSpringCell
             super(args.argv(0));
         }
 
-        private ByteArrayResource getDomainContextResource()
+        private ByteArrayResource getArgumentsResource()
         {
             Args args = (Args)getArgs().clone();
             args.shift();
@@ -815,9 +815,6 @@ public class UniversalSpringCell
             String arguments =
                 args.toString().replaceAll("-\\$\\{[0-9]+\\}", "");
             properties.setProperty("arguments", arguments);
-            properties.setProperty("thisCell", getCellName());
-            properties.setProperty("thisDomain", getCellDomainName());
-            mergeProperties(properties, getDomainContext());
             mergeProperties(properties, args.optionsAsMap());
 
             /* Convert to byte array form such that we can make it
@@ -840,15 +837,15 @@ public class UniversalSpringCell
                  */
                 public String getFilename()
                 {
-                    return "domaincontext.properties";
+                    return "arguments.properties";
                 }
             };
         }
 
         public Resource getResource(String location)
         {
-            if (location.startsWith("domaincontext:")) {
-                return getDomainContextResource();
+            if (location.startsWith("arguments:")) {
+                return getArgumentsResource();
             } else {
                 return super.getResource(location);
             }

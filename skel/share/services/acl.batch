@@ -1,12 +1,20 @@
 # Starts ACL-administration cell
 #
 
-check -strong aclEnabled
-check -strong aclTable
+check -strong pnfsmanager
 check -strong aclConnDriver
 check -strong aclConnUrl
 check -strong aclConnUser
 check aclConnPswd
 
+set context -c pnfsManagerTimeout 28000
+
 create org.dcache.cells.UniversalSpringCell acladmin \
-        "classpath:org/dcache/acl/acl.xml"
+        "classpath:org/dcache/acl/acl.xml \
+        -aclConnDriver=\"${aclConnDriver}\" \
+        -aclConnUrl=\"${aclConnUrl}\" \
+        -aclConnUser=\"${aclConnUser}\" \
+        -aclConnPswd=\"${aclConnPswd}\" \
+        -pnfsManager=\"${pnfsmanager}\" \
+        -pnfsManagerTimeout=\"${pnfsManagerTimeout}\" \
+        "

@@ -5,9 +5,9 @@
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd"
        default-autowire="byType">
 
-  <bean id="properties" 
+  <bean id="properties"
         class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-    <property name="location" value="domaincontext:"/>
+    <property name="location" value="arguments:"/>
     <property name="properties">
       <value>
         mode=1
@@ -17,7 +17,7 @@
 
   <bean id="directory" class="org.dcache.services.billing.BillingDirectory">
     <property name="mode" value="${mode}"/>
-    <property name="directory" value="${path}"/>    
+    <property name="directory" value="${path}"/>
   </bean>
 
   <bean id="file-logger" class="org.dcache.services.billing.FileLogger"/>

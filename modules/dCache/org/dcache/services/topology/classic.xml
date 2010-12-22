@@ -9,14 +9,7 @@
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
-    <property name="location" value="domaincontext:"/>
-    <property name="properties">
-      <value>
-        topoWaitTime=300000
-        topoTimeout=20000
-        topologyClass=org.dcache.services.topology.ClassicCellsTopology
-      </value>
-    </property>
+    <property name="location" value="arguments:"/>
   </bean>
 
   <bean id="topology" class="${topologyClass}">

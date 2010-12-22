@@ -7,17 +7,7 @@
 
     <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <description>Imported configuration data</description>
-        <property name="location" value="domaincontext:"/>
-        <property name="properties">
-            <value>
-                aclConnDriver=aclConnDriver
-                aclConnUrl=aclConnUrl
-                aclConnUser=aclConnUser
-                aclConnPswd=aclConnPswd
-                pnfsManager=PnfsManager
-                pnfsManagerTimeout=28000
-            </value>
-        </property>
+        <property name="location" value="arguments:"/>
     </bean>
 
     <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">

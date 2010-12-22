@@ -2,9 +2,33 @@
 #    NFSv4.1    D o o r
 #
 
+check -strong cell.name
+check -strong loginBrokerUpdateTime
+check -strong loginBrokerUpdateThreshold
+check -strong loginBroker
+check -strong poolmanager
+check -strong pnfsmanager
+check -strong chimera.db.user
+check -strong chimera.db.url
+check -strong chimera.db.dialect
+check -strong chimera.db.driver
+check chimera.db.password
+
+set context -c poolManagerTimeout 28000
+set context -c poolTimeout 10000
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv41.xml \
-       -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
-       -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
-       -loginBroker=${loginBroker} \
-"
+       -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
+       -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
+       -loginBroker=\"${loginBroker}\" \
+       -poolManager=\"${poolmanager}\" \
+       -pnfsManager=\"${pnfsmanager}\" \
+       -chimera.db.user=\"${chimera.db.user}\" \
+       -chimera.db.password=\"${chimera.db.password}\" \
+       -chimera.db.url=\"${chimera.db.url}\" \
+       -chimera.db.dialect=\"${chimera.db.dialect}\" \
+       -chimera.db.driver=\"${chimera.db.driver}\" \
+       -poolManagerTimeout=\"${poolManagerTimeout}\" \
+       -poolTimeout=\"${poolTimeout}\" \
+       "
