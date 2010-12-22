@@ -89,7 +89,6 @@ public class Domain
         SystemCell systemCell = new SystemCell(domainName);
         _log.info("Starting " + domainName);
 
-        importUnscopedParameters(systemCell, _properties);
         executePreload(systemCell);
         for (ReplaceableProperties serviceConfig: _services) {
             executeService(systemCell, serviceConfig);
@@ -163,31 +162,28 @@ public class Domain
     }
 
     /**
-     * Imports unscoped parameters into a SystemCell.
+     * Imports all unscoped properties.
      */
-    private void importUnscopedParameters(SystemCell cell,
+    private void importUnscopedParameters(Map<String,Object> map,
                                           ReplaceableProperties properties)
     {
-        Map<String,Object> domainContext = cell.getDomainContext();
         for (String key: properties.stringPropertyNames()) {
             if (!isScoped(key)) {
-                domainContext.put(key, properties.getReplacement(key));
+                map.put(key, properties.getProperty(key));
             }
         }
     }
 
     /**
-     * Imports service scoped parameters into a CellShell.
+     * Imports service scoped properties.
      */
-    private void importScopedParameters(CellShell shell,
+    private void importScopedParameters(Map<String,Object> map,
                                         ReplaceableProperties properties)
-        throws CommandException
     {
-        Map<String,Object> environment = shell.environment();
         String service = properties.getReplacement(PROPERTY_DOMAIN_SERVICE);
         for (String key: properties.stringPropertyNames()) {
             if (isScoped(service, key)) {
-                environment.put(stripScope(key), properties.getReplacement(key));
+                map.put(stripScope(key), properties.getProperty(key));
             }
         }
     }
@@ -195,15 +191,13 @@ public class Domain
     /**
      * Imports service local parameters into a CellShell.
      */
-    private void importLocalParameters(CellShell shell,
+    private void importLocalParameters(Map<String,Object> map,
                                        ReplaceableProperties properties)
-        throws CommandException
     {
-        Map<String,Object> environment = shell.environment();
         for (Object o: properties.keySet()) {
             String key = (String) o;
             if (!isScoped(key)) {
-                environment.put(key, properties.getReplacement(key));
+                map.put(key, properties.getProperty(key));
             }
         }
     }
@@ -217,25 +211,33 @@ public class Domain
         String preload = _properties.getReplacement(PROPERTY_DOMAIN_PRELOAD);
         if (preload != null) {
             CellShell shell = new CellShell(cell.getNucleus());
+            importUnscopedParameters(shell.environment(), _properties);
             executeBatchFile(shell, new URI(preload));
         }
     }
 
     /**
+     * Creates a CellShell preloaded with a specific service's
+     * configuration.
+     */
+    CellShell createShellForService(SystemCell system, ReplaceableProperties properties)
+        throws CommandException
+    {
+        CellShell shell = new CellShell(system.getNucleus());
+        importUnscopedParameters(shell.environment(), properties);
+        importScopedParameters(shell.environment(), properties);
+        importLocalParameters(shell.environment(), properties);
+        return shell;
+    }
+
+    /**
      * Executes the batch file of the service.
      */
-    private void executeService(SystemCell cell, ReplaceableProperties service)
+    private void executeService(SystemCell system, ReplaceableProperties properties)
         throws URISyntaxException, IOException, CommandException
     {
-        /* The per service configuration is loaded into the
-         * environment of the CellShell used to execute the batch
-         * file.
-         */
-        CellShell shell = new CellShell(cell.getNucleus());
-        importScopedParameters(shell, service);
-        importLocalParameters(shell, service);
-
-        URI uri = new URI(service.getReplacement(PROPERTY_DOMAIN_SERVICE_URI));
+        CellShell shell = createShellForService(system, properties);
+        URI uri = new URI(properties.getReplacement(PROPERTY_DOMAIN_SERVICE_URI));
         executeBatchFile(shell, uri);
     }
 
