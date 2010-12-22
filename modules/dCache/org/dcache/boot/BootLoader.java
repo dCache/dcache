@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+import java.util.logging.LogManager;
 import java.net.UnknownHostException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -23,6 +24,7 @@ import org.dcache.util.ReplaceableProperties;
 import org.dcache.util.DeprecatableProperties;
 import org.dcache.util.Glob;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -167,6 +169,11 @@ public class BootLoader
             if (args.argc() < 1) {
                 help();
             }
+
+            /* Redirects Java util logging to SLF4J.
+             */
+            LogManager.getLogManager().reset();
+            SLF4JBridgeHandler.install();
 
             /* Basic logging setup that will be used until the real
              * log configuration is loaded.

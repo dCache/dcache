@@ -39,9 +39,9 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 import diskCacheV111.services.space.message.*;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
@@ -83,6 +83,7 @@ import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 import org.dcache.auth.Subjects;
+import org.dcache.cells.AbstractCell;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -92,7 +93,7 @@ import org.dcache.auth.Subjects;
  * @author  timur
  */
 public final class Manager
-        extends CellAdapter
+        extends AbstractCell
         implements Runnable {
         private long spaceReservationCleanupPeriodInSeconds = 60 * 60;
         private String jdbcUrl;
@@ -131,8 +132,15 @@ public final class Manager
         DBManager manager;
         private static Logger logger = LoggerFactory.getLogger(Manager.class);
 
-        public Manager(String name, String argString) throws Exception {
-                super( name ,Manager.class.getName(), argString , false );
+        public Manager(String name, String argString)
+                throws InterruptedException, ExecutionException
+        {
+                super(name, argString);
+                doInit();
+        }
+
+        protected void init() throws Exception
+        {
                 _args     = getArgs();
                 jdbcUrl   = _args.getOpt("jdbcUrl");
                 jdbcClass = _args.getOpt("jdbcDriver");
@@ -229,19 +237,10 @@ public final class Manager
                 _poolManagerStub.setDestination(poolManager);
                 _poolManagerStub.setCellEndpoint(this);
                 _poolManagerStub.setTimeout(_poolManagerTimeout*1000L);
-                try {
-                        dbinit();
-                }
-                catch (Throwable t) {
-                        logger.error("error starting space.Manager");
-                        logger.error(t.getMessage());
-                        start();
-                        kill();
-                }
+                dbinit();
                 start();
-                (updateLinkGroups = getNucleus().newThread(this,"UpdateLinkGroups")).start();
-                (expireSpaceReservations = getNucleus().newThread(this,"ExpireThreadReservations")).start();
-
+                (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
+                (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
         }
 
 

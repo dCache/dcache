@@ -59,6 +59,7 @@
         <dependency groupId="org.springframework" artifactId="spring-webmvc" version="2.5.6" scope="provided"/>
         <dependency groupId="org.dcache.chimera" artifactId="chimera-core" version="0.0.9" scope="provided"/>
         <dependency groupId="org.slf4j" artifactId="slf4j-log4j12" version="1.5.6" scope="provided"/>
+        <dependency groupId="log4j" artifactId="log4j" version="infinity" scope="provided"/>
 
         <!-- external dependencies -->
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
@@ -75,6 +76,7 @@
         <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
+        <dependency groupId="org.slf4j" artifactId="jul-to-slf4j" version="1.6.1"/>
         <dependency groupId="ch.qos.logback" artifactId="logback-classic" version="0.9.26"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-server" version="7.2.2.v20101205"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-deploy" version="7.2.2.v20101205"/>

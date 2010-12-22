@@ -20,6 +20,9 @@
             <property name="toplink.create-ddl-jdbc-file-name" value="createDDL.jdbc"/>
             <property name="toplink.drop-ddl-jdbc-file-name" value="dropDDL.jdbc" />
             <property name="toplink.application-location" value="/tmp" />
+            <property name="toplink.logging.level" value="SEVERE"/>
+            <property name="toplink.logging.exceptions" value="false"/>
+            <property name="toplink.logging.logger" value="JavaLogger"/>
         </properties>
     </persistence-unit>
 
