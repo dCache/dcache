@@ -6,17 +6,7 @@
 
     <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <description>Imported configuration data</description>
-        <property name="location" value="domaincontext:"/>
-        <property name="properties">
-            <value>
-                poolManager=PoolManager
-                poolManagerTimeout=28000
-                poolTimeout=10000
-                ioQueue=""
-                pnfsManager=PnfsManager
-                pnfsManagerTimeout=28000
-            </value>
-        </property>
+        <property name="location" value="arguments:"/>
     </bean>
 
     <bean id="poolManagerStub" class="org.dcache.cells.CellStub">

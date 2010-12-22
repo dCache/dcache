@@ -6,11 +6,7 @@
 
     <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <description>Imported configuration data</description>
-        <property name="location" value="domaincontext:"/>
-        <property name="properties">
-            <value>
-            </value>
-        </property>
+        <property name="location" value="arguments:"/>
     </bean>
 
     <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"

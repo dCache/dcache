@@ -12,13 +12,7 @@
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
-    <property name="location" value="domaincontext:"/>
-    <property name="properties">
-      <value>
-        topoWaitTime=300000
-        topoTimeout=20000
-      </value>
-    </property>
+    <property name="location" value="arguments:"/>
   </bean>
 
   <amq:connectionFactory id="connectionFactory" brokerURL="vm://localhost"/>

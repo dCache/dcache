@@ -204,6 +204,9 @@ set context -c srmCleanPendingRequestsOnRestart false
 # client ip is used
 set context -c srmClientDNSLookup false
 
+set context -c srmGracefulShutdown 2000
+set context -c loginBrokerUpdateTime 300
+set context -c loginBrokerUpdateThreshold 0.1
 
 #
 #  ----  Usage of Srm Space Manager
@@ -281,7 +284,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -httpRootPath=${httpRootPath} \
         -srmImplicitSpaceManagerEnabled=${srmImplicitSpaceManagerEnabled} \
         -srmSpaceReservationStrict=${srmSpaceReservationStrict} \
-        -srmUserCredentialDirectory=${srmUserCredentialsDirectory} \
+        -srmUserCredentialsDirectory=${srmUserCredentialsDirectory} \
         -srmBufferSize=${srmBufferSize} \
         -srmTcpBufferSize=${srmTcpBufferSize} \
         -parallelStreams=${parallelStreams} \
@@ -335,7 +338,8 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmOldRequestRemovalPeriodSeconds=${srmOldRequestRemovalPeriodSeconds} \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
-        -jdbc-save-completed-requests-only=${srmJdbcSaveCompletedRequestsOnly} \
+        -srmJdbcSaveCompletedRequestsOnly=${srmJdbcSaveCompletedRequestsOnly} \
+        -srmJdbcEnabled=\"${srmJdbcEnabled}\" \
         -useLoginService=${useLoginService} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
@@ -371,4 +375,10 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmJettyThreadsMaxQueued=${srmJettyThreadsMaxQueued}\
         -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod}\
         -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod}\
-        -srmClientTransport=${srmClientTransport}"
+        -srmClientTransport=${srmClientTransport} \
+        -srmGracefulShutdown=\"${srmGracefulShutdown}\" \
+        -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
+        -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
+        -gplazmaPolicy=\"${gplazmaPolicy}\" \
+        -dcache.paths.share=\"${dcache.paths.share}\" \
+"

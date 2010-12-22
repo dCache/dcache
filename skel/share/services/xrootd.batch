@@ -29,6 +29,8 @@ check loginBroker
 
 onerror continue
 
+set context -c nostrongauthorization ""
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/xrootd2/door/xrootd.xml -export\
        -cellClass=XrootdDoor \
@@ -57,5 +59,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -loginBrokerUpdateTime=${loginBrokerUpdateTime} \
        -loginBrokerUpdateThreshold=${loginBrokerUpdateThreshold} \
        -loginBroker=${loginBroker} \
+       -nostrongauthorization=\"${nostrongauthorization}\" \
        "
 

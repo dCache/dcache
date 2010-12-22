@@ -6,7 +6,7 @@
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
-    <property name="location" value="domaincontext:"/>
+    <property name="location" value="arguments:"/>
   </bean>
 
   <import resource="webdav-shared.xml"/>

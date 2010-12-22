@@ -41,6 +41,16 @@ define context poolmanager.defaults endDefine
 
 endDefine
 
+check -strong cell.name
+check -strong config
+set context -c selectionUnit diskCacheV111.poolManager.PoolSelectionUnitV2
+set context -c costCalculator diskCacheV111.pools.CostCalculationV5
+set context -c threadPool diskCacheV111.util.ThreadPoolNG
+set context -c quotaManager none
+set context -c sendCostInfoMessages no
+set context -c poolStatusRelay broadcast
+set context -c stageConfigurationFilePath ""
+
 # Start PoolManager
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "!poolmanager.defaults \
@@ -48,4 +58,13 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -setupFile=${config}/PoolManager.conf \
     -export \
     -cellClass=PoolManager \
-    -replyObject"
+    -replyObject \
+    -selectionUnit=\"${selectionUnit}\" \
+    -costCalculator=\"${costCalculator}\" \
+    -pnfsManager=\"${pnfsmanager}\" \
+    -threadPool=\"${threadPool}\" \
+    -quotaManager=\"${quotaManager}\" \
+    -sendCostInfoMessages=\"${sendCostInfoMessages}\" \
+    -poolStatusRelay=\"${poolStatusRelay}\" \
+    -stageConfigurationFilePath=\"${stageConfigurationFilePath}\" \
+   "
