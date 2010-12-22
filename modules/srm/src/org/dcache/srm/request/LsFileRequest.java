@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 public final class LsFileRequest extends FileRequest {
         private static final Logger logger =
                 LoggerFactory.getLogger(LsFileRequest.class);
-        private static final String SFN_STRING="?SFN=";
+        private static final String SFN_STRING="SFN=";
         private URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
@@ -94,15 +94,15 @@ public final class LsFileRequest extends FileRequest {
         }
 
         public String getPath(URI uri) {
-                String path = uri.getPath();
-                int indx=path.indexOf(SFN_STRING);
-                if( indx != -1) {
-                        path=path.substring(indx+SFN_STRING.length());
+            String path = uri.getPath();
+            String query = uri.getQuery();
+            if (query != null) {
+                int i = query.indexOf(SFN_STRING);
+                if (i != -1) {
+                    path = query.substring(i + SFN_STRING.length());
                 }
-                if(!path.startsWith("/")) {
-                        path = "/"+path;
-                }
-                return path;
+            }
+            return path;
         }
 
         public URI getSurl() {
