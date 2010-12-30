@@ -38,7 +38,7 @@ Entry
                 {
                         extendStickyFlagLifetime();
                 }
-        succes(message: PoolSetStickyMessage)
+        success(message: PoolSetStickyMessage)
                 Done
                 {
                         succeed();
