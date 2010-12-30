@@ -1,6 +1,12 @@
 exec file:${dcache.paths.share}/cells/lmd.fragment
 
+check -strong amqSpool
+check -strong amqPort
+
 create org.dcache.cells.UniversalSpringCell JMS \
-  "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml"
+  "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml \
+   -amqSpool=${amqSpool} \
+   -amqPort=${amqPort} \
+  "
 create dmg.cells.services.LocationManager lm \
   "${broker.host} ${broker.port}"
