@@ -35,7 +35,9 @@ usage()
     echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
     echo "                   [--out=<file>] [--password=<password>]"
     echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
-    echo "   pool create <size> <directory>"
+    echo "   pool create [--meta=file|db] [--size=<bytes>]"
+    echo "               [--lfs=none|precious|volatile|transient]"
+    echo "               <directory> <name> <domain>"
     echo "   pool reconstruct <directory> <target dir>"
     echo "   restart [<domain> ...]"
     echo "   start [<domain> ...]"
@@ -44,7 +46,7 @@ usage()
     echo "   version"
     echo
     echo "Size is specified in bytes, or optionally followed by K, M, G or T"
-    echo "for powers of 1024. Size is rounded down to the nearest integer "
+    echo "for powers of 1024. Size is rounded down to the nearest integer"
     echo "number of GiB."
     exit 2
 } 1>&2
@@ -330,12 +332,15 @@ case "$1" in
 
         case "$command" in
             create)
-                [ $# -ne 2 ] && usage
+                parseOptions "meta size lfs" "$@" || shift $?
 
-                size=$1
-                path=$2
+                [ $# -ne 3 ] && usage
 
-                createPool ${size} ${path}
+                path="$1"
+                name="$2"
+                domain="$3"
+
+                createPool "${path}" "${name}" "$domain" "${opt_size}" "$opt_meta" "$opt_lfs"
                 ;;
 
             reconstruct)

@@ -319,9 +319,6 @@
         <!-- jar file  -->
         <copy file="${classesDir}/dcache.jar" todir="${server.bin.dir}/classes" />
 
-        <!-- pool setup template  -->
-        <copy file="${dcache.src}/diskCacheV111/config/setup.temp" todir="${server.bin.dir}/config" />
-
         <!-- httpd images, etc -->
         <copy todir="${server.bin.dir}/docs/images">
             <fileset dir="${dcache.src}/diskCacheV111/docs/images" />
