@@ -152,13 +152,15 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %files tests
-%attr(0755,root,root) %{prefix}/bin/dcap_test
-%attr(0755,root,root) %{prefix}/bin/dcsuck
-%attr(0755,root,root) %{prefix}/bin/readv_test
-%attr(0755,root,root) %{prefix}/bin/wdccp
-%attr(0755,root,root) %{prefix}/bin/dcap_url-test
+%defattr(0755,root,root)
+%{prefix}/bin/dcap_test
+%{prefix}/bin/dcsuck
+%{prefix}/bin/readv_test
+%{prefix}/bin/wdccp
+%{prefix}/bin/dcap_url-test
 
 %files -n libdcap
+%defattr(-,root,root)
 %ifarch x86_64
 %{prefix}/lib64/libdcap.so*
 %{prefix}/lib64/libpdcap.so*
@@ -168,6 +170,7 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %files -n libdcap-devel
+%defattr(-,root,root)
 %{prefix}/include/dc_hack.h
 %{prefix}/include/dcap.h
 %{prefix}/include/dcap_errno.h
@@ -186,6 +189,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if %gsi
 %files -n libdcap-tunnel-gsi
+%defattr(-,root,root)
 %ifarch x86_64
 %{prefix}/lib64/libgsiTunnel.a
 %{prefix}/lib64/libgsiTunnel.la
@@ -199,6 +203,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if %krb
 %files -n libdcap-tunnel-krb
+%defattr(-,root,root)
 %ifarch x86_64
 %{prefix}/lib64/libgssTunnel.a
 %{prefix}/lib64/libgssTunnel.la
@@ -211,6 +216,7 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %files -n libdcap-tunnel-telnet
+%defattr(-,root,root)
 %ifarch x86_64
 %{prefix}/lib64/libtelnetTunnel.a
 %{prefix}/lib64/libtelnetTunnel.la
@@ -223,6 +229,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %if %ssl
 %files -n libdcap-tunnel-ssl
+%defattr(-,root,root)
 %ifarch x86_64
 %{prefix}/lib64/libsslTunnel.a
 %{prefix}/lib64/libsslTunnel.la
@@ -234,6 +241,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 %endif
 %changelog
+* Wed Dec 22 2010 - tigran.mkrtchyan (at) desy.de
+- Fixed files ownership
+
 * Thu Nov 19 2009 - owen.synge (at) desy.de
 - Repackaged with auto tools
 
