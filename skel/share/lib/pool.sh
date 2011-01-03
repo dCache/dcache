@@ -30,18 +30,68 @@ getSizeOfPool() # in $1 = pool path, out $2 = size
     stringToGiB "$diskspace" $2
 }
 
-createPool() # in $1 = size, in $2 = path
+printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optional meta, $6 = optional lfs
 {
-    local size
     local path
-    local ds
-    local movers
-    local set_size
-    local set_movers
-    local parent
+    local name
+    local domain
+    local size
+    local meta
+    local lfs
 
-    stringToGiB "$1" size
-    path="$2"
+    path="$1"
+    name="$2"
+    domain="$3"
+    size="$4"
+    meta="$5"
+    lfs="$6"
+
+    echo "[$domain/pool]"
+    echo "name=$name"
+    echo "path=$path"
+    if [ -n "$size" ]; then
+        echo "maxDiskSpace=$size"
+    fi
+    case "$meta" in
+        file)
+            echo "metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository"
+            echo "waitForFiles=\${path}/data:\${path}/control"
+            ;;
+        db)
+            echo "metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
+            echo "waitForFiles=\${path}/data:\${path}/meta"
+            ;;
+        *)
+            echo "waitForFiles=\${path}/data"
+            ;;
+    esac
+
+    if [ -n "$lfs" ]; then
+        echo "lfs=$lfs"
+    fi
+}
+
+createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optional meta, $6 = optional lfs
+{
+    local path
+    local name
+    local domain
+    local size
+    local meta
+    local lfs
+
+    local bytes
+    local ds
+    local parent
+    local user
+    local layout
+
+    path="$1"
+    name="$2"
+    domain="$3"
+    size="$4"
+    meta="$5"
+    lfs="$6"
 
     # Path must not exist
     if [ -e "${path}" ]; then
@@ -54,24 +104,61 @@ createPool() # in $1 = size, in $2 = path
         mkdir -p "${parent}" || fail 1 "Failed to create $parent"
     fi
 
-    # We need to have enough free space
-    getFreeSpace "${parent}" ds
+    # Create directories
+    mkdir -p "${path}" "${path}/data" ||
+    fail 1 "Failed to create directory tree"
+    case "$meta" in
+        file)
+            mkdir "${path}/control" ||
+            fail 1 "Failed to create directory tree"
+            ;;
+        db)
+            mkdir "${path}/meta" ||
+            fail 1 "Failed to create directory tree"
+            ;;
+        ?*)
+            fail 1 "Unknown meta data format: $meta"
+            ;;
+        *)
+            ;;
+    esac
 
-    if [ "${ds}" -lt "${size}" ]; then
-        fail 1 "Pool size exceeds available space. ${path} only
-                has ${ds} GiB of free space. Operation aborted."
+    # Warn the user if the file system doesn't contain enough free
+    # space. We only generate a warning since the user may choose to
+    # mount another file system below the pool directory.
+    if [ -n "$size" ]; then
+        getFreeSpace "${parent}" ds
+        stringToGiB "$3" bytes
+        if [ "${ds}" -lt "${bytes}" ]; then
+            printp "WARNING: Pool size of ${bytes} GiB exceeds available
+                space. ${path} only has ${ds} GiB of free space."
+        fi
     fi
 
-    mkdir -p "${path}" "${path}/data" "${path}/control" ||
-    fail 1 "Failed to create directory tree"
+    # Set ownership of pool directories
+    if user="$(getProperty dcache.user "$domain")"; then
+        chown -R "$user" "$path"
+    fi
 
-    set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
-    sed -e "$set_size" "${DCACHE_CONFIG}/setup.temp" > "${path}/setup" || exit 1
-
-    printp "Created a $size GiB pool in $path. The pool cannot be used
-            until it has been added to a domain. Use 'pool add' to do so."\
-           "Please note that this script does not set the owner of the
-            pool directory. You may need to adjust it."
+    layout="$(getProperty dcache.layout.uri)"
+    case "${layout}" in
+        file:*)
+            (
+                if ! grep "\[$domain\]" "${layout#file:}" > /dev/null 2>&1; then
+                    echo "[$domain]"
+                fi
+                printPoolConfig "$@"
+            ) >> "${layout#file:}"
+            printp "Created a pool in $path. The pool was added to
+                    $domain in $layout."
+            ;;
+        *)
+            printp "Created a pool in $path. The pool cannot be used until
+                    it has been added to a domain. Add the following to the
+                    layout file, ${layout}, to do so:"
+                   "$(printPoolConfig "$@")"
+            ;;
+    esac
 }
 
 # Reconstruct the meta data Berkeley DB of a pool

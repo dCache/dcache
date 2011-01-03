@@ -71,20 +71,34 @@ Shows the dCache version number.
 .SH POOL MANAGEMENTS COMMANDS
 
 .TP
-.B pool create SIZE PATH
+.B pool create [--size=BYTES] [--meta=file|db] [--lfs=MODE] PATH NAME DOMAIN
 
-Creates a new pool in the specified directory. The directory must not
-exist. It is verified that the file system has enough free space to
-host a pool of the given size.
+Creates a new pool in the specified directory. PATH must not
+exist. NAME must be a unique pool name. DOMAIN must be a unique dCache
+domain name. The directory will be created and populated with the
+necessary files to host a pool, and the configuration will be appended
+to the layout file.
 
-The size is specified in bytes or with an optional suffix of K, M, G
-or T for kibibytes, mebibytes, gibibytes and tebibytes,
+The \fBsize\fR is specified in bytes or with an optional suffix of K,
+M, G or T for kibibytes, mebibytes, gibibytes and tebibytes,
 respectively. The size is rounded down to the nearest integer of
 gibibytes.
 
-The directory will be created and populated with the necessary files
-to host a pool, however the pool will not be added to the dCache
-layout.
+The \fBmeta\fR option configures the meta data backend to use for the
+new pool. The default is to use the \fBfile\fR based backend. This
+backend creates two meta data files in a control directory for each
+data file stored on the pool. The control directory is created in the
+pool directory. The \fBdb\fR uses Berkeley DB to store the meta
+data. The database is stored in the meta directory underneath the pool
+directory.
+
+The \fBlfs\fR option determines the large file store mode of the
+pool. The default is \fBnone\fR. Possible values are \fBnone\fR,
+\fBprecious\fR, \fBvolatile\fR, and \fBtransient\fR. \fBprecious\fR is
+a legacy option. New deployments are encouraged to use per file access
+latency and retention policy settings to control whether files are to
+be stored on tape or disk. The use of \fBprecious\fR as an LFS mode is
+deprecated.
 
 .TP
 .B pool reconstruct PATH DESTINATION
