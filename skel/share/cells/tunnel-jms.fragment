@@ -1,2 +1,7 @@
+check -strong amqUrl
+
 create org.dcache.cells.UniversalSpringCell JMS \
-     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq.xml"
+     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq.xml \
+      -amqUrl=${amqUrl} \
+     "
+
