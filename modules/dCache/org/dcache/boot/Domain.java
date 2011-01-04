@@ -26,19 +26,14 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 
+import static org.dcache.boot.Properties.*;
+
 /**
  * Domain encapsulates the configuration of a domain and its
  * services. Provides the logic for starting a domain.
  */
 public class Domain
 {
-    private static final String PROPERTY_DOMAIN_NAME = "domain.name";
-    private static final String PROPERTY_DOMAIN_SERVICE = "domain.service";
-    private static final String PROPERTY_DOMAIN_SERVICE_URI = "domain.service.uri";
-    private static final String PROPERTY_DOMAIN_PRELOAD = "domain.preload";
-
-    private static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";
-
     private static final String SCHEME_FILE = "file";
     private static final String SUFFIX_PROPERTIES = ".properties";
     private static final String SUFFIX_XML = ".xml";

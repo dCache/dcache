@@ -22,6 +22,8 @@ import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.NetworkUtils;
 import org.dcache.commons.util.Strings;
 
+import static org.dcache.boot.Properties.*;
+
 /**
  * Layout encapsulates the configuration of a set of domains.
  */
@@ -31,9 +33,6 @@ public class Layout
 
     private static final Pattern SECTION_HEADER =
         Pattern.compile("^\\s*\\[([^\\]/]+)(/([^\\]/]+))?\\]\\s*$");
-
-    private static final String PROPERTY_DOMAINS =
-        "dcache.domains";
 
     private final ConfigurationProperties _properties;
     private final Map<String,Domain> _domains =

@@ -21,6 +21,7 @@ import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.ScopedConfigurationProperties;
 import org.dcache.util.Glob;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -32,6 +33,8 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 
+import static org.dcache.boot.Properties.*;
+
 /**
  * Boot loader for dCache. This class contains the main method of
  * dCache. It is responsible for parsing the configuration files and
@@ -41,10 +44,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
  */
 public class BootLoader
 {
-    private static final String PROPERTY_DCACHE_LAYOUT_URI = "dcache.layout.uri";
-    private static final String PROPERTY_HOST_NAME = "host.name";
-    private static final String PROPERTY_HOST_FQDN = "host.fqdn";
-
     private static final String CMD_START = "start";
     private static final String CMD_COMPILE = "compile";
 
@@ -129,35 +128,92 @@ public class BootLoader
         return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[");
     }
 
-    private static void compileToShell(ConfigurationProperties properties)
+    /**
+     * Generates a shell case statement for value in {@code
+     * properties} not defined in {@code parentProperties}.
+     */
+    private static void compileToShell(String indent, ConfigurationProperties properties, ConfigurationProperties parentProperties)
     {
         PrintStream out = System.out;
-        out.println("      case \"$1\" in");
+        out.append(indent).println("case \"$1\" in");
         for (String key: properties.stringPropertyNames()) {
-            out.println("        " + quoteForCase(key) + ") echo \"" + quote(properties.getValue(key)) + "\";;");
+            if (!ScopedConfigurationProperties.isScoped(key)) {
+                String value = properties.getValue(key);
+                if (!value.equals(parentProperties.getValue(key))) {
+                    out.append(indent).append("  ");
+                    out.append(quoteForCase(key)).append(") echo \"");
+                    out.append(quote(properties.getValue(key)));
+                    out.println("\"; return;;");
+                }
+            }
         }
-        out.println("        *) undefinedProperty \"$1\" \"$2\";;");
-        out.println("      esac");
+        out.append(indent).println("esac");
     }
 
+    /**
+     * Generates a shell function {@code getProperty} which serves as
+     * an oracle for property values. The function takes three
+     * arguments: property key, domain name, cell name. The latter two
+     * are optional.
+     *
+     * For undefined cells the function calls {@code
+     * undefinedCell}. For undefined domains the function calls {@code
+     * undefinedDomain}. For undefined properties the function calls
+     * {@code undefinedProperties}. If those functions return then
+     * processing falls through to the enclosing configuration
+     * context.
+     */
     private static void compileToShell(Layout layout)
     {
         PrintStream out = System.out;
         out.println("getProperty()");
         out.println("{");
+
+        // Logic for per service parameters
         out.println("  case \"$2\" in");
         out.println("    \"\")");
-        compileToShell(layout.properties());
-        out.println("      ;;");
+        out.println("      ;;"); // Fall through
         for (Domain domain: layout.getDomains()) {
-            out.println("    " + quoteForCase(domain.getName()) + ")");
-            compileToShell(domain.properties());
+            out.append("    ").append(quoteForCase(domain.getName())).println(")");
+            out.println("      case \"$3\" in");
+            out.println("        \"\")");
+            out.println("          ;;"); // Fall through
+            for (ConfigurationProperties service: domain.getServices()) {
+                String cellName = service.getValue(PROPERTY_CELL_NAME);
+                if (cellName != null) {
+                    out.append("        ").append(quoteForCase(cellName)).println(")");
+                    compileToShell("          ", service, domain.properties());
+                    out.println("          ;;");
+                }
+            }
+            out.println("        *)");
+            out.println("          undefinedCell \"$@\"");
+            out.println("          ;;");
+            out.println("      esac");
             out.println("      ;;");
         }
         out.println("    *)");
-        out.println("      undefinedDomain \"$1\"");
+        out.println("      undefinedDomain \"$@\"");
         out.println("      ;;");
-        out.println("  esac;");
+        out.println("  esac");
+        out.println();
+
+        // Logic for per domain parameters
+        out.println("  case \"$2\" in");
+        for (Domain domain: layout.getDomains()) {
+            out.append("    ").append(quoteForCase(domain.getName())).println(")");
+            compileToShell("      ", domain.properties(), layout.properties());
+            out.println("      ;;");
+        }
+        out.println("  esac");
+        out.println();
+
+        // Logic for global properties
+        compileToShell("  ", layout.properties(), new ConfigurationProperties());
+        out.println();
+
+        // Global fallback
+        out.println("  undefinedProperty \"$@\"");
         out.println("}");
     }
 
