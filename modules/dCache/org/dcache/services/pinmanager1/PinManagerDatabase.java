@@ -553,19 +553,22 @@ class PinManagerDatabase
         " WHERE  AllPinIds.PinId IS NULL AND "  +
         " AllPinIds.Expiration != -1 AND " +
         " AllPinIds.Expiration < ?";
-    public Set<Pin> getExpiredPinsWithoutRequests()
+    public List<Pin> getExpiredPinsWithoutRequests()
         throws PinDBException
     {
         try {
-            Set<Pin> pins =
+            return
                 _template.query(selectIDsOfExpiredPinWithoutRequest,
-                                new SetExtractor<Pin>(new PinMapper()),
-                                System.currentTimeMillis());
-            for (Pin pin: pins) {
-                pin.setRequests(getPinRequestsByPin(pin));
-                assert pin.getRequests().isEmpty();
-            }
-            return pins;
+                                new RowMapper<Pin>() {
+                                    public Pin mapRow(ResultSet rs, int rowNum)
+                                        throws SQLException
+                                    {
+                                        Pin pin =  _getPin(rs.getLong(1));
+                                        pin.setRequests(getPinRequestsByPin(pin));
+                                        assert pin.getRequests().isEmpty();
+                                        return pin;
+                                    }
+                                }, System.currentTimeMillis());
         } catch (DataAccessException e) {
             throw new PinDBException(e.toString());
         }
