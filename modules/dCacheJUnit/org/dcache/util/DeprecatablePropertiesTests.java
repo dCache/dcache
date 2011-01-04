@@ -7,6 +7,8 @@ import static org.junit.Assert.fail;
 import java.io.StringWriter;
 import java.util.Properties;
 import java.util.List;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
@@ -156,5 +158,14 @@ public class DeprecatablePropertiesTests {
         } catch (IllegalArgumentException e) {
             assertEquals( FORBIDDEN_PROPERTY_W_ERROR_VALUE, e.getMessage());
         }
+    }
+
+    @Test
+    public void testStringPropertyNames()
+    {
+        String[] expected =
+            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME };
+        assertEquals(new HashSet<String>(Arrays.asList(expected)),
+                     _properties.stringPropertyNames());
     }
 }

@@ -5,6 +5,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
+import java.util.HashSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,12 +114,10 @@ public class DeprecatableProperties extends ReplaceableProperties {
     @Override
     public Set<String> stringPropertyNames()
     {
-        Set<String> names = super.stringPropertyNames();
-        Iterator<String> i = names.iterator();
-        while (i.hasNext()) {
-            String name = i.next();
-            if( isAnnotatedDeclaration(name)) {
-                i.remove();
+        Set<String> names = new HashSet<String>();
+        for (String name: super.stringPropertyNames()) {
+            if (!isAnnotatedDeclaration(name)) {
+                names.add(name);
             }
         }
         return names;
