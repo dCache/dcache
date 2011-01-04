@@ -99,7 +99,7 @@ public final class LsFileRequest extends FileRequest {
             if (query != null) {
                 int i = query.indexOf(SFN_STRING);
                 if (i != -1) {
-                    path = query.substring(i + SFN_STRING.length());
+                    path = query.substring(i + SFN_STRING.length()).replaceAll("//*", "/");
                 }
             }
             return path;
