@@ -50,17 +50,12 @@ public abstract class NetworkUtils {
         return result;
     }
 
+    /**
+     * Returns a local IP facing the first client address provided.
+     */
     public static InetAddress getLocalAddressForClient(String[] clientHosts) throws SocketException, UnknownHostException {
-        // try to pick the ip address with corresponds to the
-        // hostname (which is hopefully visible to the world)
-        // by service method
-        _log.debug("hostname: {}", clientHosts[FIRST_CLIENT_HOST]);
         InetAddress clientAddress = InetAddress.getByName(clientHosts[FIRST_CLIENT_HOST]);
-
-        _log.debug("client: {}", clientAddress.toString());
         InetAddress localAddress = NetworkUtils.getLocalAddress(clientAddress);
-        _log.debug("local: {}", localAddress.toString());
-        _log.debug("canonical: {}", localAddress.getCanonicalHostName());
         return localAddress;
     }
 
