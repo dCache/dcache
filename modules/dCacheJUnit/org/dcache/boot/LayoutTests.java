@@ -9,7 +9,8 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
 
-import org.dcache.util.ReplaceableProperties;
+import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.ScopedConfigurationProperties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class LayoutTests {
 
     @Before
     public void setUp() {
-        _layout = new Layout( new ReplaceableProperties( new Properties()));
+        _layout = new Layout( new ConfigurationProperties( new Properties()));
         _readerSource = new LayoutStringBuffer();
     }
 
@@ -91,7 +92,7 @@ public class LayoutTests {
 
         assertDomainServicesSize( domain, 1);
 
-        ReplaceableProperties serviceProperties = domain.getServices().get(0);
+        ConfigurationProperties serviceProperties = domain.getServices().get(0);
         assertServicePropertySize( serviceProperties, 1);
         assertServiceHasProperty( serviceProperties, PROPERTY_DOMAIN_NAME_KEY, domainName);
     }
@@ -123,15 +124,15 @@ public class LayoutTests {
     }
 
     private void assertDomainServicesSize( Domain domain, int expectedSize) {
-        List<ReplaceableProperties> services = domain.getServices();
+        List<ScopedConfigurationProperties> services = domain.getServices();
         assertEquals( expectedSize, services.size());
     }
 
-    private void assertServiceHasProperty( ReplaceableProperties properties, String propertyKey, String expectedValue) {
+    private void assertServiceHasProperty( ConfigurationProperties properties, String propertyKey, String expectedValue) {
         assertEquals( expectedValue, properties.getProperty( propertyKey));
     }
 
-    private void assertServicePropertySize( ReplaceableProperties properties, int expectedSize) {
+    private void assertServicePropertySize( ConfigurationProperties properties, int expectedSize) {
         assertEquals(expectedSize,properties.size());
     }
 

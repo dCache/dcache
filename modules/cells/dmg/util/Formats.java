@@ -1,19 +1,21 @@
 package dmg.util ;
 
+import java.util.Stack;
+
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
 public class Formats {
-  
+
   public static final int CENTER   =  0x1 ;
   public static final int RIGHT    =  0x4 ;
   public static final int LEFT     =  0x2 ;
   public static final int CUT      =  0x8 ;
-  
-  public static String field( String in , int field ){ 
+
+  public static String field( String in , int field ){
      return field(in,field,LEFT) ;
   }
   public static String field( String in , int field , int flags ){
@@ -48,56 +50,65 @@ public class Formats {
      int lastDot = c.lastIndexOf( '.' ) ;
      if( ( lastDot < 0 ) || ( lastDot >= ( c.length() - 1 ) ) )return c ;
      return c.substring( lastDot+1 ) ;
-  
+
   }
   private final static int RP_IDLE   = 0 ;
   private final static int RP_DOLLAR = 1 ;
   private final static int RP_OPENED = 2 ;
-  
-  public static String replaceKeywords( String in , Replaceable cb ){
-      StringBuffer key = null ;
-      StringBuffer out = new StringBuffer() ;
-      int state = RP_IDLE ;
-      int len   = in.length() ;
-      for( int i = 0 ; i < len ; i++ ){
-         char c = in.charAt(i) ;
-         switch( state ){
-             case RP_IDLE :
+
+    private static String replaceKeywords(String in, Replaceable cb, Stack<String> replaced)
+    {
+        StringBuilder key = null ;
+        StringBuilder out = new StringBuilder();
+        int state = RP_IDLE ;
+        int len   = in.length() ;
+        for( int i = 0 ; i < len ; i++ ){
+            char c = in.charAt(i) ;
+            switch( state ){
+            case RP_IDLE :
                 if( c == '$' ){
                     state = RP_DOLLAR ;
                 }else{
                     out.append( c ) ;
                 }
-             break ;
-             case RP_DOLLAR :
+                break ;
+            case RP_DOLLAR :
                 if( c == '{' ){
                     state = RP_OPENED ;
-                    key   = new StringBuffer() ;
+                    key   = new StringBuilder();
                 }else{
                     out.append( '$' ) ;
                     state = RP_IDLE ;
                 }
-             break ;
-             case RP_OPENED :
+                break ;
+            case RP_OPENED :
                 if( c == '}' ){
                     state = RP_IDLE ;
                     String keyName  = key.toString() ;
                     String keyValue = cb.getReplacement( keyName ) ;
-                    if( keyValue == null ){
+                    if (keyValue == null || replaced.contains(keyName)) {
                         out.append( "${"+keyName+"}" ) ;
-                    }else{
-                        out.append( keyValue ) ;
+                    } else {
+                        replaced.push(keyName);
+                        out.append(replaceKeywords(keyValue, cb, replaced));
+                        replaced.pop();
                     }
                 }else{
                     key.append( c ) ;
                 }
-             break ;
-         }
-      }
-      return out.toString() ;
-  }
+                break ;
+            }
+        }
+        return out.toString();
+    }
+
+    public static String replaceKeywords(String in, Replaceable cb)
+    {
+        return replaceKeywords(in, cb, new Stack<String>());
+    }
+
   public static boolean smatch( String pattern , String text ){
-    
+
     int pl = pattern.length() ;
     int tl = text.length() ;
     int i = 0 ;
@@ -109,13 +120,13 @@ public class Formats {
     return false ;
   }
 /**
- * a useful tool which can interpret jokers (*) and wildcards (?) to filter 
+ * a useful tool which can interpret jokers (*) and wildcards (?) to filter
  * from a given Array of Strings the matching ones.
  * Written by Manfred Maschewski, DESY
  *
  * @author              Manfred Maschewski, DESY Hamburg
  * @version             0.1             14 Jan 99
- */  
+ */
   public static boolean match( String condition , String subject ) {
     // handling the joker
     if ( condition.startsWith("*") ) {
@@ -149,9 +160,9 @@ public class Formats {
                 return match( condition , subject ) ;
         }
       }
-    }   
+    }
   }
-  
+
 
   private static boolean startsWith( String subject, String term ) {
      int riddle ;
@@ -162,7 +173,7 @@ public class Formats {
      }
      return equals( subject, term ) ;
   }
-        
+
   private static boolean endsWith( String subject, String term ) {
     int riddle ;
     // if term is longer than subject it doesn't matches anyway...
@@ -176,7 +187,7 @@ public class Formats {
     }
     return equals( subject, term ) ;
   }
-        
+
   private static int indexOf( String subject, String term ) {
     if ( subject.length() < term.length() ) {
       return -1 ;
@@ -191,12 +202,12 @@ public class Formats {
       }
       return i ;
     }
-    return -1 ; 
-  }                        
+    return -1 ;
+  }
   private static String removeChar( String str, int i ) {
     str = str.substring(0,i) + str.substring(i+1,str.length()) ;
     return str ;
-  }        
+  }
   private static boolean equals( String subject, String term ) {
      int riddle ;
      while ( ( riddle = term.indexOf("?")) != -1 ) {
@@ -205,6 +216,6 @@ public class Formats {
      }
      return subject.equals(term) ;
   }
-  
-} 
- 
+
+}
+

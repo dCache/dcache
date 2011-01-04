@@ -18,9 +18,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.dcache.util.DeprecatableProperties;
+import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.ReplaceableProperties;
 import org.dcache.commons.util.Strings;
 
 /**
@@ -36,16 +35,16 @@ public class Layout
     private static final String PROPERTY_DOMAINS =
         "dcache.domains";
 
-    private final ReplaceableProperties _properties;
+    private final ConfigurationProperties _properties;
     private final Map<String,Domain> _domains =
         new LinkedHashMap<String,Domain>();
 
-    public Layout(ReplaceableProperties config)
+    public Layout(ConfigurationProperties config)
     {
-        _properties = new DeprecatableProperties(config);
+        _properties = new ConfigurationProperties(config);
     }
 
-    public ReplaceableProperties properties()
+    public ConfigurationProperties properties()
     {
         return _properties;
     }

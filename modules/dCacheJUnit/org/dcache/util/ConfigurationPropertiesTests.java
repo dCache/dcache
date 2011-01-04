@@ -1,24 +1,60 @@
 package org.dcache.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.Properties;
+import java.util.List;
+import java.util.Arrays;
+import java.util.HashSet;
+
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 import org.junit.Before;
 import org.junit.Test;
 
-public class ReplaceablePropertiesTests {
+public class ConfigurationPropertiesTests {
+
+    private static final String NORMAL_PROPERTY_NAME = "normalProperty";
+    private static final String NORMAL_PROPERTY_VALUE = "some normal value";
+
+    private static final String OBSOLETE_PROPERTY_NAME = "obsoleteProperty";
+    private static final String OBSOLETE_PROPERTY_KEY =
+            "(obsolete)" + OBSOLETE_PROPERTY_NAME;
+
+    private static final String FORBIDDEN_PROPERTY_NAME = "forbiddenProperty";
+    private static final String FORBIDDEN_PROPERTY_KEY =
+            "(forbidden)" + FORBIDDEN_PROPERTY_NAME;
+
+    private static final String FORBIDDEN_PROPERTY_W_ERROR_NAME =
+            "forbiddenPropertyWithError";
+    private static final String FORBIDDEN_PROPERTY_W_ERROR_VALUE =
+            "An error message";
+    private static final String FORBIDDEN_PROPERTY_W_ERROR_KEY =
+            "(forbidden)" + FORBIDDEN_PROPERTY_W_ERROR_NAME;
+
+    private static final String DEPRECATED_PROPERTY_NAME = "deprecatedProperty";
+    private static final String DEPRECATED_PROPERTY_VALUE =
+            "some deprecated value";
+    private static final String DEPRECATED_PROPERTY_KEY =
+            "(deprecated)" + DEPRECATED_PROPERTY_NAME;
 
     private static final String SIMPLE_PROPERTY_NAME = "simple-key";
     private static final String SIMPLE_PROPERTY_VALUE = "simple-value";
@@ -31,23 +67,135 @@ public class ReplaceablePropertiesTests {
 
     private static final String EXPANDING_PROPERTY_NAME = "expanding-key";
 
-    private static final Pattern MATCH_SIMPLE_EXACTLY = Pattern.compile( SIMPLE_PROPERTY_NAME);
-    private static final Pattern MATCH_SIMPLE_WITH_ANY_PREFIX = Pattern.compile( ".*" + SIMPLE_PROPERTY_NAME);
-    private static final Pattern MATCH_SIMPLE_WITH_ANY_SUFFIX = Pattern.compile( SIMPLE_PROPERTY_NAME + ".*");
-    private static final Pattern MATCH_SIMPLE_WITH_ANY_PREFIX_OR_SUFFIX = Pattern.compile( ".*" + SIMPLE_PROPERTY_NAME + ".*");
-
-
-    ReplaceableProperties _initiallyEmptyProperties;
-    ReplaceableProperties _standardProperties;
+    private ConfigurationProperties _properties;
+    private ConfigurationProperties _initiallyEmptyProperties;
+    private ConfigurationProperties _standardProperties;
+    private List<ILoggingEvent> _log;
 
     @Before
     public void setUp() {
-        _initiallyEmptyProperties = new ReplaceableProperties( new Properties());
+        resetProperties();
+        resetLogCapture();
+    }
 
-        _standardProperties = new ReplaceableProperties( new Properties());
+    private void resetProperties() {
+        _properties = new ConfigurationProperties();
+        _properties.put( NORMAL_PROPERTY_NAME, NORMAL_PROPERTY_VALUE);
+        _properties.put( OBSOLETE_PROPERTY_KEY, "");
+        _properties.put( FORBIDDEN_PROPERTY_KEY, "");
+        _properties.put( FORBIDDEN_PROPERTY_W_ERROR_KEY,
+                FORBIDDEN_PROPERTY_W_ERROR_VALUE);
+        _properties.put( DEPRECATED_PROPERTY_KEY, DEPRECATED_PROPERTY_VALUE);
+
+        _initiallyEmptyProperties = new ConfigurationProperties();
+
+        _standardProperties = new ConfigurationProperties();
         _standardProperties.setProperty( SIMPLE_PROPERTY_NAME, SIMPLE_PROPERTY_VALUE);
         _standardProperties.setProperty( PROPERTY_WITH_SUFFIX_NAME, PROPERTY_WITH_SUFFIX_VALUE);
         _standardProperties.setProperty( PROPERTY_WITH_PREFIX_NAME, PROPERTY_WITH_PREFIX_VALUE);
+    }
+
+    private void resetLogCapture() {
+        LoggerContext loggerContext =
+            (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.reset();
+
+        ListAppender<ILoggingEvent> appender =
+            new ListAppender<ILoggingEvent>();
+        appender.setContext(loggerContext);
+        appender.setName("appender");
+        appender.start();
+        _log = appender.list;
+
+        Logger logger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        logger.addAppender(appender);
+        logger.setLevel(Level.WARN);
+    }
+
+    @Test
+    public void testNormalPropertyGet() {
+        assertEquals( "testing normal property", NORMAL_PROPERTY_VALUE,
+                _properties.get( NORMAL_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testDeprecatedPropertyGet() {
+        assertEquals( "testing deprecated property", DEPRECATED_PROPERTY_VALUE,
+                _properties.get( DEPRECATED_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testObsoletePropertyGet() {
+        assertFalse( "testing obsolete property missing",
+                _properties.containsKey( OBSOLETE_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testForbiddenWithErrorPropertyContainsKey() {
+        assertFalse( "testing obsolete property missing",
+                _properties.containsKey( FORBIDDEN_PROPERTY_W_ERROR_NAME));
+    }
+
+    @Test
+    public void testForbiddenPropertyContainsKey() {
+        assertFalse( "testing forbidden property missing",
+                _properties.containsKey( FORBIDDEN_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testNormalPropertyPut() {
+        _properties.put( NORMAL_PROPERTY_NAME, "some value");
+        assertEquals(0, _log.size());
+    }
+
+    @Test
+    public void testDeprecatedPropertyPut() {
+        _properties.put( DEPRECATED_PROPERTY_NAME, "some value");
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("The property " + DEPRECATED_PROPERTY_NAME +
+                     " is deprecated and will be removed.",
+                     _log.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testObsoletePropertyPut() {
+        _properties.put( OBSOLETE_PROPERTY_NAME, "some value");
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("The property " + OBSOLETE_PROPERTY_NAME +
+                     " is no longer used.", _log.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testForbiddenPropertyPut() {
+        try {
+            _properties.put( FORBIDDEN_PROPERTY_NAME, "some value");
+            fail( "no exception thrown");
+        } catch (IllegalArgumentException e) {
+            assertEquals( "Adjusting property " + FORBIDDEN_PROPERTY_NAME +
+                          " is forbidden as different properties now control this aspect of dCache.",
+                          e.getMessage());
+        }
+    }
+
+    @Test
+    public void testForbiddenWithErrorPropertyPut() {
+        try {
+            _properties.put( FORBIDDEN_PROPERTY_W_ERROR_NAME, "some value");
+            fail( "no exception thrown");
+        } catch (IllegalArgumentException e) {
+            assertEquals( FORBIDDEN_PROPERTY_W_ERROR_VALUE, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testStringPropertyNames()
+    {
+        String[] expected =
+            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME };
+        assertEquals(new HashSet<String>(Arrays.asList(expected)),
+                     _properties.stringPropertyNames());
     }
 
     @Test
@@ -57,7 +205,7 @@ public class ReplaceablePropertiesTests {
 
     @Test
     public void testGetReplacementSimple() {
-        assertEquals( SIMPLE_PROPERTY_VALUE, _standardProperties.getReplacement( SIMPLE_PROPERTY_NAME));
+        assertEquals( SIMPLE_PROPERTY_VALUE, _standardProperties.getValue( SIMPLE_PROPERTY_NAME));
     }
 
     @Test
@@ -79,7 +227,7 @@ public class ReplaceablePropertiesTests {
         String expandingValue = propertyReference( SIMPLE_PROPERTY_NAME);
         _standardProperties.setProperty( EXPANDING_PROPERTY_NAME, expandingValue);
 
-        assertEquals( SIMPLE_PROPERTY_VALUE, _standardProperties.getReplacement( EXPANDING_PROPERTY_NAME));
+        assertEquals( SIMPLE_PROPERTY_VALUE, _standardProperties.getValue( EXPANDING_PROPERTY_NAME));
     }
 
     @Test
@@ -89,7 +237,7 @@ public class ReplaceablePropertiesTests {
         String expandingValue = prefix + propertyReference( SIMPLE_PROPERTY_NAME);
         _standardProperties.setProperty( EXPANDING_PROPERTY_NAME, expandingValue);
 
-        assertEquals( prefix + SIMPLE_PROPERTY_VALUE, _standardProperties.getReplacement( EXPANDING_PROPERTY_NAME));
+        assertEquals( prefix + SIMPLE_PROPERTY_VALUE, _standardProperties.getValue( EXPANDING_PROPERTY_NAME));
     }
 
     @Test
@@ -99,7 +247,7 @@ public class ReplaceablePropertiesTests {
         String expandingValue = propertyReference( SIMPLE_PROPERTY_NAME) + postfix;
         _standardProperties.setProperty( EXPANDING_PROPERTY_NAME, expandingValue);
 
-        assertEquals( SIMPLE_PROPERTY_VALUE + postfix, _standardProperties.getReplacement( EXPANDING_PROPERTY_NAME));
+        assertEquals( SIMPLE_PROPERTY_VALUE + postfix, _standardProperties.getValue( EXPANDING_PROPERTY_NAME));
     }
 
     @Test
@@ -110,7 +258,7 @@ public class ReplaceablePropertiesTests {
         String expandingValue = propertyReference( SIMPLE_PROPERTY_NAME);
         _standardProperties.setProperty( EXPANDING_PROPERTY_NAME, expandingValue);
 
-        assertEquals( valueWithSpace, _standardProperties.getReplacement( EXPANDING_PROPERTY_NAME));
+        assertEquals( valueWithSpace, _standardProperties.getValue( EXPANDING_PROPERTY_NAME));
     }
 
     @Test
@@ -122,7 +270,7 @@ public class ReplaceablePropertiesTests {
         String expanding2Value = propertyReference( EXPANDING_PROPERTY_NAME);
         _standardProperties.setProperty( expanding2Name, expanding2Value);
 
-        assertEquals( SIMPLE_PROPERTY_VALUE, _standardProperties.getReplacement( expanding2Name));
+        assertEquals( SIMPLE_PROPERTY_VALUE, _standardProperties.getValue( expanding2Name));
     }
 
     @Test
@@ -136,7 +284,7 @@ public class ReplaceablePropertiesTests {
         _standardProperties.setProperty( expanding2Name, expanding2Value);
 
         assertEquals( SIMPLE_PROPERTY_VALUE + SIMPLE_PROPERTY_VALUE,
-                      _standardProperties.getReplacement( expanding2Name));
+                      _standardProperties.getValue( expanding2Name));
     }
 
     @Test
@@ -149,7 +297,7 @@ public class ReplaceablePropertiesTests {
         String expanding2Value = propertyReference( EXPANDING_PROPERTY_NAME);
         _standardProperties.setProperty( expanding2Name, expanding2Value);
 
-        assertEquals( expanding2Value, _standardProperties.getReplacement( expanding2Name));
+        assertEquals( expanding2Value, _standardProperties.getValue( expanding2Name));
     }
 
     /*
@@ -239,68 +387,6 @@ public class ReplaceablePropertiesTests {
         InputStream in = new ByteArrayInputStream( twoAssignments.getBytes());
 
         _initiallyEmptyProperties.load( in);
-    }
-
-
-    /*
-     * Test against matchingStringPropertyNames
-     */
-
-    @Test
-    public void testSinglePatternExactMatch() {
-        Collection<Pattern> selection = Collections.singletonList( MATCH_SIMPLE_EXACTLY);
-
-        Set<String> results = _standardProperties.matchingStringPropertyNames( selection);
-
-        Set<String> expected = new HashSet<String>(Arrays.asList( SIMPLE_PROPERTY_NAME));
-        assertEquals( expected, results);
-    }
-
-    @Test
-    public void testSinglePatternWithAnySuffix() {
-        Collection<Pattern> selection = Collections.singletonList(MATCH_SIMPLE_WITH_ANY_SUFFIX);
-
-        Set<String> results = _standardProperties.matchingStringPropertyNames(selection);
-
-        Set<String> expected = new HashSet<String>(Arrays.asList(SIMPLE_PROPERTY_NAME,
-                                                                 PROPERTY_WITH_SUFFIX_NAME));
-        assertEquals( expected, results);
-    }
-
-    @Test
-    public void testSinglePatternWithAnyPrefix() {
-        Collection<Pattern> selection = Collections.singletonList(MATCH_SIMPLE_WITH_ANY_PREFIX);
-
-        Set<String> results = _standardProperties.matchingStringPropertyNames( selection);
-
-        Set<String> expected = new HashSet<String>(Arrays.asList( SIMPLE_PROPERTY_NAME,
-                                                                  PROPERTY_WITH_PREFIX_NAME));
-        assertEquals( expected, results);
-    }
-
-    @Test
-    public void testSinglePatternWithAnyPrefixOrSuffix() {
-        Collection<Pattern> selection = Collections.singletonList(MATCH_SIMPLE_WITH_ANY_PREFIX_OR_SUFFIX);
-
-        Set<String> results = _standardProperties.matchingStringPropertyNames( selection);
-
-        Set<String> expected = new HashSet<String>(Arrays.asList( SIMPLE_PROPERTY_NAME,
-                                                                  PROPERTY_WITH_PREFIX_NAME,
-                                                                  PROPERTY_WITH_SUFFIX_NAME));
-        assertEquals( expected, results);
-    }
-
-    @Test
-    public void testPatternsAnyPrefixAndAnySuffix() {
-        Collection<Pattern> selection = Arrays.asList(MATCH_SIMPLE_WITH_ANY_PREFIX,
-                                                      MATCH_SIMPLE_WITH_ANY_SUFFIX);
-
-        Set<String> results = _standardProperties.matchingStringPropertyNames( selection);
-
-        Set<String> expected = new HashSet<String>(Arrays.asList( SIMPLE_PROPERTY_NAME,
-                                                                  PROPERTY_WITH_PREFIX_NAME,
-                                                                  PROPERTY_WITH_SUFFIX_NAME));
-        assertEquals( expected, results);
     }
 
     /*

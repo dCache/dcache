@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.dcache.util.DeprecatableProperties;
+import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.ScopedConfigurationProperties;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.ReplaceableProperties;
 
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
@@ -46,25 +46,25 @@ public class Domain
     private static final Logger _log =
         LoggerFactory.getLogger(SystemCell.class);
 
-    private final ReplaceableProperties _properties;
-    private final List<ReplaceableProperties> _services;
+    private final ConfigurationProperties _properties;
+    private final List<ScopedConfigurationProperties> _services;
 
-    public Domain(String name, ReplaceableProperties defaults)
+    public Domain(String name, ConfigurationProperties defaults)
     {
-        _properties = new DeprecatableProperties(defaults);
+        _properties = new ConfigurationProperties(defaults);
         _properties.put(PROPERTY_DOMAIN_NAME, name);
-        _services = new ArrayList<ReplaceableProperties>();
+        _services = new ArrayList<ScopedConfigurationProperties>();
     }
 
-    public ReplaceableProperties properties()
+    public ConfigurationProperties properties()
     {
         return _properties;
     }
 
-    public ReplaceableProperties createService(String name)
+    public ConfigurationProperties createService(String name)
     {
-        ReplaceableProperties service =
-            new DeprecatableProperties(_properties);
+        ScopedConfigurationProperties service =
+            new ScopedConfigurationProperties(_properties, name);
         service.put(PROPERTY_DOMAIN_SERVICE, name);
         _services.add(service);
         return service;
@@ -72,10 +72,10 @@ public class Domain
 
     public String getName()
     {
-        return _properties.getReplacement(PROPERTY_DOMAIN_NAME);
+        return _properties.getValue(PROPERTY_DOMAIN_NAME);
     }
 
-    List<ReplaceableProperties> getServices()
+    List<ScopedConfigurationProperties> getServices()
     {
         return _services;
     }
@@ -90,7 +90,7 @@ public class Domain
         _log.info("Starting " + domainName);
 
         executePreload(systemCell);
-        for (ReplaceableProperties serviceConfig: _services) {
+        for (ConfigurationProperties serviceConfig: _services) {
             executeService(systemCell, serviceConfig);
         }
 
@@ -103,7 +103,7 @@ public class Domain
         throws URISyntaxException, IOException
     {
         try {
-            String property = _properties.getReplacement(PROPERTY_LOG_CONFIG);
+            String property = _properties.getValue(PROPERTY_LOG_CONFIG);
             if (property == null) return;
 
             URI uri = new URI(property);
@@ -133,70 +133,13 @@ public class Domain
     }
 
     /**
-     * Returns whether a name is scoped.
-     *
-     * A scoped name begins with the name of the scope followed by the
-     * scoping operator, a forward slash.
+     * Imports all properties.
      */
-    private boolean isScoped(String name)
-    {
-        return name.indexOf('/') > -1;
-    }
-
-    /**
-     * Returns whether a name has a particular scope.
-     */
-    private boolean isScoped(String scope, String name)
-    {
-        return scope.length() < name.length() &&
-            name.startsWith(scope) && name.charAt(scope.length()) == '/';
-    }
-
-    /**
-     * Returns the unscoped name.
-     */
-    private String stripScope(String name)
-    {
-        int pos = name.indexOf('/');
-        return (pos == -1) ? name : name.substring(pos + 1);
-    }
-
-    /**
-     * Imports all unscoped properties.
-     */
-    private void importUnscopedParameters(Map<String,Object> map,
-                                          ReplaceableProperties properties)
+    private void importParameters(Map<String,Object> map,
+                                  ConfigurationProperties properties)
     {
         for (String key: properties.stringPropertyNames()) {
-            if (!isScoped(key)) {
-                map.put(key, properties.getProperty(key));
-            }
-        }
-    }
-
-    /**
-     * Imports service scoped properties.
-     */
-    private void importScopedParameters(Map<String,Object> map,
-                                        ReplaceableProperties properties)
-    {
-        String service = properties.getReplacement(PROPERTY_DOMAIN_SERVICE);
-        for (String key: properties.stringPropertyNames()) {
-            if (isScoped(service, key)) {
-                map.put(stripScope(key), properties.getProperty(key));
-            }
-        }
-    }
-
-    /**
-     * Imports service local parameters into a CellShell.
-     */
-    private void importLocalParameters(Map<String,Object> map,
-                                       ReplaceableProperties properties)
-    {
-        for (Object o: properties.keySet()) {
-            String key = (String) o;
-            if (!isScoped(key)) {
+            if (!ScopedConfigurationProperties.isScoped(key)) {
                 map.put(key, properties.getProperty(key));
             }
         }
@@ -208,10 +151,10 @@ public class Domain
     private void executePreload(SystemCell cell)
         throws URISyntaxException, IOException, CommandException
     {
-        String preload = _properties.getReplacement(PROPERTY_DOMAIN_PRELOAD);
+        String preload = _properties.getValue(PROPERTY_DOMAIN_PRELOAD);
         if (preload != null) {
             CellShell shell = new CellShell(cell.getNucleus());
-            importUnscopedParameters(shell.environment(), _properties);
+            importParameters(shell.environment(), _properties);
             executeBatchFile(shell, new URI(preload));
         }
     }
@@ -220,24 +163,22 @@ public class Domain
      * Creates a CellShell preloaded with a specific service's
      * configuration.
      */
-    CellShell createShellForService(SystemCell system, ReplaceableProperties properties)
+    CellShell createShellForService(SystemCell system, ConfigurationProperties properties)
         throws CommandException
     {
         CellShell shell = new CellShell(system.getNucleus());
-        importUnscopedParameters(shell.environment(), properties);
-        importScopedParameters(shell.environment(), properties);
-        importLocalParameters(shell.environment(), properties);
+        importParameters(shell.environment(), properties);
         return shell;
     }
 
     /**
      * Executes the batch file of the service.
      */
-    private void executeService(SystemCell system, ReplaceableProperties properties)
+    private void executeService(SystemCell system, ConfigurationProperties properties)
         throws URISyntaxException, IOException, CommandException
     {
         CellShell shell = createShellForService(system, properties);
-        URI uri = new URI(properties.getReplacement(PROPERTY_DOMAIN_SERVICE_URI));
+        URI uri = new URI(properties.getValue(PROPERTY_DOMAIN_SERVICE_URI));
         executeBatchFile(shell, uri);
     }
 

@@ -8,7 +8,7 @@ import java.util.Properties;
 import java.io.StringReader;
 import java.io.IOException;
 
-import org.dcache.util.ReplaceableProperties;
+import org.dcache.util.ConfigurationProperties;
 import org.dcache.boot.Domain;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
@@ -40,17 +40,17 @@ public class DomainConfigurationTest
 
     private final static SystemCell system = new SystemCell(DOMAIN_NAME);
 
-    private ReplaceableProperties defaults;
-    private ReplaceableProperties configuration;
+    private ConfigurationProperties defaults;
+    private ConfigurationProperties configuration;
 
     @Before
     public void setup()
         throws IOException
     {
-        defaults = new ReplaceableProperties(new Properties());
+        defaults = new ConfigurationProperties(new Properties());
         defaults.load(new StringReader(DEFAULTS));
 
-        configuration = new ReplaceableProperties(defaults);
+        configuration = new ConfigurationProperties(defaults);
         configuration.load(new StringReader(CONFIGURATION));
     }
 
@@ -64,7 +64,7 @@ public class DomainConfigurationTest
         throws CommandException
     {
         Domain domain = new Domain(DOMAIN_NAME, defaults);
-        ReplaceableProperties service = domain.createService(SERVICE1_NAME);
+        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("1", "a", shell);
@@ -89,7 +89,7 @@ public class DomainConfigurationTest
     {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
-        ReplaceableProperties service = domain.createService(SERVICE1_NAME);
+        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
         CellShell shell = domain.createShellForService(system, service);
 
         assertPropertyEquals("2", "a", shell);
@@ -114,7 +114,7 @@ public class DomainConfigurationTest
     {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
-        ReplaceableProperties service = domain.createService(SERVICE1_NAME);
+        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
         service.load(new StringReader(SERVICE1_CONFIG));
         CellShell shell = domain.createShellForService(system, service);
 
@@ -141,7 +141,7 @@ public class DomainConfigurationTest
     {
         Domain domain = new Domain(DOMAIN_NAME, configuration);
 
-        ReplaceableProperties service = domain.createService(SERVICE1_NAME);
+        ConfigurationProperties service = domain.createService(SERVICE1_NAME);
         service.load(new StringReader(SERVICE1_CONFIG));
         CellShell shell = domain.createShellForService(system, service);
 

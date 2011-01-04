@@ -20,8 +20,7 @@ import java.io.PrintStream;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
-import org.dcache.util.ReplaceableProperties;
-import org.dcache.util.DeprecatableProperties;
+import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.Glob;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -78,13 +77,13 @@ public class BootLoader
         System.exit(1);
     }
 
-    private static ReplaceableProperties getDefaults()
+    private static ConfigurationProperties getDefaults()
         throws UnknownHostException
     {
         InetAddress localhost = InetAddress.getLocalHost();
 
-        ReplaceableProperties properties =
-            new ReplaceableProperties(System.getProperties());
+        ConfigurationProperties properties =
+            new ConfigurationProperties(System.getProperties());
         properties.setProperty(PROPERTY_HOST_NAME,
                                localhost.getHostName().split("\\.")[0]);
         properties.setProperty(PROPERTY_HOST_FQDN,
@@ -92,12 +91,12 @@ public class BootLoader
         return properties;
     }
 
-    private static ReplaceableProperties
-        loadConfiguration(ReplaceableProperties config, String[] paths)
+    private static ConfigurationProperties
+        loadConfiguration(ConfigurationProperties config, String[] paths)
         throws IOException
     {
         for (String path: paths) {
-            config = new DeprecatableProperties(config);
+            config = new ConfigurationProperties(config);
             File file = new File(path);
             if (file.isFile()) {
                 config.loadFile(file);
@@ -112,11 +111,11 @@ public class BootLoader
         return config;
     }
 
-    private static Layout loadLayout(ReplaceableProperties config)
+    private static Layout loadLayout(ConfigurationProperties config)
         throws IOException, URISyntaxException
     {
         Layout layout = new Layout(config);
-        layout.load(new URI(config.getReplacement(PROPERTY_DCACHE_LAYOUT_URI)));
+        layout.load(new URI(config.getValue(PROPERTY_DCACHE_LAYOUT_URI)));
         return layout;
     }
 
@@ -130,12 +129,12 @@ public class BootLoader
         return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[");
     }
 
-    private static void compileToShell(ReplaceableProperties properties)
+    private static void compileToShell(ConfigurationProperties properties)
     {
         PrintStream out = System.out;
         out.println("      case \"$1\" in");
         for (String key: properties.stringPropertyNames()) {
-            out.println("        " + quoteForCase(key) + ") echo \"" + quote(properties.getReplacement(key)) + "\";;");
+            out.println("        " + quoteForCase(key) + ") echo \"" + quote(properties.getValue(key)) + "\";;");
         }
         out.println("        *) undefinedProperty \"$1\" \"$2\";;");
         out.println("      esac");
@@ -182,7 +181,7 @@ public class BootLoader
                 args.isOneCharOption(OPT_SILENT) ? Level.ERROR : Level.WARN;
             logToConsoleAtLevel(level);
 
-            ReplaceableProperties config = getDefaults();
+            ConfigurationProperties config = getDefaults();
             String tmp = args.getOpt(OPT_CONFIG_FILE);
             if (tmp != null) {
                 config =
