@@ -36,7 +36,6 @@ public class LayoutTests {
 
         Domain domain = _layout.getDomain(domainName);
         assertNotNull(domain);
-        assertDomainPropertySize( domain, 1);
         assertEquals(domainName, domain.getName());
         assertDomainHasProperty( domain, PROPERTY_DOMAIN_NAME_KEY, domainName);
     }
@@ -54,7 +53,6 @@ public class LayoutTests {
 
         Domain domain = _layout.getDomain(domainName);
         assertNotNull(domain);
-        assertDomainPropertySize( domain, 2);
         assertDomainHasProperty( domain, PROPERTY_DOMAIN_NAME_KEY, domainName);
         assertDomainHasProperty( domain, propertyName, propertyValue);
     }
@@ -71,7 +69,6 @@ public class LayoutTests {
 
         Domain domain = _layout.getDomain(domainName);
         assertNotNull(domain);
-        assertDomainPropertySize( domain, 1);
         assertDomainHasProperty( domain, PROPERTY_DOMAIN_NAME_KEY, domainName);
         assertDomainHasProperty( domain, propertyName, propertyValue);
     }
@@ -87,7 +84,6 @@ public class LayoutTests {
 
         Domain domain = _layout.getDomain(domainName);
         assertNotNull(domain);
-        assertDomainPropertySize( domain, 1);
         assertDomainHasProperty( domain, PROPERTY_DOMAIN_NAME_KEY, domainName);
 
         assertDomainServicesSize( domain, 1);
@@ -117,10 +113,6 @@ public class LayoutTests {
     private void assertDomainHasProperty( Domain domain, String propertyKey, String expectedValue) {
         Properties properties = domain.properties();
         assertEquals( expectedValue, properties.getProperty( propertyKey));
-    }
-
-    private void assertDomainPropertySize( Domain domain, int expectedSize) {
-        assertEquals(expectedSize,domain.properties().size());
     }
 
     private void assertDomainServicesSize( Domain domain, int expectedSize) {

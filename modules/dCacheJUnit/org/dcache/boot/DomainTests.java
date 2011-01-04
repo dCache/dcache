@@ -28,7 +28,6 @@ public class DomainTests {
     public void testCreateWithNoGlobalProperties() {
         assertEquals(DOMAIN_NAME, _domain.getName());
         assertDomainServicesCount( 0);
-        assertDomainPropertiesCount( 1);
         assertDomainPropertyValue( PROPERTY_DOMAIN_NAME_KEY, PROPERTY_DOMAIN_NAME_VALUE);
     }
 
@@ -48,8 +47,6 @@ public class DomainTests {
 
         // NB global properties are imported into Properties as "default" values, so
         // are not included in the property count.
-        assertDomainPropertiesCount( 1);
-
         assertDomainPropertyValue( PROPERTY_DOMAIN_NAME_KEY, PROPERTY_DOMAIN_NAME_VALUE);
         assertDomainPropertyValue( globalPropertyKey, globalPropertyValue);
     }
@@ -60,11 +57,6 @@ public class DomainTests {
      */
     private void assertDomainServicesCount( int expectedCount) {
         assertEquals( expectedCount, _domain.getServices().size());
-    }
-
-    private void assertDomainPropertiesCount( int expectedCount) {
-        ConfigurationProperties properties = _domain.properties();
-        assertEquals(expectedCount, properties.size());
     }
 
     private void assertDomainPropertyValue( String key, String expectedValue) {

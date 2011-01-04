@@ -13,6 +13,7 @@ import org.dcache.boot.Domain;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
 import dmg.util.CommandException;
+import dmg.util.Formats;
 
 public class DomainConfigurationTest
 {
@@ -56,7 +57,11 @@ public class DomainConfigurationTest
 
     public void assertPropertyEquals(String expected, String variable, CellShell shell)
     {
-        assertEquals(expected, shell.getReplacement(variable));
+        String value = shell.getReplacement(variable);
+        if (value != null) {
+            value = Formats.replaceKeywords(value, shell);
+        }
+        assertEquals(expected, value);
     }
 
     @Test
