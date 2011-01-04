@@ -112,6 +112,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private PnfsHandler _pnfsHandler;
 
+    private String _ioQueue;
     /*
      * FIXME: The acl handler have to be initialize in spring xml file
      */
@@ -147,6 +148,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     private ExportFile _exportFile;
     public void setExportFile(ExportFile export) {
         _exportFile = export;
+    }
+
+    public void setIoQueue(String ioQueue) {
+        _ioQueue = ioQueue;
     }
 
     public void init() throws Exception {
@@ -380,7 +385,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             _log.debug("looking for write pool for {}", transfer.getPnfsId());
             transfer.setWrite(true);
         }
-        transfer.selectPoolAndStartMover("", RETRY_POLICY);
+        transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
 
         _log.debug("mover ready: pool={} moverid={}", transfer.getPool(),
                 transfer.getMoverId());

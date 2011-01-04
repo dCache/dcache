@@ -72,6 +72,7 @@
         <property name="billingStub" ref="billing-stub"/>
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="fileSystemProvider" ref="fileSystem"/>
+        <property name="ioQueue" value="${ioQueue}" />
         <property name="exportFile" ref="export" />
     </bean>
 
