@@ -65,10 +65,22 @@ service type provided by the domain, whether the domain is running,
 and the current PID of the domain.
 
 .TP
+.B services
+Provides a list of configured services. This list includes the domain
+hosting the service, the service type, the cell name and the path of
+the log file.
+
+.TP
 .B version
 Shows the dCache version number.
 
 .SH POOL MANAGEMENTS COMMANDS
+
+.TP
+.B pool ls
+Provides a list of all configured pools. This list includes the path
+to the pool, the pool name, the domain hosting the pool, the size of the
+pool and the amount of free space on the file system containing the pool.
 
 .TP
 .B pool create [--size=BYTES] [--meta=file|db] [--lfs=MODE] PATH NAME DOMAIN

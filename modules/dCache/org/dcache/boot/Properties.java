@@ -10,6 +10,7 @@ public class Properties
     public static final String PROPERTY_HOST_FQDN = "host.fqdn";
     public static final String PROPERTY_DOMAIN_NAME = "domain.name";
     public static final String PROPERTY_DOMAIN_SERVICE = "domain.service";
+    public static final String PROPERTY_DOMAIN_CELLS = "domain.cells";
     public static final String PROPERTY_DOMAIN_SERVICE_URI = "domain.service.uri";
     public static final String PROPERTY_DOMAIN_PRELOAD = "domain.preload";
     public static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";

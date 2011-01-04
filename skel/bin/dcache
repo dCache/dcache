@@ -38,8 +38,10 @@ usage()
     echo "   pool create [--meta=file|db] [--size=<bytes>]"
     echo "               [--lfs=none|precious|volatile|transient]"
     echo "               <directory> <name> <domain>"
+    echo "   pool ls"
     echo "   pool reconstruct <directory> <target dir>"
     echo "   restart [<domain> ...]"
+    echo "   services"
     echo "   start [<domain> ...]"
     echo "   status"
     echo "   stop [<domain> ...]"
@@ -300,15 +302,30 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
-        domains=$(printDomains "*")
-        maxWidth width $domains
-        format="%-${width}s %-10s %5s\n"
-        printf "$format" "Domain" "Status" "PID"
-        for domain in $domains; do
-	    status=$(printDomainStatus "$domain")
-	    pid=$(printJavaPid "$domain") || :
-	    printf "$format" "$domain" "$status" "$pid"
-        done
+        (
+            echo "DOMAIN\tSTATUS\tPID"
+            for domain in $(getProperty dcache.domains); do
+	        status=$(printDomainStatus "$domain")
+	        pid=$(printJavaPid "$domain") || :
+	        echo "${domain}\t${status}\t${pid}"
+            done
+        ) | column
+        ;;
+
+    services)
+        shift
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        (
+            echo "DOMAIN\tSERVICE\tCELL\tLOG"
+            for domain in $(getProperty dcache.domains); do
+                for cell in $(getProperty domain.cells "$domain"); do
+                    service=$(getProperty domain.service "$domain" "$cell")
+                    log=$(getProperty dcache.log.file "$domain" "$cell")
+                    echo "${domain}\t${service}\t${cell}\t${log}"
+                done
+            done
+        ) | column
         ;;
 
     version)
@@ -369,11 +386,30 @@ case "$1" in
                         $src/meta with the content of $dst."
                 ;;
 
+            ls)
+                (
+                    echo "POOL\tDOMAIN\tSIZE\tFREE\tPATH"
+                    for domain in $(getProperty dcache.domains); do
+                        for cell in $(getProperty domain.cells "$domain"); do
+                            service=$(getProperty domain.service "$domain" "$cell")
+                            if [ "$service" = "pool" ]; then
+                                name=$(getProperty name "$domain" "$cell")
+                                path=$(getProperty path "$domain" "$cell")
+                                max=$(getProperty maxDiskSpace "$domain" "$cell")
+                                if [ "$max" = "Infinity" ]; then
+                                    max="-"
+                                fi
+                                echo "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}"
+                            fi
+                        done
+                    done
+                ) | column
+                ;;
+
             *)
                 usage
                 ;;
         esac
-
         ;;
 
     dump)

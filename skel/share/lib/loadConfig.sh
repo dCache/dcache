@@ -9,14 +9,14 @@ undefinedCell()
 {
     echo "Cell $3 is not defined in $2"
     exit 1
-}
+} 1>&2
 
 # Called by getProperty
 undefinedDomain()
 {
     echo "Domain $2 is not defined"
     exit 1
-}
+} 1>&2
 
 # Called by getProperty
 undefinedProperty()

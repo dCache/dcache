@@ -27,24 +27,11 @@ reverse() # out $1 = reverse list, in $2+ = space delimited list of words,
     eval $out=\"$ret\"
 }
 
-# Returns the maximum width of any word in a given list.
-maxWidth() # out $1 = width, in $2+ = list of words,
+# Simplified cross platform version of the BSD column utility. Formats
+# stdin into columns.
+column()
 {
-    local word
-    local ret
-    local out
-
-    out=$1
-    shift
-    ret=0
-    for i in "$@"; do
-        word=${#i}
-        if [ $ret -lt $word ]; then
-            ret=$word
-        fi
-    done
-
-    eval $out=\"$ret\"
+    awk -F "\t" '{ lines[NR] = $0; for (i = 1; i <= NF; i++) widths[i]=max(widths[i], length($i)) }; END { for (i = 1; i <= NR; i++) { $0 = lines[i]; for (j = 1; j <= NF; j++) printf("%-" widths[j] "s ", $j); print ""; } } function max(i, j) { if (i < j) return j; else return i; }'
 }
 
 # Utility function for printing to stdout with a line width
@@ -210,9 +197,9 @@ stringToGiB() # in $1 = size, out $2 = size in GiB
 }
 
 # Extracts the amount of free space in GiB.
-getFreeSpace() # in $1 = path, out $2 = free space
+getFreeSpace() # in $1 = path
 {
-    [ -d "$1" ] && eval $2=$(df -k "${1}" | awk 'NR == 2 { if (NF < 4) { getline; x = $3 } else { x = $4 }; printf "%d", x / (1024 * 1024)}')
+    [ -d "$1" ] && ( df -k "${1}" | awk 'NR == 2 { if (NF < 4) { getline; x = $3 } else { x = $4 }; printf "%d", x / (1024 * 1024)}' )
 }
 
 # Reads configuration file into shell variables. The shell variable
