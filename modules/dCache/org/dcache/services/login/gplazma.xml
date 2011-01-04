@@ -35,4 +35,9 @@
     <property name="loginStrategy" ref="login-strategy"/>
     <property name="timeoutExecutor" ref="timeout-thread"/>
   </bean>
+
+  <bean id="cli" class="org.dcache.services.login.LoginCLI">
+    <description>CLI for login service</description>
+    <property name="loginStrategy" ref="login-strategy"/>
+  </bean>
 </beans>
