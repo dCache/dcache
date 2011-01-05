@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Properties;
 
-import org.dcache.util.ReplaceableProperties;
+import org.dcache.util.ConfigurationProperties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ public class DomainTests {
 
     @Before
     public void setUp() {
-        ReplaceableProperties properties = new ReplaceableProperties( new Properties());
+        ConfigurationProperties properties = new ConfigurationProperties( new Properties());
         _domain = new Domain( DOMAIN_NAME, properties);
     }
 
@@ -28,7 +28,6 @@ public class DomainTests {
     public void testCreateWithNoGlobalProperties() {
         assertEquals(DOMAIN_NAME, _domain.getName());
         assertDomainServicesCount( 0);
-        assertDomainPropertiesCount( 1);
         assertDomainPropertyValue( PROPERTY_DOMAIN_NAME_KEY, PROPERTY_DOMAIN_NAME_VALUE);
     }
 
@@ -37,7 +36,7 @@ public class DomainTests {
     public void testCreateWithAGlobalProperty() {
         String globalPropertyKey = "global.property";
         String globalPropertyValue = "global property value";
-        ReplaceableProperties globalProperties = new ReplaceableProperties( new Properties());
+        ConfigurationProperties globalProperties = new ConfigurationProperties( new Properties());
         globalProperties.setProperty( globalPropertyKey, globalPropertyValue);
 
         _domain = new Domain( DOMAIN_NAME, globalProperties);
@@ -48,8 +47,6 @@ public class DomainTests {
 
         // NB global properties are imported into Properties as "default" values, so
         // are not included in the property count.
-        assertDomainPropertiesCount( 1);
-
         assertDomainPropertyValue( PROPERTY_DOMAIN_NAME_KEY, PROPERTY_DOMAIN_NAME_VALUE);
         assertDomainPropertyValue( globalPropertyKey, globalPropertyValue);
     }
@@ -62,12 +59,7 @@ public class DomainTests {
         assertEquals( expectedCount, _domain.getServices().size());
     }
 
-    private void assertDomainPropertiesCount( int expectedCount) {
-        ReplaceableProperties properties = _domain.properties();
-        assertEquals(expectedCount, properties.size());
-    }
-
     private void assertDomainPropertyValue( String key, String expectedValue) {
-        assertEquals(expectedValue, _domain.properties().getReplacement(key));
+        assertEquals(expectedValue, _domain.properties().getValue(key));
     }
 }
