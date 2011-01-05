@@ -58,7 +58,7 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
             new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
                                    XrootdDoor.XROOTD_PROTOCOL_MAJOR_VERSION,
                                    XrootdDoor.XROOTD_PROTOCOL_MINOR_VERSION,
-                                   client.getAddress().getHostName(),
+                                   client.getAddress().getHostAddress(),
                                    client.getPort(),
                                    new CellPath(getCellName(), getDomainName()),
                                    getPnfsId(),
