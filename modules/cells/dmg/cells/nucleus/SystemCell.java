@@ -46,6 +46,7 @@ public class      SystemCell
 
        _nucleus   = getNucleus() ;
        _cellShell = new CellShell( getNucleus() ) ;
+       _cellShell.addCommandListener(this);
        _cellShell.addCommandListener(new LogbackShell());
        _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
        useInterpreter( false ) ;

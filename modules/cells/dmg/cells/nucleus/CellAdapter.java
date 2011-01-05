@@ -104,8 +104,6 @@ public class   CellAdapter
         _nucleus   = new CellNucleus(this, cellName, cellType);
         _autoSetup = cellName + "Setup";
 
-        createPinboard(0);
-
         if ((_args.argc() > 0) &&
             ((_definedSetup = _args.argv(0)).length() > 1) &&
             (_definedSetup.startsWith("!"))) {

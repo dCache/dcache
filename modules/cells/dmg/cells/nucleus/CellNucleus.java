@@ -30,6 +30,8 @@ import ch.qos.logback.classic.Level;
  */
 public class CellNucleus implements ThreadFactory
 {
+    private static final int PINBOARD_DEFAULT_SIZE = 200;
+
     private static final  int    INITIAL  =  0;
     private static final  int    ACTIVE   =  1;
     private static final  int    REMOVING =  2;
@@ -67,7 +69,10 @@ public class CellNucleus implements ThreadFactory
 
         this(cell, name, "Generic");
     }
-    public CellNucleus(Cell cell, String name, String type) {
+
+    public CellNucleus(Cell cell, String name, String type)
+    {
+        setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
 
         _logCell = LoggerFactory.getLogger(cell.getClass());
 
@@ -131,7 +136,6 @@ public class CellNucleus implements ThreadFactory
         _callbackExecutor = Executors.newSingleThreadExecutor(this);
         _messageExecutor = Executors.newSingleThreadExecutor(this);
 
-        _logNucleus.info("Created : "+name);
         _state = ACTIVE;
 
         //
@@ -140,6 +144,7 @@ public class CellNucleus implements ThreadFactory
         _printoutLevel = __cellGlue.getDefaultPrintoutLevel();
         __cellGlue.addCell(_cellName, this);
 
+        _logNucleus.info("Created : "+name);
     }
 
     /**
@@ -265,22 +270,22 @@ public class CellNucleus implements ThreadFactory
         return __cellGlue.getPrintoutLevel(cellName);
     }
 
-    public void setLoggingThresholds(FilterThresholds thresholds)
+    public synchronized void setLoggingThresholds(FilterThresholds thresholds)
     {
         _loggingThresholds = thresholds;
     }
 
-    public FilterThresholds getLoggingThresholds()
+    public synchronized FilterThresholds getLoggingThresholds()
     {
         return _loggingThresholds;
     }
 
-    public void setPinboard(Pinboard pinboard)
+    public synchronized void setPinboard(Pinboard pinboard)
     {
         _pinboard = pinboard;
     }
 
-    public Pinboard getPinboard()
+    public synchronized Pinboard getPinboard()
     {
         return _pinboard;
     }

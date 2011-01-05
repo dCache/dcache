@@ -16,6 +16,7 @@ import org.dcache.util.ReplaceableProperties;
 
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.SystemCell;
+import dmg.cells.nucleus.CDC;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
@@ -39,6 +40,7 @@ public class Domain
 
     private static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";
 
+    private static final String SYSTEM_CELL_NAME = "System";
     private static final String SCHEME_FILE = "file";
     private static final String SUFFIX_PROPERTIES = ".properties";
     private static final String SUFFIX_XML = ".xml";
@@ -86,6 +88,7 @@ public class Domain
         initializeLogging();
 
         String domainName = getName();
+        CDC.setCellsContext(SYSTEM_CELL_NAME, domainName);
         SystemCell systemCell = new SystemCell(domainName);
         _log.info("Starting " + domainName);
 
