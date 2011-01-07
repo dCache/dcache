@@ -77,6 +77,8 @@
         <dependency groupId="org.slf4j" artifactId="jcl-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="log4j-over-slf4j" version="1.6.1"/>
         <dependency groupId="org.slf4j" artifactId="jul-to-slf4j" version="1.6.1"/>
+        <dependency groupId="commons-codec" artifactId="commons-codec" version="1.4"/>
+        <dependency groupId="commons-httpclient" artifactId="commons-httpclient" version="3.1"/>
         <dependency groupId="ch.qos.logback" artifactId="logback-classic" version="0.9.26"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-server" version="7.2.2.v20101205"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-deploy" version="7.2.2.v20101205"/>
@@ -91,6 +93,8 @@
         <dependency groupId="org.glite" artifactId="glite-security-trustmanager" version="1.8.16-1.norefresh" />
         <dependency groupId="org.glite" artifactId="glite-security-util-java" version="1.4.0-1" />
         <dependency groupId="org.glite" artifactId="glite-security-voms-api-java" version="1.9.8-1" />
+        <dependency groupId="org.glite" artifactId="glite-authz-pep-common" version="2.0.0-2" />
+        <dependency groupId="org.glite" artifactId="glite-authz-pep-java" version="2.0.0-3" />
         <dependency groupId="javax.jdo" artifactId="jdo2-api" version="2.3-ec"/>
         <dependency groupId="org.apache.geronimo.specs" artifactId="geronimo-jpa_2.0_spec" version="1.1"/>
         <dependency groupId="org.datanucleus" artifactId="datanucleus-core" version="2.1.3"/>
@@ -101,6 +105,7 @@
         <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.1.3"/>
         <dependency groupId="toplink.essentials" artifactId="toplink-essentials" version="2.1-60f"/>
         <dependency groupId="com.google.guava" artifactId="guava" version="r07"/>
+        <dependency groupId="com.caucho" artifactId="hessian" version="4.0.7" />
         <dependency groupId="com.ettrema" artifactId="milton-api" version="1.5.6"/>
         <dependency groupId="com.ettrema" artifactId="milton-servlet" version="1.5.6"/>
         <dependency groupId="postgresql" artifactId="postgresql" version="9.0-801.jdbc4"/>
@@ -123,56 +128,56 @@
 
       <!-- dcache.jar is needed independently of other compiled code -->
       <patternset id="pattern.dcache.jars.only-dcache">
-	<include name="dcache.jar"/>
+        <include name="dcache.jar"/>
       </patternset>
 
       <!-- all compiled jar files excluding dcache.jar -->
       <patternset id="pattern.dcache.jars.all-compiled-code-except-dcache">
-	<include name="dcache-common.jar"/>
-	<include name="cells.jar"/>
-	<include name="cells-protocols.jar"/>
-	<include name="javatunnel.jar"/>
-	<include name="srm.jar"/>
+        <include name="dcache-common.jar"/>
+        <include name="cells.jar"/>
+        <include name="cells-protocols.jar"/>
+        <include name="javatunnel.jar"/>
+        <include name="srm.jar"/>
       </patternset>
 
       <!-- all other jar files are external libraries -->
       <patternset id="pattern.dcache.jars.packaged-external">
-	<include name="**/*.jar"/>
-	<invert>
-	  <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
-	  <patternset refid="pattern.dcache.jars.only-dcache"/>
-	</invert>
+        <include name="**/*.jar"/>
+        <invert>
+          <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
+          <patternset refid="pattern.dcache.jars.only-dcache"/>
+        </invert>
       </patternset>
 
 
       <!-- Second, make (configurable) paths by finding matching jar files in
-	   deployed directory and replacing the path up to "classes" path-element
-	   with the ${dcache.paths.classes} property  -->
+           deployed directory and replacing the path up to "classes" path-element
+           with the ${dcache.paths.classes} property  -->
       <pathconvert property="dcache.jars.dcache" targetos="unix">
-	<map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
-	<path>
-	  <fileset dir="${server.bin.dir}/classes">
-	    <patternset refid="pattern.dcache.jars.only-dcache"/>
-	  </fileset>
-	</path>
+        <map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+        <path>
+          <fileset dir="${server.bin.dir}/classes">
+            <patternset refid="pattern.dcache.jars.only-dcache"/>
+          </fileset>
+        </path>
       </pathconvert>
 
       <pathconvert property="dcache.jars.all-compiled-code-except-dcache" targetos="unix">
-	<map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
-	<path>
-	  <fileset dir="${server.bin.dir}/classes">
-	    <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
-	  </fileset>
-	</path>
+        <map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+        <path>
+          <fileset dir="${server.bin.dir}/classes">
+            <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
+          </fileset>
+        </path>
       </pathconvert>
 
       <pathconvert property="dcache.jars.packaged-external" targetos="unix">
-	<map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
-	<path>
-	  <fileset dir="${server.bin.dir}/classes">
-	    <patternset refid="pattern.dcache.jars.packaged-external"/>
-	  </fileset>
-	</path>
+        <map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+        <path>
+          <fileset dir="${server.bin.dir}/classes">
+            <patternset refid="pattern.dcache.jars.packaged-external"/>
+          </fileset>
+        </path>
       </pathconvert>
 
       <!-- Finally, generate the classpath.properties file -->
