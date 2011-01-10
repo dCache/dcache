@@ -303,12 +303,12 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         (
-            echo "DOMAIN\tSTATUS\tPID\tUSER"
+            printf "DOMAIN\tSTATUS\tPID\tUSER\n"
             for domain in $(getProperty dcache.domains); do
 	        status=$(printDomainStatus "$domain")
 	        pid=$(printJavaPid "$domain") || :
 		user=$(processUser "$pid") || :
-	        echo "${domain}\t${status}\t${pid}\t${user}"
+	        printf "${domain}\t${status}\t${pid}\t${user}\n"
             done
         ) | column
         ;;
@@ -318,12 +318,12 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         (
-            echo "DOMAIN\tSERVICE\tCELL\tLOG"
+            printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
             for domain in $(getProperty dcache.domains); do
                 for cell in $(getProperty domain.cells "$domain"); do
                     service=$(getProperty domain.service "$domain" "$cell")
                     log=$(getProperty dcache.log.file "$domain" "$cell")
-                    echo "${domain}\t${service}\t${cell}\t${log}"
+                    printf "${domain}\t${service}\t${cell}\t${log}\n"
                 done
             done
         ) | column
@@ -389,7 +389,7 @@ case "$1" in
 
             ls)
                 (
-                    echo "POOL\tDOMAIN\tSIZE\tFREE\tPATH"
+                    printf "POOL\tDOMAIN\tSIZE\tFREE\tPATH\n"
                     for domain in $(getProperty dcache.domains); do
                         for cell in $(getProperty domain.cells "$domain"); do
                             service=$(getProperty domain.service "$domain" "$cell")
@@ -400,7 +400,7 @@ case "$1" in
                                 if [ "$max" = "Infinity" ]; then
                                     max="-"
                                 fi
-                                echo "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}"
+                                printf "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}\n"
                             fi
                         done
                     done
