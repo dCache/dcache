@@ -136,12 +136,27 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Throws an IllegalStateException if the object has been initialised.
+     * Throws an IllegalStateException if the object has been initialized.
      */
-    private synchronized void assertNotInitialised()
-    {
+    private void assertNotInitialised(String message) {
         if (_initialised)
-            throw new IllegalStateException("Cannot be changed after initialisation");
+            throw new IllegalStateException(message);
+    }
+
+    /**
+     * Throws an IllegalStateException if the object has been initialized.
+     */
+    private void assertNotInitialised()
+    {
+        assertNotInitialised("Cannot be changed after initialisation");
+    }
+
+    /**
+     * Throws an IllegalStateException if the object has been initialized.
+     */
+    private void assertInitialized() {
+        if (!_initialised)
+            throw new IllegalStateException("Repository has not been initialized.");
     }
 
     /**
@@ -239,8 +254,7 @@ public class CacheRepositoryV5
         assert _allocator != null : "Account must be set";
 
         try {
-            if (_initialised)
-                throw new IllegalStateException("Can only load repository once.");
+            assertNotInitialised("Can only load repository once.");
             _initialised = true;
 
 
@@ -369,8 +383,7 @@ public class CacheRepositoryV5
      */
     public synchronized Iterator<PnfsId> iterator()
     {
-        if (!_initialised)
-            throw new IllegalStateException("Repository has not been initialized");
+        assertInitialized();
 
         List<PnfsId> allEntries = new ArrayList<PnfsId>(_allEntries.keySet());
         return allEntries.iterator();
@@ -407,8 +420,7 @@ public class CacheRepositoryV5
             if (stickyRecords == null)
                 throw new IllegalArgumentException("List of sticky records may not be null");
 
-            if (!_initialised)
-                throw new IllegalStateException("Repository has not been initialized");
+            assertInitialized();
 
             switch (transferState) {
             case FROM_CLIENT:
@@ -471,8 +483,6 @@ public class CacheRepositoryV5
     public synchronized ReadHandle openEntry(PnfsId id)
         throws FileNotInCacheException
     {
-        if (!_initialised)
-            throw new IllegalStateException("Repository has not been initialized");
         try {
             MetaDataRecord entry = getMetaDataRecord(id);
 
@@ -517,8 +527,6 @@ public class CacheRepositoryV5
     public synchronized CacheEntry getEntry(PnfsId id)
         throws FileNotInCacheException
     {
-        if (!_initialised)
-            throw new IllegalStateException("Repository has not been initialized");
         try {
             return new CacheEntryImpl(getMetaDataRecord(id));
         } catch (FileNotInCacheException e) {
@@ -910,6 +918,7 @@ public class CacheRepositoryV5
     private synchronized MetaDataRecord getMetaDataRecord(PnfsId pnfsId)
         throws FileNotInCacheException
     {
+        assertInitialized();
         MetaDataRecord entry = _allEntries.get(pnfsId);
         if (entry == null) {
             throw new FileNotInCacheException("Entry not in repository : "

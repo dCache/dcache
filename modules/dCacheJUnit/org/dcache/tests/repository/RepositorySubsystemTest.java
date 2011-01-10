@@ -713,6 +713,14 @@ public class RepositorySubsystemTest
         repository.setState(id2, PRECIOUS);
         assertSpaceRecord(5120, 2048, 2048, 0);
     }
+
+    @Test(expected=IllegalStateException.class)
+    public void testGetStateNotInitialized()
+            throws Exception
+    {
+        initRepository();
+        repository.getState(id1);
+    }
 }
 
 
