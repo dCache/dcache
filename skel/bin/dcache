@@ -62,7 +62,7 @@ getCanonicalPath() # in $1 = path, out $2 = canonical path
     local ret
     link="$1"
     if readlink -f . > /dev/null 2>&1; then
-	ret="$(readlink -f $link)"
+        ret="$(readlink -f $link)"
     else
         ret="$(cd $(dirname $link); pwd)/$(basename $link)"
         while [ -h "$ret" ]; do
@@ -204,6 +204,22 @@ loadConfig()
     . ${DCACHE_HOME}/share/lib/loadConfig.sh
 }
 
+#  print either the user a PID is running as (if $1 is non-empty)
+#  or the user the domain is configured to run as otherwise.
+userForProcessOrDomain() # $1 pid, $2=domain
+{
+    if [ -n "$1" ]; then
+        processUser $1
+    else
+        user=$(getProperty dcache.user "$domain")
+        if [ -z "$user" ]; then
+            user="[whoever runs \"dcache start\"]"
+        fi
+        echo "$user"
+    fi
+}
+
+
 # Parse global options
 parseOptions "d" "$@" || shift $?
 
@@ -285,15 +301,15 @@ case "$1" in
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-	    if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
-		running_domains="$running_domains $domain"
+            if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
+                running_domains="$running_domains $domain"
                 domainStop "$domain"
-	    fi
+            fi
         done
 
         reverse domains_to_start $running_domains
         for domain in $domains_to_start; do
-	    domainStart "$domain"
+            domainStart "$domain"
         done
         ;;
 
@@ -305,10 +321,10 @@ case "$1" in
         (
             printf "DOMAIN\tSTATUS\tPID\tUSER\n"
             for domain in $(getProperty dcache.domains); do
-	        status=$(printDomainStatus "$domain")
-	        pid=$(printJavaPid "$domain") || :
-		user=$(processUser "$pid") || :
-	        printf "${domain}\t${status}\t${pid}\t${user}\n"
+                status=$(printDomainStatus "$domain")
+                pid=$(printJavaPid "$domain") || :
+                user=$(userForProcessOrDomain "$pid" "$domain") || :
+                printf "${domain}\t${status}\t${pid}\t${user}\n"
             done
         ) | column
         ;;
@@ -332,7 +348,7 @@ case "$1" in
     version)
         loadConfig
         showVersion
-	;;
+        ;;
 
     pool)
         shift
