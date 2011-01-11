@@ -15,7 +15,7 @@ import context -c setupContext
 #
 
 # Cell communication
-exec -run -shell file:${ourHomeDir}/config/tunnel.fragment 
+exec -run -shell file:${ourHomeDir}/config/tunnel.fragment
 
 # Permission configuration
 exec -run -shell file:${ourHomeDir}/config/permission.fragment
@@ -30,7 +30,7 @@ set context -c pnfs /pnfs/fs
 set context -c pnfsNumberOfThreads 4
 set context -c pnfsNumberOfThreadGroups 1
 set context -c pnfsNumberOfListThreads 1
-
+set context -c hsmStorageInfoExtractor org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor
 
 #
 # defaults for Access Latency and Retention Policy
@@ -42,7 +42,7 @@ set context -c DefaultRetentionPolicy ""
 onerror shutdown
 #
 create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
-        "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \
+        "${hsmStorageInfoExtractor} \
         -cmRelay=broadcast \
         -threads=${pnfsNumberOfThreads} \
         -threadGroups=${pnfsNumberOfThreadGroups} \

@@ -130,12 +130,12 @@ serviceLocatorPort=11111
 #  -----------------------------------------------------------------------
 
 #  ---- Kerberos Configuration
-#  
+#
 #   Please change FNAL.GOV to your kerberos 5 realm if you use kerbros dcap or ftp doors
 #
 kerberosRealm=FNAL.GOV
 #
-# templates for authLoginConfig files jgss.conf and jgss_host.conf are in ${ourHomeDir}/etc 
+# templates for authLoginConfig files jgss.conf and jgss_host.conf are in ${ourHomeDir}/etc
 # directory, please copy them to ${ourHomeDir}/config  and modify appropriately
 #
 #   authLoginConfig=${ourHomeDir}/config/jgss_host.conf
@@ -146,7 +146,7 @@ kerberosRealm=FNAL.GOV
 #
 authLoginConfig=${ourHomeDir}/config/jgss.conf
 #
-# Specify a comma separated list of KDCs, 
+# Specify a comma separated list of KDCs,
 # localhost.localdomain can be used if KDC multiplexer is running on the local machine
 #
 kerberosKdcList=localhost.localdomain
@@ -696,6 +696,7 @@ pnfs=/pnfs/fs
 #   -- leave this unless you are running an enstore HSM backend.
 #
 #pnfsInfoExtractor=diskCacheV111.util.OsmInfoExtractor
+#hsmStorageInfoExtractor=org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor
 
 #  ---- Number of threads per thread group
 #
