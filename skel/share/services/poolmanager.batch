@@ -1,5 +1,7 @@
 # Creates the PoolManager
 
+onerror shutdown
+
 # External settings
 exec -shell file:${dcache.paths.share}/cells/stage.fragment PoolManager
 
@@ -43,6 +45,8 @@ endDefine
 
 check -strong cell.name
 check -strong config
+
+onerror continue
 set context -c selectionUnit diskCacheV111.poolManager.PoolSelectionUnitV2
 set context -c costCalculator diskCacheV111.pools.CostCalculationV5
 set context -c threadPool diskCacheV111.util.ThreadPoolNG
@@ -50,6 +54,7 @@ set context -c quotaManager none
 set context -c sendCostInfoMessages no
 set context -c poolStatusRelay broadcast
 set context -c stageConfigurationFilePath ""
+onerror shutdown
 
 # Start PoolManager
 create org.dcache.cells.UniversalSpringCell ${cell.name} \

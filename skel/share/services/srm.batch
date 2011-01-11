@@ -5,6 +5,7 @@
 #
 #   Make sure we got what we need.
 #
+onerror shutdown
 check -strong port
 check -strong srmGssMode
 check -strong hostCertificateRefreshPeriod

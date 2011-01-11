@@ -1,5 +1,6 @@
 # Load arguments into environment
 
+onerror shutdown
 check -strong statisticsLocation
 
 create diskCacheV111.services.PoolStatisticsV0 ${cell.name}  \

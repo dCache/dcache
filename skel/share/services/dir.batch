@@ -1,4 +1,2 @@
-# Load arguments into environment
-
-
+onerror shutdown
 create diskCacheV111.pools.DirectoryLookUpPool dirLookupPool "-export"

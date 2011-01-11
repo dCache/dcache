@@ -1,6 +1,7 @@
 # Starts a GSI DCAP cell
 
 # Required variables
+onerror shutdown
 check -strong port
 
 # Defaults

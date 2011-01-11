@@ -1,3 +1,5 @@
+onerror shutdown
+
 check trash
 check -strong cleanerDB
 check -strong cleanerRefresh
@@ -23,11 +25,10 @@ create diskCacheV111.cells.CleanerV2 cleaner \
   "
 
 define context hsmcleaner.exe endDefine
+  onerror shutdown
   create org.dcache.services.hsmcleaner.HSMCleaner hsmcleaner
 endDefine
 
 onerror continue
 eval ${hsmCleaner} enabled ==
 exec context hsmcleaner.exe -ifok
-
-onerror shutdown

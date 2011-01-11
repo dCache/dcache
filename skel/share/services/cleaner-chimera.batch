@@ -1,5 +1,7 @@
 # Starts the Chimera cleaner
 
+onerror shutdown
+
 check -strong cleanerRefresh
 check -strong cleanerRecover
 check -strong cleanerPoolTimeout
