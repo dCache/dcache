@@ -1384,11 +1384,11 @@ public class PoolV4
     {
         _poolStatusCode = errorCode;
         _poolStatusMessage =
-            (errorString == null) ? "Requested By Operator" : errorString;
+            (errorString == null) ? "Requested by operator" : errorString;
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.warn("Pool mode changed to " + _poolMode);
+        _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
     }
 
     /**

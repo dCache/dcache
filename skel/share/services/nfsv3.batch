@@ -1,1 +1,2 @@
+onerror shutdown
 exec file:${domain.service.dir}/nfsv3-${dcache.namespace}.batch

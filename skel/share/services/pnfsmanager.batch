@@ -1,1 +1,2 @@
+onerror shutdown
 exec file:${domain.service.dir}/pnfsmanager-${dcache.namespace}.batch

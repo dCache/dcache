@@ -1,6 +1,6 @@
-
 ##
 ##  ---- Info Cell: broadcasting to "civilisation"
 ##
 
+onerror shutdown
 create  org.dcache.services.info.InfoProvider ${cell.name} "-export"
