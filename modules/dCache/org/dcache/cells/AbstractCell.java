@@ -131,6 +131,19 @@ public class AbstractCell extends CellAdapter
         "message UOID indicates that another message listener has " +
         "already replied to the message.";
 
+    @Option(
+        name = "monitor",
+        description = "Cell message monitoring",
+        defaultValue = "false"
+    )
+    protected boolean _isMonitoringEnabled;
+
+    @Option(
+        name = "cellClass",
+        description = "Cell classification"
+    )
+    protected String _cellClass;
+
     /**
      * Timer for periodic low-priority maintenance tasks. Shared among
      * all AbstractCell instances. Since a Timer is single-threaded,
@@ -232,23 +245,8 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, cellType, stripDefinedSetup(arguments), false);
 
-        _monitor = new MessageProcessingMonitor();
-        _monitor.setCellEndpoint(this);
-        if (arguments.getOpt("monitor") != null) {
-            _monitor.setEnabled(true);
-        }
-
-        String cellClass = arguments.getOpt("cellClass");
-        if (cellClass != null) {
-            getNucleus().setCellClass(cellClass);
-        }
-
         _logger = LoggerFactory.getLogger(getClass());
         _definedSetup = getDefinedSetup(arguments);
-
-        parseOptions();
-        addMessageListener(this);
-        addCommandListener(_monitor);
     }
 
     public void cleanUp()
@@ -275,10 +273,23 @@ public class AbstractCell extends CellAdapter
     final protected void doInit()
         throws InterruptedException, ExecutionException
     {
-        /* Execute initialisation in a different thread allocated from
-         * the correct thread group.
-         */
         try {
+            parseOptions();
+
+            _monitor = new MessageProcessingMonitor();
+            _monitor.setCellEndpoint(this);
+            _monitor.setEnabled(_isMonitoringEnabled);
+
+            if (_cellClass != null) {
+                getNucleus().setCellClass(_cellClass);
+            }
+
+            addMessageListener(this);
+            addCommandListener(_monitor);
+
+            /* Execute initialisation in a different thread allocated
+             * from the correct thread group.
+             */
             FutureTask task = new FutureTask(new Callable() {
                     public Object call() throws Exception {
                         AbstractCell.this.executeInit();
@@ -297,6 +308,11 @@ public class AbstractCell extends CellAdapter
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             _logger.error("Failed to initialise cell: " + t.getMessage(), t);
+            start();
+            kill();
+            throw e;
+        } catch (RuntimeException e) {
+            _logger.error("Failed to initialise cell: " + e.getMessage(), e);
             start();
             kill();
             throw e;

@@ -67,6 +67,7 @@ public class DirectoryLookUpPool extends AbstractCell
         doInit();
     }
 
+    @Override
     protected void init()
         throws IllegalArgumentException
     {
@@ -80,11 +81,13 @@ public class DirectoryLookUpPool extends AbstractCell
         useInterpreter(true);
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Revision          : [$Id: DirectoryLookUpPool.java,v 1.7 2007-07-26 14:34:12 tigran Exp $]");
     }
 
+    @Override
     public void messageToForward(CellMessage cellMessage)
     {
         messageArrived(cellMessage);
