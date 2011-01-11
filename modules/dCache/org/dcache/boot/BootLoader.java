@@ -37,6 +37,8 @@ public class BootLoader
 {
     private static final String CMD_START = "start";
     private static final String CMD_COMPILE = "compile";
+    private static final String CMD_COMPILE_OP_SHELL = "shell";
+    private static final String CMD_COMPILE_OP_XML = "xml";
 
     private static final char OPT_SILENT = 'q';
     private static final String OPT_CONFIG_FILE = "f";
@@ -62,8 +64,11 @@ public class BootLoader
         System.err.println("   start DOMAIN");
         System.err.println("          Start a domain.");
         System.err.println();
-        System.err.println("   compile");
-        System.err.println("          Compiles the layout to a shell script.");
+        System.err.println("   " + CMD_COMPILE + " <format>");
+        System.err.println("          Compiles the layout to some particular format, determined by <format>.");
+        System.err.println("          Valid values of <format> are:");
+        System.err.println("                  -" + CMD_COMPILE_OP_SHELL + " POSIX shell declaration of an oracle function");
+        System.err.println("                  -" + CMD_COMPILE_OP_XML + " an set of XML entity definitions");
         System.exit(1);
     }
 
@@ -149,7 +154,7 @@ public class BootLoader
 
                 domain.start();
             } else if (command.equals(CMD_COMPILE)) {
-                LayoutPrinter printer = new ShellOracleLayoutPrinter(layout);
+                LayoutPrinter printer = printerForArgs(args, layout);
                 printer.print(System.out);
             } else {
                 throw new IllegalArgumentException("Invalid command: " + command);
@@ -173,6 +178,20 @@ public class BootLoader
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static LayoutPrinter printerForArgs(Args args, Layout layout)
+    {
+        boolean compileForShell = args.getOption(CMD_COMPILE_OP_SHELL) != null;
+        boolean compileForXml = args.getOption(CMD_COMPILE_OP_XML) != null;
+
+        if(compileForShell == compileForXml) {
+            throw new IllegalArgumentException("Must specify exactly one of -" +
+                    CMD_COMPILE_OP_SHELL + " and -" + CMD_COMPILE_OP_XML);
+        }
+
+        return compileForShell ? new ShellOracleLayoutPrinter(layout)
+                    : new XmlEntityLayoutPrinter(layout);
     }
 
     private static void logToConsoleAtLevel(Level level)

@@ -58,7 +58,7 @@ fi
 
 DCACHE_SETUP="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
 
-eval "$(bootLoader -q compile)"
+eval "$(bootLoader -q compile -shell)"
 
 DCACHE_LIB="$(getProperty dcache.paths.share.lib)"
 DCACHE_CONFIG="$(getProperty dcache.paths.config)"
