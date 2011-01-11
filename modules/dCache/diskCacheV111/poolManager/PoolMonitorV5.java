@@ -703,14 +703,12 @@ public class PoolMonitorV5
 
        return list ;
     }
-    private boolean _dontAskForCost = true ;
+
     private List<PoolCostCheckable> queryPoolsForCost(Iterator<String> pools,
                                                       long filesize)
         throws InterruptedException
     {
         List<PoolCostCheckable> list = new ArrayList<PoolCostCheckable>();
-        SpreadAndWait control =
-            new SpreadAndWait(getCellEndpoint(), _poolTimeout);
 
 	while( pools.hasNext() ){
 
@@ -719,50 +717,9 @@ public class PoolMonitorV5
             if( costCheck != null ){
                list.add( costCheck ) ;
                _log.info( "queryPoolsForCost : costModule : "+poolName+" ("+filesize+") "+costCheck);
-            }else{
-               //
-               // send query
-               //
-               if( _dontAskForCost )continue ;
-	       CellMessage  cellMessage =
-                      new CellMessage(  new CellPath(poolName),
-                                        new PoolCheckCostMessage(poolName,filesize)
-                                     );
-
-               _log.info( "queryPoolsForCost : "+poolName+" query sent");
-	       try{
-                  control.send( cellMessage ) ;
-	       }catch(Exception exc){
-                  //
-                  // here we don't care about exceptions
-                  //
-                   _log.warn("queryPoolsForCost : Exception sending PoolCheckFileRequest to "+poolName+" : "+exc);
-	       }
             }
-
         }
 
-        if( _dontAskForCost )return list ;
-
-        //
-        // scan the replies
-        //
-        CellMessage answer = null ;
-
-        while( ( answer = control.next() ) != null ){
-
-           Object message = answer.getMessageObject();
-
-	   if( ! ( message instanceof PoolCostCheckable )){
-	      _log.warn("queryPoolsForCost : Unexpected message from ("+
-                   answer.getSourcePath()+") "+message.getClass());
-              continue ;
-	   }
-	   PoolCostCheckable poolMessage = (PoolCostCheckable)message;
-           _log.info( "queryPoolsForCost : reply : "+poolMessage ) ;
-           list.add( poolMessage ) ;
-        }
-        _log.info( "queryPoolsForCost : number of valid replies : "+list.size() );
         return list ;
     }
 
