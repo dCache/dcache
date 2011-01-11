@@ -2,6 +2,7 @@
 # SRM Space Manager
 #
 
+onerror shutdown
 exec file:${dcache.paths.share}/cells/threadmanager.fragment
 
 # Defaults

@@ -1,3 +1,2 @@
-# Load arguments into environment
-
+onerror shutdown
 create diskCacheV111.hsmControl.DummyStager Prestager "${config}"

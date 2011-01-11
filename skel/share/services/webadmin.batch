@@ -1,3 +1,4 @@
+onerror shutdown
 create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
           "-webappsPath=${webadminWebappsPath}  \
            -authenticated=${webadminAuthenticated}  \

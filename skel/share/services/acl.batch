@@ -1,6 +1,8 @@
 # Starts ACL-administration cell
 #
 
+onerror shutdown
+
 check -strong pnfsmanager
 check -strong aclConnDriver
 check -strong aclConnUrl

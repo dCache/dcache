@@ -2,6 +2,7 @@
 #    NFSv4.1    D o o r
 #
 
+onerror shutdown
 check -strong cell.name
 check -strong loginBrokerUpdateTime
 check -strong loginBrokerUpdateThreshold

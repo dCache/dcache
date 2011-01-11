@@ -2,6 +2,7 @@
 # embedded NFSv4 server to export chimera namespace
 #
 
+onerror shutdown
 check -strong cell.name
 check -strong chimera.db.user
 check -strong chimera.db.url

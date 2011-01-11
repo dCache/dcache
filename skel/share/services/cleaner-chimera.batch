@@ -1,7 +1,5 @@
 # Starts the Chimera cleaner
 
-# Defaults
-onerror continue
 set context -c cleanerRefresh              120
 set context -c cleanerRecover              1800
 set context -c cleanerPoolTimeout          100
@@ -9,7 +7,6 @@ set context -c cleanerProcessFilesPerRun   500
 set context -c hsmCleaner                  disabled
 set context -c hsmCleanerRequest           100
 set context -c hsmCleanerTimeout           120
-onerror shutdown
 
 create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
         "-export \

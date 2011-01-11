@@ -1,5 +1,5 @@
 # Defaults for cleaner
-onerror continue
+onerror shutdown
 set context -c trash ""
 set context -c cleanerDB /opt/pnfsdb/pnfs/trash/2
 set context -c cleanerRefresh              120
@@ -7,7 +7,6 @@ set context -c cleanerRecover              240
 set context -c cleanerPoolTimeout          100
 set context -c cleanerProcessFilesPerRun   500
 set context -c cleanerArchive             none
-onerror shutdown
 
 onerror continue
 create diskCacheV111.cells.CleanerV2 cleaner \
@@ -31,10 +30,9 @@ set context -c hsmCleanerTrash /opt/pnfsdb/pnfs/trash/1
 set context -c hsmCleanerRepository /opt/pnfsdb/pnfs/trash/1/current
 
 define context hsmcleaner.exe endDefine
+  onerror shutdown
   create org.dcache.services.hsmcleaner.HSMCleaner hsmcleaner
 endDefine
 
 eval ${hsmCleaner} enabled ==
 exec context hsmcleaner.exe -ifok
-
-onerror shutdown

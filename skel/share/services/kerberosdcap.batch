@@ -1,5 +1,6 @@
 # Kerberos DCAP cell
 
+onerror shutdown
 check -strong port
 check -string kerberos.service-principle-name
 
