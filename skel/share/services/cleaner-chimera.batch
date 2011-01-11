@@ -7,15 +7,14 @@ check -strong cleanerProcessFilesPerRun
 check -strong hsmCleaner
 check -strong hsmCleanerRequest
 check -strong hsmCleanerTimeout
-check -strong threads
-check -strong chimera.cleaner.report-cell
-
+check -strong cleaner.thread-pool.size
+check -strong cleaner.report-cell
 
 create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
         "-export \
          -refresh=${cleanerRefresh} \
          -recover=${cleanerRecover} \
-         -reportRemove=${chimera.cleaner.report-cell} \
+         -reportRemove=${cleaner.report-cell} \
          -poolTimeout=${cleanerPoolTimeout}   \
          -processFilesPerRun=${cleanerProcessFilesPerRun} \
          -chimera.db.user=${chimera.db.user} \
@@ -25,4 +24,5 @@ create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
          -hsmCleaner=${hsmCleaner} \
          -hsmCleanerRequest=${hsmCleanerRequest} \
          -hsmCleanerTimeout=${hsmCleanerTimeout} \
+         -threads=${cleaner.thread-pool.size} \
   "
