@@ -13,8 +13,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -54,10 +52,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
 import dmg.util.Args;
-
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.Subjects;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import java.util.NavigableMap;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -2132,7 +2127,7 @@ public class RequestContainerV5
               //  load is decreasing.
               //
               PoolCostCheckable cost = null ;
-              SortedMap<Integer,PoolCostCheckable> list =
+              NavigableMap<Integer,PoolCostCheckable> list =
                   new TreeMap<Integer,PoolCostCheckable>();
 
               if( _parameter._minCostCut > 0.0 ){
@@ -2156,8 +2151,7 @@ public class RequestContainerV5
 
               }
 
-              cost =
-                  (list.size() > 0 ? list.get(list.firstKey()) : bestAv.get(0));
+              cost = list.isEmpty() ? bestAv.get(0) : list.firstEntry().getValue();
 
               _log.info( "askIfAvailable : candidate : "+cost ) ;
 
