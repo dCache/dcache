@@ -407,7 +407,7 @@ public class PoolManagerV5
          * mode has changed.
          */
         if (changed) {
-            _logPoolMonitor.info("Pool " + poolName + " changed from mode "
+            _logPoolMonitor.warn("Pool " + poolName + " changed from mode "
                                  + oldMode + " to " + newMode);
 
             if (disabled) {
