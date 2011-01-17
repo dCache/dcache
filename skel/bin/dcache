@@ -62,7 +62,7 @@ getCanonicalPath() # in $1 = path, out $2 = canonical path
     local ret
     link="$1"
     if readlink -f . > /dev/null 2>&1; then
-	ret="$(readlink -f $link)"
+        ret="$(readlink -f $link)"
     else
         ret="$(cd $(dirname $link); pwd)/$(basename $link)"
         while [ -h "$ret" ]; do
@@ -204,6 +204,22 @@ loadConfig()
     . ${DCACHE_HOME}/share/lib/loadConfig.sh
 }
 
+#  print either the user a PID is running as (if $1 is non-empty)
+#  or the user the domain is configured to run as otherwise.
+userForProcessOrDomain() # $1 pid, $2=domain
+{
+    if [ -n "$1" ]; then
+        processUser $1
+    else
+        user=$(getProperty dcache.user "$domain")
+        if [ -z "$user" ]; then
+            user="[whoever runs \"dcache start\"]"
+        fi
+        echo "$user"
+    fi
+}
+
+
 # Parse global options
 parseOptions "d" "$@" || shift $?
 
@@ -285,15 +301,15 @@ case "$1" in
 
         reverse domains_backward $domains
         for domain in $domains_backward; do
-	    if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
-		running_domains="$running_domains $domain"
+            if [ "$(printDomainStatus "$domain")" = "stopped" ]; then
+                running_domains="$running_domains $domain"
                 domainStop "$domain"
-	    fi
+            fi
         done
 
         reverse domains_to_start $running_domains
         for domain in $domains_to_start; do
-	    domainStart "$domain"
+            domainStart "$domain"
         done
         ;;
 
@@ -303,11 +319,12 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         (
-            echo "DOMAIN\tSTATUS\tPID"
+            printf "DOMAIN\tSTATUS\tPID\tUSER\n"
             for domain in $(getProperty dcache.domains); do
-	        status=$(printDomainStatus "$domain")
-	        pid=$(printJavaPid "$domain") || :
-	        echo "${domain}\t${status}\t${pid}"
+                status=$(printDomainStatus "$domain")
+                pid=$(printJavaPid "$domain") || :
+                user=$(userForProcessOrDomain "$pid" "$domain") || :
+                printf "${domain}\t${status}\t${pid}\t${user}\n"
             done
         ) | column
         ;;
@@ -317,12 +334,12 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         (
-            echo "DOMAIN\tSERVICE\tCELL\tLOG"
+            printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
             for domain in $(getProperty dcache.domains); do
                 for cell in $(getProperty domain.cells "$domain"); do
                     service=$(getProperty domain.service "$domain" "$cell")
                     log=$(getProperty dcache.log.file "$domain" "$cell")
-                    echo "${domain}\t${service}\t${cell}\t${log}"
+                    printf "${domain}\t${service}\t${cell}\t${log}\n"
                 done
             done
         ) | column
@@ -331,7 +348,7 @@ case "$1" in
     version)
         loadConfig
         showVersion
-	;;
+        ;;
 
     pool)
         shift
@@ -388,7 +405,7 @@ case "$1" in
 
             ls)
                 (
-                    echo "POOL\tDOMAIN\tSIZE\tFREE\tPATH"
+                    printf "POOL\tDOMAIN\tSIZE\tFREE\tPATH\n"
                     for domain in $(getProperty dcache.domains); do
                         for cell in $(getProperty domain.cells "$domain"); do
                             service=$(getProperty domain.service "$domain" "$cell")
@@ -399,7 +416,7 @@ case "$1" in
                                 if [ "$max" = "Infinity" ]; then
                                     max="-"
                                 fi
-                                echo "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}"
+                                printf "${name}\t${domain}\t${max}\t$(getFreeSpace $path)G\t${path}\n"
                             fi
                         done
                     done

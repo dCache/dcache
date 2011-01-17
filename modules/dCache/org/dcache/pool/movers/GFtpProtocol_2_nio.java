@@ -27,7 +27,6 @@ import java.security.NoSuchAlgorithmException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.SysTimer;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.util.PortRange;
 import org.dcache.util.NetworkUtils;
@@ -304,11 +303,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	_status           = "None";
 	DigestThread digestThread = null;
 
-	/* For logging purposes we keep track of how CPU time is used.
-	 */
-        SysTimer sysTimer = new SysTimer();
-        sysTimer.getDifference();
-
 	/* Startup the transfer. The transfer is performed on a single
 	 * thread, no matter the number of streams.
 	 *
@@ -399,13 +393,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             } else {
                 say(String.format("Transfer finished: %d bytes transferred in less than 1 ms",
                                   amount));
-            }
-
-            /* If available, log system and user time used.
-             */
-            SysTimer.Timestamp st = sysTimer.getDifference();
-            if (st.getRealTicks() > 0) {
-                say("SysTimer : " + st.toString());
             }
 	}
 

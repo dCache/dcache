@@ -239,7 +239,7 @@ public abstract class TransferManager extends AbstractCell {
 		poolMgrPath     = new CellPath( poolManager ) ;
 		useInterpreter(true);
 		getNucleus().export();
-		start() ;
+                doInit();
 	}
 	/**      */
     @Override

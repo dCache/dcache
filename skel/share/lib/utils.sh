@@ -225,5 +225,16 @@ matchesAny() # $1 = word, $2+ = patterns
     return 1
 }
 
+processUser() # $1 = process ID
+{
+    case "$1" in
+        [0-9]*)
+            ps -o user -p "$1" | sed -ne '2p'
+            ;;
+        *)
+            ;;
+    esac
+}
+
 # Check prerequisites
-require awk df sed wc dirname which
+require awk df sed wc dirname which ps

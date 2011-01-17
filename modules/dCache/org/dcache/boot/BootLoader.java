@@ -1,11 +1,5 @@
 package org.dcache.boot;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
 import java.util.logging.LogManager;
 import java.net.UnknownHostException;
 import java.net.InetAddress;
@@ -15,14 +9,11 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
-import java.io.PrintStream;
 
 import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.util.ConfigurationProperties;
-import org.dcache.util.ScopedConfigurationProperties;
-import org.dcache.util.Glob;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.LoggerFactory;
@@ -118,105 +109,6 @@ public class BootLoader
         return layout;
     }
 
-    private static String quote(String s)
-    {
-        return s.replace("\\", "\\\\").replace("$", "\\$").replace("`", "\\`").replace("\"", "\\\"");
-    }
-
-    private static String quoteForCase(String s)
-    {
-        return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[");
-    }
-
-    /**
-     * Generates a shell case statement for value in {@code
-     * properties} not defined in {@code parentProperties}.
-     */
-    private static void compileToShell(String indent, ConfigurationProperties properties, ConfigurationProperties parentProperties)
-    {
-        PrintStream out = System.out;
-        out.append(indent).println("case \"$1\" in");
-        for (String key: properties.stringPropertyNames()) {
-            if (!ScopedConfigurationProperties.isScoped(key)) {
-                String value = properties.getValue(key);
-                if (!value.equals(parentProperties.getValue(key))) {
-                    out.append(indent).append("  ");
-                    out.append(quoteForCase(key)).append(") echo \"");
-                    out.append(quote(properties.getValue(key)));
-                    out.println("\"; return;;");
-                }
-            }
-        }
-        out.append(indent).println("esac");
-    }
-
-    /**
-     * Generates a shell function {@code getProperty} which serves as
-     * an oracle for property values. The function takes three
-     * arguments: property key, domain name, cell name. The latter two
-     * are optional.
-     *
-     * For undefined cells the function calls {@code
-     * undefinedCell}. For undefined domains the function calls {@code
-     * undefinedDomain}. For undefined properties the function calls
-     * {@code undefinedProperties}. If those functions return then
-     * processing falls through to the enclosing configuration
-     * context.
-     */
-    private static void compileToShell(Layout layout)
-    {
-        PrintStream out = System.out;
-        out.println("getProperty()");
-        out.println("{");
-
-        // Logic for per service parameters
-        out.println("  case \"$2\" in");
-        out.println("    \"\")");
-        out.println("      ;;"); // Fall through
-        for (Domain domain: layout.getDomains()) {
-            out.append("    ").append(quoteForCase(domain.getName())).println(")");
-            out.println("      case \"$3\" in");
-            out.println("        \"\")");
-            out.println("          ;;"); // Fall through
-            for (ConfigurationProperties service: domain.getServices()) {
-                String cellName = service.getValue(PROPERTY_CELL_NAME);
-                if (cellName != null) {
-                    out.append("        ").append(quoteForCase(cellName)).println(")");
-                    compileToShell("          ", service, domain.properties());
-                    out.println("          ;;");
-                }
-            }
-            out.println("        *)");
-            out.println("          undefinedCell \"$@\"");
-            out.println("          ;;");
-            out.println("      esac");
-            out.println("      ;;");
-        }
-        out.println("    *)");
-        out.println("      undefinedDomain \"$@\"");
-        out.println("      ;;");
-        out.println("  esac");
-        out.println();
-
-        // Logic for per domain parameters
-        out.println("  case \"$2\" in");
-        for (Domain domain: layout.getDomains()) {
-            out.append("    ").append(quoteForCase(domain.getName())).println(")");
-            compileToShell("      ", domain.properties(), layout.properties());
-            out.println("      ;;");
-        }
-        out.println("  esac");
-        out.println();
-
-        // Logic for global properties
-        compileToShell("  ", layout.properties(), new ConfigurationProperties());
-        out.println();
-
-        // Global fallback
-        out.println("  undefinedProperty \"$@\"");
-        out.println("}");
-    }
-
     public static void main(String arguments[])
     {
         try {
@@ -257,7 +149,8 @@ public class BootLoader
 
                 domain.start();
             } else if (command.equals(CMD_COMPILE)) {
-                compileToShell(layout);
+                LayoutPrinter printer = new ShellOracleLayoutPrinter(layout);
+                printer.print(System.out);
             } else {
                 throw new IllegalArgumentException("Invalid command: " + command);
             }
