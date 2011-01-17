@@ -577,9 +577,9 @@ public final class PutFileRequest extends FileRequest {
          }
         if(State.isFinalState(state)) {
             logger.debug("space reservation is "+getSpaceReservationId());
-            if(getConfiguration().isReserve_space_implicitely() &&
-                    getSpaceReservationId() != null &&
-                    isSpaceMarkedAsBeingUsed() ) {
+
+            if ( getSpaceReservationId() != null &&
+                 isSpaceMarkedAsBeingUsed() ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
                         new PutCancelUseOfSpaceCallbacks(getId());
                 getStorage().srmUnmarkSpaceAsBeingUsed(user,getSpaceReservationId(),getSurl(),
