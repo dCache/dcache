@@ -1,7 +1,6 @@
 package diskCacheV111.poolManager ;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -32,7 +31,12 @@ public interface PoolSelectionUnit  {
 
    public interface SelectionLink {
       public String getName() ;
-      public Iterator<SelectionPool> pools() ;
+
+      /**
+       * Get a defensive copy of the pools defined accessible through this link.
+       * @return collection of pools
+       */
+      public Collection<SelectionPool> pools() ;
       public String  getTag() ;
    }
 

@@ -47,9 +47,9 @@ public class Utils {
                 for(int i_link = 0; i_link < links.length; i_link++ ) {
 
                     PoolSelectionUnit.SelectionLink selectionLink = selectionUnit.getLinkByName(links[i_link]);
-                    Iterator<PoolSelectionUnit.SelectionPool> poolsIterator = selectionLink.pools();
-                    while( poolsIterator.hasNext() ) {
-                        PoolSelectionUnit.SelectionPool pool = poolsIterator.next();
+
+                    for( PoolSelectionUnit.SelectionPool pool: selectionLink.pools() ) {
+
                         if ( pool.isEnabled() ) {
                             String poolName = pool.getName();
                             /*

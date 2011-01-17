@@ -469,24 +469,20 @@ public class PoolManagerV5
        return msg;
     }
 
-    public PoolMgrGetPoolByLink
-        messageArrived(PoolMgrGetPoolByLink msg)
-        throws CacheException
-    {
-        String linkName = msg.getLinkName();
-        long   filesize = msg.getFilesize();
+    public PoolMgrGetPoolByLink messageArrived(PoolMgrGetPoolByLink msg)
+            throws CacheException {
 
-        try {
-            List<PoolCostCheckable> pools =
-                _poolMonitor.queryPoolsByLinkName( linkName , filesize ) ;
-            if ((pools == null) || pools.isEmpty())
-                throw new CacheException(57, "No appropriate pools found for link: "+linkName);
-            msg.setPoolName(pools.get(0).getPoolName());
-            msg.setSucceeded();
-        } catch (InterruptedException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     "Pool manager is shutting down");
+        String linkName = msg.getLinkName();
+        long filesize = msg.getFilesize();
+
+        List<PoolCostCheckable> pools =
+                _poolMonitor.queryPoolsByLinkName(linkName, filesize);
+        if ((pools == null) || pools.isEmpty()) {
+            throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }
+        msg.setPoolName(pools.get(0).getPoolName());
+        msg.setSucceeded();
+
         return msg;
     }
 
@@ -679,12 +675,7 @@ public class PoolManagerV5
              sb.append("  ").append( i.next().toString() ).append("\n");
           }
           sb.append("Allowed (not available)\n");
-          if( ( available = _pnfsFileLocation.getAllowedButNotAvailable() ) != null ){
-             i = available.iterator() ;
-             while( i.hasNext() ){
-                sb.append("  ").append( i.next().toString() ).append("\n");
-             }
-          }
+
           return sb.toString() ;
 
        }catch( Exception ee ){
