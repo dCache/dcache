@@ -702,15 +702,13 @@ public class PutFileRequest extends FileRequest {
          }
         if(State.isFinalState(state)) {
             say("space reservation is "+spaceReservationId);
-            if(configuration.isReserve_space_implicitely() &&
-                    spaceReservationId != null &&
+            if( spaceReservationId != null &&
                     spaceMarkedAsBeingUsed ) {
                 SrmCancelUseOfSpaceCallbacks callbacks =
                         new PutCancelUseOfSpaceCallbacks(getId());
                 storage.srmUnmarkSpaceAsBeingUsed(user,
                         spaceReservationId,getPath(),
                         callbacks);
-
             }
             if(spaceReservationId != null && weReservedSpace) {
                 say("storage.releaseSpace("+spaceReservationId+"\"");
@@ -1562,169 +1560,4 @@ public class PutFileRequest extends FileRequest {
     }
 
 }
-
-// $Log: not supported by cvs2svn $
-// Revision 1.43  2007/10/03 20:33:02  litvinse
-// throw SRMAuthorisation exeption in getTurl
-//
-// Revision 1.42  2007/09/19 22:41:29  timur
-// Default access latency and retention policy is now based on directory AccessLatency and RetentionPolicy tags if these are present
-//
-// Revision 1.41  2007/09/14 21:11:43  timur
-// rename srmSpaceManager option into srmImplicitSpaceManagerEnabled, make its value set to yes by default is srmSpaceManagerEnabled=yes and always set to no if srmImplicitSpaceManagerEnabled=no
-//
-// Revision 1.40  2007/09/13 19:14:30  timur
-// return SRM AUTHORIZATION or INVALID PATH errors instead of generic SRM_FAILURE in several instances
-//
-// Revision 1.39  2007/08/03 15:47:58  timur
-// closing sql statement, implementing hashCode functions, not passing null args, resing classes, not comparing objects using == or !=,  etc, per findbug recommendations
-//
-// Revision 1.38  2007/06/18 21:44:58  timur
-// better reporting of the expired space reservations
-//
-// Revision 1.37  2007/05/15 01:50:55  timur
-// if no space is available, return SRM_NO_FREE_SPACE
-//
-// Revision 1.36  2007/04/11 23:34:42  timur
-// Propagate SrmNoFreeSpace and SrmSpaceReleased errors in case of useSpace function
-//
-// Revision 1.35  2007/03/10 00:13:20  timur
-// started work on adding support for optional overwrite
-//
-// Revision 1.34  2007/03/03 00:43:05  timur
-// make srm reserve space and space get metadata return correct values, set status before changing request state, to make it save its value in database
-//
-// Revision 1.33  2007/02/20 01:37:56  timur
-// more changes to report status according to the spec and make ls report lifetime as -1 (infinite)
-//
-// Revision 1.32  2007/02/17 05:44:25  timur
-// propagate SRM_NO_FREE_SPACE to reserveSpace, refactored database code a bit
-//
-// Revision 1.31  2007/02/10 04:46:15  timur
-//  first version of SrmExtendFileLifetime
-//
-// Revision 1.29  2007/01/11 22:33:09  timur
-// fixed bugs: not accounting for possible null values and making correct sql statement
-//
-// Revision 1.28  2007/01/10 23:00:24  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.27  2006/10/10 20:59:57  timur
-// more changes for srmBringOnline
-//
-// Revision 1.26  2006/10/04 21:20:33  timur
-// different calculation of the v2.2 status
-//
-// Revision 1.25  2006/08/25 00:18:15  timur
-// space reservation and synchronization issue resolution
-//
-// Revision 1.24  2006/08/18 22:05:32  timur
-// srm usage of space by srmPrepareToPut implemented
-//
-// Revision 1.23  2006/08/08 15:33:34  timur
-// do not return SRM_REQUEST_SUSPENDED status
-//
-// Revision 1.22  2006/08/07 21:03:59  timur
-// implemented srmStatusOfReserveSpaceRequest
-//
-// Revision 1.21  2006/07/10 22:03:28  timur
-// updated some of the error codes
-//
-// Revision 1.20  2006/06/21 20:29:53  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)
-//
-// Revision 1.19  2006/06/20 15:42:17  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.18  2006/04/26 17:17:55  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.17  2006/04/18 00:53:47  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.16  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.15  2006/03/31 23:26:59  timur
-// better error reporting
-//
-// Revision 1.14  2006/03/14 17:44:19  timur
-// moving toward the axis 1_3
-//
-// Revision 1.13  2006/02/02 01:27:16  timur
-// better error propagation to the user
-//
-// Revision 1.12  2005/12/12 22:35:47  timur
-// more work on srmPrepareToGet and related srm v2 functions
-//
-// Revision 1.11  2005/11/04 22:23:31  timur
-// if file size is not known (0) do not reserve space for it  and do not reject it in gridftp transfer
-//
-// Revision 1.10  2005/10/07 22:57:16  timur
-// work for srm v2
-//
-// Revision 1.9  2005/10/03 19:02:40  timur
-// space release failure should not case transfer failures, if the transfer succeded
-//
-// Revision 1.8  2005/05/12 21:42:00  timur
-// use AbstractStorageElement.getSupported[Get/Put]Protocols() to determine supported protocols and not getTurl
-//
-// Revision 1.7  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.6  2005/03/23 18:10:38  timur
-// more space reservation related changes, need to support it in case of "copy"
-//
-// Revision 1.5  2005/03/11 21:16:26  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.4  2005/03/09 23:20:49  timur
-// more database checks, more space reservation code
-//
-// Revision 1.3  2005/03/01 23:10:38  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.2  2005/02/02 22:19:30  timur
-// make sure we call canRead/Write of the storage when performing get/put
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.6  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.5  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.4  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.3  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.11  2004/08/03 16:37:51  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.10  2004/07/12 21:52:06  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.1.2.9  2004/07/02 20:10:24  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.1.2.8  2004/06/30 20:37:24  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.7  2004/06/24 23:03:07  timur
-// put requests, put file requests and copy file requests are now stored in database, copy requests need more work
-//
-// Revision 1.1.2.6  2004/06/22 01:38:06  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.5  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
-
 
