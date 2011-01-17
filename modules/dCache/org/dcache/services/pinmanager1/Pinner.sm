@@ -44,10 +44,10 @@ Entry
                         setStorageInfo(message.getStorageInfo());
                 }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
-                        fail("could not get storage info: " + error);
+                        fail("Could not get storage info: " + error);
                 }
         noroute
                 Done
@@ -74,7 +74,7 @@ Entry
                 {
                         setReadPool(message.getPoolName());
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail("finding read pool failed");
@@ -105,13 +105,13 @@ Entry
                 {
                         succeed();
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 [ rc == POOL_DISABLED ||
                   rc == FILE_NOT_IN_REPOSITORY ]
                 FindingReadPool
                 {
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
@@ -124,7 +124,7 @@ Done
 
 Default
 {
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
