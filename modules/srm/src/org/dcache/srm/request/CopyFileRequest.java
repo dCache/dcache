@@ -1075,8 +1075,7 @@ public class CopyFileRequest extends FileRequest {
 							  null,
 							  callbacks);
 			}
-			if(configuration.isReserve_space_implicitely() &&
-			   spaceReservationId != null &&
+			if(spaceReservationId != null &&
 			   spaceMarkedAsBeingUsed ) {
 				SrmCancelUseOfSpaceCallbacks callbacks =
 					new CopyCancelUseOfSpaceCallbacks(getId());
