@@ -29,12 +29,15 @@ import org.dcache.cells.UniversalSpringCell;
 import org.dcache.services.pinmanager1.PinManager;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PinManagerPinMessage;
-import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.vehicles.FileAttributes;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -90,8 +93,14 @@ public class PinManagerTest {
     public void testPinning () throws Exception {
         //System.out.println("testPinning is running");
         PnfsId pnfsId = new PnfsId("000100000000000000001080");
-        PinManagerPinMessage pinManagerPinMessage = new PinManagerPinMessage(
-            pnfsId,"localhost",3600L,12345L);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(pnfsId);
+        attributes.setStorageInfo(new GenericStorageInfo());
+        DCapProtocolInfo pinfo =
+            new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
+        pinfo.fileCheckRequired(false);
+        PinManagerPinMessage pinManagerPinMessage =
+            new PinManagerPinMessage(attributes, pinfo, "12345", 3600L);
 
         pinManagerPinMessage =
             (PinManagerPinMessage)
@@ -102,7 +111,8 @@ public class PinManagerTest {
         assertTrue("failed to pin", pinManagerPinMessage.getReturnCode() == 0 );
         if(pinManagerPinMessage.getReturnCode() == 0) {
             PinManagerUnpinMessage unpin =
-                new PinManagerUnpinMessage(pnfsId,pinManagerPinMessage.getPinRequestId());
+                new PinManagerUnpinMessage(attributes);
+            unpin.setPinId(pinManagerPinMessage.getPinId());
             unpin =
                 (PinManagerUnpinMessage)
                 echoCell.sendAndWait(

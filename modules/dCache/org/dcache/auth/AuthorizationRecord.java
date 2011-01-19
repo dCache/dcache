@@ -37,6 +37,7 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.globus.gsi.jaas.GlobusPrincipal;
+import com.google.common.base.Objects;
 
 
 /**
@@ -457,14 +458,14 @@ public class AuthorizationRecord implements Serializable, SRMUser{
        AuthorizationRecord r =  (AuthorizationRecord) rec;
 
        return
-           identity.equals(r.getIdentity()) &&
-           name.equals(r.getName()) &&
+           Objects.equal(identity, r.identity) &&
+           Objects.equal(name, r.name) &&
            uid==r.getUid() &&
            readOnly==r.isReadOnly() &&
-           groupLists.equals(r.getGroupLists()) &&
+           Objects.equal(groupLists, r.groupLists) &&
            priority==r.getPriority() &&
-           home.equals(r.getHome()) &&
-           root.equals(r.getRoot());
+           Objects.equal(home, r.home) &&
+           Objects.equal(root, r.root);
     }
 
     @Override

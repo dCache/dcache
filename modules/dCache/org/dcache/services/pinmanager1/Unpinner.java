@@ -4,10 +4,10 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.cells.CellStub;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;

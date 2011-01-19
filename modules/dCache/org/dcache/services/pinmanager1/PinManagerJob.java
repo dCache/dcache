@@ -6,7 +6,7 @@
 package org.dcache.services.pinmanager1;
 
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PinManagerMessage;
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellMessage;
 import org.dcache.auth.AuthorizationRecord;
@@ -17,7 +17,7 @@ import javax.security.auth.Subject;
  *
  * @author timur
  */
-public interface PinManagerJob<T extends PinManagerMessage> {
+public interface PinManagerJob<T extends Message> {
 
     void failResponse(Object reason, int rc);
 
@@ -32,11 +32,6 @@ public interface PinManagerJob<T extends PinManagerMessage> {
     Subject getSubject();
 
     /**
-     * @return the clientHost
-     */
-    String getClientHost();
-
-    /**
      * @return the lifetime
      */
     long getLifetime();
@@ -47,9 +42,9 @@ public interface PinManagerJob<T extends PinManagerMessage> {
     Long getPinId();
 
     /**
-     * @return the pinManagerMessage
+     * @return the message
      */
-    T getPinManagerMessage();
+    T getMessage();
 
     /**
      * @return the pinRequestId
@@ -62,19 +57,9 @@ public interface PinManagerJob<T extends PinManagerMessage> {
     PnfsId getPnfsId();
 
     /**
-     * @return the pnfsPath
-     */
-    String getPnfsPath();
-
-    /**
      * @return the srmRequestId
      */
     long getSrmRequestId();
-
-    /**
-     * @return the storageIInfo
-     */
-    StorageInfo getStorageInfo();
 
     /**
      *
@@ -96,21 +81,6 @@ public interface PinManagerJob<T extends PinManagerMessage> {
      * @param pinRequestId the pinRequestId to set
      */
     void setPinRequestId(Long pinRequestId);
-
-    /**
-     * @param pnfsId the pnfsId to set
-     */
-    void setPnfsId(PnfsId pnfsId);
-
-    /**
-     * @param pnfsPath the pnfsPath to set
-     */
-    void setPnfsPath(String pnfsPath);
-
-    /**
-     * @param info the StorageInfo to set
-     */
-    void setStorageInfo(StorageInfo info);
 
     /**
      * @param task the SMCTask to set

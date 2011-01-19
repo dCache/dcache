@@ -7,6 +7,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.CellStub;
+import org.dcache.pinmanager.PinManagerPinMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ class Pinner extends SMCTask
     private String _readPoolName;
     private long _expiration;
     private final PinManager _manager;
+    private StorageInfo _storageInfo;
 
     /**
      * Pool manager allowed stated for this request.
@@ -62,6 +64,11 @@ class Pinner extends SMCTask
         _orginalPinRequestId = orginalPinRequestId;
         _allowedStates = allowedStates;
         _fsm = new PinnerContext(this);
+
+        if (job.getMessage() != null) {
+            _storageInfo = job.getMessage().getStorageInfo();
+        }
+
         setContext(_fsm);
         synchronized (this) {
             _fsm.go();
@@ -80,13 +87,13 @@ class Pinner extends SMCTask
     public StorageInfo getStorageInfo()
     {
         _logger.info("getStorageInfo");
-        return _job.getStorageInfo();
+        return _storageInfo;
     }
 
     public void setStorageInfo(StorageInfo info)
     {
         _logger.info("setStorageInfo");
-        _job.setStorageInfo(info);
+        _storageInfo = info;
     }
 
     public void setReadPool(String name)
@@ -101,20 +108,24 @@ class Pinner extends SMCTask
         send(_pnfsManager, new PnfsGetStorageInfoMessage(_job.getPnfsId()));
     }
 
+    private ProtocolInfo getProtocolInfo()
+    {
+        if (_job.getMessage() != null) {
+            return _job.getMessage().getProtocolInfo();
+        }
+
+        DCapProtocolInfo pinfo =
+            new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
+        pinfo.fileCheckRequired(false);
+        return pinfo;
+    }
+
     void findReadPool()
     {
-        String host = _job.getClientHost() == null ?
-            "localhost":
-            _job.getClientHost();
-        _logger.info("findReadPool for "+_job.getPnfsId()+" host="+host);
-        DCapProtocolInfo pinfo =
-            new DCapProtocolInfo("DCap", 3, 0, host, 0);
-        pinfo.fileCheckRequired(false);
-
         PoolMgrSelectReadPoolMsg request =
             new PoolMgrSelectReadPoolMsg(_job.getPnfsId(),
-                                         _job.getStorageInfo(),
-                                         pinfo,
+                                         getStorageInfo(),
+                                         getProtocolInfo(),
                                          0,
                                          _allowedStates);
         request.setSubject(_job.getSubject());
