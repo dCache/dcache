@@ -108,8 +108,7 @@
         class="liquibase.spring.SpringLiquibase">
     <description>Database schema manager</description>
     <property name="dataSource" ref="data-source"/>
-    <property name="changeLog"
-              value="classpath:org/dcache/services/pinmanager1/changelog/db.changelog-master.xml"/>
+    <property name="changeLog" value="classpath:${db.schema.changelog}"/>
   </bean>
 
   <bean id="stage-permission" class="diskCacheV111.util.CheckStagePermission">

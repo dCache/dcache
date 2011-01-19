@@ -29,9 +29,17 @@ usage()
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo
     echo "Valid commands are:"
-    echo "   condrestart [<domain> ...]"
+    echo "   condrestart [<domain>]..."
+    echo "   database ls"
+    echo "   database update [<cell>@<domain>]..."
+    echo "   database tag <tag> [<cell>@<domain>]..."
+    echo "   database rollback <tag> [<cell>@<domain>]..."
+    echo "   database rollbackToDate <date/time> [<cell>@<domain>]..."
+    echo "   database listLocks [<cell>@<domain>]..."
+    echo "   database releaseLocks [<cell>@<domain>]..."
+    echo "   database doc <cell>@<domain> <out-dir>"
     echo "   dump heap [--force] <domain> <file>"
-    echo "   dump threads [<domain> ...]"
+    echo "   dump threads [<domain>...]"
     echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
     echo "                   [--out=<file>] [--password=<password>]"
     echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
@@ -40,11 +48,11 @@ usage()
     echo "               <directory> <name> <domain>"
     echo "   pool ls"
     echo "   pool reconstruct <directory> <target dir>"
-    echo "   restart [<domain> ...]"
+    echo "   restart [<domain>]..."
     echo "   services"
-    echo "   start [<domain> ...]"
+    echo "   start [<domain>]..."
     echo "   status"
-    echo "   stop [<domain> ...]"
+    echo "   stop [<domain>]..."
     echo "   version"
     echo
     echo "Size is specified in bytes, or optionally followed by K, M, G or T"
@@ -554,6 +562,160 @@ case "$1" in
                     printf "$cert_alias "
                     openssl x509 -in "${cert}" | ${keytool} -importcert -noprompt -alias "${cert_alias}" -storepass "${opt_password}" -keystore "${opt_out}" > /dev/null || exit
                 done
+                ;;
+
+            *)
+                usage
+                ;;
+        esac
+        ;;
+
+    database)
+        shift
+
+        if [ $# -eq 0 ]; then
+            usage
+        fi
+
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        . ${DCACHE_LIB}/database.sh
+
+        command=$1
+        shift
+
+        case "$command" in
+            ls)
+                (
+                    printf "DOMAIN\tCELL\tDATABASE\tHOST\tUSER\tMANAGED\tAUTO\n"
+                    for domain in $(getProperty dcache.domains); do
+                        for cell in $(getProperty domain.cells "$domain"); do
+                            if hasDatabase "$domain" "$cell"; then
+                                host=$(getProperty db.host "$domain" "$cell")
+                                user=$(getProperty db.user "$domain" "$cell")
+                                changelog=$(getProperty db.schema.changelog "$domain" "$cell")
+                                database=$(getProperty db.name "$domain" "$cell")
+                                if ! hasManagedDatabase "$domain" "$cell"; then
+                                    managed=No
+                                    auto=Unknown
+                                elif [ -n "$(getProperty db.schema.auto "$domain")" ]; then
+                                    managed=Yes
+                                    auto=Yes
+                                else
+                                    managed=Yes
+                                    auto=No
+                                fi
+                                printf "${domain}\t${cell}\t${database}\t${host}\t${user}\t${managed}\t${auto}\n"
+                            fi
+                        done
+                    done
+                ) | column
+                ;;
+
+            update)
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: " "$cell@$domain"
+                                liquibase "$domain" "$cell" update
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            tag)
+                if [ $# -lt 1 ]; then
+                    usage
+                fi
+
+                tag="$1"
+                shift
+
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: " "$cell@$domain"
+                                liquibase "$domain" "$cell" tag "$tag"
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            rollback)
+                if [ $# -lt 1 ]; then
+                    usage
+                fi
+
+                tag="$1"
+                shift
+
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: " "$cell@$domain"
+                                liquibase "$domain" "$cell" rollback "$tag"
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            rollbackToDate)
+                if [ $# -lt 1 ]; then
+                    usage
+                fi
+
+                date="$1"
+                shift
+
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: " "$cell@$domain"
+                                liquibase "$domain" "$cell" rollbackToDate "$date"
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            listLocks)
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: " "$cell@$domain"
+                                liquibase "$domain" "$cell" listLocks
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            releaseLocks)
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: " "$cell@$domain"
+                                liquibase "$domain" "$cell" releaseLocks
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            doc)
+                if [ $# -ne 2 ]; then
+                    usage
+                fi
+                liquibase "${1##*@}" "${1%@*}" dbDoc "$2"
                 ;;
 
             *)
