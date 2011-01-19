@@ -21,7 +21,7 @@ class Extender extends SMCTask
 
     protected final PinRequest _pinRequest;
     protected final Pin _pin;
-    private final PinManagerJob _job;
+    private final PinManagerJob<?> _job;
     protected final ExtenderContext _fsm;
     protected final long _expiration;
     protected final PinManager _manager;
@@ -30,7 +30,7 @@ class Extender extends SMCTask
     public Extender(PinManager manager,
                     Pin pin,
                     PinRequest pinRequest,
-                    PinManagerJob job,
+                    PinManagerJob<?> job,
                     long expiration,
                     CellStub pool)
     {

@@ -4,6 +4,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
+import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.cells.CellStub;
@@ -30,7 +31,7 @@ class Unpinner extends SMCTask
         LoggerFactory.getLogger(Unpinner.class);
 
     protected final PinManager _manager;
-    protected final PinManagerJob _job;
+    protected final PinManagerJob<PinManagerUnpinMessage> _job;
     protected final Pin _pin;
     protected final UnpinnerContext _fsm;
     protected final CellStub _pnfsManager;
@@ -40,7 +41,7 @@ class Unpinner extends SMCTask
     protected final boolean _retry;
 
     public Unpinner(PinManager manager,
-                    PinManagerJob job,
+                    PinManagerJob<PinManagerUnpinMessage> job,
                     Pin pin,
                     boolean retry,
                     CellStub pnfsManager,

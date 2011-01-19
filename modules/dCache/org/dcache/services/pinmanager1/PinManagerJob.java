@@ -17,7 +17,7 @@ import javax.security.auth.Subject;
  *
  * @author timur
  */
-public interface PinManagerJob {
+public interface PinManagerJob<T extends PinManagerMessage> {
 
     void failResponse(Object reason, int rc);
 
@@ -49,7 +49,7 @@ public interface PinManagerJob {
     /**
      * @return the pinManagerMessage
      */
-    PinManagerMessage getPinManagerMessage();
+    T getPinManagerMessage();
 
     /**
      * @return the pinRequestId

@@ -31,7 +31,7 @@ class PinMover extends SMCTask
     private String _dstPoolName;
     private long _expiration;
     private PinManagerMovePinMessage _movePin;
-    protected final MessageReply _reply ;
+    protected final MessageReply<PinManagerMovePinMessage> _reply;
     // We record this now in Pinner, since upon success
     // we need to change the original pin expiration time
     // which will be calcuated only after the file was
@@ -46,7 +46,7 @@ class PinMover extends SMCTask
                     String dstPoolName,
                     long expiration,
                     PinManagerMovePinMessage movePin,
-                    MessageReply reply,
+                    MessageReply<PinManagerMovePinMessage> reply,
                     CellStub pool)
     {
         super(manager.getCellEndpoint());

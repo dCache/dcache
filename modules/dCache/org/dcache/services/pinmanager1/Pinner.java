@@ -23,7 +23,7 @@ class Pinner extends SMCTask
         LoggerFactory.getLogger(SMCTask.class);
 
     private final Pin _pin;
-    private final PinManagerJob _job;
+    private final PinManagerJob<PinManagerPinMessage> _job;
     private final PinnerContext _fsm;
     private final CellStub _pnfsManager;
     private final CellStub _poolManager;
@@ -44,7 +44,7 @@ class Pinner extends SMCTask
     private long _orginalPinRequestId;
 
     public Pinner(PinManager manager,
-                  PinManagerJob job,
+                  PinManagerJob<PinManagerPinMessage> job,
                   Pin pin,
                   long orginalPinRequestId,
                   int allowedStates,

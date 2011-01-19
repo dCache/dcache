@@ -6,9 +6,15 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
+import org.dcache.util.CacheExceptionFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Encapsulates a Message reply.
@@ -18,15 +24,17 @@ import org.slf4j.LoggerFactory;
  * is non-blocking. The latter means one can safely send the reply
  * from the message delivery thread.
  */
-public class MessageReply implements Reply
+public class MessageReply<T extends Message>
+    implements Reply, Future<T>
 {
     private static final Logger _logger =
         LoggerFactory.getLogger(MessageReply.class);
 
     private CellEndpoint _endpoint;
     private CellMessage _envelope;
-    private Message _msg;
+    private T _msg;
 
+    @Override
     public synchronized void deliver(CellEndpoint endpoint, CellMessage envelope)
     {
         if (endpoint == null || envelope == null) {
@@ -39,7 +47,12 @@ public class MessageReply implements Reply
         }
     }
 
-    public void fail(Message msg, Exception e)
+    public boolean isValidIn(long delay)
+    {
+        return (_envelope == null || delay <= _envelope.getTtl() - _envelope.getLocalAge());
+    }
+
+    public void fail(T msg, Exception e)
     {
         if (e instanceof CacheException) {
             CacheException ce = (CacheException) e;
@@ -51,19 +64,20 @@ public class MessageReply implements Reply
         }
     }
 
-    public void fail(Message msg, int rc, Object e)
+    public void fail(T msg, int rc, Object e)
     {
         msg.setFailed(rc, e);
         reply(msg);
     }
 
-    public synchronized void reply(Message msg)
+    public synchronized void reply(T msg)
     {
         _msg = msg;
         _msg.setReply();
         if (_envelope != null) {
             send();
         }
+        notifyAll();
     }
 
     protected void onNoRouteToCell(NoRouteToCellException e)
@@ -79,5 +93,65 @@ public class MessageReply implements Reply
         } catch (NoRouteToCellException e) {
             onNoRouteToCell(e);
         }
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning)
+    {
+        return false;
+    }
+
+    private synchronized T get(T msg)
+        throws ExecutionException
+    {
+        if (msg.getReturnCode() != 0) {
+            Exception e;
+            Object o = msg.getErrorObject();
+            if (o instanceof Exception) {
+                e = (Exception) o;
+            } else {
+                e = CacheExceptionFactory.exceptionOf(msg.getReturnCode(),
+                                                      String.valueOf(o));
+            }
+            throw new ExecutionException(e.getMessage(), e);
+        }
+        return msg;
+    }
+
+    @Override
+    public synchronized T get()
+        throws InterruptedException, ExecutionException
+    {
+        while (_msg == null) {
+            wait();
+        }
+        return get(_msg);
+    }
+
+    @Override
+    public synchronized T get(long timeout, TimeUnit unit)
+        throws InterruptedException, ExecutionException, TimeoutException
+    {
+        long expirationTime =
+            System.currentTimeMillis() + unit.toMillis(timeout);
+        while (_msg == null) {
+            long timeLeft = expirationTime - System.currentTimeMillis();
+            if (timeLeft <= 0)
+                throw new TimeoutException();
+            unit.timedWait(this, timeLeft);
+        }
+        return get(_msg);
+    }
+
+    @Override
+    public boolean isCancelled()
+    {
+        return false;
+    }
+
+    @Override
+    public synchronized boolean isDone()
+    {
+        return (_msg != null);
     }
 }

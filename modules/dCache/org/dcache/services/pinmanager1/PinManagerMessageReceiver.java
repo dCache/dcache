@@ -20,13 +20,13 @@ public class PinManagerMessageReceiver
         _pinManager = pinManager;
     }
 
-    public MessageReply messageArrived(PinManagerPinMessage message)
+    public MessageReply<PinManagerPinMessage> messageArrived(PinManagerPinMessage message)
         throws CacheException
     {
         return _pinManager.pin(message);
     }
 
-    public MessageReply messageArrived(PinManagerExtendLifetimeMessage message)
+    public MessageReply<PinManagerExtendLifetimeMessage> messageArrived(PinManagerExtendLifetimeMessage message)
         throws CacheException
     {
         return _pinManager.extendLifetime(message);
@@ -37,7 +37,7 @@ public class PinManagerMessageReceiver
         _pinManager.removeFiles(message);
     }
 
-    public MessageReply messageArrived(PinManagerMovePinMessage message)
+    public MessageReply<PinManagerMovePinMessage> messageArrived(PinManagerMovePinMessage message)
         throws CacheException
     {
         return _pinManager.movePin(message);
