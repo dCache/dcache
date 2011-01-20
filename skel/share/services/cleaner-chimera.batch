@@ -1,6 +1,7 @@
 # Starts the Chimera cleaner
 
 onerror shutdown
+check -strong cell.name
 check -strong cleanerRefresh
 check -strong cleanerRecover
 check -strong cleanerPoolTimeout
@@ -10,18 +11,22 @@ check -strong hsmCleanerRequest
 check -strong hsmCleanerTimeout
 check -strong cleaner.thread-pool.size
 check -strong cleaner.report-cell
+check -strong db.user
+check -strong db.url
+check -strong db.driver
+check chimera.db.password
 
-create org.dcache.chimera.namespace.ChimeraCleaner cleaner \
+create org.dcache.chimera.namespace.ChimeraCleaner ${cell.name} \
         "-export \
          -refresh=${cleanerRefresh} \
          -recover=${cleanerRecover} \
          -reportRemove=${cleaner.report-cell} \
          -poolTimeout=${cleanerPoolTimeout}   \
          -processFilesPerRun=${cleanerProcessFilesPerRun} \
-         -chimera.db.user=${chimera.db.user} \
-         -chimera.db.password=${chimera.db.password} \
-         -chimera.db.url=${chimera.db.url} \
-         -chimera.db.driver=${chimera.db.driver} \
+         -chimera.db.user=${db.user} \
+         -chimera.db.password=${db.password} \
+         -chimera.db.url=${db.url} \
+         -chimera.db.driver=${db.driver} \
          -hsmCleaner=${hsmCleaner} \
          -hsmCleanerRequest=${hsmCleanerRequest} \
          -hsmCleanerTimeout=${hsmCleanerTimeout} \

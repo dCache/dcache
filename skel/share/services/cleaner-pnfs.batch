@@ -1,5 +1,6 @@
 onerror shutdown
 check trash
+check -strong cell.name
 check -strong cleanerDB
 check -strong cleanerRefresh
 check -strong cleanerRecover
@@ -10,7 +11,7 @@ check -strong hsmCleanerTrash
 check -strong hsmCleanerRepository
 check -strong cleaner.report-cell
 
-create diskCacheV111.cells.CleanerV2 cleaner \
+create diskCacheV111.cells.CleanerV2 ${cell.name} \
         "default \
          -export \
          -trash=${trash} \
