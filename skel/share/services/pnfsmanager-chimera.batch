@@ -1,20 +1,15 @@
 # Starts the PnfsManager with a Chimera provider
 
-# Defaults
-onerror continue
-set context -c companionDatabaseHost localhost
-set context -c defaultPnfsServer localhost
-set context -c pnfs /pnfs/fs
-set context -c pnfsNumberOfThreads 4
-set context -c pnfsNumberOfThreadGroups 1
-set context -c pnfsNumberOfListThreads 2
-set context -c DefaultAccessLatency NEARLINE
-set context -c DefaultRetentionPolicy CUSTODIAL
-set context -c pnfsFolding       false
-set context -c pnfsInheritFileOwnership false
-
 onerror shutdown
 
+check -strong pnfsInheritFileOwnership
+check -strong DefaultRetentionPolicy
+check -strong DefaultAccessLatency
+check -strong pnfsFolding
+check -strong pnfsNumberOfListThreads
+check -strong pnfsNumberOfThreadGroups
+check -strong pnfsNumberOfThreads
+check -strong defaultPnfsServer
 check -strong cell.name
 check -strong aclEnabled
 check -strong aclTable
@@ -22,6 +17,11 @@ check -strong aclConnDriver
 check -strong aclConnUrl
 check -strong aclConnUser
 check aclConnPswd
+check -strong db.user
+check -strong db.url
+check -strong db.driver
+check -strong chimera.db.dialect
+check db.password
 
 create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         "${hsmStorageInfoExtractor} \
@@ -31,7 +31,6 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -listThreads=${pnfsNumberOfListThreads} \
         -pnfsDeleteRelay=SrmSpaceManager \
         -default=${defaultPnfsServer} \
-        -pnfs=${pnfs} \
         -DefaultAccessLatency=${DefaultAccessLatency} \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
         -aclEnabled=${aclEnabled} \
@@ -41,10 +40,10 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -aclConnUser=${aclConnUser} \
         -aclConnPswd=${aclConnPswd} \
         -folding=${pnfsFolding} \
-        -chimera.db.user=${chimera.db.user} \
-        -chimera.db.password=${chimera.db.password} \
-        -chimera.db.url=${chimera.db.url} \
-        -chimera.db.driver=${chimera.db.driver} \
+        -chimera.db.user=${db.user} \
+        -chimera.db.password=${db.password} \
+        -chimera.db.url=${db.url} \
+        -chimera.db.driver=${db.driver} \
         -chimera.db.dialect=${chimera.db.dialect} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \

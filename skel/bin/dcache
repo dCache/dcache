@@ -587,7 +587,7 @@ case "$1" in
         case "$command" in
             ls)
                 (
-                    printf "DOMAIN\tCELL\tDATABASE\tHOST\tUSER\tMANAGED\tAUTO\n"
+                    printf "DOMAIN\tCELL\tDATABASE\tHOST\tUSER\tMANAGEABLE\tAUTO\n"
                     for domain in $(getProperty dcache.domains); do
                         for cell in $(getProperty domain.cells "$domain"); do
                             if hasDatabase "$domain" "$cell"; then
@@ -595,17 +595,17 @@ case "$1" in
                                 user=$(getProperty db.user "$domain" "$cell")
                                 changelog=$(getProperty db.schema.changelog "$domain" "$cell")
                                 database=$(getProperty db.name "$domain" "$cell")
-                                if ! hasManagedDatabase "$domain" "$cell"; then
-                                    managed=No
-                                    auto=Unknown
-                                elif [ -n "$(getProperty db.schema.auto "$domain")" ]; then
-                                    managed=Yes
+                                if hasManagedDatabase "$domain" "$cell"; then
+                                    manageable=Yes
+                                else
+                                    manageable=No
+                                fi
+                                if [ "$(getProperty db.schema.auto "$domain" "$cell")" = "true" ]; then
                                     auto=Yes
                                 else
-                                    managed=Yes
                                     auto=No
                                 fi
-                                printf "${domain}\t${cell}\t${database}\t${host}\t${user}\t${managed}\t${auto}\n"
+                                printf "${domain}\t${cell}\t${database}\t${host}\t${user}\t${manageable}\t${auto}\n"
                             fi
                         done
                     done

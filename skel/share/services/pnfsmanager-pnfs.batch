@@ -28,25 +28,9 @@ onerror continue
 set context -c companionDatabaseHost localhost
 set context -c defaultPnfsServer localhost
 set context -c pnfs /pnfs/fs
-set context -c pnfsInfoExtractor diskCacheV111.util.OsmInfoExtractor
-set context -c pnfsNumberOfThreads 4
-set context -c pnfsNumberOfThreadGroups 1
-set context -c pnfsNumberOfListThreads 2
 set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
-set context -c pnfsDbUser        srmdcache
-set context -c pnfsDbPassword    srmdcache
-set context -c pnfsPasswordFile  ""
-set context -c pnfsFolding       false
-set context -c pnfsInheritFileOwnership false
 
 set env -c locationThreads 0
-
-#
-# defaults for Access Latency and Retention Policy
-#
-
-set context -c DefaultAccessLatency NEARLINE
-set context -c DefaultRetentionPolicy CUSTODIAL
 
 #
 # access to Deletion registration
@@ -57,6 +41,17 @@ set context -c  pnfsDeleteRegistrationDbPass ${pnfsDbPassword}
 
 onerror shutdown
 
+check -strong DefaultAccessLatency
+check -strong DefaultRetentionPolicy
+check -strong pnfsInfoExtractor
+check -strong pnfsNumberOfThreads
+check -strong pnfsNumberOfThreadGroups
+check -strong pnfsNumberOfListThreads
+check -strong pnfsFolding
+check -strong pnfsInheritFileOwnership
+check -strong pnfsDbUser
+check -strong pnfsDbPassword
+check -strong pnfsPasswordFile
 check -strong cell.name
 check -strong aclEnabled
 check -strong aclTable

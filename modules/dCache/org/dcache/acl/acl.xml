@@ -26,6 +26,7 @@
                 <prop key="aclConnUrl">${aclConnUrl}</prop>
                 <prop key="aclConnUser">${aclConnUser}</prop>
                 <prop key="aclConnPswd">${aclConnPswd}</prop>
+                <prop key="aclTable">${aclTable}</prop>
             </props>
         </constructor-arg>
     </bean>

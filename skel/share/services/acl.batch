@@ -3,20 +3,23 @@
 
 onerror shutdown
 
+check -strong aclTable
+check -strong cell.name
 check -strong pnfsmanager
-check -strong aclConnDriver
-check -strong aclConnUrl
-check -strong aclConnUser
-check aclConnPswd
+check -strong db.user
+check -strong db.driver
+check -strong db.url
+check db.password
 
 set context -c pnfsManagerTimeout 28000
 
 create org.dcache.cells.UniversalSpringCell acladmin \
         "classpath:org/dcache/acl/acl.xml \
-        -aclConnDriver=\"${aclConnDriver}\" \
-        -aclConnUrl=\"${aclConnUrl}\" \
-        -aclConnUser=\"${aclConnUser}\" \
-        -aclConnPswd=\"${aclConnPswd}\" \
+        -aclTable=${aclTable} \
+        -aclConnDriver=\"${db.driver}\" \
+        -aclConnUrl=\"${db.url}\" \
+        -aclConnUser=\"${db.user}\" \
+        -aclConnPswd=\"${db.password}\" \
         -pnfsManager=\"${pnfsmanager}\" \
         -pnfsManagerTimeout=\"${pnfsManagerTimeout}\" \
         "
