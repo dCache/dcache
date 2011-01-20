@@ -3,10 +3,9 @@ package org.dcache.services.pinmanager1;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.MessageReply;
 
-import diskCacheV111.vehicles.PinManagerMessage;
-import diskCacheV111.vehicles.PinManagerPinMessage;
-import diskCacheV111.vehicles.PinManagerUnpinMessage;
-import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.CacheException;
 
@@ -20,13 +19,13 @@ public class PinManagerMessageReceiver
         _pinManager = pinManager;
     }
 
-    public MessageReply messageArrived(PinManagerPinMessage message)
+    public MessageReply<PinManagerPinMessage> messageArrived(PinManagerPinMessage message)
         throws CacheException
     {
         return _pinManager.pin(message);
     }
 
-    public MessageReply messageArrived(PinManagerExtendLifetimeMessage message)
+    public MessageReply<PinManagerExtendPinMessage> messageArrived(PinManagerExtendPinMessage message)
         throws CacheException
     {
         return _pinManager.extendLifetime(message);
@@ -37,7 +36,7 @@ public class PinManagerMessageReceiver
         _pinManager.removeFiles(message);
     }
 
-    public MessageReply messageArrived(PinManagerMovePinMessage message)
+    public MessageReply<PinManagerMovePinMessage> messageArrived(PinManagerMovePinMessage message)
         throws CacheException
     {
         return _pinManager.movePin(message);

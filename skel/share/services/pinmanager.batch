@@ -1,46 +1,29 @@
-# ----------------------------------------------------------------------
-#           Pin Manager Cell
-# ----------------------------------------------------------------------
-
-exec file:${dcache.paths.share}/cells/stage.fragment doors
-exec file:${dcache.paths.share}/cells/threadmanager.fragment
-
-# Defaults
-onerror continue
-
-set context -c srmDbHost localhost
-set context -c srmDbName          dcache
-set context -c srmDbUser          srmdcache
-set context -c srmDbPassword      srmdcache
-set context -c srmPasswordFile    ""
-
-set context -c spaceManagerDatabaseHost  ${srmDbHost}
-
-set context -c pinManagerDbHost ${srmDbHost}
-set context -c pinManagerDbName ${srmDbName}
-set context -c pinManagerDbUser ${srmDbUser}
-set context -c pinManagerDbPassword ${srmDbPassword}
-set context -c pinManagerPasswordFile "${srmPasswordFile}"
-
-# in seconds, -1 for infinite
-set context -c pinManagerMaxPinDuration "-1"
-
-set context -c pinManagerMaxActiveJdbcConnections    50
-set context -c pinManagerMaxJdbcConnectionsWaitSec   180
-set context -c pinManagerMaxIdleJdbcConnections      10
-
 onerror shutdown
 
-create org.dcache.cells.UniversalSpringCell PinManager \
+check -strong cell.name
+check -strong db.driver
+check -strong db.url
+check -strong db.user
+check db.password
+check db.password.file
+check -strong pinManagerMaxPinDuration
+check -strong pinManagerMaxActiveJdbcConnections
+check -strong pinManagerMaxIdleJdbcConnections
+check stageConfigurationFilePath
+
+exec file:${dcache.paths.share}/cells/stage.fragment doors
+
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/services/pinmanager1/pinmanager.xml \
         -export  \
         -callbackExecutor=message-thread-pool \
         -messageExecutor=message-thread-pool \
-        -jdbcDriver=org.postgresql.Driver \
-        -jdbcUrl=jdbc:postgresql://${pinManagerDbHost}/${pinManagerDbName} \
-        -dbUser=${pinManagerDbUser} \
-        -dbPass=${pinManagerDbPassword} \
-        -pgPass=${pinManagerPasswordFile} \
+        -jdbcDriver=${db.driver} \
+        -jdbcUrl=${db.url} \
+        -dbUser=${db.user} \
+        -dbPass=${db.password} \
+        -pgPass=${db.password.file} \
+        -db.schema.changelog=${db.schema.changelog} \
         -maxPinDuration=${pinManagerMaxPinDuration} \
         -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
         -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \

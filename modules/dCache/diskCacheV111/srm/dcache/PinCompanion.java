@@ -67,17 +67,18 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import java.util.EnumSet;
+import javax.security.auth.Subject;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
-import diskCacheV111.vehicles.PinManagerPinMessage;
+import diskCacheV111.vehicles.DCapProtocolInfo;
 
+import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileType;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.Subjects;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
@@ -93,7 +94,7 @@ public class PinCompanion
     private final static Logger _log =
         LoggerFactory.getLogger(PinCompanion.class);
 
-    private final AuthorizationRecord _user;
+    private final Subject _subject;
     private final FsPath _path;
     private final String _clientHost;
     private final PinCallbacks _callbacks;
@@ -132,11 +133,14 @@ public class PinCompanion
     private class LookupState extends CallbackState<PnfsGetFileAttributes>
     {
         public LookupState() {
+            EnumSet<FileAttribute> attributes =
+                EnumSet.noneOf(FileAttribute.class);
+            attributes.addAll(DcacheFileMetaData.getKnownAttributes());
+            attributes.addAll(PinManagerPinMessage.getRequiredAttributes());
             PnfsGetFileAttributes msg =
-                new PnfsGetFileAttributes(_path.toString(),
-                                          DcacheFileMetaData.getKnownAttributes());
+                new PnfsGetFileAttributes(_path.toString(), attributes);
             msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
-            msg.setSubject(Subjects.getSubject(_user));
+            msg.setSubject(_subject);
             _pnfsStub.send(msg, PnfsGetFileAttributes.class,
                            new ThreadManagerMessageCallback(this));
         }
@@ -158,13 +162,14 @@ public class PinCompanion
     private class PinningState extends CallbackState<PinManagerPinMessage>
     {
         public PinningState() {
+            DCapProtocolInfo protocolInfo =
+                new DCapProtocolInfo("DCap", 3, 0, _clientHost, 0);
+            protocolInfo.fileCheckRequired(false);
             PinManagerPinMessage msg =
-                new PinManagerPinMessage(_attributes.getPnfsId(),
-                                         _clientHost,
-                                         _pinLifetime,
-                                         _requestId);
-            msg.setAuthorizationRecord(_user);
-            msg.setStorageInfo(_attributes.getStorageInfo());
+                new PinManagerPinMessage(_attributes, protocolInfo,
+                                         String.valueOf(_requestId),
+                                         _pinLifetime);
+            msg.setSubject(_subject);
             _pinManagerStub.send(msg, PinManagerPinMessage.class,
                                  new ThreadManagerMessageCallback(this));
         }
@@ -173,7 +178,7 @@ public class PinCompanion
         public void success(PinManagerPinMessage message)
         {
             _callbacks.Pinned(new DcacheFileMetaData(_attributes),
-                              message.getPinRequestId());
+                              String.valueOf(message.getPinId()));
             _state = new PinnedState();
         }
     }
@@ -186,7 +191,7 @@ public class PinCompanion
     {
     }
 
-    private PinCompanion(AuthorizationRecord user,
+    private PinCompanion(Subject subject,
                          FsPath path,
                          String clientHost,
                          PinCallbacks callbacks,
@@ -195,7 +200,7 @@ public class PinCompanion
                          CellStub pnfsStub,
                          CellStub pinManagerStub)
     {
-        _user = user;
+        _subject = subject;
         _path = path;
         _clientHost = clientHost;
         _callbacks = callbacks;
@@ -241,7 +246,7 @@ public class PinCompanion
             _state.getClass().getSimpleName() + "]";
     }
 
-    public static PinCompanion pinFile(AuthorizationRecord user,
+    public static PinCompanion pinFile(Subject subject,
                                        FsPath path,
                                        String clientHost,
                                        PinCallbacks callbacks,
@@ -250,7 +255,7 @@ public class PinCompanion
                                        CellStub pnfsStub,
                                        CellStub pinManagerStub)
     {
-        return new PinCompanion(user, path, clientHost, callbacks,
+        return new PinCompanion(subject, path, clientHost, callbacks,
                                 pinLifetime, requestId,
                                 pnfsStub, pinManagerStub);
     }

@@ -96,14 +96,16 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import javax.security.auth.Subject;
+
 import org.dcache.cells.MessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.cells.CellStub;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PinManagerUnpinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.Message;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.UnpinCallbacks;
+import org.dcache.vehicles.FileAttributes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,18 +123,18 @@ public class UnpinCompanion
         LoggerFactory.getLogger(UnpinCompanion.class);
 
     private UnpinCallbacks callbacks;
-    private String fileId;
+    private PnfsId pnfsId;
 
     /** Creates a new instance of StageAndPinCompanion */
-    private UnpinCompanion(String fileId, UnpinCallbacks callbacks)
+    private UnpinCompanion(PnfsId pnfsId, UnpinCallbacks callbacks)
     {
-        this.fileId = fileId;
+        this.pnfsId = pnfsId;
         this.callbacks = callbacks;
     }
 
     public void success(PinManagerUnpinMessage message)
     {
-        callbacks.Unpinned(message.getPinRequestId());
+        callbacks.Unpinned(String.valueOf(message.getPinId()));
     }
 
     public void failure(int rc, Object error)
@@ -145,7 +147,7 @@ public class UnpinCompanion
 
         default:
             _log.error("Pinning failed for {} [rc={},msg={}]",
-                       new Object[] { fileId, rc, error });
+                       new Object[] { pnfsId, rc, error });
 
             String reason =
                 String.format("Failed to pin file [rc=%d,msg=%s]",
@@ -167,82 +169,58 @@ public class UnpinCompanion
 
     public String toString()
     {
-        return getClass().getName() + " " + fileId;
+        return getClass().getName() + " " + pnfsId;
     }
 
-    public static void unpinFile(AuthorizationRecord user,
-                                 String fileId,
-                                 String pinId,
+    public static void unpinFile(Subject subject,
+                                 PnfsId pnfsId,
+                                 long pinId,
                                  UnpinCallbacks callbacks,
                                  CellStub pinManagerStub)
     {
-        _log.info("UnpinCompanion.unpinFile({})", fileId);
-        PnfsId pnfsId;
-        try {
-            pnfsId = new PnfsId(fileId);
-        } catch (IllegalArgumentException e) {
-            //just quietly fail, if the fileId is not pnfs id
-            // it must be created by a disk srm during testing
-            //just allow the request to get expired
-            callbacks.Unpinned(fileId);
-            return;
-        }
-
-        UnpinCompanion companion = new UnpinCompanion(fileId, callbacks);
-        PinManagerUnpinMessage request =
-                new PinManagerUnpinMessage(pnfsId, pinId);
-        request.setAuthorizationRecord(user);
-        pinManagerStub.send(request, PinManagerUnpinMessage.class,
+        _log.info("UnpinCompanion.unpinFile({})", pnfsId);
+        UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(pnfsId);
+        PinManagerUnpinMessage msg =
+            new PinManagerUnpinMessage(attributes);
+        msg.setPinId(pinId);
+        msg.setSubject(subject);
+        pinManagerStub.send(msg, PinManagerUnpinMessage.class,
                             new ThreadManagerMessageCallback(companion));
     }
 
-    public static void unpinFileBySrmRequestId(AuthorizationRecord user,
-                                               String fileId,
+    public static void unpinFileBySrmRequestId(Subject subject,
+                                               PnfsId pnfsId,
                                                long  srmRequestId,
                                                UnpinCallbacks callbacks,
                                                CellStub pinManagerStub)
     {
-        _log.info("UnpinCompanion.unpinFile({})", fileId);
-        PnfsId pnfsId;
-        try {
-            pnfsId = new PnfsId(fileId);
-        } catch (IllegalArgumentException e) {
-            //just ciletly fail, if the fileId is not pnfs id
-            // it must be created by a disk srm during testing
-            //just allow the request to get expired
-            callbacks.Unpinned(fileId);
-            return;
-        }
-
-        UnpinCompanion companion = new UnpinCompanion(fileId, callbacks);
-        PinManagerUnpinMessage request =
-            new PinManagerUnpinMessage(pnfsId, srmRequestId);
-        request.setAuthorizationRecord(user);
-        pinManagerStub.send(request, PinManagerUnpinMessage.class,
+        _log.info("UnpinCompanion.unpinFile({})", pnfsId);
+        UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(pnfsId);
+        PinManagerUnpinMessage msg =
+            new PinManagerUnpinMessage(attributes);
+        msg.setRequestId(String.valueOf(srmRequestId));
+        msg.setSubject(subject);
+        pinManagerStub.send(msg, PinManagerUnpinMessage.class,
                             new ThreadManagerMessageCallback(companion));
     }
 
-    public static void unpinFile(AuthorizationRecord user,
-                                 String fileId,
+    public static void unpinFile(Subject subject,
+                                 PnfsId pnfsId,
                                  UnpinCallbacks callbacks,
                                  CellStub pinManagerStub)
     {
-        _log.info("UnpinCompanion.unpinFile({}", fileId);
-        PnfsId pnfsId;
-        try {
-            pnfsId = new PnfsId(fileId);
-        } catch (IllegalArgumentException e) {
-            //just ciletly fail, if the fileId is not pnfs id
-            // it must be created by a disk srm during testing
-            //just allow the request to get expired
-            callbacks.Unpinned(fileId);
-            return;
-        }
-
-        UnpinCompanion companion = new UnpinCompanion(fileId, callbacks);
-        PinManagerUnpinMessage request = new PinManagerUnpinMessage(pnfsId);
-        request.setAuthorizationRecord(user);
-        pinManagerStub.send(request, PinManagerUnpinMessage.class,
+        _log.info("UnpinCompanion.unpinFile({}", pnfsId);
+        UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(pnfsId);
+        PinManagerUnpinMessage msg =
+            new PinManagerUnpinMessage(attributes);
+        msg.setSubject(subject);
+        pinManagerStub.send(msg, PinManagerUnpinMessage.class,
                             new ThreadManagerMessageCallback(companion));
     }
 }

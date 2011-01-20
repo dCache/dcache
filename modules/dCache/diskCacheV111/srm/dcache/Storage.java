@@ -101,6 +101,7 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.vehicles.transferManager.
@@ -113,7 +114,6 @@ import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.CopyManagerMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
-import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.pools.PoolCellInfo;
@@ -1016,7 +1016,7 @@ public final class Storage
                         PinCallbacks callbacks)
     {
         try {
-            PinCompanion.pinFile((AuthorizationRecord) user,
+            PinCompanion.pinFile(Subjects.getSubject((AuthorizationRecord)user),
                                  getPath(surl),
                                  clientHost,
                                  callbacks,
@@ -1029,22 +1029,25 @@ public final class Storage
         }
     }
 
-    public void unPinFile(SRMUser user,String fileId,
-            UnpinCallbacks callbacks,
-            String pinId) {
-        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,_pinManagerStub);
+    public void unPinFile(SRMUser user, String fileId,
+                          UnpinCallbacks callbacks,
+                          String pinId)
+    {
+        UnpinCompanion.unpinFile(Subjects.getSubject((AuthorizationRecord) user),
+                                 new PnfsId(fileId), Long.parseLong(pinId), callbacks,_pinManagerStub);
     }
 
-
-    public void unPinFileBySrmRequestId(SRMUser user,String fileId,
-            UnpinCallbacks callbacks,
-            long srmRequestId) {
-        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,_pinManagerStub);
+    public void unPinFileBySrmRequestId(SRMUser user, String fileId,
+                                        UnpinCallbacks callbacks,
+                                        long srmRequestId)
+    {
+        UnpinCompanion.unpinFileBySrmRequestId(Subjects.getSubject((AuthorizationRecord) user), new PnfsId(fileId), srmRequestId, callbacks, _pinManagerStub);
     }
 
-    public void unPinFile(SRMUser user,String fileId,
-            UnpinCallbacks callbacks) {
-        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, callbacks,_pinManagerStub);
+    public void unPinFile(SRMUser user, String fileId, UnpinCallbacks callbacks)
+    {
+        UnpinCompanion.unpinFile(Subjects.getSubject((AuthorizationRecord) user),
+                                 new PnfsId(fileId), callbacks, _pinManagerStub);
     }
 
 
@@ -3194,12 +3197,13 @@ public final class Storage
     {
         try {
             PnfsId pnfsId = new PnfsId(fileId);
-            PinManagerExtendLifetimeMessage extendLifetime =
-                new PinManagerExtendLifetimeMessage(pnfsId, pinId,
-                                                    newPinLifetime);
-            extendLifetime.setAuthorizationRecord((AuthorizationRecord) user);
+            FileAttributes attributes = new FileAttributes();
+            attributes.setPnfsId(pnfsId);
+            PinManagerExtendPinMessage extendLifetime =
+                new PinManagerExtendPinMessage(attributes, Long.parseLong(pinId), newPinLifetime);
+            extendLifetime.setSubject(Subjects.getSubject((AuthorizationRecord) user));
             extendLifetime = _pinManagerStub.sendAndWait(extendLifetime);
-            return extendLifetime.getNewLifetime();
+            return extendLifetime.getLifetime();
         } catch (IllegalArgumentException e) {
             throw new SRMException("Invalid PNFS ID: " + fileId, e);
         } catch (TimeoutCacheException e) {

@@ -583,7 +583,23 @@ class PinManagerDatabase
         long expirationTime =
             (lifetime == -1) ? -1: System.currentTimeMillis() + lifetime;
         if (authRec != null) {
-            authRecordPM.persist(authRec);
+            /* Since AuthorizationRecord is a converted Subject we
+             * cannot rely on the correctness of the ID. We need to
+             * resolve conflicts here.
+             */
+            AuthorizationRecord persistent = authRecordPM.find(authRec.getId());
+            while (persistent != null && !persistent.equals(authRec)) {
+                persistent = authRecordPM.find(persistent.getId() + 1);
+            }
+
+            if (persistent == null) {
+                persistent = authRecordPM.persist(authRec);
+                if (!persistent.equals(authRec)) {
+                    _logger.error("Persisted authorization record is different from the original");
+                }
+            }
+
+            authRec = persistent;
         }
 
         try {

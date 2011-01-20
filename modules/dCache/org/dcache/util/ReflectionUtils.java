@@ -44,7 +44,7 @@ public class ReflectionUtils
      *
      * @returns a matching method or null if no method is found
      */
-    public static Method resolve(Class c, String name, Class ... parameters)
+    public static Method resolve(Class<?> c, String name, Class<?> ... parameters)
     {
         try {
             Object[] signature = { c, name, parameters };
@@ -66,9 +66,9 @@ public class ReflectionUtils
              * method.
              */
             for (int i = 0; i < parameters.length; i++) {
-                Class s = parameters[i].getSuperclass();
+                Class<?> s = parameters[i].getSuperclass();
                 if (s != null) {
-                    Class old = parameters[i];
+                    Class<?> old = parameters[i];
                     parameters[i] = s;
                     Method m = resolve(c, name, parameters);
                     if (m != null)
@@ -91,7 +91,7 @@ public class ReflectionUtils
     public static PnfsId getPnfsId(Object o)
     {
         try {
-            Class c = o.getClass();
+            Class<?> c = o.getClass();
             Method m = c.getMethod("getPnfsId");
             if (PnfsId.class.isAssignableFrom(m.getReturnType()) &&
                 Modifier.isPublic(m.getModifiers())) {

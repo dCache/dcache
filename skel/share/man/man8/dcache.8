@@ -171,6 +171,67 @@ The command defaults to reading the CA certificates from
 \fBdcache\fR or whatever is the value of \fBtrustStorePassword\fR in
 etc/dcache.conf.
 
+.SH DATABASE MANAGEMENT COMMANDS
+
+Several services in dCache rely on relational databases. The commands
+below provide basic schema management functionality for those
+databases. By default most services manage their schema
+automatically. Use the \fBdatabase ls\fR command below to determine
+which databases do.
+
+Most commands below accept a glob pattern for \fBCELL@DOMAIN\fR.
+
+Not all services support these commands yet.
+
+.TP
+.B database ls
+Lists databases of configured services. Not all services support
+listing of their database and those that do not all provide the
+management commands below.  If they do, the database is listed with
+the MANAGED column showing "Yes".
+
+.TP
+.B database update [CELL@DOMAIN]...
+Updates the schema to the latest revision.
+
+.TP
+.B database tag TAG [CELL@DOMAIN]...
+Tags the current database schema. See \fBrollback\fR command for
+details.
+
+.TP
+.B database rollback TAG [CELL@DOMAIN]...
+Rolls back the database schema to a tagged revision. Notice that only
+the schema is rolled back. Any changes to the content of the databases
+cannot be rolled back. There is no guarante that all data can be
+preserved when rolling back - this depends on the exact changes that
+were made. Please consult the release notes for details.
+
+.TP
+.B database rollbacktoDate DATE/TIME [CELL@DOMAIN]...
+Rolls back the database schema to the state it was in at the given
+date/time. Notice that only the schema is rolled back. Any changes to
+the content of the databases cannot be rolled back. There is no
+guarante that all data can be preserved when rolling back - this
+depends on the exact changes that were made. Please consult the
+release notes for details.
+
+.TP
+.B database listLocks [CELL@DOMAIN]...
+The database schema will be locked when updated. This command lists
+the current schema change locks.
+
+.TP
+.B database releaseLocks [CELL@DOMAIN]...
+The database schema will be locked when updated. This command releases
+all schema change locks. Use this command to remove stale locks left
+over from failed schema updates.
+
+.TP
+.B database doc CELL@DOMAIN DIR
+Generates schema documentation for the database of a service. The
+documentation is written as HTML to the output directory specified.
+
 .SH DEBUGGING COMMANDS
 
 .TP
