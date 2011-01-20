@@ -27,13 +27,13 @@ public class UserPasswords extends Hashtable {
       super.put( record[0] , record ) ;
    }
    public void commit() throws IOException {
-   
+
        if( _passwdFile == null )return ;
-       
+
        String p = _passwdFile.getParent() ;
        p = p == null ? "." : p ;
        File   pwdFile = new File( p , "."+_passwdFile.getName() ) ;
-       PrintWriter pw = new PrintWriter( 
+       PrintWriter pw = new PrintWriter(
                          new FileWriter( pwdFile ) ) ;
        Enumeration  e = elements() ;
        try{
@@ -63,10 +63,10 @@ public class UserPasswords extends Hashtable {
       }
    }
    public void _scanStream( InputStream in ) throws IOException {
-      
-      BufferedReader reader = new BufferedReader( 
+
+      BufferedReader reader = new BufferedReader(
                                new InputStreamReader( in ) ) ;
-      String line ;                        
+      String line ;
       while( ( line = reader.readLine() ) != null ){
          if( line.length() <= 0 )continue ;
          if( line.charAt(0) == '#' )continue ;
@@ -77,9 +77,9 @@ public class UserPasswords extends Hashtable {
             a[i] = st.nextToken() ;
          }
          if( i < 2 )continue ;
-         put( a[0] , a ) ;    
+         put( a[0] , a ) ;
       }
-      
+
    }
    //
    // to be complient
@@ -90,7 +90,7 @@ public class UserPasswords extends Hashtable {
    }
    public Object get( Object key ){
        Object x = super.get(key) ;
-       if( ( x == null                    ) || 
+       if( ( x == null                    ) ||
            ( ! ( x instanceof Object [] ) ) ||
            ( ((Object[])x).length < 2     )    )return null ;
        return ((Object[])x)[1] ;
@@ -104,9 +104,9 @@ public class UserPasswords extends Hashtable {
       String command  = args[1] ;
       String user     = args[2] ;
       UserPasswords ups = new UserPasswords( new File(filename) ) ;
-      
+
       if( command.equals( "put" ) ){
-         
+
           String [] record = new String[args.length - 2] ;
           for( int i = 0 ; i < record.length ; i++ )
               record[i] = args[2+i] ;
@@ -121,7 +121,7 @@ public class UserPasswords extends Hashtable {
          }
          for( int i = 0 ; ( i < record.length ) && ( record[i] != null ) ; i++ )
             System.out.print(record[i]+" ") ;
-         System.out.println(""); 
+         System.out.println("");
       }else{
         System.err.println("Usage : ... <filename> ( put user passwd ... ) | get user" ) ;
         System.exit(4);

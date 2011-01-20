@@ -16,8 +16,8 @@ public class UserMetaDb {
        private void removeAttribute(String key ){
           _attr.remove( key ) ;
        }
-       private String getAttribute(String key){ 
-           
+       private String getAttribute(String key){
+
            String attr = (String)_attr.get(key) ;
            if( attr == null )return "<notSet>" ;
            return attr ;
@@ -61,20 +61,20 @@ public class UserMetaDb {
            throws DatabaseException{
        _storeUser( userName , item ) ;
        _hash.put( userName , item ) ;
-       return ;       
+       return ;
    }
    private UserMetaItem getUser( String userName )
            throws NoSuchElementException{
        UserMetaItem item = (UserMetaItem)_hash.get( userName ) ;
        if( item != null )return item ;
-       return _loadUser( userName ) ;       
+       return _loadUser( userName ) ;
    }
    private void _storeUser( String userName , UserMetaItem item )
            throws DatabaseException {
-   
+
       File file = new File( _userMetaDir , "."+userName ) ;
       PrintWriter pw = null ;
-      try{     
+      try{
            pw = new PrintWriter(
                     new FileWriter( file ) ) ;
       }catch(IOException ioe ){
@@ -83,27 +83,27 @@ public class UserMetaDb {
       }
       Enumeration e = item.getAttributes() ;
       while( e.hasMoreElements() ){
-          String key = (String)e.nextElement() ; 
+          String key = (String)e.nextElement() ;
           pw.println(key+"="+item.getAttribute(key)) ;
       }
       pw.close() ;
-      file.renameTo( new File( _userMetaDir , userName ) ) ; 
+      file.renameTo( new File( _userMetaDir , userName ) ) ;
       return ;
    }
    private UserMetaItem _loadUser( String userName )
            throws NoSuchElementException {
-           
+
        File file = new File( _userMetaDir , userName ) ;
        if( ! file.exists() )
           throw new
-          NoSuchElementException( "User not found : "+userName ) ;   
-           
+          NoSuchElementException( "User not found : "+userName ) ;
+
         BufferedReader br   = null ;
-        
+
         try{
           br = new BufferedReader( new FileReader( file ) ) ;
         }catch( IOException e ){
-           throw new 
+           throw new
            NoSuchElementException( "No found "+file ) ;
         }
         String line = null ;
@@ -118,23 +118,23 @@ public class UserMetaDb {
               item.addAttribute( key , value ) ;
            }
         }catch(NoSuchElementException nsee ){
-           throw new 
-           NoSuchElementException( "Syntax error in "+file ) ;        
+           throw new
+           NoSuchElementException( "Syntax error in "+file ) ;
         }catch(IOException ioe ){
-           throw new 
-           NoSuchElementException( "IOError on "+file ) ;        
+           throw new
+           NoSuchElementException( "IOError on "+file ) ;
         }catch(Exception ee ){
-           throw new 
-           NoSuchElementException( "IOError on "+file ) ;        
+           throw new
+           NoSuchElementException( "IOError on "+file ) ;
         }finally{
             try{ br.close() ; }catch(Exception ee){}
-        } 
+        }
         return item ;
    }
    public synchronized void createUser( String userName )
           throws DatabaseException {
-          
-       try{ 
+
+       try{
           getUser( userName ) ;
        }catch(Exception ii){
           UserMetaItem item = new UserMetaItem(userName) ;
@@ -144,12 +144,12 @@ public class UserMetaDb {
        }
        throw new
        DatabaseException( "Already exists : "+userName ) ;
-       
+
    }
    public synchronized void createGroup( String groupName )
           throws DatabaseException {
-          
-       try{ 
+
+       try{
           getUser( groupName ) ;
        }catch(Exception ii){
           UserMetaItem item = new UserMetaItem(groupName) ;
@@ -159,20 +159,20 @@ public class UserMetaDb {
        }
        throw new
        DatabaseException( "Already exists : "+groupName ) ;
-       
+
    }
    public synchronized void removePrincipal( String principalName )
           throws NoSuchElementException {
       _hash.remove( principalName ) ;
       boolean ok = new File( _userMetaDir , principalName ).delete() ;
       if( ! ok )
-        throw new 
+        throw new
         NoSuchElementException( "Not found : "+principalName ) ;
    }
-   public synchronized void setAttribute( String principalName , 
-                                          String key , 
+   public synchronized void setAttribute( String principalName ,
+                                          String key ,
                                           String value )
-          throws DatabaseException {          
+          throws DatabaseException {
        UserMetaItem item = getUser( principalName ) ;
        item.addAttribute( key , value ) ;
        putUser( principalName , item ) ;
@@ -180,16 +180,16 @@ public class UserMetaDb {
    }
    public synchronized UserMetaDictionary getDictionary( String principalName )
           throws NoSuchElementException {
-   
+
        return getUser( principalName ) ;
    }
    public synchronized void removeAttribute( String principalName , String key )
           throws DatabaseException {
-          
+
        UserMetaItem item = getUser( principalName ) ;
        item.removeAttribute( key ) ;
        putUser( principalName , item ) ;
        return ;
    }
 }
- 
+

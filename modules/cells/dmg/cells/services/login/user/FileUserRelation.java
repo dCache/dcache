@@ -1,5 +1,5 @@
 // $Id: FileUserRelation.java,v 1.1 2001-05-02 06:14:15 cvs Exp $
-package dmg.cells.services.login.user  ;                                                                                         
+package dmg.cells.services.login.user  ;
 import java.util.* ;
 import java.io.* ;
 public class FileUserRelation implements TopDownUserRelationable {
@@ -20,9 +20,9 @@ public class FileUserRelation implements TopDownUserRelationable {
            return _list[_position++] ;
         }
     }
-    
+
     private File _dbDir = null ;
-    
+
     public FileUserRelation( File dbDir ){
        if( ! dbDir.isDirectory() )
           throw new
@@ -31,7 +31,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     }
     public synchronized void createContainer( String container )
         throws DatabaseException {
-        
+
         File c = new File( _dbDir , container ) ;
         if( c.exists() )
            throw new
@@ -41,55 +41,55 @@ public class FileUserRelation implements TopDownUserRelationable {
         }catch( IOException ee ){
            throw new
            DatabaseException( 4 , "Creation denied : "+ee.getMessage() ) ;
-        
+
         }
         return ;
     }
     public void     removeContainer( String container )
         throws NoSuchElementException ,
                DatabaseException {
-               
+
         File c = new File( _dbDir , container ) ;
         if( ! c.exists() )
            throw new
            NoSuchElementException( container ) ;
-               
+
         Hashtable hash = loadFile( c ) ;
         if( hash.size() > 0 )
           throw new
           DatabaseException( 5 , "Not empty" ) ;
-          
+
         c.delete() ;
-        
+
         return ;
-               
-    }   
+
+    }
     public Enumeration getContainers(){
-       return new ListEnumeration( 
+       return new ListEnumeration(
             _dbDir.list(
                   new FilenameFilter(){
                         public boolean accept( File dir , String name ){
                             return ! name.startsWith(".") ;
                         }
                   }
-            ) 
+            )
        ) ;
     }
     public synchronized Enumeration getElementsOf( String container )
         throws NoSuchElementException {
-        
-        
+
+
        return loadFile( new File( _dbDir , container ) ).keys() ;
-    
+
     }
     public synchronized boolean isElementOf( String container , String element )
         throws NoSuchElementException {
-        
+
        return loadFile( new File( _dbDir , container ) ).get(element) != null ;
     }
     public synchronized void addElement( String container , String element )
         throws NoSuchElementException {
-        
+
        File c = new File( _dbDir , container ) ;
        Hashtable hash = loadFile( c ) ;
        // avoid IO
@@ -100,7 +100,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     }
     public synchronized void removeElement( String container , String element )
         throws NoSuchElementException {
-        
+
        File c = new File( _dbDir , container ) ;
        Hashtable hash = loadFile( c ) ;
        // avoid IO
@@ -115,25 +115,25 @@ public class FileUserRelation implements TopDownUserRelationable {
        try{
           pw = new PrintWriter( new FileWriter( tmpFile ) ) ;
        }catch(IOException e ){
-           throw new 
+           throw new
            NoSuchElementException( "Open error on "+file ) ;
        }
        Enumeration e = hash.keys() ;
        while( e.hasMoreElements() )
           pw.println( e.nextElement().toString() ) ;
         pw.close() ;
-       
+
        tmpFile.renameTo( file ) ;
        return ;
     }
     private Hashtable loadFile( File file ) throws NoSuchElementException {
         Hashtable      hash = new Hashtable() ;
         BufferedReader br   = null ;
-        
+
         try{
           br = new BufferedReader( new FileReader( file ) ) ;
         }catch( IOException e ){
-           throw new 
+           throw new
            NoSuchElementException( "No found "+file ) ;
         }
         String line = null ;
@@ -143,15 +143,15 @@ public class FileUserRelation implements TopDownUserRelationable {
               hash.put( name , name ) ;
            }
         }catch(IOException ioe ){
-           throw new 
-           NoSuchElementException( "IOError on "+file ) ;        
+           throw new
+           NoSuchElementException( "IOError on "+file ) ;
         }finally{
             try{ br.close() ; }catch(Exception ee){}
-        } 
-    
+        }
+
         return hash ;
     }
-    
+
     public static void main( String [] args ) throws Exception {
        if( args.length < 1 ){
          System.err.println( "Usage : ... <dbDir>" ) ;
@@ -202,5 +202,5 @@ public class FileUserRelation implements TopDownUserRelationable {
        }
        System.exit(0);
     }
-        
+
 }
