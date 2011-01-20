@@ -1,7 +1,16 @@
 package dmg.util ;
 
-import java.util.* ;
-import java.io.* ;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.StringTokenizer;
 
 public class UserPasswords extends Hashtable {
    private File _passwdFile = null ;
@@ -9,6 +18,7 @@ public class UserPasswords extends Hashtable {
    public UserPasswords( File passwdFile ){
       _passwdFile = passwdFile ;
    }
+   @Override
    public String toString(){ return _passwdFile.getPath() ; }
    public String getPassword( String user ){
       String [] s = (String [])super.get( user ) ;
@@ -53,13 +63,15 @@ public class UserPasswords extends Hashtable {
        _updateTime = _passwdFile.lastModified() ;
    }
    public void update() throws IOException {
-      InputStream stream = new FileInputStream( _passwdFile ) ;
-      if( _updateTime > _passwdFile.lastModified() )return ;
-      try{
-          _scanStream( stream ) ;
-          _updateTime = _passwdFile.lastModified() ;
-      }finally{
-          try{ stream.close() ; }catch(Exception ee ){}
+      if( _passwdFile.exists()) {
+          if( _updateTime > _passwdFile.lastModified() )return ;
+          InputStream stream = new FileInputStream( _passwdFile ) ;
+          try{
+              _scanStream( stream ) ;
+              _updateTime = _passwdFile.lastModified() ;
+          }finally{
+              try{ stream.close() ; }catch(Exception ee ){}
+          }
       }
    }
    public void _scanStream( InputStream in ) throws IOException {
@@ -88,6 +100,7 @@ public class UserPasswords extends Hashtable {
       super() ;
       _scanStream( in ) ;
    }
+   @Override
    public Object get( Object key ){
        Object x = super.get(key) ;
        if( ( x == null                    ) ||
