@@ -444,6 +444,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void getInfo(PrintWriter pw) {
 
         pw.println("NFSv4.1 door (MDS):");
+        pw.printf("  IO queue: %s\n", _ioQueue);
         pw.println( String.format("  Concurrent Thread number : %d", _rpcService.getThreadCount() ));
         pw.println("  Known pools (DS):\n");
         for(Map.Entry<String, PoolDS> ioDevice: _poolNameToIpMap.entrySet()) {

@@ -32,4 +32,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -chimera.db.driver=\"${chimera.db.driver}\" \
        -poolManagerTimeout=\"${poolManagerTimeout}\" \
        -poolTimeout=\"${poolTimeout}\" \
+       -nfsIoQueue=\"${nfsIoQueue}\" \
        "
