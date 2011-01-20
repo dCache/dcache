@@ -93,7 +93,7 @@ public class HSMCleaner extends AbstractCell
     @Option(
         name = "hsmCleanerScan",
         description = "Scan interval",
-        defaultValue = "90",
+        required = true,
         unit = "seconds"
     )
     protected int _scanInterval;
@@ -101,7 +101,7 @@ public class HSMCleaner extends AbstractCell
     @Option(
         name = "hsmCleanerRecover",
         description = "Recover interval",
-        defaultValue = "3600",
+        required = true,
         unit = "seconds"
     )
     protected int _recoverInterval;
@@ -109,7 +109,7 @@ public class HSMCleaner extends AbstractCell
     @Option(
         name = "hsmCleanerFlush",
         description = "Flush interval",
-        defaultValue = "60",
+        required = true,
         unit = "seconds"
     )
     protected int _flushInterval;
@@ -131,14 +131,14 @@ public class HSMCleaner extends AbstractCell
     @Option(
         name = "hsmCleanerQueue",
         description = "Max. number of queued files",
-        defaultValue = "10000"
+        required = true
     )
     protected int _maxQueueLength;
 
     @Option(
         name = "hsmCleanerTimeout",
         description = "Time after which a pool request is considered failed",
-        defaultValue = "120",
+        required = true,
         unit = "seconds"
     )
     protected int _timeout;
@@ -146,7 +146,7 @@ public class HSMCleaner extends AbstractCell
     @Option(
         name = "hsmCleanerRequest",
         description = "Max. files per pool request",
-        defaultValue = "100",
+        required = true,
         unit = "files"
     )
     protected int _maxRequests;
