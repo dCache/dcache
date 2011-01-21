@@ -63,11 +63,6 @@ public class CacheException extends Exception {
     public final static int FILE_EXISTS = 10008;
 
     /**
-     * returned in case of directory specific request ( like list ) on non existing path or pnfsid
-     */
-    public final static int DIR_NOT_EXISTS = 10009;
-
-    /**
      * returned in case of directory specific request ( like list ) on existing not a directory
      * path or pnfsid,
      */

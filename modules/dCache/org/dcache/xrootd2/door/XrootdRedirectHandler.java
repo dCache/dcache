@@ -48,7 +48,6 @@ import org.dcache.xrootd2.protocol.messages.*;
 import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -319,10 +318,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             respondWithError(ctx, event, req,
                              XrootdProtocol.kXR_FileNotOpen,
                              "No such file");
-        } catch (DirNotExistsCacheException dnex) {
-            respondWithError(ctx, event, req,
-                             XrootdProtocol.kXR_FileNotOpen,
-                             "No such directory");
         } catch (FileExistsCacheException feex) {
             respondWithError(ctx, event, req,
                              XrootdProtocol.kXR_Unsupported,
@@ -940,8 +935,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      *
      */
     private class ListCallback
-                        implements MessageCallback<PnfsListDirectoryMessage> {
-
+        implements MessageCallback<PnfsListDirectoryMessage>
+    {
         private final DirListRequest _request;
         private final ChannelHandlerContext _context;
         private final MessageEvent _event;
@@ -971,14 +966,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                  _request,
                                  kXR_ServerError,
                                  "Timeout when trying to list directory: " +
-                                 error.toString());
-                break;
-            case CacheException.DIR_NOT_EXISTS:
-                respondWithError(_context,
-                                 _event,
-                                 _request,
-                                 kXR_NotFound,
-                                 "Directory does not exist: " +
                                  error.toString());
                 break;
             case CacheException.PERMISSION_DENIED:
