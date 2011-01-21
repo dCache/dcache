@@ -2511,7 +2511,6 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
-            case CacheException.DIR_NOT_EXISTS:
                 transfer.abort(550, "File not found");
                 break;
             case CacheException.TIMEOUT:
@@ -2642,9 +2641,6 @@ public abstract class AbstractFtpDoorV1
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
                 transfer.abort(550, "File not found");
-                break;
-            case CacheException.DIR_NOT_EXISTS:
-                transfer.abort(550, "Directory not found");
                 break;
             case CacheException.FILE_EXISTS:
                 transfer.abort(550, "File exists");
