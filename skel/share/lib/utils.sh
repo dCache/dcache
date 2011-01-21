@@ -31,7 +31,23 @@ reverse() # out $1 = reverse list, in $2+ = space delimited list of words,
 # stdin into columns.
 column()
 {
-    awk -F "\t" '{ lines[NR] = $0; for (i = 1; i <= NF; i++) widths[i]=max(widths[i], length($i)) }; END { for (i = 1; i <= NR; i++) { $0 = lines[i]; for (j = 1; j <= NF; j++) printf("%-" widths[j] "s ", $j); print ""; } } function max(i, j) { if (i < j) return j; else return i; }'
+    awk -F"\t" '
+    {
+        lengths[NR] = NF;
+        for (i = 1; i <= NF; i++) {
+            fields[sprintf("%d,%d", NR, i)] = $i;
+            if (length($i) > widths[i])
+                widths[i]=length($i)
+        }
+    }
+
+    END {
+        for (nr =1 ; nr <= NR; nr++) {
+            for (i = 1; i <= lengths[nr]; i++)
+                printf("%-" widths[i] "s ", fields[sprintf("%d,%d", nr, i)]);
+            print "";
+        }
+    }'
 }
 
 # Utility function for printing to stdout with a line width
