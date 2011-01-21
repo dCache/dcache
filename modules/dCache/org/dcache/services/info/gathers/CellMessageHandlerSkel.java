@@ -5,14 +5,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -29,12 +29,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 
 	private static final Logger _log = LoggerFactory.getLogger( CellMessageHandlerSkel.class);
 
-	private final static DateFormat _simpleDateFormat = new SimpleDateFormat("MMM d, HH:mm:ss z" );
-	private final static DateFormat _iso8601DateFormat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm'Z'");
-
-	static {
-		_iso8601DateFormat.setTimeZone( TimeZone.getTimeZone("GMT"));
-	}
+	private final static String SIMPLE_DATE_FORMAT = "MMM d, HH:mm:ss z";
+	private final static String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm'Z'";
 
 	/**
 	 * Adds a standard set of metrics that represent some point in time.  We add three metrics that
@@ -51,13 +47,17 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		update.appendUpdate( parentPath.newChild("unix"),
 				new IntegerStateValue( theTime.getTime() / 1000, lifetime));
 
+		DateFormat simpleDateFormat = new SimpleDateFormat(SIMPLE_DATE_FORMAT);
+		DateFormat iso8601DateFormat = new SimpleDateFormat(ISO_8601_DATE_FORMAT);
+		iso8601DateFormat.setTimeZone( TimeZone.getTimeZone("GMT"));
+
 		// Supply the time in a simple format
 		update.appendUpdate( parentPath.newChild("simple"),
-				new StringStateValue( _simpleDateFormat.format( theTime), lifetime));
+				new StringStateValue( simpleDateFormat.format( theTime), lifetime));
 
 		// Supply the time in UTC in a standard format
 		update.appendUpdate( parentPath.newChild("ISO-8601"),
-				new StringStateValue( _iso8601DateFormat.format( theTime), lifetime));
+				new StringStateValue( iso8601DateFormat.format( theTime), lifetime));
 	}
 
 
