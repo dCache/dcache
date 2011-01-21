@@ -3,6 +3,7 @@ package org.dcache.services.info.base;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -269,8 +270,14 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param watcher
      *            : the Secondary Information Provider to remove.
      */
-    public void removeStateWatcher( StateWatcher watcher) {
-        _watchers.remove( watcher);
+    public void removeStateWatcher(StateWatcher watcher) {
+        Iterator<StateWatcherInfo> itr = _watchers.iterator();
+        while( itr.hasNext()) {
+            StateWatcherInfo info = itr.next();
+            if(info.getWatcher().equals(watcher)) {
+                itr.remove();
+            }
+        }
     }
 
     /**
