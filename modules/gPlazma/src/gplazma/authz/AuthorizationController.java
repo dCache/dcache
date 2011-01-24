@@ -187,6 +187,11 @@ public class AuthorizationController {
         Iterator<AuthorizationPlugin> plugins = plugin_loader.getPlugins();
         AuthorizationException authexceptions = null;
 
+        if (roles.isEmpty()) {
+            String noRole = null;
+            roles.add(noRole);
+        }
+
         while (records.isEmpty() && plugins.hasNext()) {
 
             AuthorizationPlugin plugin = plugins.next();
