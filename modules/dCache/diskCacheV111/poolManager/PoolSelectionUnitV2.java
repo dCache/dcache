@@ -589,7 +589,7 @@ public class PoolSelectionUnitV2
                     + (_tag == null ? "" : " -section=" + _tag);
         }
 
-        public Collection<SelectionPool> pools() {
+        public Iterator<SelectionPool> pools() {
             List<SelectionPool> list = new ArrayList<SelectionPool>();
 
             for (Object o : _poolList.values()) {
@@ -601,7 +601,7 @@ public class PoolSelectionUnitV2
                     }
                 }
             }
-            return list;
+            return list.iterator();
         }
 
         public boolean exec(Map variableMap) {
@@ -1685,9 +1685,9 @@ public class PoolSelectionUnitV2
                 if (link._uGroupList.size() != required)
                     continue;
                 sb.append("Link : ").append(link.toString()).append("\n");
-
-                for(SelectionPool pool: link.pools()) {
-                    sb.append("    ").append(pool.getName()).append(
+                Iterator<SelectionPool> pools = link.pools();
+                while (pools.hasNext()) {
+                    sb.append("    ").append(pools.next().getName()).append(
                             "\n");
                 }
             }
