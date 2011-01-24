@@ -336,7 +336,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 StorageInfo storageInfo = _pnfsHandler.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
 
                 NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
-                        client.getRemoteAddress().getAddress(), stateid);
+                        client.getRemoteAddress(), stateid);
 
                 NFS4ProtocolInfo protocolInfo = transfer.createProtocolInfoForPool();
                 protocolInfo.door(new CellPath(this.getCellName(), this.getCellDomainName()));
@@ -531,15 +531,13 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
         private final stateid4 _stateid;
-        private final InetAddress _client;
         private final NFS4ProtocolInfo _protocolInfo;
 
-        NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path, InetAddress client,
+        NfsTransfer(PnfsHandler pnfs, Subject subject, FsPath path, InetSocketAddress client,
                 stateid4 stateid) {
             super(pnfs, subject, path);
             _stateid = stateid;
-            _client = client;
-            _protocolInfo = new NFS4ProtocolInfo(_client, _stateid);
+            _protocolInfo = new NFS4ProtocolInfo(client, _stateid);
         }
 
         @Override

@@ -340,7 +340,7 @@ public class XrootdProtocol_3
         // try to pick the ip address with corresponds to the
         // hostname (which is hopefully visible to the world)
         InetAddress localIP =
-            NetworkUtils.getLocalAddressForClient(_protocolInfo.getHosts());
+            NetworkUtils.getLocalAddress(_protocolInfo.getSocketAddress().getAddress());
 
         if (localIP != null && !localIP.isLoopbackAddress()
             && localIP instanceof Inet4Address) {

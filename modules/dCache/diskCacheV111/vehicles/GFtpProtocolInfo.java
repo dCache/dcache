@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.vehicles ;
 
 import diskCacheV111.util.VOInfo;
+import java.net.InetSocketAddress;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
@@ -259,5 +260,11 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
 
     public String getChecksumType(){
         return _checksumType;
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        // enforced by interface
+        return null;
     }
 }

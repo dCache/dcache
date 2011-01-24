@@ -1,7 +1,9 @@
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.VOInfo;
 import dmg.cells.nucleus.CellPath;
+import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.List;
 
 public class DCapProtocolInfo implements IpProtocolInfo {
 
@@ -136,5 +138,11 @@ public class DCapProtocolInfo implements IpProtocolInfo {
 
     public void door(CellPath door) {
         _door = door;
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        // enforced by interface
+        return null;
     }
 }

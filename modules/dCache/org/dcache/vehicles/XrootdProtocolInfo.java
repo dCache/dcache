@@ -17,9 +17,11 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
 	private int _major;
 
-	private String[] _hosts;
+        private final String[] _hosts;
 
-	private int _port;
+        private int _port;
+
+        private InetSocketAddress _clientSocketAddress;
 
 	private CellPath _pathToDoor;
 
@@ -36,16 +38,16 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 	private InetSocketAddress _doorAddress;
 
 	public XrootdProtocolInfo(String protocol,  int major,int minor,
-			String host, int port, CellPath pathToDoor, PnfsId pnfsID,
+		InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
 			int xrootdFileHandle, long checksum, UUID uuid,
 			InetSocketAddress doorAddress) {
 
 		_name = protocol;
 		_minor = minor;
 		_major = major;
-		_hosts = new String[1];
-		_hosts[0] = host;
-		_port = port;
+                _clientSocketAddress = clientAddress;
+                _hosts = new String[] {_clientSocketAddress.getAddress().getHostAddress() };
+                _port = _clientSocketAddress.getPort();
 		_pathToDoor = pathToDoor;
 		_pnfsId = pnfsID;
 		_xrootdFileHandle = xrootdFileHandle;
@@ -54,21 +56,12 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		_doorAddress = doorAddress;
 	}
 
-	public XrootdProtocolInfo(String protocol, int major, int minor,
-			String[] hosts, int port, CellPath pathToDoor) {
-		_name = protocol;
-		_minor = minor;
-		_major = major;
-		_hosts = new String[hosts.length];
-		System.arraycopy(hosts, 0, _hosts, 0, hosts.length);
-		_port = port;
-		_pathToDoor = pathToDoor;
-	}
-
+        @Deprecated
 	public String[] getHosts() {
 		return _hosts;
 	}
 
+        @Deprecated
 	public int getPort() {
 		return _port;
 	}
@@ -148,4 +141,10 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 	{
 		return _path;
 	}
+
+        @Override
+        public InetSocketAddress getSocketAddress()
+        {
+            return _clientSocketAddress;
+        }
 }

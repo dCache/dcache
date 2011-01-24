@@ -4,11 +4,12 @@ package org.dcache.chimera.nfsv41.mover;
  * dCache specific part
  */
 import diskCacheV111.vehicles.IpProtocolInfo;
-import java.net.InetAddress;
 
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 
 import dmg.cells.nucleus.CellPath;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class NFS4ProtocolInfo implements IpProtocolInfo {
 
@@ -16,27 +17,27 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     private static final String _protocolName = "NFS4";
     private static final int _minor = 1;
     private static final int _major = 4;
-    private final InetAddress _clientIp;
     private final stateid4 _stateId;
-    private String[] _knownNames = null;
+    private final String[] _knownNames;
     private CellPath _door = null;
+    private final InetSocketAddress _socketAddress;
 
-    public NFS4ProtocolInfo(InetAddress clientIp, stateid4 stateId) {
-        _clientIp = clientIp;
+    @Deprecated
+    private final InetAddress _clientIp; //will bve dropped in 1.9.13
+
+    public NFS4ProtocolInfo(InetSocketAddress clientSocketAddress, stateid4 stateId) {
         _stateId = stateId;
+        _socketAddress = clientSocketAddress;
+        _knownNames = new String[] { _socketAddress.getAddress().getHostAddress() };
+        _clientIp = _socketAddress.getAddress();
     }
 
     public String[] getHosts() {
-
-        if (_knownNames == null) {
-            _knownNames = new String[1];
-            _knownNames[0] = _clientIp.getHostName();
-        }
         return _knownNames;
     }
 
     public int getPort() {
-        return 0;
+        return _socketAddress.getPort();
     }
 
     //
@@ -77,8 +78,13 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(getVersionString()).append(":").append(_clientIp);
+        sb.append(getVersionString()).append(":").append(_socketAddress);
 
         return sb.toString();
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        return _socketAddress;
     }
 }

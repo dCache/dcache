@@ -65,7 +65,8 @@ public class NfsExcecutionService implements MoverExecutorService {
                     request.getPnfsId(), stateid, raf.getChannel(), transfer.getIoMode(), descriptor);
             _nfsIO.addHandler(moverBridge);
 
-            InetAddress localAddress = NetworkUtils.getLocalAddressForClient(nfs4ProtocolInfo.getHosts());
+            InetAddress localAddress = NetworkUtils.
+                    getLocalAddress(nfs4ProtocolInfo.getSocketAddress().getAddress());
 
             XdrEncodingStream xdr = new XdrBuffer(128);
             xdr.beginEncoding();

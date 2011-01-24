@@ -1022,13 +1022,11 @@ public class DcacheResourceFactory
         protected ProtocolInfo createProtocolInfo()
         {
             Origin origin = Subjects.getOrigin(_subject);
-            String address = origin.getAddress().getHostAddress();
             HttpProtocolInfo protocolInfo =
                 new HttpProtocolInfo(PROTOCOL_INFO_NAME,
                                      PROTOCOL_INFO_MAJOR_VERSION,
                                      PROTOCOL_INFO_MINOR_VERSION,
-                                     address,
-                                     PROTOCOL_INFO_UNKNOWN_PORT,
+                                     getClientAddress(),
                                      _cellName, _domainName,
                                      _path.toString());
             protocolInfo.setSessionId((int) getSessionId());

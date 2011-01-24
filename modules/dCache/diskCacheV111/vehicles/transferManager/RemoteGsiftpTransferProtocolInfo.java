@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles.transferManager;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import java.net.InetSocketAddress;
 
 /**
  * @author Patrick F.
@@ -229,6 +230,12 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
 
     public String getUser() {
         return user;
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        // enforced by interface
+        return null;
     }
 }
 

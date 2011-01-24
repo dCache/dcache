@@ -1,7 +1,17 @@
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
+
+import java.net.InetSocketAddress;
 
 public interface IpProtocolInfo extends ProtocolInfo {
-    public String [] getHosts() ;
-    public int       getPort() ;
-}
 
+    @Deprecated
+    public String[] getHosts();
+
+    @Deprecated
+    public int getPort();
+
+    /**
+     * Returns clients {@link InetSocketAddress}
+     */
+    InetSocketAddress getSocketAddress();
+}

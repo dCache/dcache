@@ -1,4 +1,7 @@
 package diskCacheV111.vehicles;
+
+import java.net.InetSocketAddress;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -10,7 +13,8 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private String _name  = "Unkown" ;
   private int    _minor = 0 ;
   private int    _major = 0 ;
-  private String [] _hosts  = null ;
+  private InetSocketAddress _clientSocketAddress;
+  private final String [] _hosts;
   private int    _port  = 0 ;
   private long   _transferTime     = 0 ;
   private long   _bytesTransferred = 0 ;
@@ -23,7 +27,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private static final long serialVersionUID = 8002182588464502270L;
   
   public HttpProtocolInfo( String protocol, int major , int minor ,
-                           String host    , int port  , 
+                           InetSocketAddress clientSocketAddress,
                            String httpDoorCellName ,
                            String httpDoorDomainName,
                            String path )
@@ -31,29 +35,14 @@ public class HttpProtocolInfo implements IpProtocolInfo
     _name  = protocol ;
     _minor = minor ;
     _major = major ; 
-    _hosts = new String[1] ;
-    _hosts[0]  = host ;
-    _port  = port ;
+    _clientSocketAddress = clientSocketAddress;
+    _hosts = new String[] { _clientSocketAddress.getAddress().getHostAddress() };
+    _port  = _clientSocketAddress.getPort() ;
     this.httpDoorCellName = httpDoorCellName;
     this.httpDoorDomainName = httpDoorDomainName;
     this.path = path;
   }
-  public HttpProtocolInfo( String protocol, int major , int minor ,
-                           String [] hosts, int port ,
-                           String httpDoorCellName ,
-                           String httpDoorDomainName,
-                           String path )
-  {
-    _name  = protocol ;
-    _minor = minor ;
-    _major = major ; 
-    _hosts = new String[hosts.length] ;
-    System.arraycopy( hosts , 0 , _hosts , 0 , hosts.length ) ;
-    _port  = port ;
-    this.httpDoorCellName = httpDoorCellName;
-    this.httpDoorDomainName = httpDoorDomainName;
-    this.path = path;
-  }
+
   public String getHttpDoorCellName()
   {
     return httpDoorCellName;
@@ -148,7 +137,11 @@ public class HttpProtocolInfo implements IpProtocolInfo
   public boolean isFileCheckRequired() {
     return true;
   }
-   
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        return _clientSocketAddress;
+    }
 }
 
 

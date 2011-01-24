@@ -53,6 +53,7 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandException;
+import java.net.InetSocketAddress;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
@@ -636,6 +637,11 @@ public class PoolManagerV5
        public String [] getHosts(){ return _host ; }
        public int       getPort(){ return 0 ; }
        public boolean isFileCheckRequired() { return true; }
+        @Override
+        public InetSocketAddress getSocketAddress() {
+            // enforced by interface
+            return null;
+        }
     }
     private static class XStorageInfo extends GenericStorageInfo {
 

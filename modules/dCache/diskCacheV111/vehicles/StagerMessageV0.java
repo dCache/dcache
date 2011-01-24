@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
+import java.net.InetSocketAddress;
 
 public class StagerMessageV0  extends StagerMessage {
    private String _storageClass = null ;
@@ -54,6 +55,11 @@ public class StagerMessageV0  extends StagerMessage {
         return getVersionString()+";L="+_host ;
       }
       public boolean isFileCheckRequired() { return true; }
+       @Override
+       public InetSocketAddress getSocketAddress() {
+           // enforced by interface
+           return null;
+       }
    }
    public StagerMessageV0( PnfsId pnfsId ){
       super( pnfsId ) ;

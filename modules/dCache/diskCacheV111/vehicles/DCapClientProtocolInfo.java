@@ -1,4 +1,7 @@
 package diskCacheV111.vehicles;
+
+import java.net.InetSocketAddress;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -145,6 +148,11 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
       return true;
   }
 
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        // enforced by interface
+        return null;
+    }
 }
 
 
