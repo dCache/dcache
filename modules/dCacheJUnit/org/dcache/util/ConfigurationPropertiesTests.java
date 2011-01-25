@@ -2,6 +2,7 @@ package org.dcache.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -9,16 +10,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Set;
-import java.util.Properties;
 import java.util.List;
-import java.util.Arrays;
-import java.util.HashSet;
 
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
@@ -113,6 +108,16 @@ public class ConfigurationPropertiesTests {
     }
 
     @Test
+    public void testIsScopedNotScoped() {
+        assertFalse(ConfigurationProperties.isScoped("foo"));
+    }
+
+    @Test
+    public void testIsScopedScoped() {
+        assertTrue(ConfigurationProperties.isScoped("foo/bar"));
+    }
+
+    @Test
     public void testNormalPropertyGet() {
         assertEquals( "testing normal property", NORMAL_PROPERTY_VALUE,
                 _properties.get( NORMAL_PROPERTY_NAME));
@@ -196,6 +201,20 @@ public class ConfigurationPropertiesTests {
             new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME };
         assertEquals(new HashSet<String>(Arrays.asList(expected)),
                      _properties.stringPropertyNames());
+    }
+
+    @Test
+    public void testPropertyNames()
+    {
+        String[] expected =
+            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME };
+        HashSet<String> results = new HashSet<String>();
+        Enumeration<?> e = _properties.propertyNames();
+        while( e.hasMoreElements()) {
+            results.add( String.valueOf(e.nextElement()));
+        }
+        assertEquals(new HashSet<String>(Arrays.asList(expected)),
+                     results);
     }
 
     @Test
