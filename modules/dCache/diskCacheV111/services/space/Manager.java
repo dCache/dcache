@@ -139,6 +139,7 @@ public final class Manager
                 doInit();
         }
 
+        @Override
         protected void init() throws Exception
         {
                 _args     = getArgs();
@@ -3540,11 +3541,8 @@ public final class Manager
                                         try {
                                                 spaces=manager.selectPrepared( new  SpaceReservationIO(),
                                                                                SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                                                if (spaces != null) {
-                                                        System.out.println("Found "+
-                                                                           spaces.size()+
-                                                                           " space reservations to update");
-                                                }
+                                                System.out.println("Found "+spaces.size()+
+                                                                   " space reservations to update");
                                                 for (Iterator i=spaces.iterator(); i.hasNext();) {
                                                         Space space = (Space)i.next();
                                                         try {
