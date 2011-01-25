@@ -95,7 +95,9 @@ import java.io.InputStreamReader;
 import java.io.EOFException;
 import java.nio.channels.ServerSocketChannel;
 import java.net.Socket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.NoSuchAlgorithmException;
@@ -271,6 +273,8 @@ public abstract class AbstractFtpDoorV1
          */
         // "DCAU"
     };
+
+    private final int DEFAULT_DATA_PORT = 20;
 
     /**
      * Time stamp format as defined in RFC 3659.
@@ -543,8 +547,7 @@ public abstract class AbstractFtpDoorV1
     protected int            _commandCounter = 0;
     protected String         _lastCommand    = "<init>";
 
-    protected String         _client_data_host;
-    protected int            _client_data_port = 20;
+    protected InetSocketAddress _clientDataAddress;
     protected volatile Socket _dataSocket;
 
     // added for the support or ERET with partial retrieve mode
@@ -1123,12 +1126,15 @@ public abstract class AbstractFtpDoorV1
 
         Args args = getArgs();
         _out      = new PrintWriter(_engine.getWriter());
-        _client_data_host = _engine.getInetAddress().getHostName();
 
-        _logger.debug("Client hostname = {}", _client_data_host);
+        _clientDataAddress =
+            new InetSocketAddress(_engine.getInetAddress(), DEFAULT_DATA_PORT);
+
+        _logger.debug("Client host: {}",
+                      _clientDataAddress.getAddress().getHostAddress());
 
         if (_local_host == null)
-            _local_host = _engine.getLocalAddress().getHostName();
+            _local_host = _engine.getLocalAddress().getHostAddress();
 
         /* Use kpwd file if login service is not enabled.
          */
@@ -1516,7 +1522,7 @@ public abstract class AbstractFtpDoorV1
     @Override
     public String toString()
     {
-        return getUser() + "@" + _client_data_host;
+        return getUser() + "@" + _clientDataAddress.getAddress().getHostAddress();
     }
 
     @Override
@@ -1524,7 +1530,7 @@ public abstract class AbstractFtpDoorV1
     {
         pw.println( "            FTPDoor");
         pw.println( "         User  : " + getUser());
-        pw.println( "    User Host  : " + _client_data_host);
+        pw.println( "    User Host  : " + _clientDataAddress.getAddress().getHostAddress());
         pw.println( "   Local Host  : " + _local_host);
         pw.println( " Last Command  : " + _lastCommand);
         pw.println( " Command Count : " + _commandCounter);
@@ -1961,6 +1967,20 @@ public abstract class AbstractFtpDoorV1
         ac_cwd("..");
     }
 
+    private InetSocketAddress getAddressOf(String[] s)
+    {
+        try {
+            byte address[] = new byte[4];
+            for (int i = 0; i < 4; ++i) {
+                address[i] = (byte) Integer.parseInt(s[i]);
+            }
+            int port = Integer.parseInt(s[4]) * 256 + Integer.parseInt(s[5]);
+            return new InetSocketAddress(InetAddress.getByAddress(address), port);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Bug detected (UnknownHostException should only be thrown if address has wrong length): " + e.toString());
+        }
+    }
+
     public void ac_port(String arg)
     {
         String[] st = arg.split(",");
@@ -1969,15 +1989,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        int tok[] = new int[6];
-        for (int i = 0; i < 6; ++i) {
-            tok[i] = Integer.parseInt(st[i]);
-        }
-        String ip = tok[0] + "." + tok[1] + "." + tok[2] + "." + tok[3];
-        _client_data_host = ip;
-
-        // XXX if transfer in progress, abort
-        _client_data_port = tok[4] * 256 + tok[5];
+        _clientDataAddress = getAddressOf(st);
 
         // Switch to active mode
         closePassiveModeServerSocket();
@@ -2384,17 +2396,13 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_retr(String arg)
     {
-        String        clientHost = _client_data_host;
-        int           clientPort = _client_data_port;
-        Mode          mode       = _mode;
         try {
             if (_skipBytes > 0){
                 reply("504 RESTART not implemented");
                 return;
             }
-            retrieve(arg, prm_offset, prm_size, mode,
-                     _xferMode, _parallel,
-                     new InetSocketAddress(clientHost, clientPort),
+            retrieve(arg, prm_offset, prm_size, _mode,
+                     _xferMode, _parallel, _clientDataAddress,
                      _bufSize, false, 1);
         } finally {
             prm_offset=-1;
@@ -2543,7 +2551,7 @@ public abstract class AbstractFtpDoorV1
 
     public void ac_stor(String arg)
     {
-        if (_client_data_host == null) {
+        if (_clientDataAddress == null) {
             reply("504 Host somehow not set");
             return;
         }
@@ -2552,9 +2560,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        store(arg, _mode, _xferMode,
-              _parallel,
-              new InetSocketAddress(_client_data_host, _client_data_port),
+        store(arg, _mode, _xferMode, _parallel, _clientDataAddress,
               _bufSize, false, 1);
     }
 
@@ -2743,7 +2749,8 @@ public abstract class AbstractFtpDoorV1
         if (_mode == Mode.PASSIVE) {
             _dataSocket = _passiveModeServerSocket.accept().socket();
         } else {
-            _dataSocket = new Socket(_client_data_host, _client_data_port);
+            _dataSocket = new Socket();
+            _dataSocket.connect(_clientDataAddress);
         }
     }
 
@@ -3480,8 +3487,7 @@ public abstract class AbstractFtpDoorV1
     {
         try {
             String        xferMode   = _xferMode;
-            String        clientHost = _client_data_host;
-            int           clientPort = _client_data_port;
+            InetSocketAddress clientAddress = _clientDataAddress;
             Mode          mode       = _mode;
             boolean       reply127   = false;
 
@@ -3510,18 +3516,14 @@ public abstract class AbstractFtpDoorV1
 
             if (parameters.containsKey("port")) {
                 String[] tok = parameters.get("port").split(",");
-                String ip = tok[0]+"."+tok[1]+"."+tok[2]+"."+tok[3];
-                clientHost = ip;
-                clientPort =
-                    Integer.valueOf(tok[4]) * 256 + Integer.valueOf(tok[5]);
+                clientAddress = getAddressOf(tok);
                 mode = Mode.ACTIVE;
             }
 
             /* Now do the transfer...
              */
             retrieve(parameters.get("path"), prm_offset, prm_size, mode,
-                     xferMode, _parallel,
-                     new InetSocketAddress(clientHost, clientPort),
+                     xferMode, _parallel, clientAddress,
                      _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
@@ -3539,8 +3541,7 @@ public abstract class AbstractFtpDoorV1
     public void ac_put(String arg)
     {
         String        xferMode   = _xferMode;
-        String        clientHost = _client_data_host;
-        int           clientPort = _client_data_port;
+        InetSocketAddress clientAddress = _clientDataAddress;
         Mode          mode       = _mode;
         boolean       reply127   = false;
         try {
@@ -3566,19 +3567,14 @@ public abstract class AbstractFtpDoorV1
 
             if (parameters.containsKey("port")) {
                 String[] tok = parameters.get("port").split(",");
-                String ip = tok[0]+"."+tok[1]+"."+tok[2]+"."+tok[3];
-                clientHost = ip;
-                clientPort =
-                    Integer.valueOf(tok[4]) * 256 + Integer.valueOf(tok[5]);
+                clientAddress = getAddressOf(tok);
                 mode = Mode.ACTIVE;
             }
 
             /* Now do the transfer...
              */
             store(parameters.get("path"), mode, xferMode,
-                  _parallel,
-                  new InetSocketAddress(clientHost, clientPort),
-                  _bufSize, reply127, 2);
+                  _parallel, clientAddress, _bufSize, reply127, 2);
         } catch (FTPCommandException e) {
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         }
@@ -3593,7 +3589,7 @@ public abstract class AbstractFtpDoorV1
             infoRemove.setGid((int) Subjects.getPrimaryGid(_subject));
             infoRemove.setUid((int) Subjects.getUid(_subject));
             infoRemove.setPath(path.toString());
-            infoRemove.setClient(_client_data_host);
+            infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 
             _billingStub.send(infoRemove);
         } catch (NoRouteToCellException e) {

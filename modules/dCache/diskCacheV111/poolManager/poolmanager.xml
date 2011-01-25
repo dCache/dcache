@@ -22,7 +22,6 @@
       </bean>
     </property>
     <property name="quotaManager" value="${quotaManager}"/>
-    <property name="sendCostInfo" value="${sendCostInfoMessages}"/>
   </bean>
 
   <bean id="psu" class="${selectionUnit}">
@@ -67,7 +66,6 @@
     <property name="threadPool">
       <bean class="${threadPool}"/>
     </property>
-    <property name="sendCostInfo" value="${sendCostInfoMessages}"/>
     <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
   </bean>
 

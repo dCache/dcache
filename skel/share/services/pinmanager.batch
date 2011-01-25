@@ -9,9 +9,10 @@ check db.password.file
 check -strong pinManagerMaxPinDuration
 check -strong pinManagerMaxActiveJdbcConnections
 check -strong pinManagerMaxIdleJdbcConnections
-check stageConfigurationFilePath
 
 exec file:${dcache.paths.share}/cells/stage.fragment doors
+
+check stageConfigurationFilePath
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
        "classpath:org/dcache/services/pinmanager1/pinmanager.xml \

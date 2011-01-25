@@ -89,7 +89,6 @@ public class RequestContainerV5
     private String      _onError       = "suspend" ;
     private int         _maxRetries    = 3 ;
     private int         _maxRestore    = -1 ;
-    private boolean     _sendCostInfo  = false ;
 
     private CheckStagePermission _stagePolicyDecisionPoint;
 
@@ -1566,8 +1565,6 @@ public class RequestContainerV5
                             _poolCandidateInfo = _bestPool ;
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
-                          if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
-
                           setError(0,"");
                           nextStep( ST_DONE , CONTINUE ) ;
                         }
@@ -1591,7 +1588,6 @@ public class RequestContainerV5
                               _poolCandidateInfo = _bestPool;
                               _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
-                             if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
                              setError(0,"");
                              nextStep( ST_DONE , CONTINUE ) ;
                           }else{
@@ -1620,8 +1616,6 @@ public class RequestContainerV5
                        }else{
 
                            _poolCandidateInfo = _bestPool;
-
-                          if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
 
                           _log.info(" found high cost object");
 
@@ -2156,8 +2150,6 @@ public class RequestContainerV5
               _log.info( "askIfAvailable : candidate : "+cost ) ;
 
 
-              if( _sendCostInfo )sendCostMsg( _pnfsId, cost, false );
-
               _poolCandidateInfo = cost ;
               setError(0,"") ;
 
@@ -2395,9 +2387,6 @@ public class RequestContainerV5
                       (_p2pPoolCandidateInfo = destinationPool ).getPoolName()
                                      );
 
-                if (_sendCostInfo)sendCostMsg(_pnfsId, (PoolCostCheckable)destinationPool, true);// VP
-
-
 				return RT_FOUND;
 
             } catch ( CacheException ce) {
@@ -2557,9 +2546,6 @@ public class RequestContainerV5
 
                setError(0,"");
 
-               if( _sendCostInfo )sendCostMsg(_pnfsId, (PoolCostCheckable)_poolCandidateInfo , true);//VP
-
-
               return RT_FOUND ;
 
            }catch( CacheException ce ){
@@ -2603,22 +2589,6 @@ public class RequestContainerV5
       }
     }
 
-    //VP
-    public void sendCostMsg( PnfsId pnfsId,
-                             PoolCostCheckable checkable,
-                             boolean useBoth){
-       try {
-       /*
-          PoolCostInfoMessage msg = new PoolCostInfoMessage(checkable.getPoolName(), pnfsId);
-          double cost = _poolMonitor.calculateCost(checkable, useBoth);
-          msg.setCost(cost);
-          _cell.sendMessage(new CellMessage( new CellPath(_warningPath), msg));
-        */
-       }catch (Exception ee){
-          _log.warn("Couldn't report cost for : "+pnfsId+" : "+ee);
-       }
-    }
-
     private void sendHitMsg(PnfsId pnfsId, String poolName, boolean cached)
     {
         try {
@@ -2628,10 +2598,6 @@ public class RequestContainerV5
         } catch (Exception ee) {
             _log.warn("Couldn't report hit info for : "+pnfsId+" : "+ee);
         }
-    }
-
-    public void setSendCostInfo(boolean sendCostInfo) {
-        _sendCostInfo = sendCostInfo;
     }
 
     /**

@@ -937,11 +937,6 @@ public class PoolManagerV5
               */
               String poolName = storeList.get(0).getPoolName() ;
 
-              if (_sendCostInfo)
-                    _requestContainer.sendCostMsg(
-                             _pnfsId, storeList.get(0), true
-                                                 );        //VP
-
               _log.info(_pnfsId+" write handler selected "+poolName+" after "+
                   ( System.currentTimeMillis() - started ) );
               requestSucceeded( poolName ) ;

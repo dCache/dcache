@@ -51,7 +51,6 @@ set context -c selectionUnit diskCacheV111.poolManager.PoolSelectionUnitV2
 set context -c costCalculator diskCacheV111.pools.CostCalculationV5
 set context -c threadPool diskCacheV111.util.ThreadPoolNG
 set context -c quotaManager none
-set context -c sendCostInfoMessages no
 set context -c poolStatusRelay broadcast
 set context -c stageConfigurationFilePath ""
 onerror shutdown
@@ -69,7 +68,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -pnfsManager=\"${pnfsmanager}\" \
     -threadPool=\"${threadPool}\" \
     -quotaManager=\"${quotaManager}\" \
-    -sendCostInfoMessages=\"${sendCostInfoMessages}\" \
     -poolStatusRelay=\"${poolStatusRelay}\" \
     -stageConfigurationFilePath=\"${stageConfigurationFilePath}\" \
    "
