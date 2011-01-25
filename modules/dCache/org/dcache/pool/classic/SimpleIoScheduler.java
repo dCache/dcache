@@ -113,10 +113,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             _log.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
         }
 
+        request.setState(IoRequestState.QUEUED);
         PrioritizedRequest wrapper = new PrioritizedRequest(id, request, priority);
         _queue.add(wrapper);
         _jobs.put(id, wrapper);
-        request.setState(IoRequestState.QUEUED);
 
         return id;
     }
