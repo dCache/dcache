@@ -180,91 +180,54 @@ public class AuthorizationController {
 
     }
 
-    public Map <NameRolePair, gPlazmaAuthorizationRecord>
-        authorize(String subjectDN, Collection <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
+    public Map<NameRolePair, gPlazmaAuthorizationRecord> authorize(String subjectDN, Collection<String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
-        Map <NameRolePair, gPlazmaAuthorizationRecord> records = new LinkedHashMap <NameRolePair, gPlazmaAuthorizationRecord>();
 
-        AuthorizationException authexceptions=null;
-
-        Iterator <String> roleIter = roles.iterator();
-        if(!roleIter.hasNext()) roleIter = new NullIterator<String>();
-        while (roleIter.hasNext()) {
-            String role = roleIter.next();
-            gPlazmaAuthorizationRecord r=null;
-            try {
-                r = authorize(subjectDN, role, chain, desiredUserName, serviceUrl, socket);
-            } catch (AuthorizationException ase) {
-                if(authexceptions==null)
-                    authexceptions = ase;
-                else
-                    authexceptions = new AuthorizationException(authexceptions.getMessage() + "\n" + ase.getMessage());
-            }
-            records.put(new NameRolePair(subjectDN, role), r);
-            if(desiredUserName!=null) break;
-        }
-
-        // Check whether authorization was denied.
-         for( NameRolePair nameAndRole : records.keySet()) {
-          gPlazmaAuthorizationRecord r = records.get(nameAndRole);
-          if(r!=null) {
-              return records;
-          }
-         }
-
-        // All authrecords are null. Perhaps no plugins were tried.
-        if(!plugin_loader.getPlugins().hasNext()) {
-            return records;
-        }
-
-        // Indicate denial
-        if(authexceptions==null) {
-            String denied = AuthorizationPlugin.DENIED_MESSAGE + " for " + subjectDN + " and roles " + roles.toString();
-            authexceptions = new AuthorizationException(denied);
-        }
-        throw authexceptions;
-    }
-
-
-    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
-    throws AuthorizationException {
-        gPlazmaAuthorizationRecord r = null;
-        AuthorizationException authexceptions=null;
-
-        AuthorizationPlugin p;
+        Map<NameRolePair, gPlazmaAuthorizationRecord> records = new LinkedHashMap<NameRolePair, gPlazmaAuthorizationRecord>();
         Iterator<AuthorizationPlugin> plugins = plugin_loader.getPlugins();
-        while (r==null && plugins.hasNext()) {
-            p = plugins.next();
-            try {
-                r = p.authorize(subjectDN, role, chain, desiredUserName, serviceUrl, socket);
-            } catch(AuthorizationException ae) {
-                if(authexceptions==null)
-                    authexceptions = new AuthorizationException("\nException thrown by " + p.getClass().getName() + ": " + ae.getMessage());
-                else
-                    authexceptions = new AuthorizationException(authexceptions.getMessage() + "\nException thrown by " + p.getClass().getName() + ": " + ae.getMessage());
-            }
+        AuthorizationException authexceptions = null;
+
+        if (roles.isEmpty()) {
+            String noRole = null;
+            roles.add(noRole);
         }
 
-        if(authexceptions!=null && r==null) throw authexceptions;
+        while (records.isEmpty() && plugins.hasNext()) {
 
-        return r;
-    }
+            AuthorizationPlugin plugin = plugins.next();
 
+            for (String role : roles) {
 
-    public static class NullIterator<E> implements Iterator<E> {
-        private boolean hasnext = true;
-        public boolean hasNext() { return hasnext; }
-        public E next()
-        throws java.util.NoSuchElementException {
-            if(hasnext) {
-                hasnext = false;
-                return null;
+                try {
+                    gPlazmaAuthorizationRecord authorizationRecord = plugin.authorize(subjectDN, role, chain, desiredUserName, serviceUrl, socket);
+                    records.put(new NameRolePair(subjectDN, role), authorizationRecord);
+
+                } catch (AuthorizationException ex) {
+                    if (authexceptions == null) {
+                        authexceptions = ex;
+                    } else {
+                        authexceptions = new AuthorizationException(authexceptions.getMessage() + "\n" + ex.getMessage());
+                    }
+                }
+
+                if (desiredUserName != null) {
+                    break;
+                }
             }
-            throw new java.util.NoSuchElementException("no more nulls");
         }
+        // Check whether authorization was denied.
+        if (records.isEmpty()) {
 
-        public void remove() {}
+            // Indicate denial
+            if (authexceptions == null) {
+                String denied = AuthorizationPlugin.DENIED_MESSAGE + " for " + subjectDN + " and roles " + roles.toString();
+                authexceptions = new AuthorizationException(denied);
+            }
+            throw authexceptions;
+        }
+        return records;
     }
+
 
     public static String getFormattedAuthRequestID(long id) {
         String idstr;
