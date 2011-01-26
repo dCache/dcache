@@ -210,8 +210,11 @@ public class ChimeraNameSpaceProvider
             Stat metadataStat = fileMetadata2Stat(metaData, isDir );
 
             File newEntryFile = new File(path);
-
-            FsInode parent = _fs.path2inode(newEntryFile.getParent());
+            String parentPath = newEntryFile.getParent();
+            if (parentPath == null) {
+                throw new FileExistsCacheException("File exists: " + path);
+            }
+            FsInode parent = _fs.path2inode(parentPath);
 
             if( isDir ) {
                 inode = _fs.mkdir(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
