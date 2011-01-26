@@ -41,7 +41,7 @@ Entry
                 Done
                 {
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
@@ -83,14 +83,14 @@ Entry
                         succeed();
                 }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 [ rc == CacheException.FILE_NOT_IN_REPOSITORY ]
                 Done
                 {
                         succeed();
                 }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
@@ -103,7 +103,7 @@ Done
 
 Default
 {
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);

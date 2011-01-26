@@ -43,7 +43,7 @@ Entry
                 {
                         succeed();
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                        fail(error);
@@ -61,7 +61,7 @@ Done
 
 Default
 {
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);

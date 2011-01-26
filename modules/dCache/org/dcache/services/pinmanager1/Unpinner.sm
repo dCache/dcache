@@ -50,13 +50,13 @@ Entry
                 {
                 }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                [ ctxt.isRetry() ]
                CheckingThatFileExists
                {
                }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                Done
                {
                         fail(error);
@@ -79,14 +79,14 @@ Entry
                 {
                         checkThatFileExists();
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 [ rc == CacheException.NOT_IN_TRASH ||
                   rc == CacheException.FILE_NOT_FOUND]
                 Done
                 {
                         fileRemoved();
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
@@ -119,7 +119,7 @@ Entry
                 {
                         setLocations(message.getCacheLocations());
                 }
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
@@ -155,14 +155,14 @@ Entry
                         succeed();
                 }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 [ rc == CacheException.FILE_NOT_IN_REPOSITORY ]
                 Done
                 {
                         succeed();
                 }
 
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
@@ -180,7 +180,7 @@ Done
 
 Default
 {
-        failure(rc: int, error: Object)
+        failure(rc: Integer, error: Object)
                 Done
                 {
                         fail(error);
