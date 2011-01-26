@@ -6,6 +6,7 @@ import org.parboiled.Action;
 import org.parboiled.Context;
 import org.parboiled.support.Var;
 import org.parboiled.annotations.*;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 @BuildParseTree
 public abstract class ExpressionParser extends BaseParser<Expression>
@@ -14,6 +15,7 @@ public abstract class ExpressionParser extends BaseParser<Expression>
         return Sequence(If(), EOI);
     }
 
+    @SuppressWarnings(value="IL_INFINITE_RECURSIVE_LOOP") // NB. Parboil injects code to prevent infinite loops
     Rule If() {
         return Sequence(Disjunction(),
                         Optional(QUERY, If(), COLON, If(),
@@ -121,6 +123,7 @@ public abstract class ExpressionParser extends BaseParser<Expression>
         return FirstOf(CharRange('a', 'z'), CharRange('A', 'Z'), CharRange('0', '9'), '_', '$');
     }
 
+    @SuppressWarnings(value="IL_INFINITE_RECURSIVE_LOOP") // NB. Parboil injects code to prevent infinite loops
     @Cached
     Rule UnaryOperatorRule(Rule subRule, Rule operatorRule) {
         Var<Token> op = new Var<Token>();
