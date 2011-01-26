@@ -107,7 +107,9 @@
     <target name="-dcache-copy-skel">
         <!-- rpm directory structure with some defaults scripts -->
         <copy todir="${server.bin.dir}">
-            <fileset dir="${skelDir}" />
+            <fileset dir="${skelDir}">
+	      <exclude name="etc/PlotConfiguration.xml"/>
+	    </fileset>
         </copy>
     </target>
 
