@@ -66,7 +66,13 @@ public interface IoScheduler {
     // legacy crap
     public List<JobInfo> getJobInfos();
 
-    public PoolIORequest getJobInfo(int id);
+    /**
+     * Get job information
+     * @param id
+     * @return
+     * @throws NoSuchElementException if job with specified <code>id</code> does not exist
+     */
+    public JobInfo getJobInfo(int id) throws NoSuchElementException;
 
     public StringBuffer printJobQueue(StringBuffer sb);
 }
