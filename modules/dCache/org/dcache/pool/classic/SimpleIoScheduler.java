@@ -136,8 +136,12 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     @Override
-    public PoolIORequest getJobInfo(int id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public JobInfo getJobInfo(int id) {
+        PrioritizedRequest pRequest = _jobs.get(id);
+        if(pRequest == null) {
+            throw new NoSuchElementException("Job not found : Job-" + id);
+        }
+        return toJobInfo(pRequest.getRequest(), id);
     }
 
     @Override
