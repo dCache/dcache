@@ -91,22 +91,26 @@ fi
 
 %files
 %defattr(-,root,root)
-/opt/d-cache/
-%attr(0755,root,root) /opt/d-cache/install/install.sh
-%attr(0755,root,root) /opt/d-cache/install/preparePnfs.sh
-%attr(0755,root,root) /opt/d-cache/install/migrate-config-to-197.sh
-%attr(0755,root,root) /opt/d-cache/jobs/hsmcp.sh
-%attr(0755,root,root) /opt/d-cache/jobs/hsmcpV4.sh
-%attr(0755,root,root) /opt/d-cache/bin/dcache
-%attr(0755,root,root) /opt/d-cache/bin/chimera-cli.sh
-%attr(0755,root,root) /opt/d-cache/bin/chimera-get-acl.sh
-%attr(0755,root,root) /opt/d-cache/bin/chimera-set-acl.sh
-%attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
+%docdir /opt/d-cache/docs
+%docdir /opt/d-cache/share/doc
+%docdir /opt/d-cache/share/man
+/opt/d-cache/billing
+/opt/d-cache/docs
+/opt/d-cache/classes
+/opt/d-cache/share
+/opt/d-cache/libexec/README
+/opt/d-cache/libexec/chimera
+%attr(0755,root,root) /opt/d-cache/install
+%attr(0755,root,root) /opt/d-cache/jobs
+%attr(0755,root,root) /opt/d-cache/bin
+%attr(0755,root,root) /opt/d-cache/libexec/nsp-performance.sh
+%attr(0755,root,root) /opt/d-cache/libexec/wait-for-cells.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
-%config(noreplace) /opt/d-cache/etc/logback.xml
-%config(noreplace) /opt/d-cache/etc/dcachesrm-gplazma.policy
-%config(noreplace) /opt/d-cache/etc/tc-config.xml
-%config(noreplace) /opt/d-cache/etc/layouts/*.conf
-%config(noreplace) /opt/d-cache/etc/dcache.conf
+%attr(0755,root,root) /opt/d-cache/libexec/migration-check.sh
+%attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
+%config(noreplace) /opt/d-cache/etc
+%config(noreplace) /opt/d-cache/config
+
+
 %changelog
 
