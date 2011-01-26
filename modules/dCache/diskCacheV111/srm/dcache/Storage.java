@@ -100,7 +100,6 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.vehicles.transferManager.
     RemoteGsiftpTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.
@@ -1702,8 +1701,6 @@ public final class Storage
             throw new SRMInternalErrorException(e.getMessage(), e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
-        } catch (DirNotExistsCacheException e) {
-            throw new SRMInvalidPathException(e.getMessage(), e);
         } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException(e.getMessage(), e);
         } catch (CacheException e) {

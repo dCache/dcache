@@ -1,7 +1,6 @@
 package org.dcache.util;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -44,8 +43,6 @@ public class CacheExceptionFactory {
                 return new FileNotInCacheException(message);
             case FILE_EXISTS:
                 return new FileExistsCacheException(message);
-            case DIR_NOT_EXISTS:
-                return new DirNotExistsCacheException(message);
             case NOT_DIR:
                 return new NotDirCacheException(message);
             case NOT_FILE:

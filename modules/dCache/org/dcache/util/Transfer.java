@@ -21,7 +21,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.DirNotExistsCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FsPath;
@@ -460,7 +459,10 @@ public abstract class Transfer implements Comparable<Transfer>
     {
         try {
             createNameSpaceEntry();
-        } catch (DirNotExistsCacheException e) {
+        } catch (NotInTrashCacheException e) {
+            _pnfs.createDirectories(_path.getParent());
+            createNameSpaceEntry();
+        } catch (FileNotFoundCacheException e) {
             _pnfs.createDirectories(_path.getParent());
             createNameSpaceEntry();
         }
