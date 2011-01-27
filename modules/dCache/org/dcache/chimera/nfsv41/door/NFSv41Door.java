@@ -70,6 +70,7 @@ import org.dcache.chimera.posix.AclHandler;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
@@ -235,7 +236,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * of all interfaces
                  */
                 deviceid4 deviceid = deviceidOf(id);
-                device = new PoolDS(deviceidOf(id), poolAddress);
+                device = new PoolDS(deviceid, poolAddress);
 
                 _poolNameToIpMap.put(poolName, device);
                 _deviceMap.put(deviceid, device);
@@ -483,18 +484,10 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     private static deviceid4 deviceidOf(int id) {
-        return new deviceid4(id2deviceid(id));
-    }
+        byte[] deviceidBytes = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
+        Bytes.putInt(deviceidBytes, 0, id);
 
-    private static byte[] id2deviceid(int id) {
-
-        byte[] buf = Integer.toString(id).getBytes();
-        byte[] devData = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
-
-        int len = Math.min(buf.length, nfs4_prot.NFS4_DEVICEID4_SIZE);
-        System.arraycopy(buf, 0, devData, 0, len);
-
-        return devData;
+        return new deviceid4(deviceidBytes);
     }
 
     private static class PoolDS {
