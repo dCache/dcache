@@ -5,7 +5,7 @@ define env startLogin.exe enddefine
   check -strong gplazmaPolicy
   check -strong gPlazmaNumberOfSimutaneousRequests
 
-  create org.dcache.cells.UniversalSpringCell "gPlazma" \
+  create org.dcache.cells.UniversalSpringCell "${gplazma}" \
     "classpath:org/dcache/services/login/gplazma.xml \
      -monitor \
      -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
@@ -18,7 +18,7 @@ enddefine
 
 define env startLoginIfNotRunning.exe enddefine
   onerror continue
-  getcellinfo gPlazma
+  test -i ${gplazma}
   exec env startLogin.exe -ifnotok
 enddefine
 
