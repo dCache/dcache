@@ -164,7 +164,6 @@ public class PinCompanion
         public PinningState() {
             DCapProtocolInfo protocolInfo =
                 new DCapProtocolInfo("DCap", 3, 0, _clientHost, 0);
-            protocolInfo.fileCheckRequired(false);
             PinManagerPinMessage msg =
                 new PinManagerPinMessage(_attributes, protocolInfo,
                                          String.valueOf(_requestId),

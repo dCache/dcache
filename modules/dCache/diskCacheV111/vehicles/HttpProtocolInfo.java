@@ -23,9 +23,9 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private String httpDoorCellName;
   private String httpDoorDomainName;
   private String path;
-  
+
   private static final long serialVersionUID = 8002182588464502270L;
-  
+
   public HttpProtocolInfo( String protocol, int major , int minor ,
                            InetSocketAddress clientSocketAddress,
                            String httpDoorCellName ,
@@ -34,7 +34,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
   {
     _name  = protocol ;
     _minor = minor ;
-    _major = major ; 
+    _major = major ;
     _clientSocketAddress = clientSocketAddress;
     _hosts = new String[] { _clientSocketAddress.getAddress().getHostAddress() };
     _port  = _clientSocketAddress.getPort() ;
@@ -56,32 +56,32 @@ public class HttpProtocolInfo implements IpProtocolInfo
     return path;
   }
   public int getSessionId()
-  { 
-    return _sessionId ; 
+  {
+    return _sessionId ;
   }
   public void setSessionId( int sessionId )
-  { 
-    _sessionId = sessionId ; 
+  {
+    _sessionId = sessionId ;
   }
   //
   //  the ProtocolInfo interface
   //
   public String getProtocol(){ return _name ; }
   public int    getMinorVersion()
-  { 
-    return _minor ; 
+  {
+    return _minor ;
   }
-  
+
   public int    getMajorVersion()
-  { 
-    return _major ; 
+  {
+    return _major ;
   }
-  
+
   public String getVersionString()
   {
     return _name+"-"+_major+"."+_minor ;
   }
-  
+
   //
   // and the private stuff
   //
@@ -91,24 +91,24 @@ public class HttpProtocolInfo implements IpProtocolInfo
   {
     _bytesTransferred = bytesTransferred ;
   }
-  
+
   public void   setTransferTime( long transferTime )
   {
     _transferTime = transferTime ;
   }
-  
+
   public long getTransferTime()
-  { 
-    return _transferTime ; 
+  {
+    return _transferTime ;
   }
-   
+
   public long getBytesTransferred()
-  { 
-    return _bytesTransferred ; 
+  {
+    return _bytesTransferred ;
   }
-  
+
   public String toString()
-  {  
+  {
     StringBuffer sb = new StringBuffer() ;
     sb.append(getVersionString()) ;
     for(int i = 0 ; i < _hosts.length ; i++ )
@@ -119,23 +119,20 @@ public class HttpProtocolInfo implements IpProtocolInfo
     sb.append(':').append(httpDoorCellName);
     sb.append(':').append(httpDoorDomainName);
     sb.append(':').append(path);
-         
-    return sb.toString() ; 
+
+    return sb.toString() ;
   }
   //
   // io mode
   //
   public boolean isWriteAllowed()
-  { 
-    return _writeAllowed ; 
+  {
+    return _writeAllowed ;
   }
-  
+
   public void    setAllowWrite( boolean allow )
-  { 
-    _writeAllowed = allow ; 
-  }
-  public boolean isFileCheckRequired() {
-    return true;
+  {
+    _writeAllowed = allow ;
   }
 
     @Override

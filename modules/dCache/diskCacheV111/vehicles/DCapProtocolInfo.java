@@ -16,7 +16,6 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private long _bytesTransferred = 0;
     private int _sessionId = 0;
     private boolean _writeAllowed = false;
-    private boolean _fileCheck = true;
     private boolean _isPassive = false;
     private CellPath _door = null;
 
@@ -113,15 +112,6 @@ public class DCapProtocolInfo implements IpProtocolInfo {
 
     public void setAllowWrite(boolean allow) {
         _writeAllowed = allow;
-    }
-
-    // check file availability in the pool
-    public boolean isFileCheckRequired() {
-        return _fileCheck;
-    }
-
-    public void fileCheckRequired(boolean isRequired) {
-        _fileCheck = isRequired;
     }
 
     public boolean isPassive() {

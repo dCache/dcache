@@ -24,9 +24,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
@@ -244,9 +242,17 @@ public class PoolMonitorV5
          // check if pools are up and file is really there.
          // (returns unsorted list of costs)
          //
-         _acknowledgedPnfsPools =
-             queryPoolsForPnfsId(expectedFromPnfs, _pnfsId, 0,
-                                 _protocolInfo.isFileCheckRequired());
+         _acknowledgedPnfsPools = new ArrayList<PoolCostCheckable>();
+         for (String poolName: expectedFromPnfs) {
+             PoolCostCheckable cost = _costModule.getPoolCost(poolName, 0);
+             if (cost != null) {
+                 PoolCheckAdapter check = new PoolCheckAdapter(cost);
+                 check.setHave(true);
+                 check.setPnfsId(_pnfsId);
+                 _acknowledgedPnfsPools.add(check);
+             }
+         }
+
          say( "calculateFileAvailableMatrix _acknowledgedPnfsPools : "+_acknowledgedPnfsPools ) ;
          Map<String, PoolCostCheckable> availableHash =
              new HashMap<String, PoolCostCheckable>() ;
@@ -568,115 +574,7 @@ public class PoolMonitorV5
        return cost ;
     }
     */
-    //------------------------------------------------------------------------------
-    //
-    //  'queryPoolsForPnfsId' sends PoolCheckFileMessages to all pools
-    //  specified in the pool iterator. It waits until all replies
-    //  have arrived, the global timeout has expired or the thread
-    //  was interrupted.
-    //
 
-    private List<PoolCostCheckable> queryPoolsForPnfsId(Collection<String> pools,
-                                                        PnfsId pnfsId,
-                                                        long filesize,
-                                                        boolean checkFileExistence)
-        throws InterruptedException
-    {
-        List<PoolCostCheckable> list = new ArrayList<PoolCostCheckable>();
-
-        if (checkFileExistence) {
-
-            SpreadAndWait control = new SpreadAndWait(getCellEndpoint(),
-                    _poolTimeout);
-
-            for (String poolName: pools) {
-
-                //
-                // deselection inactive and disabled pools
-                //
-                PoolSelectionUnit.SelectionPool pool = _selectionUnit
-                        .getPool(poolName);
-                if ((pool == null) || !pool.canRead() || !pool.isActive())
-                    continue;
-
-                _log.info("queryPoolsForPnfsId : PoolCheckFileRequest to : {}",
-                      poolName);
-                //
-                // send query
-                //
-                CellMessage cellMessage = new CellMessage(
-                        new CellPath(poolName), new PoolCheckFileMessage(
-                                poolName, pnfsId));
-
-                try {
-                    control.send(cellMessage);
-                } catch (Exception exc) {
-                    //
-                    // here we don't care about exceptions
-                    //
-                    _log.warn("Exception sending PoolCheckFileRequest to "
-                            + poolName + " : " + exc);
-                }
-            }
-
-            //
-            // scan the replies
-            //
-            CellMessage answer = null;
-
-            while ((answer = control.next()) != null) {
-
-                Object message = answer.getMessageObject();
-
-                if (!(message instanceof PoolCheckFileMessage)) {
-                    _log.warn("queryPoolsForPnfsId : Unexpected message from ({}) {}",
-                         answer.getSourcePath(), message.getClass());
-                    continue;
-                }
-
-                PoolCheckFileMessage poolMessage =
-                    (PoolCheckFileMessage) message;
-                _log.info("queryPoolsForPnfsId : reply : {}", poolMessage);
-
-                boolean have = poolMessage.getHave();
-                String poolName = poolMessage.getPoolName();
-                if (have) {
-
-                    PoolCostCheckable cost =
-                        _costModule.getPoolCost(poolName, filesize);
-                    if (cost != null) {
-                        PoolCheckAdapter check = new PoolCheckAdapter(cost);
-                        check.setHave(have);
-                        check.setPnfsId(pnfsId);
-                        list.add(check);
-                        _log.info("queryPoolsForPnfsId : returning : {}", check);
-                    }
-                } else if (!poolMessage.getWaiting() && poolMessage.getReturnCode() == 0) {
-                    _log.warn("queryPoolsForPnfsId : clearingCacheLocation for pnfsId {} at pool {}",
-                        pnfsId, poolName);
-                    _pnfsHandler.clearCacheLocation(pnfsId, poolName);
-                }
-            }
-
-        } else {
-
-            for (String poolName : pools) {
-
-                PoolCostCheckable cost =
-                        _costModule.getPoolCost(poolName, filesize);
-                if (cost != null) {
-                    PoolCheckAdapter check = new PoolCheckAdapter(cost);
-                    check.setHave(true);
-                    check.setPnfsId(pnfsId);
-                    list.add(check);
-                }
-            }
-        }
-
-        _log.info("queryPoolsForPnfsId : number of valid replies : {}", list.size());
-        return list;
-
-    }
     public List<PoolCostCheckable> queryPoolsByLinkName(String linkName, long filesize) {
 
         PoolSelectionUnit.SelectionLink link = _selectionUnit.getLinkByName(linkName);

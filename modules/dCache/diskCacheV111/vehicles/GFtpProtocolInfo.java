@@ -189,9 +189,6 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     {
         return _size;
     }
-    public boolean isFileCheckRequired() {
-        return false;
-    }
 
     /**
      * Returns the cell name of the FTP door. May be null.

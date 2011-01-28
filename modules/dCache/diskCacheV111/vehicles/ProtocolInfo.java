@@ -20,5 +20,4 @@ public interface ProtocolInfo extends java.io.Serializable {
     public int    getMinorVersion() ;
     public int    getMajorVersion() ;
     public String getVersionString() ;
-    public boolean isFileCheckRequired();
 }

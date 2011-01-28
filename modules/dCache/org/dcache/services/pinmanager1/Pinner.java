@@ -119,7 +119,6 @@ class Pinner extends SMCTask
 
         DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
-        pinfo.fileCheckRequired(false);
         return pinfo;
     }
 

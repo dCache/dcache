@@ -20,21 +20,21 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
   private long   transferTime     = 0 ;
   private long   bytesTransferred = 0 ;
   private int    sessionId        = 0 ;
-  
+
   private static final long serialVersionUID = 4482469147378465931L;
-  
+
   public RemoteHttpDataTransferProtocolInfo(String protocol, int major, int minor, String[] hosts, int port, int buf_size, String sourceHttpUrl)
   {
     this.name  = protocol ;
     this.minor = minor ;
-    this.major = major ; 
+    this.major = major ;
     this.hosts = new String[1] ;
     this.hosts = hosts ;
     this.port  = port ;
     this.sourceHttpUrl = sourceHttpUrl;
     this.bufferSize =buf_size;
   }
-  
+
   public String getSourceHttpUrl()
   {
       return sourceHttpUrl;
@@ -47,40 +47,40 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
   //  the ProtocolInfo interface
   //
   public String getProtocol()
-  { 
-      return name ; 
+  {
+      return name ;
   }
-  
+
   public int    getMinorVersion()
-  { 
-    return minor ; 
+  {
+    return minor ;
   }
-  
+
   public int    getMajorVersion()
-  { 
-    return major ; 
+  {
+    return major ;
   }
-  
+
   public String getVersionString()
   {
     return name+"-"+major+"."+minor ;
   }
-  
+
   //
   // and the private stuff
   //
   public int    getPort()
   {
-      return port ; 
+      return port ;
   }
   public String [] getHosts()
-  { 
-      return hosts ; 
+  {
+      return hosts ;
   }
-  
-  
+
+
   public String toString()
-  {  
+  {
     StringBuffer sb = new StringBuffer() ;
     sb.append(getVersionString()) ;
     for(int i = 0 ; i < hosts.length ; i++ )
@@ -88,12 +88,8 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
       sb.append(',').append(hosts[i]) ;
     }
     sb.append(':').append(port) ;
-         
-    return sb.toString() ; 
-  }
 
-  public boolean isFileCheckRequired() {
-      return true;
+    return sb.toString() ;
   }
 
     @Override

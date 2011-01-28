@@ -106,7 +106,6 @@ public class PinManagerCLI
             _pnfs.getFileAttributes(pnfsId, attributes);
         DCapProtocolInfo protocolInfo =
             new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
-        protocolInfo.fileCheckRequired(false);
         PinManagerPinMessage message =
             new PinManagerPinMessage(fileAttributes, protocolInfo, null, lifetime);
         return _pinProcessor.messageArrived(message).get();

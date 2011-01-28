@@ -10,13 +10,13 @@ public class StagerMessageV0  extends StagerMessage {
    private String _protocol = null ;
    private int    _minor    = 0 ;
    private int    _major    = 0 ;
-   
+
    private static final long serialVersionUID = 4469066464567546218L;
-   
+
    public class _StorageInfo extends GenericStorageInfo {
-       
+
        private static final long serialVersionUID = -4539657116285745024L;
-       
+
       private _StorageInfo(){}
       public String getStorageClass(){ return _storageClass ; }
       public String getBitfileId(){ return _bfid ; }
@@ -32,29 +32,28 @@ public class StagerMessageV0  extends StagerMessage {
       }
       public void setBitfileId(String bitfileId ){ _bfid = bitfileId ; }
 
-      
+
    }
    public class _ProtocolInfo implements IpProtocolInfo {
-       
+
        private static final long serialVersionUID = 1752886092046157556L;
-       
+
       private _ProtocolInfo(){}
       public String [] getHosts(){
          String [] hosts = new String[1] ;
-         hosts[0] = _host ; 
+         hosts[0] = _host ;
          return hosts ;
       }
       public int       getPort(){ return 0 ; }
       public String getProtocol(){ return _protocol ; }
       public int    getMinorVersion(){return _minor ; }
       public int    getMajorVersion(){ return _major ; }
-      public String getVersionString(){ 
-        return _protocol+"-"+_major+"."+_minor ; 
+      public String getVersionString(){
+        return _protocol+"-"+_major+"."+_minor ;
       }
       public String toString(){
         return getVersionString()+";L="+_host ;
       }
-      public boolean isFileCheckRequired() { return true; }
        @Override
        public InetSocketAddress getSocketAddress() {
            // enforced by interface
@@ -71,7 +70,7 @@ public class StagerMessageV0  extends StagerMessage {
       _bfid         = bitfileId ;
       _storageClass = storageClass ;
    }
-   public void setProtocol( String protocol , 
+   public void setProtocol( String protocol ,
                             int majorVersion , int minorVersion ,
                             String location ){
       _protocol = protocol ;

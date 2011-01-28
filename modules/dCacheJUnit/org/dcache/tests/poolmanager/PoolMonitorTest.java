@@ -67,7 +67,7 @@ public class PoolMonitorTest {
 
 
     @Test
-    public void testPartialFromStore() throws Exception {
+    public void testFromStore() throws Exception {
 
         PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
 
@@ -112,28 +112,6 @@ public class PoolMonitorTest {
         _costModule.messageArrived(pool2UpMessage);
 
         /*
-         * one pool have the file
-         */
-        PoolCheckFileMessage pool1CeckMessage = new PoolCheckFileMessage("pool1",pnfsId );
-        pool1CeckMessage.setHave(true);
-
-        /*
-         * the other, receiving it
-         */
-        PoolCheckFileMessage pool2CeckMessage = new PoolCheckFileMessage("pool2",pnfsId );
-        pool2CeckMessage.setHave(false);
-        pool2CeckMessage.setWaiting(true);
-
-
-        /*
-         * prepare pools reply
-         */
-        GenericMockCellHelper.prepareMessage(new CellPath("pool1"), pool1CeckMessage);
-        GenericMockCellHelper.prepareMessage(new CellPath("pool2"), pool2CeckMessage);
-
-
-
-        /*
          * exercise
          */
         PnfsFileLocation availableLocations = _poolMonitor.getPnfsFileLocation(pnfsId, _storageInfo, _protocolInfo, null);
@@ -143,19 +121,19 @@ public class PoolMonitorTest {
         assertFalse("No pools found (test setup error)", acknowledgedPools.isEmpty());
         assertTrue("No pools acknowledged (test setup error)", availableLocations.getAvailablePoolCount() > 0 );
 
-        for( PoolCostCheckable pool : acknowledgedPools) {
-            assertFalse("Pool with the file in the 'waiting' state should not be used in selection", pool.getPoolName().equals("pool2") );
-        }
-
-        boolean found = false;
+        boolean found1 = false;
+        boolean found2 = false;
         for( PoolCostCheckable pool : acknowledgedPools) {
             if( pool.getPoolName().equals("pool1") ) {
-                found = true;
-                break;
+                found1 = true;
+            }
+            if( pool.getPoolName().equals("pool2") ) {
+                found2 = true;
             }
         }
 
-        assertTrue("Pool with the file not used by selection", found );
+        assertTrue("Pool with the file not used by selection", found1 );
+        assertTrue("Pool with the file not used by selection", found2 );
     }
 
 }

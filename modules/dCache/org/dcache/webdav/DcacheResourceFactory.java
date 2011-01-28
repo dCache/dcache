@@ -860,25 +860,39 @@ public class DcacheResourceFactory
             Integer sessionId = (int) transfer.getSessionId();
             transfer.setPnfsId(pnfsid);
             transfer.readNameSpaceEntry();
-            transfer.selectPool();
 
-            RedirectKey key = new RedirectKey(pnfsid, transfer.getPool());
-            _redirect.put(key, transfer);
+            _downloads.put(sessionId, transfer);
             try {
-                _downloads.put(sessionId, transfer);
-                transfer.startMover(_ioQueue);
-                transfer.setStatus("Mover " + transfer.getPool() + "/" +
-                                   transfer.getMoverId() + ": Waiting for URI");
-                uri = transfer.waitForRedirect(_moverTimeout);
-                if (uri == null) {
-                    throw new TimeoutCacheException("Server is busy (internal timeout)");
+                while (true) {
+                    transfer.selectPool();
+
+                    RedirectKey key =
+                        new RedirectKey(pnfsid, transfer.getPool());
+                    _redirect.put(key, transfer);
+                    try {
+                        try {
+                            transfer.startMover(_ioQueue);
+                        } catch (CacheException e) {
+                            _log.warn("Pool error: " + e.getMessage());
+                            continue;
+                        }
+
+                        transfer.setStatus("Mover " + transfer.getPool() + "/" +
+                                           transfer.getMoverId() + ": Waiting for URI");
+                        uri = transfer.waitForRedirect(_moverTimeout);
+                        if (uri == null) {
+                            throw new TimeoutCacheException("Server is busy (internal timeout)");
+                        }
+                    } finally {
+                        _redirect.remove(key);
+                    }
+                    break;
                 }
             } finally {
                 transfer.setStatus(null);
                 if (uri == null) {
                     _downloads.remove(sessionId);
                 }
-                _redirect.remove(key, transfer);
             }
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                transfer.getMoverId() + ": Waiting for completion");

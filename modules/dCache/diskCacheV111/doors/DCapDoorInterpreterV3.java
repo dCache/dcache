@@ -1828,7 +1828,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String            _truncFile       = null;
         private boolean          _poolRequestDone = false ;
         private String            _permission      = null;
-        private boolean          _fileCheck = true;
         private boolean          _passive = false;
         private String            _accessLatency = null;
         private String            _retentionPolicy = null;
@@ -1863,8 +1862,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _checksumString = args.getOpt("checksum") ;
             _truncFile      = args.getOpt("truncate");
             _truncate       = ( _truncFile != null ) && _truncateAllowed  ;
-            _fileCheck      = args.getOpt("skip-file-check") == null;
-            _protocolInfo.fileCheckRequired(_fileCheck);
 
             _passive        = args.getOpt("passive") != null;
             _protocolInfo.isPassive(_passive);

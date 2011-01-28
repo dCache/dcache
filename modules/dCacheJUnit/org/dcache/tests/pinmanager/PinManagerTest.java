@@ -98,7 +98,6 @@ public class PinManagerTest {
         attributes.setStorageInfo(new GenericStorageInfo());
         DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
-        pinfo.fileCheckRequired(false);
         PinManagerPinMessage pinManagerPinMessage =
             new PinManagerPinMessage(attributes, pinfo, "12345", 3600L);
 
