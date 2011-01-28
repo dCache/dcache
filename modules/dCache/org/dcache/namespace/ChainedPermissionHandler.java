@@ -28,6 +28,10 @@ public class ChainedPermissionHandler implements PermissionHandler
     private final List<PermissionHandler> _chain =
         CollectionFactory.newArrayList();
 
+    public ChainedPermissionHandler()
+    {
+    }
+
     public ChainedPermissionHandler(List<PermissionHandler> chain)
     {
         _chain.addAll(chain);
@@ -36,6 +40,12 @@ public class ChainedPermissionHandler implements PermissionHandler
     public ChainedPermissionHandler(PermissionHandler ... chain)
     {
         _chain.addAll(Arrays.asList(chain));
+    }
+
+    public void setChain(List<PermissionHandler> chain)
+    {
+        _chain.clear();
+        _chain.addAll(chain);
     }
 
     @Override

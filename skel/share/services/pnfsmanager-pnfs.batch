@@ -47,8 +47,11 @@ check -strong pnfsInfoExtractor
 check -strong pnfsNumberOfThreads
 check -strong pnfsNumberOfThreadGroups
 check -strong pnfsNumberOfListThreads
+check -strong pnfsListChunkSize
+check -strong pnfsLogSlowThreshold
 check -strong pnfsFolding
 check -strong pnfsInheritFileOwnership
+check -strong pnfsQueueMaxSize
 check -strong pnfsDbUser
 check -strong pnfsDbPassword
 check -strong pnfsPasswordFile
@@ -58,10 +61,13 @@ check -strong aclTable
 check -strong aclConnDriver
 check -strong aclConnUrl
 check -strong aclConnUser
+
 check aclConnPswd
 
-create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
-       "${pnfsInfoExtractor} \
+create org.dcache.cells.UniversalSpringCell ${cell.name} \
+   "classpath:diskCacheV111/namespace/pnfsmanager.xml \
+        ${pnfsInfoExtractor} \
+        -export \
         -enableLargeFileSimulation \
         -storeFilesize  \
         -cmRelay=broadcast \
@@ -69,6 +75,9 @@ create diskCacheV111.namespace.PnfsManagerV3 ${cell.name} \
         -threads=${pnfsNumberOfThreads} \
         -threadGroups=${pnfsNumberOfThreadGroups} \
         -listThreads=${pnfsNumberOfListThreads} \
+        -directoryListLimit=${pnfsListChunkSize} \
+        -logSlowThreshold=${pnfsLogSlowThreshold} \
+        -queueMaxSize=${pnfsQueueMaxSize} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
         -aclEnabled=${aclEnabled} \

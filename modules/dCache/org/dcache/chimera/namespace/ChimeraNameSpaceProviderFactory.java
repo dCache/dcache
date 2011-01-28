@@ -4,21 +4,18 @@
 package org.dcache.chimera.namespace;
 
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.namespace.provider.DcacheNameSpaceProviderFactory;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
-public class ChimeraNameSpaceProviderFactory extends  DcacheNameSpaceProviderFactory {
+public class ChimeraNameSpaceProviderFactory
+{
+    private static ChimeraNameSpaceProvider _provider;
 
-    static private ChimeraNameSpaceProvider _provider = null;
-
-    public synchronized NameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {
-
-        if ( _provider == null ) {
-            _provider = new ChimeraNameSpaceProvider(args, nucleus);
+    public static synchronized NameSpaceProvider getProvider(String args)
+        throws Exception
+    {
+        if (_provider == null) {
+            _provider = new ChimeraNameSpaceProvider(new Args(args));
         }
         return _provider;
     }
-
-
 }

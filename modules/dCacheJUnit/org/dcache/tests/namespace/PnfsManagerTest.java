@@ -12,18 +12,20 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.EnumSet;
+import java.util.Properties;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import dmg.util.Args;
+
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -53,13 +55,10 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+import org.dcache.acl.handler.singleton.AclHandler;
 
-public class PnfsManagerTest {
-
-    /*
-     * make Cells happy
-     */
-    private static final CellAdapterHelper SYSTEM_CELL_HOLDER = new CellAdapterHelper("PnfsManagerTest", "");
+public class PnfsManagerTest
+{
     private static final String OSM_URI_STEM = "osm://example-osm-instance/";
 
     private static PnfsManagerV3 _pnfsManager;
@@ -94,28 +93,39 @@ public class PnfsManagerTest {
             SqlHelper.tryToClose(st);
         }
 
+        Properties properties = new Properties();
+        properties.setProperty("aclEnabled", "false");
+        properties.setProperty("aclTable", "t_acl");
+        properties.setProperty("aclConnDriver", "org.hsqldb.jdbcDriver");
+        properties.setProperty("aclConnUrl", "jdbc:hsqldb:mem:chimeramem");
+        properties.setProperty("aclConnPswd", "");
+        properties.setProperty("aclConnUser", "postgres");
+        AclHandler.setAclConfig(properties);
 
         String args = "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor " +
-            "-threads=1 " +
-            "-namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-            "-storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-            "-cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
             "-chimera.db.user=sa " +
             "-chimera.db.password= " +
             "-chimera.db.url=jdbc:hsqldb:mem:chimeramem " +
             "-chimera.db.driver=org.hsqldb.jdbcDriver " +
-            "-chimera.db.dialect=HsqlDB " +
-            "-aclEnabled=false " +
-            "-aclTable=t_acl " +
-            "-aclConnDriver=org.hsqldb.jdbcDriver " +
-            "-aclConnUrl=jdbc:hsqldb:mem:chimeramem " +
-            "-aclConnUser=postgres " +
-            "-aclConnPswd=";
+            "-chimera.db.dialect=HsqlDB ";
 
-        _pnfsManager =  new PnfsManagerV3("testPnfsManager", args);
+        NameSpaceProvider chimera =
+            new org.dcache.chimera.namespace.ChimeraNameSpaceProvider(new Args(args));
 
-        // FIXME: make it configurable
-        Class.forName("org.hsqldb.jdbcDriver");
+        _pnfsManager = new PnfsManagerV3();
+        _pnfsManager.setThreads(1);
+        _pnfsManager.setCacheLocationThreads(0);
+        _pnfsManager.setListThreads(1);
+        _pnfsManager.setThreadGroups(1);
+        _pnfsManager.setCacheModificationRelay(null);
+        _pnfsManager.setPnfsDeleteNotificationRelay(null);
+        _pnfsManager.setLogSlowThreshold(0);
+        _pnfsManager.setNameSpaceProvider(chimera);
+        _pnfsManager.setCacheLocationProvider(chimera);
+        _pnfsManager.setQueueMaxSize(0);
+        _pnfsManager.setFolding(true);
+        _pnfsManager.setDirectoryListLimit(100);
+        _pnfsManager.init();
 
         DataSource dataSource = DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem",
                 "sa", "");
@@ -502,8 +512,6 @@ public class PnfsManagerTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-
-        CellAdapterHelper.getSystem().getNucleus().kill(_pnfsManager.getCellName());
 
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();

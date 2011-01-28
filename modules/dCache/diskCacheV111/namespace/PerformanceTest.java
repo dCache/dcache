@@ -1,5 +1,6 @@
 package diskCacheV111.namespace;
 
+import java.lang.reflect.Method;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -21,7 +22,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import diskCacheV111.namespace.provider.DcacheNameSpaceProviderFactory;
 import dmg.util.Args;
 
 
@@ -67,7 +67,7 @@ enum Operation {
  * This utility performs performance tests for various name space
  * lookup operations. The utility is independent of any specific name
  * space provider and can be used with any name space provider
- * providing a DcacheNameSpaceProviderFactory.
+ * providing a factory.
  *
  * The utility can measure pnfsid lookup, file meta data lookup and
  * storage info lookup. It can use a configurable number of threads.
@@ -142,9 +142,9 @@ public class PerformanceTest extends Thread
 
         /* Instantiate provider.
          */
-        DcacheNameSpaceProviderFactory factory =
-            (DcacheNameSpaceProviderFactory)Class.forName(factoryName).newInstance();
-        provider = (NameSpaceProvider)factory.getProvider(args, null);
+        Class factory = Class.forName(factoryName);
+        Method factoryMethod = factory.getMethod("getProvider", Args.class);
+        provider = (NameSpaceProvider) factoryMethod.invoke(null, args);
 
         /* Read paths.
          */
