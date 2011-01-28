@@ -125,7 +125,7 @@ public class PoolV4
      * used by PoolManager to recognize pool restarts
      */
     private final long _serialId = System.currentTimeMillis();
-    private final PoolV2Mode _poolMode = new PoolV2Mode();
+    private PoolV2Mode _poolMode;
     private boolean _reportOnRemovals = false;
     private boolean _suppressHsmLoad = false;
     private boolean _cleanPreciousFiles = false;
@@ -375,6 +375,12 @@ public class PoolV4
     {
         _ioQueue = ioQueueManager;
     }
+
+    public void setPoolMode(PoolV2Mode mode)
+    {
+        _poolMode = mode;
+    }
+
     /**
      * Initialize remaining pieces.
      *
