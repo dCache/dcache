@@ -98,7 +98,7 @@ public class Domain
         initializeLogging();
 
         String domainName = getName();
-        CDC.setCellsContext(SYSTEM_CELL_NAME, domainName);
+        CDC.reset(SYSTEM_CELL_NAME, domainName);
         SystemCell systemCell = new SystemCell(domainName);
         _log.info("Starting " + domainName);
 

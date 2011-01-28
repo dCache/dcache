@@ -69,7 +69,7 @@ public class ThreadPoolNG implements ThreadPool {
         Runnable wrapper = new Runnable() {
                 public void run()
                 {
-                    cdc.apply();
+                    cdc.restore();
                     try {
                         runner.run();
                     } finally {

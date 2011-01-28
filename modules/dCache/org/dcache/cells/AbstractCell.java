@@ -353,7 +353,7 @@ public class AbstractCell extends CellAdapter
                 public void run()
                 {
                     try {
-                        cdc.apply();
+                        cdc.restore();
                         try {
                             getNucleus().updateWaitQueue();
                         } finally {

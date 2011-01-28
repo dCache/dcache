@@ -806,7 +806,7 @@ public class PoolManagerV5
         public void run()
         {
             long started = System.currentTimeMillis();
-            _cdc.apply();
+            _cdc.restore();
             try {
                 _log.info("Select link group handler started");
 

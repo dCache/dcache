@@ -85,7 +85,7 @@ import java.util.concurrent.Future;
 
       public void run()
       {
-          cdc.apply();
+          cdc.restore();
           try {
               super.run();
           } finally {
@@ -95,7 +95,7 @@ import java.util.concurrent.Future;
 
       protected boolean runAndReset()
       {
-          cdc.apply();
+          cdc.restore();
           try {
               return super.runAndReset();
           } finally {

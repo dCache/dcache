@@ -609,15 +609,13 @@ public class CellNucleus implements ThreadFactory
 
     private Runnable wrapLoggingContext(final Runnable runnable)
     {
-        final NDC ndc = NDC.cloneNdc();
         return new Runnable() {
             public void run() {
-                CDC.setCellsContext(CellNucleus.this);
-                NDC.set(ndc);
+                CDC cdc = CDC.reset(CellNucleus.this);
                 try {
                     runnable.run();
                 } finally {
-                    NDC.clear();
+                    cdc.restore();
                 }
             }
         };
@@ -937,15 +935,14 @@ public class CellNucleus implements ThreadFactory
 
         public void run ()
         {
-            CDC cdc = new CDC();
+            CDC cdc = CDC.reset(CellNucleus.this);
             try {
-                CDC.setCellsContext(CellNucleus.this);
                 innerRun();
             } catch (Throwable e) {
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             } finally {
-                cdc.apply();
+                cdc.restore();
             }
         }
     }
@@ -971,7 +968,7 @@ public class CellNucleus implements ThreadFactory
             Object obj;
             try {
                 answer = new CellMessage(_message);
-                _lock.getCdc().apply();
+                _lock.getCdc().restore();
                 obj = answer.getMessageObject();
             } catch (SerializationException e) {
                 _logNucleus.warn(e.getMessage());

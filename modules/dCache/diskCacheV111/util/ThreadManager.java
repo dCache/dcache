@@ -198,7 +198,7 @@ import org.slf4j.LoggerFactory;
           Runnable wrapper = new Runnable() {
                   public void run()
                   {
-                      cdc.apply();
+                      cdc.restore();
                       try {
                           runnable.run();
                       } finally {

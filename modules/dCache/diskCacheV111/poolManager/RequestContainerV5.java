@@ -1131,7 +1131,7 @@ public class RequestContainerV5
 
         public class RunEngine implements ExtendedRunnable {
            public void run(){
-               _cdc.apply();
+               _cdc.restore();
               try{
                  stateLoop() ;
               }finally{

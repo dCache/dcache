@@ -24,7 +24,7 @@ public class CDCThreadFactory implements ThreadFactory
         return _factory.newThread(new Runnable() {
                 public void run()
                 {
-                    cdc.apply();
+                    cdc.restore();
                     try {
                         r.run();
                     } finally {

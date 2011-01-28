@@ -3180,7 +3180,7 @@ public abstract class AbstractFtpDoorV1
         @Override
         public synchronized void run()
         {
-            _cdc.apply();
+            _cdc.restore();
 
             CellMessage msg =
                 new CellMessage(new CellPath(_pool),
@@ -3284,7 +3284,7 @@ public abstract class AbstractFtpDoorV1
                     _running = true;
                     _executor.submit(new Runnable() {
                             public void run() {
-                                cdc.apply();
+                                cdc.restore();
                                 String command = get();
                                 while (command != null) {
                                     execute(command);
