@@ -194,6 +194,7 @@ public class CellMessageDispatcher
                                                    _receiverName,
                                                    CellMessage.class, c);
                 if (m != null) {
+                    m.setAccessible(true);
                     receivers.add(new LongReceiver(listener, m));
                     continue;
                 }
@@ -202,6 +203,7 @@ public class CellMessageDispatcher
                                             _receiverName,
                                             c);
                 if (m != null) {
+                    m.setAccessible(true);
                     receivers.add(new ShortReceiver(listener, m));
                 }
             }

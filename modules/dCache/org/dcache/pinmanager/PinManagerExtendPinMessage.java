@@ -8,6 +8,7 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import static org.dcache.namespace.FileAttribute.*;
+import static com.google.common.base.Preconditions.*;
 
 public class PinManagerExtendPinMessage extends Message
 {
@@ -20,6 +21,7 @@ public class PinManagerExtendPinMessage extends Message
 
     public PinManagerExtendPinMessage(FileAttributes fileAttributes, long pinId, long lifetime)
     {
+        checkNotNull(fileAttributes);
         _fileAttributes = fileAttributes;
         _pinId = pinId;
         _lifetime = lifetime;
@@ -38,6 +40,11 @@ public class PinManagerExtendPinMessage extends Message
     public FileAttributes getFileAttributes()
     {
         return _fileAttributes;
+    }
+
+    public void setLifetime(long lifetime)
+    {
+        _lifetime = lifetime;
     }
 
     public long getLifetime()

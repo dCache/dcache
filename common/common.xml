@@ -71,6 +71,10 @@
         <dependency groupId="org.springframework" artifactId="spring-jdbc" version="3.0.5.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-orm" version="3.0.5.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-web" version="3.0.5.RELEASE"/>
+        <dependency groupId="org.springframework" artifactId="spring-aspects" version="3.0.5.RELEASE"/>
+        <dependency groupId="org.springframework" artifactId="spring-instrument" version="3.0.5.RELEASE"/>
+        <dependency groupId="org.aspectj" artifactId="aspectjrt" version="1.6.10"/>
+        <dependency groupId="org.aspectj" artifactId="aspectjweaver" version="1.6.10"/>
         <dependency groupId="org.apache.xbean" artifactId="xbean-spring" version="3.7"/>
         <dependency groupId="org.apache.activemq" artifactId="activemq-all" version="5.4.2"/>
         <dependency groupId="org.slf4j" artifactId="slf4j-api" version="1.6.1"/>

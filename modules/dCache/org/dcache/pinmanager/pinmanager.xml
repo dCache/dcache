@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+    <context:load-time-weaver/>
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
+
+  <bean id="message-thread-pool"
+        class="java.util.concurrent.ThreadPoolExecutor"
+        destroy-method="shutdown">
+    <description>Thread pool for message processing</description>
+    <constructor-arg value="${threadsCore}"/>
+    <constructor-arg value="${threadsMax}"/>
+    <constructor-arg value="${threadsKeepAliveTime}"/>
+    <constructor-arg value="#{ T(java.util.concurrent.TimeUnit).SECONDS }"/>
+    <constructor-arg>
+      <bean class="java.util.concurrent.ArrayBlockingQueue">
+        <constructor-arg value="${threadsQueueMax}"/>
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <bean id="scheduled-executor"
+        class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool"
+        destroy-method="shutdown">
+      <constructor-arg value="2"/>
+  </bean>
+
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+      <description>PNFS manager communication stub</description>
+      <property name="destination" value="${pnfsManager}"/>
+      <property name="timeout" value="300000"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+      <description>Pool manager communication stub</description>
+      <property name="destination" value="${poolManager}"/>
+      <property name="timeout" value="3600000"/>
+  </bean>
+
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+      <description>Pool communication stub</description>
+      <property name="timeout" value="90000"/>
+  </bean>
+
+  <bean id="pinmanager" class="org.dcache.pinmanager.PinManager"
+        init-method="init">
+      <property name="expirationPeriod" value="${expirationFrequency}"/>
+      <property name="poolStub" ref="pool-stub"/>
+      <property name="dao" ref="dao"/>
+      <property name="executor" ref="scheduled-executor"/>
+  </bean>
+
+  <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">
+      <description>Processes pin requests</description>
+      <property name="poolManagerStub" ref="pool-manager-stub"/>
+      <property name="poolStub" ref="pool-stub"/>
+      <property name="dao" ref="dao"/>
+      <property name="executor" ref="scheduled-executor"/>
+      <property name="stagePermission" ref="stage-permission"/>
+      <property name="maxLifetime" value="${maxPinDuration}"/>
+  </bean>
+
+  <bean id="unpin-processor" class="org.dcache.pinmanager.UnpinRequestProcessor">
+      <description>Processes unpin requests</description>
+      <property name="dao" ref="dao"/>
+      <property name="authorizationPolicy" ref="pdp"/>
+  </bean>
+
+  <bean id="move-pin-processor" class="org.dcache.pinmanager.MovePinRequestProcessor">
+      <description>Processes pin extension requests</description>
+      <property name="dao" ref="dao"/>
+      <property name="poolStub" ref="pool-stub"/>
+      <property name="authorizationPolicy" ref="pdp"/>
+      <property name="maxLifetime" value="${maxPinDuration}"/>
+  </bean>
+
+  <bean id="pinmanager-cli" class="org.dcache.pinmanager.PinManagerCLI">
+      <description>Command line interface</description>
+      <property name="pinManager" ref="pinmanager"/>
+      <property name="pnfsStub" ref="pnfs-stub"/>
+      <property name="dao" ref="dao"/>
+      <property name="pinProcessor" ref="pin-processor"/>
+      <property name="unpinProcessor" ref="unpin-processor"/>
+      <property name="moveProcessor" ref="move-pin-processor"/>
+      <property name="executor" ref="message-thread-pool"/>
+  </bean>
+
+  <bean id="pdp" class="org.dcache.pinmanager.DefaultAuthorizationPolicy">
+      <description>Makes authorization decisions</description>
+  </bean>
+
+  <bean id="stage-permission" class="diskCacheV111.util.CheckStagePermission">
+      <description>Stage permission checker</description>
+      <constructor-arg value="${stageConfigurationFilePath}"/>
+  </bean>
+
+  <!--  DATABASE BEANS
+  -->
+
+  <bean id="liquibase"
+        class="liquibase.spring.SpringLiquibase">
+    <description>Database schema manager</description>
+    <property name="dataSource">
+      <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbcDriver}"/>
+        <property name="url" value="${jdbcUrl}"/>
+        <property name="username" value="${dbUser}"/>
+        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${jdbcUrl}', '${dbUser}', '${dbPass}') }"/>
+      </bean>
+    </property>
+    <property name="changeLog" value="classpath:${db.schema.changelog}"/>
+  </bean>
+
+  <bean id="pmf"
+        class="org.springframework.orm.jdo.LocalPersistenceManagerFactoryBean"
+        depends-on="liquibase">
+    <description>JDO connection</description>
+    <property name="jdoProperties">
+      <props>
+        <prop key="javax.jdo.PersistenceManagerFactoryClass">
+        org.datanucleus.jdo.JDOPersistenceManagerFactory</prop>
+        <prop key="javax.jdo.option.ConnectionURL">${jdbcUrl}</prop>
+        <prop key="javax.jdo.option.ConnectionUserName">${dbUser}</prop>
+        <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${jdbcUrl}', '${dbUser}', '${dbPass}') }</prop>
+        <prop key="javax.jdo.option.ConnectionDriverName">${jdbcDriver}</prop>
+        <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
+        <prop key="datanucleus.connectionPoolingType">DBCP</prop>
+        <prop key="datanucleus.connectionPool.maxIdle">${maxIdleJdbcConnections}</prop>
+        <prop key="datanucleus.connectionPool.minIdle">2</prop>
+        <prop key="datanucleus.connectionPool.minActive">${maxActiveJdbcConnections}</prop>
+        <prop key="datanucleus.connectionPool.maxWait">#{ ${maxJdbcConnectionsWaitSec} * 1000 }</prop>
+        <prop key="datanucleus.connectionPool.maxStatements">100</prop>
+        <prop key="datanucleus.cache.level2.type">none</prop>
+      </props>
+    </property>
+  </bean>
+
+  <bean id="tx-manager" class="org.springframework.orm.jdo.JdoTransactionManager">
+    <description>JDO transaction manager</description>
+    <property name="persistenceManagerFactory" ref="pmf"/>
+    <property name="jdoDialect">
+        <bean class="org.dcache.util.Jdo3Dialect"/>
+    </property>
+  </bean>
+
+  <bean id="pmf-proxy"
+      class="org.springframework.orm.jdo.TransactionAwarePersistenceManagerFactoryProxy">
+    <description>Transaction aware JDO connection</description>
+    <property name="targetPersistenceManagerFactory" ref="pmf"/>
+    <property name="allowCreate" value="false"/>
+  </bean>
+
+  <bean id="dao" class="org.dcache.pinmanager.JdoDao">
+    <description>Data access object</description>
+    <property name="persistenceManagerFactory" ref="pmf-proxy"/>
+  </bean>
+
+  <tx:annotation-driven transaction-manager="tx-manager" mode="aspectj"/>
+</beans>
