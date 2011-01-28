@@ -603,7 +603,7 @@ public abstract class Transfer implements Comparable<Transfer>
                                                   protocolInfo,
                                                   allocated);
             } else {
-                int allowedStates =
+                EnumSet<RequestContainerV5.RequestState> allowedStates =
                     _checkStagePermission.canPerformStaging(_subject, storageInfo)
                     ? RequestContainerV5.allStates
                     : RequestContainerV5.allStatesExceptStage;

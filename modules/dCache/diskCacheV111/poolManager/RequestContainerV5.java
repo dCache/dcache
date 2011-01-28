@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.EnumSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -65,6 +66,10 @@ public class RequestContainerV5
      * State of CheckFilePingHandler.
      */
     private enum PingState { STOPPED, WAITING, QUERYING };
+
+    public enum RequestState { ST_INIT, ST_DONE, ST_POOL_2_POOL,
+            ST_STAGE, ST_WAITING, ST_WAITING_FOR_STAGING,
+            ST_WAITING_FOR_POOL_2_POOL, ST_SUSPENDED };
 
     private static final String POOL_UNKNOWN_STRING  = "<unknown>" ;
 
@@ -118,36 +123,11 @@ public class RequestContainerV5
      * allStates defines that all states are allowed.
      * allStatesExceptStage defines that all states except STAGE are allowed.
      */
-    public static final int allStates = PoolRequestHandler.ST_STAGE | PoolRequestHandler.ST_INIT | PoolRequestHandler.ST_DONE
-            | PoolRequestHandler.ST_POOL_2_POOL | PoolRequestHandler.ST_WAITING | PoolRequestHandler.ST_WAITING_FOR_STAGING
-            | PoolRequestHandler.ST_WAITING_FOR_POOL_2_POOL | PoolRequestHandler.ST_SUSPENDED;
+    public static final EnumSet<RequestState> allStates =
+        EnumSet.allOf(RequestState.class);
 
-    public static final int allStatesExceptStage = PoolRequestHandler.ST_INIT | PoolRequestHandler.ST_DONE | PoolRequestHandler.ST_POOL_2_POOL
-            | PoolRequestHandler.ST_WAITING | PoolRequestHandler.ST_WAITING_FOR_STAGING | PoolRequestHandler.ST_WAITING_FOR_POOL_2_POOL
-            | PoolRequestHandler.ST_SUSPENDED;
-
-    private static String modeToString(int mode){
-        switch (mode) {
-        case 1:
-            return "ST_INIT";
-        case 2:
-            return "ST_DONE";
-        case 4:
-            return "ST_POOL_2_POOL";
-        case 8:
-            return "ST_STAGE";
-        case 16:
-            return "ST_WAITING";
-        case 32:
-            return "ST_WAITING_FOR_STAGING";
-        case 64:
-            return "ST_WAITING_FOR_POOL_2_POOL";
-        case 128:
-            return "ST_SUSPENDED";
-       default:
-            throw new IllegalArgumentException("Invalid mode : " + mode);
-       }
-    }
+    public static final EnumSet<RequestState> allStatesExceptStage =
+        EnumSet.complementOf(EnumSet.of(RequestState.ST_STAGE));
 
     public RequestContainerV5( int stagingRetryInterval) {
         _stagingRetryInterval = stagingRetryInterval;
@@ -632,7 +612,7 @@ public class RequestContainerV5
 
         PnfsId       pnfsId       = request.getPnfsId() ;
         ProtocolInfo protocolInfo = request.getProtocolInfo() ;
-        int allowedStates = request.getAllowedStates();
+        EnumSet<RequestState> allowedStates = request.getAllowedStates();
 
         String  hostName    =
                protocolInfo instanceof IpProtocolInfo ?
@@ -736,9 +716,9 @@ public class RequestContainerV5
         private   UOID         _waitingFor    = null ;
         private   long         _waitUntil     = 0 ;
 
-        private   String       _state         = "[<idle>]";
-        private   int          _mode          = ST_INIT ;
-        private   final int    _allowedStates;
+        private   String       _status        = "[<idle>]";
+        private   RequestState _state         = RequestState.ST_INIT;
+        private   final EnumSet<RequestState> _allowedStates;
         private   boolean      _stagingDenied = false;
         private   int          _currentRc     = 0 ;
         private   String       _currentRm     = "" ;
@@ -866,8 +846,9 @@ public class RequestContainerV5
             }
         }
 
-        public PoolRequestHandler( PnfsId pnfsId , String canonicalName, int allowedStates ){
-
+        public PoolRequestHandler(PnfsId pnfsId, String canonicalName,
+                                  EnumSet<RequestState> allowedStates)
+        {
 	    _pnfsId  = pnfsId ;
 	    _name    = canonicalName ;
 	    _allowedStates = allowedStates ;
@@ -935,14 +916,14 @@ public class RequestContainerV5
 		  _retryCounter ,
                   _started ,
 		  getPoolCandidateState() ,
-		  _state ,
+		  _status ,
 		  _currentRc ,
 		  _currentRm ) ;
 	}
         @Override
         public String toString(){
            return _name+" m="+_messages.size()+" r="+
-                  _retryCounter+" ["+getPoolCandidateState()+"] ["+_state+"] "+
+                  _retryCounter+" ["+getPoolCandidateState()+"] ["+_status+"] "+
                   "{"+_currentRc+","+_currentRm+"}" ;
         }
         //
@@ -1037,7 +1018,7 @@ public class RequestContainerV5
                 sendMessage( cellMessage );
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
-                _state = "Staging "+_formatter.format(new Date()) ;
+                _status = "Staging "+_formatter.format(new Date()) ;
             }
             return true ;
 	}
@@ -1060,7 +1041,7 @@ public class RequestContainerV5
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 if( _waitingFor != null )_messageHash.remove( _waitingFor ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
-                _state = "[P2P "+_formatter.format(new Date())+"]" ;
+                _status = "[P2P "+_formatter.format(new Date())+"]" ;
             }
 	}
 
@@ -1140,15 +1121,6 @@ public class RequestContainerV5
         private static final int RT_S_COST_EXCEEDED  = 9 ;
         private static final int RT_DELAY  = 10 ;
 
-        private static final int ST_INIT        = 1 ;
-        private static final int ST_DONE        = 2 ;
-        private static final int ST_POOL_2_POOL = 4 ;
-        private static final int ST_STAGE       = 8 ;
-        private static final int ST_WAITING     = 16 ;
-        private static final int ST_WAITING_FOR_STAGING     = 32 ;
-        private static final int ST_WAITING_FOR_POOL_2_POOL = 64 ;
-        private static final int ST_SUSPENDED   = 128 ;
-
         private static final int CONTINUE        = 0 ;
         private static final int WAIT            = 1 ;
 
@@ -1212,9 +1184,8 @@ public class RequestContainerV5
               }
               _forceContinue = false ;
               try{
-                 _log.info("StageEngine called in mode "+
-                   modeToString(_mode)+
-                     " with object "+
+                 _log.info("StageEngine called in mode " +
+                           _state + " with object " +
                         (  inputObject == null ?
                              "(NULL)":
                             (  inputObject instanceof Object [] ?
@@ -1226,7 +1197,7 @@ public class RequestContainerV5
 
                  stateEngine( inputObject ) ;
 
-                 _log.info("StageEngine left with   : " + modeToString(_mode)+
+                 _log.info("StageEngine left with   : " + _state +
                             "  ("+ ( _forceContinue?"Continue":"Wait")+")");
 
               }catch(Exception ee ){
@@ -1241,7 +1212,7 @@ public class RequestContainerV5
             /* If the result is cached or the door disabled staging,
              * then we don't check the permissions.
              */
-            if (_stagingDenied || (_allowedStates & ST_STAGE) == 0) {
+            if (_stagingDenied || !_allowedStates.contains(RequestState.ST_STAGE)) {
                 return false;
             }
 
@@ -1269,46 +1240,40 @@ public class RequestContainerV5
             return false;
         }
 
-        private void nextStep( int mode , int shouldContinue ){
+        private void nextStep(RequestState state, int shouldContinue ){
             if (_currentRc == CacheException.NOT_IN_TRASH ||
                 _currentRc == CacheException.FILE_NOT_FOUND) {
-                _mode = ST_DONE;
+                _state = RequestState.ST_DONE;
                 _forceContinue = true;
-                _state = "Failed";
+                _status = "Failed";
                 sendInfoMessage(_pnfsId , _storageInfo ,
                                 _currentRc , "Failed "+_currentRm);
             } else {
-                if (mode == ST_STAGE && !canStage()) {
-                    _mode = ST_DONE;
+                if (state == RequestState.ST_STAGE && !canStage()) {
+                    _state = RequestState.ST_DONE;
                     _forceContinue = true;
-                    _state = "Failed";
+                    _status = "Failed";
                     _log.debug("Subject is not authorized to stage");
                     _currentRc = CacheException.FILE_NOT_ONLINE;
                     _currentRm = "File not online. Staging not allowed.";
                     sendInfoMessage(_pnfsId , _storageInfo ,
                                     _currentRc , "Permission denied." + _currentRm);
-                } else if ((mode & _allowedStates) == 0) {
-                    _mode = ST_DONE;
+                } else if (!_allowedStates.contains(state)) {
+                    _state = RequestState.ST_DONE;
                     _forceContinue = true;
-                    _state = "Failed";
-                    _log.debug("No permission to perform " +
-                               modeToString(mode));
+                    _status = "Failed";
+                    _log.debug("No permission to perform {}", state);
                     _currentRc = CacheException.PERMISSION_DENIED;
                     _currentRm = "Permission denied.";
                     sendInfoMessage(_pnfsId, _storageInfo, _currentRc,
-                                    "Permission denied for " +
-                                    modeToString(mode));
-                } else if ((mode & _allowedStates) == mode) {
-                    _mode = mode ;
+                                    "Permission denied for " + state);
+                } else {
+                    _state = state;
                     _forceContinue = shouldContinue == CONTINUE ;
-                    if( _mode != ST_DONE ){
+                    if( _state != RequestState.ST_DONE ){
                         _currentRc = 0 ;
                         _currentRm = "" ;
                     }
-                } else {
-                    _log.error("Value of (mode & _allowedStates) is neither equal to '0' nor to 'mode'." +
-                               " Current value of mode = " + Integer.toString(mode));
-                    throw new IllegalStateException("Illegal value of 'mode'.");
                 }
             }
         }
@@ -1423,7 +1388,7 @@ public class RequestContainerV5
         //
         private void stateEngine( Object inputObject ) {
            int rc = -1;
-           switch( _mode ){
+           switch( _state ){
 
               case ST_INIT :
                  _log.debug( "stateEngine: case ST_INIT");
@@ -1432,7 +1397,7 @@ public class RequestContainerV5
                     CacheException ce = _selections.get(_pnfsId) ;
                     if( ce != null ){
                        setError(ce.getRc(),ce.getMessage());
-                       nextStep( ST_DONE , CONTINUE ) ;
+                       nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        return ;
                     }
 
@@ -1443,11 +1408,11 @@ public class RequestContainerV5
 
 
                     if( _suspendIncoming ){
-                          _state = "Suspended (forced) "+_formatter.format(new Date()) ;
+                          _status = "Suspended (forced) "+_formatter.format(new Date()) ;
                           _currentRc = 1005 ;
                           _currentRm = "Suspend enforced";
                           _log.debug( " stateEngine: SUSPENDED/WAIT ");
-                         nextStep( ST_SUSPENDED , WAIT ) ;
+                         nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                          sendInfoMessage( _pnfsId , _storageInfo ,
                                           _currentRc , "Suspended (forced) "+_currentRm );
                          return ;
@@ -1458,14 +1423,14 @@ public class RequestContainerV5
                     //
                     if( _enforceP2P ){
                         setError(0,"");
-                        nextStep(ST_POOL_2_POOL , CONTINUE) ;
+                        nextStep(RequestState.ST_POOL_2_POOL , CONTINUE) ;
                         return ;
                     }
 
                     if( ( rc = askIfAvailable() ) == RT_FOUND ){
 
                        setError(0,"");
-                       nextStep( ST_DONE , CONTINUE ) ;
+                       nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo ) sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getPoolName():"<UNKNOWN>", true );   //VP
 
@@ -1475,14 +1440,14 @@ public class RequestContainerV5
                         _log.debug(" stateEngine: RT_NOT_FOUND ");
                        if( _parameter._hasHsmBackend ){
                            _log.debug(" stateEngine: parameter has HSM backend ");
-                          nextStep( ST_STAGE , CONTINUE ) ;
+                          nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        }else{
                           _log.debug(" stateEngine: parameter has NO HSM backend ");
-                          _state = "Suspended (pool unavailable) "+_formatter.format(new Date()) ;
+                          _status = "Suspended (pool unavailable) "+_formatter.format(new Date()) ;
                           _currentRc = 1010 ;
                           _currentRm = "Suspend";
                           _poolCandidateInfo = null ;
-                          nextStep( ST_SUSPENDED , WAIT ) ;
+                          nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                        }
                        if (_sendHitInfo && _poolCandidateInfo == null) {
                            sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getPoolName():"<UNKNOWN>", false );   //VP
@@ -1499,27 +1464,27 @@ public class RequestContainerV5
                        //  if we don't have an hsm we overwrite the p2pAllowed
                        //
                        nextStep( _parameter._p2pAllowed || ! _parameter._hasHsmBackend
-                                ? ST_POOL_2_POOL : ST_STAGE , CONTINUE ) ;
+                                ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE , CONTINUE ) ;
 
                     }else if( rc == RT_COST_EXCEEDED ){
 
                        if( _parameter._p2pOnCost ){
 
-                           nextStep( ST_POOL_2_POOL , CONTINUE ) ;
+                           nextStep(RequestState.ST_POOL_2_POOL , CONTINUE ) ;
 
                        }else if( _parameter._hasHsmBackend &&  _parameter._stageOnCost ){
 
-                           nextStep( ST_STAGE , CONTINUE ) ;
+                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
 
                        }else{
 
                            setError( 127 , "Cost exceeded (st,p2p not allowed)" ) ;
-                           nextStep( ST_DONE , CONTINUE ) ;
+                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
 
                        }
                     }else if( rc == RT_ERROR ){
                        _log.debug( " stateEngine: RT_ERROR");
-                       nextStep( ST_STAGE , CONTINUE ) ;
+                       nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        _log.info("AskIfAvailable returned an error, will continue with Staging");
 
                     }
@@ -1539,8 +1504,8 @@ public class RequestContainerV5
 
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RT_FOUND ){
 
-                       nextStep( ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
-                       _state = "Pool2Pool "+_formatter.format(new Date()) ;
+                       nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
+                       _status = "Pool2Pool "+_formatter.format(new Date()) ;
                        setError(0,"");
                        _pingHandler.startP2P(_p2pPoolCandidateInfo.getPoolName()) ;
 
@@ -1553,20 +1518,20 @@ public class RequestContainerV5
 
                         if( _bestPool == null) {
                             if( _enforceP2P ){
-                               nextStep( ST_DONE , CONTINUE ) ;
+                               nextStep(RequestState.ST_DONE , CONTINUE ) ;
                             }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
                                _log.info("ST_POOL_2_POOL : Pool to pool not permitted, trying to stage the file");
-                               nextStep( ST_STAGE , CONTINUE ) ;
+                               nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                             }else{
                                setError(265,"Pool to pool not permitted");
-                               nextStep( ST_SUSPENDED , WAIT ) ;
+                               nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                             }
                         }else{
                             _poolCandidateInfo = _bestPool ;
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
                           setError(0,"");
-                          nextStep( ST_DONE , CONTINUE ) ;
+                          nextStep(RequestState.ST_DONE , CONTINUE ) ;
                         }
 
                     }else if( rc == RT_S_COST_EXCEEDED ){
@@ -1576,10 +1541,10 @@ public class RequestContainerV5
                        if( _parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored() ){
 
                            if( _enforceP2P ){
-                              nextStep( ST_DONE , CONTINUE ) ;
+                              nextStep(RequestState.ST_DONE , CONTINUE ) ;
                            }else{
                               _log.info("ST_POOL_2_POOL : staging");
-                              nextStep( ST_STAGE , CONTINUE ) ;
+                              nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                            }
                        }else{
 
@@ -1589,13 +1554,13 @@ public class RequestContainerV5
                               _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
                              setError(0,"");
-                             nextStep( ST_DONE , CONTINUE ) ;
+                             nextStep(RequestState.ST_DONE , CONTINUE ) ;
                           }else{
                              //
                              // this can't possibly happen
                              //
                              setError(194,"PANIC : File not present in any reasonable pool");
-                             nextStep( ST_DONE , CONTINUE ) ;
+                             nextStep(RequestState.ST_DONE , CONTINUE ) ;
                           }
 
                        }
@@ -1607,10 +1572,10 @@ public class RequestContainerV5
                           // this can't possibly happen
                           //
                           if( _enforceP2P ){
-                             nextStep( ST_DONE , CONTINUE ) ;
+                             nextStep(RequestState.ST_DONE , CONTINUE ) ;
                           }else{
                              setError(192,"PANIC : File not present in any reasonable pool");
-                             nextStep( ST_DONE , CONTINUE ) ;
+                             nextStep(RequestState.ST_DONE , CONTINUE ) ;
                           }
 
                        }else{
@@ -1620,7 +1585,7 @@ public class RequestContainerV5
                           _log.info(" found high cost object");
 
                           setError(0,"");
-                          nextStep( ST_DONE , CONTINUE ) ;
+                          nextStep(RequestState.ST_DONE , CONTINUE ) ;
 
                        }
 
@@ -1628,11 +1593,11 @@ public class RequestContainerV5
                     }else{
 
                        if( _enforceP2P ){
-                          nextStep( ST_DONE , CONTINUE ) ;
+                          nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        }else if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
-                          nextStep( ST_STAGE , CONTINUE ) ;
+                          nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        }else{
-                          nextStep( ST_SUSPENDED , WAIT ) ;
+                          nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                        }
 
                     }
@@ -1646,10 +1611,10 @@ public class RequestContainerV5
                  if( inputObject == null ){
 
                     if( _suspendStaging ){
-                          _state = "Suspended Stage (forced) "+_formatter.format(new Date()) ;
+                          _status = "Suspended Stage (forced) "+_formatter.format(new Date()) ;
                           _currentRc = 1005 ;
                           _currentRm = "Suspend enforced";
-                         nextStep( ST_SUSPENDED , WAIT ) ;
+                         nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                          sendInfoMessage( _pnfsId , _storageInfo ,
                                           _currentRc , "Suspended Stage (forced) "+_currentRm );
                          return ;
@@ -1657,8 +1622,8 @@ public class RequestContainerV5
 
                     if( ( rc = askForStaging() ) == RT_FOUND ){
 
-                       nextStep( ST_WAITING_FOR_STAGING , WAIT ) ;
-                       _state = "Staging "+_formatter.format(new Date()) ;
+                       nextStep(RequestState.ST_WAITING_FOR_STAGING , WAIT ) ;
+                       _status = "Staging "+_formatter.format(new Date()) ;
                        setError(0,"");
                        _pingHandler.startStage(_poolCandidateInfo.getPoolName()) ;
 
@@ -1683,7 +1648,7 @@ public class RequestContainerV5
 
                     if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RT_OK ){
 
-                       nextStep( _parameter._p2pForTransfer && ! _enforceP2P ? ST_INIT : ST_DONE , CONTINUE ) ;
+                       nextStep( _parameter._p2pForTransfer && ! _enforceP2P ? RequestState.ST_INIT : RequestState.ST_DONE , CONTINUE ) ;
 
                     }else if( rc == RT_CONTINUE ){
                         //
@@ -1693,7 +1658,7 @@ public class RequestContainerV5
                         if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
 
                             _log.info("ST_POOL_2_POOL : trying to stage the file");
-                            nextStep( ST_STAGE , CONTINUE ) ;
+                            nextStep(RequestState.ST_STAGE , CONTINUE ) ;
 
                         }else{
                             errorHandler() ;
@@ -1716,11 +1681,11 @@ public class RequestContainerV5
 
                     if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RT_OK ){
 
-                       nextStep( _parameter._p2pForTransfer ? ST_INIT : ST_DONE , CONTINUE ) ;
+                       nextStep( _parameter._p2pForTransfer ? RequestState.ST_INIT : RequestState.ST_DONE , CONTINUE ) ;
 
                     }else if( rc == RT_DELAY ){
-                        _state = "Suspended By HSM request";
-                        nextStep( ST_SUSPENDED , WAIT ) ;
+                        _status = "Suspended By HSM request";
+                        nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                     }else if( rc == RT_CONTINUE ){
 
                     }else{
@@ -1756,7 +1721,7 @@ public class RequestContainerV5
                     //
                     synchronized( _handlerHash ){
                        if( answerRequest( _maxRequestClumping ) ){
-                           nextStep( ST_INIT , CONTINUE ) ;
+                           nextStep(RequestState.ST_INIT , CONTINUE ) ;
                        }else{
                            _handlerHash.remove( _name ) ;
                        }
@@ -1773,17 +1738,17 @@ public class RequestContainerV5
 
               clearSteering();
               setError(((Integer)c[1]).intValue(),c[2].toString());
-              nextStep(ST_DONE,CONTINUE);
+              nextStep(RequestState.ST_DONE,CONTINUE);
 
            }else if( command.equals("retry") ){
 
-              _state = "Retry enforced" ;
+              _status = "Retry enforced" ;
               _retryCounter = 0 ;
               clearSteering() ;
               _pnfsFileLocation.clear() ;
               setError(0,"");
               if( ( c.length > 1 ) && c[1].toString().equals("update") )getStorageInfo();
-              nextStep(ST_INIT,CONTINUE);
+              nextStep(RequestState.ST_INIT,CONTINUE);
 
            }else if( command.equals("alive") ){
 
@@ -1794,7 +1759,7 @@ public class RequestContainerV5
               }
 
               if( ( _waitUntil > 0L ) && ( now > _waitUntil ) ){
-                 nextStep(ST_INIT,CONTINUE);
+                 nextStep(RequestState.ST_INIT,CONTINUE);
                  clearSteering() ;
               }else{
                  _pingHandler.alive() ;
@@ -1839,8 +1804,8 @@ public class RequestContainerV5
 
            clearSteering();
            setError(5,"Resource temporarily unavailable : "+detail);
-           nextStep( ST_DONE , CONTINUE ) ;
-           _state = "Failed" ;
+           nextStep(RequestState.ST_DONE , CONTINUE ) ;
+           _status = "Failed" ;
            sendInfoMessage( _pnfsId , _storageInfo ,
                             _currentRc , "Failed "+_currentRm );
         }
@@ -1851,7 +1816,7 @@ public class RequestContainerV5
               //
               _pnfsFileLocation.clear() ;
               getStorageInfo();
-              nextStep( ST_INIT, CONTINUE ) ;
+              nextStep(RequestState.ST_INIT, CONTINUE ) ;
               //
            }else if( _retryCounter < _maxRetries ){
               //
@@ -1860,18 +1825,18 @@ public class RequestContainerV5
               _pnfsFileLocation.clear() ;
               getStorageInfo();
               waitFor( _retryTimer ) ;
-              nextStep( ST_INIT , WAIT ) ;
-              _state = "Waiting "+_formatter.format(new Date()) ;
+              nextStep(RequestState.ST_INIT , WAIT ) ;
+              _status = "Waiting "+_formatter.format(new Date()) ;
               //
            }else{
               if( _onError.equals( "suspend" ) ){
-                 _state = "Suspended "+_formatter.format(new Date()) ;
-                 nextStep( ST_SUSPENDED , WAIT ) ;
+                 _status = "Suspended "+_formatter.format(new Date()) ;
+                 nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                  sendInfoMessage( _pnfsId , _storageInfo ,
                                   _currentRc , "Suspended "+_currentRm );
               }else{
-                 nextStep( ST_DONE , CONTINUE ) ;
-                 _state = "Failed" ;
+                 nextStep(RequestState.ST_DONE , CONTINUE ) ;
+                 _status = "Failed" ;
                  sendInfoMessage( _pnfsId , _storageInfo ,
                                   _currentRc , "Failed "+_currentRm );
               }

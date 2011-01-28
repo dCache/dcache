@@ -1,7 +1,10 @@
 package org.dcache.services.pinmanager1;
 
+import java.util.EnumSet;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.*;
+import diskCacheV111.poolManager.RequestContainerV5;
 
 import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.Subjects;
@@ -37,7 +40,7 @@ class Pinner extends SMCTask
     /**
      * Pool manager allowed stated for this request.
      */
-    private final int _allowedStates;
+    private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
     // We record this now in Pinner, since upon success
     // we need to change the original pin expiration time
     // which will be calcuated only after the file was
@@ -49,7 +52,7 @@ class Pinner extends SMCTask
                   PinManagerJob<PinManagerPinMessage> job,
                   Pin pin,
                   long orginalPinRequestId,
-                  int allowedStates,
+                  EnumSet<RequestContainerV5.RequestState> allowedStates,
                   CellStub pnfsManager,
                   CellStub poolManager,
                   CellStub pool)

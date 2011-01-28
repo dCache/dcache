@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.EnumSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.PatternSyntaxException;
 import org.dcache.cells.Option;
@@ -434,7 +435,7 @@ public class PinManager
                 // and staging should be allowed for this case
                 // so the default value for allowedStates should be
                 //
-                int allowedStates = RequestContainerV5.allStates;
+                EnumSet<RequestContainerV5.RequestState> allowedStates = RequestContainerV5.allStates;
                 try {
                     StorageInfo storageInfo =
                         (job.getMessage() == null) ? null : job.getMessage().getStorageInfo();

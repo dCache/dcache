@@ -3,6 +3,7 @@
 package diskCacheV111.vehicles ;
 import  diskCacheV111.util.* ;
 import diskCacheV111.poolManager.RequestContainerV5;
+import java.util.EnumSet;
 
 public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
@@ -13,7 +14,7 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private String       _pnfsPath;
     private String       _linkGroup = null;
     private static final long serialVersionUID = -5874326080375390208L;
-    private final int    _allowedStates;
+    private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
     public PoolMgrSelectPoolMsg( PnfsId       pnfsId ,
                                  StorageInfo  storageInfo,
@@ -24,12 +25,12 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
     }
 
-    public PoolMgrSelectPoolMsg( PnfsId pnfsId ,
-            StorageInfo  storageInfo,
-            ProtocolInfo protocolInfo,
-            long fileSize,
-            int allowedStates){
-
+    public PoolMgrSelectPoolMsg(PnfsId pnfsId ,
+                                StorageInfo  storageInfo,
+                                ProtocolInfo protocolInfo,
+                                long fileSize,
+                                EnumSet<RequestContainerV5.RequestState> allowedStates)
+    {
         super( pnfsId , storageInfo ) ;
         _protocolInfo = protocolInfo;
         _fileSize     = fileSize;
@@ -64,7 +65,7 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         return _linkGroup;
     }
 
-    public int getAllowedStates() {
+    public EnumSet<RequestContainerV5.RequestState> getAllowedStates() {
         return _allowedStates;
     }
 

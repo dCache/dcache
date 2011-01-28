@@ -2129,7 +2129,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // try to get some space to store the file.
                 //
-               int allowedStates;
+               EnumSet<RequestContainerV5.RequestState> allowedStates;
                try {
                    allowedStates =
                        _checkStagePermission.canPerformStaging(_subject, _storageInfo)

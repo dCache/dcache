@@ -3,6 +3,7 @@ package org.dcache.pinmanager;
 import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
+import java.util.EnumSet;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -139,7 +140,7 @@ public class PinRequestProcessor
         return reply;
     }
 
-    protected int checkStaging(PinTask task)
+    protected EnumSet<RequestContainerV5.RequestState> checkStaging(PinTask task)
     {
         try {
             Subject subject = task.getSubject();

@@ -3,6 +3,7 @@
 package diskCacheV111.vehicles ;
 import diskCacheV111.poolManager.RequestContainerV5;
 import  diskCacheV111.util.* ;
+import java.util.EnumSet;
 
 public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
 
@@ -19,7 +20,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg {
             StorageInfo  storageInfo,
             ProtocolInfo protocolInfo,
             long fileSize,
-            int allowedStates){
+            EnumSet<RequestContainerV5.RequestState> allowedStates){
 
             super( pnfsId , storageInfo , protocolInfo , fileSize , allowedStates) ;
     }
