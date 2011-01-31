@@ -144,6 +144,11 @@
         <include name="srm.jar"/>
       </patternset>
 
+      <!-- find liquibase -->
+      <patternset id="pattern.dcache.jars.liquibase">
+        <include name="**/liquibase-core-*.jar"/>
+      </patternset>
+
       <!-- all other jar files are external libraries -->
       <patternset id="pattern.dcache.jars.packaged-external">
         <include name="**/*.jar"/>
@@ -171,6 +176,16 @@
         <path>
           <fileset dir="${server.bin.dir}/classes">
             <patternset refid="pattern.dcache.jars.all-compiled-code-except-dcache"/>
+          </fileset>
+        </path>
+      </pathconvert>
+
+
+      <pathconvert property="dcache.jars.liquibase" targetos="unix">
+        <map from="${server.bin.dir}/classes" to="$${dcache.paths.classes}" />
+        <path>
+          <fileset dir="${server.bin.dir}/classes">
+            <patternset refid="pattern.dcache.jars.liquibase"/>
           </fileset>
         </path>
       </pathconvert>
@@ -204,11 +219,11 @@
 #   jar files.  Most sites will not have to do this.
 #
 #
-#   A list of all external dependencies that are delivered with dCache.
-dcache.paths.classpath.packaged-external=${dcache.jars.packaged-external}
-#
 #   Location of the dcache.jar file.
 dcache.paths.classpath.dcache=${dcache.jars.dcache}
+#
+#   Location of the liquibase-core-*.jar file.
+dcache.paths.liquibase=${dcache.jars.liquibase}
 #
 #   Location of all dCache code jar files excluding the dcache.jar file.
 dcache.path.classpath.compiled-not-dcache=${dcache.jars.all-compiled-code-except-dcache}
@@ -221,6 +236,9 @@ dcache.paths.classpath.all-external=$${dcache.java.classpath}:$${dcache.paths.cl
 #
 #   The classpath used by dCache.
 dcache.paths.classpath=$${dcache.paths.classpath.all-compiled-code}:$${dcache.paths.classpath.all-external}
+#
+#   A list of all external dependencies that are delivered with dCache.
+dcache.paths.classpath.packaged-external=${dcache.jars.packaged-external}
 </echo>
 
     </target>
