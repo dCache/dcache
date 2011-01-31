@@ -25,11 +25,6 @@
     <description>Thread for timeout handling</description>
   </bean>
 
-  <bean id="login-strategy" class="org.dcache.auth.GplazmaLoginStrategy">
-    <description>Interfaces with gPlazma</description>
-    <property name="policyFile" value="${gplazmaPolicy}"/>
-  </bean>
-
   <bean id="message-handler" class="org.dcache.services.login.MessageHandler">
     <description>Processes login requests</description>
     <property name="loginStrategy" ref="login-strategy"/>
