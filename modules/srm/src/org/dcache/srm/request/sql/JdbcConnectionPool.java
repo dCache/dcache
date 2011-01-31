@@ -26,8 +26,6 @@ public class JdbcConnectionPool implements Runnable{
     private Thread[] execution_threads;
     private final List<JdbcTask> jdbcTasks = new LinkedList<JdbcTask>();
 
-    private Thread vacuum_thread;
-    private long vacuum_period=60*60*1000;//every hour
     private static int executionThreadNum=5;
     private static int maxJdbcTasksNum = 1000 ;
 
@@ -248,17 +246,6 @@ public class JdbcConnectionPool implements Runnable{
     }
 
 
-    public void startVacuumThread(long vacuum_period){
-            if(vacuum_thread != null)
-            {
-                return;
-            }
-            if(vacuum_period >0) {
-                this.vacuum_period = vacuum_period;
-            }
-            vacuum_thread = new Thread(this, "vacuum-thread");
-            vacuum_thread.start();
-    }
     public void startExecutionThreads(){
             if(execution_threads != null)
             {
@@ -270,27 +257,6 @@ public class JdbcConnectionPool implements Runnable{
                 execution_threads[i].start();
             }
 
-    }
-
-    public void vacuum() {
-        try
-        {
-            Connection _con  = DriverManager.getConnection(jdbcUrl, user, pass);
-            while(true) {
-                Thread.sleep(vacuum_period);
-                Statement sqlStatement = _con.createStatement();
-                _log.debug("executing statement: VACUUM ANALYZE");
-                sqlStatement.execute("VACUUM ANALYZE");
-                _log.debug("finished statement: VACUUM ANALYZE");
-
-            }
-        } catch (InterruptedException e){
-            _log.debug("Vacuum thread shutting down");
-        } catch (SQLException e) {
-            _log.error("VACCUUM ANALYZE failed: " + e.getMessage());
-        } finally {
-           vacuum_thread = null;
-        }
     }
 
     public void execution_thread_loop() {
@@ -331,13 +297,7 @@ public class JdbcConnectionPool implements Runnable{
     }
 
     public void run() {
-        Thread current = Thread.currentThread();
-        if (  current == vacuum_thread) {
-            vacuum();
-        }
-        else {
-             execution_thread_loop();
-        }
+        execution_thread_loop();
     }
 
     public static interface JdbcTask {

@@ -230,8 +230,6 @@
     <property name="copyMaxRunningBySameOwner"
               value="${srmCopyReqMaxNumOfRunningBySameOwner}"/>
 
-    <property name="vacuum" value="${srmVacuum}"/>
-    <property name="vacuum_period_sec" value="${srmVacuumPeriod}"/>
     <property name="numDaysHistory"
               value="${srmNumberOfDaysInDatabaseHistory}"/>
     <property name="oldRequestRemovePeriodSecs"
