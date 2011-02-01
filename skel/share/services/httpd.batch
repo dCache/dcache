@@ -172,9 +172,7 @@ endDefine
 create diskCacheV111.cells.TransferObserverV1 TransferObserver \
               "default \
                -loginBroker=LoginBroker \
-               -update=60 \
-               -fieldMap=diskCacheV111.util.MapInfoFields \
-               -mapFile=/etc/passwd "
+               -update=60"
 
 
 # PoolInfoObserverV3 collects information about pool groups
