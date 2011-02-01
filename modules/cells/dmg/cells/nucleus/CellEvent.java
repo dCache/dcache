@@ -7,8 +7,8 @@ package dmg.cells.nucleus ;
   * @version 0.1, 15 Feb 1998
   */
 public class  CellEvent {
-    private Object _source;
-    private int    _type;
+    private final Object _source;
+    private final int    _type;
 
     public final static int EXCEPTION_EVENT = 1;
     public final static int REMOVAL_EVENT = 2;
@@ -33,8 +33,9 @@ public class  CellEvent {
        return _source;
     }
 
-    public void setSource( Object source ){ _source = source; }
     public int getEventType(){ return _type; }
+
+    @Override
     public String toString(){
       String m;
       switch( _type ){
