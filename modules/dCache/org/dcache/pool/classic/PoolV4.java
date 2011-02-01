@@ -115,7 +115,6 @@ public class PoolV4
     private final static Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
     private final String _poolName;
-    private final Args _args;
 
     private final Map<String, Class<?>> _moverHash =
         new ConcurrentHashMap<String, Class<?>>();
@@ -138,7 +137,6 @@ public class PoolV4
 
     private Account _account;
 
-    private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
 
     private int _version = 4;
@@ -179,7 +177,6 @@ public class PoolV4
     public PoolV4(String poolName, String args)
     {
         _poolName = poolName;
-        _args = new Args(args);
 
         _log.info("Pool " + poolName + " starting");
 
@@ -262,11 +259,6 @@ public class PoolV4
         } else {
             throw new IllegalArgumentException("Illegal 'dupRequest' value");
         }
-    }
-
-    public void setPoolManagerName(String name)
-    {
-        _poolManagerName = name;
     }
 
     public void setPoolUpDestination(String name)
@@ -415,6 +407,7 @@ public class PoolV4
         assertNotRunning("Cannot initialize several times");
         _running = true;
         new Thread() {
+            @Override
             public void run() {
                 try {
                     _repository.init();
@@ -448,6 +441,7 @@ public class PoolV4
     /**
      * Called by subsystems upon serious faults.
      */
+    @Override
     public void faultOccurred(FaultEvent event)
     {
         Throwable cause = event.getCause();
@@ -570,6 +564,7 @@ public class PoolV4
         }
     }
 
+    @Override
     public void printSetup(PrintWriter pw)
     {
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
@@ -587,6 +582,7 @@ public class PoolV4
         _ioQueue.printSetup(pw);
     }
 
+    @Override
     public CellInfo getCellInfo(CellInfo info)
     {
         PoolCellInfo poolinfo = new PoolCellInfo(info);
@@ -597,6 +593,7 @@ public class PoolV4
         return poolinfo;
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Base directory    : " + _baseDir);
@@ -960,6 +957,7 @@ public class PoolV4
             _message = message;
         }
 
+        @Override
         public void cacheFileAvailable(PnfsId pnfsId, Throwable ee)
         {
             try {
@@ -1053,6 +1051,7 @@ public class PoolV4
             _message = message;
         }
 
+        @Override
         public void cacheFileAvailable(PnfsId pnfsId, Throwable error)
         {
             if (_message.getReplyRequired()) {
@@ -1360,7 +1359,7 @@ public class PoolV4
     private List<CacheRepositoryEntryInfo> getRepositoryListing()
         throws CacheException, InterruptedException
     {
-        List<CacheRepositoryEntryInfo> listing = new ArrayList();
+        List<CacheRepositoryEntryInfo> listing = new ArrayList<CacheRepositoryEntryInfo>();
         for (PnfsId pnfsid : _repository) {
             try {
                 switch (_repository.getState(pnfsid)) {
@@ -1426,6 +1425,7 @@ public class PoolV4
             _worker.start();
         }
 
+        @Override
         public void run()
         {
             _log.debug("Ping thread started");
@@ -1587,6 +1587,7 @@ public class PoolV4
             _pnfs.clearCacheLocation(id);
         }
 
+        @Override
         public void run()
         {
             _hybridCurrent = 0;
