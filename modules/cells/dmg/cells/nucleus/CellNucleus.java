@@ -330,6 +330,17 @@ public class CellNucleus implements ThreadFactory
         _isPrivateMessageExecutor = false;
     }
 
+
+    private synchronized void shutdownPrivateExecutors()
+    {
+        if (_isPrivateCallbackExecutor) {
+            _callbackExecutor.shutdown();
+        }
+        if (_isPrivateMessageExecutor) {
+            _messageExecutor.shutdown();
+        }
+    }
+
     public void   sendMessage(CellMessage msg)
         throws SerializationException,
                NoRouteToCellException    {
@@ -897,14 +908,7 @@ public class CellNucleus implements ThreadFactory
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             }
 
-            synchronized (this) {
-                if (_isPrivateCallbackExecutor) {
-                    _callbackExecutor.shutdown();
-                }
-                if (_isPrivateMessageExecutor) {
-                    _messageExecutor.shutdown();
-                }
-            }
+            shutdownPrivateExecutors();
 
             _logNucleus.info("killerThread : waiting for all threads in "+_threads+" to finish");
 
