@@ -299,14 +299,6 @@ public class SRM {
                           new DatabaseJobStorageFactory(configuration));
             }
 
-            if (configuration.isVacuum()) {
-                logger.debug("starting vacuum thread");
-                org.dcache.srm.request.sql.JdbcConnectionPool pool = org.dcache.srm.request.sql.JdbcConnectionPool.getPool(configuration.getJdbcUrl(),
-                        configuration.getJdbcClass(), configuration.getJdbcUser(),
-                        configuration.getJdbcPass());
-                pool.startVacuumThread(configuration.getVacuum_period_sec() * 1000);
-            }
-
         } else {
              JobStorageFactory.initJobStorageFactory(
                      new NoopJobStorageFactory());

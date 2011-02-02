@@ -18,6 +18,7 @@ import org.dcache.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.pools.PoolV2Mode;
 
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
@@ -65,6 +66,7 @@ public class MigrationModuleServer
     private ExecutorService _executor;
     private ChecksumModuleV1 _checksumModule;
     private MigrationModule _migration;
+    private PoolV2Mode _poolMode;
 
     public void setExecutor(ExecutorService executor)
     {
@@ -91,71 +93,9 @@ public class MigrationModuleServer
         _migration = migration;
     }
 
-    public Message messageArrived(PoolMigrationUpdateReplicaMessage message)
-        throws CacheException, InterruptedException
+    public void setPoolMode(PoolV2Mode mode)
     {
-        if (message.isReply()) {
-            return null;
-        }
-
-        PnfsId pnfsId = message.getPnfsId();
-
-        /* This check prevents updates that are indirectly triggered
-         * by a local migration task: In particular the case in which
-         * two pools each try to move the same files to each other
-         * would otherwise have a race condition that would cause
-         * files to be lost. This check prevents that any local
-         * migration task is active on this file at this time and
-         * hence the update request cannot be a result of a local
-         * migration task.
-         */
-        if (_migration.isActive(pnfsId)) {
-            throw new LockedCacheException("Target file is busy");
-        }
-
-        EntryState targetState = message.getState();
-        CacheEntry entry = _repository.getEntry(pnfsId);
-        EntryState state = entry.getState();
-        long ttl = message.getTimeToLive();
-
-        /* Drop message if TTL is exceeded. This is done to avoid
-         * modifying the entry after the requestor has timed out.
-         */
-        if (ttl < System.currentTimeMillis()) {
-            _log.warn("PoolMigrationUpdateReplica message discarded: TTL exceeded");
-            return null;
-        }
-
-        if (targetState != PRECIOUS && targetState != CACHED) {
-            throw new IllegalArgumentException("State must be either CACHED or PRECIOUS");
-        }
-
-        try {
-            switch (state) {
-            case CACHED:
-                if (targetState == PRECIOUS) {
-                    _repository.setState(pnfsId, PRECIOUS);
-                }
-                // fall through
-            case PRECIOUS:
-                for (StickyRecord record: message.getStickyRecords()) {
-                    _repository.setSticky(pnfsId,
-                                          record.owner(),
-                                          record.expire(),
-                                          false);
-                }
-                break;
-            default:
-                throw new CacheException(CacheException.DEFAULT_ERROR_CODE,
-                                         "Cannot update file in state " + state);
-            }
-        } catch (IllegalTransitionException e) {
-            throw new CacheException(CacheException.DEFAULT_ERROR_CODE,
-                                     "Cannot update file in state " + e.getSourceState());
-        }
-
-        message.setSucceeded();
-        return message;
+        _poolMode = mode;
     }
 
     public Message
@@ -169,6 +109,11 @@ public class MigrationModuleServer
         if (envelope.getLocalAge() >= envelope.getTtl()) {
             _log.warn("PoolMigrationCopyReplica message discarded: TTL exceeded");
             return null;
+        }
+
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
+            throw new CacheException(CacheException.POOL_DISABLED,
+                                     "Pool is disabled");
         }
 
         /* This check prevents updates that are indirectly triggered

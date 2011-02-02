@@ -34,8 +34,6 @@ set context -c srmAuthzCacheLifetime   180
 set context -c parallelStreams      10
 
 set context -c srmTimeout           3600
-set context -c srmVacuum            true
-set context -c srmVacuumPeriod      21600
 set context -c srmBufferSize        1048576
 set context -c srmTcpBufferSize     1048576
 set context -c srmDebug             true
@@ -278,8 +276,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmPnfsTimeout=${srmPnfsTimeout} \
         -srmPoolManager=${srmPoolManager} \
         -srmPoolManagerTimeout=${srmPoolManagerTimeout} \
-        -srmVacuum=${srmVacuum} \
-        -srmVacuumPeriod=${srmVacuumPeriod} \
         -pnfsSrmPath=${pnfsSrmPath} \
         -xrootdRootPath=${xrootdRootPath} \
         -httpRootPath=${httpRootPath} \

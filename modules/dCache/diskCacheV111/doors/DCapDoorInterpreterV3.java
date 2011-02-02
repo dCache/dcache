@@ -42,6 +42,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.*;
 
 public class DCapDoorInterpreterV3 implements KeepAliveListener,
         DcapProtocolInterpreter {
@@ -994,10 +995,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
     abstract protected  class PnfsSessionHandler  extends SessionHandler  {
 
-        protected PnfsId       _pnfsId       = null ;
         protected String       _path         = null;
-        protected StorageInfo  _storageInfo  = null ;
-        protected FileMetaData _fileMetaData = null ;
+        protected FileAttributes _fileAttributes;
         private   long         _timer        = 0L ;
         private   final Object       _timerLock    = new Object() ;
         private long           _timeout      = 0L ;
@@ -1013,6 +1012,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             super(sessionId, commandId, args);
 
             _attributes = FileMetaData.getKnownFileAttributes();
+            _attributes.add(PNFSID);
+            _attributes.add(TYPE);
             if (!metaDataOnly) {
                 _attributes.add(STORAGEINFO);
             }
@@ -1091,8 +1092,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             String fileIdentifier = _vargs.argv(0);
 
             if( PnfsId.isValid(fileIdentifier)) {
-                _pnfsId = new PnfsId(fileIdentifier);
-                _message = new PnfsGetFileAttributes(_pnfsId, _attributes);
+                PnfsId pnfsId = new PnfsId(fileIdentifier);
+                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
             } else {
                 DCapUrl url = new DCapUrl(fileIdentifier);
                 String fileName = url.getFilePart();
@@ -1138,21 +1139,18 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
             }
 
-            FileAttributes fileAttributes = _message.getFileAttributes();
+            _fileAttributes = _message.getFileAttributes();
 
-            _pnfsId = _message.getPnfsId();
-            _info.setPnfsId(_pnfsId);
+            _info.setPnfsId(_fileAttributes.getPnfsId());
 
-            if (fileAttributes.isDefined(STORAGEINFO)) {
-                _storageInfo = fileAttributes.getStorageInfo();
+            if (_fileAttributes.isDefined(STORAGEINFO)) {
+                StorageInfo storageInfo = _fileAttributes.getStorageInfo();
                 for (int i = 0; i < _vargs.optc(); i++) {
                     String key = _vargs.optv(i);
                     String value = _vargs.getOpt(key);
-                    _storageInfo.setKey(key, value == null ? "" : value);
+                    storageInfo.setKey(key, value == null ? "" : value);
                 }
             }
-
-            _fileMetaData = new FileMetaData(fileAttributes);
 
             fileAttributesAvailable();
         }
@@ -1167,7 +1165,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public String toString(){
-            return "["+_pnfsId+"]"+" {timer="+
+            return "["+((_fileAttributes == null) ? "null" : _fileAttributes.getPnfsId())+"]"+" {timer="+
             (_timer==0L?"off":""+(_timer-System.currentTimeMillis()))+"} "+
             super.toString() ;
         }
@@ -1193,13 +1191,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable(){
             try {
-                if( _message.getFileAttributes().getFileType() != FileType.REGULAR ) {
+                if( _fileAttributes.getFileType() != REGULAR ) {
                     sendReply( "storageInfoAvailable" , CacheException.NOT_FILE,
                                "path is not a regular file", "EINVAL" ) ;
                     return;
                 }
                 try {
-                    if( !_checkStagePermission.canPerformStaging(_subject, _storageInfo) ) {
+                    if( !_checkStagePermission.canPerformStaging(_subject, _fileAttributes.getStorageInfo()) ) {
                         sendReply( "storageInfoAvailable" , CacheException.PERMISSION_DENIED,
                                    "Staging file not allowed", "EACCES" ) ;
                         return;
@@ -1210,8 +1208,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // we are not called if the pnfs request failed.
                 //
-                StagerMessageV0 sm = new StagerMessageV0( _pnfsId ) ;
-                sm.setStorageInfo( _storageInfo ) ;
+                StagerMessageV0 sm = new StagerMessageV0( _fileAttributes.getPnfsId() ) ;
+                sm.setStorageInfo( _fileAttributes.getStorageInfo() ) ;
                 sm.setProtocol( "DCap",3,0,_destination);
                 sm.setStageTime( _time ) ;
 
@@ -1258,7 +1256,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-                FileMetaData meta = _fileMetaData;
+                FileMetaData meta = new FileMetaData(_fileAttributes);
                 StringBuilder sb = new StringBuilder() ;
                 sb.append(_sessionId).append(" ").
                     append(_commandId).append(" ").
@@ -1292,7 +1290,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     append(world.canExecute()?"x":"-").
                     append(" ") ;
 
-                sb.append("-st_ino=").append(_pnfsId.toString().hashCode()&0xfffffff) ;
+                sb.append("-st_ino=").append(_fileAttributes.getPnfsId().toString().hashCode()&0xfffffff) ;
 
                 println( sb.toString() ) ;
             } finally {
@@ -1335,8 +1333,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 // we are not called if the pnfs request failed.
                 //
                 String path = _message.getPnfsPath();
-                FileMetaData meta = _fileMetaData;
-                if (!meta.isDirectory()) {
+                if (_fileAttributes.getFileType() != DIR) {
                     _pnfs.deletePnfsEntry(path);
                     sendReply("fileAttributesAvailable", 0, "");
                     sendRemoveInfoToBilling(path);
@@ -1399,9 +1396,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-                FileMetaData meta = _fileMetaData;
+                FileMetaData meta = new FileMetaData(_fileAttributes);
                 meta.setMode(_permission);
-                _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
+                _pnfs.pnfsSetFileMetaData(_fileAttributes.getPnfsId(), meta);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
@@ -1445,7 +1442,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable(){
 
-            FileMetaData meta = _fileMetaData;
+            FileMetaData meta = new FileMetaData(_fileAttributes);
 
             try {
                 if (_owner >= 0) {
@@ -1456,7 +1453,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     meta.setGid(_group);
                 }
 
-                _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
+                _pnfs.pnfsSetFileMetaData(_fileAttributes.getPnfsId(), meta);
 
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1496,14 +1493,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         @Override
         public void fileAttributesAvailable(){
 
-            FileMetaData meta = _fileMetaData;
+            FileMetaData meta = new FileMetaData(_fileAttributes);
 
             try {
                 if (_group >= 0) {
                     meta.setGid(_group);
                 }
 
-                _pnfs.pnfsSetFileMetaData(_pnfsId, meta);
+                _pnfs.pnfsSetFileMetaData(_fileAttributes.getPnfsId(), meta);
 
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1543,7 +1540,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-                _pnfs.renameEntry(_pnfsId, _newName);
+                _pnfs.renameEntry(_fileAttributes.getPnfsId(), _newName);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
@@ -1587,8 +1584,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-                _pnfs.deletePnfsEntry(_message.getPnfsPath(),
-                                      EnumSet.of(FileType.DIR));
+                _pnfs.deletePnfsEntry(_message.getPnfsPath(), EnumSet.of(DIR));
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 23, e.getMessage(), "EACCES");
@@ -1713,10 +1709,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 // we are not called if the pnfs request failed.
                 //
                 PoolMgrQueryPoolsMsg query =
-                  new PoolMgrQueryPoolsMsg( DirectionType.READ,
-                _protocolName ,
-                _destination ,
-                _storageInfo ) ;
+                  new PoolMgrQueryPoolsMsg(DirectionType.READ,
+                                           _protocolName ,
+                                           _destination ,
+                                           _fileAttributes.getStorageInfo());
 
                 CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
                 setStatus("Waiting for reply from PoolManager");
@@ -1755,7 +1751,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                                 _log.debug("Sending query to pool {}", pool);
                                 PoolCheckFileCostMessage request =
-                                new PoolCheckFileCostMessage( pool , _pnfsId , 0L ) ;
+                                    new PoolCheckFileCostMessage( pool , _fileAttributes.getPnfsId() , 0L ) ;
                                 controller.send( new CellMessage( new CellPath(pool) , request ) );
                             }
                             controller.waitForReplies() ;
@@ -1890,8 +1886,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             setTimer(60 * 1000);
 
             try {
-                _pnfsId = new PnfsId(_vargs.argv(0));
-                _message = new PnfsGetFileAttributes(_pnfsId, _attributes);
+                PnfsId pnfsId = new PnfsId(_vargs.argv(0));
+                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
             } catch (IllegalArgumentException e) {
                 /* Seems not to be a pnfsId, might be a url.
                  */
@@ -1930,15 +1926,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         public IoDoorEntry getIoDoorEntry(){
-            return
-            new
-            IoDoorEntry( _sessionId ,
-            _pnfsId ,
-            _pool ,
-            _status ,
-            _statusSince ,
-            _hosts[0] );
+            return new IoDoorEntry(_sessionId,
+                                   _fileAttributes.getPnfsId(),
+                                   _pool,
+                                   _status,
+                                   _statusSince,
+                                   _hosts[0]);
         }
+
         @Override
         public void again( boolean strong ) throws Exception {
             if( strong )_poolRequestDone = false ;
@@ -1997,25 +1992,23 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             _log.debug("{} storageInfoAvailable after {} ",
-                       _pnfsId, (System.currentTimeMillis()-_started));
+                       _fileAttributes.getPnfsId(),
+                       (System.currentTimeMillis()-_started));
 
             PoolMgrSelectPoolMsg getPoolMessage = null ;
 
-            FileMetaData meta = _fileMetaData;
-
-            if( ! meta.isRegularFile() ){
+            if (_fileAttributes.getFileType() != REGULAR){
                 sendReply( "fileAttributesAvailable", 1 ,
                 "Not a File" ) ;
                 removeUs() ;
                 return ;
             }
 
-
-            if( _storageInfo.isCreatedOnly() || _overwrite || _truncate ||
+            if (_fileAttributes.getStorageInfo().isCreatedOnly() || _overwrite || _truncate ||
             ( _isHsmRequest && ( _ioMode.indexOf( 'w' ) >= 0 ) ) ){
                 //
                 //
-                if( _isHsmRequest && _storageInfo.isStored() ){
+                if (_isHsmRequest && _fileAttributes.getStorageInfo().isStored()){
                     sendReply( "fileAttributesAvailable", 1 ,
                     "HsmRequest : file already stored" ) ;
                     removeUs() ;
@@ -2038,7 +2031,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 _protocolInfo.setAllowWrite(true) ;
                 if( _overwrite ){
-                    _storageInfo.setKey("overwrite","true");
+                    _fileAttributes.getStorageInfo().setKey("overwrite","true");
                     _log.debug("Overwriting requested");
                 }
 
@@ -2049,12 +2042,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             _log.debug("truncating path {}", path);
                             _pnfs.deletePnfsEntry( path );
                             _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(NameSpaceProvider.DEFAULT));
-                            _pnfsId = _message.getPnfsId() ;
-                            _storageInfo = _message.getFileAttributes().getStorageInfo();
+                            _fileAttributes = _message.getFileAttributes();
                         }else{
-                            _pnfsId = new PnfsId( _truncFile );
-                            _message = _pnfs.getStorageInfoByPnfsId( _pnfsId ) ;
-                            _storageInfo = _message.getFileAttributes().getStorageInfo() ;
+                            _message = _pnfs.getStorageInfoByPnfsId(_fileAttributes.getPnfsId()) ;
+                            _fileAttributes = _message.getFileAttributes();
                         }
 
                     }catch(CacheException ce ) {
@@ -2068,13 +2059,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
                 if( !_isUrl && (_path != null) ) {
-                    _storageInfo.setKey("path", _path);
+                    _fileAttributes.getStorageInfo().setKey("path", _path);
                 }
 
                 if( _checksumString != null ){
-                    _storageInfo.setKey("checksum",_checksumString);
+                    _fileAttributes.getStorageInfo().setKey("checksum",_checksumString);
                     _log.debug("Checksum from client {}", _checksumString);
-                    storeChecksumInPnfs( _pnfsId , _checksumString ) ;
+                    storeChecksumInPnfs( _fileAttributes.getPnfsId() , _checksumString ) ;
                 }
 
 
@@ -2083,8 +2074,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( _isAccessLatencyOverwriteAllowed && _accessLatency != null ) {
                     try {
                         AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
-                        _storageInfo.setAccessLatency(accessLatency);
-                        _storageInfo.isSetAccessLatency(true);
+                        _fileAttributes.getStorageInfo().setAccessLatency(accessLatency);
+                        _fileAttributes.getStorageInfo().isSetAccessLatency(true);
 
                     }catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
                 }
@@ -2092,8 +2083,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( _isRetentionPolicyOverwriteAllowed && _retentionPolicy != null ) {
                     try {
                         RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
-                        _storageInfo.setRetentionPolicy(retentionPolicy);
-                        _storageInfo.isSetRetentionPolicy(true);
+                        _fileAttributes.getStorageInfo().setRetentionPolicy(retentionPolicy);
+                        _fileAttributes.getStorageInfo().isSetRetentionPolicy(true);
 
                     }catch(IllegalArgumentException e) { /* bad RetentionPolicy ignored*/}
                 }
@@ -2102,7 +2093,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // try to get some space to store the file.
                 //
-                getPoolMessage = new PoolMgrSelectWritePoolMsg(_pnfsId,_storageInfo,_protocolInfo,0) ;
+                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes.getPnfsId(),_fileAttributes.getStorageInfo(),_protocolInfo,0) ;
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
                     getPoolMessage.setPnfsPath(_path);
@@ -2132,7 +2123,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                int allowedStates;
                try {
                    allowedStates =
-                       _checkStagePermission.canPerformStaging(_subject, _storageInfo)
+                       _checkStagePermission.canPerformStaging(_subject, _fileAttributes.getStorageInfo())
                        ? RequestContainerV5.allStates
                        : RequestContainerV5.allStatesExceptStage;
                } catch (IOException e) {
@@ -2140,8 +2131,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                    _log.error("Error while reading data from StageConfiguration.conf file : {}", e.getMessage());
                }
                getPoolMessage =
-                   new PoolMgrSelectReadPoolMsg(_pnfsId,
-                                                _storageInfo,
+                   new PoolMgrSelectReadPoolMsg(_fileAttributes.getPnfsId(),
+                                                _fileAttributes.getStorageInfo(),
                                                 _protocolInfo,
                                                 0,
                                                 allowedStates);
@@ -2187,7 +2178,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             setTimer(0L);
             _log.debug("poolMgrGetPoolArrived : {}", reply);
             _log.debug("{} poolMgrSelectPoolArrived after {}",
-                       _pnfsId, (System.currentTimeMillis() - _started));
+                       _fileAttributes.getPnfsId(),
+                       (System.currentTimeMillis() - _started));
 
             if( reply.getReturnCode() != 0 ){
                 sendReply( "poolMgrGetPoolArrived" , reply )  ;
@@ -2202,7 +2194,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
             // use the updated StorageInfo from PoolManager/SpaceManager
-            _storageInfo = reply.getStorageInfo();
+            _fileAttributes.setStorageInfo(reply.getStorageInfo());
 
             _pool = pool ;
             PoolIoFileMessage poolMessage  = null ;
@@ -2211,17 +2203,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 poolMessage =
                 new PoolDeliverFileMessage(
                 pool,
-                _pnfsId ,
+                _fileAttributes.getPnfsId(),
                 _protocolInfo ,
-                _storageInfo           ) ;
+                _fileAttributes.getStorageInfo());
             }else if( reply instanceof PoolMgrSelectWritePoolMsg ){
 
                 poolMessage =
                 new PoolAcceptFileMessage(
                 pool,
-                _pnfsId ,
+                _fileAttributes.getPnfsId(),
                 _protocolInfo ,
-                _storageInfo           ) ;
+                _fileAttributes.getStorageInfo());
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,
                 "Illegal Message arrived : "+reply.getClass().getName() ) ;
@@ -2321,14 +2313,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                     for( int count = 0 ; count < 10 ; count++  ){
                         try{
-                            long fs = _pnfs.getStorageInfoByPnfsId( _pnfsId).
+                            long fs = _pnfs.getStorageInfoByPnfsId(_fileAttributes.getPnfsId()).
                             getStorageInfo().
                             getFileSize() ;
                             _log.info("doorTransferArrived : Size of {}: {}",
-                                      _pnfsId, fs);
+                                      _fileAttributes.getPnfsId(), fs);
                             if( fs > 0L )break ;
                         }catch(Exception ee ){
-                            _log.error("Problem getting storage info (check) for {}: {}", _pnfsId, ee);
+                            _log.error("Problem getting storage info (check) for {}: {}", _fileAttributes.getPnfsId(), ee);
                         }
                         try{
                             Thread.sleep(10000L);
@@ -2406,8 +2398,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             setTimer(60 * 1000);
 
             try {
-                _pnfsId = new PnfsId(_vargs.argv(0));
-                _message = new PnfsGetFileAttributes(_pnfsId, _attributes);
+                PnfsId pnfsId = new PnfsId(_vargs.argv(0));
+                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
             } catch (IllegalArgumentException e) {
                 /* Seems not to be a pnfsId, might be a url.
                  */
@@ -2443,13 +2435,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             String path = _message.getPnfsPath();
 
-            if( ! _fileMetaData.isDirectory() ) {
+            if( _fileAttributes.getFileType() != DIR) {
                 sendReply( "fileAttributesAvailable" , 22, path +" is not a directory", "ENOTDIR" ) ;
                 removeUs()  ;
                 return ;
             }
 
-            PoolIoFileMessage poolIoFileMessage = new PoolIoFileMessage(_pool,_pnfsId, _protocolInfo);
+            PoolIoFileMessage poolIoFileMessage = new PoolIoFileMessage(_pool,_fileAttributes.getPnfsId(), _protocolInfo);
 
             poolIoFileMessage.setId(_sessionId);
             if (_ioQueueName != null) {

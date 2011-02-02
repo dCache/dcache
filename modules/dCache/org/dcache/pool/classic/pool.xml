@@ -55,6 +55,10 @@
     <constructor-arg value="${lfs}"/>
   </bean>
 
+  <bean id="pool-mode" class="diskCacheV111.pools.PoolV2Mode">
+      <description>Pool mode</description>
+  </bean>
+
   <bean id="pool" class="org.dcache.pool.classic.PoolV4"
         init-method="init"
         destroy-method="cleanUp">
@@ -90,6 +94,7 @@
     <property name="hasTapeBackend"
               value="#{ '${lfs}' == 'none' }"/>
     <property name="ioQueueManager" ref="io-queue-manager" />
+    <property name="poolMode" ref="pool-mode"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -302,6 +307,7 @@
     <property name="PPClient" ref="pp"/>
     <property name="executor" ref="workerThreadPool"/>
     <property name="checksumModule" ref="csm"/>
+    <property name="poolMode" ref="pool-mode"/>
   </bean>
 
   <bean id="account"

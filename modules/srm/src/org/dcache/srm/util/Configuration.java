@@ -256,8 +256,6 @@ public class Configuration {
     private boolean reserve_space_implicitely;
     private boolean space_reservation_strict;
     private long storage_info_update_period=5*60*1000;
-    private long vacuum_period_sec=60*60;
-    private boolean vacuum = true;
     private String qosPluginClass = null;
     private String qosConfigFile = null;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
@@ -605,13 +603,6 @@ public class Configuration {
                 Long.toString(storage_info_update_period),
                 "storage_info_update_period in milliseconds");
         put(document,root,
-                "vacuum",
-                new Boolean(space_reservation_strict).toString(),"enables or disables postgres vacuuming, true or false");
-        put(document,root,
-                "vacuum_period_sec",
-                Long.toString(vacuum_period_sec),
-                "period between invocation of vacuum operations in seconds");
-        put(document,root,
                 XML_LABEL_TRANSPORT_CLIENT,
                 clientTransport.name(),
                 "transport to use when connecting to other SRM instances");
@@ -632,11 +623,6 @@ public class Configuration {
 
 
     private void set(String name, String value) {
-        //if(value == null)
-        //{
-        //System.out.println("value is null");
-        //}
-        //System.out.println("setting "+name+" to "+value);
         name=name.trim();
         value=value==null?null:value.trim();
         if(name.equals("debug")) {
@@ -870,10 +856,6 @@ public class Configuration {
             space_reservation_strict = Boolean.valueOf(value).booleanValue();
         } else if(name.equals("storage_info_update_period")) {
             storage_info_update_period = Long.parseLong(value);
-        } else if(name.equals("vacuum")) {
-            vacuum= Boolean.valueOf(value).booleanValue();
-        } else if(name.equals("vacuum_period_sec")) {
-            vacuum_period_sec = Long.parseLong(value);
         } else if(name.equals("qosPluginClass")) {
         	qosPluginClass = value;
         } else if(name.equals("qosConfigFile")) {
@@ -1423,8 +1405,6 @@ public class Configuration {
         sb.append("\n\treserve_space_implicitely=").append(this.reserve_space_implicitely);
         sb.append("\n\tspace_reservation_strict=").append(this.space_reservation_strict);
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
-        sb.append("\n\tvacuum=").append(this.vacuum);
-        sb.append("\n\tvacuum_period_sec=").append(this.vacuum_period_sec);
         sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);
         sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
         sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
@@ -2272,37 +2252,6 @@ public class Configuration {
         this.storage_info_update_period = storage_info_update_period;
     }
 
-    /**
-     * Getter for property vacuum_period_sec.
-     * @return Value of property vacuum_period_sec.
-     */
-    public long getVacuum_period_sec() {
-        return vacuum_period_sec;
-    }
-
-    /**
-     * Setter for property vacuum_period_sec.
-     * @param vacuum_period_sec New value of property vacuum_period_sec.
-     */
-    public void setVacuum_period_sec(long vacuum_period_sec) {
-        this.vacuum_period_sec = vacuum_period_sec;
-    }
-
-    /**
-     * Getter for property vacuum.
-     * @return Value of property vacuum.
-     */
-    public boolean isVacuum() {
-        return vacuum;
-    }
-
-    /**
-     * Setter for property vacuum.
-     * @param vacuum New value of property vacuum.
-     */
-    public void setVacuum(boolean vacuum) {
-        this.vacuum = vacuum;
-    }
 
     /**
      * Getter for property putRequestRestorePolicy.

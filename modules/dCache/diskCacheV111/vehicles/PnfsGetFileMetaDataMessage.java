@@ -24,12 +24,14 @@ public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
     public PnfsGetFileMetaDataMessage()
     {
         super((PnfsId) null, FileMetaData.getKnownFileAttributes());
+        _attributes.add(PNFSID);
         setReplyRequired(true);
     }
 
     public PnfsGetFileMetaDataMessage(Set<FileAttribute> attr)
     {
         super((PnfsId) null, FileMetaData.getKnownFileAttributes());
+        _attributes.add(PNFSID);
         _attributes.addAll(attr);
         setReplyRequired(true);
     }
@@ -37,6 +39,7 @@ public class PnfsGetFileMetaDataMessage extends PnfsGetFileAttributes
     public PnfsGetFileMetaDataMessage(PnfsId pnfsId)
     {
         super(pnfsId, FileMetaData.getKnownFileAttributes());
+        _attributes.add(PNFSID);
 	setReplyRequired(true);
     }
 
