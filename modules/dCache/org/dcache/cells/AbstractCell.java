@@ -852,7 +852,12 @@ public class AbstractCell extends CellAdapter
             try {
                 endpoint.sendMessage(envelope);
             } catch (NoRouteToCellException e) {
-                sendReply(this, envelope, e);
+                if (!isReply) {
+                    sendReply(this, envelope, e);
+                } else {
+                    _logger.warn("Dropping message: No route to {}",
+                                 envelope.getDestinationAddress());
+                }
             }
         }
     }
