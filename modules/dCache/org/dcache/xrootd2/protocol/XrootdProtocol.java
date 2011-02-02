@@ -2,14 +2,14 @@ package org.dcache.xrootd2.protocol;
 
 public interface XrootdProtocol {
 
-    /*  current supported protocol version: 2.96
+    /*  current supported protocol version: 2.89
      * Xrootd expects the protocol information binary encoded in an int32
      */
-    public final static byte PROTOCOL_VERSION_MAJOR = 0x2;
-    /* short, because bytes are signed in java and 0x96 > 0x7f */
-    public final static short PROTOCOL_VERSION_MINOR =  0x96;
-
-    public final static int  PROTOCOL_VERSION = PROTOCOL_VERSION_MAJOR << 8 | PROTOCOL_VERSION_MINOR;
+    public final static int  PROTOCOL_VERSION = 0x289;
+    public final static byte PROTOCOL_VERSION_MAJOR =
+        (byte) ((PROTOCOL_VERSION & 0xFF00) >> 8);
+    public final static byte PROTOCOL_VERSION_MINOR =
+        (byte) (PROTOCOL_VERSION & 0x00FF);
 
     public final static byte      CLIENT_REQUEST_LEN = 24;
     public final static byte    CLIENT_HANDSHAKE_LEN = 20;
@@ -18,9 +18,8 @@ public interface XrootdProtocol {
     public final static int              DATA_SERVER = 1;
 
     public final static byte[] HANDSHAKE_REQUEST = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 7, (byte) 220};
-    /* casting the minor version to byte works, because xrootd interprets the bytes as unsigned ( and 0x96 < 0xff ) */
-    public final static byte[] HANDSHAKE_RESPONSE_LOADBALANCER = {0, 0, 0, 0, 0, 0, 0, 8, 0, 0, PROTOCOL_VERSION_MAJOR, (byte) PROTOCOL_VERSION_MINOR , 0, 0, 0, LOAD_BALANCER};
-    public final static byte[] HANDSHAKE_RESPONSE_DATASERVER = {0, 0, 0, 0, 0, 0, 0, 8, 0, 0, PROTOCOL_VERSION_MAJOR, (byte) PROTOCOL_VERSION_MINOR, 0, 0, 0, DATA_SERVER};
+    public final static byte[] HANDSHAKE_RESPONSE_LOADBALANCER = {0, 0, 0, 0, 0, 0, 0, 8, 0, 0, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR , 0, 0, 0, LOAD_BALANCER};
+    public final static byte[] HANDSHAKE_RESPONSE_DATASERVER = {0, 0, 0, 0, 0, 0, 0, 8, 0, 0, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR, 0, 0, 0, DATA_SERVER};
 
     // server response codes
     public final static int   kXR_ok       = 0;
