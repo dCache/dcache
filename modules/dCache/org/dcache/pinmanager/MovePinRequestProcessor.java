@@ -187,7 +187,7 @@ public class MovePinRequestProcessor
         /* Remove all stale sticky flags.
          */
         for (StickyRecord record: message.getRecords()) {
-            if (containsPin(pins, record.owner())) {
+            if (!containsPin(pins, record.owner())) {
                 setSticky(source, pnfsId, false, record.owner(), 0);
             }
         }

@@ -1,33 +1,30 @@
 #
-# Replica Manager Cell
+# Replica Manager service
 #
 
-# Defaults
-#
-onerror continue
-   set context -c replicaManagerDatabaseHost localhost
-   set context -c replicaDbName              replicas
-   set context -c replicaDbUser              srmdcache
-   set context -c replicaDbPassword          srmdcache
-   set context -c replicaPasswordFile        ""
-   set context -c replicaDbJdbcDriver        org.postgresql.Driver
-   set context -c resilientGroupName           ResilientPools
-   set context -c replicaPoolWatchDogPeriod    600
-   set context -c replicaWaitDBUpdateTimeout   600
-   set context -c replicaExcludedFilesExpirationTimeout 43200
-   set context -c replicaDelayDBStartTimeout   1200
-   set context -c replicaAdjustStartTimeout    1200
-   set context -c replicaWaitReplicateTimeout  43200
-   set context -c replicaWaitReduceTimeout     43200
-   set context -c replicaDebug                 false
-   set context -c replicaMaxWorkers            6
-   set context -c replicaMin                   2
-   set context -c replicaMax                   3
-   set context -c replicaCheckPoolHost              true
-   set context -c replicaEnableSameHostReplica      false
 onerror shutdown
-#
-create diskCacheV111.replicaManager.ReplicaManagerV2 replicaManager \
+
+check -strong cell.name
+check -strong db.user
+check db.password
+check replicaPasswordFile
+check -strong db.driver
+check -strong resilientGroupName
+check -strong replicaPoolWatchDogPeriod
+check -strong replicaWaitDBUpdateTimeout
+check -strong replicaExcludedFilesExpirationTimeout
+check -strong replicaDelayDBStartTimeout
+check -strong replicaAdjustStartTimeout
+check -strong replicaWaitReplicateTimeout
+check -strong replicaWaitReduceTimeout
+check -strong replicaDebug
+check -strong replicaMaxWorkers
+check -strong replicaMin
+check -strong replicaMax
+check -strong replicaCheckPoolHost
+check -strong replicaEnableSameHostReplica
+
+create diskCacheV111.replicaManager.ReplicaManagerV2 ${cell.name} \
         "default \
         -export \
         -debug=${replicaDebug} \
@@ -46,10 +43,10 @@ create diskCacheV111.replicaManager.ReplicaManagerV2 replicaManager \
         -delayAdjStartTO=${replicaAdjustStartTimeout} \
         -waitReplicateTO=${replicaWaitReplicateTimeout} \
         -waitReduceTO=${replicaWaitReduceTimeout} \
-        -dbURL=jdbc:postgresql://${replicaManagerDatabaseHost}/${replicaDbName} \
-        -jdbcDrv=${replicaDbJdbcDriver} \
-        -dbUser=${replicaDbUser} \
-        -dbPass=${replicaDbPassword} \
+        -dbURL=${db.url} \
+        -jdbcDrv=${db.driver} \
+        -dbUser=${db.user} \
+        -dbPass=${db.password} \
         -pgPass=${replicaPasswordFile}   \
         -XXcheckPoolHost=${replicaCheckPoolHost} \
         -enableSameHostReplica=${replicaEnableSameHostReplica} \

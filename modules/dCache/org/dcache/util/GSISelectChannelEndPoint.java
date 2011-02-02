@@ -270,14 +270,12 @@ public class GSISelectChannelEndPoint extends SelectChannelEndPoint
     @Override
     public int flush(Buffer header, Buffer buffer, Buffer trailer) throws IOException {
         int consumed=0;
-        int available=header.length();
+        int available = (header == null) ? 0 : header.length();
         if (buffer != null) {
             available += buffer.length();
         }
 
-        int outBufferSize =
-            ((header == null)?0:header.length()) +
-            ((buffer == null)?0:buffer.length()) +
+        int outBufferSize = available +
             ((trailer == null)?0:trailer.length());
         outBufferSize *= 2;
 

@@ -1,38 +1,42 @@
-# Billing Cell
+# Billing service
 
-# Defaults
-onerror continue
+onerror shutdown
+
+check -strong cell.name
 check -strong billingDb
-set context -c billingDisableTxt ""
+check billingDisableTxt
+check billingToDb
 
-#
-#     Additional params, if 'billingToDb' is 'yes'
+# Additional params, if 'billingToDb' is 'yes'
 define env billingToDb.exe endExe
-  set context -c billingDatabaseHost localhost
-  set context -c billingDbUser srmdcache
-  set context -c billingDbPass srmdcache
-  set context -c billingDbName billing
-  set context -c billingDbPgPassFileName
-  set context -c billingDbCommitRows 100
-  set context -c billingDbCommitIntervalInMilliseconds 30000
+  onerror shutdown
 
-  set env -c billingDbParams "\
+  check -strong db.url
+  check -strong db.driver
+  check -strong db.user
+  check db.password
+  check billingDbPgPassFileName
+  check -strong billingDbCommitRows
+  check -strong billingDbCommitIntervalInMilliseconds
+
+  set env billingDbParams "\
         -useSQL \
-        -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/${billingDbName} \
-        -jdbcDriver=org.postgresql.Driver \
-        -dbUser=${billingDbUser} \
-        -dbPass=${billingDbPass} \
+        -jdbcUrl=${db.url} \
+        -jdbcDriver=${db.driver} \
+        -dbUser=${db.user} \
+        -dbPass=${db.password} \
         -pgPass=${billingDbPgPassFileName} \
         -dbCommitNumber=${billingDbCommitRows} \
         -dbCommitTime=${billingDbCommitIntervalInMilliseconds} \
        "
 endExe
+
+onerror continue
 eval ${billingToDb} yes ==
 exec env billingToDb.exe -ifok
 onerror shutdown
 
-
-create diskCacheV111.cells.BillingCell billing \
+create diskCacheV111.cells.BillingCell ${cell.name} \
        "${billingDb} \
         -printMode=2 \
         ${billingDisableTxt} \

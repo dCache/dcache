@@ -91,7 +91,7 @@ public class TransferObserverV1
         private FieldMap(String className , Args args)
         {
             if (className == null) {
-                _log.warn("FieldMap : 'fieldMap' not defined");
+                _log.info("FieldMap : 'fieldMap' not defined");
                 return;
             }
 
@@ -314,6 +314,7 @@ public class TransferObserverV1
             return _tableName;
         }
 
+        @Override
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
@@ -416,6 +417,7 @@ public class TransferObserverV1
         return "Update time set to " + args.argv(0) + " seconds";
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("    $Id: TransferObserverV1.java,v 1.18 2007-09-27 15:03:17 behrmann Exp $");
@@ -472,6 +474,7 @@ public class TransferObserverV1
                  compareTo(Long.valueOf(other._ioDoorEntry.getSerialId()));
          }
 
+         @Override
          public boolean equals(Object obj)
          {
              if( obj == this ) return true;
@@ -482,8 +485,9 @@ public class TransferObserverV1
                  _ioDoorInfo.getCellName().equals(other._ioDoorInfo.getCellName()) &&
 
                  (_ioDoorEntry.getSerialId() == other._ioDoorEntry.getSerialId());
-        }
+         }
 
+         @Override
          public int hashCode() {
              // required to by some Collections
              return 17;
