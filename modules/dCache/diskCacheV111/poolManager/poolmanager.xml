@@ -67,6 +67,7 @@
       <bean class="${threadPool}"/>
     </property>
     <property name="stageConfigurationFile" value="${stageConfigurationFilePath}"/>
+    <property name="pnfsHandler" ref="pnfs"/>
   </bean>
 
   <bean id="rebalance" class="org.dcache.poolmanager.Rebalancer">

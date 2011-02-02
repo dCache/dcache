@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.dcache.tests.cells.GenericMockCellHelper;
@@ -41,6 +42,8 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import org.dcache.tests.util.CurrentThreadExceutorHelper;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.namespace.FileAttribute;
 
 import static org.junit.Assert.*;
 
@@ -95,6 +98,7 @@ public class HsmRestoreTest {
         _partitionManager.ac_rc_set_stage_$_1_2(new Args("on"));
         _rc = new RequestContainerV5(RETRY_INTERVAL);
         _rc.setPoolSelectionUnit(_selectionUnit);
+        _rc.setPnfsHandler(_pnfsHandler);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
         _rc.setThreadPool(new CurrentThreadExceutorHelper(_cell));
@@ -136,13 +140,15 @@ public class HsmRestoreTest {
         _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
-        PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+        PnfsGetFileAttributes fileAttributesMessage =
+            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(locations);
-        storageInfoMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
+        fileAttributesMessage.setFileAttributes(attributes);
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
+                                             fileAttributesMessage, true);
 
 
         /*
@@ -219,13 +225,14 @@ public class HsmRestoreTest {
         _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
-        PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+        PnfsGetFileAttributes fileAttributesMessage =
+            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(locations);
-        storageInfoMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
+        fileAttributesMessage.setFileAttributes(attributes);
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
 
 
@@ -310,13 +317,15 @@ public class HsmRestoreTest {
         _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
-        PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+        PnfsGetFileAttributes fileAttributesMessage =
+            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(locations);
-        storageInfoMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
+        fileAttributesMessage.setFileAttributes(attributes);
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
+                                             fileAttributesMessage, true);
 
 
 
@@ -398,13 +407,15 @@ public class HsmRestoreTest {
         _storageInfo.setFileSize(5);
         _storageInfo.setIsNew(false);
 
-        PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+        PnfsGetFileAttributes fileAttributesMessage =
+            new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(locations);
-        storageInfoMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
+        fileAttributesMessage.setFileAttributes(attributes);
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
+                                             fileAttributesMessage, true);
 
 
 

@@ -32,6 +32,9 @@ import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.ExtendedRunnable;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.ThreadPool;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
@@ -107,6 +110,7 @@ public class RequestContainerV5
 
     private PoolSelectionUnit  _selectionUnit;
     private PoolMonitorV5      _poolMonitor;
+    private PnfsHandler        _pnfsHandler;
     private final SimpleDateFormat   _formatter        = new SimpleDateFormat ("MM.dd HH:mm:ss");
     private ThreadPool         _threadPool ;
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<PnfsId, CacheException>() ;
@@ -149,6 +153,11 @@ public class RequestContainerV5
     public void setPoolMonitor(PoolMonitorV5 poolMonitor)
     {
         _poolMonitor = poolMonitor;
+    }
+
+    public void setPnfsHandler(PnfsHandler pnfsHandler)
+    {
+        _pnfsHandler = pnfsHandler;
     }
 
     public void setPartitionManager(PartitionManager partitionManager)
@@ -664,22 +673,9 @@ public class RequestContainerV5
 
         try {
 
-            PnfsId pnfsId = new PnfsId(args.argv(0));
-            PnfsGetFileAttributes msg =
-                new PnfsGetFileAttributes(pnfsId, PoolMgrReplicateFileMsg.getRequiredAttributes());
-
-            CellMessage request =
-                new CellMessage(new CellPath("PnfsManager"), msg);
-
-            request = sendAndWait(request, 30000);
-            if (request == null) {
-                throw new Exception(
-                        "Timeout : PnfsManager request for storageInfo of "
-                                + pnfsId);
-            }
-
-            msg = (PnfsGetFileAttributes) request.getMessageObject();
-            FileAttributes fileAttributes = msg.getFileAttributes();
+            FileAttributes fileAttributes =
+                _pnfsHandler.getFileAttributes(new PnfsId(args.argv(0)),
+                                               PoolMgrReplicateFileMsg.getRequiredAttributes());
 
             // TODO: call p2p direct
             // send message to yourself
@@ -737,6 +733,7 @@ public class RequestContainerV5
 
         private   StorageInfo  _storageInfo   = null ;
         private   ProtocolInfo _protocolInfo  = null ;
+        private   String       _linkGroup;
 
         private   boolean _enforceP2P            = false ;
         private   int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
@@ -883,6 +880,7 @@ public class RequestContainerV5
 
            _storageInfo  = request.getStorageInfo() ;
            _protocolInfo = request.getProtocolInfo() ;
+           _linkGroup    = request.getLinkGroup();
 
            if( request instanceof PoolMgrReplicateFileMsg ){
               _enforceP2P            = true ;
@@ -892,7 +890,8 @@ public class RequestContainerV5
            _pnfsFileLocation =
                 _poolMonitor.getPnfsFileLocation( _pnfsId ,
                                                   _storageInfo ,
-                                                  _protocolInfo, request.getLinkGroup()) ;
+                                                  _protocolInfo,
+                                                  _linkGroup);
 
            //
            //
@@ -1772,38 +1771,28 @@ public class RequestContainerV5
            }
 
         }
-        private void getStorageInfo(){
-           try{
-              PnfsGetStorageInfoMessage getStorageInfo = new PnfsGetStorageInfoMessage( _pnfsId ) ;
 
-              CellMessage request = new CellMessage(
-                                       new CellPath("PnfsManager") ,
-                                       getStorageInfo ) ;
-
-              request = sendAndWait( request , 30000 ) ;
-              if( request == null )
-                 throw new
-                 Exception("Timeout : PnfsManager request for storageInfo of "+_pnfsId);
-
-              getStorageInfo = (PnfsGetStorageInfoMessage)request.getMessageObject();
-              switch (getStorageInfo.getReturnCode()) {
-              case 0:
-                  _storageInfo = getStorageInfo.getStorageInfo();
-                  break;
-              case CacheException.FILE_NOT_FOUND:
-              case CacheException.NOT_IN_TRASH:
-                  setError(getStorageInfo.getReturnCode(),
-                           "File not found");
-                  break;
-              default:
-                  _log.warn("Fetching storage info failed: " +
-                            getStorageInfo.getErrorObject());
-                  break;
-              }
-           }catch(Exception ee ){
-               _log.warn("Fetching storage info failed : "+ee);
-           }
+        private void getStorageInfo()
+        {
+            try {
+                FileAttributes fileAttributes =
+                    _pnfsHandler.getFileAttributes(_pnfsId,
+                                                   PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+                _storageInfo = fileAttributes.getStorageInfo();
+                _pnfsFileLocation =
+                    _poolMonitor.getPnfsFileLocation(_pnfsId,
+                                                     _storageInfo,
+                                                     _protocolInfo,
+                                                     _linkGroup);
+            } catch (FileNotFoundCacheException e) {
+                setError(e.getRc(), "File not found");
+            } catch (NotInTrashCacheException e) {
+                setError(e.getRc(), "File not found");
+            } catch (CacheException e) {
+                _log.warn("Fetching storage info failed: {}", e.getMessage());
+            }
         }
+
         private void outOfResources( String detail ){
 
            clearSteering();
