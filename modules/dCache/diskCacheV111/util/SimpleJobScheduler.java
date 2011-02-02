@@ -123,7 +123,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             }
 
             try {
-                _cdc.apply();
+                _cdc.restore();
                 NDC.push("job=" + _id);
                 _runnable.run();
             } finally {

@@ -240,6 +240,7 @@
         <mkdir dir="${dcache.build.dir}/META-INF" />
         <copy file="${dcache.src}/diskCacheV111/config/persistence.xml" todir="${dcache.build.dir}/META-INF" />
         <copy file="${dcache.src}/org/dcache/auth/AuthRecordORM.xml" todir="${dcache.build.dir}/org/dcache/auth/" />
+        <copy file="${dcache.src}/diskCacheV111/config/aop.xml" todir="${dcache.build.dir}/META-INF" />
         <jar jarfile="${dcache.jar}">
             <fileset dir="${dcache.src}" includes="**/*.xml,**/*.jdo" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
             <fileset dir="${dcache.build.dir}" includes="**/*.class,META-INF/*.xml" />
@@ -276,9 +277,7 @@
 
       <enhance classpathref="dcache-srm-enhance.classpath"
                dir="${dcache.build.dir}">
-        <fileset dir="${dcache.src}/diskCacheV111/services/">
-          <include name="package.jdo"/>
-        </fileset>
+        <fileset dir="${dcache.src}/" includes="**/package.jdo"/>
         <sysproperty key="logback.configurationFile"
                      value="file:modules-builds/logback.xml"/>
       </enhance>

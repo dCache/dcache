@@ -69,13 +69,9 @@ public class CDC
     }
 
     /**
-     * Applies the cells diagnostic context to the calling thread.  If
-     * <code>clone</code> is false, then the <code>apply</code> can
-     * only be called once for this CDC. If <code>clone</code> is
-     * true, then the CDC may be applied several times, however the
-     * operation is more expensive.
+     * Restore the cells diagnostic context to the calling thread.
      */
-    public void apply()
+    public void restore()
     {
         setMdc(MDC_DOMAIN, _domain);
         setMdc(MDC_CELL, _cell);
@@ -142,22 +138,28 @@ public class CDC
     /**
      * Setup the cell diagnostic context of the calling
      * thread. Threads created from the calling thread automatically
-     * inherit this information.
+     * inherit this information. The old diagnostic context is
+     * captured and returned.
      */
-    static public void setCellsContext(CellNucleus cell)
+    static public CDC reset(CellNucleus cell)
     {
-        setCellsContext(cell.getCellName(), cell.getCellDomainName());
+        return reset(cell.getCellName(), cell.getCellDomainName());
     }
 
     /**
      * Setup the cell diagnostic context of the calling
      * thread. Threads created from the calling thread automatically
-     * inherit this information.
+     * inherit this information. The old diagnostic context is
+     * captured and returned.
      */
-    static public void setCellsContext(String cellName, String domainName)
+    static public CDC reset(String cellName, String domainName)
     {
+        CDC cdc = new CDC();
         setMdc(MDC_CELL, cellName);
         setMdc(MDC_DOMAIN, domainName);
+        MDC.remove(MDC_SESSION);
+        NDC.clear();
+        return cdc;
     }
 
     /**

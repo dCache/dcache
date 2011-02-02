@@ -7,6 +7,7 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import static org.dcache.namespace.FileAttribute.*;
+import static com.google.common.base.Preconditions.*;
 
 public class PinManagerUnpinMessage extends Message
 {
@@ -18,6 +19,7 @@ public class PinManagerUnpinMessage extends Message
 
     public PinManagerUnpinMessage(FileAttributes fileAttributes)
     {
+        checkNotNull(fileAttributes);
         _fileAttributes = fileAttributes;
     }
 

@@ -78,6 +78,11 @@ public class AclHandler {
             _aclHandler.close();
     }
 
+    public void setProperties(Properties properties) throws ACLException
+    {
+        setAclConfig(properties);
+    }
+
     public static void setAclConfig(Properties aclProps) throws ACLException {
         _aclConfig = new AclConfig(aclProps);
         refresh();

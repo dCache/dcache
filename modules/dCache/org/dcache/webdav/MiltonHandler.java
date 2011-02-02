@@ -48,7 +48,7 @@ public class MiltonHandler
                        HttpServletRequest request,HttpServletResponse response)
         throws IOException, ServletException
     {
-        CDC.setCellsContext(_cellName, _domainName);
+        CDC cdc = CDC.reset(_cellName, _domainName);
         CDC.createSession();
         NDC.push(CDC.getSession());
         try {
@@ -67,7 +67,7 @@ public class MiltonHandler
             response.getOutputStream().flush();
             response.flushBuffer();
         } finally {
-            CDC.clear();
+            cdc.restore();
         }
     }
 }

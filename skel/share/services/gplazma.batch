@@ -20,9 +20,10 @@ define env killLogin.exe enddefine
   kill ${cell.name}
 enddefine
 
-# Only start gplazma service if it does not already exist
+# If there is a gPlazma instance already running, kill it.
 onerror continue
-getcellinfo ${cell.name}
+test -i ${cell.name}
 exec env killLogin.exe -ifok
 onerror shutdown
+
 exec env startLogin.exe

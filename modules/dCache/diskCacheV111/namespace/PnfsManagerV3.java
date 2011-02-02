@@ -33,6 +33,9 @@ import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.PermissionHandler;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
 import org.dcache.commons.stats.RequestCounters;
 
@@ -45,60 +48,89 @@ import org.dcache.acl.enums.AccessType;
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.acl.enums.AccessType.*;
 
-public class PnfsManagerV3 extends CellAdapter
+import org.springframework.beans.factory.annotation.Required;
+
+import com.google.common.base.Strings;
+
+public class PnfsManagerV3
+    extends AbstractCellComponent
+    implements CellCommandListener, CellMessageReceiver
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PnfsManagerV3.class);
 
     private static final int THRESHOLD_DISABLED = 0;
-    private static final int DEFAULT_LIST_THREADS = 2;
-    private static final int DEFAULT_DIR_LIST_LIMIT = 100;
     private static final int TTL_BUFFER_MAXIMUM = 10000;
     private static final float TTL_BUFFER_FRACTION = 0.10f;
 
-    private final String      _cellName  ;
-    private final Args        _args      ;
-    private final CellNucleus _nucleus   ;
-    private final Random      _random   = new Random(System.currentTimeMillis());
-    private int _threads = 1;
-    private int _threadGroups = 1;
-    private int _directoryListLimit = DEFAULT_DIR_LIST_LIMIT;
+    private final Random _random = new Random(System.currentTimeMillis());
+
+    private final RequestCounters<Class> _counters =
+        new RequestCounters<Class> ("PnfsManagerV3");
+    private final RequestCounters<Class> _foldedCounters =
+        new RequestCounters<Class> ("PnfsManagerV3.Folded");
+
+    /**
+     * Cache of path prefix to database IDs mappings.
+     */
+    private final PrefixMap<Integer> _pathToDBCache = new PrefixMap();
+
+    /**
+     * These messages are subject to being discarded if their time to
+     * live has been exceeded (or is expected to be exceeded).
+     */
+    private final Class[] DISCARD_EARLY = {
+        PnfsGetCacheLocationsMessage.class,
+        PnfsGetStorageInfoMessage.class,
+        PnfsMapPathMessage.class,
+        PnfsGetFileMetaDataMessage.class,
+        PnfsGetParentMessage.class,
+        PnfsGetChecksumAllMessage.class,
+        PnfsGetChecksumMessage.class,
+        PnfsCreateEntryMessage.class,
+        PnfsCreateDirectoryMessage.class,
+        PnfsGetFileAttributes.class,
+        PnfsListDirectoryMessage.class
+    };
+
+    private int _threads;
+    private int _threadGroups;
+    private int _directoryListLimit;
+    private int _queueMaxSize;
+    private int _cacheLocationThreads;
+    private int _listThreads;
+    private long _logSlowThreshold;
+
+    /**
+     * Whether to use folding.
+     */
+    private boolean _canFold;
 
     /**
      * Queues for list operations. There is one queue per thread
      * group.
      */
-    private final BlockingQueue<CellMessage>[] _listQueues;
+    private BlockingQueue<CellMessage>[] _listQueues;
 
     /**
      * Tasks queues used for cache location messages. Depending on
      * configuration, this may be the same as <code>_fifos</code>.
      */
-    private final BlockingQueue<CellMessage>[] _locationFifos;
+    private BlockingQueue<CellMessage>[] _locationFifos;
 
     /**
      * Tasks queues used for messages that do not operate on cache
      * locations.
      */
-    private final BlockingQueue<CellMessage>[] _fifos;
+    private BlockingQueue<CellMessage>[] _fifos;
 
+    private CellPath _cacheModificationRelay;
+    private CellPath _pnfsDeleteNotificationRelay;
 
-    private CellPath     _cacheModificationRelay = null ;
-    private CellPath     _pnfsDeleteNotificationRelay = null;
+    private PermissionHandler _permissionHandler;
+    private NameSpaceProvider _nameSpaceProvider;
+    private NameSpaceProvider _cacheLocationProvider;
 
-    /**
-     * Whether to use folding.
-     */
-    private boolean      _canFold = false;
-
-    private final PermissionHandler _permissionHandler;
-    private final NameSpaceProvider _nameSpaceProvider;
-    private final NameSpaceProvider _cacheLocationProvider;
-    private final static String defaultNameSpaceProvider      = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
-    private final static String defaultCacheLocationProvider  = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
-
-    private final  RequestCounters<Class> _counters = new RequestCounters<Class> ("PnfsManagerV3");
-    private final  RequestCounters<Class> _foldedCounters = new RequestCounters<Class> ("PnfsManagerV3.Folded");
 
     private void populateRequestMap()
     {
@@ -126,203 +158,136 @@ public class PnfsManagerV3 extends CellAdapter
         _counters.addCounter(PnfsListDirectoryMessage.class);
     }
 
-    /**
-     * Cache of path prefix to database IDs mappings.
-     */
-    PrefixMap<Integer> _pathToDBCache = new PrefixMap();
-
-    private int _logSlowThreshold;
-
-    /**
-     * These messages are subject to being discarded if their time to
-     * live has been exceeded (or is expected to be exceeded).
-     */
-    private final Class[] DISCARD_EARLY = {
-        PnfsGetCacheLocationsMessage.class,
-        PnfsGetStorageInfoMessage.class,
-        PnfsMapPathMessage.class,
-        PnfsGetFileMetaDataMessage.class,
-        PnfsGetParentMessage.class,
-        PnfsGetChecksumAllMessage.class,
-        PnfsGetChecksumMessage.class,
-        PnfsCreateEntryMessage.class,
-        PnfsCreateDirectoryMessage.class,
-        PnfsGetFileAttributes.class,
-        PnfsListDirectoryMessage.class
-    };
-
-    public PnfsManagerV3( String cellName , String args ) throws Exception {
-
-        super( cellName , PnfsManagerV3.class.getName(),  args , false ) ;
-
-        _cellName = cellName ;
-        _args     = getArgs() ;
-        _nucleus  = getNucleus() ;
-
-        populateRequestMap();
-
-        useInterpreter( true ) ;
-
-        try {
-            //
-            // make it backward compatible
-            //
-            if( _args.argc() < 1 )
-                throw new
-                    IllegalArgumentException(
-                                             "Usage : ... [-pnfs=<pnfsMountpoint>] "+
-                                             "-defaultPnfsServer=<serverName> "+
-                                             "-cmRelay=<cellPathOfCacheModificationRelay> "+
-                                             "-logSlowThreshold=<min. time in milliseconds> " +
-                                             "-queueMaxSize=<pnfs message queue>" +
-                                             "<StorageInfoExctractorClass>");
-
-            //
-            // get the thread multiplier
-            //
-            String tmp = _args.getOpt("threads") ;
-            if( tmp != null ){
-                try{
-                    _threads = Integer.parseInt(tmp) ;
-                }catch(NumberFormatException e){
-                    _log.warn( "Threads not changed ("+e+")");
-                }
-            }
-            tmp = _args.getOpt("threadGroups") ;
-            if( tmp != null ){
-                try{
-                    _threadGroups = Integer.parseInt(tmp) ;
-                }catch(NumberFormatException e){
-                    _log.warn( "Thread groups not changed ("+e+")");
-                }
-            }
-            tmp = _args.getOpt("cmRelay") ;
-            if( tmp != null )_cacheModificationRelay = new CellPath(tmp) ;
-            _log.info("CacheModificationRelay = "+
-                      ( _cacheModificationRelay == null ? "NONE" : _cacheModificationRelay.toString() ) );
-
-            tmp = _args.getOpt("pnfsDeleteRelay") ;
-            if( tmp != null )_pnfsDeleteNotificationRelay = new CellPath(tmp) ;
-            _log.info("pnfsDeleteRelay = "+
-                      ( _pnfsDeleteNotificationRelay == null ? "NONE" : _pnfsDeleteNotificationRelay.toString() ) );
-
-            tmp = _args.getOpt("logSlowThreshold") ;
-            _logSlowThreshold = (tmp != null) ? Integer.parseInt(tmp) : THRESHOLD_DISABLED;
-            _log.info("logSlowThreshold = "+
-                      ( _logSlowThreshold == THRESHOLD_DISABLED ? "NONE" : Integer.toString(_logSlowThreshold) ) );
-
-            //
-            //
-            String nameSpace_provider = _args.getOpt("namespace-provider") ;
-            if( nameSpace_provider == null ) {
-                nameSpace_provider = defaultNameSpaceProvider;
-            }
-
-            _log.info("Namespace provider: " + nameSpace_provider);
-            DcacheNameSpaceProviderFactory nameSpaceProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(nameSpace_provider).newInstance();
-            _permissionHandler = new ChainedPermissionHandler(new ACLPermissionHandler(), new PosixPermissionHandler());
-            _nameSpaceProvider =
-                new PermissionHandlerNameSpaceProvider(nameSpaceProviderFactory.getProvider(_args, _nucleus), _permissionHandler);
-
-
-            String cacheLocation_provider = _args.getOpt("cachelocation-provider") ;
-            if( cacheLocation_provider == null ) {
-                cacheLocation_provider = defaultCacheLocationProvider;
-            }
-
-            _log.info("CacheLocation provider: " + cacheLocation_provider);
-            DcacheNameSpaceProviderFactory cacheLocationProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(cacheLocation_provider).newInstance();
-            _cacheLocationProvider = cacheLocationProviderFactory.getProvider(_args, _nucleus);
-
-            String queueMaxSizeOption = _args.getOpt("queueMaxSize");
-            int queueMaxSize =  queueMaxSizeOption == null ? 0 : Integer.parseInt(queueMaxSizeOption);
-            //
-            // and now the threads and fifos
-            //
-            _fifos = new BlockingQueue[_threads * _threadGroups];
-            _log.info("Starting " + _fifos.length + " threads");
-            for (int i = 0; i < _fifos.length; i++) {
-                if (queueMaxSize > 0) {
-                    _fifos[i] = new LinkedBlockingQueue<CellMessage>(queueMaxSize);
-                } else {
-                    _fifos[i] = new LinkedBlockingQueue<CellMessage>();
-                }
-                _nucleus.newThread(new ProcessThread(_fifos[i]), "proc-" + i).start();
-            }
-
-            tmp = _args.getOpt("cachelocation-threads");
-            int threads = (tmp == null) ? 0 : Integer.parseInt(tmp);
-            if (threads > 0) {
-                _log.info("Starting " +  threads + " cache location threads");
-                _locationFifos = new BlockingQueue[threads];
-                for (int i = 0; i < _locationFifos.length; i++) {
-                    _locationFifos[i] = new LinkedBlockingQueue();
-                    _nucleus.newThread(new ProcessThread(_locationFifos[i]),
-                                       "proc-loc-" + i).start();
-                }
-            } else {
-                _locationFifos = _fifos;
-            }
-
-            /* Start list-threads threads per thread group for list
-             * processing. We use a shared queue per thread group, as
-             * list operations are read only and thus there is no need
-             * to serialize the operations.
-             */
-            tmp = _args.getOpt("list-threads");
-            int listThreads =
-                (tmp == null) ? DEFAULT_LIST_THREADS : Integer.parseInt(tmp);
-            _listQueues = new BlockingQueue[_threadGroups];
-            for (int i = 0; i < _threadGroups; i++) {
-                _listQueues[i] = new LinkedBlockingQueue();
-                for (int j = 0; j < listThreads; j++) {
-                    _nucleus.newThread(new ProcessThread(_listQueues[i]), "proc-list-" + i + "-" + j).start();
-                }
-            }
-
-            tmp = _args.getOpt("folding");
-            if (tmp != null && (tmp.equals("true") || tmp.equals("yes") ||
-                                tmp.equals("enabled"))) {
-                _canFold = true;
-            }
-
-            tmp = _args.getOpt("directoryListLimit");
-            if (tmp != null) {
-                _directoryListLimit = Integer.parseInt(tmp);
-            }
-
-            /* Initialize ACL.
-             */
-            Properties props = new Properties();
-            getAclProperty("aclEnabled", props, _args);
-            getAclProperty("aclTable", props, _args);
-            getAclProperty("aclConnDriver", props, _args);
-            getAclProperty("aclConnUrl", props, _args);
-            getAclProperty("aclConnUser", props, _args);
-            getAclProperty("aclConnPswd", props, _args);
-            AclHandler.setAclConfig(props);
-        } catch (RuntimeException e){
-            _log.error("Exception occurred", e);
-            start();
-            kill();
-            throw e;
-        }
-        //Make the cell name well-known
-        getNucleus().export();
-        start() ;
-    }
-
-    private void getAclProperty(String key, Properties props, Args args)
+    public PnfsManagerV3()
     {
-        String value = args.getOpt(key);
-        if (value != null) {
-            props.setProperty(key, value);
+        populateRequestMap();
+    }
+
+    @Required
+    public void setThreads(int threads)
+    {
+        _threads = threads;
+    }
+
+    @Required
+    public void setCacheLocationThreads(int threads)
+    {
+        _cacheLocationThreads = threads;
+    }
+
+    @Required
+    public void setListThreads(int threads)
+    {
+        _listThreads = threads;
+    }
+
+    @Required
+    public void setThreadGroups(int threadGroups)
+    {
+        _threadGroups = threadGroups;
+    }
+
+    @Required
+    public void setCacheModificationRelay(String path)
+    {
+        _cacheModificationRelay =
+            Strings.isNullOrEmpty(path) ? null : new CellPath(path);
+        _log.info("CacheModificationRelay = {}",
+                  (_cacheModificationRelay == null) ? "NONE" : _cacheModificationRelay.toString());
+    }
+
+    @Required
+    public void setPnfsDeleteNotificationRelay(String path)
+    {
+        _pnfsDeleteNotificationRelay =
+            Strings.isNullOrEmpty(path) ? null : new CellPath(path);
+        _log.info("pnfsDeleteRelay = {}",
+                  (_pnfsDeleteNotificationRelay == null) ? "NONE" : _pnfsDeleteNotificationRelay.toString());
+    }
+
+    @Required
+    public void setLogSlowThreshold(long threshold)
+    {
+        _logSlowThreshold = threshold;
+        _log.info("logSlowThreshold {}",
+                  (_logSlowThreshold == THRESHOLD_DISABLED) ? "NONE" : String.valueOf(_logSlowThreshold));
+    }
+
+    @Required
+    public void setPermissionHandler(PermissionHandler handler)
+    {
+        _permissionHandler = handler;
+    }
+
+    @Required
+    public void setNameSpaceProvider(NameSpaceProvider provider)
+    {
+        _nameSpaceProvider = provider;
+    }
+
+    @Required
+    public void setCacheLocationProvider(NameSpaceProvider provider)
+    {
+        _cacheLocationProvider = provider;
+    }
+
+    @Required
+    public void setQueueMaxSize(int maxSize)
+    {
+        _queueMaxSize = maxSize;
+    }
+
+    @Required
+    public void setFolding(boolean folding)
+    {
+        _canFold = folding;
+    }
+
+    @Required
+    public void setDirectoryListLimit(int limit)
+    {
+        _directoryListLimit = limit;
+    }
+
+    public void init()
+    {
+        _fifos = new BlockingQueue[_threads * _threadGroups];
+        _log.info("Starting {} threads", _fifos.length);
+        for (int i = 0; i < _fifos.length; i++) {
+            if (_queueMaxSize > 0) {
+                _fifos[i] = new LinkedBlockingQueue<CellMessage>(_queueMaxSize);
+            } else {
+                _fifos[i] = new LinkedBlockingQueue<CellMessage>();
+            }
+            new Thread(new ProcessThread(_fifos[i]), "proc-" + i).start();
+        }
+
+        if (_cacheLocationThreads > 0) {
+            _log.info("Starting {} cache location threads", _cacheLocationThreads);
+            _locationFifos = new BlockingQueue[_cacheLocationThreads];
+            for (int i = 0; i < _locationFifos.length; i++) {
+                _locationFifos[i] = new LinkedBlockingQueue();
+                new Thread(new ProcessThread(_locationFifos[i]),
+                           "proc-loc-" + i).start();
+            }
+        } else {
+            _locationFifos = _fifos;
+        }
+
+        /* Start list-threads threads per thread group for list
+         * processing. We use a shared queue per thread group, as
+         * list operations are read only and thus there is no need
+         * to serialize the operations.
+         */
+        _listQueues = new BlockingQueue[_threadGroups];
+        for (int i = 0; i < _threadGroups; i++) {
+            _listQueues[i] = new LinkedBlockingQueue();
+            for (int j = 0; j < _listThreads; j++) {
+                new Thread(new ProcessThread(_listQueues[i]), "proc-list-" + i + "-" + j).start();
+            }
         }
     }
 
-    @Override
-    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" ); }
-    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("$Revision$");
         pw.println( "NameSpace Provider: ");
@@ -777,10 +742,8 @@ public class PnfsManagerV3 extends CellAdapter
     public String ac_get_log_slow_threshold_$_0( Args args) {
     	if( _logSlowThreshold == THRESHOLD_DISABLED)
             return "disabled";
-
-    	return Integer.toString( _logSlowThreshold) + " ms";
+    	return String.valueOf(_logSlowThreshold) + " ms";
     }
-
 
     public String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
     public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
@@ -1606,99 +1569,83 @@ public class PnfsManagerV3 extends CellAdapter
         }
     }
 
-    @Override
-    public void messageArrived(CellMessage message)
+    public void messageArrived(CellMessage envelope, PnfsListDirectoryMessage message)
+        throws CacheException
     {
-        Object pnfsMessage  = message.getMessageObject();
-        if (! (pnfsMessage instanceof PnfsMessage) ){
-            _log.warn("Unexpected message class [" + pnfsMessage.getClass() + "] from source [" + message.getSourceAddress() + "]");
-            return;
+        PnfsId pnfsId = message.getPnfsId();
+        String path = message.getPnfsPath();
+        int group;
+        if (pnfsId != null) {
+            group = pnfsIdToThreadGroup(pnfsId);
+            _log.info("Using list queue [{}] {}", pnfsId, group);
+        } else if (path != null) {
+            group = pathToThreadGroup(path);
+            _log.info("Using list queue [{}] {}", path, group);
+        } else {
+            throw new InvalidMessageCacheException("Missing PNFS id and path");
         }
-        PnfsMessage pnfs   = (PnfsMessage)pnfsMessage ;
-        PnfsId      pnfsId = pnfs.getPnfsId() ;
-        String      path = pnfs.getPnfsPath() ;
+        if (!_listQueues[group].offer(envelope)) {
+            throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
+        }
+    }
 
-        if( ( _cacheModificationRelay != null ) &&
-            ( ( pnfs instanceof PnfsAddCacheLocationMessage   ) ||
-              ( pnfs instanceof PnfsClearCacheLocationMessage )    ) ){
+    public void messageArrived(CellMessage envelope, PnfsMessage message)
+        throws CacheException
+    {
+        PnfsId pnfsId = message.getPnfsId();
+        String path = message.getPnfsPath();
 
-
-            forwardModifyCacheLocationMessage( pnfs ) ;
-
+        if ((_cacheModificationRelay != null) &&
+            ((message instanceof PnfsAddCacheLocationMessage) ||
+             (message instanceof PnfsClearCacheLocationMessage))) {
+            forwardModifyCacheLocationMessage(message);
         }
 
-        try {
-            if (pnfs instanceof PnfsListDirectoryMessage) {
-                int group;
-                if (pnfsId != null) {
-                    group = pnfsIdToThreadGroup(pnfsId);
-                    _log.info("Using list queue [" + pnfsId + "] " + group);
-                } else if (path != null) {
-                    group = pathToThreadGroup(path);
-                    _log.info("Using list queue [" + path + "] " + group);
-                } else {
-                    throw new InvalidMessageCacheException("Missing PNFS id and path");
-                }
-                if (!_listQueues[group].offer(message)) {
-                    throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
-                }
-                return;
-            }
-
-            boolean isCacheOperation =
-                ((pnfs instanceof PnfsAddCacheLocationMessage) ||
-                 (pnfs instanceof PnfsClearCacheLocationMessage) ||
-                 (pnfs instanceof PnfsGetCacheLocationsMessage));
-            BlockingQueue<CellMessage> fifo;
-            if (isCacheOperation && _locationFifos != _fifos) {
-                int index;
-                if (pnfsId != null) {
-                    index =
-                        (int) (Math.abs((long) pnfsId.hashCode()) % _locationFifos.length);
-                    _log.info("Using location thread [" + pnfsId + "] " + index);
-                } else if (path != null) {
-                    index =
-                        (int) (Math.abs((long) path.hashCode()) % _locationFifos.length);
-                    _log.info("Using location thread [" + path + "] " + index);
-                } else {
-                    index = _random.nextInt(_locationFifos.length);
-                    _log.info("Using random location thread " + index);
-                }
-                fifo = _locationFifos[index];
+        boolean isCacheOperation =
+            ((message instanceof PnfsAddCacheLocationMessage) ||
+             (message instanceof PnfsClearCacheLocationMessage) ||
+             (message instanceof PnfsGetCacheLocationsMessage));
+        BlockingQueue<CellMessage> fifo;
+        if (isCacheOperation && _locationFifos != _fifos) {
+            int index;
+            if (pnfsId != null) {
+                index =
+                    (int) (Math.abs((long) pnfsId.hashCode()) % _locationFifos.length);
+                _log.info("Using location thread [{}] {}", pnfsId, index);
+            } else if (path != null) {
+                index =
+                    (int) (Math.abs((long) path.hashCode()) % _locationFifos.length);
+                _log.info("Using location thread [{}] {}", path, index);
             } else {
-                int index;
-                if (pnfsId != null) {
-                    index =
-                        pnfsIdToThreadGroup(pnfsId) * _threads +
-                        (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
-                    _log.info("Using thread [" + pnfsId + "] " + index);
-                } else if (path != null) {
-                    index =
-                        pathToThreadGroup(path) * _threads +
-                        (int) (Math.abs((long) path.hashCode()) % _threads);
-                    _log.info("Using thread [" + path + "] " + index);
-                } else {
-                    index = _random.nextInt(_fifos.length);
-                    _log.info("Using random thread " + index);
-                }
-                fifo = _fifos[index];
+                index = _random.nextInt(_locationFifos.length);
+                _log.info("Using random location thread {}", index);
             }
+            fifo = _locationFifos[index];
+        } else {
+            int index;
+            if (pnfsId != null) {
+                index =
+                    pnfsIdToThreadGroup(pnfsId) * _threads +
+                    (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
+                _log.info("Using thread [{}] {}", pnfsId, index);
+            } else if (path != null) {
+                index =
+                    pathToThreadGroup(path) * _threads +
+                    (int) (Math.abs((long) path.hashCode()) % _threads);
+                _log.info("Using thread [{}] {}", path, index);
+            } else {
+                index = _random.nextInt(_fifos.length);
+                _log.info("Using random thread {}", index);
+            }
+            fifo = _fifos[index];
+        }
 
-            /*
-             * try to add a message into queue.
-             * tell requester, that queue is full
-             */
-            if (!fifo.offer(message)) {
-                throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
-            }
-        } catch (CacheException e) {
-            pnfs.setFailed(e.getRc(), e);
-            try {
-                message.revertDirection();
-                sendMessage(message);
-            } catch (NoRouteToCellException f) {
-                _log.warn("Requester cell disappeared: " + f.getMessage());
-            }
+        /*
+         * try to add a message into queue.
+         * tell requester, that queue is full
+         */
+        if (!fifo.offer(envelope)) {
+            throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
     }
 

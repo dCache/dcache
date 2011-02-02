@@ -18,6 +18,6 @@ enddefine
 
 # Only start ThreadManager if it does not already exist
 onerror continue
-getcellinfo ThreadManager
+test -i ThreadManager
 exec env threadmanager.exe -ifnotok
 onerror shutdown

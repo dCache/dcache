@@ -8,9 +8,9 @@ public class StagerMessage  extends Message {
    private ProtocolInfo _protocolInfo = null ;
    private PnfsId       _pnfsId       = null ;
    private long         _stageTime    = 0L ;
-   
+
    private static final long serialVersionUID = 9114811219859194002L;
-   
+
    public StagerMessage( PnfsId pnfsId ){
       _pnfsId = pnfsId ;
       setReplyRequired(true);
@@ -19,7 +19,7 @@ public class StagerMessage  extends Message {
    public void setStorageInfo( StorageInfo storageInfo ){
       _storageInfo = storageInfo ;
    }
-   public StorageInfo getStorageInfo(){ 
+   public StorageInfo getStorageInfo(){
       return _storageInfo ;
    }
    public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }
@@ -28,16 +28,16 @@ public class StagerMessage  extends Message {
    }
    public long getStageTime(){ return _stageTime ; }
    public void setStageTime( long stageTime ){ _stageTime = stageTime ; }
-   
+
    public String toString(){
      StringBuffer sb = new StringBuffer() ;
-     
+
      sb.append( _pnfsId.toString() ).append(";").
         append("t=").append(getStageTime()).append(";SI={").
         append(getStorageInfo().toString()).append("};PI={").
         append(getProtocolInfo()).append("}");
-        
+
      return sb.toString() ;
-   
+
    }
 }

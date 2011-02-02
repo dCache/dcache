@@ -23,6 +23,24 @@ onerror shutdown
 # be defined in httpdSetupExtra.
 ####################################################################
 
+#
+#  The following block defines the context set_alias_statistics to be either
+#  "set alias statistics directory ${statisticsLocation}" if
+#  ${statisticsLocation} exists and is a directory, or an empty string otherwise
+#
+define env defineStatisticsAlias.exe endDefine
+   set context set_alias_statistics "set alias statistics directory ${statisticsLocation}"
+endDefine
+define env defineEmptyStatisticsAlias.exe endDefine
+   set context set_alias_statistics ""
+endDefine
+onerror continue
+test -d ${statisticsLocation}
+set env have_stats_loc ${rc}
+onerror shutdown
+exec env defineStatisticsAlias.exe -ifok=have_stats_loc
+exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
+
 define context httpdSetup endDefine
    set alias default context home.html
    set alias <home> file ${config}/../docs/skins/home-skin-basic.html -onError=default
@@ -41,7 +59,7 @@ define context httpdSetup endDefine
    set alias billing  class diskCacheV111.cells.HttpBillingEngine
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
-   set alias statistics directory ${statisticsLocation}
+   ${set_alias_statistics}
    set alias info class org.dcache.services.info.InfoHttpEngine
    set update 60
 endDefine
@@ -138,18 +156,14 @@ endDefine
 # Any of the above defaults can be redefined in etc/httpd.conf
 ####################################################################
 
-define env notice.exe endDefine
-  say -level=esay "${dcache.paths.etc}/httpd.conf not loaded. This is not an error."
-endDefine
-
 onerror continue
-exec file:${dcache.paths.etc}/httpd.conf
-exec env notice.exe -ifnotok
+test -f ${dcache.paths.etc}/httpd.conf
+exec file:${dcache.paths.etc}/httpd.conf -ifok
+onerror shutdown
 
 # Transfer observer collects information about active transfers
 ####################################################################
 
-onerror shutdown
 define context TransferObserverSetup endDefine
   table define large 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
   table define small 6,8,4,5,9,10,11,15

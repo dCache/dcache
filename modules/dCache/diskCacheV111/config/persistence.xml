@@ -26,4 +26,14 @@
         </properties>
     </persistence-unit>
 
+    <persistence-unit name="PinManager">
+      <!-- The provider is not required for JDO, but TopLink doesn't
+           appear to be happy if we don't specify something. -->
+      <provider>org.datanucleus</provider>
+      <mapping-file>org/dcache/pinmanager/model/package.jdo</mapping-file>
+      <properties>
+        <property name="datanucleus.identifier.case" value="PreserveCase"/>
+      </properties>
+    </persistence-unit>
+
 </persistence>

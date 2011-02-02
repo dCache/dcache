@@ -10,6 +10,9 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import static org.dcache.namespace.FileAttribute.*;
+import static com.google.common.base.Preconditions.*;
+
+import org.dcache.pinmanager.model.Pin;
 
 public class PinManagerPinMessage extends Message
 {
@@ -28,6 +31,9 @@ public class PinManagerPinMessage extends Message
                                 String requestId,
                                 long lifetime)
     {
+        checkNotNull(fileAttributes);
+        checkNotNull(protocolInfo);
+
         _fileAttributes = fileAttributes;
         _protocolInfo = protocolInfo;
         _requestId = requestId;
@@ -37,6 +43,11 @@ public class PinManagerPinMessage extends Message
     public String getRequestId()
     {
         return _requestId;
+    }
+
+    public void setLifetime(long lifetime)
+    {
+        _lifetime = lifetime;
     }
 
     public long getLifetime()
@@ -92,6 +103,13 @@ public class PinManagerPinMessage extends Message
     public Date getExpirationTime()
     {
         return _expirationTime;
+    }
+
+    public void setPin(Pin pin)
+    {
+        setPool(pin.getPool());
+        setPinId(pin.getPinId());
+        setExpirationTime(pin.getExpirationTime());
     }
 
     @Override

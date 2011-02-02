@@ -4,17 +4,17 @@
 package diskCacheV111.namespace.provider;
 
 import diskCacheV111.namespace.NameSpaceProvider;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
-public class SQLCacheLocationProviderFactory extends DcacheNameSpaceProviderFactory {
+public class SQLCacheLocationProviderFactory
+{
+    private static SQLNameSpaceProvider provider;
 
-    static private SQLNameSpaceProvider provider = null;
-
-    public synchronized NameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {
-
-        if ( provider == null ) {
-            provider = new SQLNameSpaceProvider(args, nucleus);
+    public static synchronized NameSpaceProvider getProvider(Args args)
+        throws Exception
+    {
+        if (provider == null) {
+            provider = new SQLNameSpaceProvider(args);
         }
         return provider;
     }

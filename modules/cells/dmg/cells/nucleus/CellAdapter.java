@@ -314,7 +314,7 @@ public class   CellAdapter
      * created from the calling thread automatically inherit this
      * information.
      */
-    public void initLoggingContext() { CDC.setCellsContext(_nucleus); }
+    public void initLoggingContext() { CDC.reset(_nucleus); }
 
     /**
      *  informs the CellCore to remove this cell.

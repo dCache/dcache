@@ -1322,6 +1322,45 @@ public class      CellShell
       return sb.toString() ;
    }
 
+   public final static String fh_test =
+      "test <kind> <target>\n\n" +
+      "  Check whether <target>, of type <kind>, is available in the current environment.\n" +
+      "  If <target> is present then the return-code is zero, if not then a non-zero\n" +
+      "  return-code is returned.\n\n" +
+      "  Possible invocations are:\n" +
+      "     -i <cell>   test if <cell> is running,\n" +
+      "     -e <file>   test if <file> exists,\n" +
+      "     -f <file>   test if <file> exists and is a normal file,\n" +
+      "     -d <file>   test if <file> exists and is a directory";
+   public final static String hh_test = "-i <cell> | -e <file> | -f <file> | -d <file>";
+   public String ac_test_$_1(Args args) throws CommandEvaluationException {
+       Tester tester = testerForArgs(args);
+
+       if( !tester.test()){
+           throw new CommandEvaluationException(1, tester.getMessage());
+       }
+
+       return "";
+   }
+
+   Tester testerForArgs( Args args) {
+       if( args.argc() != 1) {
+           throw new IllegalArgumentException( "Expecting exactly one argument");
+       }
+
+       if( args.getOption("i") != null) {
+           return new CellRunningTester(args);
+       } else  if( args.getOption( "e") != null) {
+           return new FileExistsTester(args);
+       } else  if( args.getOption( "f") != null) {
+           return new FileIsNormalTester(args);
+       } else  if( args.getOption( "d") != null) {
+           return new FileIsDirectoryTester(args);
+       } else {
+           throw new IllegalArgumentException( "Expecting either -cell or -file");
+       }
+   }
+
    public final static String fh_exec =
       "exec [<options>] <url> [<args>]\n" +
       "exec context [<options>] <contextName> [<args>]\n" +
@@ -1849,6 +1888,104 @@ public class      CellShell
             throw new InterruptedIOException(e.toString());
         } catch (NoRouteToCellException e){
             throw new IOException("sendAndWait : " + e);
+        }
+    }
+
+    private interface Tester {
+        /** check for something */
+        public boolean test();
+        /** Useful message if answer is false */
+        public String getMessage();
+    }
+
+
+    /**
+     * Test if a cell is running.
+     */
+    private class CellRunningTester implements Tester {
+        private final String _name;
+
+        CellRunningTester(Args args) {
+            _name = args.argv(0);
+        }
+
+        @Override
+        public boolean test() {
+            return _nucleus.getCellInfo(_name) != null;
+        }
+
+        @Override
+        public String getMessage() {
+            return _name + " is not running";
+        }
+    }
+
+    /**
+     * Test presence of a file.
+     */
+    private class FileExistsTester implements Tester {
+        private final File _file;
+
+        FileExistsTester(Args args) {
+            _file = new File(args.argv(0));
+        }
+
+        @Override
+        public boolean test() {
+            return _file.exists();
+        }
+
+        @Override
+        public String getMessage() {
+            return _file.toString() + " does not exist";
+        }
+    }
+
+    /**
+     * Test presence of a file and that the file is
+     * not special
+     */
+    private class FileIsNormalTester implements Tester {
+        private final File _file;
+        private boolean _exists;
+
+        FileIsNormalTester(Args args) {
+            _file = new File(args.argv(0));
+        }
+
+        @Override
+        public boolean test() {
+            _exists = _file.exists();
+            return _file.isFile();
+        }
+
+        @Override
+        public String getMessage() {
+            return _file.toString() + (_exists ? " is not a normal file" : " does not exist");
+        }
+    }
+
+    /**
+     * Test presence of a file and that the file is
+     * not special
+     */
+    private class FileIsDirectoryTester implements Tester {
+        private final File _file;
+        private boolean _exists;
+
+        FileIsDirectoryTester(Args args) {
+            _file = new File(args.argv(0));
+        }
+
+        @Override
+        public boolean test() {
+            _exists = _file.exists();
+            return _file.isDirectory();
+        }
+
+        @Override
+        public String getMessage() {
+            return _file.toString() + (_exists ? " is not a directory file" : " does not exist");
         }
     }
 }

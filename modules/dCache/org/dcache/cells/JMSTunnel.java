@@ -503,8 +503,7 @@ public class JMSTunnel
         /** Called by JMS on ARP reply. */
         synchronized public void onMessage(Message message)
         {
-            CDC cdc = new CDC();
-            CDC.setCellsContext(_nucleus);
+            CDC cdc = CDC.reset(_nucleus);
             try {
                 Lookup lookup = _lookups.remove(message.getJMSCorrelationID());
                 if (lookup != null && lookup.cancel()) {
@@ -533,7 +532,7 @@ public class JMSTunnel
                 _log.error("Error while resolving well known cell: "
                            + e.getMessage());
             } finally {
-                cdc.apply();
+                cdc.restore();
             }
         }
 
@@ -655,8 +654,7 @@ public class JMSTunnel
          */
         synchronized public void onMessage(Message message)
         {
-            CDC cdc = new CDC();
-            CDC.setCellsContext(_nucleus);
+            CDC cdc = CDC.reset(_nucleus);
             try {
                 ObjectMessage objectMessage = (ObjectMessage) message;
                 Object object = objectMessage.getObject();
@@ -673,7 +671,7 @@ public class JMSTunnel
             } catch (JMSException e) {
                 _log.error("Failed to retrieve object from JMS message: " + e);
             } finally {
-                cdc.apply();
+                cdc.restore();
             }
         }
 
@@ -737,8 +735,7 @@ public class JMSTunnel
          */
         synchronized public void onMessage(Message message)
         {
-            CDC cdc = new CDC();
-            CDC.setCellsContext(_nucleus);
+            CDC cdc = CDC.reset(_nucleus);
             try {
                 TextMessage textMessage = (TextMessage) message;
                 String name = textMessage.getText();
@@ -753,7 +750,7 @@ public class JMSTunnel
             } catch (JMSException e) {
                 _log.error("JMS failure in cell name resolver: " + e);
             } finally {
-                cdc.apply();
+                cdc.restore();
             }
         }
 

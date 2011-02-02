@@ -4,6 +4,7 @@
 
 package diskCacheV111.namespace.provider;
 
+import java.lang.reflect.Method;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -45,7 +46,6 @@ import diskCacheV111.util.StorageInfoExtractable;
 import diskCacheV111.util.PnfsFile.VirtualMountPoint;
 import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import dmg.util.CollectionFactory;
 import org.dcache.namespace.FileType;
@@ -67,10 +67,8 @@ public class BasicNameSpaceProvider
     implements NameSpaceProvider
 {
     private final String            _mountPoint ;
-    private final CellNucleus       _nucleus;
     private final List<VirtualMountPoint>              _virtualMountPoints ;
     private final PathManager       _pathManager ;
-    private final Args        _args ;
     private final StorageInfoExtractable _extractor;
 
     private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
@@ -93,12 +91,7 @@ public class BasicNameSpaceProvider
         EnumSet.of(SIMPLE_TYPE, SIZE, MODIFICATION_TIME);
 
     /** Creates a new instance of BasicNameSpaceProvider */
-    public BasicNameSpaceProvider(Args args, CellNucleus nucleus) throws Exception {
-
-
-        _nucleus = nucleus;
-
-        _args = args;
+    public BasicNameSpaceProvider(Args args) throws Exception {
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
         if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
@@ -126,13 +119,13 @@ public class BasicNameSpaceProvider
         //
         // get the extractor
         //
-        Class<StorageInfoExtractable> exClass = (Class<StorageInfoExtractable>) Class.forName( _args.argv(0)) ;
+        Class<StorageInfoExtractable> exClass = (Class<StorageInfoExtractable>) Class.forName( args.argv(0)) ;
         Constructor<StorageInfoExtractable>  extractorInit =
             exClass.getConstructor();
         _extractor =  extractorInit.newInstance();
 
 
-        _mountPoint = _args.getOpt("pnfs")  ;
+        _mountPoint = args.getOpt("pnfs")  ;
 
 
         if( ( _mountPoint != null ) && ( ! _mountPoint.equals("") ) ){
@@ -170,7 +163,7 @@ public class BasicNameSpaceProvider
         }
 
         _pathManager = new PathManager( _virtualMountPoints ) ;
-        String defaultServerName = _args.getOpt("defaultPnfsServer") ;
+        String defaultServerName = args.getOpt("defaultPnfsServer") ;
 
         if( ( _pathManager.getServerCount() > 2  ) &&
             ( ( defaultServerName == null ) ||
@@ -187,19 +180,19 @@ public class BasicNameSpaceProvider
         }
         // Process 'delete-registration' arguments
         String location, driverName, userName, passwd;
-        if (((location = _args.getOpt("delete-registration")) == null) || (location.equals(""))) {
+        if (((location = args.getOpt("delete-registration")) == null) || (location.equals(""))) {
             _logNameSpace.warn("'delete-registration' is not defined.");
             location = null;
         }
-        if (((driverName = _args.getOpt("delete-registration-jdbcDrv")) == null) || (driverName.equals(""))) {
+        if (((driverName = args.getOpt("delete-registration-jdbcDrv")) == null) || (driverName.equals(""))) {
             _logNameSpace.warn("'delete-registration-jdbcDrv' is not defined.");
             driverName = null;
         }
-        if (((userName = _args.getOpt("delete-registration-dbUser")) == null) || (userName.equals(""))) {
+        if (((userName = args.getOpt("delete-registration-dbUser")) == null) || (userName.equals(""))) {
             _logNameSpace.warn("'delete-registration-dbUser' is not defined.");
             userName = null;
         }
-        if (((passwd = _args.getOpt("delete-registration-dbPass")) == null) || (passwd.equals(""))) {
+        if (((passwd = args.getOpt("delete-registration-dbPass")) == null) || (passwd.equals(""))) {
             _logNameSpace.warn("'delete-registration-dbPass' is not defined.");
             passwd = null;
         }
@@ -225,11 +218,12 @@ public class BasicNameSpaceProvider
          * The DcacheNameSpaceProviderFactorys will take care that we have only
          * one instance of each type of provider.
          */
-        String cacheLocation_provider = _args.getOpt("cachelocation-provider");
+        String cacheLocation_provider = args.getOpt("cachelocation-provider");
         if (cacheLocation_provider != null) {
-            _logNameSpace.debug("CacheLocation provider: " + cacheLocation_provider);
-            DcacheNameSpaceProviderFactory cacheLocationProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(cacheLocation_provider).newInstance();
-            _cacheLocationProvider = (NameSpaceProvider)cacheLocationProviderFactory.getProvider(_args, _nucleus);
+            _logNameSpace.debug("CacheLocation provider: {}", cacheLocation_provider);
+            Class factory = Class.forName(cacheLocation_provider);
+            Method factoryMethod = factory.getMethod("getProvider", Args.class);
+            _cacheLocationProvider = (NameSpaceProvider) factoryMethod.invoke(null, args);
         }else{
             _cacheLocationProvider = this;
         }

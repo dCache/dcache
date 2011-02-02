@@ -7,14 +7,15 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
-public class BasicNameSpaceProviderFactory extends DcacheNameSpaceProviderFactory {
+public class BasicNameSpaceProviderFactory
+{
+    private static BasicNameSpaceProvider provider;
 
-    static private BasicNameSpaceProvider provider = null;
-
-    public synchronized NameSpaceProvider getProvider(Args args, CellNucleus nucleus) throws Exception {
-
-        if ( provider == null ) {
-            provider = new BasicNameSpaceProvider(args, nucleus);
+    public static synchronized NameSpaceProvider getProvider(String args)
+        throws Exception
+    {
+        if (provider == null) {
+            provider = new BasicNameSpaceProvider(new Args(args));
         }
         return provider;
     }

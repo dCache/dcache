@@ -5,7 +5,6 @@
 package diskCacheV111.namespace.provider;
 
 import dmg.util.Args;
-import dmg.cells.nucleus.CellNucleus;
 import diskCacheV111.util.*;
 import diskCacheV111.namespace.*;
 
@@ -42,7 +41,7 @@ public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
     private final String _clearCacheLocationSQL;
 
 
-    public SQLNameSpaceProvider(Args args, CellNucleus nucleus)
+    public SQLNameSpaceProvider(Args args)
         throws Exception
     {
         String __cfURL = args.getOpt("cachelocation-provider-dbURL");

@@ -41,7 +41,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.FileNotFoundCacheException;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 import java.io.IOException;
 import javax.sql.DataSource;
@@ -72,7 +71,7 @@ public class ChimeraNameSpaceProvider
 
     private final boolean _inheritFileOwnership;
 
-    public ChimeraNameSpaceProvider( Args args, CellNucleus nucleus) throws Exception {
+    public ChimeraNameSpaceProvider(Args args) throws Exception {
 
         // FIXME: the initialization have to go into spring xml file
         Class.forName(args.getOpt("chimera.db.driver"));

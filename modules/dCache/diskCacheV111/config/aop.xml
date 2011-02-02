@@ -1,0 +1,11 @@
+<!DOCTYPE aspectj PUBLIC
+        "-//AspectJ//DTD//EN" "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
+<aspectj>
+    <weaver>
+        <include within="org.dcache.pinmanager.*"/>
+    </weaver>
+
+    <aspects>
+        <aspect name="org.springframework.transaction.aspectj.AnnotationTransactionAspect"/>
+    </aspects>
+</aspectj>
