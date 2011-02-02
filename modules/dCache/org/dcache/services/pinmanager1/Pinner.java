@@ -11,6 +11,8 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +37,7 @@ class Pinner extends SMCTask
     private String _readPoolName;
     private long _expiration;
     private final PinManager _manager;
-    private StorageInfo _storageInfo;
+    private FileAttributes _fileAttributes;
 
     /**
      * Pool manager allowed stated for this request.
@@ -69,7 +71,7 @@ class Pinner extends SMCTask
         _fsm = new PinnerContext(this);
 
         if (job.getMessage() != null) {
-            _storageInfo = job.getMessage().getStorageInfo();
+            _fileAttributes = job.getMessage().getFileAttributes();
         }
 
         setContext(_fsm);
@@ -87,16 +89,14 @@ class Pinner extends SMCTask
         return _fsm.getState().toString();
     }
 
-    public StorageInfo getStorageInfo()
+    public FileAttributes getFileAttributes()
     {
-        _logger.info("getStorageInfo");
-        return _storageInfo;
+        return _fileAttributes;
     }
 
-    public void setStorageInfo(StorageInfo info)
+    public void setFileAttributes(FileAttributes fileAttributes)
     {
-        _logger.info("setStorageInfo");
-        _storageInfo = info;
+        _fileAttributes = fileAttributes;
     }
 
     public void setReadPool(String name)
@@ -105,10 +105,13 @@ class Pinner extends SMCTask
         _readPoolName = name;
     }
 
-    void retrieveStorageInfo()
+    void retrieveFileAttributes()
     {
         _logger.info("retrieveStorageInfo");
-        send(_pnfsManager, new PnfsGetStorageInfoMessage(_job.getPnfsId()));
+        PnfsGetFileAttributes msg =
+            new PnfsGetFileAttributes(_job.getPnfsId(),
+                                      PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+        send(_pnfsManager, msg);
     }
 
     private ProtocolInfo getProtocolInfo()
@@ -125,8 +128,7 @@ class Pinner extends SMCTask
     void findReadPool()
     {
         PoolMgrSelectReadPoolMsg request =
-            new PoolMgrSelectReadPoolMsg(_job.getPnfsId(),
-                                         getStorageInfo(),
+            new PoolMgrSelectReadPoolMsg(getFileAttributes(),
                                          getProtocolInfo(),
                                          0,
                                          _allowedStates);

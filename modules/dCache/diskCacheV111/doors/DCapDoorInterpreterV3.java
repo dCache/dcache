@@ -1208,8 +1208,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // we are not called if the pnfs request failed.
                 //
-                StagerMessageV0 sm = new StagerMessageV0( _fileAttributes.getPnfsId() ) ;
-                sm.setStorageInfo( _fileAttributes.getStorageInfo() ) ;
+                StagerMessageV0 sm = new StagerMessageV0(_fileAttributes) ;
                 sm.setProtocol( "DCap",3,0,_destination);
                 sm.setStageTime( _time ) ;
 
@@ -1867,6 +1866,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _protocolInfo.door( new CellPath(_cell.getCellInfo().getCellName(),
                     _cell.getCellInfo().getDomainName()) ) ;
 
+            _attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
         }
 
         @Override
@@ -2090,7 +2090,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // try to get some space to store the file.
                 //
-                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes.getPnfsId(),_fileAttributes.getStorageInfo(),_protocolInfo,0) ;
+                getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes,_protocolInfo,0) ;
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
                     getPoolMessage.setPnfsPath(_path);
@@ -2128,8 +2128,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                    _log.error("Error while reading data from StageConfiguration.conf file : {}", e.getMessage());
                }
                getPoolMessage =
-                   new PoolMgrSelectReadPoolMsg(_fileAttributes.getPnfsId(),
-                                                _fileAttributes.getStorageInfo(),
+                   new PoolMgrSelectReadPoolMsg(_fileAttributes,
                                                 _protocolInfo,
                                                 0,
                                                 allowedStates);

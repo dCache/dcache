@@ -7,8 +7,8 @@ import javax.security.auth.Subject;
 import org.dcache.cells.MessageReply;
 import org.dcache.auth.Subjects;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.vehicles.FileAttributes;
 
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -52,9 +52,9 @@ public class PinTask
         return _request.getFileAttributes().getPnfsId();
     }
 
-    public StorageInfo getStorageInfo()
+    public FileAttributes getFileAttributes()
     {
-        return _request.getFileAttributes().getStorageInfo();
+        return _request.getFileAttributes();
     }
 
     public ProtocolInfo getProtocolInfo()

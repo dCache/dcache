@@ -334,8 +334,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                 deviceid = MDS_ID;
             } else {
                 PnfsId pnfsId = new PnfsId(inode.toString());
-                StorageInfo storageInfo = _pnfsHandler.getStorageInfoByPnfsId(pnfsId).getStorageInfo();
-
                 NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
                         client.getRemoteAddress(), stateid);
 
@@ -348,8 +346,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 transfer.setPoolStub(_poolManagerStub);
                 transfer.setPoolManagerStub(_poolManagerStub);
                 transfer.setPnfsId(pnfsId);
-                transfer.setStorageInfo(storageInfo);
                 transfer.setClientAddress(client.getRemoteAddress());
+                transfer.readNameSpaceEntry();
 
                 _ioMessages.put(protocolInfo.stateId(), transfer);
 

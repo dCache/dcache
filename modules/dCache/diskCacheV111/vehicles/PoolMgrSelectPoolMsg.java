@@ -4,6 +4,7 @@ package diskCacheV111.vehicles ;
 import  diskCacheV111.util.* ;
 import diskCacheV111.poolManager.RequestContainerV5;
 import java.util.EnumSet;
+import org.dcache.vehicles.FileAttributes;
 
 public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
@@ -16,22 +17,19 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private static final long serialVersionUID = -5874326080375390208L;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
-    public PoolMgrSelectPoolMsg( PnfsId       pnfsId ,
-                                 StorageInfo  storageInfo,
-                ProtocolInfo protocolInfo,
-                long fileSize ){
-
-    this( pnfsId , storageInfo, protocolInfo, fileSize, RequestContainerV5.allStates) ;
-
+    public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
+                                ProtocolInfo protocolInfo,
+                                long fileSize)
+    {
+        this(fileAttributes, protocolInfo, fileSize, RequestContainerV5.allStates);
     }
 
-    public PoolMgrSelectPoolMsg(PnfsId pnfsId ,
-                                StorageInfo  storageInfo,
+    public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,
                                 long fileSize,
                                 EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
-        super( pnfsId , storageInfo ) ;
+        super(fileAttributes);
         _protocolInfo = protocolInfo;
         _fileSize     = fileSize;
         _allowedStates = allowedStates;

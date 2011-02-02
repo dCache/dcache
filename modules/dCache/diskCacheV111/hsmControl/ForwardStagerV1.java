@@ -15,6 +15,8 @@ import diskCacheV111.util.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.vehicles.FileAttributes;
+
 /**
   *  Simple Version of a prestager. It receives stage requests from the
   *  Prestaging doors (dCap, SRM), converts those requests to a
@@ -269,8 +271,7 @@ public class ForwardStagerV1 extends CellAdapter {
 
         PoolMgrSelectReadPoolMsg request =
           new PoolMgrSelectReadPoolMsg(
-               stager.getPnfsId(),
-               stager.getStorageInfo(),
+               stager.getFileAttributes(),
                stager.getProtocolInfo(), 0);
 
         request.setReplyRequired( true ) ;
@@ -290,7 +291,6 @@ public class ForwardStagerV1 extends CellAdapter {
        private final PnfsId _pnfsId ;
        private final String _host ;
        private final boolean _pin ;
-       private StorageInfo _storageInfo = null ;
        private String      _status = "<WaitingForStorageInfo>" ;
        private String      _poolName = null ;
        private ExampleCompanion( PnfsId pnfsId , String host , boolean pin ){
@@ -315,15 +315,14 @@ public class ForwardStagerV1 extends CellAdapter {
              return ;
           }
           if( message instanceof PnfsGetStorageInfoMessage ){
-             _storageInfo = ((PnfsGetStorageInfoMessage)message).getStorageInfo() ;
-             _log.info( "Manual Stager : storageInfoArrived : "+_storageInfo ) ;
+              FileAttributes fileAttributes =
+                  ((PnfsGetStorageInfoMessage) message).getFileAttributes();
+              _log.info("Manual Stager : storageInfoArrived: {} ",
+                        fileAttributes.getStorageInfo());
 
              DCapProtocolInfo pinfo = new DCapProtocolInfo( "DCap",3,0,_host,0) ;
              PoolMgrSelectReadPoolMsg request =
-               new PoolMgrSelectReadPoolMsg(
-                    _pnfsId,
-                    _storageInfo ,
-                    pinfo , 0);
+                 new PoolMgrSelectReadPoolMsg(fileAttributes, pinfo , 0);
              try{
                 sendMessage(
                    new CellMessage(

@@ -109,10 +109,8 @@ public class ScheduledStager extends CellAdapter {
     }
     private void sendStageRequest( StagerMessage stager ){
         PoolMgrSelectReadPoolMsg request =
-          new PoolMgrSelectReadPoolMsg(
-               stager.getPnfsId(),
-               stager.getStorageInfo(),
-               stager.getProtocolInfo(), 0);
+          new PoolMgrSelectReadPoolMsg(stager.getFileAttributes(),
+                                       stager.getProtocolInfo(), 0);
         try{
             sendMessage(
                new CellMessage(

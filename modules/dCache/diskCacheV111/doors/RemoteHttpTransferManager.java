@@ -10,6 +10,8 @@ import dmg.cells.nucleus.*;
 import dmg.cells.network.*;
 import dmg.util.*;
 
+import org.dcache.vehicles.FileAttributes;
+
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
@@ -622,7 +624,8 @@ public class RemoteHttpTransferManager extends CellAdapter {
                        buffer_size,remoteTURL);
                     Thread current = Thread.currentThread();
                     setState("waiting for a read pool");
-                    pool = askForReadWritePool(pnfsId,storageInfo,protocol_info,true);
+                    pool = askForReadWritePool(pnfsEntry.getFileAttributes(),
+                                               protocol_info,true);
 
                     Object sync = Long.valueOf(id);
                     synchronized(longIdToMessageMap)
@@ -731,29 +734,25 @@ public class RemoteHttpTransferManager extends CellAdapter {
         }
     }
 
-    private String askForReadWritePool( PnfsId       pnfsId ,
-    StorageInfo  storageInfo ,
-    ProtocolInfo protocolInfo ,
-    boolean      isWrite       ) throws CacheException {
-
+    private String askForReadWritePool(FileAttributes fileAttributes,
+                                       ProtocolInfo protocolInfo ,
+                                       boolean      isWrite       )
+        throws CacheException
+    {
         //
         // ask for a pool
         //
         PoolMgrSelectPoolMsg request =
-        isWrite ?
-        (PoolMgrSelectPoolMsg)
-        new PoolMgrSelectWritePoolMsg(
-        pnfsId,
-        storageInfo,
-        protocolInfo ,
-        0L                 )
-        :
+            isWrite ?
             (PoolMgrSelectPoolMsg)
-            new PoolMgrSelectReadPoolMsg(
-            pnfsId  ,
-            storageInfo,
-            protocolInfo ,
-            0L                 );
+            new PoolMgrSelectWritePoolMsg(fileAttributes,
+                                          protocolInfo ,
+                                          0L)
+            :
+            (PoolMgrSelectPoolMsg)
+            new PoolMgrSelectReadPoolMsg(fileAttributes,
+                                         protocolInfo ,
+                                         0L);
 
             _log.info("PoolMgrSelectPoolMsg: " + request );
             CellMessage reply;

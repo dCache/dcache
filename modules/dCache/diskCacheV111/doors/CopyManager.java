@@ -40,6 +40,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.EnumSet;
+
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileAttribute;
+import static org.dcache.namespace.FileAttribute.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -652,14 +657,14 @@ public class CopyManager extends CellAdapter {
                 }
                 setState("checking user permissions");
                 PnfsHandler pnfs_handler = getPnfsHandler();
-                PnfsCreateEntryMessage dstPnfsEntry = null;
+                FileAttributes dstPnfsEntry = null;
                 try
                 {
                     //
                     // first get source file info,
                     // check that it exists, we can read it etc.
                     //
-                    PnfsGetStorageInfoMessage srcPnfsEntry =
+                    FileAttributes srcPnfsEntry =
                         getSrcPnfsInfo(uid,gid,srcPnfsFilePath);
                     srcPnfsId = srcPnfsEntry.getPnfsId();
                     srcStorageInfo = srcPnfsEntry.getStorageInfo();
@@ -686,9 +691,10 @@ public class CopyManager extends CellAdapter {
                     Thread current = Thread.currentThread();
                     setState("waiting for a write pool");
 
-                    dstPool = askForReadWritePool(dstPnfsId,
+                    dstPool = askForReadWritePool(
+                        dstPnfsEntry,
                         dstPnfsFilePath,
-                        dstStorageInfo,dst_protocol_info,true);
+                        dst_protocol_info,true);
 
                     setState("wating for a write mover to give us "+
                         " a listening port");
@@ -729,9 +735,9 @@ public class CopyManager extends CellAdapter {
                             deleg_req.getPort() ) ;
                    src_protocol_info.setSessionId( getSessionNextId());
                    setState("waiting for a read pool");
-                   srcPool = askForReadWritePool(srcPnfsId,
+                   srcPool = askForReadWritePool(
+                        srcPnfsEntry,
                         srcPnfsFilePath,
-                        srcStorageInfo,
                         src_protocol_info,
                         false);
                     if(srcPool.equals(dstPool ) )
@@ -849,8 +855,8 @@ public class CopyManager extends CellAdapter {
                 }
         }
 
-        PnfsCreateEntryMessage createDestinationPnfsEntry(int uid,int gid,
-            String dstPnfsFilePath)
+        FileAttributes createDestinationPnfsEntry(int uid,int gid,
+                                                  String dstPnfsFilePath)
             throws Exception
         {
             PnfsHandler pnfs_handler = getPnfsHandler();
@@ -884,23 +890,24 @@ public class CopyManager extends CellAdapter {
                 throw new java.io.IOException(
                     "user has no permission to write to directory "+parentDir );
             }
-            return    pnfs_handler.createPnfsEntry(dstPnfsFilePath, uid,
-                gid,0644);
-
-
+            return  pnfs_handler.createPnfsEntry(dstPnfsFilePath, uid,
+                                                 gid,0644).getFileAttributes();
         }
 
-        private PnfsGetStorageInfoMessage getSrcPnfsInfo(int uid, int gid,
-            String srcPnfsFilePath)
+        private FileAttributes getSrcPnfsInfo(int uid, int gid,
+                                              String srcPnfsFilePath)
             throws Exception
         {
             PnfsHandler pnfs_handler = getPnfsHandler();
 
-            PnfsGetStorageInfoMessage info =
-                pnfs_handler.getStorageInfoByPath(srcPnfsFilePath);
+            EnumSet<FileAttribute> attributes =
+                EnumSet.of(OWNER, OWNER_GROUP, MODE);
+            attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+            FileAttributes info =
+                pnfs_handler.getFileAttributes(srcPnfsFilePath, attributes);
 
             diskCacheV111.util.FileMetaData metadata =
-                info.getMetaData();
+                new diskCacheV111.util.FileMetaData(info);
 
             boolean can_read = (metadata.getUid() == uid) &&
                 metadata.getUserPermissions().canRead();
@@ -919,30 +926,26 @@ public class CopyManager extends CellAdapter {
         }
 
     }
-    private String askForReadWritePool( PnfsId       pnfsId ,
-    String pnfsPath,
-    StorageInfo  storageInfo ,
-    ProtocolInfo protocolInfo ,
-    boolean      isWrite       ) throws CacheException {
-
+    private String askForReadWritePool(FileAttributes fileAttributes,
+                                       String pnfsPath,
+                                       ProtocolInfo protocolInfo ,
+                                       boolean isWrite)
+        throws CacheException
+    {
         //
         // ask for a pool
         //
         PoolMgrSelectPoolMsg request =
-        isWrite ?
-        (PoolMgrSelectPoolMsg)
-        new PoolMgrSelectWritePoolMsg(
-        pnfsId,
-        storageInfo,
-        protocolInfo ,
-        0L                 )
-        :
+            isWrite ?
             (PoolMgrSelectPoolMsg)
-            new PoolMgrSelectReadPoolMsg(
-            pnfsId  ,
-            storageInfo,
-            protocolInfo ,
-            0L                 );
+            new PoolMgrSelectWritePoolMsg(fileAttributes,
+                                          protocolInfo,
+                                          0L)
+            :
+            (PoolMgrSelectPoolMsg)
+            new PoolMgrSelectReadPoolMsg(fileAttributes,
+                                         protocolInfo,
+                                         0L);
         request.setPnfsPath(pnfsPath);
 
             _log.info("PoolMgrSelectPoolMsg: " + request.toString() );

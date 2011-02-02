@@ -144,7 +144,7 @@ public class PinRequestProcessor
     {
         try {
             Subject subject = task.getSubject();
-            StorageInfo info = task.getStorageInfo();
+            StorageInfo info = task.getFileAttributes().getStorageInfo();
             return _checkStagePermission.canPerformStaging(subject, info) ?
                 RequestContainerV5.allStates :
                 RequestContainerV5.allStatesExceptStage;
@@ -187,8 +187,7 @@ public class PinRequestProcessor
     private void selectReadPool(final PinTask task)
     {
         PoolMgrSelectReadPoolMsg msg =
-            new PoolMgrSelectReadPoolMsg(task.getPnfsId(),
-                                         task.getStorageInfo(),
+            new PoolMgrSelectReadPoolMsg(task.getFileAttributes(),
                                          task.getProtocolInfo(),
                                          0,
                                          checkStaging(task));

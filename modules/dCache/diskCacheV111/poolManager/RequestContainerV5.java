@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
@@ -663,11 +665,11 @@ public class RequestContainerV5
         try {
 
             PnfsId pnfsId = new PnfsId(args.argv(0));
-            PnfsGetStorageInfoMessage getStorageInfo = new PnfsGetStorageInfoMessage(
-                    pnfsId);
+            PnfsGetFileAttributes msg =
+                new PnfsGetFileAttributes(pnfsId, PoolMgrReplicateFileMsg.getRequiredAttributes());
 
-            CellMessage request = new CellMessage(new CellPath("PnfsManager"),
-                    getStorageInfo);
+            CellMessage request =
+                new CellMessage(new CellPath("PnfsManager"), msg);
 
             request = sendAndWait(request, 30000);
             if (request == null) {
@@ -676,15 +678,17 @@ public class RequestContainerV5
                                 + pnfsId);
             }
 
-            getStorageInfo = (PnfsGetStorageInfoMessage) request
-                    .getMessageObject();
-            StorageInfo storageInfo = getStorageInfo.getStorageInfo();
+            msg = (PnfsGetFileAttributes) request.getMessageObject();
+            FileAttributes fileAttributes = msg.getFileAttributes();
 
             // TODO: call p2p direct
             // send message to yourself
-            PoolMgrReplicateFileMsg req = new PoolMgrReplicateFileMsg(pnfsId,
-                    storageInfo, new DCapProtocolInfo("DCap", 3, 0,
-                            args.argv(1), 2222), storageInfo.getFileSize());
+            PoolMgrReplicateFileMsg req =
+                new PoolMgrReplicateFileMsg(fileAttributes,
+                                            new DCapProtocolInfo("DCap", 3, 0,
+                                                                 args.argv(1),
+                                                                 2222),
+                                            fileAttributes.getStorageInfo().getFileSize());
 
             sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
 

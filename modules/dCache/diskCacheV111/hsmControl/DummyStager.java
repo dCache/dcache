@@ -15,6 +15,8 @@ import diskCacheV111.util.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.vehicles.FileAttributes;
+
 public class DummyStager extends CellAdapter {
 
     private final static Logger _log =
@@ -120,10 +122,8 @@ public class DummyStager extends CellAdapter {
     }
     private void sendStageRequest( StagerMessage stager ){
         PoolMgrSelectReadPoolMsg request =
-          new PoolMgrSelectReadPoolMsg(
-               stager.getPnfsId(),
-               stager.getStorageInfo(),
-               stager.getProtocolInfo(), 0);
+          new PoolMgrSelectReadPoolMsg(stager.getFileAttributes(),
+                                       stager.getProtocolInfo(), 0);
         try{
             sendMessage(
                new CellMessage(
@@ -146,7 +146,6 @@ public class DummyStager extends CellAdapter {
        private PnfsId _pnfsId = null ;
        private String _host   = null ;
        private boolean _pin   = false ;
-       private StorageInfo _storageInfo = null ;
        private String      _status = "<WaitingForStorageInfo>" ;
        private String      _poolName = null ;
        private ExampleCompanion( PnfsId pnfsId , String host , boolean pin ){
@@ -171,15 +170,14 @@ public class DummyStager extends CellAdapter {
              return ;
           }
           if( message instanceof PnfsGetStorageInfoMessage ){
-             _storageInfo = ((PnfsGetStorageInfoMessage)message).getStorageInfo() ;
-             _log.info( "Manual Stager : storageInfoArrived : "+_storageInfo ) ;
+              FileAttributes fileAttributes =
+                  ((PnfsGetStorageInfoMessage) message).getFileAttributes();
+              _log.info("Manual Stager : storageInfoArrived: {}",
+                        fileAttributes.getStorageInfo() ) ;
 
              DCapProtocolInfo pinfo = new DCapProtocolInfo( "DCap",3,0,_host,0) ;
              PoolMgrSelectReadPoolMsg request =
-               new PoolMgrSelectReadPoolMsg(
-                    _pnfsId,
-                    _storageInfo ,
-                    pinfo , 0);
+               new PoolMgrSelectReadPoolMsg(fileAttributes, pinfo , 0);
              try{
                 sendMessage(
                    new CellMessage(

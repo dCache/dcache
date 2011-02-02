@@ -7,6 +7,7 @@
 %package org.dcache.services.pinmanager1
 %access package
 %import diskCacheV111.vehicles.*
+%import org.dcache.vehicles.PnfsGetFileAttributes
 %import static diskCacheV111.util.CacheException.*
 
 %start PinnerFSM::Init
@@ -15,8 +16,8 @@
 Init
 {
         go
-                [ ctxt.getStorageInfo() == null]
-                GettingStorageInfo
+                [ ctxt.getFileAttributes() == null]
+                GettingFileAttributes
                 {
                 }
         go
@@ -25,29 +26,29 @@ Init
                 }
 }
 
-GettingStorageInfo
+GettingFileAttributes
 Entry
 {
-        retrieveStorageInfo();
+        retrieveFileAttributes();
 }
 {
         timeout
                 nil
                 {
-                        retrieveStorageInfo();
+                        retrieveFileAttributes();
                 }
 
-        success(message: PnfsGetStorageInfoMessage)
+        success(message: PnfsGetFileAttributes)
                 [ message.getReturnCode() == 0 ]
                 FindingReadPool
                 {
-                        setStorageInfo(message.getStorageInfo());
+                        setFileAttributes(message.getFileAttributes());
                 }
 
         failure(rc: Integer, error: Object)
                 Done
                 {
-                        fail("Could not get storage info: " + error);
+                        fail("Could not get file attributes: " + error);
                 }
         noroute
                 Done
@@ -139,7 +140,7 @@ Default
                 {
                         fail("Communication timeout");
                 }
-        success(message: PnfsGetStorageInfoMessage)
+        success(message: PnfsGetFileAttributes)
                 Done
                 {
                         fail("Unexpected answer received in state "

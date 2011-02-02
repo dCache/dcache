@@ -728,7 +728,9 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                   storeError( entry , 45 , "File is Locked" ) ;
                   continue ;
              }
-             PnfsGetStorageInfoMessage query =  new PnfsGetStorageInfoMessage( entry._pnfsId ) ;
+             PnfsGetStorageInfoMessage query =
+                 new PnfsGetStorageInfoMessage(PoolMgrReplicateFileMsg.getRequiredAttributes());
+             query.setPnfsId(entry._pnfsId);
              CellMessage msg = new CellMessage( new CellPath("PnfsManager") , query ) ;
              try{
                 _core.sendMessage( msg );
@@ -840,7 +842,9 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                  }
 
                  RepositoryEntry           entry = (RepositoryEntry)obj ;
-                 PnfsGetStorageInfoMessage query =  new PnfsGetStorageInfoMessage( entry._pnfsId ) ;
+                 PnfsGetStorageInfoMessage query =
+                     new PnfsGetStorageInfoMessage(PoolMgrReplicateFileMsg.getRequiredAttributes());
+                 query.setPnfsId(entry._pnfsId);
                  CellMessage msg = new CellMessage( new CellPath("PnfsManager") , query ) ;
                  try{
                     _core.sendMessage( msg );
@@ -1127,9 +1131,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
                   StorageInfo storageInfo = reply.getStorageInfo() ;
 
                   PoolMgrReplicateFileMsg req =
-                     new PoolMgrReplicateFileMsg(
-                          pnfsId,
-                          storageInfo,
+                     new PoolMgrReplicateFileMsg(reply.getFileAttributes(),
                           _protocolInfo ,
                           storageInfo.getFileSize()
                      );

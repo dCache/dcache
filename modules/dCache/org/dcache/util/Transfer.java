@@ -86,10 +86,9 @@ public abstract class Transfer implements Comparable<Transfer>
     private String _poolName;
     private Integer _moverId;
     private boolean _hasMover;
-    private PnfsId _pnfsid;
     private String _status;
     private CacheException _error;
-    private StorageInfo _storageInfo;
+    private FileAttributes _fileAttributes = new FileAttributes();
     private ProtocolInfo _protocolInfo;
     private boolean _isWrite;
     private InetSocketAddress _clientAddress;
@@ -194,20 +193,51 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Sets the PnfsId of the file to be transferred.
+     * Sets the FileAttributes of the file to transfer.
      */
-    public synchronized void setPnfsId(PnfsId pnfsid)
+    public synchronized FileAttributes getFileAttributes()
     {
-        _pnfsid = pnfsid;
+        return _fileAttributes;
     }
 
+    /**
+     * Sets the FileAttributes of the file to transfer.
+     */
+    public synchronized void setFileAttributes(FileAttributes fileAttributes)
+    {
+        _fileAttributes = fileAttributes;
+    }
 
     /**
      * Returns the PnfsId of the file to be transferred.
      */
     public synchronized PnfsId getPnfsId()
     {
-        return _pnfsid;
+        return _fileAttributes.isDefined(PNFSID) ? _fileAttributes.getPnfsId() : null;
+    }
+
+    /**
+     * Sets the PnfsId of the file to be transferred.
+     */
+    public synchronized void setPnfsId(PnfsId pnfsid)
+    {
+        _fileAttributes.setPnfsId(pnfsid);
+    }
+
+    /**
+     * Returns the StorageInfo of the file to transfer.
+     */
+    public synchronized StorageInfo getStorageInfo()
+    {
+        return _fileAttributes.getStorageInfo();
+    }
+
+    /**
+     * Sets the StorageInfo of the file to transfer.
+     */
+    public synchronized void setStorageInfo(StorageInfo info)
+    {
+        _fileAttributes.setStorageInfo(info);
     }
 
     /**
@@ -268,22 +298,6 @@ public abstract class Transfer implements Comparable<Transfer>
     public synchronized String getPool()
     {
         return _poolName;
-    }
-
-    /**
-     * Sets the StorageInfo of the file to transfer.
-     */
-    public synchronized void setStorageInfo(StorageInfo info)
-    {
-        _storageInfo = info;
-    }
-
-    /**
-     * Returns the StorageInfo of the file to transfer.
-     */
-    public synchronized StorageInfo getStorageInfo()
-    {
-        return _storageInfo;
     }
 
     /**
@@ -434,7 +448,7 @@ public abstract class Transfer implements Comparable<Transfer>
     public synchronized IoDoorEntry getIoDoorEntry()
     {
         return new IoDoorEntry(_sessionId,
-                               _pnfsid,
+                               getPnfsId(),
                                _poolName,
                                _status,
                                _startedAt,
@@ -497,8 +511,7 @@ public abstract class Transfer implements Comparable<Transfer>
                 msg = _pnfs.createPnfsEntry(_path.toString());
             }
 
-            setPnfsId(msg.getPnfsId());
-            setStorageInfo(msg.getStorageInfo());
+            setFileAttributes(msg.getFileAttributes());
             setWrite(true);
         } finally {
             setStatus(null);
@@ -520,12 +533,14 @@ public abstract class Transfer implements Comparable<Transfer>
     {
         setStatus("PnfsManager: Fetching storage info");
         try {
-            Set<FileAttribute> request = EnumSet.of(PNFSID, TYPE, STORAGEINFO);
+            Set<FileAttribute> request =
+                EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
+            request.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA);
+            PnfsId pnfsId = getPnfsId();
             FileAttributes attributes;
-            PnfsId pnfsid = getPnfsId();
-            if (pnfsid != null) {
-                attributes = _pnfs.getFileAttributes(pnfsid, request, mask);
+            if (pnfsId != null) {
+                attributes = _pnfs.getFileAttributes(pnfsId, request, mask);
             } else {
                 attributes = _pnfs.getFileAttributes(_path.toString(), request, mask);
             }
@@ -537,8 +552,7 @@ public abstract class Transfer implements Comparable<Transfer>
                 throw new NotFileCacheException("Not a regular file");
             }
 
-            setStorageInfo(attributes.getStorageInfo());
-            setPnfsId(attributes.getPnfsId());
+            setFileAttributes(attributes);
             setWrite(false);
         } finally {
             setStatus(null);
@@ -554,7 +568,8 @@ public abstract class Transfer implements Comparable<Transfer>
         if (!isWrite()) {
             throw new IllegalStateException("Can only set length for uploads");
         }
-        _storageInfo.setFileSize(length);
+        _fileAttributes.setSize(length);
+        _fileAttributes.getStorageInfo().setFileSize(length);
     }
 
     /**
@@ -582,12 +597,7 @@ public abstract class Transfer implements Comparable<Transfer>
     private void selectPool(long timeout)
         throws CacheException, InterruptedException
     {
-        PnfsId pnfsId = getPnfsId();
-        StorageInfo storageInfo = getStorageInfo();
-
-        if (pnfsId == null || storageInfo == null) {
-            throw new IllegalStateException("Need both PNFS ID and StorageInfo before a pool can be selected");
-        }
+        FileAttributes fileAttributes = getFileAttributes();
 
         setStatus("PoolManager: Selecting pool");
         try {
@@ -596,22 +606,22 @@ public abstract class Transfer implements Comparable<Transfer>
             if (isWrite()) {
                 long allocated = _allocated;
                 if (allocated == 0) {
-                    allocated = storageInfo.getFileSize();
+                    allocated = fileAttributes.getSize();
                 }
                 request =
-                    new PoolMgrSelectWritePoolMsg(pnfsId, storageInfo,
+                    new PoolMgrSelectWritePoolMsg(fileAttributes,
                                                   protocolInfo,
                                                   allocated);
             } else {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
-                    _checkStagePermission.canPerformStaging(_subject, storageInfo)
+                    _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
                     ? RequestContainerV5.allStates
                     : RequestContainerV5.allStatesExceptStage;
 
                 request =
-                    new PoolMgrSelectReadPoolMsg(pnfsId, storageInfo,
+                    new PoolMgrSelectReadPoolMsg(fileAttributes,
                                                  protocolInfo,
-                                                 storageInfo.getFileSize(),
+                                                 fileAttributes.getSize(),
                                                  allowedStates);
             }
             request.setId(_sessionId);
@@ -805,7 +815,7 @@ public abstract class Transfer implements Comparable<Transfer>
             msg.setClient(_clientAddress.getAddress().getHostName());
             msg.setPnfsId(getPnfsId());
             msg.setResult(code, error);
-            msg.setStorageInfo(_storageInfo);
+            msg.setStorageInfo(_fileAttributes.getStorageInfo());
             _billing.send(msg);
 
             _isBillingNotified = true;

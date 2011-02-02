@@ -10,6 +10,9 @@ import diskCacheV111.util.*;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.pools.PoolV2Mode;
 
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+
 import java.util.* ;
 import java.io.* ;
 import java.net.* ;
@@ -370,40 +373,36 @@ public class      DCacheAdminShell
            PnfsId pnfsId = new PnfsId(args.argv(0) ) ;
            String ip     = args.getOpt("ip");
 
+           PnfsGetFileAttributes msg =
+               new PnfsGetFileAttributes(pnfsId, PoolMgrReplicateFileMsg.getRequiredAttributes());
 
-           PnfsGetStorageInfoMessage stinfo =
-               new PnfsGetStorageInfoMessage( pnfsId  ) ;
+           CellMessage request =
+               new CellMessage(new CellPath("PnfsManager"), msg);
+           request = _nucleus.sendAndWait(request, 30000L);
+           if (request == null)
+               throw new Exception("Get storageinfo timed out");
 
-           CellMessage  msg = new CellMessage( new CellPath("PnfsManager") , stinfo ) ;
-           msg = _nucleus.sendAndWait( msg , 30000L )  ;
-           if( msg == null )
-               throw new
-               Exception("Get storageinfo timed out");
+           msg = (PnfsGetFileAttributes) request.getMessageObject();
 
-           if( stinfo.getReturnCode() != 0 )
-               throw new
-               IllegalArgumentException("getStorageInfo returned "+stinfo.getReturnCode());
-
-           stinfo = (PnfsGetStorageInfoMessage)msg.getMessageObject() ;
-           StorageInfo storageInfo = stinfo.getStorageInfo() ;
+           if (msg.getReturnCode() != 0 )
+               throw new IllegalArgumentException("getStorageInfo returned "+msg.getReturnCode());
 
            DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap",0,0,"localhost",0);
 
+           PoolMgrReplicateFileMsg select =
+               new PoolMgrReplicateFileMsg(msg.getFileAttributes(),pinfo,0L);
 
-          PoolMgrReplicateFileMsg select =
-              new PoolMgrReplicateFileMsg(pnfsId,storageInfo,pinfo,0L);
-
-          msg = new CellMessage( new CellPath("PoolManager"),select ) ;
+           request = new CellMessage( new CellPath("PoolManager"),select ) ;
 
           String timeoutString = args.getOpt("timeout");
           long timeout = timeoutString != null ?
                          Long.parseLong(timeoutString)*1000L :
                          60000L ;
 
-          msg = _nucleus.sendAndWait( msg , timeout ) ;
+          request = _nucleus.sendAndWait(request , timeout ) ;
 
-          select = (PoolMgrReplicateFileMsg)msg.getMessageObject() ;
+          select = (PoolMgrReplicateFileMsg) request.getMessageObject() ;
           if( select == null )
               throw new
               Exception("p2p request timed out");

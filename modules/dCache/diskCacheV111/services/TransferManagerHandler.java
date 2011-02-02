@@ -39,6 +39,7 @@ import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.EnumSet;
 import diskCacheV111.doors.FTPTransactionLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,7 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.namespace.ACLPermissionHandler;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.enums.AccessType;
 
@@ -187,10 +189,12 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			setState(WAITING_FOR_PNFS_PARENT_INFO_STATE);
 		}
 		else {
-			sInfo = new PnfsGetStorageInfoMessage(
-                    permissionHandler.getRequiredAttributes()) ;
-			sInfo.setPnfsPath( pnfsPath ) ;
-			setState(WAITING_FOR_PNFS_INFO_STATE);
+                    EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
+                    attributes.addAll(permissionHandler.getRequiredAttributes());
+                    attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+                    sInfo = new PnfsGetStorageInfoMessage(attributes);
+                    sInfo.setPnfsPath( pnfsPath ) ;
+                    setState(WAITING_FOR_PNFS_INFO_STATE);
 		}
 		manager.persist(this);
 		try {
@@ -499,18 +503,14 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		PoolMgrSelectPoolMsg request =
 			store ?
 			(PoolMgrSelectPoolMsg)
-			new PoolMgrSelectWritePoolMsg(
-				pnfsId,
-				storageInfo,
-				protocol_info ,
-				sizeToSend)
+			new PoolMgrSelectWritePoolMsg(fileAttributes,
+                                                      protocol_info,
+                                                      sizeToSend)
 			:
 			(PoolMgrSelectPoolMsg)
-			new PoolMgrSelectReadPoolMsg(
-				pnfsId  ,
-				storageInfo,
-				protocol_info ,
-				sizeToSend);
+                    new PoolMgrSelectReadPoolMsg(fileAttributes,
+                                                 protocol_info,
+                                                 sizeToSend);
                 request.setPnfsPath(pnfsPath);
 		log.debug("PoolMgrSelectPoolMsg: " + request );
 		setState(WAITING_FOR_POOL_INFO_STATE);

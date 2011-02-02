@@ -22,7 +22,6 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolLinkInfo;
@@ -52,6 +51,9 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.vehicles.FileAttributes;
 
 /**
   *
@@ -810,29 +812,28 @@ public class      UserAdminShell
            PnfsId pnfsId = new PnfsId(args.argv(0) ) ;
            String ip     = args.getOpt("ip");
 
+           PnfsGetFileAttributes fileAttributesMsg =
+               new PnfsGetFileAttributes(pnfsId, PoolMgrReplicateFileMsg.getRequiredAttributes());
 
-           PnfsGetStorageInfoMessage stinfo =
-               new PnfsGetStorageInfoMessage( pnfsId  ) ;
-
-           CellMessage  msg = new CellMessage( new CellPath("PnfsManager") , stinfo ) ;
+           CellMessage  msg = new CellMessage( new CellPath("PnfsManager") , fileAttributesMsg ) ;
             msg = cellEndPoint.sendAndWait( msg , 30000L )  ;
            if( msg == null )
                throw new
                Exception("Get storageinfo timed out");
 
-           if( stinfo.getReturnCode() != 0 )
-               throw new
-               IllegalArgumentException("getStorageInfo returned "+stinfo.getReturnCode());
+           fileAttributesMsg = (PnfsGetFileAttributes) msg.getMessageObject();
 
-           stinfo = (PnfsGetStorageInfoMessage)msg.getMessageObject() ;
-           StorageInfo storageInfo = stinfo.getStorageInfo() ;
+           if (fileAttributesMsg.getReturnCode() != 0)
+               throw new
+               IllegalArgumentException("getFileAttributes returned "+fileAttributesMsg.getReturnCode());
 
            DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap",0,0,"localhost",0);
 
 
           PoolMgrReplicateFileMsg select =
-              new PoolMgrReplicateFileMsg(pnfsId,storageInfo,pinfo,0L);
+              new PoolMgrReplicateFileMsg(fileAttributesMsg.getFileAttributes(),
+                                          pinfo, 0L);
 
           msg = new CellMessage( new CellPath("PoolManager"),select ) ;
 

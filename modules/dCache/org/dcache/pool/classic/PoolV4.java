@@ -39,6 +39,7 @@ import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.AbstractCellComponent;
+import org.dcache.vehicles.FileAttributes;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
@@ -893,9 +894,14 @@ public class PoolV4
 
             storageInfo.setKey("replication.source", source);
 
+            FileAttributes attributes = new FileAttributes();
+            attributes.setPnfsId(pnfsId);
+            attributes.setStorageInfo(storageInfo);
+            attributes.setLocations(Collections.singleton(_poolName));
+            attributes.setSize(storageInfo.getFileSize());
+
             PoolMgrReplicateFileMsg req =
-                new PoolMgrReplicateFileMsg(pnfsId,
-                                            storageInfo,
+                new PoolMgrReplicateFileMsg(attributes,
                                             new DCapProtocolInfo("DCap", 3, 0,
                                                                  _destinationHostName, 2222),
                                             storageInfo.getFileSize());

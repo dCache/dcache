@@ -1,53 +1,69 @@
 // $Id: PoolMgrGetPoolMsg.java,v 1.3 2004-11-05 12:07:19 tigran Exp $
 
-package diskCacheV111.vehicles ;
-import  diskCacheV111.util.* ;
+package diskCacheV111.vehicles;
 
-public class PoolMgrGetPoolMsg extends PoolManagerMessage {
+import java.util.EnumSet;
+import diskCacheV111.util.PnfsId;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileAttribute;
 
-    private StorageInfo _storageInfo  = null;
-    private PnfsId      _pnfsId       = null;
-    private String      _poolName;
+import static org.dcache.namespace.FileAttribute.*;
+import static com.google.common.base.Preconditions.*;
 
+public class PoolMgrGetPoolMsg extends PoolManagerMessage
+{
     private static final long serialVersionUID = 8907604668091102254L;
-    
-    public PoolMgrGetPoolMsg( String       pnfsId ,
-                              StorageInfo  storageInfo ){
-	_storageInfo  = storageInfo;
-	_pnfsId       = new PnfsId(pnfsId);
-	setReplyRequired(true);
-    }
-    public PoolMgrGetPoolMsg( PnfsId       pnfsId ,
-                              StorageInfo  storageInfo ){
-	_storageInfo  = storageInfo;
-	_pnfsId       = pnfsId;
+
+    private final FileAttributes _fileAttributes;
+    private String _poolName;
+
+    public PoolMgrGetPoolMsg(FileAttributes fileAttributes)
+    {
+        checkArgument(fileAttributes.getDefinedAttributes().containsAll(getRequiredAttributes()), "Required attributes are missing");
+
+	_fileAttributes = fileAttributes;
 	setReplyRequired(true);
     }
 
-    public StorageInfo getStorageInfo(){
-	return _storageInfo ;
+    public FileAttributes getFileAttributes()
+    {
+	return _fileAttributes;
     }
-    public PnfsId getPnfsId(){
-	return _pnfsId;
+
+    public StorageInfo getStorageInfo()
+    {
+	return _fileAttributes.getStorageInfo();
     }
-    public String getPoolName(){
+
+    public PnfsId getPnfsId()
+    {
+	return _fileAttributes.getPnfsId();
+    }
+
+    public String getPoolName()
+    {
 	return _poolName;
     }
-    public void setPoolName(String poolName){
+
+    public void setPoolName(String poolName)
+    {
 	_poolName = poolName;
     }
-    public String toString(){
-       if( getReturnCode() == 0 )
-         return "PnfsId="+
-                (_pnfsId==null?"<unknown>":_pnfsId.toString())+
-                ";StorageInfo="+
-                (_storageInfo==null?"<unknown>":
-                                    _storageInfo.toString())+
-                ";PoolName="+
-                (_poolName==null?"<unknown>":_poolName) ;
-       else
-          return super.toString() ;
+
+    @Override
+    public String toString()
+    {
+        if (getReturnCode() == 0) {
+            return "PnfsId=" + getPnfsId()
+                + ";StorageInfo=" + getStorageInfo()
+                + ";PoolName=" + ((_poolName==null) ? "<unknown>" : _poolName);
+        } else {
+            return super.toString();
+        }
     }
 
-
+    public static EnumSet<FileAttribute> getRequiredAttributes()
+    {
+        return EnumSet.of(PNFSID, STORAGEINFO);
+    }
 }

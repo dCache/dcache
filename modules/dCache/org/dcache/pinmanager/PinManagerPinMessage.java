@@ -6,6 +6,7 @@ import java.util.EnumSet;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.util.PnfsId;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
@@ -121,6 +122,8 @@ public class PinManagerPinMessage extends Message
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
     {
-        return EnumSet.of(PNFSID, STORAGEINFO);
+        EnumSet<FileAttribute> attributes = EnumSet.of(PNFSID);
+        attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+        return attributes;
     }
 }
