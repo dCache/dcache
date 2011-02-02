@@ -359,8 +359,8 @@ public class Job
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
             while ((_running.size() < _concurrency) && i.hasNext()) {
+                PnfsId pnfsId = i.next();
                 try {
-                    PnfsId pnfsId = i.next();
                     i.remove();
                     Repository repository = _configuration.getRepository();
                     CacheEntry entry = repository.getEntry(pnfsId);
@@ -376,8 +376,14 @@ public class Job
                     _statistics.addAttempt();
                     task.run();
                 } catch (FileNotInCacheException e) {
+                    _sizes.remove(pnfsId);
                     continue;
                 }
+            }
+
+            if (!_definition.isPermanent
+                && _queued.isEmpty() && _running.isEmpty()) {
+                setState(State.FINISHED);
             }
         }
     }
@@ -488,6 +494,7 @@ public class Job
     {
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);
+        _sizes.remove(pnfsId);
         schedule();
 
         Error error = new Error(task.getId(), pnfsId, msg);
