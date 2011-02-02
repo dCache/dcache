@@ -3209,14 +3209,14 @@ public abstract class AbstractFtpDoorV1
 
                 if (status == null) {
                     sendMarker();
-                } else if (status.equals("A")) {
+                } else if (status.equals("A") || status.equals("RUNNING")) {
                     // "Active" job
                     setProgressInfo(ioJobInfo.getBytesTransferred(),
                                     ioJobInfo.getLastTransferred());
                     sendMarker();
                 } else if (status.equals("K") || status.equals("R")) {
                     // "Killed" or "Removed" job
-                } else if (status.equals("W")) {
+                } else if (status.equals("W") || status.equals("QUEUED")) {
                     sendMarker();
                 } else {
                     _logger.error("Performance marker engine received unexcepted status from mover: {}",
