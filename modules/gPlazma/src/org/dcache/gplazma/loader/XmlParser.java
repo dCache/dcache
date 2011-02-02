@@ -264,7 +264,9 @@ public class XmlParser {
 
         for( int i = 0; i < childNodes.getLength(); i++) {
             Node childNode = childNodes.item( i);
-            addMetadataFromChildNode( metadata, childNode);
+            if( childNode.getNodeType() == Node.ELEMENT_NODE) {
+                addMetadataFromChildNode( metadata, childNode);
+            }
         }
     }
 
