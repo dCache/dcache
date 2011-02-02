@@ -634,10 +634,11 @@ public class XrootdPoolRequestHandler extends XrootdRequestHandler
             return null;
         }  catch (IOException e) {
             Reader reader = _readers.remove();
-            AbstractResponseMessage msg = new ErrorResponse(reader.getStreamID(),
-                                                            kXR_IOError,
-                                                            e.getMessage());
-            return msg;
+            return new ErrorResponse(reader.getStreamID(),
+                                     kXR_IOError,
+                                     (e.getMessage() == null)
+                                     ? e.toString()
+                                     : e.getMessage());
         }
     }
 

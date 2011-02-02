@@ -1121,8 +1121,8 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
            throw new SRMException("surl is null");
         }
         for(int i =0; i<fileRequests.length;++i) {
-            if(((CopyFileRequest)fileRequests[i]).getFromURL().equals(surl) ||
-               ((CopyFileRequest)fileRequests[i]).getToURL().equals(surl) ) {
+            if(((CopyFileRequest)fileRequests[i]).getFrom_surl().equals(surl) ||
+               ((CopyFileRequest)fileRequests[i]).getTo_surl().equals(surl) ) {
                 return fileRequests[i];
             }
         }

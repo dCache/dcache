@@ -113,10 +113,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             _log.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
         }
 
+        request.setState(IoRequestState.QUEUED);
         PrioritizedRequest wrapper = new PrioritizedRequest(id, request, priority);
         _queue.add(wrapper);
         _jobs.put(id, wrapper);
-        request.setState(IoRequestState.QUEUED);
 
         return id;
     }
@@ -136,8 +136,12 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     @Override
-    public PoolIORequest getJobInfo(int id) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public JobInfo getJobInfo(int id) {
+        PrioritizedRequest pRequest = _jobs.get(id);
+        if(pRequest == null) {
+            throw new NoSuchElementException("Job not found : Job-" + id);
+        }
+        return toJobInfo(pRequest.getRequest(), id);
     }
 
     @Override

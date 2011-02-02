@@ -452,8 +452,8 @@ public class Job
                     break;
                 }
 
+                PnfsId pnfsId = i.next();
                 try {
-                    PnfsId pnfsId = i.next();
                     i.remove();
                     Repository repository = _context.getRepository();
                     CacheEntry entry = repository.getEntry(pnfsId);
@@ -469,6 +469,7 @@ public class Job
                     _statistics.addAttempt();
                     task.run();
                 } catch (FileNotInCacheException e) {
+                    _sizes.remove(pnfsId);
                     continue;
                 } catch (CacheException e) {
                     _log.error("Migration job failed to read entry: " +
@@ -481,6 +482,11 @@ public class Job
                     setState(State.FAILED);
                     break;
                 }
+            }
+
+            if (!_definition.isPermanent
+                && _queued.isEmpty() && _running.isEmpty()) {
+                setState(State.FINISHED);
             }
         }
     }
@@ -588,6 +594,7 @@ public class Job
     {
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);
+        _sizes.remove(pnfsId);
         schedule();
 
         Error error = new Error(task.getId(), pnfsId, msg);

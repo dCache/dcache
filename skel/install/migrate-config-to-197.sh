@@ -656,6 +656,7 @@ generateDcacheConf() # in $1 dCacheSetup path
     case "$NODE_CONFIG_NAMESPACE" in
         chimera)
             echo "dcache.namespace=chimera"
+            printChimeraOptions
             ;;
 
         *)
@@ -820,9 +821,6 @@ printp "Converting ${DCACHE_ETC}/node_config
             chimera|pnfs)
                 echo "[namespaceDomain]"
                 echo "[namespaceDomain/pnfsmanager]"
-                if [ $SERVICE = chimera ]; then
-                    printChimeraOptions
-                fi
                 echo "[namespaceDomain/cleaner]"
                 echo "[namespaceDomain/acl]"
                 ;;
