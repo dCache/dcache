@@ -48,7 +48,7 @@ class_for_command() # in $1 command name, out $2 class
 	    ;;
     esac
 
-    cmd=$2=org.dcache.chimera.examples.cli.$class
+    cmd=$2=org.dcache.chimera.cli.$class
     eval $cmd
 }
 
@@ -74,7 +74,14 @@ fi
 
 . ${DCACHE_HOME}/share/lib/loadConfig.sh
 
+dbpass=$(getProperty chimera.db.password)
+
 CLASSPATH="$(getProperty dcache.paths.classpath)" \
     ${JAVA} $(getProperty dcache.java.options) \
     "-Dlogback.configurationFile=$(getProperty dcache.paths.share)/xml/logback-cli.xml" \
-    ${class} ${DCACHE_CONFIG}/chimera-config.xml "$@"
+    ${class}  $(getProperty chimera.db.driver) \
+    $(getProperty chimera.db.url) \
+    $(getProperty chimera.db.dialect) \
+    $(getProperty chimera.db.user) \
+    ${dbpass:-""} \
+    "$@"
