@@ -1,40 +1,47 @@
 package org.dcache.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.File;
 import java.io.FileReader;
-import java.io.Reader;
 import java.io.IOException;
 import java.io.InputStream;
-
+import java.io.Reader;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Set;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.InvalidPropertiesFormatException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dmg.util.Replaceable;
+
 import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
 
 /**
  * The ConfigurationProperties class represents a set of dCache
  * configuration properties.
- *
+ * <p>
  * Repeated declaration of the same property is considered an error
  * and will cause loading of configuration files to fail.
- *
- * Properties can be annotated as deprecated, obsolete or forbidden. A
- * property is annotated as deprecated by prefixing the declaration
- * with <code>(deprecated)</code>, as obsolete by prefixing the
- * declaration with <code>(obsolete)</code>, and forbidden by
- * prefixing it <code>(forbidden)</code>.
- *
- * These annotations have the following semantics:
+ * <p>
+ * Properties may have zero or more annotations.  These annotations
+ * are represented as a comma-separated list of annotation-labels
+ * inside parentheses immediately before the property key. Valid
+ * annotation labels are "deprecated", "obsolete", "forbidden"
+ * and "not-for-services".  A property may have, at most, one annotation
+ * from the set {deprecated, obsolete, forbidden}.
+ * <p>
+ * Annotations have the following semantics:
  * <ul>
  * <li><i>deprecated</i> indicates that a property is supported but that a
  * future version of dCache will likely remove that support.
@@ -44,17 +51,26 @@ import dmg.util.PropertiesBackedReplaceable;
  * <li><i>forbidden</i> indicates that a property is no longer supported and
  * dCache does not always behave correctly without further configuration or
  * that support for some feature has been removed.
+ * <li><i>not-for-services</i> indicates that a property has no effect if
+ * the property is assigned a value within a service context.
  * </ul>
  * <p>
  * The intended behaviour of dCache when encountering sysadmin-supplied
  * property assignment of some annotated property is dependent on the
- * annotation. For deprecated and obsolete properties, a warning is emitted
- * and dCache continues to start up. If the user assigns a value to a
- * forbidden properties then dCache will refuse to start.
+ * annotation(s).  If the property is annotated as deprecated and obsolete
+ * then a warning is emitted and dCache continues to start up. If the user
+ * assigns a value to a forbidden properties then dCache will refuse to start.
  * <p>
- * Such a declaration only affects following declarations. It does not affect
- * any previous declarations of this property, nor does it generate any
+ * Annotation of a property only affects subsequent declarations.  It does not
+ * affect any previous declarations of this property, nor does it generate any
  * errors when such properties are referenced in any way.
+ * <p>
+ * The following provides examples of valid annotated declarations:
+ * <pre>
+ *   (obsolete)dcache.property1 = some value
+ *   (forbidden)dcache.property2 =
+ *   (deprecated,no-for-services)dcache.property3 = default-value
+ * </pre>
  *
  * @see java.util.Properties
  */
@@ -63,12 +79,14 @@ public class ConfigurationProperties
 {
     private static final long serialVersionUID = -5684848160314570455L;
 
+    private static final String STORAGE_PREFIX_ANNOTATIONS = "<A>";
+    private static final String STORAGE_PREFIX_ERROR_MSG = "<E>";
+
+    private static final EnumSet<Annotation> OBSOLETE_FORBIDDEN =
+        EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
+
     private final static Logger _log =
         LoggerFactory.getLogger(ConfigurationProperties.class);
-
-    private final static String FORBIDDEN = "(forbidden)";
-    private final static String OBSOLETE = "(obsolete)";
-    private final static String DEPRECATED = "(deprecated)";
 
     private final PropertiesBackedReplaceable _replaceable =
         new PropertiesBackedReplaceable(this);
@@ -80,24 +98,24 @@ public class ConfigurationProperties
         super();
     }
 
-    public ConfigurationProperties(Properties properties)
+    public ConfigurationProperties(Properties defaults)
     {
-        super(properties);
+        super(defaults);
     }
 
-    public boolean isForbidden(String key)
-    {
-        return getProperty(FORBIDDEN + key) != null;
-    }
+    public AnnotatedKey getAnnotatedKey(String name) {
+        AnnotatedKey key;
 
-    public boolean isObsolete(String key)
-    {
-        return getProperty(OBSOLETE + key) != null;
-    }
+        String annotations = getProperty(STORAGE_PREFIX_ANNOTATIONS + name);
 
-    public boolean isDeprecated(String key)
-    {
-        return getProperty(DEPRECATED + key) != null;
+        if(annotations != null) {
+            String error = getProperty(STORAGE_PREFIX_ERROR_MSG + name);
+            key = new AnnotatedKey(name, annotations, error);
+        } else {
+            key = new AnnotatedKey(name, "");
+        }
+
+        return key;
     }
 
     /**
@@ -106,9 +124,9 @@ public class ConfigurationProperties
      * A scoped name begins with the name of the scope followed by the
      * scoping operator, a forward slash.
      */
-    public static boolean isScoped(String key)
+    public static boolean isScoped(String name)
     {
-        return key.indexOf('/') > -1;
+        return name.indexOf('/') > -1;
     }
 
     /**
@@ -143,7 +161,7 @@ public class ConfigurationProperties
 
     /**
      * @throws IllegalArgumentException during loading if a property
-     * is defined multiple times.
+     * is defined multiple times or the annotations are inappropriate.
      */
     @Override
     public synchronized void loadFromXML(InputStream in)
@@ -176,83 +194,70 @@ public class ConfigurationProperties
      * already defined.
      */
     @Override
-    public synchronized Object put(Object key, Object value)
+    public synchronized Object put(Object rawKey, Object value)
     {
-        if (_loading && containsKey(key)) {
-            throw new IllegalArgumentException(String.format("%s is already defined", key));
+        checkNotNull(rawKey, "A propery key must not be null");
+        checkNotNull(value, "A propery value must not be null");
+
+        AnnotatedKey key = new AnnotatedKey(rawKey, value);
+        String name = key.getPropertyName();
+        checkArgument(!_loading || !containsKey(name), "%s is already defined", name);
+
+        checkIsAllowedKey(key);
+
+        if(key.hasAnnotations()) {
+            store(key);
         }
-        String s = key.toString();
-        actOnAnnotation(s);
-        if (isDeprecatedDeclaration(s)) {
-            super.put(s.substring(DEPRECATED.length()), value);
-        }
-        return super.put(key, value);
+
+        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, value);
     }
 
-    private void actOnAnnotation(String key)
+
+    private void checkIsAllowedKey(AnnotatedKey key)
     {
-        if( isForbidden( key)) {
-            String error = errorForForbiddenProperty( key);
-            throw new IllegalArgumentException( error);
+        String name = key.getPropertyName();
+
+        AnnotatedKey existingKey = getAnnotatedKey(name);
+
+        if(existingKey.hasAnnotations() && key.hasAnnotations()) {
+            throw new IllegalArgumentException("Property " + name +
+                    " is assigned a value with annotations.  Remove \"" +
+                    key.getAnnotationDeclaration() + "\" from assignment.");
         }
 
-        if( isObsolete( key)) {
-            _log.warn( "The property {} is no longer used.", key);
-        } else if( isDeprecated( key)) {
-            _log.warn( "The property {} is deprecated and will be removed.", key);
+        if(existingKey.hasAnnotation(Annotation.FORBIDDEN)) {
+            throw new IllegalArgumentException(existingKey.getError());
+        }
+
+        if(existingKey.hasAnnotation(Annotation.OBSOLETE)) {
+            _log.warn( "The property {} is no longer used; consider " +
+                       "removing this assignment.", name);
+        }
+
+        if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
+            _log.warn( "The property {} is deprecated and will be removed " +
+                       "in future versions of dCache.", name);
         }
     }
 
-    private String errorForForbiddenProperty(String property)
-    {
-        String error = getProperty( FORBIDDEN + property);
-
-        if( error.isEmpty()) {
-            error = "Adjusting property " + property + " is forbidden as different properties now control this aspect of dCache.";
-        }
-
-        return error;
-    }
 
     @Override
-    public Enumeration<?> propertyNames()
+    public synchronized Enumeration<?> propertyNames()
     {
         return Collections.enumeration(stringPropertyNames());
     }
 
     @Override
-    public Set<String> stringPropertyNames()
+    public synchronized Set<String> stringPropertyNames()
     {
         Set<String> names = new HashSet<String>();
         for (String name: super.stringPropertyNames()) {
-            if (!isAnnotatedDeclaration(name)) {
+            if( !name.startsWith(STORAGE_PREFIX_ANNOTATIONS) &&
+                !name.startsWith(STORAGE_PREFIX_ERROR_MSG)) {
                 names.add(name);
             }
         }
         return names;
-    }
-
-    private boolean isDeprecatedDeclaration(String name)
-    {
-        return name.startsWith(DEPRECATED);
-    }
-
-    private boolean isForbiddenDeclaration(String name)
-    {
-        return name.startsWith(FORBIDDEN);
-    }
-
-    private boolean isObsoleteDeclaration(String name)
-    {
-        return name.startsWith(OBSOLETE);
-    }
-
-    private boolean isAnnotatedDeclaration(String name)
-    {
-        boolean isDeprecated = isDeprecatedDeclaration(name);
-        boolean isForbidden = isForbiddenDeclaration(name);
-        boolean isObsolete = isObsoleteDeclaration(name);
-        return isForbidden || isDeprecated || isObsolete;
     }
 
     public String replaceKeywords(String s)
@@ -264,5 +269,167 @@ public class ConfigurationProperties
     {
         String value = getProperty(name);
         return (value == null) ? null : replaceKeywords(value);
+    }
+
+    private void store(AnnotatedKey key) {
+        String name = key.getPropertyName();
+
+        setProperty(STORAGE_PREFIX_ANNOTATIONS + name,
+                    key.getAnnotationDeclaration());
+
+        setProperty(STORAGE_PREFIX_ERROR_MSG + name,
+                    key.getError());
+    }
+
+
+
+    /**
+     * A class for parsing and storing a set of annotations associated with
+     * some specific property declaration's key in addition to a potential
+     * custom error message.
+     *
+     * Annotations take the form of a comma-separated list of keywords
+     * within parentheses that immediately precede the property name;
+     *
+     * If a property is annotated as forbidden then the property value is taken
+     * as a custom error message to report.  If the value is empty then a default
+     * error message is used instead.
+     */
+    public static class AnnotatedKey {
+
+        private static final String RE_ATTRIBUTE = "[-\\w]+";
+        private static final String RE_SEPARATOR = ",";
+        private static final String RE_ANNOTATION_DECLARATION =
+            "(\\((" + RE_ATTRIBUTE + "(?:" + RE_SEPARATOR + RE_ATTRIBUTE + ")*)\\))";
+        private static final String RE_KEY_DECLARATION =
+            RE_ANNOTATION_DECLARATION + "([-\\w.]+)";
+
+        private static final Pattern PATTERN_ANNOTATION_DECLARATION = Pattern.compile(RE_ANNOTATION_DECLARATION);
+        private static final Pattern PATTERN_KEY_DECLARATION = Pattern.compile(RE_KEY_DECLARATION);
+        private static final Pattern PATTERN_SEPARATOR = Pattern.compile(RE_SEPARATOR);
+
+        private static final Set<Annotation> FORBIDDEN_OBSOLETE_DEPRECATED =
+            EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE, Annotation.DEPRECATED);
+
+        private final String _name;
+        private final String _annotationDeclaration;
+        private final Set<Annotation> _annotations = EnumSet.noneOf(Annotation.class);
+        private final String _error;
+
+        public AnnotatedKey(String name, String annotationDeclaration, String error) {
+            _name = name;
+            _error = error;
+            _annotationDeclaration = annotationDeclaration;
+
+            Matcher m = PATTERN_ANNOTATION_DECLARATION.matcher(annotationDeclaration);
+            if( !m.matches()) {
+                throw new IllegalStateException("Cannot match stored annotation declaration");
+            }
+            for(String label : PATTERN_SEPARATOR.split(m.group(2))) {
+                _annotations.add(Annotation.forLabel(label));
+            }
+        }
+
+        public AnnotatedKey(Object propertyKey, Object propertyValue) {
+            String declaration = propertyKey.toString();
+            Matcher m = PATTERN_KEY_DECLARATION.matcher(declaration);
+            if(m.matches()) {
+                _annotationDeclaration = m.group(1);
+
+                for(String label : PATTERN_SEPARATOR.split(m.group(2))) {
+                    _annotations.add(Annotation.forLabel(label));
+                }
+
+                _name = m.group(3);
+
+                if(countDeclaredAnnotationsFrom(FORBIDDEN_OBSOLETE_DEPRECATED) > 1) {
+                    throw new IllegalArgumentException("At most one of forbidden, obsolete " +
+                            "and deprecated may be specified.");
+                }
+            } else {
+                _annotationDeclaration = "";
+                _name = declaration;
+            }
+
+            _error = errorFor(propertyValue.toString());
+        }
+
+        private String errorFor(String value) {
+            String error;
+            if(_annotations.contains(Annotation.FORBIDDEN)) {
+                if(value.isEmpty()) {
+                    error = "Adjusting property " + _name + " is forbidden " +
+                    "as different properties now control this aspect of dCache.";
+                } else {
+                    error = value;
+                }
+            } else {
+                error = "";
+            }
+            return error;
+        }
+
+
+        private int countDeclaredAnnotationsFrom(Set<Annotation> items) {
+            EnumSet<Annotation> a = EnumSet.copyOf(items);
+            a.retainAll(_annotations);
+            return a.size();
+        }
+
+        public boolean hasAnnotation(Annotation annotation) {
+            return _annotations.contains(annotation);
+        }
+
+        public boolean hasAnyOf(EnumSet<Annotation> annotations) {
+            return countDeclaredAnnotationsFrom(annotations) > 0;
+        }
+
+        public boolean hasAnnotations() {
+            return !_annotations.isEmpty();
+        }
+
+        public String getAnnotationDeclaration() {
+            return _annotationDeclaration;
+        }
+
+        public String getPropertyName() {
+            return _name;
+        }
+
+        public String getError() {
+            return _error;
+        }
+    }
+
+
+    /**
+     *  This enum represents a property key annotation.  Each annotation has
+     *  an associated label that is present as a comma-separated list within
+     *  parentheses.
+     */
+    public enum Annotation {
+        FORBIDDEN("forbidden"),
+        OBSOLETE("obsolete"),
+        DEPRECATED("deprecated"),
+        NOT_FOR_SERVICES("not-for-services");
+
+        private static Map<String,Annotation> ANNOTATION_LABELS = new HashMap<String,Annotation>();
+
+        private final String _label;
+
+        static {
+            for( Annotation annotation : Annotation.values()) {
+                ANNOTATION_LABELS.put(annotation._label, annotation);
+            }
+        }
+
+        public static Annotation forLabel(String label) {
+            checkArgument(ANNOTATION_LABELS.containsKey(label), "Unknown annotation " + label);
+            return ANNOTATION_LABELS.get(label);
+        }
+
+        Annotation(String label) {
+            _label = label;
+        }
     }
 }

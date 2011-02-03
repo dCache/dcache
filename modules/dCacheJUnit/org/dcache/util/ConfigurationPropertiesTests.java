@@ -159,7 +159,8 @@ public class ConfigurationPropertiesTests {
         assertEquals(1, _log.size());
         assertEquals(Level.WARN, _log.get(0).getLevel());
         assertEquals("The property " + DEPRECATED_PROPERTY_NAME +
-                     " is deprecated and will be removed.",
+                     " is deprecated and will be removed " +
+                     "in future versions of dCache.",
                      _log.get(0).getFormattedMessage());
     }
 
@@ -169,7 +170,7 @@ public class ConfigurationPropertiesTests {
         assertEquals(1, _log.size());
         assertEquals(Level.WARN, _log.get(0).getLevel());
         assertEquals("The property " + OBSOLETE_PROPERTY_NAME +
-                     " is no longer used.", _log.get(0).getFormattedMessage());
+                     " is no longer used; consider removing this assignment.", _log.get(0).getFormattedMessage());
     }
 
     @Test
