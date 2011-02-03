@@ -1496,12 +1496,16 @@ public final class Manager
                                          ManagerSchemaConstants.CreateSpaceFileTable};
                 Map<String, Boolean> created=new Hashtable<String, Boolean>();
                 for (int i=0; i<tables.length; ++i) {
-                        created.put(tables[i], Boolean.FALSE);
+                        String table = tables[i];
+                        created.put(table, Boolean.FALSE);
                         try {
-                                manager.createTable(tables[i], createTables[i]);
-                                created.put(tables[i], Boolean.TRUE);
-                        }
-                        catch (SQLException e) {
+                            if( manager.hasTable(table)) {
+                                logger.info("Presence of table \"" + table + "\" verified");
+                            } else {
+                                manager.createTable(table, createTables[i]);
+                                created.put(table, Boolean.TRUE);
+                            }
+                        } catch (SQLException e) {
                                 logger.error(e.getMessage());
                         }
                 }

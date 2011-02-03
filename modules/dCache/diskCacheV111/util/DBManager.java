@@ -12,7 +12,6 @@
 package diskCacheV111.util;
 
 import java.util.Iterator;
-import java.util.Set;
 import java.util.HashSet;
 import java.sql.*;
 import org.slf4j.Logger;
@@ -178,61 +177,84 @@ public class DBManager {
 		}
 	}
 
-	public void createTable( String name,
-				 String ... statements)
-		throws SQLException {		
-			Connection connection = null;
-                        ResultSet set = null;
-			try {
-				connection = connectionPool.getConnection();
-				DatabaseMetaData md = connection.getMetaData();
-				set = md.getTables(null, null, name, null);
-				if (!set.next()) {
-                                        for (String statement : statements) {
-                                                Statement s=null;
-                                                try {
-                                                        s = connection.createStatement();
-                                                        if (_logger.isDebugEnabled()) {
-                                                                _logger.debug("Executing  "+statement);
-                                                        }
-                                                        int result = s.executeUpdate(statement);
-                                                        connection.commit();
-                                                        s.close();
-                                                        s=null;
-                                                }
-                                                catch (SQLException e) {
-                                                        try {
-                                                                connection.rollback();
-                                                                if (s!=null) {
-                                                                        s.close();
-                                                                        s=null;
-                                                                }
-                                                        }
-                                                        catch (SQLException e1) { } 
-                                                        if (_logger.isDebugEnabled()) {
-                                                                _logger.debug("Failed: "+e.getMessage());
-                                                        }
-                                                }
-                                        }
-                                }
-                                else {
-					throw new SQLException("Table \""+name+"\" already exist");
-				}
-			}
-			finally {
-				if(connection!= null) {
-                                        if (set!=null) {
-                                                try {
-                                                        set.close();
-                                                        set=null;
-                                                }
-                                                catch (SQLException e1) { } 
-                                        }
-                                        connectionPool.returnConnection(connection);
-                                        connection=null;
-                                }
-                        }
+	public boolean hasTable(String table) throws SQLException {
+	    boolean hasTable = false;
+        Connection connection = connectionPool.getConnection();
+        try {
+            hasTable = hasTable(connection, table);
+            connectionPool.returnConnection(connection);
+            connection=null;
+        } finally {
+            if(connection!= null) {
+                connectionPool.returnFailedConnection(connection);
+            }
         }
+
+        return hasTable;
+	}
+
+	private boolean hasTable(Connection connection, String table) throws SQLException {
+        DatabaseMetaData metadata = connection.getMetaData();
+        ResultSet set = metadata.getTables(null, null, table, null);
+        boolean hasTable = false;
+        try {
+            hasTable = set.next();
+        } finally {
+            set.close();
+        }
+        return hasTable;
+	}
+
+	public void createTable( String name,
+				 String ... statements)	throws SQLException {
+	    Connection connection = null;
+	    ResultSet set = null;
+	    try {
+	        connection = connectionPool.getConnection();
+	        if(hasTable(connection, name)) {
+	            throw new SQLException("Table \"" + name + "\" already exists");
+	        }
+
+	        for (String statement : statements) {
+	            Statement s=null;
+	            try {
+	                s = connection.createStatement();
+	                if (_logger.isDebugEnabled()) {
+	                    _logger.debug("Executing  "+statement);
+	                }
+	                s.executeUpdate(statement);
+	                connection.commit();
+	                s.close();
+	                s=null;
+	            }
+	            catch (SQLException e) {
+	                try {
+	                    connection.rollback();
+	                    if (s!=null) {
+	                        s.close();
+	                        s=null;
+	                    }
+	                }
+	                catch (SQLException e1) { }
+	                if (_logger.isDebugEnabled()) {
+	                    _logger.debug("Failed: "+e.getMessage());
+	                }
+	            }
+	        }
+	    } finally {
+	        if(connection!= null) {
+	            if (set!=null) {
+	                try {
+	                    set.close();
+	                    set=null;
+	                }
+	                catch (SQLException e1) { }
+	            }
+	            connectionPool.returnConnection(connection);
+	            connection=null;
+	        }
+	    }
+	}
 
 	public void createIndexes( String name,
 				   String ... columns)
