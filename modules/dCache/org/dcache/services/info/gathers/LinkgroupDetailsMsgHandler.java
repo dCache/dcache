@@ -28,13 +28,13 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 	private static final String WILDCARD_VO = "*";
 
 	final private StateUpdateManager _sum;
-	
+
 	public LinkgroupDetailsMsgHandler( StateUpdateManager sum) {
 		_sum = sum;
 	}
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
-		
+
 		if( !(messagePayload instanceof GetLinkGroupsMessage))
 			return false;
 
@@ -49,23 +49,23 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 			_log.info( "received GetLinkGroupNamesMessage with no linkgroups listed");
 			return true;
 		}
-		
+
 		StateUpdate update = new StateUpdate();
 
 		for( LinkGroup linkGroup : linkGroups) {
-			
+
 			String lgid = String.valueOf( linkGroup.getId());
 
 			StatePath thisLinkGroupPath = LINKGROUPS_PATH.newChild( lgid);
 
 			update.appendUpdate( thisLinkGroupPath.newChild("name"), new StringStateValue( linkGroup.getName(), metricLifetime));
 			update.appendUpdate( thisLinkGroupPath.newChild("id"), new StringStateValue( lgid, metricLifetime));
-			
+
 			StatePath spacePath = thisLinkGroupPath.newChild( "space");
 			update.appendUpdate( spacePath.newChild("free"), new IntegerStateValue( linkGroup.getFreeSpace(), metricLifetime));
 			update.appendUpdate( spacePath.newChild("reserved"), new IntegerStateValue( linkGroup.getReservedSpaceInBytes(), metricLifetime));
 			update.appendUpdate( spacePath.newChild("available"), new IntegerStateValue( linkGroup.getAvailableSpaceInBytes(), metricLifetime));
-			
+
 			StatePath accLatPath = thisLinkGroupPath.newChild("access-latency");
 			update.appendUpdate( accLatPath.newChild("onlineAllowed"), new BooleanStateValue( linkGroup.isOnlineAllowed(), metricLifetime));
 			update.appendUpdate( accLatPath.newChild("nearlineAllowed"), new BooleanStateValue( linkGroup.isNearlineAllowed(), metricLifetime));
@@ -78,10 +78,10 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 			Date lastUpdate = new Date( linkGroup.getUpdateTime());
 			CellMessageHandlerSkel.addTimeMetrics( update, thisLinkGroupPath.newChild("lastUpdated"), lastUpdate, metricLifetime);
 
-			StatePath vosPath = thisLinkGroupPath.newChild( "authorisation");			
+			StatePath vosPath = thisLinkGroupPath.newChild( "authorisation");
 			VOInfo voInfo[] = linkGroup.getVOs();
 
-			if( voInfo.length > 0) { 
+			if( voInfo.length > 0) {
 				for( int i = 0; i < voInfo.length; i++) {
 					VOInfo thisVO = voInfo[i];
 					addVoInfo( update, vosPath.newChild(thisVO.toString()), thisVO, metricLifetime, lgid);
@@ -91,44 +91,44 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 				update.appendUpdate( vosPath, new StateComposite(metricLifetime));
 			}
 		}
-			
+
 		_sum.enqueueUpdate( update);
-		
+
 		return true;
 	}
 
 	/**
-	 * Add VO-specific information about a linkgroup underneath the correct branch. 
+	 * Add VO-specific information about a linkgroup underneath the correct branch.
 	 * @param update the StateUpdate to append new metrics underneath
-	 * @param vosPath the branch that metrics will be added underneath. 
+	 * @param vosPath the branch that metrics will be added underneath.
 	 * @param vo the VOInfo of this VO.
 	 */
 	private void addVoInfo( StateUpdate update, StatePath voPath, VOInfo vo, long metricLifetime, String lgid) {
 		String group = vo.getVoGroup();
 		String role = vo.getVoRole();
-		
-		if( group != null) 
+
+		if( group != null)
 			update.appendUpdate( voPath.newChild( "group"), new StringStateValue( group, metricLifetime));
-		
+
 		if( role != null)
 			update.appendUpdate( voPath.newChild( "role"), new StringStateValue( role, metricLifetime));
 
 		if( group != null) {
 			StringBuilder fqan = new StringBuilder();
-		
+
 			fqan.append( vo.getVoGroup());
-			
+
 			if( role != null && !role.equals( WILDCARD_ROLE)) {
 				fqan.append( "/Role=");
 				fqan.append( role);
 			}
 
 			update.appendUpdate( voPath.newChild( "FQAN"), new StringStateValue( fqan.toString(), metricLifetime));
-			
+
 			// If this entry authorises a whole VO (or all VOs), make a special note of this.
 			if( (role == null || role.equals( WILDCARD_ROLE)) && group.indexOf('/', 1) == -1) {
 				String voName = group.startsWith("/") ? group.substring(1) : group;
-				
+
 				StatePath rootPath = voName.equals( WILDCARD_VO) ? SUMMARY_LINKGROUP_BLANKET_AUTH_ALL :  SUMMARY_LINKGROUP_BLANKET_AUTH_BY_VO.newChild( voName);
 				update.appendUpdate( rootPath.newChild("linkgroups").newChild(lgid), new StateComposite( metricLifetime));
 			}
