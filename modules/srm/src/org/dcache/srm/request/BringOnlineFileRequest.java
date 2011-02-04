@@ -724,18 +724,6 @@ public final class BringOnlineFileRequest extends FileRequest {
         public void Error( String error) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                 try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
                 this.error = "TheUnpinCallbacks error: "+ error;
                 if(fr != null) {
                     logger.error(this.error);
@@ -752,22 +740,10 @@ public final class BringOnlineFileRequest extends FileRequest {
         public void Exception( Exception e) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
                 if(fr != null) {
                     logger.error("TheUnpinCallbacks exception",e);
                 }
-                this.error = "TheUninCallbacks exception: "+e.toString();
+                this.error = "TheUnpinCallbacks exception: "+e.toString();
                 success = false;
                 done();
             }
@@ -783,20 +759,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         public void Timeout() {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
-
-                this.error = "TheUninCallbacks Timeout";
+                this.error = "TheUnpinCallbacks Timeout";
                 if(fr  != null) {
                     logger.error(this.error);
                }
@@ -839,19 +802,6 @@ public final class BringOnlineFileRequest extends FileRequest {
         public void UnpinningFailed(String reason) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
-
                 this.error = "TheUnpinCallbacks error: "+ reason;
                 if(fr  != null) {
                     logger.error(this.error);

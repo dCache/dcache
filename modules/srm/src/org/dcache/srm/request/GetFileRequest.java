@@ -487,7 +487,7 @@ public final class GetFileRequest extends FileRequest {
 
         if(State.isFinalState(state)) {
             if(getFileId() != null && getPinId() != null) {
-                UnpinCallbacks callbacks = new TheUninCallbacks(this.getId());
+                UnpinCallbacks callbacks = new TheUnpinCallbacks(this.getId());
                 logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
                 SRMUser user;
                 try {
@@ -756,11 +756,11 @@ public final class GetFileRequest extends FileRequest {
 
     }
 
-    private  static class TheUninCallbacks implements UnpinCallbacks {
+    private  static class TheUnpinCallbacks implements UnpinCallbacks {
 
         Long fileRequestJobId;
 
-        public TheUninCallbacks(Long fileRequestJobId) {
+        public TheUnpinCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
 
@@ -776,19 +776,7 @@ public final class GetFileRequest extends FileRequest {
         public void Error( String error) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                 try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
-                logger.error("TheUninCallbacks error: "+ error);
+                logger.error("TheUnpinCallbacks error: "+ error);
             }
             catch(Exception e) {
                 logger.error(e.toString());
@@ -798,19 +786,7 @@ public final class GetFileRequest extends FileRequest {
         public void Exception( Exception e) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
-                logger.error("TheUninCallbacks exception",e);
+                logger.error("TheUnpinCallbacks exception",e);
             }
             catch(Exception e1) {
                 logger.error(e1.toString());
@@ -823,20 +799,7 @@ public final class GetFileRequest extends FileRequest {
         public void Timeout() {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
-
-                logger.error("TheUninCallbacks Timeout");
+                logger.error("TheUnpinCallbacks Timeout");
             }
             catch(Exception e) {
                 logger.error(e.toString());
@@ -846,7 +809,7 @@ public final class GetFileRequest extends FileRequest {
         public void Unpinned(String pinId) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                logger.debug("TheUninCallbacks: Unpinned() pinId:"+pinId);
+                logger.debug("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
                 State state = fr.getState();
                if(state == State.ASYNCWAIT) {
                     fr.setPinId(pinId);
@@ -867,20 +830,7 @@ public final class GetFileRequest extends FileRequest {
         public void UnpinningFailed(String reason) {
             try {
                 GetFileRequest fr = getGetFileRequest();
-                /*
-                 * unpin is called when the file request  is already
-                 * in a final state
-                 */
-                /*
-                try {
-                    //fr.setState(State.FAILED);
-                }
-                catch(IllegalStateTransition ist) {
-                    //logger.error("can not fail state:"+ist);
-                }
-                 */
-
-                logger.error("TheUninCallbacks error: "+ reason);
+                logger.error("TheUnpinCallbacks error: "+ reason);
             }
             catch(Exception e) {
                 logger.error(e.toString());
