@@ -401,4 +401,21 @@ public class Subjects extends dmg.util.Subjects
         return subject;
     }
 
+    /**
+     * Create a subject for UNIX based user record.
+     *
+     * @param uid
+     * @param gid
+     * @param gids
+     */
+    public static Subject of(int uid, int gid, int[] gids) {
+
+        Subject subject = new Subject();
+        subject.getPrincipals().add(new UidPrincipal(uid));
+        subject.getPrincipals().add(new GidPrincipal(gid, true));
+        for (int g : gids) {
+            subject.getPrincipals().add(new GidPrincipal(g, false));
+        }
+        return subject;
+    }
 }
