@@ -223,8 +223,17 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                     new LinkedBlockingQueue<Runnable>(1));
 		retryTimer = new Timer();
                 thread = new Thread(this,"Scheduler-"+id);
+                running = true;
 		thread.start();
-		running = true;
+	}
+
+	public void stop() {
+	    retryTimer.cancel();
+	    pooledExecutor.shutdownNow();
+	    running = false;
+	    synchronized(this) {
+	        notify();
+	    }
 	}
 
 
@@ -746,8 +755,9 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         }
     }
 
+    @Override
     public void run() {
-        while(true) {
+        while(running) {
             try {
 
                 synchronized(this) {

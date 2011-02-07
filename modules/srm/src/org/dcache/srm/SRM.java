@@ -369,6 +369,10 @@ public class SRM {
         return srm;
     }
 
+    public void stop() {
+        Job.shutdown();
+        SchedulerFactory.getSchedulerFactory().shutdown();
+    }
 
     /**
      * @return this host InetAddress

@@ -462,6 +462,11 @@ public final class Storage
         storageInfoUpdateThread.start();
     }
 
+    public void stop()
+    {
+        srm.stop();
+    }
+
     @Required
     public void setDirectoryListSource(DirectoryListSource source)
     {

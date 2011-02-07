@@ -173,6 +173,9 @@ public abstract class Job  {
         //jobsSupport.firePropertyChange(new JobStorageAddedEvent(jobStorage));
     }
 
+    public static void shutdown() {
+        LifetimeExpiration.shutdown();
+    }
 
     // this constructor is used for restoring the job from permanent storage
     // should be called through the Job.getJob only, otherwise the expireRestoredJobOrCreateExperationTimer
@@ -910,6 +913,11 @@ public abstract class Job  {
         static private Timer _timer = new Timer();
 
         private Long _id;
+
+        static public void shutdown()
+        {
+            _timer.cancel();
+        }
 
         static synchronized public void schedule(Long id, long time)
         {
