@@ -69,7 +69,7 @@ public class NFSv3 {
         _service.start();
     }
 
-    public void destory() {
+    public void destroy() {
         _service.stop();
     }
 
