@@ -152,6 +152,7 @@ public class      SystemCell
                    _log.info("Killed " + cellName);
                } else {
                    _log.warn("Timeout waiting for " + cellName);
+                   _nucleus.listThreadGroupOf(cellName);
                    break;
                }
            } catch (InterruptedException e) {

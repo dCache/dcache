@@ -547,6 +547,33 @@ public class CellNucleus implements ThreadFactory
 
 
     /**
+     * List the threads of some cell to stdout.  This is
+     * indended for diagnostic information.
+     */
+    public void listThreadGroupOf(String cellName) {
+        __cellGlue.threadGroupList(cellName);
+    }
+
+    /**
+     * Print diagnostic information about currently running
+     * threads at warn level.
+     */
+    public void  threadGroupList() {
+        Thread[] threads = new Thread[_threads.activeCount()];
+        _threads.enumerate(threads);
+        for(Thread thread : threads) {
+            _logNucleus.warn("Thread: " + thread.getName() + " [" + (thread.isAlive() ? "A" : "-") +
+                    (thread.isDaemon() ? "D" : "-") + (thread.isInterrupted() ? "I" : "-") +
+                    "] (" + thread.getPriority()+ ") " + thread.getState());
+            for(StackTraceElement s : thread.getStackTrace()) {
+                _logNucleus.warn( "    " + s.toString());
+            }
+        }
+    }
+
+
+
+    /**
      * Blocks until the given cell is dead.
      *
      * @param timeout the maximum time to wait in milliseconds.

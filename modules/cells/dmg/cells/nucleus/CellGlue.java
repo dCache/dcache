@@ -377,6 +377,25 @@ class CellGlue {
 
    }
 
+   /**
+    * Print diagnostic information about a cell's ThreadGroup to
+    * stdout.
+    */
+   void threadGroupList(String cellName)
+   {
+       CellNucleus nucleus =  _cellList.get(cellName);
+
+       if(nucleus == null ) {
+           nucleus = _killedCellList.get(cellName);
+       }
+
+       if(nucleus != null) {
+           nucleus.threadGroupList();
+       } else {
+           _logGlue.warn("cell " + cellName + " is not running");
+       }
+   }
+
     /**
      * Returns a named cell. This method also returns cells that have
      * been killed, but which are not dead yet.
