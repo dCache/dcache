@@ -9,7 +9,6 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.EntryChangeEvent;
@@ -313,7 +312,7 @@ public class CacheRepositoryV5
          * generated to prepopulate the cache. That may take some
          * time. Therefore we do this outside the synchronization.
          */
-        _log.warn("Reading inventory from " + _store);
+        _log.info("Reading inventory from " + _store);
         MetaDataCache cache = new MetaDataCache(_store);
 
         synchronized (this) {
@@ -322,6 +321,7 @@ public class CacheRepositoryV5
         }
     }
 
+    @Override
     public void load()
         throws IOException, CacheException, IllegalStateException,
                InterruptedException
@@ -1074,6 +1074,7 @@ public class CacheRepositoryV5
             _entry = entry;
         }
 
+        @Override
         public void run()
         {
             _tasks.remove(_entry.getPnfsId());
@@ -1112,6 +1113,7 @@ public class CacheRepositoryV5
         return "";
     }
 
+    @Override
     public synchronized void printSetup(PrintWriter pw)
     {
         if (_runtimeMaxSize < Long.MAX_VALUE) {
