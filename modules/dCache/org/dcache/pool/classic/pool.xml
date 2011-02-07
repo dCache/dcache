@@ -328,9 +328,11 @@
     <constructor-arg ref="mover-execution-service" />
   </bean>
 
-  <bean id="nfs-execution-service" class="org.dcache.chimera.nfsv41.mover.NfsExcecutionService">
+  <bean id="nfs-execution-service" class="org.dcache.chimera.nfsv41.mover.NfsExcecutionService"
+        destroy-method="shutdown">
       <description>NFSv4.1 request execution service</description>
   </bean>
+
   <bean id="mover-execution-service" class="org.dcache.pool.classic.MoverExecutorServices" >
       <description>Request execution service container</description>
       <constructor-arg>
