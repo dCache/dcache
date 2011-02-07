@@ -649,6 +649,9 @@ public class      SshStreamEngine
 
 
             }
+            case SshPacket.SSH_CMSG_KEX_DH_GEX_REQUEST_OLD:
+                writePacket(bad);
+                break;
             default :
                 printerr( "SshStreamEngine : Unknown denied : "+packet.getType() ) ;
                 if( state != ST_INTERACTIVE )writePacket( bad ) ;

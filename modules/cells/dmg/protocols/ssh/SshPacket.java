@@ -29,8 +29,8 @@ public class SshPacket {
   public static final int SSH_SMSG_STDERR_DATA       =   18 ;
   public static final int SSH_CMSG_EOF               =   19 ;
   public static final int SSH_SMSG_EXITSTATUS        =   20 ;
+  public static final int SSH_CMSG_KEX_DH_GEX_REQUEST_OLD = 30;
   public static final int SSH_CMSG_EXIT_CONFORMATION =   33 ;
-
   public static final int SSH_CMSG_X11_REQUEST_FORWARDING =  34 ;
   public static final int SSH_CMSG_AUTH_RHOSTS_RSA        =  35 ;
   public static final int SSH_MSG_DEBUG                   =  36 ;
@@ -191,7 +191,7 @@ public class SshPacket {
 
   }
   static public String byteToHexString( byte b ) {
-       String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
+       String s = Integer.toHexString( ( b < 0 ) ? ( 256 + b ) : (int)b  ) ;
        if( s.length() == 1 )return "0"+s ;
        else return s ;
   }
@@ -206,10 +206,10 @@ public class SshPacket {
   }
 
   protected int intFromBytes( byte [] b , int off ){
-    return     ((((int)b[off+0])&0xff) << 24 ) |
-               ((((int)b[off+1])&0xff) << 16 ) |
-               ((((int)b[off+2])&0xff) <<  8 ) |
-               ((((int)b[off+3])&0xff)       )   ;
+    return     (((b[off+0])&0xff) << 24 ) |
+               (((b[off+1])&0xff) << 16 ) |
+               (((b[off+2])&0xff) <<  8 ) |
+               (((b[off+3])&0xff)       )   ;
 
   }
   protected void punchInt( byte [] a , int off , int value ){
