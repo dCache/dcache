@@ -8,7 +8,7 @@ public class SshPacket {
   MsgDigest    _digest ;
   byte    []   _payload ;
   int          _type ;
-  
+
   public static final int SSH_MSG_NONE               =   0 ;
   public static final int SSH_MSG_DISCONNECT         =   1 ;
   public static final int SSH_SMSG_PUBLIC_KEY        =   2 ;
@@ -30,7 +30,7 @@ public class SshPacket {
   public static final int SSH_CMSG_EOF               =   19 ;
   public static final int SSH_SMSG_EXITSTATUS        =   20 ;
   public static final int SSH_CMSG_EXIT_CONFORMATION =   33 ;
-  
+
   public static final int SSH_CMSG_X11_REQUEST_FORWARDING =  34 ;
   public static final int SSH_CMSG_AUTH_RHOSTS_RSA        =  35 ;
   public static final int SSH_MSG_DEBUG                   =  36 ;
@@ -62,16 +62,16 @@ public class SshPacket {
         break ;
         case SshPacket.SSH_MSG_DEBUG :
         break ;
-        case SshPacket.SSH_SMSG_SUCCESS : 
+        case SshPacket.SSH_SMSG_SUCCESS :
         break ;
-        case SshPacket.SSH_SMSG_FAILURE : 
+        case SshPacket.SSH_SMSG_FAILURE :
         break ;
-        case SshPacket.SSH_SMSG_AUTH_RSA_CHALLENGE : 
+        case SshPacket.SSH_SMSG_AUTH_RSA_CHALLENGE :
         break ;
-     
+
      }
-  
-  
+
+
   }
   */
   public SshPacket( StreamCipher cipher ){
@@ -85,38 +85,38 @@ public class SshPacket {
      detectType()  ;
   }
   public SshPacket( StreamCipher cipher , byte [] data , int leng ){
-  
+
         _digest  = new Crc32() ;
         _cipher  = cipher ;
      int padding = 8 - ( leng % 8 ) ;
-     
+
      if( _cipher != null )
      _cipher.decrypt( data , 0 , data , 0 , leng + padding ) ;
-     
+
 //     System.out.println( " User dec : "+SshSmsgPublicKey.byteToHexString(data) ) ;
-     
+
      _digest.update( data , 0 ,  data.length-4) ;
-     
-     byte [] dig       = _digest.digest() ;    
+
+     byte [] dig       = _digest.digest() ;
      int pos           = padding ;
         _type          = data[pos++] ;
      int payloadLength = leng - 5 ;
         _payload       = new byte[payloadLength] ;
-        
+
      System.arraycopy( data , pos , _payload , 0 , payloadLength ) ;
      pos += payloadLength ;
-        
+
      int i ;
-     for( i = 0 ; 
+     for( i = 0 ;
           ( i < 4 ) && ( dig[i] == data[pos+i] ) ; i ++ ) ;
-        
+
      if( i < 4 ){
        System.out.println( " Got : "+byteToHexString( data ) ) ;
        throw new IllegalArgumentException( "Wrong crc" ) ;
      }
-     
-     
-     
+
+
+
   }
   public byte [] getPayload(){ return _payload ; }
   public int     getType(){    return _type ; }
@@ -141,12 +141,12 @@ public class SshPacket {
     else if( this instanceof SshMsgDebug       )_type = SSH_MSG_DEBUG ;
 //    else if( this instanceof SshCmsgEOF        )_type = SSH_CMSG_EOF ;
  //   else if( this instanceof SshSmsgStderrData )_type = SSH_SMSG_STDERR_DATA ;
-  
+
     return _type ;
   }
   public byte [] toByteArray(){ return null ; }
-  public byte [] toByteArray( StreamCipher cipher ){ 
-      throw new IllegalArgumentException( "toByteArray not overloaded" ) ; 
+  public byte [] toByteArray( StreamCipher cipher ){
+      throw new IllegalArgumentException( "toByteArray not overloaded" ) ;
   }
   public byte [] makePacket( byte [] payload ){
       return makePacket( _cipher , _type , payload ) ;
@@ -180,15 +180,15 @@ public class SshPacket {
      byte [] digest = _digest.digest() ;
      System.arraycopy(  digest , 0 ,out , pos , digest.length ) ;
      pos += digest.length ;
-     
+
 //     System.out.println( " noenc "+SshSmsgPublicKey.byteToHexString( out ) );
      if( cipher != null ){
         cipher.encrypt( out , encStart , out , encStart , pos - encStart ) ;
      }
 //     System.out.println( "   enc "+SshSmsgPublicKey.byteToHexString( out ) );
      return out ;
-     
-  
+
+
   }
   static public String byteToHexString( byte b ) {
        String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
@@ -196,13 +196,13 @@ public class SshPacket {
        else return s ;
   }
   static public String byteToHexString( byte [] b ) {
-      
+
 	  StringBuilder sb = new StringBuilder(b.length +1);
-	  
+
        for( int i = 0 ; i < b.length ; i ++ ) {
           sb.append(byteToHexString( b[i] ) ).append(" " ) ;
        }
-       return sb.toString() ;    
+       return sb.toString() ;
   }
 
   protected int intFromBytes( byte [] b , int off ){
