@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
 
 
@@ -154,7 +155,13 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	 * Exception arrived, record it and carry on.
 	 */
 	public void exceptionArrived( CellMessage request , Exception   exception ) {
-		_log.error( "Received remote exception: ", exception);
+        if( exception instanceof NoRouteToCellException) {
+            _log.info( "Sending message to {} failed: {}",
+                    ((NoRouteToCellException)exception).getDestinationPath(),
+                    exception.getMessage());
+        } else {
+            _log.error( "Received remote exception: {}", exception);
+        }
 	}
 
 	/**
