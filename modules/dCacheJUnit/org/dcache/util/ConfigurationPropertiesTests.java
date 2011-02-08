@@ -41,7 +41,7 @@ public class ConfigurationPropertiesTests {
     private static final String FORBIDDEN_PROPERTY_W_ERROR_NAME =
             "forbiddenPropertyWithError";
     private static final String FORBIDDEN_PROPERTY_W_ERROR_VALUE =
-            "An error message";
+            "an error message";
     private static final String FORBIDDEN_PROPERTY_W_ERROR_KEY =
             "(forbidden)" + FORBIDDEN_PROPERTY_W_ERROR_NAME;
 
@@ -158,9 +158,8 @@ public class ConfigurationPropertiesTests {
         _properties.put( DEPRECATED_PROPERTY_NAME, "some value");
         assertEquals(1, _log.size());
         assertEquals(Level.WARN, _log.get(0).getLevel());
-        assertEquals("The property " + DEPRECATED_PROPERTY_NAME +
-                     " is deprecated and will be removed " +
-                     "in future versions of dCache.",
+        assertEquals("Property " + DEPRECATED_PROPERTY_NAME +
+                     ": please review configuration; support for this property will be removed in the future",
                      _log.get(0).getFormattedMessage());
     }
 
@@ -169,8 +168,8 @@ public class ConfigurationPropertiesTests {
         _properties.put( OBSOLETE_PROPERTY_NAME, "some value");
         assertEquals(1, _log.size());
         assertEquals(Level.WARN, _log.get(0).getLevel());
-        assertEquals("The property " + OBSOLETE_PROPERTY_NAME +
-                     " is no longer used; consider removing this assignment.", _log.get(0).getFormattedMessage());
+        assertEquals("Property " + OBSOLETE_PROPERTY_NAME + ": " +
+                     "please remove this assignment; it has no effect", _log.get(0).getFormattedMessage());
     }
 
     @Test
@@ -179,8 +178,8 @@ public class ConfigurationPropertiesTests {
             _properties.put( FORBIDDEN_PROPERTY_NAME, "some value");
             fail( "no exception thrown");
         } catch (IllegalArgumentException e) {
-            assertEquals( "Adjusting property " + FORBIDDEN_PROPERTY_NAME +
-                          " is forbidden as different properties now control this aspect of dCache.",
+            assertEquals( "Property " + FORBIDDEN_PROPERTY_NAME + ": " +
+                          "may not be adjusted; this property no longer affects dCache",
                           e.getMessage());
         }
     }
@@ -191,7 +190,8 @@ public class ConfigurationPropertiesTests {
             _properties.put( FORBIDDEN_PROPERTY_W_ERROR_NAME, "some value");
             fail( "no exception thrown");
         } catch (IllegalArgumentException e) {
-            assertEquals( FORBIDDEN_PROPERTY_W_ERROR_VALUE, e.getMessage());
+            assertEquals( "Property " + FORBIDDEN_PROPERTY_W_ERROR_NAME + ": " +
+                          "may not be adjusted; " + FORBIDDEN_PROPERTY_W_ERROR_VALUE, e.getMessage());
         }
     }
 

@@ -221,25 +221,32 @@ public class ConfigurationProperties
 
         if(existingKey.hasAnnotations() && key.hasAnnotations()) {
             throw new IllegalArgumentException("Property " + name +
-                    " is assigned a value with annotations.  Remove \"" +
-                    key.getAnnotationDeclaration() + "\" from assignment.");
+                    ": annotated assignments are not allowed; remove \"" +
+                    key.getAnnotationDeclaration() + "\"");
         }
 
         if(existingKey.hasAnnotation(Annotation.FORBIDDEN)) {
-            throw new IllegalArgumentException(existingKey.getError());
+            throw new IllegalArgumentException(forbiddenErrorMessageFor(existingKey));
         }
 
         if(existingKey.hasAnnotation(Annotation.OBSOLETE)) {
-            _log.warn( "The property {} is no longer used; consider " +
-                       "removing this assignment.", name);
+            _log.warn( "Property {}: please remove this assignment; it has no effect", name);
         }
 
         if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
-            _log.warn( "The property {} is deprecated and will be removed " +
-                       "in future versions of dCache.", name);
+            _log.warn( "Property {}: please review configuration; support for this property will be removed in the future", name);
         }
     }
 
+    private String forbiddenErrorMessageFor(AnnotatedKey key)
+    {
+        String customError = key.getError();
+
+        String suffix = customError.isEmpty() ? "this property no longer affects dCache" :
+            customError;
+
+        return "Property " + key.getPropertyName() + ": may not be adjusted; " + suffix;
+    }
 
     @Override
     public synchronized Enumeration<?> propertyNames()
@@ -357,12 +364,7 @@ public class ConfigurationProperties
         private String errorFor(String value) {
             String error;
             if(_annotations.contains(Annotation.FORBIDDEN)) {
-                if(value.isEmpty()) {
-                    error = "Adjusting property " + _name + " is forbidden " +
-                    "as different properties now control this aspect of dCache.";
-                } else {
-                    error = value;
-                }
+                error = value;
             } else {
                 error = "";
             }
