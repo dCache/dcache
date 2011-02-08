@@ -30,6 +30,7 @@
         <format property="sortableTimestamp" timezone="UTC" pattern="yyyyMMddHHmmss" />
     </tstamp>
 
+    <property name="m2.home" value="${user.home}/.m2/repository" />
     <!-- external dependencies -->
     <artifact:dependencies pathId="dependency.classpath" filesetId="dependency.fileset" useScope="runtime">
         <!-- Remote repositories -->
@@ -48,6 +49,7 @@
                           url="http://download.java.net/maven/1/toplink.essentials"/>
         <remoteRepository id="ettrema-repo"
                           url="http://www.ettrema.com/maven2"/>
+        <localRepository id="local" path="${m2.home}" />
 
         <!-- Suppress some dependencies: Dependencies with scope
              'provided' are not included in the runtime classpath. We
