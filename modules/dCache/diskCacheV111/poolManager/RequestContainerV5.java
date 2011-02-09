@@ -24,7 +24,6 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
@@ -38,7 +37,6 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
@@ -120,7 +118,7 @@ public class RequestContainerV5
     private final int _stagingRetryInterval;
 
     /**
-     * define host selection behavior on restore retry
+     * define host selection behaviour on restore retry
      */
     private int _sameHostRetry = SAME_HOST_RETRY_NOTCHECKED ;
 
@@ -190,6 +188,7 @@ public class RequestContainerV5
         handler.mailForYou(message);
     }
 
+    @Override
     public void run(){
        try{
           while( ! Thread.interrupted() ){
@@ -695,12 +694,6 @@ public class RequestContainerV5
         return commandReply;
     }
 
-    private static final String [] ST_STRINGS = {
-
-        "Init" , "Done" , "Pool2Pool" , "Staging" , "Waiting" ,
-        "WaitingForStaging" , "WaitingForP2P" , "Suspended"
-    } ;
-
     ///////////////////////////////////////////////////////////////
     //
     // the read io request handler
@@ -1112,7 +1105,6 @@ public class RequestContainerV5
         //
         // and the heart ...
         //
-        private static final int RT_DONE       = 0 ;
         private static final int RT_OK         = 1 ;
         private static final int RT_FOUND      = 2 ;
         private static final int RT_NOT_FOUND  = 3 ;
@@ -1133,24 +1125,28 @@ public class RequestContainerV5
         private boolean    _overwriteCost     = false ;
 
         public class RunEngine implements ExtendedRunnable {
+           @Override
            public void run(){
                _cdc.restore();
               try{
                  stateLoop() ;
               }finally{
-                  _cdc.clear();
+                 CDC.clear();
                  synchronized( _fifo ){
                    _stateEngineActive = false ;
                  }
               }
            }
+
+           @Override
            public void runFailed(){
               synchronized( _fifo ){
                    _stateEngineActive = false ;
               }
            }
+
            @Override
-        public String toString() {
+           public String toString() {
               return PoolRequestHandler.this.toString();
            }
         }
