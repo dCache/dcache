@@ -220,9 +220,9 @@ public class ConfigurationProperties
         AnnotatedKey existingKey = getAnnotatedKey(name);
 
         if(existingKey.hasAnnotations() && key.hasAnnotations()) {
-            throw new IllegalArgumentException("Property " + name +
-                    ": annotated assignments are not allowed; remove \"" +
-                    key.getAnnotationDeclaration() + "\"");
+            throw new IllegalArgumentException("Property " + name + ": " +
+                    "remove \"" + key.getAnnotationDeclaration() + "\"; " +
+                    "annotated assignments are not allowed");
         }
 
         if(existingKey.hasAnnotation(Annotation.FORBIDDEN)) {
@@ -230,11 +230,12 @@ public class ConfigurationProperties
         }
 
         if(existingKey.hasAnnotation(Annotation.OBSOLETE)) {
-            _log.warn( "Property {}: please remove this assignment; it has no effect", name);
+            _log.warn(obsoleteErrorMessageFor(existingKey));
         }
 
         if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
-            _log.warn( "Property {}: please review configuration; support for this property will be removed in the future", name);
+            _log.warn( "Property {}: please review configuration; " +
+                    "support for this property will be removed in the future", name);
         }
     }
 
@@ -246,6 +247,15 @@ public class ConfigurationProperties
             customError;
 
         return "Property " + key.getPropertyName() + ": may not be adjusted; " + suffix;
+    }
+
+    private String obsoleteErrorMessageFor(AnnotatedKey key)
+    {
+        String customError = key.getError();
+
+        String suffix = customError.isEmpty() ? "it has no effect" : customError;
+
+        return "Property " + key.getPropertyName() + ": please remove this assignment; " + suffix;
     }
 
     @Override
@@ -318,6 +328,9 @@ public class ConfigurationProperties
         private static final Set<Annotation> FORBIDDEN_OBSOLETE_DEPRECATED =
             EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE, Annotation.DEPRECATED);
 
+        private static final EnumSet<Annotation> FORBIDDEN_OBSOLETE =
+            EnumSet.of(Annotation.FORBIDDEN, Annotation.OBSOLETE);
+
         private final String _name;
         private final String _annotationDeclaration;
         private final Set<Annotation> _annotations = EnumSet.noneOf(Annotation.class);
@@ -358,19 +371,8 @@ public class ConfigurationProperties
                 _name = declaration;
             }
 
-            _error = errorFor(propertyValue.toString());
+            _error = hasAnyOf(FORBIDDEN_OBSOLETE) ? propertyValue.toString() : "";
         }
-
-        private String errorFor(String value) {
-            String error;
-            if(_annotations.contains(Annotation.FORBIDDEN)) {
-                error = value;
-            } else {
-                error = "";
-            }
-            return error;
-        }
-
 
         private int countDeclaredAnnotationsFrom(Set<Annotation> items) {
             EnumSet<Annotation> a = EnumSet.copyOf(items);

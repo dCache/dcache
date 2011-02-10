@@ -34,6 +34,13 @@ public class ConfigurationPropertiesTests {
     private static final String OBSOLETE_PROPERTY_KEY =
             "(obsolete)" + OBSOLETE_PROPERTY_NAME;
 
+    private static final String OBSOLETE_PROPERTY_W_ERROR_NAME =
+        "obsoletePropertyWithError";
+    private static final String OBSOLETE_PROPERTY_W_ERROR_VALUE =
+        "an error message";
+    private static final String OBSOLETE_PROPERTY_W_ERROR_KEY =
+            "(obsolete)" + OBSOLETE_PROPERTY_W_ERROR_NAME;
+
     private static final String FORBIDDEN_PROPERTY_NAME = "forbiddenProperty";
     private static final String FORBIDDEN_PROPERTY_KEY =
             "(forbidden)" + FORBIDDEN_PROPERTY_NAME;
@@ -77,6 +84,8 @@ public class ConfigurationPropertiesTests {
         _properties = new ConfigurationProperties();
         _properties.put( NORMAL_PROPERTY_NAME, NORMAL_PROPERTY_VALUE);
         _properties.put( OBSOLETE_PROPERTY_KEY, "");
+        _properties.put( OBSOLETE_PROPERTY_W_ERROR_KEY,
+                OBSOLETE_PROPERTY_W_ERROR_VALUE);
         _properties.put( FORBIDDEN_PROPERTY_KEY, "");
         _properties.put( FORBIDDEN_PROPERTY_W_ERROR_KEY,
                 FORBIDDEN_PROPERTY_W_ERROR_VALUE);
@@ -136,6 +145,12 @@ public class ConfigurationPropertiesTests {
     }
 
     @Test
+    public void testObsoleteWithErrorPropertyContainsKey() {
+        assertFalse( "testing obsolete property missing",
+                _properties.containsKey( OBSOLETE_PROPERTY_W_ERROR_NAME));
+    }
+
+    @Test
     public void testForbiddenWithErrorPropertyContainsKey() {
         assertFalse( "testing obsolete property missing",
                 _properties.containsKey( FORBIDDEN_PROPERTY_W_ERROR_NAME));
@@ -170,6 +185,15 @@ public class ConfigurationPropertiesTests {
         assertEquals(Level.WARN, _log.get(0).getLevel());
         assertEquals("Property " + OBSOLETE_PROPERTY_NAME + ": " +
                      "please remove this assignment; it has no effect", _log.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testObsoleteWithErrorPropertyPut() {
+        _properties.put( OBSOLETE_PROPERTY_W_ERROR_NAME, "some value");
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("Property " + OBSOLETE_PROPERTY_W_ERROR_NAME + ": " +
+                     "please remove this assignment; " + OBSOLETE_PROPERTY_W_ERROR_VALUE, _log.get(0).getFormattedMessage());
     }
 
     @Test
