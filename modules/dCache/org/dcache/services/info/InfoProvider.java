@@ -107,8 +107,14 @@ public class InfoProvider extends AbstractCell {
      */
     public InfoProvider( String cellName, String args) throws InterruptedException, ExecutionException {
         super( cellName, args);
-
         _sum = new StateMaintainer( _state, getNucleus());
+
+        doInit();
+    }
+
+    @Override
+    public void init() {
+		_log.info( "InfoProvider starting...");
         _state.setStateUpdateManager( _sum);
 
         StateExhibitor exhibitor = _state;
@@ -123,19 +129,11 @@ public class InfoProvider extends AbstractCell {
         addSerialiser( new PrettyPrintTextSerialiser( exhibitor));
         _currentSerialiser = _availableSerialisers.get( DEFAULT_SERIALISER_NAME);
 
-        useInterpreter( true );
         buildMessageHandlerChain();
         startDgaScheduler( exhibitor);
         addDefaultConduits( exhibitor);
         addDefaultWatchers();
         startConduits();
-
-        doInit();
-    }
-
-    @Override
-    public void init() {
-		_log.info( "InfoProvider starting...");
 	}
 
 	/**

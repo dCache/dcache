@@ -1,17 +1,12 @@
 package diskCacheV111.services.web;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.io.IOException;
 import java.io.PrintWriter;
 
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
-import dmg.util.CommandExitException;
 
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.poolManager.PoolManagerCellInfo;
@@ -60,17 +55,22 @@ public class PoolInfoObserverV3 extends AbstractCell
         _pool = new CellStub(this, null, 60000);
 
         _refreshThread = new Thread(THREAD_NAME) {
+                @Override
                 public void run() {
-                    while (!Thread.interrupted()) {
-                        try {
-                            refresh();
+                    try {
+                        while (!Thread.interrupted()) {
+                            try {
+                                refresh();
+                            } catch (CacheException e) {
+                                _log.error("Failed to update topology map: " + e.getMessage());
+                            } catch (RuntimeException e) {
+                                _log.error("Failed to update topology map: " + e);
+                            }
+
                             Thread.sleep(_interval * 1000);
-                        } catch (CacheException e) {
-                            _log.error("Failed to update topology map: " + e.getMessage());
-                        } catch (InterruptedException e) {
-                        } catch (RuntimeException e) {
-                            _log.error("Failed to update topology map: " + e);
                         }
+                    } catch(InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     }
                 }
             };

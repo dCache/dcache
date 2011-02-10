@@ -1,9 +1,7 @@
 package  dmg.cells.services.login ;
 
-import java.net.* ;
 import java.io.* ;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.protocols.ssh.* ;
@@ -248,9 +246,11 @@ public class      SshKeyManager
      _log.info( " CellMessage To     : "+msg.getDestinationAddress() ) ;
      _log.info( " CellMessage Object : "+msg.getMessageObject() ) ;
    }
-   public void ceanUp(){
+   @Override
+   public void cleanUp(){
      _cellContext.remove( "Ssh" ) ;
      _log.info( "finished" ) ;
+     _updateThread.interrupt();
    }
    public void   exceptionArrived( ExceptionEvent ce ){
      _log.info( " exceptionArrived "+ce ) ;

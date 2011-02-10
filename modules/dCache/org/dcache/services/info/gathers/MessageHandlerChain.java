@@ -254,6 +254,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
     @Override
     public void exceptionArrived(CellMessage request, Exception exception) {
         remove( request.getLastUOID());
-        _log.error( "Received remote exception: ", exception);
+        if( exception instanceof NoRouteToCellException) {
+            _log.info( "Sending message to {} failed: {}",
+                    ((NoRouteToCellException)exception).getDestinationPath(),
+                    exception.getMessage());
+        } else {
+            _log.error( "Received remote exception: ", exception);
+        }
     }
 }

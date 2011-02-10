@@ -18,7 +18,7 @@ public class CellMessage implements Cloneable , Serializable {
   private long        _ttl = Long.MAX_VALUE;
   private int         _mode ;
   private UOID        _umid , _lastUmid ;
-  private byte []     _messageStream = null ;
+  private final byte[] _messageStream;
   private boolean     _isRouted      = false ;
   private int         _hopCount      = 0 ;
   private boolean     _isAcknowledge = false ;
@@ -40,6 +40,7 @@ public class CellMessage implements Cloneable , Serializable {
      _umid         = new UOID() ;
      _lastUmid     = _umid ;
      _session      = CDC.getSession();
+     _messageStream = null;
   }
   @Override
   public String toString(){
@@ -133,13 +134,15 @@ public boolean equals( Object obj ){
   }
   CellMessage(){
      _mode = DUMMY_MODE ;
+     _messageStream = null;
      return ;
   }
   public CellMessage( CellMessage cm ) throws SerializationException {
      if( cm._mode == ORIGINAL_MODE ){
-        _originalToStream( cm ) ;
+        _messageStream = _originalToStream( cm ) ;
      }else{
-        _streamToOriginal( cm ) ;
+         _streamToOriginal( cm ) ;
+         _messageStream = null;
      }
   }
   void addSourceAddress( CellAddressCore source ){
@@ -168,7 +171,7 @@ public boolean equals( Object obj ){
      _session       = cm._session;
      _ttl           = cm._ttl;
   }
-  private void _originalToStream( CellMessage cm )
+  private byte[] _originalToStream( CellMessage cm )
       throws SerializationException {
      _copyInternalStuff( cm ) ;
      _mode          = STREAM_MODE ;
@@ -189,8 +192,8 @@ public boolean equals( Object obj ){
      } catch (IOException e) {
          throw new SerializationException("Failed to serialize object: " + e, e);
      }
-     _messageStream = array.toByteArray() ;
 
+     return array.toByteArray() ;
   }
   private void _streamToOriginal( CellMessage cm )
       throws SerializationException {

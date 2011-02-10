@@ -73,6 +73,16 @@ public class      HttpServiceCell
                 _log.warn(e.getMessage());
             }
         }
+
+        if( _listenThread != null) {
+            _listenThread.interrupt();
+            try {
+                _listenThread.join();
+            } catch (InterruptedException e1) {
+                _log.warn("Interrupted while waiting for listener thread to end");
+            }
+        }
+
         super.cleanUp();
     }
 
@@ -294,23 +304,27 @@ public class      HttpServiceCell
        addCommandListener(engine);
        return engine ;
    }
+
+   @Override
    public void run(){
-       Socket         socket =null ;
-       while( true ){
-          _serial ++ ;
-          try{
-             socket = _listener.accept() ;
-             _log.info( "Connection ("+_serial+") from : "+socket ) ;
+       Socket socket=null;
+       try {
+           while( true ){
+               _serial ++ ;
+               socket = _listener.accept();
+               _log.info( "Connection ("+_serial+") from : "+socket ) ;
 
-             new Thread(
-                     new HtmlService( _serial , socket ) ,
-                     socket.getInetAddress().toString()
-                 ).start() ;
-          }catch( Exception ee ){
-             _log.warn( "Problem in connection from "+socket+" : "+ee ) ;
-             break  ;
-          }
-
+               new Thread(
+                       new HtmlService( _serial , socket ) ,
+                       socket.getInetAddress().toString()
+               ).start() ;
+           }
+       } catch(SocketException e) {
+           /* We get a SocketException when the ServerSocket closes, and that's the only
+            * way to get out of the accept.  So we must ignore SocketExceptions.
+            */
+       } catch(IOException e) {
+           _log.warn("Problem in connection from "+socket+" : " + e);
        }
        _log.info("Listener Done" );
    }
@@ -365,7 +379,7 @@ public class      HttpServiceCell
        public String getPassword(){ doAuthorization() ; return _password ; }
        //
        //
-       private HtmlService( int serial , Socket socket ) throws Exception {
+       private HtmlService( int serial , Socket socket ) throws IOException {
 
           _socket = socket ;
           _serial = serial ;
