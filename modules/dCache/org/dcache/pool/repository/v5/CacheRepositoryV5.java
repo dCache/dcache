@@ -312,7 +312,7 @@ public class CacheRepositoryV5
          * generated to prepopulate the cache. That may take some
          * time. Therefore we do this outside the synchronization.
          */
-        _log.info("Reading inventory from " + _store);
+        _log.warn("Reading inventory from " + _store);
         MetaDataCache cache = new MetaDataCache(_store);
 
         synchronized (this) {
