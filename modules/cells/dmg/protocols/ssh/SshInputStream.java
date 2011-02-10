@@ -47,6 +47,11 @@ public class SshInputStream extends InputStream {
       while( true ){
          SshPacket packet = null ;
          packet = _core.readPacket() ;
+         if( packet == null) {
+             _exitConfirmed = true;
+             _core.confirmed();
+             return false;
+         }
          switch( packet.getType() ){
             case SshPacket.SSH_CMSG_STDIN_DATA :{
             
