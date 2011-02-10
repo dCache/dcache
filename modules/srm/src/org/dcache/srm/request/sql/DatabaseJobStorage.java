@@ -1354,7 +1354,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 Thread.sleep(update_period);
             }
             catch(InterruptedException ie) {
-                logger.error("database update thread interrupted");
+                logger.info("database update thread interrupted");
                 return;
             }
             long currenttime = System.currentTimeMillis();

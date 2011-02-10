@@ -15,13 +15,9 @@ import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.ExceptionEvent;
-import dmg.cells.nucleus.KillEvent;
-import dmg.cells.nucleus.MessageEvent;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -30,9 +26,12 @@ import dmg.util.HttpResponseEngine;
  * This class provides support for querying the info cell via the admin web-interface.  It
  * implements the HttpResponseEngine to handle requests at a particular point (a specific alias).
  * <p>
- * Currently it provides only a complete XML dump of the info cell.  If the info cell cannot
- * be contacted or takes too long to reply, or there was a problem when (de-)serialising the
- * Message then an appropriate HTTP status code (50x server-side error) is generated.
+ * It provides either a complete XML dump of the info cell or the subtree matching the supplied
+ * list of path elements.
+ * <p>
+ * If the info cell cannot be contacted or takes too long to reply, or there was a problem when
+ * (de-)serialising the Message then an appropriate HTTP status code (50x server-side error)
+ * is generated.
  * <p>
  * It is anticipated that clients query this information (roughly) once per minute.
  * <p>
@@ -41,11 +40,11 @@ import dmg.util.HttpResponseEngine;
  * that make many requests per second.
  * <p>
  * Future versions may include additional functionality, such as server-side transformation of
- * the XML data into another format, or selecting only part of the available XML tree.
+ * the XML data into another format.
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class InfoHttpEngine implements HttpResponseEngine, Cell {
+public class InfoHttpEngine implements HttpResponseEngine {
 
 	private static Logger _log = LoggerFactory.getLogger( HttpResponseEngine.class);
 
@@ -68,11 +67,11 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 	/**
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
 	 */
-	public InfoHttpEngine() {
+	public InfoHttpEngine(CellNucleus nucleus, String[] args) {
         if( _log.isInfoEnabled())
         	_log.info("in InfoHttpEngine constructor");
 
-		_nucleus = new CellNucleus( this, this.getClass().getSimpleName());
+		_nucleus = nucleus;
 	}
 
 	/**
@@ -212,15 +211,4 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 		return serialisedData.getBytes();
 	}
 	
-		
-   public String getInfo() {
-	   return "working normally";
-   }
-   
-   /**
-    *  We don't expect any messages to arrive outside of our sendAndWait() above.
-    */
-   public void   messageArrived( MessageEvent me ) {}   
-   public void prepareRemoval( KillEvent killEvent) {}
-   public void exceptionArrived( ExceptionEvent ce) {}
 }

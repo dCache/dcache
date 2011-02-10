@@ -49,6 +49,11 @@ public class NfsExcecutionService implements MoverExecutorService {
             _nfsIO = new NFSv4MoverHandler(portRange);
     }
 
+
+    public void shutdown() {
+        _nfsIO.shutdown();
+    }
+
     @Override
     public Future execute(PoolIORequest request, final CompletionHandler completionHandler) {
 

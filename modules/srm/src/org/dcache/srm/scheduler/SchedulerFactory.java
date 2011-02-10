@@ -99,6 +99,12 @@ public class SchedulerFactory {
         this.name = name;
     }
 
+    public void shutdown() {
+        for( Scheduler scheduler : schedulerMap.values()) {
+            scheduler.stop();
+        }
+    }
+
     public static void initSchedulerFactory(Configuration config, String name) {
         initSchedulerFactory( new SchedulerFactory(config,name));
     }

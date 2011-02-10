@@ -133,4 +133,8 @@ public class NFSv4MoverHandler {
     public InetSocketAddress getLocalAddress(){
         return _rpcService.getInetSocketAddress(IpProtocolType.TCP);
     }
+
+    public void shutdown() {
+        _rpcService.stop();
+    }
 }
