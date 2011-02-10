@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -74,17 +72,10 @@ public class PoolManagerV5
     private int _counterSelectWritePool= 0 ;
     private int _counterSelectReadPool = 0 ;
 
-    private Map _readHandlerList   = new HashMap() ;
-    private final Object  _readHandlerLock   = new Object() ;
-
     private PoolSelectionUnit _selectionUnit ;
     private PoolMonitorV5     _poolMonitor   ;
 
-    private long _pnfsTimeout      = 15 * 1000;
     private long _readPoolTimeout  = 15 * 1000;
-    private long _poolFetchTimeout = 5 * 24 * 3600 * 1000;
-    private long _writePoolTimeout = 15 * 1000;
-    private long _poolTimeout      = 15 * 1000;
 
     private CostModule   _costModule  ;
     private CellPath     _poolStatusRelayPath = null ;
@@ -92,7 +83,6 @@ public class PoolManagerV5
     private RequestContainerV5 _requestContainer ;
     private WatchdogThread     _watchdog         = null ;
 
-    private boolean _sendCostInfo  = false ;                   //VP
     private boolean _quotasEnabled = false ;
     private String  _quotaManager  = "none";
 
@@ -137,11 +127,6 @@ public class PoolManagerV5
     {
         _quotaManager = quotaManager;
         _quotasEnabled = !_quotaManager.equals("none");
-    }
-
-    public void setSendCostInfo(boolean sendCostInfo)
-    {
-        _sendCostInfo = sendCostInfo;
     }
 
     public void init()
@@ -224,6 +209,7 @@ public class PoolManagerV5
             _log.info("WatchdogThread initialized with : " + this);
         }
 
+        @Override
         public void run() {
             _log.info("watchdog thread activated");
             while (true) {
@@ -316,25 +302,14 @@ public class PoolManagerV5
        boolean isRead  = args.getOpt("read")  != null ;
        long    timeout = Integer.parseInt(args.argv(0)) * 1000 ;
        if( ( ! isWrite ) && ( ! isRead ) ){
-          _readPoolTimeout = _writePoolTimeout = timeout ;
+          _readPoolTimeout = timeout ;
           _poolMonitor.setPoolTimeout(_readPoolTimeout);
           return "" ;
        }
-       if( isWrite )_writePoolTimeout = timeout ;
        if( isRead  ){
           _readPoolTimeout = timeout ;
           _poolMonitor.setPoolTimeout(_readPoolTimeout);
        }
-       return "" ;
-    }
-    public String hh_set_timeout_pnfs = "<timeout/secs>" ;
-    public String ac_set_timeout_pnfs_$_1( Args args )throws CommandException{
-       _pnfsTimeout = Integer.parseInt(args.argv(0)) * 1000 ;
-       return "" ;
-    }
-    public String hh_set_timeout_fetch = "<timeout/min>" ;
-    public String ac_set_timeout_fetch_$_1( Args args )throws CommandException{
-       _poolFetchTimeout = Integer.parseInt(args.argv(0)) * 1000 * 60 ;
        return "" ;
     }
     public String hh_getpoolsbylink = "<linkName> [-size=<filesize>]" ;
@@ -343,11 +318,11 @@ public class PoolManagerV5
        long size = sizeString == null ? 50000000L : Long.parseLong( sizeString ) ;
        String linkName = args.argv(0) ;
 
-       List list = _poolMonitor.queryPoolsByLinkName( linkName , size ) ;
+       List<PoolCostCheckable> list = _poolMonitor.queryPoolsByLinkName( linkName , size ) ;
 
        StringBuffer sb = new StringBuffer() ;
-       for( Iterator i = list.iterator() ; i.hasNext() ; ){
-          sb.append( i.next().toString() ).append("\n");
+       for(PoolCostCheckable poolCost : list) {
+           sb.append(poolCost.toString()).append("\n");
        }
        return sb.toString() ;
     }
@@ -492,7 +467,7 @@ public class PoolManagerV5
         throws CacheException
     {
         try {
-            List<PoolManagerPoolInformation> pools = new ArrayList();
+            List<PoolManagerPoolInformation> pools = new ArrayList<PoolManagerPoolInformation>();
             for (String name: msg.getPoolNames()) {
                 try {
                     pools.add(_poolMonitor.getPoolInformation(name));
@@ -630,18 +605,48 @@ public class PoolManagerV5
        private XProtocolInfo( String hostName ){
           _host[0] = hostName ;
        }
-       public String getProtocol(){ return "DCap" ; }
-       public int    getMinorVersion(){ return 0 ; }
-       public int    getMajorVersion(){ return 0 ; }
-       public String getVersionString(){ return "0.0" ; }
-       public String [] getHosts(){ return _host ; }
-       public int       getPort(){ return 0 ; }
-       public boolean isFileCheckRequired() { return true; }
-        @Override
-        public InetSocketAddress getSocketAddress() {
-            // enforced by interface
-            return null;
-        }
+
+       @Override
+       public String getProtocol()
+       {
+           return "DCap";
+       }
+
+       @Override
+       public int getMinorVersion()
+       {
+           return 0;
+       }
+
+       @Override
+       public int getMajorVersion()
+       {
+           return 0;
+       }
+
+       @Override
+       public String getVersionString()
+       {
+           return "0.0";
+       }
+
+       @Override
+       public String[] getHosts()
+       {
+           return _host;
+       }
+
+       @Override
+       public int getPort()
+       {
+           return 0;
+       }
+
+       @Override
+       public InetSocketAddress getSocketAddress() {
+           // enforced by interface
+           return null;
+       }
     }
     private static class XStorageInfo extends GenericStorageInfo {
 
@@ -672,13 +677,12 @@ public class PoolManagerV5
                                                       storageInfo ,
                                                       protocolInfo, null ) ;
 
-          List available = _pnfsFileLocation.getFileAvailableMatrix() ;
+          List<List<PoolCostCheckable>> available = _pnfsFileLocation.getFileAvailableMatrix() ;
 
-          Iterator i = ((List)available.get(0)).iterator() ;
           StringBuffer sb = new StringBuffer() ;
           sb.append("Available and allowed\n");
-          while( i.hasNext() ){
-             sb.append("  ").append( i.next().toString() ).append("\n");
+          for( PoolCostCheckable cost : available.get(0)) {
+              sb.append("  ").append( cost.toString() ).append("\n");
           }
           sb.append("Allowed (not available)\n");
 
@@ -803,6 +807,7 @@ public class PoolManagerV5
             new Thread(this, "LinkGroupSelectionTask").start();
         }
 
+        @Override
         public void run()
         {
             long started = System.currentTimeMillis();
@@ -835,8 +840,6 @@ public class PoolManagerV5
         {
             StorageInfo storageInfo = _message.getStorageInfo();
             ProtocolInfo protocolInfo = _message.getProtocolInfo();
-            long expectedLength =
-                determineExpectedFileSize(_message.getFileSize(), storageInfo);
             String protocol =
                 protocolInfo.getProtocol() + "/" + protocolInfo.getMajorVersion();
             String hostName =
@@ -894,6 +897,7 @@ public class PoolManagerV5
             new Thread(this, "writeHandler").start();
         }
 
+       @Override
        public void run(){
 
            StorageInfo  storageInfo  = _request.getStorageInfo() ;
