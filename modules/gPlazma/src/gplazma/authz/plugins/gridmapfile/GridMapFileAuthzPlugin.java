@@ -61,11 +61,11 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
         return authorize(subjectDN, null, null, desiredUserName, serviceUrl, socket);
     }
 
+    @Override
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
         GridMapFileHandler gridmapServ;
-        //DCacheSRMauthzRecordsService storageRecordsServ;
         this.desiredUserName = desiredUserName;
         String user_name;
 
@@ -107,15 +107,4 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
 
         return gauthrec;
     }
-
-
-    //private gPlazmaAuthorizationRecord nullGridMapRecord(String subjectDN, String role) {
-    //    if (authRecord == null) {
-    //        warn("grid-mapfile plugin: Authorization denied for user");
-    //        warn("with subject DN: " + subjectDN + " and role " + role);
-    //    }
-    //
-    //    return null;
-    //}
-
 } //end of class GridMapFileAuthzPlugin

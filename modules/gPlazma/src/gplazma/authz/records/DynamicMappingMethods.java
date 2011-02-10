@@ -63,14 +63,12 @@ public class DynamicMappingMethods {
     } catch(Exception ase) {
 	  System.out.println("Exception in reading grid-uidmap configuration file");
       System.out.println("/etc/grid-security/grid-uidmap" + " " + ase);
-	  //throw new AuthorizationException (ase.toString());
       throw ase;
     }
 
 	try {
 	  UID = gridmapServ.getMappedUID(subjectDN);
 	} catch(Exception e) {
-	  //throw new AuthorizationException(e.toString());
       throw e;
     }
 
@@ -79,7 +77,6 @@ public class DynamicMappingMethods {
     if (UID == null) {
 	  String denied = /*DENIED_MESSAGE + */": Cannot determine UID from grid-uidmap file for DN " + subjectDN;
       System.out.println(denied);
-      //throw new AuthorizationException(denied);
       throw new Exception("Cannot determine UID from grid-uidmap file for DN " + subjectDN);
     }
 
@@ -96,14 +93,12 @@ public class DynamicMappingMethods {
     } catch(Exception ase) {
 	  System.out.println("Exception in reading grid-gidmap configuration file");
       System.out.println("/etc/grid-security/grid-gidmap" + " " + ase);
-	  //throw new AuthorizationException (ase.toString());
       throw ase;
     }
 
 	try {
 	  GID = gridmapServ.getMappedGID(role);
 	} catch(Exception e) {
-	  //throw new AuthorizationException(e.toString());
       throw e;
     }
 
@@ -112,7 +107,6 @@ public class DynamicMappingMethods {
     if (GID == null) {
 	  String denied = /*DENIED_MESSAGE + */": Cannot determine GID from grid-gidmap file for role " + role;
       System.out.println(denied);
-      //throw new AuthorizationException(denied);
       throw new Exception("Cannot determine GID from grid-gidmap file for role " + role);
     }
 

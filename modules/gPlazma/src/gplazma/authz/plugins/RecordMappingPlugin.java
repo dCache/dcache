@@ -90,10 +90,6 @@ public abstract class RecordMappingPlugin extends CachingPlugin {
         throw new AuthorizationException(denied);
     }
 
-       //String fsroot = authRecord.FsRoot; //if(root==null) {
-       //int priority = authRecord.priority;
-       //boolean readonlyflag = authRecord.ReadOnly;
-
         return authRecord;
     }
 

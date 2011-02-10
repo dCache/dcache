@@ -8,8 +8,6 @@ package gplazma.authz.plugins.vorolemap;
 
 import org.glite.voms.FQAN;
 
-//import org.opensciencegrid.authz.ac.FQAN;
-
 
 /**
  *

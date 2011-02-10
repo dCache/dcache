@@ -31,11 +31,10 @@ public class runVORoleMap {
 		if (fqan == null) fqan="";
 		fqan = fqan.trim();
 		String gridFineGrainIdentity = dn.concat(fqan);
-		//System.out.println("gridFineGrainIdentity being passed to service:" +gridFineGrainIdentity);
 
       try {
 	  	String gotName = gplRoleAuthz.getMappedUsername(gridFineGrainIdentity);
-		
+
            System.out.println(" Username received as:        " +gotName);
       } catch(Exception e) {
          System.err.println("Exception:" + e);

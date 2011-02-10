@@ -1,4 +1,3 @@
-//package diskCacheV111.services.authorization.authz.records;
 package gplazma.authz.records;
 
 import java.lang.*;
@@ -31,7 +30,6 @@ public class runDCacheSRMauthzRecordsService {
       try {
          gPlazmaAuthorizationRecord authRecord = dcacheSrmRecords.getStorageUserRecord(user_name);
          if (authRecord != null) {
-           //return authRecord;
            String username_got = authRecord.getUsername();
            boolean readonly = authRecord.isReadOnly();
            int priority = authRecord.getPriority();

@@ -94,7 +94,6 @@ public class VORoleMapHandler {
 
 			if(thirdQuote == -1) {
 					mappedUsername = thisLine.substring(secondQuote+1).trim();
-					//System.out.println("mappedUsername parsed from file as: " +mappedUsername);
 			}
 			else {
 				int fourthQuote = thisLine.indexOf('\"', thirdQuote+1);
@@ -102,12 +101,10 @@ public class VORoleMapHandler {
 					continue;
 				}
 				gridVORole = thisLine.substring(thirdQuote+1, fourthQuote).trim();
-				//System.out.println("gridVORole parsed from file as: " +gridVORole);
 				mappedUsername = thisLine.substring(fourthQuote+1).trim();
 			}
 
       String gridFineGrainIdentity = gridSubjectDN.concat(gridVORole);
-			//System.out.println("gridFineGrainIdentity parsed from file as: " +gridFineGrainIdentity);
 			if(mappedUsername != null && !mappedUsername.equals("")) {
 				fillMap(gridFineGrainIdentity, mappedUsername);
 			}

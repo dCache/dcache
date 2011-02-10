@@ -156,35 +156,30 @@ public class AuthorizationConfig {
 
         if ("ON".equals(switchOfGPLiteVORoleMapping)) {
             int priorityOfGPLiteVORoleMapping = getGPLiteVORoleMappingPriority();
-            //log.trace("priorityOfGPLiteVORoleMapping is: " +priorityOfGPLiteVORoleMapping);
             if (priorityOfGPLiteVORoleMapping > 0 && priorityOfGPLiteVORoleMapping < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(GPLAZMA_LITE_VOROLE_MAPPING_SIGNAL, priorityOfGPLiteVORoleMapping-1);
             }
         }
         if ("ON".equals(switchOfGridMapFile)) {
             int priorityOfGridMapFile = getGridMapFilePriority();
-            //log.trace("priorityOfGridMapFile is: " +priorityOfGridMapFile);
             if (priorityOfGridMapFile > 0 && priorityOfGridMapFile < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(GRIDMAPFILE_SIGNAL, priorityOfGridMapFile-1);
             }
         }
         if ("ON".equals(switchOfVOMapping)) {
             int priorityOfVOMapping = getVOMappingPriority();
-            //log.trace("priorityOfVOMapping is: " +priorityOfVOMapping);
             if (priorityOfVOMapping > 0 && priorityOfVOMapping < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(VO_MAPPING_SIGNAL, priorityOfVOMapping-1);
             }
         }
         if ("ON".equals(switchOfXACMLMapping)) {
             int priorityOfXACMLeMapping = getXACMLMappingPriority();
-            //log.trace("priorityOfXACMLeMapping is: " +priorityOfXACMLeMapping);
             if (priorityOfXACMLeMapping > 0 && priorityOfXACMLeMapping < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(XACML_MAPPING_SIGNAL, priorityOfXACMLeMapping-1);
             }
         }
         if ("ON".equals(switchOfKpwd)) {
             int priorityOfKpwd = getKpwdPriority();
-            //log.trace("priorityOfKpwd is: " +priorityOfKpwd);
             if (priorityOfKpwd > 0 && priorityOfKpwd < MAX_PLUGINS+1) {
                 pluginPriorityConfig.setElementAt(KPWD_SIGNAL, priorityOfKpwd-1);
             }
@@ -228,7 +223,6 @@ public class AuthorizationConfig {
     private int getPriority(String thisPriorityMark)
             throws Exception {
         String priority = (String)authServConfig.get(thisPriorityMark);
-        //log.trace("string priority of " +thisPriorityMark+ " is :" +priority);
         if (priority != null) {
             priority = priority.replace('\"',' ').trim();
         }

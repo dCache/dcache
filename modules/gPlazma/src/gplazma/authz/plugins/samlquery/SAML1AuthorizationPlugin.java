@@ -30,6 +30,7 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
         logger.info("saml-vo-mapping plugin now loaded for URL " + mappingServiceURL);
     }
 
+    @Override
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
@@ -79,7 +80,6 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             }
             catch (Exception e ) {
                 logger.error(" Exception occurred in mapCredentials: " + e);
-                //e.printStackTrace();
                 throw new AuthorizationException(e.toString());
             }
 

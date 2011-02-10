@@ -26,8 +26,6 @@ public abstract class AuthorizationPlugin {
     long authRequestID;
     public static final String DENIED_MESSAGE="Permission Denied";
     public static final String REVOCATION_MESSAGE=DENIED_MESSAGE+" - revocation.";
-    //public static final Class STR_CLASS = "z".getClass();
-    //public static final Class INT_CLASS = Integer.TYPE;
 
     public AuthorizationPlugin(long authRequestID) {
         this.authRequestID = authRequestID;
@@ -37,95 +35,9 @@ public abstract class AuthorizationPlugin {
         return authRequestID;
     }
 
-    /*public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
-            throws AuthorizationException {
-        return null;
-    }*/
 
     public abstract gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException;
-
-
-    //public void setLogLevel	(String level) {
-    //}
-
-    /*public gPlazmaAuthorizationRecord getAuthRecord(String username, String subjectDN, String role) throws AuthorizationException {
-
-       DCacheSRMauthzRecordsService storageRecordsServ;
-
-       try {
-         storageRecordsServ = new DCacheSRMauthzRecordsService(storageAuthzPath);
-       } catch(Exception ase) {
-         esay("Exception in reading storage-authzdb configuration file: ");
-         esay(storageAuthzPath + " " + ase);
-         throw new AuthorizationException(ase.toString());
-       }
-
-       gPlazmaAuthorizationRecord authRecord = storageRecordsServ.getStorageUserRecord(username);
-
-       if (authRecord == null) {
-         esay("A null record was received from the storage authorization service.");
-         return null;
-       }
-
-       if(authRecord instanceof DynamicAuthorizationRecord) {
-         DynamicAuthorizationRecord dynrecord = (DynamicAuthorizationRecord) authRecord;
-         dynrecord.subjectDN = subjectDN;
-         dynrecord.role = role;
-         authRecord = getDynamicRecord(username, dynrecord);
-       }
-
-       String  user=authRecord.Username; if(user==null) {
-         String denied = DENIED_MESSAGE + ": received null username " + user;
-         warn(denied);
-         throw new AuthorizationException(denied);
-       }
-
-       //Integer uid = localId.getUID(); if(uid==null) {
-       int uid = authRecord.UID; if(uid==-1) {
-         String denied = DENIED_MESSAGE + ": uid not found for " + user;
-         warn(denied);
-         throw new AuthorizationException(denied);
-       }
-
-       //Integer gid = localId.getGID(); if(gid==null) {
-       int[] gids = authRecord.GIDs; if(gids[0]==-1) {
-         String denied = DENIED_MESSAGE + ": gids not found for " + user;
-         warn(denied);
-         throw new AuthorizationException(denied);
-       }
-
-           //String home = localId.getRelativeHomePath(); if(home==null) {
-       String home = authRecord.Home; if(home==null) {
-         String denied = DENIED_MESSAGE + ": relative home path not found for " + user;
-         warn(denied);
-         throw new AuthorizationException(denied);
-       }
-
-           //String root = localId.getRootPath(); if(root==null) {
-       String root = authRecord.Root; if(root==null) {
-         String denied = DENIED_MESSAGE + ": root path not found for " + user;
-         warn(denied);
-         throw new AuthorizationException(denied);
-       }
-
-       String fsroot = authRecord.FsRoot; //if(root==null) {
-       int priority = authRecord.priority;
-
-       boolean readonlyflag = authRecord.ReadOnly;
-
-       debug("Plugin now forming user authorization records...");
-       HashSet principals = new HashSet();
-
-       //UserAuthRecord authRecordtoReturn = new UserAuthRecord(user, subjectDN, role, readonlyflag, priority, uid, gids, home, root, fsroot, principals);
-       //if (authRecordtoReturn.isValid()) {
-       //  debug("User authorization record has been formed and is valid.");
-       //}
-
-      // return authRecordtoReturn;
-         return authRecord;
-     }
-    */
 
 
     public String getDynamicString(String dynamic_mapper, String id_method, String subjectDN, String role) throws AuthorizationException {
@@ -152,19 +64,12 @@ public abstract class AuthorizationPlugin {
         Object ret_val;
 
         try {
-            //Class DynamicMapper = Class.forName(dynamic_mapper);
-            //Method meth = DynamicMapper.getMethod(id_method, STR_CLASS, STR_CLASS);
             Method meth = (Method) DCacheSRMauthzRecordsService.getDynamicMethods().get(id_method);
             if(meth==null) {
-                //throw new AuthorizationException("No method " + id_method + " found in " + DCacheSRMauthzRecordsService.getDynamicMapper());
                 return null;
             } else {
                 ret_val = meth.invoke(this, subjectDN, role);
             }
-            //} catch (ClassNotFoundException cnfe) {
-            //throw new AuthorizationException("ClassNotFoundException for DynamicMapper " + dynamic_mapper + " for DN " + subjectDN + " and role " + role);
-            //} catch (NoSuchMethodException nsm) {
-            //throw new AuthorizationException("NoSuchMethodException from uid mapping method " + id_method + " for DN " + subjectDN + " and role " + role);
         } catch (InvocationTargetException ite) {
             throw new AuthorizationException("InvocationTargetException from uid mapping method " + id_method + " for DN " + subjectDN + " and role " + role);
         } catch (IllegalAccessException iac) {
@@ -177,7 +82,6 @@ public abstract class AuthorizationPlugin {
     }
 
     public <T> T getDynamicValue(String dynamic_mapper, String uid_method, String subjectDN, String role, Class<T> ct) throws AuthorizationException {
-        //return (T) getDynamicValue(dynamic_mapper, uid_method, subjectDN, role);
         return null;
     }
 

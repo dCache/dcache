@@ -1,4 +1,3 @@
-//package diskCacheV111.services.authorization.authz.records;
 package gplazma.authz.records;
 
 public class PasswordRecord extends AuthorizationRecordBase
@@ -32,9 +31,9 @@ public class PasswordRecord extends AuthorizationRecordBase
     }
 
 
- 	public String serialize()
- 	{
-	
+    public String serialize()
+    {
+
  		String str = getUsername() + " " +
  			Password + " " +
  		  readOnlyStr() + " " +
@@ -48,7 +47,8 @@ public class PasswordRecord extends AuthorizationRecordBase
  		return str;
  	}
 
-   public String toString()
+    @Override
+    public String toString()
     {
         return serialize();
     }
@@ -68,7 +68,7 @@ public class PasswordRecord extends AuthorizationRecordBase
         return stringbuffer.toString();
     }
 
-	
+
 	public String hashPassword(String pwd)
 	{
 		String uandp = "1234567890" + getUsername() + " " + pwd;
@@ -82,7 +82,7 @@ public class PasswordRecord extends AuthorizationRecordBase
 		else
 			Password = hashPassword(pwd);
 	}
-	
+
 	public void disable()
 	{
 		Password = "#";
@@ -92,12 +92,12 @@ public class PasswordRecord extends AuthorizationRecordBase
 	{
 		return Password.equals(hashPassword(clear_pwd));
 	}
-	
+
 	public boolean isDisabled()
 	{
 		return Password.equals("#");
 	}
-	
+
 	public boolean isAnonymous()
 	{
 		return Password.equals("-");

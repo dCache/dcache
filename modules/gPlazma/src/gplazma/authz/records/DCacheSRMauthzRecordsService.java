@@ -1,4 +1,3 @@
-//package diskCacheV111.services.authorization.authz.records;
 package gplazma.authz.records;
 
 import org.slf4j.Logger;
@@ -199,9 +198,6 @@ public class DCacheSRMauthzRecordsService {
         if ( ntokens < 7) {
             return null;
         }
-        //if (fileVersion == 2.2 && ntokens < 9) {
-        //    return null;
-        //}
         String username = t.nextToken();
         String passwd = t.nextToken();
         boolean readOnly = (t.nextToken().equals("read-only")) ? true : false;

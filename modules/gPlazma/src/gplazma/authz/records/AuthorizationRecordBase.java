@@ -1,4 +1,3 @@
-//package diskCacheV111.services.authorization.authz.records;
 package gplazma.authz.records;
 
 import java.io.Serializable;
@@ -77,9 +76,4 @@ public abstract class AuthorizationRecordBase implements Serializable
     public String getFsRoot() {
         return FsRoot;
     }
-
-    //abstract public boolean isAnonymous();
-    //abstract public boolean isWeak();
-	
-	
 }

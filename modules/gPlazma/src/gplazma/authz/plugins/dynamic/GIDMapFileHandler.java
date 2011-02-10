@@ -94,11 +94,6 @@ public class GIDMapFileHandler {
 		return quotedString;
 	}
 
-	//public String getMappedGID(String gridRole)
-	//throws Exception {
-	//	return removeQuotes((String) gidMap.get(gridRole));
-	//}
-
   public String getMappedGID(String gridRole) throws Exception {
     String GID;
     try {

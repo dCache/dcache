@@ -1,6 +1,5 @@
 package gplazma.authz.plugins.saz;
 
-//import org.dcache.auth.UserAuthRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +33,9 @@ public class SAZAuthorizationPlugin extends AuthorizationPlugin {
 	throws AuthorizationException {
 
     gPlazmaAuthorizationRecord record=null;
-    //log.setLevel(Level.DEBUG);
 
     rwSocket = new ReadWriteSocket(socket);
     String messageFromServer=null;
-    //int clientIdx = X509CertUtil.findClientCert(myValidatedChain);
 
     try {
 
@@ -81,7 +78,8 @@ public class SAZAuthorizationPlugin extends AuthorizationPlugin {
     return record;
   }
 
-  public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
+  @Override
+public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
 	throws AuthorizationException {
     return null;
   }
