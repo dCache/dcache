@@ -16,6 +16,10 @@ import org.jboss.netty.channel.ChannelFactory;
 import static org.jboss.netty.channel.Channels.*;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.handler.logging.LoggingHandler;
+import org.jboss.netty.logging.InternalLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import org.dcache.xrootd2.core.XrootdEncoder;
 import org.dcache.xrootd2.core.XrootdDecoder;
@@ -26,18 +30,32 @@ import org.dcache.xrootd2.protocol.XrootdProtocol;
 
 import diskCacheV111.util.FsPath;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
  * spring configuration once we move to Netty 3.1.
  */
 public class NettyXrootdServer
 {
+    private static final Logger _log =
+        LoggerFactory.getLogger(NettyXrootdServer.class);
+
     private int _port;
     private int _backlog;
     private Executor _requestExecutor;
     private XrootdDoor _door;
     private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
+
+    /**
+     * Switch Netty to slf4j for logging.
+     */
+    static
+    {
+        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
+    }
 
     public int getPort()
     {
@@ -88,6 +106,10 @@ public class NettyXrootdServer
                     pipeline.addLast("tracker", _connectionTracker);
                     pipeline.addLast("encoder", new XrootdEncoder());
                     pipeline.addLast("decoder", new XrootdDecoder());
+                    if (_log.isDebugEnabled()) {
+                        pipeline.addLast("logger",
+                                         new LoggingHandler(NettyXrootdServer.class));
+                    }
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                     pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
                     pipeline.addLast("redirector", new XrootdRedirectHandler(_door));
