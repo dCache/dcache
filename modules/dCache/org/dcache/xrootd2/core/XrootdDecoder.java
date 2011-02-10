@@ -6,7 +6,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import org.dcache.xrootd2.protocol.messages.*;
-import static org.dcache.xrootd.protocol.XrootdProtocol.*;
+import static org.dcache.xrootd2.protocol.XrootdProtocol.*;
 
 /**
  * A FrameDecoder decoding xrootd frames into AbstractRequestMessage
