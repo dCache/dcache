@@ -12,7 +12,7 @@ import org.dcache.pool.repository.Allocator;
  * Implementation of the SpaceMonitor interface, which serves requests
  * in FIFO order.
  */
-public class FairQueueAllocation 
+public class FairQueueAllocation
     implements Allocator
 {
     private Account _account;
@@ -38,9 +38,9 @@ public class FairQueueAllocation
         _list.add(thread);
     }
 
-    private synchronized void dequeue()
+    private synchronized void dequeue(Thread thread)
     {
-        _list.remove(0);
+        _list.remove(thread);
         notifyAll();
     }
 
@@ -50,7 +50,7 @@ public class FairQueueAllocation
         while (_list.get(0) != thread) {
             wait();
         }
-    }    
+    }
 
     /**
      * Allocate space. If not enough free space is available, the
@@ -71,7 +71,7 @@ public class FairQueueAllocation
             waitForTurn(self);
             _account.allocate(space);
         } finally {
-            dequeue();
+            dequeue(self);
         }
     }
 
