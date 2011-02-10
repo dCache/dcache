@@ -53,4 +53,10 @@ public class ReadResponse extends AbstractResponseMessage
     {
         return _buffer.readableBytes() - SERVER_RESPONSE_LEN;
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("read-response[length=%d]", getDataLength());
+    }
 }

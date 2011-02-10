@@ -46,4 +46,10 @@ public class ReadRequest extends GenericReadRequestMessage
         return getReadRequestList();
     }
 
+    @Override
+    public String toString()
+    {
+        return String.format("read[handle=%d,offset=%d,length=%d]",
+                             fhandle, offset, rlen);
+    }
 }
