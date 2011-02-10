@@ -1,11 +1,15 @@
 package org.dcache.pool.migration;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.cells.nucleus.CellEndpoint;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
+
+import diskCacheV111.util.PnfsId;
 
 /**
  * Describes the context of migration jobs.
@@ -19,6 +23,8 @@ public class MigrationContext
     private CellStub _poolManager;
     private CellStub _pinManager;
     private Repository _repository;
+    private final ConcurrentMap<PnfsId,PnfsId> _locks =
+        new ConcurrentHashMap<PnfsId,PnfsId>();
 
     public String getPoolName()
     {
@@ -88,5 +94,20 @@ public class MigrationContext
     public void setRepository(Repository repository)
     {
         _repository = repository;
+    }
+
+    public boolean lock(PnfsId pnfsId)
+    {
+        return (_locks.put(pnfsId, pnfsId) == null);
+    }
+
+    public void unlock(PnfsId pnfsId)
+    {
+        _locks.remove(pnfsId);
+    }
+
+    public boolean isActive(PnfsId pnfsId)
+    {
+        return _locks.containsKey(pnfsId);
     }
 }

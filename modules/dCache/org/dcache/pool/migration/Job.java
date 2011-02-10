@@ -156,6 +156,13 @@ public class Job
         schedule();
     }
 
+    public synchronized void addError(Error error)
+    {
+        while (!_errors.offer(error)) {
+            _errors.poll();
+        }
+    }
+
     /** Adds status information about the job to <code>pw</code>. */
     public synchronized void getInfo(PrintWriter pw)
     {
@@ -453,6 +460,11 @@ public class Job
                 }
 
                 PnfsId pnfsId = i.next();
+                if (!_context.lock(pnfsId)) {
+                    addError(new Error(0, pnfsId, "File is locked"));
+                    continue;
+                }
+
                 try {
                     i.remove();
                     Repository repository = _context.getRepository();
@@ -481,12 +493,19 @@ public class Job
                                e.getMessage());
                     setState(State.FAILED);
                     break;
+                } finally {
+                    if (!_running.containsKey(pnfsId)) {
+                        _context.unlock(pnfsId);
+                    }
                 }
             }
 
-            if (!_definition.isPermanent
-                && _queued.isEmpty() && _running.isEmpty()) {
-                setState(State.FINISHED);
+            if (_running.isEmpty()) {
+                if (!_definition.isPermanent && _queued.isEmpty()) {
+                    setState(State.FINISHED);
+                } else {
+                    setState(State.SLEEPING);
+                }
             }
         }
     }
@@ -503,15 +522,6 @@ public class Job
             }
         }
         return true;
-    }
-
-    /**
-     * Returns true if and only if the job contains a running task for
-     * the given PNFS ID.
-     */
-    public synchronized boolean isRunning(PnfsId pnfsId)
-    {
-        return _running.containsKey(pnfsId);
     }
 
     /** Adds a new task to the job. */
@@ -566,6 +576,7 @@ public class Job
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);
         _sizes.remove(pnfsId);
+        _context.unlock(pnfsId);
         schedule();
     }
 
@@ -575,6 +586,7 @@ public class Job
         PnfsId pnfsId = task.getPnfsId();
         if (task == _running.remove(pnfsId)) {
             _queued.add(pnfsId);
+            _context.unlock(pnfsId);
         }
 
         if (_state == State.RUNNING) {
@@ -583,10 +595,7 @@ public class Job
             schedule();
         }
 
-        Error error = new Error(task.getId(), pnfsId, msg);
-        while (!_errors.offer(error)) {
-            _errors.poll();
-        }
+        addError(new Error(task.getId(), pnfsId, msg));
     }
 
     /** Callback from task: Task failed permanently, remove it. */
@@ -595,12 +604,10 @@ public class Job
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);
         _sizes.remove(pnfsId);
+        _context.unlock(pnfsId);
         schedule();
 
-        Error error = new Error(task.getId(), pnfsId, msg);
-        while (!_errors.offer(error)) {
-            _errors.poll();
-        }
+        addError(new Error(task.getId(), pnfsId, msg));
     }
 
     /** Callback from task: Task is done, remove it. */
@@ -609,6 +616,7 @@ public class Job
         PnfsId pnfsId = task.getPnfsId();
         applySourceMode(pnfsId);
         _running.remove(pnfsId);
+        _context.unlock(pnfsId);
         _statistics.addCompleted(_sizes.remove(pnfsId));
         schedule();
     }
