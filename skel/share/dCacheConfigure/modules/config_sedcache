@@ -1449,13 +1449,6 @@ config_dcache_config_dcache_scripts()
     yaimlog DEBUG "function config_dcache_config_dcache_scripts start"
     local dir
     local retcode
-    dir=${INSTALL_ROOT}/d-cache
-    $dir/install/install.sh
-    retcode=$?
-    if [ "$retcode" != 0 ] ; then 
-        echo "ERROR executing $dir/install/install.sh failed (exit code $retcode) -- abort"
-        exit 1
-    fi
     yaimlog DEBUG "function config_dcache_config_dcache_scripts stop"
 }
 
