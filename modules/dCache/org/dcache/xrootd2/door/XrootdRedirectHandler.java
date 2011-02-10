@@ -436,11 +436,20 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
     }
 
+    @Override
+    protected void doOnPrepare(ChannelHandlerContext ctx, MessageEvent e,
+                               PrepareRequest msg)
+    {
+        respond(ctx, e, new OKResponse(msg.getStreamID()));
+    }
+
+    @Override
     protected void doOnClose(ChannelHandlerContext ctx, MessageEvent e, CloseRequest msg)
     {
         unsupported(ctx, e, msg);
     }
 
+    @Override
     protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
     {
         unsupported(ctx, e, msg);

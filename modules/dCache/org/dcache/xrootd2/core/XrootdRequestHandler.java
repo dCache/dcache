@@ -57,6 +57,10 @@ public class XrootdRequestHandler extends SimpleChannelHandler
             doOnClose(ctx, e, (CloseRequest) msg);
         } else if (msg instanceof ProtocolRequest) {
             doOnProtocolRequest(ctx, e, (ProtocolRequest) msg);
+        } else if (msg instanceof PrepareRequest) {
+            doOnPrepare(ctx, e, (PrepareRequest) msg);
+        } else {
+            unsupported(ctx, e, msg);
         }
     }
 
@@ -92,7 +96,7 @@ public class XrootdRequestHandler extends SimpleChannelHandler
     {
         _log.info("Unsupported request: " + msg);
         return respondWithError(ctx, e, msg, kXR_Unsupported,
-                                "Request not supported");
+                                "Request " + msg.getRequestID() + " not supported");
     }
 
     protected void doOnLogin(ChannelHandlerContext ctx, MessageEvent e, LoginRequest msg)
@@ -147,6 +151,11 @@ public class XrootdRequestHandler extends SimpleChannelHandler
 
     protected void doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent e, ProtocolRequest msg)
     {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnPrepare(ChannelHandlerContext ctx, MessageEvent e,
+                               PrepareRequest msg) {
         unsupported(ctx, e, msg);
     }
 }
