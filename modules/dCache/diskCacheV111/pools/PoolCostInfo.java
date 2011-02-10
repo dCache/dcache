@@ -12,10 +12,16 @@ public class PoolCostInfo implements java.io.Serializable {
                           _mover = null  , _p2p     = null ,
                           _p2pClient = null ;
     private Map<String, NamedPoolQueueInfo>           _extendedMoverHash = null ;
-    private final String  _defaultQueueName  = IoQueueManager.DEFAULT_QUEUE ;
+    private final String  _defaultQueueName;
     private PoolSpaceInfo _space  = null ;
-    private final String        _poolName ;
-    public PoolCostInfo( String poolName ){ _poolName = poolName ; }
+    private final String  _poolName ;
+
+    public PoolCostInfo(String poolName)
+    {
+        _poolName = poolName;
+        _defaultQueueName = IoQueueManager.DEFAULT_QUEUE;
+    }
+
     public String getPoolName(){ return _poolName ; }
     public class NamedPoolQueueInfo extends PoolQueueInfo {
 
