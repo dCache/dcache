@@ -41,7 +41,7 @@ onerror shutdown
 exec env defineStatisticsAlias.exe -ifok=have_stats_loc
 exec env defineEmptyStatisticsAlias.exe -ifnotok=have_stats_loc
 
-define context httpdSetup endDefine
+define context ${cell.name}Setup endDefine
    set alias default context home.html
    set alias <home> file ${config}/../docs/skins/home-skin-basic.html -onError=default
    set alias docs directory ${config}/../docs
