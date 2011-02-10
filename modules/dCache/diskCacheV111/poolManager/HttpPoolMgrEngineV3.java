@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import diskCacheV111.util.HTMLWriter;
@@ -98,6 +97,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             _siDetails = details.substring(8).split(",");
     }
 
+    @Override
     public void run()
     {
         _log.info("Restore Collector Thread started");
@@ -395,24 +395,13 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("span.big-link { font-size:24; text-align:center }");
     }
 
+    @Override
     public void queryUrl(HttpRequest request)  throws HttpException
     {
         OutputStream out    = request.getOutputStream();
         PrintWriter pw      = request.getPrintWriter();
         String[]   urlItems = request.getRequestTokens();
-        /*
-          {
-          HashMap map = request.getRequestAttributes();
 
-          System.out.println("XXX ->> "+map);
-          for (int i = 0, n = urlItems.length; i < n; i++)
-          System.out.println("XXX -> "+i+" -> "+urlItems[i]);
-          System.out.println("Class : "+request.getClass().getName());
-
-          Map m = createMap(urlItems[urlItems.length-1]);
-          System.out.println("MAP -> "+m);
-          }
-        */
         request.printHttpHeader(0);
         _requestCounter ++;
         try {
@@ -564,7 +553,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             } else if (!(o instanceof Map)) {
                 showProblem(pw, "Unexpected class arrived : "+o.getClass().getName());
             } else {
-                Map parameterMap = (Map) o;
+                Map<String,PoolManagerParameter> parameterMap = (Map<String,PoolManagerParameter>) o;
                 if (key.equals("section"))
                     printParameterInSections(pw, parameterMap);
                 else if (key.equals("matrix"))
@@ -580,24 +569,24 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private void printParameterInMatrix(PrintWriter pw, Map parameterMap)
+    private void printParameterInMatrix(PrintWriter pw, Map<String,PoolManagerParameter> parameterMap)
     {
-        PoolManagerParameter defaultParas = (PoolManagerParameter)parameterMap.get("default");
+        PoolManagerParameter defaultParas = parameterMap.get("default");
         if (defaultParas == null)return;
 
-        Map   [] restMap = new Map[parameterMap.size()-1];
+        Map<String,Object[]>[] restMap = new Map[parameterMap.size()-1];
         String[] header  = new String[parameterMap.size()-1];
         int row = 0;
 
-        for (Map.Entry entry : (Set<Map.Entry>)parameterMap.entrySet()) {
-            String  mapName = entry.getKey().toString();
+        for (Map.Entry<String,PoolManagerParameter> entry : parameterMap.entrySet()) {
+            String mapName = entry.getKey();
 
             if (mapName.equals("default"))continue;
 
             header[row]  = mapName;
             restMap[row] = new PoolManagerParameter(defaultParas).
                 setValid(false).
-                merge((PoolManagerParameter)entry.getValue()).
+                merge(entry.getValue()).
                 toMap();
             row ++;
         }
@@ -636,7 +625,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             // the other partitions
             //
             for (int m = 0; m < restMap.length; m++) {
-                e     = (Object[])restMap[m].get(key);
+                e     = restMap[m].get(key);
                 isSet = (Boolean)e[0];
                 value = e[1].toString();
                 pw.print("<td class=\""+setColor[isSet?1:0]+"\">");
@@ -649,82 +638,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</table></center>");
     }
 
-    private void printParameterInMatrixII(PrintWriter pw, Map parameterMap)
+
+    private void printParameterInSections(PrintWriter pw, Map<String,PoolManagerParameter> parameterMap)
     {
-        PoolManagerParameter defaultParas = (PoolManagerParameter)parameterMap.get("default");
-        if (defaultParas == null)return;
-
-        Map   [] restMap = new Map[parameterMap.size()-1];
-        String[] header  = new String[parameterMap.size()-1];
-        int row = 0;
-
-        for (Map.Entry entry : (Set<Map.Entry>)parameterMap.entrySet()) {
-            String  mapName = entry.getKey().toString();
-
-            if (mapName.equals("default"))continue;
-
-            header[row]  = mapName;
-            restMap[row] = new PoolManagerParameter(defaultParas).
-                setValid(false).
-                merge((PoolManagerParameter)entry.getValue()).
-                toMap();
-            row ++;
-        }
-
-        pw.println("<center><table width=\"90%\" cellspacing=0 cellpadding=4 border=1");
-
-        pw.print("<tr bgcolor=\"#115259\">");
-        pw.print("<th><font color=white>Key</font></th><th><font color=white>Default</font></th>");
-        for (int m = 0; m < restMap.length; m++)
-            pw.println("<th><font color=white>"+header[m]+"</font></th>");
-        pw.println("</tr>");
-
-        Map<String, Object[]> defaultMap = new TreeMap<String, Object[]>(defaultParas.toMap());
-        row = 0;
-        String[] setColor = { "gray"   , "black"  };
-        String[] rowColor = { "#bebebe", "#efefef" };
-
-        for (Map.Entry<String, Object[]> entry : defaultMap.entrySet()) {
-            String key      = entry.getKey();
-            Object[] e     =  entry.getValue();
-            boolean isSet   = (Boolean)e[0];
-            String value    = e[1].toString();
-
-            //
-            // the keys
-            //
-            pw.print("<tr bgcolor=\""+rowColor[row%rowColor.length]+"\">");
-            pw.print("<th>"); pw.print(key); pw.print("</th>");
-            //
-            // default values
-            //
-            pw.print("<td align=center>");
-            pw.print("<font color="+setColor[1]+">");
-            pw.println(value); pw.println("</font></td>");
-            //
-            // the other partitions
-            //
-            for (int m = 0; m < restMap.length; m++) {
-                e     = (Object[])restMap[m].get(key);
-                isSet = (Boolean)e[0];
-                value = e[1].toString();
-                pw.print("<td align=center>");
-                pw.print("<font color="+setColor[isSet?1:0]+">");
-                pw.println(value); pw.println("</font></td>");
-            }
-            pw.println("</tr>");
-
-            row++;
-        }
-        pw.println("</table></center>");
-
-    }
-
-    private void printParameterInSections(PrintWriter pw, Map parameterMap)
-    {
-        for (Map.Entry entry : (Set<Map.Entry>)parameterMap.entrySet()) {
-            String name = (String)entry.getKey();
-            PoolManagerParameter p = (PoolManagerParameter)entry.getValue();
+        for (Map.Entry<String,PoolManagerParameter> entry : parameterMap.entrySet()) {
+            String name = entry.getKey();
+            PoolManagerParameter p = entry.getValue();
             pw.println("<h2>"+name+"</h2>");
             printParameterEntry(pw, p);
         }
@@ -766,83 +685,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private void printParameterOnlySet(PrintWriter pw, PoolManagerParameter p)
-    {
-        pw.println("<center><table width=\"90%\" cellspacing=4 cellpadding=4>");
-
-        pw.println("<tr><th align=center>Key</th><th align=center>Value</th></tr>");
-
-        if (p._p2pAllowedSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._p2pAllowed);
-            pw.println("</td></tr>");
-        }
-        if (p._stageOnCostSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._stageOnCost);
-            pw.println("</td></tr>");
-        }
-        if (p._p2pForTransferSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._p2pForTransfer);
-            pw.println("</td></tr>");
-        }
-
-        if (p._slopeSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._slope);
-            pw.println("</td></tr>");
-        }
-        if (p._costCutSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p.getCostCutString());
-            pw.println("</td></tr>");
-        }
-        if (p._alertCostCutSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._alertCostCut);
-            pw.println("</td></tr>");
-        }
-        if (p._panicCostCutSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._panicCostCut);
-            pw.println("</td></tr>");
-        }
-        if (p._minCostCutSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._minCostCut);
-            pw.println("</td></tr>");
-        }
-        if (p._maxPnfsFileCopiesSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._maxPnfsFileCopies);
-            pw.println("</td></tr>");
-        }
-        if (p._fallbackCostCutSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._fallbackCostCut);
-            pw.println("</td></tr>");
-        }
-        if (p._hasHsmBackendSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._hasHsmBackend);
-            pw.println("</td></tr>");
-        }
-        if (p._spaceCostFactorSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._spaceCostFactor);
-            pw.println("</td></tr>");
-        }
-        if (p._performanceCostFactorSet) {
-            pw.print("<tr><td align=center>P2p OnCost</td><tr>td align=center>");
-            pw.print(p._performanceCostFactor);
-            pw.println("</td></tr>");
-        }
-
-
-        pw.println("</table></center>");
-
-    }
 
     private void printLazyRestoreInfo(OutputStream out, String sorting, String grep)
     {
@@ -926,7 +768,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private boolean grepOk(String grep, Object o)
     {
-        String line = null;
         RestoreHandlerInfo info = null;
         if (o instanceof RestoreHandlerInfo) {
             info = (RestoreHandlerInfo)o;
@@ -963,6 +804,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             //           System.out.println("Comparator !!!!iniitialized with "+type);
         }
 
+        @Override
         public int compare(Object o1, Object o2)
         {
             if (o1 instanceof RestoreHandlerInfo)
@@ -987,7 +829,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 String a = i1.getPool();
                 String b = i2.getPool();
                 if ((a == null) || (b == null))return a == null ? -1 : b == null ? 1 : 0;
-                if (a == null)return b == null ? 0 : 1;
 
                 return a.compareTo(b);
             } else if (_type.equals("i.start")) {
@@ -1023,9 +864,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private static final String[] __errorBackground   = { "red", "orange" };
-    private static final String[] __regularBackground = { "#bebebe", "#efefef" };
-
     private void showRestoreInfo(HTMLWriter html, RestoreHandlerInfo info)
     {
         showRestoreInfo(html, info, null, null);
@@ -1045,9 +883,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         String  started= _formatter.format(new Date(info.getStartTime()));
 
         boolean   error      = (rc != 0) || ((msg != null) && (!msg.equals("")));
-
-        String[] background = error ? __errorBackground : __regularBackground;
-        String    foreground = error ? "white" : "black";
 
         String  pool = info.getPool();
         pool = (pool == null) || (pool.equals("") || pool.equals("<unknown>")) ? "N.N." : pool;
@@ -1279,41 +1114,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</table>");
     }
 
-    private void showListII(PrintWriter pw, Object[] array, int rows, String link)
-    {
-        String bgColor = "#a0a0c8";  // 10b0ee
-        pw.println("<table border=0 width=\"90%\" cellspacing=1 cellpadding=4>");
-        int width= 100 /rows;
-        Arrays.sort(array);
-        for (int i= 0; i < array.length; i++) {
-            if ((i % rows) == 0)pw.println("<tr>");
-            pw.print("<td bgcolor=\""+bgColor+"\" align=center ");
-            pw.print("width=\"");
-            pw.print(width);
-            pw.print("%\"");
-            pw.print("><a href=\"");
-            if (link != null)pw.print(link);
-            pw.print(makeLink(array[i].toString()));
-            pw.print("\">");
-            pw.println(array[i].toString());
-            pw.println("</a>");
-            pw.println("</td>");
-            if ((i % rows) == (rows - 1))pw.println("</tr>");
-        }
-        int rest = rows - (array.length % rows);
-        if (rest < rows) {
-            for (int i = 0; i < rest; i++) {
-                pw.print("<td bgcolor=\""+bgColor+"\" align=center ");
-                pw.print("width=\"");
-                pw.print(width);
-                pw.print("%\"");
-                pw.println(">-</td>");
-            }
-            pw.println("</tr>");
-        }
-        pw.println("</table>");
-    }
-
     private void showQueryForm(PrintWriter pw,
                                String linkGroup,
                                String type,
@@ -1357,34 +1157,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<input type=submit value=\"Send Query\">");
         pw.println("</form>");
         pw.println("</td></tr>");
-        pw.println("</table>");
-    }
-
-    private void showQueryFormII(PrintWriter pw,
-                                 String type,
-                                 String store,
-                                 String dcache,
-                                 String net,
-                                 String protocol)
-    {
-        pw.println("<table border=0 cellpadding=10><tr><td align=center bgcolor=red>");
-        pw.println("<h3>Simulated I/O Request</h3>");
-        pw.println("<form method=get action=\"/poolInfo/match/match\">");
-        pw.println("<table border=0 cellspacing=1 cellpadding=4>");
-        pw.println("<tr><th>Store</th><th>dCache</th><th>Net</th><th>Protocol</th></tr><tr>");
-        pw.println("<td bgcolor=orange><input size=20 name=store value=\""+store+"\"></td>");
-        pw.println("<td bgcolor=orange><input size=20 name=dcache value=\""+dcache+"\"></td>");
-        pw.println("<td bgcolor=orange><input size=20 name=net value=\""+net+"\"></td>");
-        pw.println("<td bgcolor=orange><input size=20 name=protocol value=\""+protocol+"\"></td>");
-        pw.println("</table>");
-        pw.println("Select Request Type : ");
-        pw.println("<select name=type>");
-        pw.println("<option value=read  "+(type.equals("read")?"selected":"")+">Read");
-        pw.println("<option value=p2p   "+(type.equals("p2p")?"selected":"")+">Pool 2 Pool");
-        pw.println("<option value=cache "+(type.equals("cache")?"selected":"")+">Cache");
-        pw.println("<option value=write "+(type.equals("write")?"selected":"")+">Write</select>");
-        pw.println("<input type=submit value=\"Send Query\">");
-        pw.println("</form>");
         pw.println("</table>");
     }
 
@@ -1550,12 +1322,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return p;
         }
 
+        @Override
         public int compareTo(LinkProperties link )
         {
             if (link.tag.equals(tag))return name.compareTo(link.name);
             if (tag.equals("NONE"))return -1;
             return tag.compareTo(link.tag);
         }
+
         @Override
         public String toString() { return "["+tag+"/"+name+"]"; }
     }
