@@ -1315,18 +1315,17 @@ public abstract class AbstractFtpDoorV1
             // actively throws an exception.
             //
             Throwable te = ite.getTargetException();
-            if (te instanceof CommandExitException) {
-                throw (dmg.util.CommandExitException)te;
+            if (te instanceof FTPCommandException) {
+                FTPCommandException failure = (FTPCommandException) te;
+                reply(String.valueOf(failure.getCode()) + " " + failure.getReply());
+            } else if (te instanceof CommandExitException) {
+                throw (CommandExitException) te;
+            } else {
+                reply("500 Operation failed due to internal error: " +
+                      te.getMessage());
+                _logger.error("FTP command '{}' got exception", cmd, te);
             }
-            reply("500 Operation failed due to internal error: " +
-                  te.getMessage());
 
-            /* We don't want to call reportBug, since throwing a
-             * RuntimeException at this point will lead to other error
-             * messages being generated. Just log the exception as
-             * fatal and continue.
-             */
-            _logger.error("FTP command '{}' got exception", cmd, te);
             _skipBytes = 0;
         } catch (IllegalAccessException e) {
             _logger.error("This is a bug. Please report it.", e);
@@ -1584,6 +1583,26 @@ public abstract class AbstractFtpDoorV1
 
     protected abstract void secure_reply(String answer, String code);
 
+    protected void checkLoggedIn()
+        throws FTPCommandException
+    {
+        if (_subject == null) {
+            throw new FTPCommandException(530, "Not logged in.");
+        }
+    }
+
+    protected void checkWritable()
+        throws FTPCommandException
+    {
+        if (_readOnly || _isUserReadOnly) {
+            throw new FTPCommandException(500, "Command disabled");
+        }
+
+        if (Subjects.isNobody(_subject)) {
+            throw new FTPCommandException(554, "Anonymous write access not permitted");
+        }
+    }
+
     public void ac_feat(String arg)
     {
         StringBuilder builder = new StringBuilder();
@@ -1712,16 +1731,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_dele(String arg)
+        throws FTPCommandException
     {
-        if (_readOnly) {
-            reply("500 Command disabled");
-            return;
-        }
-
-        if (_isUserReadOnly) {
-            reply("500 Command disabled");
-            return;
-        }
+        checkLoggedIn();
+        checkWritable();
 
         FsPath path = absolutePath(arg);
         try {
@@ -1809,29 +1822,13 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_rmd(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+        checkWritable();
+
         if (arg.equals("")) {
             reply(err("RMD",arg));
-            return;
-        }
-
-        if (_subject == null) {
-            reply("530 Not logged in.");
-            return;
-        }
-
-        if (_readOnly) {
-            reply("500 Command disabled");
-            return;
-        }
-
-        if (_isUserReadOnly) {
-            reply("500 Command disabled");
-            return;
-        }
-
-        if (_subject.equals(Subjects.NOBODY)) {
-            reply("554 Anonymous write access not permitted");
             return;
         }
 
@@ -1850,29 +1847,13 @@ public abstract class AbstractFtpDoorV1
 
 
     public void ac_mkd(String arg)
+        throws FTPCommandException
     {
-        if (_subject == null) {
-            reply("530 Not logged in.");
-            return;
-        }
+        checkLoggedIn();
+        checkWritable();
 
         if (arg.equals("")) {
             reply(err("MKD",arg));
-            return;
-        }
-
-        if (_readOnly) {
-            reply("500 Command disabled");
-            return;
-        }
-
-        if (_isUserReadOnly) {
-            reply("500 Command disabled");
-            return;
-        }
-
-        if (_subject.equals(Subjects.NOBODY)) {
-            reply("554 Anonymous write access not permitted");
             return;
         }
 
@@ -1911,7 +1892,11 @@ public abstract class AbstractFtpDoorV1
         Pattern.compile("(\\d+)( R \\d+)?");
 
     public void ac_allo(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+        checkWritable();
+
         _allo = 0;
 
         Matcher matcher = ALLO_PATTERN.matcher(arg);
@@ -1931,7 +1916,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_pwd(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         if (!arg.equals("")) {
             reply(err("PWD",arg));
             return;
@@ -1940,7 +1928,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_cwd(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         try {
             FsPath newcwd = absolutePath(arg);
             checkIsDirectory(newcwd);
@@ -1957,12 +1948,16 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_cdup(String arg)
+        throws FTPCommandException
     {
         ac_cwd("..");
     }
 
     public void ac_port(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         String[] st = arg.split(",");
         if (st.length != 6) {
             reply(err("PORT",arg));
@@ -1987,7 +1982,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_pasv(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         try {
             closePassiveModeServerSocket();
             _logger.info("Opening server socket for passive mode");
@@ -2034,7 +2032,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_site(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         if (arg.equals("")) {
             reply("500 must supply the site specific command");
             return;
@@ -2067,7 +2068,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_cksm(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         String[] st = arg.split("\\s+");
         if (st.length != 4) {
             reply("500 Unsupported CKSM command operands");
@@ -2133,7 +2137,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_scks(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         String[] st = arg.split("\\s+");
         if (st.length != 2) {
             reply("505 Unsupported SCKS command operands");
@@ -2162,21 +2169,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void doChmod(String permstring, String path)
+        throws FTPCommandException
     {
-        if (_subject == null) {
-            reply("530 Not logged in.");
-            return;
-        }
-
-        if (_readOnly) {
-            reply("500 Command disabled");
-            return;
-        }
-
-        if (_isUserReadOnly) {
-            reply("500 Command disabled");
-            return;
-        }
+        checkLoggedIn();
+        checkWritable();
 
         if (path.equals("")){
             reply(err("SITE CHMOD",path));
@@ -2309,6 +2305,7 @@ public abstract class AbstractFtpDoorV1
     // void method ac_esto_"MODE"(String arg)
     //
     public void ac_esto_a(String arg)
+        throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
         if (st.length != 3) {
@@ -2347,6 +2344,7 @@ public abstract class AbstractFtpDoorV1
     // void method ac_eret_"MODE"(String arg)
     //
     public void ac_eret_p(String arg)
+        throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
         if (st.length != 4) {
@@ -2383,6 +2381,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_retr(String arg)
+        throws FTPCommandException
     {
         String        clientHost = _client_data_host;
         int           clientPort = _client_data_port;
@@ -2435,13 +2434,30 @@ public abstract class AbstractFtpDoorV1
      *                      and client is active.
      * @param version       The mover version to use for the transfer
      */
-    private
-        void retrieve(String file, long offset, long size,
-                      Mode mode, String xferMode,
-                      int parallel,
-                      InetSocketAddress client, int bufSize,
-                      boolean reply127, int version)
+    private void retrieve(String file, long offset, long size,
+                          Mode mode, String xferMode,
+                          int parallel,
+                          InetSocketAddress client, int bufSize,
+                          boolean reply127, int version)
+        throws FTPCommandException
     {
+        /* Check preconditions.
+         */
+        checkLoggedIn();
+
+        if (file.equals("")) {
+            throw new FTPCommandException(501, "Missing path");
+        }
+        if (xferMode.equals("E") && mode == Mode.PASSIVE) {
+            throw new FTPCommandException(500, "Cannot do passive retrieve in E mode");
+        }
+        if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
+            throw new FTPCommandException(504, "Cannot use passive X mode");
+        }
+        if (_checkSumFactory != null || _checkSum != null) {
+            throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
+        }
+
         FtpTransfer transfer =
             new FtpTransfer(absolutePath(file),
                             offset, size,
@@ -2453,25 +2469,6 @@ public abstract class AbstractFtpDoorV1
                             reply127,
                             version);
         try {
-            /* Check preconditions.
-             */
-            if (file.equals("")) {
-                throw new FTPCommandException(501, "Missing path");
-            }
-            if (xferMode.equals("E") && mode == Mode.PASSIVE) {
-                throw new FTPCommandException(500, "Cannot do passive retrieve in E mode");
-            }
-            if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
-                throw new FTPCommandException(504, "Cannot use passive X mode");
-            }
-            if (_subject == null) {
-                throw new FTPCommandException(530, "Not logged in.");
-            }
-
-            if (_checkSumFactory != null || _checkSum != null) {
-                throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
-            }
-
             _logger.info("retrieve user={}", getUser());
             _logger.info("retrieve addr={}", _engine.getInetAddress());
 
@@ -2533,8 +2530,6 @@ public abstract class AbstractFtpDoorV1
             _logger.error("Retrieve failed", e);
             transfer.abort(451, "Transient internal failure");
         } finally {
-            _checkSumFactory = null;
-            _checkSum = null;
             _allo = 0;
         }
     }
@@ -2542,6 +2537,7 @@ public abstract class AbstractFtpDoorV1
     public abstract void startTlog(FTPTransactionLog log, String path, String action);
 
     public void ac_stor(String arg)
+        throws FTPCommandException
     {
         if (_client_data_host == null) {
             reply("504 Host somehow not set");
@@ -2577,7 +2573,21 @@ public abstract class AbstractFtpDoorV1
                        int parallel,
                        InetSocketAddress client, int bufSize,
                        boolean reply127, int version)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+        checkWritable();
+
+        if (file.equals("")) {
+            throw new FTPCommandException(501, "STOR command not understood");
+        }
+        if (xferMode.equals("E") && mode == Mode.ACTIVE) {
+            throw new FTPCommandException(504, "Cannot store in active E mode");
+        }
+        if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
+            throw new FTPCommandException(504, "Cannot use passive X mode");
+        }
+
         FtpTransfer transfer =
             new FtpTransfer(absolutePath(file),
                             0, 0,
@@ -2589,32 +2599,6 @@ public abstract class AbstractFtpDoorV1
                             reply127,
                             version);
         try {
-            if (_readOnly) {
-                throw new FTPCommandException(502, "Command disabled");
-            }
-            if (file.equals("")) {
-                throw new FTPCommandException(501, "STOR command not understood");
-            }
-
-            if (_subject == null) {
-                throw new FTPCommandException(530, "Not logged in.");
-            }
-
-            if (_isUserReadOnly) {
-                throw new FTPCommandException(500, "Command disabled");
-            }
-
-            if (_subject.equals(Subjects.NOBODY)) {
-                throw new FTPCommandException(554, "Anonymous write access not permitted");
-            }
-
-            if (xferMode.equals("E") && mode == Mode.ACTIVE) {
-                throw new FTPCommandException(504, "Cannot store in active E mode");
-            }
-            if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
-                throw new FTPCommandException(504, "Cannot use passive X mode");
-            }
-
             _logger.info("store receiving with mode {}", xferMode);
 
             transfer.createNameSpaceEntry();
@@ -2629,8 +2613,6 @@ public abstract class AbstractFtpDoorV1
             } finally {
                 _commandQueue.disableInterrupt();
             }
-        } catch (FTPCommandException e) {
-            transfer.abort(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
             transfer.abort(451, "Operation cancelled");
         } catch (IOException e) {
@@ -2666,14 +2648,12 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_size(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         if (arg.equals("")) {
             reply(err("SIZE",""));
-            return;
-        }
-
-        if (_subject == null) {
-            reply("530 Not logged in.");
             return;
         }
 
@@ -2694,14 +2674,12 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_mdtm(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         if (arg.equals("")) {
             reply(err("MDTM",""));
-            return;
-        }
-
-        if (_subject == null) {
-            reply("530 Not logged in.");
             return;
         }
 
@@ -2762,7 +2740,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_list(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         Args args = new Args(arg);
         boolean listLong =
             args.options().isEmpty() || (args.getOpt("l") != null);
@@ -2838,7 +2819,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_nlst(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         if (arg.equals("")) {
             arg = ".";
         }
@@ -2901,11 +2885,9 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_mlst(String arg)
+        throws FTPCommandException
     {
-        if (_subject == null) {
-            reply("530 Not logged in.");
-            return;
-        }
+        checkLoggedIn();
 
         try {
             FsPath path = absolutePath(arg);
@@ -2929,11 +2911,9 @@ public abstract class AbstractFtpDoorV1
     }
 
     public void ac_mlsd(String arg)
+        throws FTPCommandException
     {
-        if (_subject == null) {
-            reply("530 Not logged in.");
-            return;
-        }
+        checkLoggedIn();
 
         try {
             _commandQueue.enableInterrupt();
@@ -2999,13 +2979,11 @@ public abstract class AbstractFtpDoorV1
     //----------------------------------------------
     public void ac_dcau(String arg)
     {
-
         if(arg.equalsIgnoreCase("N")) {
             reply("200 data channel authtication switched off");
         }else{
             reply("202 data channel authtication not sopported");
         }
-
     }
 
     // ---------------------------------------------
@@ -3054,7 +3032,10 @@ public abstract class AbstractFtpDoorV1
     // ABOR: close data channels, but leave command channel open
     // ---------------------------------------------
     public void ac_abor(String arg)
+        throws FTPCommandException
     {
+        checkLoggedIn();
+
         FtpTransfer transfer = _transfer;
         if (transfer != null) {
             transfer.abort(426, "Transfer aborted");
