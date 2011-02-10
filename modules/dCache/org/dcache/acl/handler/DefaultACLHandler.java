@@ -16,7 +16,7 @@ import org.dcache.acl.config.AclConfig;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
-import org.dcache.acl.util.sql.SQLHandler;
+import static org.dcache.commons.util.SqlHelper.*;
 
 /**
  * Generic component for managing the ACLs. It provides an interface to the ACL database table and
@@ -143,9 +143,9 @@ public class DefaultACLHandler extends THandler implements ACLHandler {
             throw new ACLException("Get ACL", "SQLException", e);
 
         } finally {
-            SQLHandler.attemptClose(rs);
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(rs);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
@@ -220,8 +220,8 @@ public class DefaultACLHandler extends THandler implements ACLHandler {
 
 
         } finally {
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
@@ -271,8 +271,8 @@ public class DefaultACLHandler extends THandler implements ACLHandler {
             throw new ACLException("Rollback attempted. Remove ACL", "SQLException", e);
 
         } finally {
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
         return rowCnt;
     }

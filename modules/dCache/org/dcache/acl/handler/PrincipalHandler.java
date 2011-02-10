@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.config.Config;
-import org.dcache.acl.util.sql.SQLHandler;
+import static org.dcache.commons.util.SqlHelper.*;
 
 /**
  * Component takes information on a principal on input and translates it into a virtual user ID
@@ -91,9 +91,9 @@ public class PrincipalHandler extends THandler {
             return principal;
 
         } finally {
-            SQLHandler.attemptClose(rs);
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(rs);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
@@ -129,9 +129,9 @@ public class PrincipalHandler extends THandler {
             return nextID;
 
         } finally {
-            SQLHandler.attemptClose(rs);
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(rs);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
@@ -165,9 +165,9 @@ public class PrincipalHandler extends THandler {
             return id;
 
         } finally {
-            SQLHandler.attemptClose(rs);
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(rs);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
@@ -204,8 +204,8 @@ public class PrincipalHandler extends THandler {
             throw new SQLException("Rollback attempted. Set ID failed: ", e.getMessage());
 
         } finally {
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 

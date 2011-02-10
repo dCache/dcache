@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.config.Config;
-import org.dcache.acl.util.sql.SQLHandler;
+import static org.dcache.commons.util.SqlHelper.*;
 
 /**
  * Component takes absolute filename and translates it into a unique resource ID.
@@ -98,9 +98,9 @@ public class FPathHandler extends THandler {
             throw new ACLException("Get ID", "SQLException", e);
 
         } finally {
-            SQLHandler.attemptClose(rs);
-            SQLHandler.attemptClose(pstmt);
-            SQLHandler.attemptClose(conn);
+            tryToClose(rs);
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
