@@ -36,7 +36,7 @@ public class      SshStreamEngine
    private final Object        _closeLock = new Object() ;
 
    private InetAddress   _remoteAddress = null ;
-   private Subject      _remoteUser    = null ;
+   private Subject      _remoteUser    = new Subject();
 
    public final static int   SERVER_MODE = 1 ;
    public final static int   CLIENT_MODE = 2 ;
@@ -53,7 +53,7 @@ public class      SshStreamEngine
        _socket       = socket ;
        _serverAuth   = auth ;
        _mode         = SERVER_MODE ;
-
+       _remoteUser.setReadOnly();
        runServerProtocol()  ;
    }
    public SshStreamEngine( Socket socket , SshClientAuthentication auth )
@@ -64,7 +64,7 @@ public class      SshStreamEngine
        _socket       = socket ;
        _clientAuth   = auth ;
        _mode         = CLIENT_MODE ;
-
+       _remoteUser.setReadOnly();
        runClientProtocol()  ;
    }
    public int getMode(){ return _mode ; }
