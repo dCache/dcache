@@ -8,4 +8,10 @@ public class UnknownRequest extends AbstractRequestMessage
     {
         super(buffer);
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("unknown[%d,%d]", streamId, requestId);
+    }
 }

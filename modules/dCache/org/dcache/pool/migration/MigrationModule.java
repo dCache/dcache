@@ -1003,11 +1003,6 @@ public class MigrationModule
 
     public synchronized boolean isActive(PnfsId id)
     {
-        for (Job job: _jobs.values()) {
-            if (job.isRunning(id)) {
-                return true;
-            }
-        }
-        return false;
+        return _context.isActive(id);
     }
 }

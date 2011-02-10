@@ -54,8 +54,9 @@ public class WriteRequest extends AbstractRequestMessage
         }
     }
 
+    @Override
     public String toString()
     {
-        return String.format("write[%d,%d,%d]", fhandle, offset, dlen);
+        return String.format("write[handle=%d,offset=%d,length=%d]", fhandle, offset, dlen);
     }
 }
