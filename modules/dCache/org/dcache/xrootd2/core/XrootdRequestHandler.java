@@ -68,6 +68,10 @@ public class XrootdRequestHandler extends IdleStateAwareChannelHandler
             doOnMv(ctx, e, (MvRequest) msg);
         } else if (msg instanceof DirListRequest) {
             doOnDirList(ctx, e, (DirListRequest) msg);
+        } else if (msg instanceof PrepareRequest) {
+            doOnPrepare(ctx, e, (PrepareRequest) msg);
+        } else {
+            unsupported(ctx, e, msg);
         }
     }
 
@@ -103,7 +107,7 @@ public class XrootdRequestHandler extends IdleStateAwareChannelHandler
     {
         _log.info("Unsupported request: " + msg);
         return respondWithError(ctx, e, msg, kXR_Unsupported,
-                                "Request not supported");
+                                "Request " + msg.getRequestID() + " not supported");
     }
 
     protected void doOnLogin(ChannelHandlerContext ctx, MessageEvent e, LoginRequest msg)
@@ -182,6 +186,11 @@ public class XrootdRequestHandler extends IdleStateAwareChannelHandler
 
     protected void doOnDirList(ChannelHandlerContext ctx, MessageEvent e,
                                DirListRequest msg) {
+        unsupported(ctx, e, msg);
+    }
+
+    protected void doOnPrepare(ChannelHandlerContext ctx, MessageEvent e,
+                               PrepareRequest msg) {
         unsupported(ctx, e, msg);
     }
 }

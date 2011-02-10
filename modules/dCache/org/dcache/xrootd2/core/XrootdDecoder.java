@@ -57,6 +57,8 @@ public class XrootdDecoder extends FrameDecoder
         switch (requestID) {
         case kXR_login:
             return new LoginRequest(frame);
+        case kXR_prepare:
+            return new PrepareRequest(frame);
         case kXR_open:
             return new OpenRequest(frame);
         case kXR_stat:
