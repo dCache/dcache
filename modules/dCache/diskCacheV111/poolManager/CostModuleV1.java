@@ -364,6 +364,7 @@ public class CostModuleV1
      * Defined by CostModule interface. Used by PoolManager to inject
      * the replies PoolManager sends to doors.
      */
+    @Override
     public void messageArrived(CellMessage cellMessage)
     {
         _handlers.call(cellMessage);
@@ -451,6 +452,7 @@ public class CostModuleV1
 
 
 
+   @Override
    public boolean isActive(){ return _isActive ; }
 
     public String hh_cm_info = "";
