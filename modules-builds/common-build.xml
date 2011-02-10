@@ -48,7 +48,6 @@
         <fileset dir="${libDir}/dcache-common" includes="**/*.jar" /> -->
         <path refid="dependency.classpath" />
         <fileset dir="${libDir}/rrd4j" includes="**/*.jar" />
-	<fileset dir="${libDir}/batik-1.7" includes="*.jar" />
     </path>
 
 

@@ -12,6 +12,7 @@ import diskCacheV111.namespace.provider.*;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
+import org.dcache.util.MathUtils;
 import org.dcache.util.PrefixMap;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksum;
@@ -1543,7 +1544,7 @@ public class PnfsManagerV3
             if (_canFold && message.getReturnCode() == 0) {
                 Iterator<CellMessage> i = _fifo.iterator();
                 while (i.hasNext()) {
-                    CellMessage envelope = (CellMessage) i.next();
+                    CellMessage envelope = i.next();
                     PnfsMessage other =
                         (PnfsMessage) envelope.getMessageObject();
 
@@ -1788,7 +1789,7 @@ public class PnfsManagerV3
         try {
             if (_threadGroups > 1) {
                 Integer db = _pathToDBCache.get(new FsPath(path));
-                if (db == null || ((int) db) != id) {
+                if (db == null || db != id) {
                     String root = getDatabaseRoot(new File(path)).getPath();
                     _pathToDBCache.put(new FsPath(root), id);
                     _log.info("Path cache updated: " + root + " -> " + id);
@@ -1868,7 +1869,7 @@ public class PnfsManagerV3
 
         _log.info("Path cache miss for " + path);
 
-        return (int) (Math.abs(path.hashCode())) % _threadGroups;
+        return MathUtils.absModulo(path.hashCode(), _threadGroups);
     }
 
     /**
