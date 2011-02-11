@@ -4,7 +4,6 @@ package diskCacheV111.cells;
 
 import java.util.*;
 import java.io.*;
-import java.text.*;
 import java.lang.reflect.*;
 
 import dmg.util.*;
@@ -444,7 +443,7 @@ public class TransferObserverV1
                 }
             }
         } catch (InterruptedException e) {
-            _log.warn("Data collector interrupted");
+            _log.info("Data collector interrupted");
         }
     }
     //
