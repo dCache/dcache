@@ -4,14 +4,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.Socket;
 
 import jline.ConsoleReader;
 import jline.History;
@@ -61,7 +60,6 @@ public class StreamObjectCell
     };
 
     private StreamEngine _engine;
-    private InetAddress _host;
     private Subject _subject;
     private Thread _workerThread;
     private CellNucleus _nucleus;
@@ -90,7 +88,6 @@ public class StreamObjectCell
             _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
             _subject = engine.getSubject();
-            _host = engine.getInetAddress();
 
             prepareClass(args.argv(0));
         } catch (Exception e) {
@@ -268,6 +265,7 @@ public class StreamObjectCell
         }
     }
 
+    @Override
     public void run()
     {
         try {
@@ -278,7 +276,6 @@ public class StreamObjectCell
                 history = new History();
             }
             try {
-                Socket socket = _engine.getSocket();
                 final ConsoleReader console =
                     new ConsoleReader(_engine.getInputStream(),
                                       _engine.getWriter());
@@ -287,6 +284,7 @@ public class StreamObjectCell
                 console.setUseHistory(true);
                 console.addTriggeredAction(ConsoleReader.CTRL_C, new ActionListener()
                     {
+                        @Override
                         public void actionPerformed(ActionEvent event)
                         {
                             try {
@@ -312,8 +310,7 @@ public class StreamObjectCell
                  * input stream.
                  */
                 console.flushConsole();
-                socket.shutdownOutput();
-                while (console.readLine() != null);
+                _engine.getInputStream().close();
             } finally {
                 /* ConsoleReader doesn't close the history file itself.
                  */
@@ -349,6 +346,7 @@ public class StreamObjectCell
             _nucleus.newThread(this).start();
         }
 
+        @Override
         public void run()
         {
             Object result;
@@ -486,7 +484,7 @@ public class StreamObjectCell
     public void cleanUp()
     {
         try {
-            _engine.getSocket().close();
+            _engine.getInputStream().close();
         } catch (IOException e) {
             _log.error("Failed to close socket: " + e);
         }
