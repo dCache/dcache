@@ -2,9 +2,6 @@
 package org.dcache.commons.stats;
 import java.util.Formatter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * this class stores an average of the execution time of the request
  * if the num is the num of updates that took place before this update
@@ -20,8 +17,6 @@ import org.slf4j.LoggerFactory;
  * @author timur
  */
 public class RequestExecutionTimeGauge {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RequestExecutionTimeGauge.class);
 
     private final String name;
     // These are the variables that keep the
@@ -83,8 +78,6 @@ public class RequestExecutionTimeGauge {
     public synchronized void update(long nextExecTime) {
 
         if(nextExecTime <0) {
-            LOG.info("possible backwards timeshift detected; discarding invalid data ({})",
-                    nextExecTime);
             return;
         }
         // long term averages calculations
