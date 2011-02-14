@@ -141,6 +141,9 @@
     <target name="install-srmclient" depends="srmclient"
         description="build deploy-ready srm client"/>
 
+    <target name="smc" depends="-dcache.smc"
+	    description="build Java SMC code"/>
+
     <!--
           Find Bugs
     -->
