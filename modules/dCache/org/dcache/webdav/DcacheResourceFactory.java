@@ -1048,13 +1048,13 @@ public class DcacheResourceFactory
         }
 
         @Override
-        protected ProtocolInfo createProtocolInfoForPoolManager()
+        protected ProtocolInfo getProtocolInfoForPoolManager()
         {
             return createProtocolInfo();
         }
 
         @Override
-        protected ProtocolInfo createProtocolInfoForPool()
+        protected ProtocolInfo getProtocolInfoForPool()
         {
             return createProtocolInfo();
         }
@@ -1174,7 +1174,7 @@ public class DcacheResourceFactory
         }
 
         @Override
-        protected ProtocolInfo createProtocolInfoForPool()
+        protected ProtocolInfo getProtocolInfoForPool()
         {
             ServerSocket socket = getServerChannel().socket();
             String address = socket.getInetAddress().getHostAddress();

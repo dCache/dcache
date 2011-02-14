@@ -10,7 +10,7 @@ import diskCacheV111.util.TimeoutCacheException;
 /**
  * A transfer where the mover can send a redirect message to the door.
  */
-public abstract class RedirectedTransfer<T> extends Transfer
+public class RedirectedTransfer<T> extends Transfer
 {
     private boolean _isRedirected;
     private T _redirectObject;

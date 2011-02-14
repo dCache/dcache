@@ -52,16 +52,15 @@ import dmg.util.TimebasedCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.*;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 
 /**
  * Facade for transfer related operations. Encapulates information
  * about and typical operations of a transfer.
- *
- * The class is abstract and must be subclassed.
  */
-public abstract class Transfer implements Comparable<Transfer>
+public class Transfer implements Comparable<Transfer>
 {
     private static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
@@ -116,14 +115,40 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Creates a ProtocolInfo suitable for selecting a pool.
+     * Returns a ProtocolInfo suitable for selecting a pool. By
+     * default the protocol info set with setProtocolInfo is returned.
      */
-    protected abstract ProtocolInfo createProtocolInfoForPoolManager();
+    protected ProtocolInfo getProtocolInfoForPoolManager()
+    {
+        checkNotNull(_protocolInfo);
+        return _protocolInfo;
+    }
 
     /**
-     * Creates a ProtocolInfo suitable for starting a mover.
+     * Returns a ProtocolInfo suitable for starting a mover. By
+     * default the protocol info set with setProtocolInfo is returned.
      */
-    protected abstract ProtocolInfo createProtocolInfoForPool();
+    protected ProtocolInfo getProtocolInfoForPool()
+    {
+        checkNotNull(_protocolInfo);
+        return _protocolInfo;
+    }
+
+    /**
+     * Sets the ProtocolInfo used for the transfer.
+     */
+    public synchronized void setProtocolInfo(ProtocolInfo info)
+    {
+        _protocolInfo = info;
+    }
+
+    /**
+     * Returns the ProtocolInfo used for the transfer. May be null.
+     */
+    public synchronized ProtocolInfo getProtocolInfo()
+    {
+        return _protocolInfo;
+    }
 
     /**
      * Orders Transfer objects according to hash value. Makes it
@@ -182,6 +207,14 @@ public abstract class Transfer implements Comparable<Transfer>
     public synchronized void setStatus(String status)
     {
         _status = status;
+    }
+
+    /**
+     * Sets the current status of a pool. May be null.
+     */
+    public synchronized String getStatus()
+    {
+        return _status;
     }
 
     /**
@@ -298,24 +331,6 @@ public abstract class Transfer implements Comparable<Transfer>
     public synchronized String getPool()
     {
         return _poolName;
-    }
-
-    /**
-     * Returns the ProtocolInfo returned by the pool after the
-     * transfer completed.
-     */
-    public synchronized void setProtocolInfo(ProtocolInfo info)
-    {
-        _protocolInfo = info;
-    }
-
-    /**
-     * Returns the ProtocolInfo returned by the pool after the
-     * transfer completed.
-     */
-    public synchronized ProtocolInfo getProtocolInfo()
-    {
-        return _protocolInfo;
     }
 
     /**
@@ -560,6 +575,15 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Returns the length of the file to be transferred.
+     * @throw IllegalStateException if the length isn't known
+     */
+    public synchronized long getLength()
+    {
+        return _fileAttributes.getSize();
+    }
+
+    /**
      * Sets the length of the file to be uploaded. Only valid for
      * uploads.
      */
@@ -601,7 +625,7 @@ public abstract class Transfer implements Comparable<Transfer>
 
         setStatus("PoolManager: Selecting pool");
         try {
-            ProtocolInfo protocolInfo = createProtocolInfoForPoolManager();
+            ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
             PoolMgrSelectPoolMsg request;
             if (isWrite()) {
                 long allocated = _allocated;
@@ -647,7 +671,7 @@ public abstract class Transfer implements Comparable<Transfer>
     public void startMover(String queue)
             throws CacheException, InterruptedException
     {
-        startMover(queue, _poolManager.getTimeout());
+        startMover(queue, _pool.getTimeout());
     }
 
     /**
@@ -668,7 +692,7 @@ public abstract class Transfer implements Comparable<Transfer>
 
         setStatus("Pool " + pool + ": Creating mover");
         try {
-            ProtocolInfo protocolInfo = createProtocolInfoForPool();
+            ProtocolInfo protocolInfo = getProtocolInfoForPool();
             PoolIoFileMessage message;
             if (isWrite()) {
                 message =
@@ -723,7 +747,7 @@ public abstract class Transfer implements Comparable<Transfer>
             /* To reduce the risk of orphans when using PNFS, we wait
              * for the transfer confirmation.
              */
-            if (!waitForMover(millis)) {
+            if (millis > 0 && !waitForMover(millis)) {
                 _log.error("Failed to kill mover " + pool + "/" + moverId
                            + ": Timeout");
             }

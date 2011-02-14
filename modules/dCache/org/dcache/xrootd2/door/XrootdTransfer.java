@@ -70,12 +70,12 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     }
 
     @Override
-    protected ProtocolInfo createProtocolInfoForPoolManager() {
+    protected ProtocolInfo getProtocolInfoForPoolManager() {
         return createProtocolInfo();
     }
 
     @Override
-    protected ProtocolInfo createProtocolInfoForPool() {
+    protected ProtocolInfo getProtocolInfoForPool() {
         return createProtocolInfo();
     }
 }

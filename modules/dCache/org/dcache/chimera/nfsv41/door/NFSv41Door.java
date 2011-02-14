@@ -337,7 +337,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 NfsTransfer transfer = new NfsTransfer(_pnfsHandler, Subjects.ROOT, new FsPath("/"),
                         client.getRemoteAddress(), stateid);
 
-                NFS4ProtocolInfo protocolInfo = transfer.createProtocolInfoForPool();
+                NFS4ProtocolInfo protocolInfo = transfer.getProtocolInfoForPool();
                 protocolInfo.door(new CellPath(this.getCellName(), this.getCellDomainName()));
 
                 transfer.setCellName(this.getCellName());
@@ -532,12 +532,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         @Override
-        protected NFS4ProtocolInfo createProtocolInfoForPoolManager() {
+        protected NFS4ProtocolInfo getProtocolInfoForPoolManager() {
             return _protocolInfo;
         }
 
         @Override
-        protected NFS4ProtocolInfo createProtocolInfoForPool() {
+        protected NFS4ProtocolInfo getProtocolInfoForPool() {
             return _protocolInfo;
         }
     }

@@ -755,7 +755,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        protected synchronized ProtocolInfo createProtocolInfoForPoolManager()
+        protected synchronized ProtocolInfo getProtocolInfoForPoolManager()
         {
             return new GFtpProtocolInfo("GFtp",
                                         _version,
@@ -769,7 +769,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        protected synchronized ProtocolInfo createProtocolInfoForPool()
+        protected synchronized ProtocolInfo getProtocolInfoForPool()
         {
             /* We can only let the pool be passive if this has been
              * enabled and if we can provide the address to the client
