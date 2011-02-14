@@ -794,7 +794,6 @@ printp "Converting ${DCACHE_ETC}/node_config
             dCache)
                 echo "[$domain]"
                 echo "[$domain/poolmanager]"
-                echo "[$domain/dummy-prestager]"
                 echo "[$domain/broadcast]"
                 echo "[$domain/loginbroker]"
                 echo "[$domain/topo]"

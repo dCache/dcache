@@ -41,6 +41,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -pnfsManager=${pnfsmanager} \
               -poolManager=${doorPoolManager}  \
               -poolProxy=${doorPoolManager} \
+              -pinManager=PinManager \
               -loginBroker=LoginBroker \
               -brokerUpdateTime=120 \
               -protocolFamily=gsidcap \

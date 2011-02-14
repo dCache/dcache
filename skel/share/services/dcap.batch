@@ -31,6 +31,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -pnfsManager=${pnfsmanager} \
              -poolManager=${poolmanager} \
              -poolProxy=${poolmanager} \
+             -pinManager=PinManager \
              -io-queue=${dcapIoQueue} \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -io-queue-overwrite=${dcapIoQueueOverwrite} \

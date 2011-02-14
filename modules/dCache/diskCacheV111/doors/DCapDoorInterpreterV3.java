@@ -41,6 +41,8 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.pinmanager.PinManagerPinMessage;
+
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 
@@ -110,7 +112,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private String  _poolManagerName = null ;
     private String  _pnfsManagerName = null ;
 
-
+    private CellStub _pinManagerStub;
     private CellPath _poolMgrPath    = null ;
 
     /**
@@ -208,16 +210,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         _loginStrategy = createLoginStrategy();
 
-        _pnfsManagerName = _args.getOpt("pnfsManager" ) ;
-        _pnfsManagerName = _pnfsManagerName == null ?
-        "PnfsManager" : _pnfsManagerName ;
-
-        _poolManagerName = _args.getOpt("poolManager" ) ;
-        _poolManagerName = _poolManagerName == null ?
-        "PoolManager" : _poolManagerName ;
-
-
-        _poolProxy       = _args.getOpt("poolProxy");
+        _pnfsManagerName = _args.getOpt("pnfsManager");
+        _poolManagerName = _args.getOpt("poolManager");
+        _poolProxy = _args.getOpt("poolProxy");
 
         if (_poolProxy != null) {
             _log.debug("Pool Proxy set to {}", _poolProxy);
@@ -237,6 +232,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
+        _pinManagerStub = new CellStub(cell, new CellPath(_args.getOpt("pinManager")));
 
         _checkStrict     = ( _args.getOpt("check") != null ) &&
         ( _args.getOpt("check").equals("strict") ) ;
@@ -1175,67 +1171,49 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     //
     //      the basic prestage handler
     //
-    private final CellPath _prestagerPath = new CellPath( "Prestager" ) ;
-    protected  class PrestageHandler  extends PnfsSessionHandler  {
-        private long   _time = 0L ;
-        private String _destination = null ;
-        private PrestageHandler( int sessionId , int commandId , VspArgs args )
+    protected class PrestageHandler extends PnfsSessionHandler
+    {
+        private final String _destination;
+
+        private PrestageHandler(int sessionId, int commandId, VspArgs args)
             throws CacheException, CommandException
         {
-            super( sessionId , commandId , args, false, true ) ;
-
-            try{ _time = Long.parseLong( args.getOpt("stagetime" ) ) ; }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-            _destination = args.getOpt( "location" ) ;
+            super(sessionId, commandId, args, false, true);
+            _destination = args.getOpt("location");
         }
 
         @Override
-        public void fileAttributesAvailable(){
+        public void fileAttributesAvailable()
+        {
             try {
-                if( _fileAttributes.getFileType() != REGULAR ) {
-                    sendReply( "storageInfoAvailable" , CacheException.NOT_FILE,
-                               "path is not a regular file", "EINVAL" ) ;
+                if (_fileAttributes.getFileType() != REGULAR) {
+                    sendReply("storageInfoAvailable", CacheException.NOT_FILE,
+                              "path is not a regular file", "EINVAL");
                     return;
                 }
-                try {
-                    if( !_checkStagePermission.canPerformStaging(_subject, _fileAttributes.getStorageInfo()) ) {
-                        sendReply( "storageInfoAvailable" , CacheException.PERMISSION_DENIED,
-                                   "Staging file not allowed", "EACCES" ) ;
-                        return;
-                    }
-                } catch (IOException e) {
-                    _log.error("Error while reading data from StageConfiguration.conf file : {}", e.getMessage());
-                }
-                //
-                // we are not called if the pnfs request failed.
-                //
-                StagerMessageV0 sm = new StagerMessageV0(_fileAttributes) ;
-                sm.setProtocol( "DCap",3,0,_destination);
-                sm.setStageTime( _time ) ;
 
-                CellMessage stagerMessage = new CellMessage( _prestagerPath , sm ) ;
-                setStatus("Waiting for reply from Prestager");
-                Message msg = null ;
-                try{
-                    stagerMessage = _cell.sendAndWait(  stagerMessage , 20000 ) ;
-                    msg = (Message) stagerMessage.getMessageObject() ;
-                }catch(Exception ee ){
-                    sendReply( "storageInfoAvailable", 2 , ee.toString() ) ;
-                    return ;
-                }
-                if( msg.getReturnCode() != 0 ){
-                    sendReply( "storageInfoAvailable" ,
-                               msg.getReturnCode() ,
-                               (String)msg.getErrorObject()  ) ;
-                    return ;
-                }
-                sendReply( "storageInfoAvailable" , 0 , "" ) ;
+                DCapProtocolInfo protocolInfo =
+                    new DCapProtocolInfo("DCap", 3, 0, _destination, 0);
+                PinManagerPinMessage message =
+                    new PinManagerPinMessage(_fileAttributes, protocolInfo,
+                                             null, 0);
+                _pinManagerStub.send(message);
+                sendReply("storageInfoAvailable", 0, "");
+            } catch (NoRouteToCellException e) {
+                sendReply("storageInfoAvailable", 2,
+                          "Staging service is offline");
             } finally {
-                removeUs() ;
+                removeUs();
             }
         }
+
         @Override
-        public String toString(){ return "st "+super.toString() ; }
+        public String toString()
+        {
+            return "st " + super.toString();
+        }
     }
+
     ////////////////////////////////////////////////////////////////////
     //
     //      the file stat handler

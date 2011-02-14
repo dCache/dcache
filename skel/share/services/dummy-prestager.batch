@@ -1,2 +1,2 @@
-onerror shutdown
-create diskCacheV111.hsmControl.DummyStager Prestager "${config}"
+say -level=2 "dummy-prestager is obsolete and has been replaced by pinmanager"
+
