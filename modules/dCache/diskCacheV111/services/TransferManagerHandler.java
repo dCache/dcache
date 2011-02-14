@@ -1,3 +1,5 @@
+/* -*- c-basic-offset: 8; indent-tabs-mode: nil -*- */
+
 //______________________________________________________________________________
 //
 // $id: TransferManagerHandler.java,v 1.4 2006/05/18 20:16:09 litvinse Exp $
@@ -52,8 +54,9 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.enums.AccessType;
 
 
-public class TransferManagerHandler implements CellMessageAnswerable {
-    private static final Logger log =
+public class TransferManagerHandler implements CellMessageAnswerable
+{
+        private static final Logger log =
             LoggerFactory.getLogger(TransferManagerHandler.class);
 	private final TransferManager manager;
 	private TransferManagerMessage transferRequest;
@@ -69,7 +72,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	transient boolean locked = false;
 	private String pool;
 	private FTPTransactionLog tlog;
-    private FileAttributes fileAttributes;
+        private FileAttributes fileAttributes;
 	public static final int INITIAL_STATE=0;
 	public static final int WAITING_FOR_PNFS_INFO_STATE=1;
 	public static final int RECEIVED_PNFS_INFO_STATE=2;
@@ -105,13 +108,12 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	private transient Object _errorObject;
 	private transient boolean _cancelTimer;
 	private DoorRequestInfoMessage info;
-    private PermissionHandler permissionHandler;
+        private PermissionHandler permissionHandler;
 
-/**      */
 	public TransferManagerHandler(TransferManager tManager,
 				      TransferManagerMessage message,
-				      CellPath sourcePath)  {
-
+				      CellPath sourcePath)
+        {
 	    info =
 			new DoorRequestInfoMessage(tManager.getNucleus().getCellName()+"@"+
 						   tManager.getNucleus().getCellDomainName());
@@ -161,9 +163,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		this.spaceReservationId       = transferRequest.getSpaceReservationId();
 		this.space_reservation_strict = transferRequest.isSpaceReservationStrict();
 		this.size                     = transferRequest.getSize();
-		synchronized(manager.activeTransfersIDs) {
-			manager.addActiveTransfer(longId,this);
-		}
+                manager.addActiveTransfer(longId,this);
 		setState(INITIAL_STATE);
         permissionHandler =
             new ChainedPermissionHandler(
@@ -434,10 +434,8 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 						       CacheException( "pnfs pnfsid: "+pnfsId.toString()+" file "+pnfsPath+"  is already there"));
 					return;
 				}
-				Iterator iter = manager.justRequestedIDs.iterator();
-				while(iter.hasNext()) {
-					PnfsId pnfsid = (PnfsId)iter.next();
-					log.debug("found pnfsid: "+pnfsid.toString());
+                                for (PnfsId pnfsid: manager.justRequestedIDs) {
+                                    log.debug("found pnfsid: {}", pnfsid);
 				}
 				manager.justRequestedIDs.add(pnfsId);
 			}
@@ -729,7 +727,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				manager.justRequestedIDs.remove(pnfsId);
 			}
 		}
-		manager.finish_transfer();
+		manager.finishTransfer();
 		try {
 			TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest,replyCode, errorObject);
 			manager.sendMessage(new CellMessage(sourcePath,errorReply));
@@ -741,9 +739,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		Long longId = new Long(id);
 		//this will allow the handler to be garbage collected
 		// once we sent a response
-		synchronized(manager.activeTransfersIDs) {
-			manager.removeActiveTransfer(longId);
-		}
+                manager.removeActiveTransfer(longId);
 	}
 	public void sendErrorReply() {
 
@@ -780,7 +776,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				manager.justRequestedIDs.remove(pnfsId);
 			}
 		}
-		manager.finish_transfer();
+		manager.finishTransfer();
 		try {
 			TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest,replyCode, errorObject);
 			manager.sendMessage(new CellMessage(sourcePath,errorReply));
@@ -792,9 +788,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		Long longId = new Long(id);
 		//this will allow the handler to be garbage collected
 		// once we sent a response
-		synchronized(manager.activeTransfersIDs) {
-			manager.removeActiveTransfer(longId);
-		}
+                manager.removeActiveTransfer(longId);
 	}
 /**      */
 	public void sendSuccessReply() {
@@ -812,7 +806,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				manager.justRequestedIDs.remove(pnfsId);
 			}
 		}
-		manager.finish_transfer();
+		manager.finishTransfer();
 		if(tlog != null) {
 			tlog.success();
 		}
@@ -827,9 +821,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		Long longId = new Long(id);
 		//this will allow the handler to be garbage collected
 		// once we sent a response
-		synchronized(manager.activeTransfersIDs) {
-			manager.removeActiveTransfer(longId);
-		}
+                manager.removeActiveTransfer(longId);
 	}
 
 	/** Sends status information to the biling cell. */

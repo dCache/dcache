@@ -103,6 +103,8 @@ create diskCacheV111.services.GsiftpTransferManager RemoteGsiftpTransferManager 
         -doDbLog=${srmDbLogEnabled} \
         -poolManager=${remoteTransferManagerPoolManager} \
         -poolProxy=${remoteTransferManagerPoolProxy} \
+        -pnfsManager=PnfsManager \
+        -maxNumberOfDeleteRetries=1 \
 "
 #
 # Copy Manager Cell
