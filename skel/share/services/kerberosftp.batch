@@ -22,7 +22,6 @@ check -strong gsiftpMaxStreamsPerClient
 check -strong gsiftpDefaultStreamsPerClient
 check -strong gsiftpDeleteOnConnectionClosed
 check gsiftpPoolManager
-check gsiftpPoolProxy
 check gsiftpIoQueue
 check kpwdFile
 check gsiftpAdapterInternalInterface
@@ -32,14 +31,6 @@ check -strong ftp.proxy.on-active
 check FtpTLogDir
 
 onerror continue
-
-# Use gsiftpPoolProxy if defined
-define env usePoolProxy end
-set env -c myPoolProxy ${gsiftpPoolProxy}
-end
-
-eval "${gsiftpPoolProxy}" "" !=
-exec env usePoolProxy -ifok
 
 # Use gsiftpPoolManager if defined
 define env usePoolManager end
@@ -51,7 +42,6 @@ exec env usePoolManager -ifok
 
 # Otherwise use space manager, if enabled
 define env useSpaceManager end
-  set env -c myPoolProxy ${spacemanager}
   set env -c myPoolManager ${spacemanager}
 end
 
@@ -59,7 +49,6 @@ eval ${srmSpaceManagerEnabled} yes ==
 exec env useSpaceManager -ifok
 
 # Otherwise use poolmanager
-set env -c myPoolProxy ${poolmanager}
 set env -c myPoolManager ${poolmanager}
 
 onerror shutdown
@@ -75,7 +64,6 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -svc-principal=${kerberos.service-principle-name} \
              -prot=raw \
              -clientDataPortRange=${clientDataPortRange} \
-             -poolProxy=${gsiftpPoolProxy}  \
              -poolManager=${gsiftpPoolManager}  \
              -maxLogin=${gsiftpMaxLogin} \
              -brokerUpdateTime=${loginBrokerUpdateTime} \

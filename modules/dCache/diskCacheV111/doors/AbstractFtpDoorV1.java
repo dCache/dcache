@@ -339,11 +339,6 @@ public abstract class AbstractFtpDoorV1
     )
     protected String _portRange;
 
-    @Option(
-        name = "poolProxy"
-    )
-    protected String _poolProxy;
-
     /**
      * Name or IP address of the interface on which we listen for
      * connections from the pool in case an adapter is used.
