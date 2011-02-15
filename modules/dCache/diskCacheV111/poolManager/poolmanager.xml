@@ -28,7 +28,7 @@
     <description>Pool selection unit</description>
   </bean>
 
-  <bean id="cm" class="diskCacheV111.poolManager.PoolOperator">
+  <bean id="cm" class="diskCacheV111.poolManager.CostModuleV1">
     <description>Cost module</description>
     <property name="costCalculationEngine">
       <bean class="diskCacheV111.pools.CostCalculationEngine">
