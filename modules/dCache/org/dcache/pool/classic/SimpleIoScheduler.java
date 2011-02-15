@@ -221,7 +221,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
                         @Override
                         public void completed(Object result, Object attachment) {
-                            postProcess(0, "");
+                            postProcess();
                         }
 
                         @Override
@@ -242,14 +242,15 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                                 rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
                                 msg = "Transfer failed due to unexpected exception: " + e;
                             }
-                            postProcess(rc, msg);
+                            request.setTransferStatus(rc, msg);
+                            postProcess();
                         }
 
-                        private void postProcess(int rc, String msg) {
+                        private void postProcess() {
                             _semaphore.release();
                             _jobs.remove(wrapp.getId());
                             request.setState(IoRequestState.DONE);
-                            request.sendBillingMessage(rc, msg);
+                            request.sendBillingMessage();
                             _executorServices.getPostExecutorService(protocolName).execute(request);
                         }
                     });

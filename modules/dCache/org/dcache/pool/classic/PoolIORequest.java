@@ -50,6 +50,12 @@ public class PoolIORequest implements IoProcessable {
 
     private volatile IoRequestState _state = CREATED;
 
+    /** transfer status error code */
+    private volatile int _errorCode = 0;
+
+    /** transfer status error message */
+    private volatile String _errorMessage = "";
+
     /**
      * @param transfer the read or write transfer to execute
      * @param id the client id of the request
@@ -77,7 +83,7 @@ public class PoolIORequest implements IoProcessable {
         _faultListener = faultListener;
     }
 
-    void sendBillingMessage(int rc, String message) {
+    void sendBillingMessage() {
         MoverInfoMessage info =
                 new MoverInfoMessage(_cellEndpoint.getCellInfo().getCellName() + "@" + _cellEndpoint.getCellInfo().getDomainName(),
                 getPnfsId());
@@ -85,7 +91,7 @@ public class PoolIORequest implements IoProcessable {
         info.setFileCreated(_transfer instanceof PoolIOWriteTransfer);
         info.setStorageInfo(getStorageInfo());
         info.setFileSize(_transfer.getFileSize());
-        info.setResult(rc, message);
+        info.setResult(_errorCode, _errorMessage);
         info.setTransferAttributes(getBytesTransferred(),
                 getTransferTime(),
                 getProtocolInfo());
@@ -97,7 +103,7 @@ public class PoolIORequest implements IoProcessable {
         }
     }
 
-    void sendFinished(int rc, String msg) {
+    void sendFinished() {
         DoorTransferFinishedMessage finished =
                 new DoorTransferFinishedMessage(getClientId(),
                 getPnfsId(),
@@ -105,10 +111,10 @@ public class PoolIORequest implements IoProcessable {
                 getStorageInfo(),
                 _poolName);
         finished.setIoQueueName(_queue);
-        if (rc == 0) {
+        if (_errorCode == 0) {
             finished.setSucceeded();
         } else {
-            finished.setReply(rc, msg);
+            finished.setReply(_errorCode, _errorMessage);
         }
 
         try {
@@ -209,6 +215,18 @@ public class PoolIORequest implements IoProcessable {
 
     public FaultListener getFaultListener() {
         return _faultListener;
+    }
+
+    /**
+     * Set transfer status. The provided status and error message will be send to
+     * the Billing and to the corresponding Door.
+     *
+     * @param errorCode
+     * @param errorMessage
+     */
+    public void setTransferStatus(int errorCode, String errorMessage) {
+        _errorCode = errorCode;
+        _errorMessage = errorMessage;
     }
 
     @Override
