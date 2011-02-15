@@ -45,8 +45,32 @@ check loginBroker
 define env verify-http.exe enddefine
 enddefine
 
+onerror continue
+test -f ${webdavKeyStore}
+set env have_keystore ${rc}
+test -f ${webdavTrustStore}
+set env have_truststore ${rc}
+onerror shutdown
+
 define env verify-https.exe enddefine
+  check -strong webdavKeyStore
   check -strong webdavKeyStorePassword
+  check -strong webdavTrustStore
+
+  exec env failMissingKeyStore.exe -ifnotok=have_keystore
+  exec env failMissingTrustStore.exe -ifnotok=have_truststore
+enddefine
+
+define env failMissingKeyStore.exe enddefine
+   say -level=esay "The key-store file ${webdavKeyStore} is missing.  Please generate it with:"
+   say -level=esay "     /opt/d-cache/bin/dcache import hostcert --out=${webdavKeyStore}"
+   exit 1
+enddefine
+
+define env failMissingTrustStore.exe enddefine
+   say -level=esay "The TrustStore file ${webdavTrustStore} is missing.  Please generate it with:"
+   say -level=esay "     /opt/d-cache/bin/dcache import cacerts --out=${webdavTrustStore}"
+   exit 1
 enddefine
 
 exec env verify-${webdavProtocol}.exe
