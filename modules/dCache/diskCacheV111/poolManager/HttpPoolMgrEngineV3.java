@@ -101,18 +101,19 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     public void run()
     {
         _log.info("Restore Collector Thread started");
-        while (!Thread.interrupted()) {
-            try {
-                synchronized (_updateLock) {
-                    _updateLock.wait(_collectorUpdate);
+        try {
+            while (!Thread.interrupted()) {
+                try {
+                    synchronized (_updateLock) {
+                        _updateLock.wait(_collectorUpdate);
+                    }
+                    runRestoreCollector();
+                } catch(NoRouteToCellException e) {
+                    _log.warn("Restore Collector got : " + e, e);
                 }
-                runRestoreCollector();
-            } catch (InterruptedException e) {
-                _log.warn("Restore Collector interrupted");
-                break;
-            } catch (Exception e) {
-                _log.warn("Restore Collector got : " + e, e);
             }
+        } catch (InterruptedException e) {
+            _log.info("Restore Collector interrupted");
         }
     }
 
