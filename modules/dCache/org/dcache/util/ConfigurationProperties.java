@@ -82,6 +82,8 @@ public class ConfigurationProperties
     private static final String STORAGE_PREFIX_ANNOTATIONS = "<A>";
     private static final String STORAGE_PREFIX_ERROR_MSG = "<E>";
 
+    private static final Pattern SINGLE_PROPERTY_EXPANSION = Pattern.compile("^\\$\\{([^}]+)\\}");
+
     private static final EnumSet<Annotation> OBSOLETE_FORBIDDEN =
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
@@ -234,9 +236,62 @@ public class ConfigurationProperties
         }
 
         if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
-            _log.warn( "Property {}: please review configuration; " +
-                    "support for this property will be removed in the future", name);
+            _log.warn( "Property {}: {}; support for {} will be removed in the future",
+                        new Object[] {name, deprecatedWarningInstructionsFor(name), name});
         }
+    }
+
+    private String deprecatedWarningInstructionsFor(String propertyName)
+    {
+        String synonym = findSynonymOf(propertyName);
+
+        if(synonym != null) {
+            return "use \"" + synonym + "\" instead";
+        } else {
+            return "please review configuration";
+        }
+    }
+
+    /**
+     * Define the binary relationship property A hasSynonym property B
+     * as true iff either:
+     * <ul>
+     * <li>Property A's value is a simple reference to property B (e.g.
+     * <tt>property.A = ${property.B}</tt>).
+     * <li>If there exists precisely one property with a simple reference to
+     * property A; e.g.
+     * <pre>
+     *     property.B = ${property.A}
+     *     property.A = some default value
+     * </pre>
+     * <p>
+     * This method returns the name of a property that is the subject of
+     * hasSynonym relationship (property B) with the supplied property
+     * (as property A), or null if no such property exists.
+     */
+    private String findSynonymOf(String propertyName)
+    {
+        String propertyValue = getProperty(propertyName);
+        Matcher m = SINGLE_PROPERTY_EXPANSION.matcher(propertyValue);
+        if( m.matches()) {
+            return m.group(1);
+        }
+
+        String synonym = null;
+        String simpleReference = "${" + propertyName + "}";
+
+        for(Map.Entry<Object,Object> entry : entrySet()) {
+            String value = entry.getValue().toString();
+            if( value.equals(simpleReference)) {
+                if( synonym != null) {
+                    return null;
+                }
+
+                synonym = entry.getKey().toString();
+            }
+        }
+
+        return synonym;
     }
 
     private String forbiddenErrorMessageFor(AnnotatedKey key)

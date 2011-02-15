@@ -30,6 +30,9 @@ public class ConfigurationPropertiesTests {
     private static final String NORMAL_PROPERTY_NAME = "normalProperty";
     private static final String NORMAL_PROPERTY_VALUE = "some normal value";
 
+    private static final String SIMPLE_PROPERTY_NAME = "simple-key";
+    private static final String SIMPLE_PROPERTY_VALUE = "simple-value";
+
     private static final String OBSOLETE_PROPERTY_NAME = "obsoleteProperty";
     private static final String OBSOLETE_PROPERTY_KEY =
             "(obsolete)" + OBSOLETE_PROPERTY_NAME;
@@ -58,8 +61,21 @@ public class ConfigurationPropertiesTests {
     private static final String DEPRECATED_PROPERTY_KEY =
             "(deprecated)" + DEPRECATED_PROPERTY_NAME;
 
-    private static final String SIMPLE_PROPERTY_NAME = "simple-key";
-    private static final String SIMPLE_PROPERTY_VALUE = "simple-value";
+    private static final String DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME = "deprecatedProperty.forward";
+    private static final String DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_VALUE =
+            "${" + SIMPLE_PROPERTY_NAME + "}";
+    private static final String DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_KEY =
+            "(deprecated)" + DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME;
+
+    private static final String DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME = "deprecatedProperty.backward";
+    private static final String DEPRECATED_PROPERTY_W_BACK_SYNONYM_VALUE = "some value";
+    private static final String DEPRECATED_PROPERTY_W_BACK_SYNONYM_KEY =
+            "(deprecated)" + DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME;
+
+    private static final String SIMPLE_SYNONYM_OF_DEPRECATED_NAME = "synonym.of.deprecated";
+    private static final String SIMPLE_SYNONYM_OF_DEPRECATED_VALUE = "${" + DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME + "}";
+    private static final String SIMPLE_SYNONYM_OF_DEPRECATED_KEY = SIMPLE_SYNONYM_OF_DEPRECATED_NAME;
+
 
     private static final String PROPERTY_WITH_SUFFIX_NAME = SIMPLE_PROPERTY_NAME + "-foo";
     private static final String PROPERTY_WITH_SUFFIX_VALUE = "value-foo";
@@ -90,6 +106,13 @@ public class ConfigurationPropertiesTests {
         _properties.put( FORBIDDEN_PROPERTY_W_ERROR_KEY,
                 FORBIDDEN_PROPERTY_W_ERROR_VALUE);
         _properties.put( DEPRECATED_PROPERTY_KEY, DEPRECATED_PROPERTY_VALUE);
+        _properties.put( DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_KEY,
+                DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_VALUE);
+        _properties.put(DEPRECATED_PROPERTY_W_BACK_SYNONYM_KEY,
+                DEPRECATED_PROPERTY_W_BACK_SYNONYM_VALUE);
+        _properties.put(SIMPLE_SYNONYM_OF_DEPRECATED_KEY,
+                SIMPLE_SYNONYM_OF_DEPRECATED_VALUE);
+
 
         _initiallyEmptyProperties = new ConfigurationProperties();
 
@@ -174,7 +197,30 @@ public class ConfigurationPropertiesTests {
         assertEquals(1, _log.size());
         assertEquals(Level.WARN, _log.get(0).getLevel());
         assertEquals("Property " + DEPRECATED_PROPERTY_NAME +
-                     ": please review configuration; support for this property will be removed in the future",
+                     ": please review configuration; support for " +
+                     DEPRECATED_PROPERTY_NAME + " will be removed in the future",
+                     _log.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testDeprecatedForwardSynonymPropertyPut() {
+        _properties.put( DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME, "some value");
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("Property " + DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME +
+                     ": use \"" + SIMPLE_PROPERTY_NAME + "\" instead; support for " +
+                     DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME + " will be removed in the future",
+                     _log.get(0).getFormattedMessage());
+    }
+
+    @Test
+    public void testDeprecatedBackSynonymPropertyPut() {
+        _properties.put( DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME, "some value");
+        assertEquals(1, _log.size());
+        assertEquals(Level.WARN, _log.get(0).getLevel());
+        assertEquals("Property " + DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME +
+                     ": use \"" + SIMPLE_SYNONYM_OF_DEPRECATED_NAME + "\" instead; support for " +
+                     DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME + " will be removed in the future",
                      _log.get(0).getFormattedMessage());
     }
 
@@ -223,7 +269,11 @@ public class ConfigurationPropertiesTests {
     public void testStringPropertyNames()
     {
         String[] expected =
-            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME };
+            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME,
+                           DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME,
+                           DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME,
+                           SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
+
         assertEquals(new HashSet<String>(Arrays.asList(expected)),
                      _properties.stringPropertyNames());
     }
@@ -232,7 +282,11 @@ public class ConfigurationPropertiesTests {
     public void testPropertyNames()
     {
         String[] expected =
-            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME };
+            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME,
+                           DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME,
+                           DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME,
+                           SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
+
         HashSet<String> results = new HashSet<String>();
         Enumeration<?> e = _properties.propertyNames();
         while( e.hasMoreElements()) {
