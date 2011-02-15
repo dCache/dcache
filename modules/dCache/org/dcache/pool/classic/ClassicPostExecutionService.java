@@ -19,31 +19,23 @@ public class ClassicPostExecutionService implements PostTransferExecutionService
         _executor.execute( new Runnable() {
 
             public void run() {
-                int rc;
-                String msg;
                 try {
                     request.close();
-                    rc = 0;
-                    msg = "";
                 } catch (InterruptedException e) {
-                    rc = CacheException.DEFAULT_ERROR_CODE;
-                    msg = "Transfer was killed";
+                    request.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
+                            "Transfer was killed");
                 } catch (CacheException e) {
-                    rc = e.getRc();
-                    msg = e.getMessage();
+                    int rc = e.getRc();
+                    String msg = e.getMessage();
                     if (rc == CacheException.ERROR_IO_DISK) {
                         request.getFaultListener().faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, msg, e));
                     }
-                    rc = e.getRc();
-                    msg = e.getMessage();
-                } catch (RuntimeException e) {
-                    rc = CacheException.UNEXPECTED_SYSTEM_EXCEPTION;
-                    msg = "Transfer failed due to unexpected exception: " + e;
+                    request.setTransferStatus(rc, msg);
                 } catch (Exception e) {
-                    rc = CacheException.DEFAULT_ERROR_CODE;
-                    msg = "Transfer failed: " + e.getMessage();
+                    request.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                            "Transfer failed due to unexpected exception: " + e.getMessage());
                 }
-                request.sendFinished(rc, msg);
+                request.sendFinished();
             }
         });
 
