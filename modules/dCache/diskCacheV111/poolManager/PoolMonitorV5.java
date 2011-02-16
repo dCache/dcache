@@ -37,7 +37,6 @@ public class PoolMonitorV5
     private final static Logger _log =
         LoggerFactory.getLogger(PoolMonitorV5.class);
 
-    private long              _poolTimeout   = 15 * 1000;
     private PoolSelectionUnit _selectionUnit ;
     private PnfsHandler       _pnfsHandler   ;
     private CostModule        _costModule    ;
@@ -68,20 +67,11 @@ public class PoolMonitorV5
         _partitionManager = partitionManager;
     }
 
-   public void messageToCostModule( CellMessage cellMessage ){
-      _costModule.messageArrived(cellMessage);
-   }
-   public void setPoolTimeout( long poolTimeout ){
-      _poolTimeout = poolTimeout ;
-   }
-   /*
-   public void setSpaceCost( double spaceCost ){
-      _spaceCostFactor = spaceCost ;
-   }
-   public void setPerformanceCost( double performanceCost ){
-      _performanceCostFactor = performanceCost ;
-   }*/
-   public long getPoolTimeout(){ return _poolTimeout ;}
+    public void messageToCostModule(CellMessage cellMessage)
+    {
+        _costModule.messageArrived(cellMessage);
+    }
+
     // output[0] -> Allowed and Available
     // output[1] -> available but not allowed (sorted, cpu)
     // output[2] -> allowed but not available (sorted, cpu + space)
@@ -96,12 +86,22 @@ public class PoolMonitorV5
 
    }
    public class PnfsFileLocation {
+       private List<PoolManagerParameter> _listOfPartitions;
+       private List<List<PoolCostCheckable>> _allowedAndAvailableMatrix;
 
-      private List<PoolManagerParameter> _listOfPartitions;
-      private List<List<PoolCostCheckable>> _allowedAndAvailableMatrix;
-      private List<PoolCostCheckable> _acknowledgedPnfsPools;
-      private int  _allowedPoolCount          = 0 ;
-      private int  _availablePoolCount        = 0 ;
+       /**
+        * Pools that are supposed to have a copy of the file and which
+        * are online. Online here means that they are actively
+        * registering themselves with the pool manager.
+        */
+       private List<PoolCostCheckable> _onlinePools;
+
+       /**
+        * Number of pools that would be able to serve the request if
+        * they had a copy of the file.
+        */
+       private int  _allowedPoolCount          = 0;
+
       private boolean  _calculationDone       = false ;
 
       private final PnfsId       _pnfsId       ;
@@ -137,22 +137,17 @@ public class PoolMonitorV5
            return _listOfPartitions.get(0);
        }
 
-       public List<PoolCostCheckable> getAcknowledgedPnfsPools()
+       public List<PoolCostCheckable> getOnlinePools()
            throws CacheException, InterruptedException
        {
-           if (_acknowledgedPnfsPools == null)
+           if (_onlinePools == null)
                calculateFileAvailableMatrix();
-           return _acknowledgedPnfsPools;
+           return _onlinePools;
        }
 
        public int getAllowedPoolCount()
        {
            return _allowedPoolCount;
-       }
-
-       public int getAvailablePoolCount()
-       {
-           return _availablePoolCount;
        }
 
        public List<List<PoolCostCheckable>> getFileAvailableMatrix()
@@ -215,7 +210,7 @@ public class PoolMonitorV5
        /*
         *   Input : storage info , pnfsid
         *   Output :
-        *             _acknowledgedPnfsPools
+        *             _onlinePools
         *             _allowedAndAvailableMatrix
         *             _allowedAndAvailable
         */
@@ -236,27 +231,29 @@ public class PoolMonitorV5
          // the possible pools.
          //
          List<String> expectedFromPnfs = _pnfsHandler.getCacheLocations( _pnfsId ) ;
-         say( "calculateFileAvailableMatrix _expectedFromPnfs : "+expectedFromPnfs ) ;
+         _log.debug("calculateFileAvailableMatrix _expectedFromPnfs : {}",
+                    expectedFromPnfs);
          //
          // check if pools are up and file is really there.
          // (returns unsorted list of costs)
          //
-         _acknowledgedPnfsPools = new ArrayList<PoolCostCheckable>();
+         _onlinePools = new ArrayList<PoolCostCheckable>();
          for (String poolName: expectedFromPnfs) {
              PoolCostCheckable cost = _costModule.getPoolCost(poolName, 0);
              if (cost != null) {
                  PoolCheckAdapter check = new PoolCheckAdapter(cost);
                  check.setHave(true);
                  check.setPnfsId(_pnfsId);
-                 _acknowledgedPnfsPools.add(check);
+                 _onlinePools.add(check);
              }
          }
 
-         say( "calculateFileAvailableMatrix _acknowledgedPnfsPools : "+_acknowledgedPnfsPools ) ;
+         _log.debug("calculateFileAvailableMatrix _onlinePools : {}",
+                    _onlinePools);
          Map<String, PoolCostCheckable> availableHash =
              new HashMap<String, PoolCostCheckable>() ;
-         for( PoolCostCheckable cost: _acknowledgedPnfsPools ){
-            availableHash.put( cost.getPoolName() , cost ) ;
+         for( PoolCostCheckable cost: _onlinePools ){
+             availableHash.put( cost.getPoolName() , cost ) ;
          }
          //
          //  get the prioritized list of allowed pools for this
@@ -273,21 +270,18 @@ public class PoolMonitorV5
          _listOfPartitions          = new ArrayList<PoolManagerParameter>();
          _allowedAndAvailableMatrix = new ArrayList<List<PoolCostCheckable>>();
          _allowedPoolCount          = 0 ;
-         _availablePoolCount        = 0 ;
 
          for( int prio = 0 ; prio < level.length ; prio++ ){
 
             List<String> poolList = level[prio].getPoolList() ;
-            //
-            //
-            PoolManagerParameter parameter = _partitionManager.getParameterCopyOf(level[prio].getTag()) ;
-            _listOfPartitions.add(  parameter ) ;
+
             //
             // get the allowed pools for this level and
             // and add them to the result list only if
             // they are really available.
             //
-            say( "calculateFileAvailableMatrix : db matrix[*,"+prio+"] "+poolList);
+            _log.debug("calculateFileAvailableMatrix : db matrix[*,{}] {}",
+                       prio, poolList);
 
             List<PoolCostCheckable> result =
                 new ArrayList<PoolCostCheckable>(poolList.size());
@@ -295,15 +289,22 @@ public class PoolMonitorV5
                 PoolCostCheckable cost;
                 if ((cost = availableHash.get(poolName)) != null) {
                     result.add(cost);
-                    _availablePoolCount++;
                 }
                 _allowedPoolCount++;
             }
 
+            if (result.isEmpty()) {
+                continue;
+            }
+
+            PoolManagerParameter parameter =
+                _partitionManager.getParameterCopyOf(level[prio].getTag()) ;
+            _listOfPartitions.add(  parameter ) ;
+
             sortByCost(result, false, parameter);
 
-            say("calculateFileAvailableMatrix : av matrix[*," + prio + "] "
-                + result);
+            _log.debug("calculateFileAvailableMatrix : av matrix[*,{}] {}",
+                       prio, result);
 
             _allowedAndAvailableMatrix.add(result);
          }
@@ -326,7 +327,7 @@ public class PoolMonitorV5
            if (!_calculationDone)
                calculateFileAvailableMatrix();
            List<PoolCostCheckable> list =
-               new ArrayList<PoolCostCheckable>(getAcknowledgedPnfsPools());
+               new ArrayList<PoolCostCheckable>(getOnlinePools());
            sortByCost(list, false);
            return list;
        }
@@ -372,13 +373,12 @@ public class PoolMonitorV5
          // Copy the matrix into a linear HashMap(keys).
          // Exclude pools which contain the file.
          //
-         List<PoolCostCheckable> acknowledged =
-             getAcknowledgedPnfsPools();
+         List<PoolCostCheckable> online = getOnlinePools();
          Map<String, PoolCostCheckable> poolMap =
              new HashMap<String,PoolCostCheckable>();
          Set<String> poolAvailableSet =
              new HashSet<String>();
-         for (PoolCheckable pool : acknowledged)
+         for (PoolCheckable pool: online)
              poolAvailableSet.add(pool.getPoolName());
          for (int prio = 0; prio < level.length; prio++) {
             for (String poolName : level[prio].getPoolList()) {
@@ -437,9 +437,6 @@ public class PoolMonitorV5
          }
 
          return costMatrix ;
-      }
-      private void say(String message ){
-          _log.debug("PFL ["+_pnfsId+"] : "+message);
       }
 
        public List<PoolCostCheckable> getStorePoolList(long filesize)

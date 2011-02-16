@@ -113,14 +113,17 @@ public class PoolMonitorTest {
          */
         PnfsFileLocation availableLocations = _poolMonitor.getPnfsFileLocation(pnfsId, _storageInfo, _protocolInfo, null);
 
-        List<PoolCostCheckable> acknowledgedPools =  availableLocations.getAcknowledgedPnfsPools();
+        List<PoolCostCheckable> onlinePools =
+            availableLocations.getOnlinePools();
 
-        assertFalse("No pools found (test setup error)", acknowledgedPools.isEmpty());
-        assertTrue("No pools acknowledged (test setup error)", availableLocations.getAvailablePoolCount() > 0 );
+        assertFalse("No pools found (test setup error)",
+                    onlinePools.isEmpty());
+        assertFalse("No pools acknowledged (test setup error)",
+                    availableLocations.getFileAvailableMatrix().isEmpty());
 
         boolean found1 = false;
         boolean found2 = false;
-        for( PoolCostCheckable pool : acknowledgedPools) {
+        for( PoolCostCheckable pool : onlinePools) {
             if( pool.getPoolName().equals("pool1") ) {
                 found1 = true;
             }

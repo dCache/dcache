@@ -75,8 +75,6 @@ public class PoolManagerV5
     private PoolSelectionUnit _selectionUnit ;
     private PoolMonitorV5     _poolMonitor   ;
 
-    private long _readPoolTimeout  = 15 * 1000;
-
     private CostModule   _costModule  ;
     private CellPath     _poolStatusRelayPath = null ;
 
@@ -158,9 +156,6 @@ public class PoolManagerV5
         writer.print(getClass().getName());
         writer.print(") at ");
         writer.println(new Date().toString());
-        writer.println("#");
-        writer.print("set timeout pool ");
-        writer.println(""+(_poolMonitor.getPoolTimeout()/1000L));
         writer.println("#");
     }
 
@@ -281,7 +276,6 @@ public class PoolManagerV5
         pw.println(" SelectionUnit : "+_selectionUnit.getVersion() ) ;
         pw.println(" Write Threads : "+_writeThreads) ;
         pw.println(" Read  Threads : "+_readThreads) ;
-        pw.println("  Pool Timeout : "+_poolMonitor.getPoolTimeout()/1000L) ;
         pw.println("Message counts") ;
         pw.println("           PoolUp : "+_counterPoolUp ) ;
         pw.println("   SelectReadPool : "+_counterSelectReadPool ) ;
@@ -292,25 +286,14 @@ public class PoolManagerV5
              pw.println("         Watchdog : "+_watchdog ) ;
         }
     }
-    public String hh_set_max_threads = " # DEPRICATED 	" ;
+    public String hh_set_max_threads = "# OBSOLETE";
     public String ac_set_max_threads_$_1( Args args )throws CommandException{
-      return "" ;
+      return "'set max threads' is obsolete" ;
     }
-    public String hh_set_timeout_pool = "[-read] [-write] <timeout/secs>" ;
+
+    public String hh_set_timeout_pool = "# OBSOLETE";
     public String ac_set_timeout_pool_$_1( Args args )throws CommandException{
-       boolean isWrite = args.getOpt("write") != null ;
-       boolean isRead  = args.getOpt("read")  != null ;
-       long    timeout = Integer.parseInt(args.argv(0)) * 1000 ;
-       if( ( ! isWrite ) && ( ! isRead ) ){
-          _readPoolTimeout = timeout ;
-          _poolMonitor.setPoolTimeout(_readPoolTimeout);
-          return "" ;
-       }
-       if( isRead  ){
-          _readPoolTimeout = timeout ;
-          _poolMonitor.setPoolTimeout(_readPoolTimeout);
-       }
-       return "" ;
+      return "'set timeout pool' is obsolete" ;
     }
     public String hh_getpoolsbylink = "<linkName> [-size=<filesize>]" ;
     public String ac_getpoolsbylink_$_1( Args args )throws Exception {

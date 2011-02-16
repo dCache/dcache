@@ -1956,65 +1956,59 @@ public class RequestContainerV5
 
               List<List<PoolCostCheckable>> avMatrix =
                   _pnfsFileLocation.getFileAvailableMatrix();
-              int matrixSize = avMatrix.size() ;
+
               //
-              // the DB matrix has no rows, which
-              // means that there are no pools which are allowed
-              // to serve this request.
+              // the DB matrix has no rows, which means that there are
+              // no pools which are allowed to serve this request.
               //
-              if( ( matrixSize == 0 ) ||
-                  ( _pnfsFileLocation.getAllowedPoolCount() == 0 ) ){
+              if (_pnfsFileLocation.getAllowedPoolCount() == 0) {
 
                   err="Configuration Error : No entries in Permission Matrix for this request" ;
                   setError(130,err) ;
                   _log.warn("askIfAvailable : "+err);
                   return RT_ERROR ;
-
               }
+
               //
-              // we define the top row as the default parameter set for
-              // cases where none of the pools hold the file.
+              // we define the top row as the default parameter set
+              // for cases where none of the pools hold the file.
               //
               List<PoolManagerParameter> paraList =
                   _pnfsFileLocation.getListOfParameter() ;
               _parameter = paraList.get(0);
+
               //
               // The file is not in the dCache at all.
               //
-              if( _pnfsFileLocation.getAcknowledgedPnfsPools().size() == 0 ){
+              if (_pnfsFileLocation.getOnlinePools().isEmpty()){
                   _log.info("askIfAvailable : file not in pool at all");
                   return RT_NOT_FOUND ;
               }
+
               //
-              // The file is in the cache but not on a pool where
-              // we would be allowed to read it from.
+              // The file is in the cache but not on a pool where we
+              // would be allowed to read it from.
               //
-              if( _pnfsFileLocation.getAvailablePoolCount()  == 0 ){
+              if (avMatrix.isEmpty()) {
                   _log.info("askIfAvailable : file in cache but not in read-allowed pool");
                   return RT_NOT_PERMITTED ;
               }
+
               //
-              // File is at least on one pool from which we could
-              // get it. Now we have to find the pool with the
-              // best performance cost.
-              // Matrix is assumed to be sorted, so we
-              // only have to check the leftmost entry
-              // in the list (get(0)). Rows could be empty.
+              // File is at least on one pool from which we could get
+              // it. Now we have to find the pool with the best
+              // performance cost.  Matrix is assumed to be sorted, so
+              // we only have to check the leftmost entry in the list
+              // (get(0)). Rows could be empty.
               //
               _bestPool       = null;
               List<PoolCostCheckable> bestAv = null;
-              int  validCount = 0;
               List<PoolCostCheckable> tmpList = new ArrayList<PoolCostCheckable>();
               int  level      = 0;
               boolean allowFallbackOnPerformance = false;
 
-              for( Iterator<List<PoolCostCheckable>> i = avMatrix.iterator() ; i.hasNext() ; level++ ){
+              for(List<PoolCostCheckable> av: avMatrix) {
 
-                 List<PoolCostCheckable> av = i.next() ;
-
-                 if( av.size() == 0 )continue ;
-
-                 validCount++;
                  PoolCostCheckable cost = av.get(0);
                  tmpList.add(cost);
 
@@ -2029,8 +2023,10 @@ public class RequestContainerV5
                  allowFallbackOnPerformance = _parameter._fallbackCostCut > 0.0 ;
 
                  if( ( ( ! allowFallbackOnPerformance ) &&
-                       ( validCount == 1              )    ) ||
+                       ( level == 0              )    ) ||
                      ( _bestPool.getPerformanceCost() < _parameter._fallbackCostCut ) )break ;
+
+                 level++;
               }
               //
               // this can't happen because we already know that
