@@ -18,7 +18,6 @@ import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.cells.AbstractCellComponent;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
@@ -34,7 +33,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 public class PoolMonitorV5
-    extends AbstractCellComponent
 {
     private final static Logger _log = LoggerFactory.getLogger(PoolMonitorV5.class);
 

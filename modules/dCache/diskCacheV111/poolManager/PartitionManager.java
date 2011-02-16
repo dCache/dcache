@@ -6,14 +6,15 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellSetupProvider;
 import org.dcache.cells.CellCommandListener;
 
 import dmg.util.Args;
 
 public class PartitionManager
-    extends AbstractCellComponent
-    implements Serializable, CellCommandListener
+    implements Serializable,
+               CellCommandListener,
+               CellSetupProvider
 {
     public static class Info implements Serializable
     {
@@ -517,6 +518,11 @@ public class PartitionManager
     public void beforeSetup()
     {
         clear();
+    }
+
+    @Override
+    public void afterSetup()
+    {
     }
 
     @Override

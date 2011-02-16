@@ -3,7 +3,6 @@ package org.dcache.tests.poolmanager;
 import java.util.Map;
 
 import org.dcache.poolmanager.Utils;
-import org.dcache.tests.cells.GenericMockCellHelper;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -20,7 +19,6 @@ import dmg.util.CommandInterpreter;
 public class LinkGroupInfoTest {
 
 
-    private static GenericMockCellHelper _cell = new GenericMockCellHelper("LinkGroupInfoTestCell", "");
     private PoolSelectionUnit _selectionUnit;
     private CostModuleV1 _costModule ;
     private CommandInterpreter _ci;
@@ -31,7 +29,6 @@ public class LinkGroupInfoTest {
 
         _selectionUnit = new PoolSelectionUnitV2();
         _costModule = new CostModuleV1();
-        _costModule.setCellEndpoint(_cell);
         _ci = new CommandInterpreter(_selectionUnit);
 
         _ci.command( new Args("psu create pool p0" )  );

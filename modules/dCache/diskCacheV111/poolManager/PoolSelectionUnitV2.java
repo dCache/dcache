@@ -33,12 +33,12 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellSetupProvider;
 
 public class PoolSelectionUnitV2
-    extends AbstractCellComponent
     implements PoolSelectionUnit,
-               CellCommandListener
+               CellCommandListener,
+               CellSetupProvider
 {
 
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
@@ -731,6 +731,11 @@ public class PoolSelectionUnitV2
     public void beforeSetup()
     {
           clear();
+    }
+
+    @Override
+    public void afterSetup()
+    {
     }
 
     @Override

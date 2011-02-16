@@ -10,10 +10,11 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellInfoProvider;
+import org.dcache.cells.CellSetupProvider;
 
 import diskCacheV111.pools.CostCalculatable;
 import diskCacheV111.pools.CostCalculationEngine;
@@ -31,13 +32,15 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellInfo;
 import dmg.util.Args;
 
 public class CostModuleV1
-    extends AbstractCellComponent
     implements CostModule,
                CellCommandListener,
-               CellMessageReceiver
+               CellMessageReceiver,
+               CellInfoProvider,
+               CellSetupProvider
 {
     /** The file size used when calculating performance cost ranked percentile  */
     public static final long PERCENTILE_FILE_SIZE = 104857600;
@@ -371,6 +374,12 @@ public class CostModuleV1
     }
 
     @Override
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
+    }
+
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.append( "Submodule : CostModule (cm) : ").println(getClass().getName());
@@ -379,6 +388,16 @@ public class CostModuleV1
         pw.append(" Update  : ").println(_update?"on":"off");
         pw.append(" Active  : ").println(_isActive?"yes":"no");
         pw.append(" Magic   : ").println(_magic?"yes":"no");
+    }
+
+    @Override
+    public void beforeSetup()
+    {
+    }
+
+    @Override
+    public void afterSetup()
+    {
     }
 
     @Override

@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 
-import org.dcache.tests.cells.CellAdapterHelper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,7 +18,6 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 public class CostModuleTest {
 
-    private final static CellAdapterHelper _cell = new CellAdapterHelper( "CostModuleTest", "");
     private static final String POOL_NAME = "aPool";
     private static final String POOL_NAME_2 = "anotherPool";
     private static final String POOL_NAME_3 = "yetAnotherPool";
@@ -49,7 +47,6 @@ public class CostModuleTest {
     @Before
     public void setUp() throws ClassNotFoundException, NoSuchMethodException {
         _costModule = new CostModuleV1();
-        _costModule.setCellEndpoint(_cell);
         _costModule.setCostCalculationEngine( new diskCacheV111.pools.CostCalculationEngine( COST_CALCULATION_ENGINE_CLASS));
     }
 
