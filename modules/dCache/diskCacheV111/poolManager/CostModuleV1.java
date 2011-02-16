@@ -3,6 +3,9 @@
 package diskCacheV111.poolManager ;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,15 +39,23 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.util.Args;
 
 public class CostModuleV1
-    implements CostModule,
+    implements Serializable,
+               CostModule,
                CellCommandListener,
                CellMessageReceiver,
                CellInfoProvider,
                CellSetupProvider
 {
-    /** The file size used when calculating performance cost ranked percentile  */
+    private final static Logger _log =
+        LoggerFactory.getLogger(CostModuleV1.class);
+
+    /**
+     * The file size used when calculating performance cost ranked
+     * percentile.
+     */
     public static final long PERCENTILE_FILE_SIZE = 104857600;
-    private final static Logger _log = LoggerFactory.getLogger(CostModuleV1.class);
+
+    static final long serialVersionUID = -267023006449629909L;
 
     private final Map<String, Entry> _hash = new HashMap<String, Entry>() ;
     private boolean _isActive = true ;
@@ -54,13 +65,16 @@ public class CostModuleV1
     private boolean _cachedPercentileCostIsValid = false;
     private double _cachedPercentileCost;
     private double _cachedPercentileFraction;
-    private final CellMessageDispatcher _handlers =
+    private transient CellMessageDispatcher _handlers =
         new CellMessageDispatcher("messageToForward");
 
     /**
      * Information about some specific pool.
      */
-   private static class Entry {
+   private static class Entry implements Serializable
+   {
+       static final long serialVersionUID = -6380756950554320179L;
+
        private long timestamp ;
        private PoolCostInfo _info ;
        private double _fakeCpu   = -1.0 ;
@@ -87,11 +101,13 @@ public class CostModuleV1
        }
    }
    private CostCalculationEngine _costCalculationEngine = null ;
-   private class CostCheck extends PoolCheckAdapter implements PoolCostCheckable  {
+
+   private class CostCheck
+       extends PoolCheckAdapter implements PoolCostCheckable
+   {
+       static final long serialVersionUID = -77487683158664348L;
 
        private PoolCostInfo _info ;
-
-       private static final long serialVersionUID = -77487683158664348L;
 
        private CostCheck( String poolName , Entry e , long filesize ){
           super(poolName,filesize);
@@ -634,4 +650,12 @@ public class CostModuleV1
 
 	   return poolCostInfo;
    }
+
+    private void readObject(ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+        _handlers = new CellMessageDispatcher("messageToForward");
+        _handlers.addMessageListener(this);
+    }
 }

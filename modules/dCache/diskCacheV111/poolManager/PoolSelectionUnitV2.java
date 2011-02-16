@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Serializable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +37,11 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
 
 public class PoolSelectionUnitV2
-    implements PoolSelectionUnit,
+    implements Serializable,
+               PoolSelectionUnit,
                CellCommandListener,
                CellSetupProvider
 {
-
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionUnitV2.class);
 
@@ -53,6 +54,8 @@ public class PoolSelectionUnitV2
     private static final int DCACHE = 2;
     private static final int NET = 3;
     private static final int PROTOCOL = 4;
+
+    static final long serialVersionUID = 4852540784324544199L;
 
     private final Map<String, PGroup> _pGroups = new HashMap<String, PGroup>();
     private final Map<String, Pool> _pools = new HashMap<String, Pool>();
@@ -75,7 +78,10 @@ public class PoolSelectionUnitV2
 
     private final NetHandler _netHandler = new NetHandler();
 
-    private class NetHandler {
+    private class NetHandler implements Serializable
+    {
+        static final long serialVersionUID = 8911153851483100573L;
+
         private Map<Long, NetUnit>[] _netList = new HashMap[33];
         private String[] _maskStrings = new String[33];
         private long[] _masks = new long[33];
@@ -186,7 +192,9 @@ public class PoolSelectionUnitV2
         }
     }
 
-    protected static class PoolCore {
+    protected static class PoolCore implements Serializable
+    {
+        static final long serialVersionUID = -8571296485927073985L;
 
         protected final String _name;
         protected final Map<String, Link> _linkList = new HashMap<String, Link>();
@@ -200,7 +208,9 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class PGroup extends PoolCore {
+    private static class PGroup extends PoolCore
+    {
+        static final long serialVersionUID = 3883973457610397314L;
 
         private final Map<String, Pool> _poolList = new HashMap<String, Pool>();
 
@@ -215,7 +225,10 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class LinkGroup implements SelectionLinkGroup {
+    private static class LinkGroup
+        implements SelectionLinkGroup, Serializable
+    {
+        static final long serialVersionUID = 5425784079451748166L;
 
         private final String _name;
         private final Collection<SelectionLink> _links = new HashSet<SelectionLink>();
@@ -388,7 +401,9 @@ public class PoolSelectionUnitV2
 
     }
 
-    private class Pool extends PoolCore implements SelectionPool {
+    private class Pool extends PoolCore implements SelectionPool
+    {
+        static final long serialVersionUID = 8108406418388363116L;
 
         private final Map<String, PGroup> _pGroupList = new HashMap<String, PGroup>();
         private boolean _enabled = true;
@@ -550,7 +565,10 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class Link implements SelectionLink {
+    private static class Link
+        implements SelectionLink, Serializable
+    {
+        static final long serialVersionUID = 4480385941491281821L;
 
         private final String _name;
         private final Map<String, PoolCore> _poolList = new HashMap<String, PoolCore>();
@@ -617,7 +635,10 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class UGroup {
+    private static class UGroup implements Serializable
+    {
+        static final long serialVersionUID = 8169708306745935858L;
+
         private final String _name;
         private final Map<String, Link> _linkList = new HashMap<String, Link>();
         private final Map<String, Unit> _unitList = new HashMap<String, Unit>(); // !!!
@@ -644,7 +665,9 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class Unit {
+    private static class Unit implements Serializable
+    {
+        static final long serialVersionUID = -2534629882175347637L;
 
         private String _name = null;
         private int _type = 0;
@@ -846,7 +869,10 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private class NetUnit extends Unit {
+    private class NetUnit extends Unit
+    {
+        static final long serialVersionUID = -2510355260024374990L;
+
         private InetAddress _address = null;
         private long _mask = 0;
         private int _bits = 0;
@@ -905,13 +931,19 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private class StoreUnit extends Unit {
+    private class StoreUnit extends Unit
+    {
+        static final long serialVersionUID = 5426561463758225952L;
+
         private StoreUnit(String name) {
             super(name, STORE);
         }
     }
 
-    private class ProtocolUnit extends Unit {
+    private class ProtocolUnit extends Unit
+    {
+        static final long serialVersionUID = 4588437437939085320L;
+
         private String _protocol = null;
         private int _version = -1;
 

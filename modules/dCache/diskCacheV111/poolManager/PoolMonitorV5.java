@@ -1,6 +1,6 @@
 //  $Id: PoolMonitorV5.java,v 1.32 2007-08-01 20:00:45 tigran Exp $
 
-package diskCacheV111.poolManager ;
+package diskCacheV111.poolManager;
 
 import com.google.common.base.Function;
 import static com.google.common.collect.Collections2.*;
@@ -34,14 +34,15 @@ import dmg.cells.nucleus.CellPath;
 
 public class PoolMonitorV5
 {
-    private final static Logger _log = LoggerFactory.getLogger(PoolMonitorV5.class);
+    private final static Logger _log =
+        LoggerFactory.getLogger(PoolMonitorV5.class);
 
-   private long              _poolTimeout   = 15 * 1000;
-   private PoolSelectionUnit _selectionUnit ;
-   private PnfsHandler       _pnfsHandler   ;
-   private CostModule        _costModule    ;
-   private double            _maxWriteCost          = 1000000.0;
-   private PartitionManager  _partitionManager ;
+    private long              _poolTimeout   = 15 * 1000;
+    private PoolSelectionUnit _selectionUnit ;
+    private PnfsHandler       _pnfsHandler   ;
+    private CostModule        _costModule    ;
+    private double            _maxWriteCost          = 1000000.0;
+    private PartitionManager  _partitionManager ;
 
     public PoolMonitorV5()
     {

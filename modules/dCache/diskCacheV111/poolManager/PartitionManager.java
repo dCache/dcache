@@ -16,8 +16,16 @@ public class PartitionManager
                CellCommandListener,
                CellSetupProvider
 {
+    static final long serialVersionUID = 3245564135066081407L;
+
+    private final Info _defaultPartitionInfo;
+    private final Map<String, Info> _infoMap =
+        new HashMap<String, Info>();
+
     public static class Info implements Serializable
     {
+        static final long serialVersionUID = -583614456111069534L;
+
         private final String               _name ;
         private final PoolManagerParameter _parameter  ;
 
@@ -34,8 +42,6 @@ public class PartitionManager
         public String getName(){ return _name ; }
         public PoolManagerParameter getParameter(){ return _parameter ; }
     }
-    private final Info        _defaultPartitionInfo ;
-    private final Map<String, Info>         _infoMap = new HashMap<String, Info>() ;
 
     public PartitionManager(){
 
