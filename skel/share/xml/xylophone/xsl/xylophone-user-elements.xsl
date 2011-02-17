@@ -286,6 +286,9 @@
     |
     |  Look up the RDN of a parent element
     |
+    |  The @use attribute is required and must be one of
+    |  'rdn' or 'value'
+    |
     |  NB.  This will only work if within an <object/> element.
     |       Specifically, it will not work within a class.
     +-->
@@ -293,11 +296,24 @@
   <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
 
+  <xsl:variable name="prefix">
+    <xsl:choose>
+      <xsl:when test="@use = 'rdn'">
+	<xsl:value-of select="concat(@rdn,'=')"/>
+      </xsl:when>
+      <xsl:when test="@use = 'value'"/>
+      <xsl:otherwise>
+	<xsl:message>ERROR: @use ('<xsl:value-of select="@use"/>') is not 'rdn' or 'value' in <xsl:value-of select="build-XPath"/></xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
   <!-- Select the nearest ancestor object that has a matching rdn -->
   <xsl:apply-templates select="ancestor::object[@rdn=current()/@rdn][1]"
                        mode="emit-RDN-for-attribute">
     <xsl:with-param name="path-stack" select="$path-stack"/>
     <xsl:with-param name="list-item" select="$list-item"/>
+    <xsl:with-param name="prefix" select="$prefix"/>
   </xsl:apply-templates>
 </xsl:template>
 

@@ -322,13 +322,39 @@
   </xsl:if>
 
   <!-- Publish any child objects -->
-  <xsl:apply-templates select="object" mode="publish">
+  <xsl:call-template name="output-child-objects">
     <xsl:with-param name="path-stack" select="$path-stack"/>
     <xsl:with-param name="list-item" select="$list-item"/>
     <xsl:with-param name="parent-dn" select="$our-dn"/>
-  </xsl:apply-templates>
+  </xsl:call-template>
 </xsl:template>
 
+
+
+<!--+
+    |  Output any child objects: both those we publish unconditional
+    |  and the ones where it's conditional.
+    +-->
+<xsl:template name="output-child-objects">
+  <xsl:param name="path-stack"/>
+  <xsl:param name="list-item"/>
+  <xsl:param name="parent-dn"/>
+
+  <!-- Emit unconditional child objects -->
+  <xsl:apply-templates select="object" mode="publish">
+    <xsl:with-param name="path-stack" select="$path-stack"/>
+    <xsl:with-param name="list-item" select="$list-item"/>
+    <xsl:with-param name="parent-dn" select="$parent-dn"/>
+  </xsl:apply-templates>
+
+
+  <!-- Evaluate the conditional ones -->
+  <xsl:apply-templates select="*" mode="publish-conditional-object">
+    <xsl:with-param name="path-stack" select="$path-stack"/>
+    <xsl:with-param name="list-item" select="$list-item"/>
+    <xsl:with-param name="parent-dn" select="$parent-dn"/>
+  </xsl:apply-templates>
+</xsl:template>
 
 
 
@@ -374,14 +400,33 @@
     </xsl:call-template>
   </xsl:if>
 
-  <!-- Emit any object-local attributes -->
+  <xsl:call-template name="output-object-local-attributes">
+    <xsl:with-param name="path-stack" select="$path-stack"/>
+    <xsl:with-param name="list-item" select="$list-item"/>
+  </xsl:call-template>
+</xsl:template>
+
+
+<!--+
+    |  Output appropriate attributes declared for this property,
+    |  the unconditional ones and the conditional ones that match.
+    +-->
+<xsl:template name="output-object-local-attributes">
+  <xsl:param name="path-stack"/>
+  <xsl:param name="list-item"/>
+
+  <!-- Emit unconditional attributes -->
   <xsl:apply-templates select="attr" mode="publish">
     <xsl:with-param name="list-item" select="$list-item"/>
     <xsl:with-param name="path-stack" select="$path-stack"/>
   </xsl:apply-templates>
+
+  <!-- Evaluate the conditional ones -->
+  <xsl:apply-templates select="*" mode="publish-conditional-attr">
+    <xsl:with-param name="list-item" select="$list-item"/>
+    <xsl:with-param name="path-stack" select="$path-stack"/>
+  </xsl:apply-templates>
 </xsl:template>
-
-
 
 
 
@@ -774,8 +819,9 @@
 <xsl:template match="object" mode="emit-RDN-for-attribute">
   <xsl:param name="path-stack"/>
   <xsl:param name="list-item"/>
+  <xsl:param name="prefix"/>
 
-  <xsl:value-of select="concat(@rdn,'=')"/>
+  <xsl:value-of select="$prefix"/>
 
   <xsl:call-template name="markup-attribute-value">
     <xsl:with-param name="value">

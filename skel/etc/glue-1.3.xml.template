@@ -432,7 +432,7 @@
 -->
 
             <attr name="GlueChunkKey">
-              <parent-rdn rdn="GlueSEUniqueID"/>
+              <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
             </attr>
           </object>
 
@@ -458,7 +458,7 @@
             </allow>
 
             <attr name="GlueChunkKey">
-              <parent-rdn rdn="GlueSEUniqueID"/>
+              <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
             </attr>
           </object>
 
@@ -512,11 +512,11 @@
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSALocalID"/>
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSEUniqueID"/>
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
               </attr>
             </object>
 
@@ -615,7 +615,7 @@
                  useful information-->
             <attr name="GlueSACapability">dCacheUsage=SRM-reservation-group</attr>
 
-            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
           </object>
 
 
@@ -692,11 +692,11 @@
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSALocalID"/>
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSEUniqueID"/>
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
               </attr>
 
               <attr name="GlueVOInfoAccessControlBaseRule">VO:<map
@@ -726,11 +726,11 @@
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSALocalID"/>
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSEUniqueID"/>
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
               </attr>
 
               <attr name="GlueVOInfoAccessControlBaseRule">VO:<item/></attr>
@@ -1103,7 +1103,7 @@
               </suppress>
             </attr>
 
-            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
           </object>
 
           <!--+
@@ -1158,11 +1158,11 @@
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSALocalID"/>
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
               </attr>
 
               <attr name="GlueChunkKey">
-                <parent-rdn rdn="GlueSEUniqueID"/>
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
               </attr>
 
               <attr name="GlueVOInfoAccessControlBaseRule">VO:<lookup
@@ -1244,7 +1244,7 @@
               </scale>
             </attr>
 
-            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
           </object>
 
 
@@ -1329,7 +1329,7 @@
             <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
           </object>
 
-          <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID"/></attr>
+          <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
         </object>
 
 
