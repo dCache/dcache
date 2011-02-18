@@ -159,6 +159,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.TransferRetryPolicies;
 
 import dmg.cells.nucleus.CDC;
 
@@ -562,6 +564,7 @@ public abstract class AbstractFtpDoorV1
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
     protected CellStub _poolStub;
+    protected TransferRetryPolicy _retryPolicy;
 
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
@@ -863,10 +866,10 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        public synchronized void startMover(String queue)
+        public synchronized void startMover(String queue, long timeout)
             throws CacheException, InterruptedException
         {
-            super.startMover(queue);
+            super.startMover(queue, timeout);
             setStatus("Mover " + getPool() + "/" + getMoverId());
             if (_version == 1) {
                 startTransfer();
@@ -1157,8 +1160,6 @@ public abstract class AbstractFtpDoorV1
          */
         _parallel = _defaultStreamsPerClient;
 
-        /* Permission handler.
-         */
 	_origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
                              _engine.getInetAddress());
 
@@ -1169,6 +1170,10 @@ public abstract class AbstractFtpDoorV1
                          _poolManagerTimeout * 1000);
         _poolStub =
             new CellStub(this, null, _poolTimeout * 1000);
+
+        _retryPolicy =
+            new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
+                                    Long.MAX_VALUE, _poolTimeout * 1000);
 
         adminCommandListener = new AdminCommandListener();
         addCommandListener(adminCommandListener);
@@ -2488,21 +2493,7 @@ public abstract class AbstractFtpDoorV1
             _commandQueue.enableInterrupt();
             try {
                 transfer.createAdapter();
-                for (;;) {
-                    try {
-                        transfer.selectPool();
-                        transfer.startMover(_ioQueueName);
-                        break;
-                    } catch (CacheException e) {
-                        _logger.error("Failed to create mover: {}", e.getMessage());
-                    }
-                    retry++;
-                    if (retry >= _maxRetries) {
-                        throw new FTPCommandException(425, "Cannot open port: No pools available", "No pools available");
-                    }
-                    Thread.sleep(_retryWait*1000);
-                    _logger.info("retrieve retry attempt {}", retry);
-                }  //end of retry loop
+                transfer.selectPoolAndStartMover(_ioQueueName, _retryPolicy);
             } finally {
                 _commandQueue.disableInterrupt();
             }
@@ -2609,8 +2600,8 @@ public abstract class AbstractFtpDoorV1
             _commandQueue.enableInterrupt();
             try {
                 transfer.createAdapter();
-                transfer.selectPool();
-                transfer.startMover(_ioQueueName);
+                transfer.selectPoolAndStartMover(_ioQueueName,
+                                                 TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE));
             } finally {
                 _commandQueue.disableInterrupt();
             }

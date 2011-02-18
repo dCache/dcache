@@ -64,6 +64,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -544,11 +545,11 @@ public class DcacheResourceFactory
             try {
                 PnfsId pnfsid = transfer.getPnfsId();
                 transfer.setLength(length);
-                transfer.selectPool();
                 transfer.openServerChannel();
-                _uploads.put(pnfsid, transfer);
                 try {
-                    transfer.startMover(_ioQueue);
+                    _uploads.put(pnfsid, transfer);
+                    transfer.selectPoolAndStartMover(_ioQueue,
+                                                     TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE));
                     try {
                         transfer.relayData(inputStream);
                     } finally {

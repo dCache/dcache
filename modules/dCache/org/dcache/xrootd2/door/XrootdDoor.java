@@ -29,6 +29,8 @@ import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.PingMoversTask;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
@@ -80,6 +82,9 @@ public class XrootdDoor
     private final static AtomicInteger _handleCounter = new AtomicInteger();
 
     private final static long PING_DELAY = 300000;
+
+    private final static TransferRetryPolicy RETRY_POLICY =
+        TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE);
 
     private String _cellName;
     private String _domainName;
@@ -328,19 +333,11 @@ public class XrootdDoor
         _transfers.put(handle, transfer);
         try {
             transfer.readNameSpaceEntry();
-
-            do {
-                transfer.selectPool();
-                try {
-                    transfer.startMover(_ioQueue);
-                    address = transfer.waitForRedirect(_moverTimeout);
-                    if (address == null) {
-                        _log.error("Pool failed to open TCP socket");
-                    }
-                } catch (CacheException e) {
-                    _log.warn("Pool error: " + e.getMessage());
-                }
-            } while (address == null);
+            transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
+            address = transfer.waitForRedirect(_moverTimeout);
+            if (address == null) {
+                throw new CacheException(transfer.getPool() + " failed to open TCP socket");
+            }
 
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                transfer.getMoverId() + ": Sending");
@@ -388,16 +385,7 @@ public class XrootdDoor
                 transfer.createNameSpaceEntry();
             }
             try {
-                do {
-                    transfer.selectPool();
-                    try {
-                        transfer.startMover(_ioQueue);
-                    } catch (TimeoutCacheException e) {
-                        throw e;
-                    } catch (CacheException e) {
-                        _log.warn("Pool error: {}", e.getMessage());
-                    }
-                } while (!transfer.hasMover());
+                transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
 
                 address = transfer.waitForRedirect(_moverTimeout);
                 if (address == null) {

@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 
@@ -103,7 +104,13 @@ public class NFSv41Door extends AbstractCellComponent implements
      * The usual timeout for NFS ops. is 30s.
      * We will use a bit shorter (27s) one to avoid retries.
      */
-    private final static int NFS_REPLY_TIMEOUT = 27000;
+    private final static long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(27);
+
+    /**
+     * Given that the timeout is pretty short, the retry period has to
+     * be rather small too.
+     */
+    private final static long NFS_RETRY_PERIOD = TimeUnit.SECONDS.toMillis(1);
 
     /**
      * Cell communication helper.
@@ -130,7 +137,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     private  OncRpcSvc _rpcService;
 
     private final static TransferRetryPolicy RETRY_POLICY =
-            new TransferRetryPolicy(Integer.MAX_VALUE, NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
+        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
+                                NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
 
     public void setPoolManagerStub(CellStub stub)
     {

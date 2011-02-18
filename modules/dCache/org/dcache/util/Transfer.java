@@ -679,7 +679,7 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param queue The mover queue of the transfer; may be null
      */
-    private void startMover(String queue, long timeout)
+    public void startMover(String queue, long timeout)
         throws CacheException, InterruptedException
     {
         PnfsId pnfsId = getPnfsId();
@@ -850,50 +850,83 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Select a pool and start a mover in defined queue. Failed attempts are handled
-     * according specified {@link TransferRetryPolicy}. Note, that there will be
-     * no retries on uploads.
+     * Select a pool and start a mover. Failed attempts are handled
+     * according to the {@link TransferRetryPolicy}. Note, that there
+     * will be no retries on uploads.
      *
-     * @param queue where mover should started.
+     * @param queue where mover should be started
      * @param policy to handle error cases
      * @throws CacheException
      * @throws InterruptedException
      */
-    public synchronized void selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
-            throws CacheException, InterruptedException {
-
+    public void
+        selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
+        throws CacheException, InterruptedException
+    {
         long deadLine = System.currentTimeMillis() + policy.getTotalTimeOut();
         long retryCount = policy.getRetryCount();
+        long retryPeriod = policy.getRetryPeriod();
 
-        do {
-
-            --retryCount;
+        while (true) {
+            boolean gotPool = false;
+            long start = System.currentTimeMillis();
+            CacheException lastFailure;
             try {
                 selectPool(deadLine - System.currentTimeMillis());
+                gotPool = true;
+                startMover(queue,
+                           Math.min(deadLine - System.currentTimeMillis(),
+                                    policy.getMoverStartTimeout()));
+                return;
             } catch (TimeoutCacheException e) {
-                // we managet timeouts our selfs
-            }
-
-            if(getPool() != null) {
-                try {
-                    startMover(queue,Math.min(deadLine - System.currentTimeMillis(),
-                            policy.getMoverStartTimeout()) );
-                    /*
-                     * handeling the timeout for the reply from Pool.
-                     * The request could be retried if the time is left.
+                _log.warn(e.getMessage());
+                if (gotPool && isWrite()) {
+                    /* We cannot know whether the mover was actually
+                     * started or not. Retrying is therefore not an
+                     * option.
                      */
-                } catch (FileNotInCacheException ex) {
-                    _log.info("File not in cache: {}", ex);
-                } catch (TimeoutCacheException e) {
-                    // we managet timeouts our selfs
+                    throw e;
                 }
+                lastFailure = e;
+            } catch (CacheException e) {
+                switch (e.getRc()) {
+                case CacheException.POOL_DISABLED:
+                case CacheException.FILE_NOT_IN_REPOSITORY:
+                    _log.info("Retrying pool selection: {}", e.getMessage());
+                    if (!isWrite()) {
+                        readNameSpaceEntry();
+                    }
+                    continue;
+                default:
+                    _log.error(e.toString());
+                    break;
+                }
+                lastFailure = e;
             }
 
-        } while (!hasMover() && !isWrite() && retryCount > 0
-                    && deadLine - System.currentTimeMillis() > 0 );
+            --retryCount;
 
-        if (!hasMover()) {
-            throw new TimeoutCacheException("Internal server timeout ");
+            /* We rate limit the retry loop: two consecutive
+             * iterations are separated by at least retryPeriod.
+             */
+            long now = System.currentTimeMillis();
+            long timeToSleep =
+                Math.max(0, retryPeriod - (now - start));
+
+            if (retryCount == 0 || deadLine - now <= timeToSleep) {
+                throw lastFailure;
+            }
+
+            setStatus("Sleeping (" + lastFailure.getMessage() + ")");
+            try {
+                Thread.sleep(timeToSleep);
+            } finally {
+                setStatus(null);
+            }
+
+            if (!isWrite()) {
+                readNameSpaceEntry();
+            }
         }
     }
 }
