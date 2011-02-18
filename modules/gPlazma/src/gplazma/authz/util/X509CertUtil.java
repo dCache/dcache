@@ -268,13 +268,7 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
                 attr = attr.substring(0, attr.length() - AuthorizationController.capnulllen);
                 if(attr.endsWith(AuthorizationController.rolenull))
                 attr = attr.substring(0, attr.length() - AuthorizationController.rolenulllen);
-                Iterator k = fqans.iterator();
-                boolean issubrole=false;
-                while (k.hasNext()) {
-                  String fqanattr=(String) k.next();
-                  if (fqanattr.startsWith(attr)) {issubrole=true; break;}
-                }
-                if(!issubrole) fqans.add(attr);
+                fqans.add(attr);
             }
         }
 
