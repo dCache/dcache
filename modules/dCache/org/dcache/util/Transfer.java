@@ -839,7 +839,9 @@ public class Transfer implements Comparable<Transfer>
             msg.setClient(_clientAddress.getAddress().getHostName());
             msg.setPnfsId(getPnfsId());
             msg.setResult(code, error);
-            msg.setStorageInfo(_fileAttributes.getStorageInfo());
+            if (_fileAttributes.isDefined(STORAGEINFO)) {
+                msg.setStorageInfo(_fileAttributes.getStorageInfo());
+            }
             _billing.send(msg);
 
             _isBillingNotified = true;
