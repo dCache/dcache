@@ -165,7 +165,8 @@ public class CostModuleV1
         } else {
             if(newInfo != null) {
                 if(isNewPool) {
-                    _hash.put(poolName, new Entry(newInfo));
+                    poolEntry = new Entry(newInfo);
+                    _hash.put(poolName, poolEntry);
                 } else {
                     poolEntry.setPoolCostInfo(newInfo);
                 }
