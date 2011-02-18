@@ -62,8 +62,8 @@ public class CostModuleV1
     private boolean _update = true ;
     private boolean _magic = true ;
     private boolean _debug = false ;
-    private boolean _cachedPercentileCostIsValid = false;
-    private double _cachedPercentileCost;
+    private boolean _cachedPercentileCostCutIsValid = false;
+    private double _cachedPercentileCostCut;
     private double _cachedPercentileFraction;
     private transient CellMessageDispatcher _handlers =
         new CellMessageDispatcher("messageToForward");
@@ -145,58 +145,78 @@ public class CostModuleV1
         String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
         PoolCostInfo newInfo = msg.getPoolCostInfo();
+        Entry poolEntry = _hash.get(poolName);
+        boolean isNewPool = poolEntry == null;
 
         /* Whether the pool mentioned in the message should be removed */
-        boolean removePool = poolMode.getMode() == PoolV2Mode.DISABLED ||
+        boolean shouldRemovePool = poolMode.getMode() == PoolV2Mode.DISABLED ||
                 poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
                 poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
 
-
-        /* Check whether we should invalidate the cached entry.  We should
-         * only need to do this if:
-         *   * a new pool is discovered,
-         *   * an existing pool is removed,
-         *   * either:
-         *       o  a pool with cost less than the cached value assumes a cost greater
-         *                  than the cached value,
-         *       o  a pool with the cached value takes on a different value,
-         *       o  a pool with cost greater than the cached value assumes a cost less
-         *                  than the cached value.
-         */
-        if( _cachedPercentileCostIsValid) {
-            Entry poolEntry = _hash.get( poolName);
-            if( poolEntry != null) {
-                if( removePool) {
-                    _cachedPercentileCostIsValid = false;
-                } else {
-                    PoolCostInfo oldInfo = poolEntry.getPoolCostInfo();
-                    double oldCost = _costCalculationEngine.getCostCalculatable( oldInfo).getPerformanceCost();
-                    double newCost = _costCalculationEngine.getCostCalculatable( newInfo).getPerformanceCost();
-
-                    if( Math.signum( oldCost-_cachedPercentileCost) != Math.signum( newCost-_cachedPercentileCost))
-                        _cachedPercentileCostIsValid = false;
-                }
-            } else {
-                if( !removePool)
-                    _cachedPercentileCostIsValid = false;
-            }
-        }
-
-        if ( !removePool) {
-            if( newInfo != null) {
-                Entry e = _hash.get(poolName);
-
-                if (e == null) {
-                    e = new Entry( newInfo);
-                    _hash.put(poolName, e);
-                } else {
-                    e.setPoolCostInfo( newInfo);
-                }
-                e.setTagMap(msg.getTagMap());
-            }
+        if( isNewPool || shouldRemovePool) {
+            _cachedPercentileCostCutIsValid = false;
         } else {
-            _hash.remove(poolName);
+            PoolCostInfo currentInfo = poolEntry.getPoolCostInfo();
+            considerInvalidatingCache(currentInfo, newInfo);
         }
+
+        if(shouldRemovePool) {
+            _hash.remove(poolName);
+        } else {
+            if(newInfo != null) {
+                if(isNewPool) {
+                    _hash.put(poolName, new Entry(newInfo));
+                } else {
+                    poolEntry.setPoolCostInfo(newInfo);
+                }
+                poolEntry.setTagMap(msg.getTagMap());
+            }
+        }
+    }
+
+    private void considerInvalidatingCache(PoolCostInfo currentInfo, PoolCostInfo newInfo)
+    {
+        if( !_cachedPercentileCostCutIsValid) {
+            return;
+        }
+
+        double currentCost = getPerformanceCost(currentInfo);
+        double newCost = getPerformanceCost(newInfo);
+        considerInvalidatingCache(currentCost, newCost);
+    }
+
+    private void considerInvalidatingCache(double currentCost, PoolCostInfo newInfo)
+    {
+        if( !_cachedPercentileCostCutIsValid) {
+            return;
+        }
+
+        double newCost = getPerformanceCost(newInfo);
+        considerInvalidatingCache(currentCost, newCost);
+    }
+
+    /* Check whether we should invalidate the cached.  We must do this when
+     * a pool changes its relationship to the cost threshold:
+     *       o  a pool with cost less than the cached value assumes a cost greater
+     *                  than the cached value,
+     *       o  a pool with cost greater than the cached value assumes a cost less
+     *                  than the cached value.
+     *       o  a pool with cost equal to the cached value assumes a cost less
+     *                  than or greater than the cached value.
+     */
+    private void considerInvalidatingCache(double currentCost, double newCost)
+    {
+        if( Math.signum(currentCost-_cachedPercentileCostCut) !=
+            Math.signum(newCost-_cachedPercentileCostCut)) {
+            _cachedPercentileCostCutIsValid = false;
+        }
+    }
+
+    private double getPerformanceCost(PoolCostInfo info)
+    {
+        CostCalculatable cost = _costCalculationEngine.getCostCalculatable(info);
+        cost.recalculate(PERCENTILE_FILE_SIZE);
+        return cost.getPerformanceCost();
     }
 
     public synchronized void messageToForward(PoolIoFileMessage msg)
@@ -209,6 +229,7 @@ public class CostModuleV1
         String requestedQueueName = msg.getIoQueueName();
 
         PoolCostInfo costInfo = e.getPoolCostInfo();
+        double currentPerformanceCost = getPerformanceCost(costInfo);
         Map<String, NamedPoolQueueInfo> map =
             costInfo.getExtendedMoverHash();
 
@@ -243,6 +264,8 @@ public class CostModuleV1
         queue.modifyQueue(diff);
         spaceInfo.modifyPinnedSpace(pinned);
 
+        considerInvalidatingCache(currentPerformanceCost, costInfo);
+
         xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, pinned, msg);
     }
 
@@ -254,6 +277,7 @@ public class CostModuleV1
             return;
 
         PoolCostInfo costInfo = e.getPoolCostInfo();
+        double currentPerformanceCost = getPerformanceCost(costInfo);
         String requestedQueueName = msg.getIoQueueName();
 
         Map<String, NamedPoolQueueInfo> map =
@@ -276,7 +300,7 @@ public class CostModuleV1
         long pinned = 0;
 
         queue.modifyQueue(diff);
-
+        considerInvalidatingCache(currentPerformanceCost, costInfo);
         xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, pinned, msg);
     }
 
@@ -288,6 +312,7 @@ public class CostModuleV1
              return;
 
          PoolCostInfo costInfo = e.getPoolCostInfo();
+         double currentPerformanceCost = getPerformanceCost(costInfo);
          PoolCostInfo.PoolQueueInfo queue = costInfo.getRestoreQueue();
          PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
 
@@ -302,7 +327,7 @@ public class CostModuleV1
          }
          queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
-
+         considerInvalidatingCache(currentPerformanceCost, costInfo);
          xsay("Restore", poolName, diff, pinned, msg);
     }
 
@@ -321,6 +346,7 @@ public class CostModuleV1
          String requestedQueueName = msg.getIoQueueName();
 
          PoolCostInfo costInfo = e.getPoolCostInfo();
+         double currentPerformanceCost = getPerformanceCost(costInfo);
          Map<String, NamedPoolQueueInfo> map =
              costInfo.getExtendedMoverHash();
          PoolCostInfo.PoolQueueInfo queue;
@@ -342,7 +368,7 @@ public class CostModuleV1
              (msg instanceof PoolMgrSelectWritePoolMsg) ? msg.getFileSize() : 0;
          queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
-
+         considerInvalidatingCache(currentPerformanceCost, costInfo);
          xsay("Mover (magic)"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, pinned, msg);
     }
 
@@ -355,18 +381,24 @@ public class CostModuleV1
         if (source == null)
             return;
 
-        PoolCostInfo.PoolQueueInfo sourceQueue =
-            source.getPoolCostInfo().getP2pQueue();
+        PoolCostInfo sourceCostInfo = source.getPoolCostInfo();
+        double currentSourcePerformanceCost = getPerformanceCost(sourceCostInfo);
+
+        PoolCostInfo.PoolQueueInfo sourceQueue = sourceCostInfo.getP2pQueue();
 
         String destinationName = msg.getDestinationPoolName();
         Entry destination = _hash.get(destinationName);
         if (destination == null)
             return;
 
+        PoolCostInfo destinationCostInfo = destination.getPoolCostInfo();
+        double currentDestinationPerformanceCost =
+            getPerformanceCost(destinationCostInfo);
+
         PoolCostInfo.PoolQueueInfo destinationQueue =
-            destination.getPoolCostInfo().getP2pClientQueue();
+            destinationCostInfo.getP2pClientQueue();
         PoolCostInfo.PoolSpaceInfo destinationSpaceInfo =
-            destination.getPoolCostInfo().getSpaceInfo();
+            destinationCostInfo.getSpaceInfo();
 
         int diff = msg.isReply() ? -1 : 1;
         long pinned = msg.getStorageInfo().getFileSize();
@@ -374,6 +406,10 @@ public class CostModuleV1
         sourceQueue.modifyQueue(diff);
         destinationQueue.modifyQueue(diff);
         destinationSpaceInfo.modifyPinnedSpace(pinned);
+
+        considerInvalidatingCache(currentSourcePerformanceCost, sourceCostInfo);
+        considerInvalidatingCache(currentDestinationPerformanceCost,
+                destinationCostInfo);
 
         xsay("P2P client (magic)", destinationName, diff, pinned, msg);
         xsay("P2P server (magic)", sourceName, diff, 0, msg);
@@ -446,42 +482,41 @@ public class CostModuleV1
    }
 
    @Override
-   public synchronized double getPoolsPercentilePerformanceCost( double fraction) {
+   public synchronized double getPoolsPercentilePerformanceCost(double fraction) {
 
-       if( fraction <= 0 || fraction >= 1)
-           throw new IllegalArgumentException( "supplied fraction (" + Double.toString( fraction) +") not between 0 and 1");
-
-       if( !_cachedPercentileCostIsValid || _cachedPercentileFraction != fraction) {
-
-           _log.debug( "Rebuilding percentileCost cache");
-
-           if( _hash.size() > 0) {
-               if( _log.isDebugEnabled())
-                   _log.debug( "  "+Integer.toString( _hash.size())+" pools available");
-
-               double poolCosts[] = new double[ _hash.size()];
-
-               int idx=0;
-               for( Entry poolInfo : _hash.values()) {
-                   CostCalculatable  cost = _costCalculationEngine.getCostCalculatable( poolInfo.getPoolCostInfo());
-                   cost.recalculate( PERCENTILE_FILE_SIZE);
-                   poolCosts[idx++] = cost.getPerformanceCost();
-               }
-
-               Arrays.sort(  poolCosts);
-
-               _cachedPercentileCost = poolCosts [ (int) Math.floor( fraction * _hash.size())];
-
-           } else {
-               _log.debug( "  no pools available");
-               _cachedPercentileCost = 0;
-           }
-
-           _cachedPercentileCostIsValid = true;
-           _cachedPercentileFraction = fraction;
+       if( fraction <= 0 || fraction >= 1) {
+           throw new IllegalArgumentException("supplied fraction (" + Double.toString( fraction) +") not between 0 and 1");
        }
 
-       return _cachedPercentileCost;
+       if( !_cachedPercentileCostCutIsValid || _cachedPercentileFraction != fraction) {
+           _cachedPercentileCostCut = calculatePercentileCostCut(fraction);
+           _cachedPercentileFraction = fraction;
+           _cachedPercentileCostCutIsValid = true;
+       }
+
+       return _cachedPercentileCostCut;
+   }
+
+   private double calculatePercentileCostCut(double fraction)
+   {
+       if( _hash.isEmpty()) {
+           _log.debug( "no pools available");
+           return 0;
+       }
+
+       _log.debug( "{} pools available", _hash.size());
+
+       double poolCosts[] = new double[_hash.size()];
+
+       int idx=0;
+       for( Entry poolInfo : _hash.values()) {
+           poolCosts[idx] = getPerformanceCost(poolInfo.getPoolCostInfo());
+           idx++;
+       }
+
+       Arrays.sort(poolCosts);
+
+       return poolCosts [ (int) Math.floor(fraction * _hash.size())];
    }
 
 
