@@ -77,6 +77,7 @@ public class Domain
     {
         ScopedConfigurationProperties service =
             new ScopedConfigurationProperties(_properties, name);
+        service.setIsService(true);
         service.put(PROPERTY_DOMAIN_SERVICE, name);
         _services.add(service);
         return service;

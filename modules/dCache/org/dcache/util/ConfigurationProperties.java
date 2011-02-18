@@ -94,6 +94,7 @@ public class ConfigurationProperties
         new PropertiesBackedReplaceable(this);
 
     private boolean _loading = false;
+    private boolean _isService = false;
 
     public ConfigurationProperties()
     {
@@ -103,6 +104,11 @@ public class ConfigurationProperties
     public ConfigurationProperties(Properties defaults)
     {
         super(defaults);
+    }
+
+    public void setIsService(boolean isService)
+    {
+        _isService = isService;
     }
 
     public AnnotatedKey getAnnotatedKey(String name) {
@@ -238,6 +244,11 @@ public class ConfigurationProperties
         if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
             _log.warn( "Property {}: {}; support for {} will be removed in the future",
                         new Object[] {name, deprecatedWarningInstructionsFor(name), name});
+        }
+
+        if(_isService && existingKey.hasAnnotation(Annotation.NOT_FOR_SERVICES)) {
+            _log.warn( "Property {}: consider moving to a domain scope; it has no effect here",
+                        name);
         }
     }
 
