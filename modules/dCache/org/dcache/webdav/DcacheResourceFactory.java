@@ -51,6 +51,7 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
@@ -69,6 +70,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import dmg.util.Args;
 import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import org.dcache.auth.Origin;
 
@@ -791,6 +793,34 @@ public class DcacheResourceFactory
         PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
         pnfs.deletePnfsEntry(pnfsid, path.toString(),
                              EnumSet.of(REGULAR, LINK));
+        sendRemoveInfoToBilling(path);
+    }
+
+    private void sendRemoveInfoToBilling(FsPath path)
+    {
+        try {
+            String cell = getCellName() + "@" + getCellDomainName();
+            DoorRequestInfoMessage infoRemove =
+                new DoorRequestInfoMessage(cell, "remove");
+            Subject subject = getSubject();
+
+            long[] uids = Subjects.getUids(subject);
+            long[] gids = Subjects.getGids(subject);
+            if (uids.length > 0) {
+                infoRemove.setUid((int) uids[0]);
+            }
+            if (gids.length > 0) {
+                infoRemove.setGid((int) gids[0]);
+            }
+
+            infoRemove.setOwner(Subjects.getUserName(subject));
+            infoRemove.setPath(path.toString());
+            infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+            _billingStub.send(infoRemove);
+        } catch (NoRouteToCellException e) {
+            _log.error("Cannot send remove message to billing: {}",
+                       e.getMessage());
+        }
     }
 
     /**
