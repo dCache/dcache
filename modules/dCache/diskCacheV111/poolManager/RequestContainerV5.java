@@ -1157,8 +1157,9 @@ public class RequestContainerV5
                _fifo.addFirst(obj) ;
                if( _stateEngineActive )return ;
                _log.info( "Starting Engine" ) ;
-               _threadPool.invokeLater( new RunEngine() , "Read-"+_pnfsId ) ;
                _stateEngineActive = true ;
+
+               _threadPool.invokeLater( new RunEngine() , "Read-"+_pnfsId ) ;
            }
         }
         private void stateLoop(){
