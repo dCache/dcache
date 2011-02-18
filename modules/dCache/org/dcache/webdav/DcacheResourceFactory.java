@@ -169,10 +169,12 @@ public class DcacheResourceFactory
     private List<FsPath> _allowedPaths =
         Collections.singletonList(new FsPath());
     private InetAddress _internalAddress;
-    private Map<String,Object> _resources;
     private String _path;
     private boolean _doRedirectOnRead = true;
     private boolean _isOverwriteAllowed = false;
+
+    private String _staticContentPath;
+    private StringTemplateGroup _listingGroup;
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -392,20 +394,37 @@ public class DcacheResourceFactory
     }
 
     /**
-     * The resource map contains paths to stylesheets and images used
-     * for HTML rendering.
+     * Sets the resource containing the StringTemplateGroup for
+     * directory listing.
      */
-    public void setResourceMap(Map<String,Object> resources)
+    public void setListTemplateResource(org.springframework.core.io.Resource resource)
+        throws IOException
     {
-        _resources = resources;
+        InputStream in = resource.getInputStream();
+        try {
+            _listingGroup = new StringTemplateGroup(new InputStreamReader(in),
+                                                    DefaultTemplateLexer.class);
+        } finally {
+            in.close();
+        }
     }
 
     /**
-     * Returns the resource map.
+     * Returns the static content path.
      */
-    public Map<String,Object> getResourceMap()
+    public String getStaticContentPath()
     {
-        return _resources;
+        return _staticContentPath;
+    }
+
+    /**
+     * The static content path is the path under which the service
+     * exports the static content. This typically contains stylesheets
+     * and image files.
+     */
+    public void setStaticContentPath(String path)
+    {
+        _staticContentPath = path;
     }
 
     /**
@@ -638,22 +657,12 @@ public class DcacheResourceFactory
     public void list(FsPath path, OutputStream out)
         throws InterruptedException, CacheException, IOException
     {
-        StringTemplateGroup group;
-        InputStream stg =
-            ClassLoader.getSystemResourceAsStream("org/dcache/webdav/listing.stg");
-        try {
-            group = new StringTemplateGroup(new InputStreamReader(stg),
-                                            DefaultTemplateLexer.class);
-        } finally {
-            stg.close();
-        }
-
         Request request = HttpManager.request();
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(request.getAbsolutePath()), String.class);
-        final StringTemplate t = group.getInstanceOf("page");
+        final StringTemplate t = _listingGroup.getInstanceOf("page");
         t.setAttribute("path", base);
-        t.setAttribute("resources", _resources);
+        t.setAttribute("static", _staticContentPath);
         t.setAttribute("subject", getSubject().getPrincipals().toString());
 
         DirectoryListPrinter printer =

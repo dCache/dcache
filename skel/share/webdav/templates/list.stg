@@ -1,11 +1,26 @@
-group listing;
+/* HTML Template for directory listing.
+ *
+ * Must provide a page template. 
+ *
+ * See StringTemplate documentation at http://www.stringtemplate.org/ 
+ * for details on the format. 
+ *
+ * Do not modify this file. Any changes will be lost on upgrade. To
+ * customize the look and feel a copy of this file should be
+ * created. Update the webdav.templates.list configuration property to
+ * point to the copy.
+ */
 
+group list;
+
+/* Renders a directory entry.
+ */
 file(f) ::= <<
 <tr>
     $if(f.isDirectory)$
     <td>
         <div class="directoryicon">
-            <img class="scaled" src="$resources.images.dir$" alt=""/>
+            <img class="scaled" src="$static$/images/directoryIcon.png" alt=""/>
         </div>
     </td>
     <td>
@@ -15,7 +30,7 @@ file(f) ::= <<
     $else$
     <td>
         <div class="fileicon">
-            <img class="scaled" src="$resources.images.file$" alt=""/>
+            <img class="scaled" src="$static$/images/fileIcon.png" alt=""/>
         </div>
     </td>
     <td>
@@ -29,6 +44,8 @@ file(f) ::= <<
 </tr>
 >>
 
+/* Recursively renders the path as a breadcrumb trail.
+ */
 breadcrumbs(base,path) ::= <<
   <a href="$base;separator="/"$/">$last(base)$/</a>
   $if(path)$
@@ -36,16 +53,23 @@ breadcrumbs(base,path) ::= <<
   $endif$
 >>
 
-page(resources,subject,path,files) ::= <<
+/* Renders the complete HTML page.
+ *
+ *  static   The URI to the static content directory.
+ *  subject  The user who made the request.
+ *  path     Collection of path elements of the directory to list.
+ *  files    Collection of files in the directory.
+ */
+page(static,subject,path,files) ::= <<
 <html>
     <head>
         <title>dCache.org - File system</title>
-        <link rel="stylesheet" type="text/css" href="$resources.stylesheet$"/>
+        <link rel="stylesheet" type="text/css" href="$static$/styles/webdav.css"/>
     </head>
     <body>
         <div id="navi">
             <div class="figure">
-                <img class="scaled" src="$resources.images.logo$"/>
+                <img class="scaled" src="$static$/images/logo.png"/>
             </div>
 
             <p>$subject$</p>

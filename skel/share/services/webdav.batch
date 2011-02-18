@@ -31,10 +31,7 @@ check -strong loginBrokerUpdateThreshold
 check -strong webdav.static-content.dir.local
 check -strong webdav.static-content.dir.default
 check -strong webdav.static-content.location
-check -strong webdav.images.logo
-check -strong webdav.images.directory
-check -strong webdav.images.file
-check -strong webdav.style.css
+check -strong webdav.templates.list
 check -strong webdav.redirect.on-read
 check -strong webdav.overwrite
 
@@ -126,10 +123,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdav.static-content.dir.default=${webdav.static-content.dir.default} \
     -webdav.static-content.dir.local=${webdav.static-content.dir.local} \
     -webdav.static-content.location=${webdav.static-content.location} \
-    -webdav.images.logo=${webdav.images.logo} \
-    -webdav.images.directory=${webdav.images.directory} \
-    -webdav.images.file=${webdav.images.file} \
-    -webdav.style.css=${webdav.style.css} \
+    -webdav.templates.list=${webdav.templates.list} \
     -webdav.redirect.on-read=${webdav.redirect.on-read} \
     -webdav.overwrite=${webdav.overwrite} \
     -export -cellClass=WebDAVDoor"
