@@ -98,9 +98,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
 import java.sql.SQLException;
-//
-// just testing cvs
-//
+
+import com.google.common.base.Strings;
 
 /**
  *
@@ -2333,13 +2332,13 @@ public class Configuration {
     	return qosPluginClass;
     }
     public void setQosPluginClass(String qosPluginClass) {
-    	this.qosPluginClass = qosPluginClass;
+    	this.qosPluginClass = Strings.emptyToNull(qosPluginClass);
     }
     public String getQosConfigFile() {
     	return qosConfigFile;
     }
     public void setQosConfigFile(String qosConfigFile) {
-    	this.qosConfigFile = qosConfigFile;
+    	this.qosConfigFile = Strings.emptyToNull(qosConfigFile);
     }
 
     public int getNumDaysHistory() {

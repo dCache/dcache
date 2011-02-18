@@ -251,10 +251,12 @@
               value="${srmJdbcSaveCompletedRequestsOnly}"/>
     <property name="jdbcEnabled" value="${srmJdbcEnabled}"/>
     <property name="gsissl" value="true"/>
+    <property name="clientTransportByName" value="${srmClientTransport}"/>
+    <property name="qosPluginClass" value="${qosPluginClass}"/>
+    <property name="qosConfigFile" value="${qosConfigFile}"/>
 
     <property name="storage" ref="srm"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
-    <property name="clientTransportByName" value="${srmClientTransport}"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
