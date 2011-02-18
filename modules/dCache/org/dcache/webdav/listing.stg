@@ -1,0 +1,82 @@
+group listing;
+
+file(f) ::= <<
+<tr>
+    $if(f.isDirectory)$
+    <td>
+        <div class="directoryicon">
+            <img class="scaled" src="$resources.images.dir$" alt=""/>
+        </div>
+    </td>
+    <td>
+        <a href="/$[path,f.name];separator="/"$/">$f.name$/</a>
+    </td>
+    <td></td>
+    $else$
+    <td>
+        <div class="fileicon">
+            <img class="scaled" src="$resources.images.file$" alt=""/>
+        </div>
+    </td>
+    <td>
+        <a href="/$[path,f.name];separator="/"$">$f.name$</a>
+    </td>
+    <td>$f.size$</td>
+    $endif$
+    <td>
+        $f.mtime$
+    </td>
+</tr>
+>>
+
+breadcrumbs(base,path) ::= <<
+  <a href="$base;separator="/"$/">$last(base)$/</a>
+  $if(path)$
+    $breadcrumbs(base=[base,first(path)],path=rest(path))$
+  $endif$
+>>
+
+page(resources,subject,path,files) ::= <<
+<html>
+    <head>
+        <title>dCache.org - File system</title>
+        <link rel="stylesheet" type="text/css" href="$resources.stylesheet$"/>
+    </head>
+    <body>
+        <div id="navi">
+            <div class="figure">
+                <img class="scaled" src="$resources.images.logo$"/>
+            </div>
+
+            <p>$subject$</p>
+
+            <p>
+                $breadcrumbs(base="",path=path)$
+            </p>
+        </div>
+
+        <div id="wrap">
+            <div class="content">
+                <h1>File System</h1>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th/>
+                            <th>Name</th>
+                            <th>Size</th>
+                            <th>Last Modified</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $files: file()$
+                    </tbody>
+            </table>
+            </div>
+            <div id="footer">
+                www.dCache.org
+            </div>
+        </div>
+    </body>
+</html>
+>>

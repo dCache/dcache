@@ -103,10 +103,18 @@
     <property name="killTimeout" value="${webdavKillTimeout}"/>
     <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
     <property name="internalAddress" value="${webdavInternalAddress}"/>
-    <property name="logoPath" value="${webdav.images.logo}"/>
-    <property name="iconDirPath" value="${webdav.images.directory}"/>
-    <property name="iconFilePath" value="${webdav.images.file}"/>
-    <property name="webdavStylesheetPath" value="${webdav.style.css}"/>
+    <property name="resourceMap">
+        <map>
+            <entry key="images">
+                <map>
+                    <entry key="logo" value="${webdav.images.logo}"/>
+                    <entry key="dir" value="${webdav.images.directory}"/>
+                    <entry key="file" value="${webdav.images.file}"/>
+                </map>
+            </entry>
+            <entry key="stylesheet" value="${webdav.style.css}"/>
+        </map>
+    </property>
     <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
     <property name="overwriteAllowed" value="${webdav.overwrite}"/>
   </bean>
