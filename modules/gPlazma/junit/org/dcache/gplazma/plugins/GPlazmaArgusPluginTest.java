@@ -16,7 +16,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * These tests test the gPlazma plugin for Argus. They rely on the following
+ * These tests test the gPlazma plugin for Argus. Some of them rely on the following
  * policies:
  *
  * ****************************************************************************
@@ -37,8 +37,10 @@ import org.junit.Test;
  * ****************************************************************************
  *
  * and on the machine karsten-vm01.desy.de with a running Argus system and the
- * corresponding certificates. For this reasons the tests will probably fail on
- * almost every machine, except mine.
+ * corresponding certificates. For this reasons the tests are deactivated for
+ * standard test runs.
+ *
+ * The remaining tests work with a mock PEP Client and are environment independent.
  *
  * @author karsten
  *
@@ -107,7 +109,7 @@ public class GPlazmaArgusPluginTest {
      * @throws AuthenticationException
      */
     @Test
-    @Ignore("Depends on running, preconfigured Argus System.")
+    @Ignore("Fails because ArgumentMap currently cannot handle multiple entries with the same key.")
     public void testGPlazmaArgusPluginWithValidArgsAndMultipleEndpoints() throws AuthenticationException {
         String[] args = {
                 PEP_ENDPOINT,
@@ -142,7 +144,6 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithUnknownDN() throws AuthenticationException {
         String[] args = {
-                "mumpitz",
                 PEP_ENDPOINT,
                 VALID_ENDPOINT,
                 RESOURCE_ID,
@@ -167,8 +168,7 @@ public class GPlazmaArgusPluginTest {
     /**
      * Test result NOT_APPLICABLE authorisation with valid dn but missing parameters
      */
-    @Test
-    @Ignore("Depends on running, preconfigured Argus System.")
+    @Test(expected=IllegalArgumentException.class)
     public void testGPlazmaArgusPluginWithValidArgsButMissingResourceAndAction()
     throws AuthenticationException {
         String[] args = {
@@ -248,31 +248,6 @@ public class GPlazmaArgusPluginTest {
     }
 
     /**
-     * Test result DENY with banned user and incomplete request information
-     * @throws AuthenticationException
-     */
-    @Test(expected=AuthenticationException.class)
-    @Ignore("Depends on running, preconfigured Argus System.")
-    public void testGPlazmaArgusPluginBannedUserMissingResourceAndAction() throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
-        };
-
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
-
-        plugin.account(null, BannedPrincipals);
-    }
-
-    /**
      * Test result DENY with invalid/unreachable PEP
      * @throws AuthenticationException
      */
@@ -300,8 +275,6 @@ public class GPlazmaArgusPluginTest {
 
         plugin.account(null, BannedPrincipals);
     }
-
-
 
     @Test
     public void testResponsePermit() throws PEPClientException, AuthenticationException {
@@ -350,8 +323,6 @@ public class GPlazmaArgusPluginTest {
 
         new GPlazmaArgusPlugin(MockPEPClient.create(new PEPClientException(), Result.DECISION_PERMIT)).account(null, ValidPrincipals);
     }
-
-
 
     /**
      * Mock PEPClient to test arbitrary responses
