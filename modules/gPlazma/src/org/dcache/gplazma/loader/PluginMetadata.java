@@ -3,20 +3,16 @@ package org.dcache.gplazma.loader;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
+import org.glite.authz.common.model.util.Strings;
 
 /**
  * Class to hold (static) metadata about a plugin. It also checks the
  * validity of the information.
  */
 public class PluginMetadata {
-    private static final Pattern PATTERN_WHITESPACE_ONLY_LINE =
-            Pattern.compile( "^\\s*$");
-
-    private Set<String> _names = new HashSet<String>();
+    private final Set<String> _names = new HashSet<String>();
     private Class<? extends GPlazmaPlugin> _class;
     private String _defaultControl;
 
@@ -26,14 +22,8 @@ public class PluginMetadata {
     }
 
     void validPluginNameGuard( String name) {
-        if( name == null) {
-            throw new IllegalArgumentException("Cannot set plugin name to null");
-        }
-
-        Matcher matcher = PATTERN_WHITESPACE_ONLY_LINE.matcher( name);
-
-        if( matcher.matches()) {
-            throw new IllegalArgumentException("Plugin name cannot be empty");
+        if( name == null || Strings.isEmpty(name.trim())) {
+            throw new IllegalArgumentException("Plugin name cannot be null or empty.");
         }
     }
 

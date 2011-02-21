@@ -1,27 +1,37 @@
 package org.dcache.gplazma;
 
-import java.security.Principal;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.Arrays;
-import javax.security.auth.Subject;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.ACCOUNT;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.AUTHENTICATION;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.MAPPING;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.SESSION;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import org.dcache.gplazma.loader.Utf8DataClassLoader;
-import org.dcache.gplazma.loader.PluginXmlGenerator;
-import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
-import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
-import org.dcache.gplazma.configuration.StaticContentConfigurationLoadingStrategy;
+import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.security.auth.Subject;
+
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.*;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
+import org.dcache.gplazma.configuration.StaticContentConfigurationLoadingStrategy;
+import org.dcache.gplazma.loader.PluginXmlGenerator;
+import org.dcache.gplazma.loader.Utf8DataClassLoader;
+import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 /**
  *
  * @author timur
@@ -79,13 +89,13 @@ public class GPlazmaTests {
 
     //AddNameUidGidMappingPlugin.class
 
-    private static final String PLUGIN2_NAME="mapping1";
+//    private static final String PLUGIN2_NAME="mapping1";
 
-    private static final ConfigurationItem[] CONFIG2_ARRAY =
-            new ConfigurationItem[] {
-      new ConfigurationItem(  MAPPING, REQUIRED,    PLUGIN2_NAME,null) };
-    private static final Configuration CONFIG2 =
-            new Configuration(Arrays.asList(CONFIG2_ARRAY));
+//    private static final ConfigurationItem[] CONFIG2_ARRAY =
+//            new ConfigurationItem[] {
+//      new ConfigurationItem(  MAPPING, REQUIRED,    PLUGIN2_NAME,null) };
+//    private static final Configuration CONFIG2 =
+//            new Configuration(Arrays.asList(CONFIG2_ARRAY));
 
     @Before
     public void setUp() {
@@ -120,12 +130,14 @@ public class GPlazmaTests {
     @Test (expected=AuthenticationException.class)
     public void testEmptyConfigLogin() throws AuthenticationException {
         Subject subject = new Subject(false,
-                Collections.EMPTY_SET,
-                Collections.EMPTY_SET,
-                Collections.EMPTY_SET);
+                Collections.<Principal>emptySet(),
+                Collections.emptySet(),
+                Collections.emptySet());
 
         GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG));
         LoginReply result = instance.login(subject);
+
+        Assert.assertNotNull(result);
     }
 
     /**
@@ -168,7 +180,7 @@ public class GPlazmaTests {
         // check the results
         assertTrue(CheckUIDAccountPlugin.isCalled());
 
-        Set<Object> expectedPrincipals = new HashSet();
+        Set<Principal> expectedPrincipals = new HashSet<Principal>();
         expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
         expectedPrincipals.add(new UidPrincipal(ROOT_UID));
         expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
@@ -176,7 +188,7 @@ public class GPlazmaTests {
         Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
         assertEquals(resultPrincipals, expectedPrincipals);
 
-        Set<SessionAttribute> expectedAttributes = new HashSet();
+        Set<SessionAttribute> expectedAttributes = new HashSet<SessionAttribute>();
         expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
         expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
         expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
@@ -212,14 +224,14 @@ public class GPlazmaTests {
         // check the results
         assertTrue(CheckUIDAccountPlugin.isCalled());
 
-        Set<Object> expectedPrincipals = new HashSet();
+        Set<Principal> expectedPrincipals = new HashSet<Principal>();
         expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
         expectedPrincipals.add(new UidPrincipal(ROOT_UID));
         expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
         Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
         assertEquals(resultPrincipals, expectedPrincipals);
 
-        Set<SessionAttribute> expectedAttributes = new HashSet();
+        Set<SessionAttribute> expectedAttributes = new HashSet<SessionAttribute>();
         expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
         expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
         expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
@@ -246,6 +258,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
 
     /**
@@ -267,6 +281,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
     /**
      * Configuration is same as in testLogin, but we add required failing authentication plugin
@@ -287,6 +303,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
     /**
      * Configuration is same as in testLogin, but we add required failing authentication plugin
@@ -307,6 +325,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
 
     /**
@@ -326,6 +346,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
 
     /**
@@ -345,6 +367,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
     /**
      * Configuration is same as in testLogin, but without authentication
@@ -363,6 +387,8 @@ public class GPlazmaTests {
 
         // do the work here
         LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        Assert.assertNotNull(result);
    }
 
     private static Configuration newConfiguration(ConfigurationItem ... items) {
@@ -372,16 +398,16 @@ public class GPlazmaTests {
 
     private static Subject newTestSubject() {
                 //input subject
-        Set<Object> publicCredentials = new HashSet();
+        Set<Object> publicCredentials = new HashSet<Object>();
         publicCredentials.add(new UserNamePrincipal(USER_NAME));
         publicCredentials.add(new UidPrincipal(ROOT_UID));
 
-        Set<Object> privateCredentials = new HashSet();
+        Set<Object> privateCredentials = new HashSet<Object>();
         privateCredentials.add(new GidPrincipal(ROOT_GID,true));
 
         return new Subject(
                 false,
-                Collections.EMPTY_SET,
+                Collections.<Principal>emptySet(),
                 publicCredentials,
                 privateCredentials);
     }

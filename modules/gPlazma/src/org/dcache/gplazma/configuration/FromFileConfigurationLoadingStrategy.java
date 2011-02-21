@@ -18,7 +18,7 @@ import org.dcache.gplazma.configuration.parser.ConfigurationParserFactory;
 public class FromFileConfigurationLoadingStrategy
         implements  ConfigurationLoadingStrategy {
 
-    private static final long CONFIGURATION_UPDATE_FREQUNCY_MILLIS =
+    private static final long CONFIGURATION_UPDATE_FREQUENCY_MILLIS =
             TimeUnit.SECONDS.toMillis(1);
 
     private static final Logger LOGGER =
@@ -49,7 +49,7 @@ public class FromFileConfigurationLoadingStrategy
     @Override
     public boolean hasUpdated() {
         if( (System.currentTimeMillis() - configurationFileLastChecked) <
-                CONFIGURATION_UPDATE_FREQUNCY_MILLIS) {
+                CONFIGURATION_UPDATE_FREQUENCY_MILLIS) {
             // we checked less then CONFIGURATION_UPDATE_FREQUNCY_MILLIS millis ago
             return false;
         }

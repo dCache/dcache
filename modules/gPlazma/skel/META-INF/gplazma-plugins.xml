@@ -4,4 +4,12 @@
         <name>KpwdUsernamePassword</name>
         <class>org.dcache.gplazma.plugins.KpwdFileUsernamePasswordAuthenticationPlugin</class>
     </plugin>
+    <plugin>
+        <name>VORoleMap</name>
+        <class>org.dcache.gplazma.plugins.GPlazmaVORolePlugin</class>
+    </plugin>
+    <plugin>
+        <name>Argus</name>
+        <class>org.dcache.gplazma.plugins.GPlazmaArgusPlugin</class>
+    </plugin>
 </plugins>

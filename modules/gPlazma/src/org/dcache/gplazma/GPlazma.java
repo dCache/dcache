@@ -1,39 +1,34 @@
 package org.dcache.gplazma;
 
-import javax.security.auth.Subject;
 import java.security.Principal;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.security.auth.Subject;
 
 import org.dcache.commons.util.Strings;
-
-import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
-
-import org.dcache.gplazma.loader.PluginLoader;
+import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
 import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
+import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.XmlResourcePluginLoader;
-
-import org.dcache.gplazma.strategies.StrategyFactory;
-import org.dcache.gplazma.strategies.AuthenticationStrategy;
-import org.dcache.gplazma.strategies.MappingStrategy;
-import org.dcache.gplazma.strategies.AccountStrategy;
-import org.dcache.gplazma.strategies.SessionStrategy;
-import org.dcache.gplazma.strategies.GPlazmaPluginElement;
-
-import org.dcache.gplazma.validation.ValidationStrategy;
-import org.dcache.gplazma.validation.ValidationStrategyFactory;
-
-import org.dcache.gplazma.plugins.GPlazmaPlugin;
+import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
-import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
+import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
-
+import org.dcache.gplazma.strategies.AccountStrategy;
+import org.dcache.gplazma.strategies.AuthenticationStrategy;
+import org.dcache.gplazma.strategies.GPlazmaPluginElement;
+import org.dcache.gplazma.strategies.MappingStrategy;
+import org.dcache.gplazma.strategies.SessionStrategy;
+import org.dcache.gplazma.strategies.StrategyFactory;
+import org.dcache.gplazma.validation.ValidationStrategy;
+import org.dcache.gplazma.validation.ValidationStrategyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -94,10 +89,10 @@ public class GPlazma {
          }
 
          SessionID sessionId = null;
-         Set<Principal> identifiedPrincipals = new HashSet();
+         Set<Principal> identifiedPrincipals = new HashSet<Principal>();
          identifiedPrincipals.addAll(subject.getPrincipals());
-         Set<Principal>  authorizedPrincipals = new HashSet();
-         Set<SessionAttribute> attributes = new HashSet();
+         Set<Principal>  authorizedPrincipals = new HashSet<Principal>();
+         Set<SessionAttribute> attributes = new HashSet<SessionAttribute>();
          currentAuthenticationStrategy.authenticate(
                  sessionId,
                  subject.getPublicCredentials(),
@@ -135,10 +130,10 @@ public class GPlazma {
         pluginLoader.init();
 
 
-        authenticationPluginElements = new ArrayList();
-        mappingPluginElements = new ArrayList();
-        accountPluginElements = new ArrayList();
-        sessionPluginElements = new ArrayList();
+        authenticationPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>();
+        mappingPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaMappingPlugin>>();
+        accountPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAccountPlugin>>();
+        sessionPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaSessionPlugin>>();
 
         for(ConfigurationItem configItem:
                 configurationLoadingStrategy.
@@ -211,6 +206,7 @@ public class GPlazma {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <T extends GPlazmaPlugin> void storePluginElement (
             GPlazmaPlugin plugin,
             ConfigurationItemControl control,
@@ -219,7 +215,7 @@ public class GPlazma {
         // we are forced to use unchecked cast here, as the generics do not support
         // instanceof, but we have checked the type before calling storePluginElement
         T authPlugin = (T) plugin;
-        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement(authPlugin, control);
+        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<T>(authPlugin, control);
         pluginElements.add(pluginElement);
     }
 

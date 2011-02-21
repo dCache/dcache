@@ -1,16 +1,17 @@
 package org.dcache.gplazma.configuration.parser;
-import java.util.List;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -41,6 +42,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @return Configuration based on the configuration
      * @throws org.dcache.gplazma.configuration.parser.ParseException
      */
+    @Override
     public Configuration parse(String configuration)
     throws ParseException {
         if(configuration == null) {
@@ -57,6 +59,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @return Configuration based on the configuration
      * @throws org.dcache.gplazma.configuration.parser.ParseException
      */
+    @Override
     public Configuration parse(File configurationFile)
     throws ParseException {
         if(configurationFile == null) {
@@ -79,10 +82,11 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * line number reported in the exception will be correct iff the bufferedReader
      *  was initially pointing to the first char in the underlying char stream
      */
+    @Override
     public Configuration parse (BufferedReader bufferedReader)
     throws ParseException {
         List<ConfigurationItem> configItemList =
-                new ArrayList();
+                new ArrayList<ConfigurationItem>();
         int offset = 0;
         String line;
         try {
@@ -121,7 +125,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
             return null;
         }
 
-        String[] splitLine = trimmed.split("[ \t][ \t]*",SPLIT_LIMIT);
+        String[] splitLine = trimmed.split("\\s+",SPLIT_LIMIT);
         logger.debug("splitLine = "+Arrays.toString(splitLine));
 
         if(splitLine.length == 0) {
