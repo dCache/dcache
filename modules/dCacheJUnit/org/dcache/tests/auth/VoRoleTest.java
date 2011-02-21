@@ -1,14 +1,13 @@
 package org.dcache.tests.auth;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import gplazma.authz.AuthorizationException;
+import gplazma.authz.plugins.vorolemap.VORoleMapAuthzPlugin;
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import org.dcache.auth.UserAuthBase;
-import gplazma.authz.plugins.vorolemap.VORoleMapAuthzPlugin;
-import gplazma.authz.records.gPlazmaAuthorizationRecord;
-import gplazma.authz.AuthorizationException;
 
 public class VoRoleTest {
 
@@ -25,31 +24,27 @@ public class VoRoleTest {
     }
 
     @Test
-    public void testVoRole() throws Exception {
-
+    public void testValidDnValidRole() throws Exception {
         gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(MY_DN, ROLE1, null, null, null, null);
-
         assertNotNull("can't find user record", pwdRecord);
-
     }
 
+    @Test(expected=AuthorizationException.class)
+    public void testVoRoleWithNullRole() throws AuthorizationException {
+        _voAuth.authorize(MY_DN, null, null, null, null, null);
+    }
+
+    @Test(expected=AuthorizationException.class)
+    public void testValidDnInvalidRole() throws Exception {
+        _voAuth.authorize(MY_DN, BADROLE, null, null, null, null);
+    }
 
     @Test
     public void testRegexp() throws Exception {
         gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(FLAVIA, ROLE1, null, null, null, null);
         assertNotNull("can't find user record", pwdRecord);
         assertEquals("Incorrect user record received", 1001, pwdRecord.getUID());
-
     }
 
-    @Test
-    public void testNonExisting() throws Exception {
-        try {
-            gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(MY_DN, BADROLE, null, null, null, null);
-            fail("Record for non existing role returned");
-        }catch(AuthorizationException ae) {
-            // OK
-        }
-    }
 
 }
