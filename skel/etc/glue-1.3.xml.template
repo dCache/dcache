@@ -1529,11 +1529,8 @@
 
           <attr name="GLUE2ServiceID">glue:<constant id="SE-UNIQUE-ID"/>/data</attr>
 
-          <!-- FIXME: GLUE2ServiceName is currently missing in LDAP schema.
-                      This prevents us from publishing this attribute.
-          <attr name="GLUE2ServiceName"
+          <attr name="GLUE2EntityName"
                 not-empty="1"><constant id="SE-NAME"/></attr>
-          -->
 
           <attr name="GLUE2ServiceType">org.dcache.storage</attr>
           <attr name="GLUE2ServiceQualityLevel"><constant id="DCACHE-QUALITY-LEVEL"/></attr>
@@ -1566,11 +1563,8 @@
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
 
-            <!-- FIXME: GLUE2ManagerName is currently missing in LDAP schema.
-                        This prevents us from publishing this attribute.
             <attr not-empty="1"
-                  name="GLUE2ManagerName"><constant id="SE-NAME"/></attr>
-            -->
+                  name="GLUE2EntityName"><constant id="SE-NAME"/></attr>
 
             <attr name="GLUE2ManagerProductName">dCache</attr>
             <attr name="GLUE2ManagerProductVersion">
