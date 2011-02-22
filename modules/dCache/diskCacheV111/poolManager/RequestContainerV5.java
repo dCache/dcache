@@ -716,10 +716,42 @@ public class RequestContainerV5
         private   int          _currentRc     = 0 ;
         private   String       _currentRm     = "" ;
 
-        private   PoolCostCheckable _bestPool = null ;
-        private   PoolCheckable     _poolCandidateInfo    = null ;
-        private   PoolCheckable     _p2pPoolCandidateInfo = null ;
-        private   PoolCheckable     _p2pSourcePoolInfo    = null ;
+        /**
+         * The best pool found by askIfAvailable(). In contrast to
+         * _poolCandidateInfo, _bestPool may be set even when
+         * askIfAvailable() returns with an error. Eg when the best
+         * pool is too expensive.
+         */
+        private   PoolCostCheckable _bestPool = null;
+
+        /**
+         * The pool from which to read the file or the pool to which
+         * to stage the file. Set by askIfAvailable() when it returns
+         * RT_FOUND, by exercisePool2PoolReply() when it returns
+         * RT_OK, and by askForStaging(). Also set in the
+         * stateEngine() at various points.
+         */
+        private   String     _poolCandidate;
+
+        /**
+         * The host name of the pool used for staging.
+         *
+         * Serves a critical role when retrying staging to avoid that
+         * the same stage host is chosen twice in a row.
+         */
+        private   String     _stageCandidateHost;
+
+        /**
+         * The destination of a pool to pool transfer. Set by
+         * askForPoolToPool() when it returns RT_FOUND.
+         */
+        private   String     _p2pDestinationPool;
+
+        /**
+         * The source of a pool to pool transfer. Set by
+         * askForPoolToPool() when it return RT_FOUND.
+         */
+        private   String     _p2pSourcePool;
 
         private   final long   _started       = System.currentTimeMillis() ;
         private   String       _name          = null ;
@@ -891,20 +923,30 @@ public class RequestContainerV5
            //
            add(null) ;
         }
-        public String getPoolCandidate() {
-            return _poolCandidateInfo == null ? (_p2pPoolCandidateInfo == null ? POOL_UNKNOWN_STRING
-                    : _p2pPoolCandidateInfo.getPoolName())
-                    : _poolCandidateInfo.getPoolName();
+
+        public String getPoolCandidate()
+        {
+            if (_poolCandidate != null) {
+                return _poolCandidate;
+            } else if (_p2pDestinationPool != null) {
+                return _p2pDestinationPool;
+            } else {
+                return POOL_UNKNOWN_STRING;
+            }
         }
 
-        private String getPoolCandidateState() {
-            return _poolCandidateInfo != null ? _poolCandidateInfo
-                    .getPoolName()
-                    : _p2pPoolCandidateInfo != null ? ((_p2pSourcePoolInfo == null ? POOL_UNKNOWN_STRING
-                            : _p2pSourcePoolInfo.getPoolName())
-                            + "->" + _p2pPoolCandidateInfo.getPoolName())
-                            : POOL_UNKNOWN_STRING;
+        private String getPoolCandidateState()
+        {
+            if (_poolCandidate != null) {
+                return _poolCandidate;
+            } else if (_p2pDestinationPool != null) {
+                return (_p2pSourcePool == null ? POOL_UNKNOWN_STRING : _p2pSourcePool)
+                    + "->" + _p2pDestinationPool;
+            } else {
+                return POOL_UNKNOWN_STRING;
+            }
         }
+
 	public RestoreHandlerInfo getRestoreHandlerInfo(){
 	   return new RestoreHandlerInfo(
 	          _name,
@@ -1085,7 +1127,7 @@ public class RequestContainerV5
                 CellMessage m =  messages.next();
                 PoolMgrSelectPoolMsg rpm = (PoolMgrSelectPoolMsg) m.getMessageObject();
                 if (_currentRc == 0) {
-                    rpm.setPoolName(_poolCandidateInfo.getPoolName());
+                    rpm.setPoolName(_poolCandidate);
                     rpm.setSucceeded();
                 } else {
                     rpm.setFailed(_currentRc, _currentRm);
@@ -1449,10 +1491,10 @@ public class RequestContainerV5
                           _status = "Suspended (pool unavailable) "+_formatter.format(new Date()) ;
                           _currentRc = 1010 ;
                           _currentRm = "Suspend";
-                          _poolCandidateInfo = null ;
+                          _poolCandidate = null ;
                           nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                        }
-                       if (_sendHitInfo && _poolCandidateInfo == null) {
+                       if (_sendHitInfo && _poolCandidate == null) {
                            sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getPoolName():"<UNKNOWN>", false );   //VP
                        }
                        //
@@ -1510,12 +1552,11 @@ public class RequestContainerV5
                        nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
                        _status = "Pool2Pool "+_formatter.format(new Date()) ;
                        setError(0,"");
-                       _pingHandler.startP2P(_p2pPoolCandidateInfo.getPoolName()) ;
+                       _pingHandler.startP2P(_p2pDestinationPool) ;
 
                        if (_sendHitInfo ) sendHitMsg(  _pnfsId,
-                               (_p2pSourcePoolInfo!=null)?
-                                   _p2pSourcePoolInfo.getPoolName():
-                                   "<UNKNOWN>", true );   //VP
+                               (_p2pSourcePool!=null)?
+                                   _p2pSourcePool:"<UNKNOWN>", true );   //VP
 
                     }else if( rc == RT_NOT_PERMITTED ){
 
@@ -1530,8 +1571,8 @@ public class RequestContainerV5
                                nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                             }
                         }else{
-                            _poolCandidateInfo = _bestPool ;
-                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
+                            _poolCandidate = _bestPool.getPoolName();
+                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
 
                           setError(0,"");
                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1553,8 +1594,8 @@ public class RequestContainerV5
 
                           if( _bestPool != null ){
 
-                              _poolCandidateInfo = _bestPool;
-                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
+                              _poolCandidate = _bestPool.getPoolName();
+                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
 
                              setError(0,"");
                              nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1583,7 +1624,7 @@ public class RequestContainerV5
 
                        }else{
 
-                           _poolCandidateInfo = _bestPool;
+                           _poolCandidate = _bestPool.getPoolName();
 
                           _log.info(" found high cost object");
 
@@ -1628,7 +1669,7 @@ public class RequestContainerV5
                        nextStep(RequestState.ST_WAITING_FOR_STAGING , WAIT ) ;
                        _status = "Staging "+_formatter.format(new Date()) ;
                        setError(0,"");
-                       _pingHandler.startStage(_poolCandidateInfo.getPoolName()) ;
+                       _pingHandler.startStage(_poolCandidate) ;
 
                     }else if( rc == RT_OUT_OF_RESOURCES ){
 
@@ -1885,7 +1926,7 @@ public class RequestContainerV5
                  Pool2PoolTransferMsg reply = (Pool2PoolTransferMsg)messageArrived ;
                  _log.info("Pool2PoolTransferMsg replied with : "+reply);
                  if( ( _currentRc = reply.getReturnCode() ) == 0 ){
-                     _poolCandidateInfo = _p2pPoolCandidateInfo ;
+                     _poolCandidate = _p2pDestinationPool;
                     return RT_OK ;
 
                  }else{
@@ -2099,12 +2140,12 @@ public class RequestContainerV5
 
               }
 
-              cost = list.isEmpty() ? bestAv.get(0) : list.firstEntry().getValue();
+              cost = list.isEmpty() ? _bestPool : list.firstEntry().getValue();
 
               _log.info( "askIfAvailable : candidate : "+cost ) ;
 
 
-              _poolCandidateInfo = cost ;
+              _poolCandidate = cost.getPoolName();
               setError(0,"") ;
 
               return RT_FOUND ;
@@ -2334,14 +2375,13 @@ public class RequestContainerV5
 					}
 				}
 
-                _log.info("P2P : source=" + sourcePool.getPoolName() + ";dest=" + destinationPool.getPoolName());
+                _p2pSourcePool = sourcePool.getPoolName();
+                _p2pDestinationPool = destinationPool.getPoolName();
+                _log.info("P2P : source={};dest={}",
+                          _p2pSourcePool, _p2pDestinationPool);
+                sendPool2PoolRequest(_p2pSourcePool, _p2pDestinationPool);
 
-                sendPool2PoolRequest(
-                      (_p2pSourcePoolInfo    = sourcePool).getPoolName(),
-                      (_p2pPoolCandidateInfo = destinationPool ).getPoolName()
-                                     );
-
-				return RT_FOUND;
+                return RT_FOUND;
 
             } catch ( CacheException ce) {
 
@@ -2387,7 +2427,7 @@ public class RequestContainerV5
 
 
             PoolCostCheckable cost = null ;
-            if( _poolCandidateInfo == null ){
+            if( _poolCandidate == null ){
                 int n = 0 ;
                 for( Iterator<List<PoolCostCheckable>> i = matrix.iterator() ; i.hasNext() ; n++ ){
 
@@ -2402,13 +2442,6 @@ public class RequestContainerV5
                  //
                  // find a pool which is not identical to the first candidate
                  //
-                //
-                //    This prepares for the 'host name' comparison.
-                //    (tmpMap is used to avoid calling getTagMap twice. The variable is used within the
-                //     the for(for( loop for the same reason. The scope is limited to just two lines.)
-                //
-                Map<String, String> tmpMap = _poolCandidateInfo == null ? null : _poolCandidateInfo.getTagMap() ;
-                String currentCandidateHostName = tmpMap == null ? null : (String)tmpMap.get("hostname") ;
 
                 PoolCostCheckable rememberBest = null ;
 
@@ -2420,8 +2453,9 @@ public class RequestContainerV5
                        //
                        // skip this one if we tried this last time
                        //
-                       if( c.getPoolName().equals(_poolCandidateInfo.getPoolName()) &&  n.hasNext() ) {
-                           _log.info("askFor "+mode+" : Second shot excluding : " + _poolCandidateInfo.getPoolName() ) ;
+                       if( c.getPoolName().equals(_poolCandidate) &&  n.hasNext() ) {
+                           _log.info("askFor {} : Second shot excluding : {}",
+                                     mode, _poolCandidate);
                            continue;
                        }
 
@@ -2429,7 +2463,7 @@ public class RequestContainerV5
                        //  If the setting disallows 'sameHostRetry' and the hostname information
                        //  is present, we try to honor this.
                        //
-                       if( ( _sameHostRetry != SAME_HOST_RETRY_NOTCHECKED ) && ( currentCandidateHostName != null )){
+                       if( ( _sameHostRetry != SAME_HOST_RETRY_NOTCHECKED ) && ( _stageCandidateHost != null )){
                            //
                            // Remember the best even if it is on the same host, in case of 'best effort'.
                            //
@@ -2437,8 +2471,10 @@ public class RequestContainerV5
                            //
                            // skip this if the hostname is available and identical to the first candidate.
                            //
-                           String thisHostname = ( tmpMap = c.getTagMap() ) == null ? null : (String) tmpMap.get("hostname") ;
-                           if( ( thisHostname != null ) && ( thisHostname.equals(currentCandidateHostName) ) )continue ;
+                           Map<String, String> tagMap = c.getTagMap();
+                           String thisHostname =
+                               (tagMap == null) ? null : tagMap.get("hostname");
+                           if( ( thisHostname != null ) && ( thisHostname.equals(_stageCandidateHost) ) )continue ;
                         }
                         //
                         // If the 'fallbackoncost' option is enabled and the cost of the smallest
@@ -2490,13 +2526,18 @@ public class RequestContainerV5
 
            try{
 
-               _poolCandidateInfo = askForFileStoreLocation( DirectionType.CACHE ) ;
+               PoolCostCheckable pool =
+                   askForFileStoreLocation(DirectionType.CACHE);
+               _poolCandidate = pool.getPoolName();
+               Map<String, String> tagMap = pool.getTagMap();
+               _stageCandidateHost =
+                   (tagMap == null) ? null : tagMap.get("hostname");
 
-               //_poolCandidate     = _poolCandidateInfo.getPoolName() ;
+               _log.info("askForStaging : poolCandidate -> {}", _poolCandidate);
 
-               _log.info( "askForStaging : poolCandidate -> "+_poolCandidateInfo.getPoolName());
-
-               if( ! sendFetchRequest( _poolCandidateInfo.getPoolName() , _storageInfo ) )return RT_OUT_OF_RESOURCES ;
+               if (!sendFetchRequest(_poolCandidate, _storageInfo)) {
+                   return RT_OUT_OF_RESOURCES;
+               }
 
                setError(0,"");
 
