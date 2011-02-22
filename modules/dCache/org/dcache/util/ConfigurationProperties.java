@@ -3,10 +3,12 @@ package org.dcache.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.LineNumberReader;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -95,6 +97,7 @@ public class ConfigurationProperties
 
     private boolean _loading = false;
     private boolean _isService = false;
+    private ProblemConsumer _problemConsumer = new DefaultProblemConsumer();
 
     public ConfigurationProperties()
     {
@@ -104,6 +107,25 @@ public class ConfigurationProperties
     public ConfigurationProperties(Properties defaults)
     {
         super(defaults);
+
+        if( defaults instanceof ConfigurationProperties) {
+            _problemConsumer = ((ConfigurationProperties) defaults)._problemConsumer;
+        }
+    }
+
+    public void setProblemConsumer(ProblemConsumer consumer)
+    {
+        _problemConsumer = consumer;
+    }
+
+    public ProblemConsumer getProblemConsumer()
+    {
+        return _problemConsumer;
+    }
+
+    public void setFilename(String filename)
+    {
+        _problemConsumer.setFilename(filename);
     }
 
     public void setIsService(boolean isService)
@@ -189,11 +211,30 @@ public class ConfigurationProperties
     public void loadFile(File file)
         throws IOException
     {
-        Reader in = new FileReader(file);
+        Reader reader = new FileReader(file);
         try {
-            load(in);
+            load(file.getName(), 0, reader);
         } finally {
-            in.close();
+            reader.close();
+        }
+    }
+
+    /**
+     * Wrapper method that ensures error and warning messages have
+     * the correct line number.
+     * @param source a label describing where Reader is obtaining information
+     * @param line Number of lines read so far
+     * @param reader Source of the property information
+     */
+    public void load(String source, int line, Reader reader) throws IOException
+    {
+        LineNumberReader lnr = new LineNumberReader(reader);
+        lnr.setLineNumber(line);
+        _problemConsumer.setFilename(source);
+        try {
+            load(new ConfigurationParserAwareReader(lnr));
+        } finally {
+            _problemConsumer.setFilename(null);
         }
     }
 
@@ -209,7 +250,10 @@ public class ConfigurationProperties
 
         AnnotatedKey key = new AnnotatedKey(rawKey, value);
         String name = key.getPropertyName();
-        checkArgument(!_loading || !containsKey(name), "%s is already defined", name);
+        if(_loading && containsKey(name)) {
+            _problemConsumer.error(name + " is already defined");
+            return null;
+        }
 
         checkIsAllowedKey(key);
 
@@ -228,27 +272,28 @@ public class ConfigurationProperties
         AnnotatedKey existingKey = getAnnotatedKey(name);
 
         if(existingKey.hasAnnotations() && key.hasAnnotations()) {
-            throw new IllegalArgumentException("Property " + name + ": " +
+            _problemConsumer.error("Property " + name + ": " +
                     "remove \"" + key.getAnnotationDeclaration() + "\"; " +
                     "annotated assignments are not allowed");
         }
 
         if(existingKey.hasAnnotation(Annotation.FORBIDDEN)) {
-            throw new IllegalArgumentException(forbiddenErrorMessageFor(existingKey));
+            _problemConsumer.error(forbiddenErrorMessageFor(existingKey));
         }
 
         if(existingKey.hasAnnotation(Annotation.OBSOLETE)) {
-            _log.warn(obsoleteErrorMessageFor(existingKey));
+            _problemConsumer.warning(obsoleteErrorMessageFor(existingKey));
         }
 
         if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
-            _log.warn( "Property {}: {}; support for {} will be removed in the future",
-                        new Object[] {name, deprecatedWarningInstructionsFor(name), name});
+            _problemConsumer.warning("Property " + name + ": " +
+                    deprecatedWarningInstructionsFor(name) + "; support for " +
+                    name + " will be removed in the future");
         }
 
         if(_isService && existingKey.hasAnnotation(Annotation.NOT_FOR_SERVICES)) {
-            _log.warn( "Property {}: consider moving to a domain scope; it has no effect here",
-                        name);
+            _problemConsumer.warning("Property " + name
+                    + ": consider moving to a domain scope; it has no effect here");
         }
     }
 
@@ -500,6 +545,150 @@ public class ConfigurationProperties
 
         Annotation(String label) {
             _label = label;
+        }
+    }
+
+
+    /**
+     * A class that implement this interface, when registered, will accept
+     * responsibility for handling the warnings and errors produced when
+     * parsing dCache configuration.  These methods may throw an exception,
+     * to terminate parsing; however, code using a ProblemsAware class must
+     * not assume that this will happen.
+     */
+    public interface ProblemConsumer {
+        public void setFilename(String name);
+        public void setLineNumberReader(LineNumberReader reader);
+        public void error(String message);
+        public void warning(String message);
+    }
+
+
+    /**
+     * This class provides the default behaviour if no problem
+     * consumer is registered: warnings are logged and errors
+     * result in an IllegalArgumentException being thrown.
+     */
+    public static class DefaultProblemConsumer implements ProblemConsumer
+    {
+        private String _filename;
+        private LineNumberReader _reader;
+
+        protected String addContextTo(String message)
+        {
+            if( _filename == null || _reader == null) {
+                return message;
+            }
+
+            return _filename + ":" + _reader.getLineNumber() + ": " + message;
+        }
+
+        @Override
+        public void error(String message)
+        {
+            throw new IllegalArgumentException(addContextTo(message));
+        }
+
+        @Override
+        public void warning(String message)
+        {
+            _log.warn(addContextTo(message));
+        }
+
+        @Override
+        public void setFilename( String name) {
+            _filename = name;
+        }
+
+        @Override
+        public void setLineNumberReader( LineNumberReader reader) {
+            _reader = reader;
+        }
+    }
+
+
+    /**
+     * This reader wraps a BufferedReader and extends the basic Reader class
+     * so that it compensates for Configuration.read behaviour.  The perser's
+     * behaviour results in unreliable line numbers being reported if
+     * LineNumberReader is used directly.  This is due to two reasons:
+     * <p>
+     * First, the load method uses an internal buffer to read as much as
+     * possible from the reader.  It is very likely that this will include
+     * many lines, advancing the LineNumberReader so the line number count
+     * will be unreliable.  The put method, when reporting a problem, will
+     * very likely use a line number greater than that of the line where the
+     * problem is located.
+     * <p>
+     * Second, when finished parsing a line, if the parsing has exhausted
+     * the available data then the parser will always fetch more data.  This
+     * is needed if the line ends with a backslash ('\'), but the parser does
+     * this unconditionally if the buffer is exhausted.  This behaviour
+     * results in an out-by-one error in the line numbers, except when reading
+     * the last line.
+     * <p>
+     * To counter the first problem, this class replies with exactly one line
+     * for each read request.  For the second problem, this class injects
+     * a empty line in between each real line-read, provided the previous
+     * line didn't end with a backslash.  These empty lines do not cause the
+     * line number to increase but prevent the out-by-one error.
+     * <p>
+     * NB. In case it isn't obvious: this class is nothing more than an ugly
+     * hack.  The correct solution is to write a replacement parser.
+     */
+    public static class ConfigurationParserAwareReader extends Reader
+    {
+        final private BufferedReader _inner;
+        private boolean _shouldInjectBlankLine;
+        private String _remaining = "";
+
+        public ConfigurationParserAwareReader(BufferedReader reader)
+        {
+            _inner = reader;
+        }
+
+        @Override
+        public int read(char[] cbuf, int off, int len) throws IOException
+        {
+            String data = getDataForParser();
+            if(data == null) {
+                return -1;
+            }
+
+            int count = Math.min(len, data.length());
+            System.arraycopy(data.toCharArray(), 0, cbuf, off, count);
+
+            _remaining = data.substring(count);
+
+            if(_remaining.isEmpty()) {
+                if (_shouldInjectBlankLine){
+                    _shouldInjectBlankLine = false;
+                } else {
+                    _shouldInjectBlankLine = !data.endsWith("\\\n");
+                }
+            }
+
+            return count;
+        }
+
+        private String getDataForParser() throws IOException
+        {
+            if( !_remaining.isEmpty()) {
+                return _remaining;
+            }
+
+            if(_shouldInjectBlankLine) {
+                return "\n";
+            }
+
+            String data = _inner.readLine();
+
+            return data == null ? null : data + "\n";
+        }
+
+        @Override
+        public void close() throws IOException {
+            _inner.close();
         }
     }
 }

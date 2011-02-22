@@ -50,6 +50,7 @@ usage()
     echo "   pool reconstruct <directory> <target dir>"
     echo "   restart [<domain>]..."
     echo "   services"
+    echo "   check-config"
     echo "   start [<domain>]..."
     echo "   status"
     echo "   stop [<domain>]..."
@@ -210,6 +211,11 @@ showVersion()
 loadConfig()
 {
     . ${DCACHE_HOME}/share/lib/loadConfig.sh
+}
+
+initBootloader()
+{
+    . ${DCACHE_HOME}/share/lib/bootLoader.sh
 }
 
 #  print either the user a PID is running as (if $1 is non-empty)
@@ -726,8 +732,14 @@ case "$1" in
 
     loader)
         shift
-        loadConfig
+        initBootloader
         bootLoader "$@"
+        ;;
+
+    check-config)
+        shift
+        initBootloader
+        bootLoader check-config
         ;;
 
     *)

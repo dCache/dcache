@@ -9,11 +9,15 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
+import java.io.OutputStream;
+import java.io.PrintStream;
 
 import dmg.util.Args;
 import dmg.util.CommandException;
 
 import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
+import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.LoggerFactory;
@@ -39,6 +43,7 @@ public class BootLoader
     private static final String CMD_COMPILE = "compile";
     private static final String CMD_COMPILE_OP_SHELL = "shell";
     private static final String CMD_COMPILE_OP_XML = "xml";
+    private static final String CMD_CHECK = "check-config";
 
     private static final char OPT_SILENT = 'q';
     private static final String OPT_CONFIG_FILE = "f";
@@ -64,6 +69,9 @@ public class BootLoader
         System.err.println("   start DOMAIN");
         System.err.println("          Start a domain.");
         System.err.println();
+        System.err.println("   " + CMD_CHECK);
+        System.err.println("          Check configuration for any problems.");
+        System.err.println();
         System.err.println("   " + CMD_COMPILE + " <format>");
         System.err.println("          Compiles the layout to some particular format, determined by <format>.");
         System.err.println("          Valid values of <format> are:");
@@ -87,11 +95,12 @@ public class BootLoader
     }
 
     private static ConfigurationProperties
-        loadConfiguration(ConfigurationProperties config, String[] paths)
-        throws IOException
+        loadConfiguration(ConfigurationProperties config, String[] paths,
+                ProblemConsumer consumer) throws IOException
     {
         for (String path: paths) {
             config = new ConfigurationProperties(config);
+            config.setProblemConsumer(consumer);
             File file = new File(path);
             if (file.isFile()) {
                 config.loadFile(file);
@@ -134,15 +143,20 @@ public class BootLoader
                 args.isOneCharOption(OPT_SILENT) ? Level.ERROR : Level.WARN;
             logToConsoleAtLevel(level);
 
+            String command = args.argv(0);
+
+            ProblemConsumer problemConsumer = command.equals(CMD_CHECK) ?
+                    new OutputStreamProblemConsumer(System.out) :
+                    new DefaultProblemConsumer();
+
             ConfigurationProperties config = getDefaults();
             String tmp = args.getOpt(OPT_CONFIG_FILE);
             if (tmp != null) {
-                config =
-                    loadConfiguration(config, tmp.split(OPT_CONFIG_FILE_DELIMITER));
+                config = loadConfiguration(config,
+                        tmp.split(OPT_CONFIG_FILE_DELIMITER),problemConsumer);
             }
 
             Layout layout = loadLayout(config);
-            String command = args.argv(0);
             if (command.equals(CMD_START)) {
                 if (args.argc() != 2) {
                     throw new IllegalArgumentException("Missing argument: Domain name");
@@ -153,6 +167,10 @@ public class BootLoader
                 }
 
                 domain.start();
+            } else if (command.equals(CMD_CHECK)) {
+                OutputStreamProblemConsumer consumer = (OutputStreamProblemConsumer) problemConsumer;
+                consumer.printSummary();
+                System.exit(consumer.getReturnCode());
             } else if (command.equals(CMD_COMPILE)) {
                 LayoutPrinter printer = printerForArgs(args, layout);
                 printer.print(System.out);
@@ -215,5 +233,87 @@ public class BootLoader
         Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
         rootLogger.addAppender(ca);
         rootLogger.setLevel(level);
+    }
+
+    /**
+     * Provide a ProblemConsumer that logs all messages to standard output and
+     * doesn't terminate the parsing process if an error is discovered.  It
+     * can also provide a one-line summary describing the number of warnings
+     * and errors encountered.
+     */
+    private static class OutputStreamProblemConsumer extends DefaultProblemConsumer
+    {
+        private int _errors;
+        private int _warnings;
+        private final PrintStream _out;
+
+        public OutputStreamProblemConsumer(OutputStream out)
+        {
+            _out = new PrintStream(out);
+        }
+
+        @Override
+        public void error(String message)
+        {
+            _out.println("[ERROR] " + addContextTo(message));
+            _errors++;
+        }
+
+        @Override
+        public void warning(String message)
+        {
+            _out.println("[WARNING] " + addContextTo(message));
+            _warnings++;
+        }
+
+        public int getReturnCode()
+        {
+            if (_errors > 0) {
+                return 2;
+             } else if (_warnings > 0) {
+                return 1;
+             } else {
+                return 0;
+             }
+        }
+
+        public void printSummary()
+        {
+            if( _warnings == 0 && _errors == 0) {
+                System.out.println("No problems found.");
+            } else {
+                System.out.println(buildProblemsMessage());
+            }
+        }
+
+        private String buildProblemsMessage()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("Found ");
+            cardinalMessage(sb, _errors, "error");
+
+            if(_warnings > 0 && _errors > 0) {
+                sb.append(" and ");
+            }
+
+            cardinalMessage(sb, _warnings, "warning");
+            sb.append(".");
+            return sb.toString();
+        }
+
+        private void cardinalMessage(StringBuilder sb, int count, String label)
+        {
+            switch(count) {
+            case 0:
+                break;
+            case 1:
+                sb.append("1 ").append(label);
+                break;
+            default:
+                sb.append(count).append(" ").append(label).append("s");
+                break;
+            }
+        }
     }
 }

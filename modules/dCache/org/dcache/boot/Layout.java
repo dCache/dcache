@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,14 +14,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 import org.dcache.util.NetworkUtils;
 import org.dcache.commons.util.Strings;
+
+import diskCacheV111.util.FsPath;
 
 import static org.dcache.boot.Properties.*;
 
@@ -37,6 +39,7 @@ public class Layout
     private final ConfigurationProperties _properties;
     private final Map<String,Domain> _domains =
         new LinkedHashMap<String,Domain>();
+    private String _source = "<unknown>";
 
     public Layout(ConfigurationProperties config)
     {
@@ -79,16 +82,10 @@ public class Layout
         throws URISyntaxException, IOException
     {
         URL url = NetworkUtils.toURL(uri);
-        LineNumberReader reader =
-            new LineNumberReader(new InputStreamReader(url.openStream()));
+        _source = new FsPath(url.getPath()).getName();
+        Reader reader = new InputStreamReader(url.openStream());
         try {
             load(reader);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(String.format("%s, line %d: %s", uri, reader.getLineNumber(), e.getMessage()), e);
-        } catch (IOException e) {
-            throw new IOException(String.format("%s, line %d: %s", uri, reader.getLineNumber(), e.getMessage()), e);
-        } catch (RuntimeException e) {
-            throw new RuntimeException(String.format("%s, line %d: %s", uri, reader.getLineNumber(), e.getMessage()), e);
         } finally {
             reader.close();
         }
@@ -99,9 +96,10 @@ public class Layout
      *
      * @param reader the input character stream.
      */
-    public void load(BufferedReader reader)
+    public void load(Reader in)
         throws IOException
     {
+        LineNumberReader reader = new LineNumberReader(in);
         loadSection(reader, _properties);
 
         String s;
@@ -122,11 +120,25 @@ public class Layout
             } else {
                 Domain domain = getDomain(domainName);
                 if (domain == null) {
-                    throw new IllegalArgumentException(String.format("Service declaration %s/%s lacks definition of domain %s", domainName, serviceName, domainName));
+                    String message = String.format("Service declaration " +
+                            "%s/%s lacks definition of domain %s",
+                            domainName, serviceName, domainName);
+                    discardSection(reader, message);
+                } else {
+                    loadSection(reader, domain.createService(serviceName));
                 }
-                loadSection(reader, domain.createService(serviceName));
             }
         }
+    }
+
+    private void discardSection(LineNumberReader reader, String message)
+        throws IOException
+    {
+        ProblemConsumer consumer = _properties.getProblemConsumer();
+        consumer.setFilename(_source);
+        consumer.setLineNumberReader(reader);
+        consumer.error(message);
+        loadSection(reader); // discard any configuration for this section
     }
 
     /**
@@ -136,19 +148,33 @@ public class Layout
      * @param reader The reader to read from
      * @param config The Properties to which to add the properties
      */
-    private void loadSection(BufferedReader reader, Properties config)
+    private void loadSection(LineNumberReader reader, ConfigurationProperties config)
         throws IOException
     {
-        String s;
+        int linesRead = reader.getLineNumber();
+        String section = loadSection(reader);
+        config.load(_source, linesRead, new StringReader(section));
+    }
+
+    /**
+     * Reads properties until the next section header. The position is
+     * advanced until the next section header or the end of file.
+     *
+     * @param reader The reader to read from
+     * @return Property declarations.
+     */
+    private String loadSection(BufferedReader reader) throws IOException
+    {
+        String line;
         StringBuilder section = new StringBuilder();
         reader.mark(READ_AHEAD_LIMIT);
-        while ( (s = reader.readLine()) != null &&
-                !SECTION_HEADER.matcher(s).matches()) {
-            section.append(s).append('\n');
+        while ( (line = reader.readLine()) != null &&
+                !SECTION_HEADER.matcher(line).matches()) {
+            section.append(line).append('\n');
             reader.mark(READ_AHEAD_LIMIT);
         }
         reader.reset();
-        config.load(new StringReader(section.toString()));
+        return section.toString();
     }
 
     /**

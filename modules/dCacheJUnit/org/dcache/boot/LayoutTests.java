@@ -3,7 +3,6 @@ package org.dcache.boot;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
@@ -130,8 +129,7 @@ public class LayoutTests {
 
 
     private void load() throws IOException {
-        StringReader r = new StringReader(_readerSource.toString());
-        BufferedReader reader = new BufferedReader(r);
+        StringReader reader = new StringReader(_readerSource.toString());
         _layout.load(reader);
     }
 
