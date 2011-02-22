@@ -164,6 +164,20 @@ public class Transfer implements Comparable<Transfer>
      * Returns the session ID of this transfer. The session ID
      * uniquely identifies this transfer object within this VM
      * instance.
+     *
+     * The session ID is used as the message ID for both the pool
+     * selection message sent to PoolManager and the io file message
+     * to the pool. The DoorTransferFinishedMessage from the pool will
+     * have the same ID.
+     *
+     * IoDoorEntry instances provided for monitoring will contain the
+     * session ID and the active transfer page of the httpd service
+     * reports the session ID in the sequence column.
+     *
+     * The session ID is not to be confused with session string
+     * identifier used for logging. The former identifies a single
+     * transfer while the latter identifies a user session and could
+     * in theory span multiple transfers.
      */
     public long getSessionId()
     {

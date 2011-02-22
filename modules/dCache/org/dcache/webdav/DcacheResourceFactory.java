@@ -7,9 +7,10 @@ import java.util.Set;
 import java.util.EnumSet;
 import java.util.Date;
 import java.util.Collections;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.Iterator;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,7 +73,6 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.ListDirectoryHandler;
 
 import dmg.util.Args;
-import dmg.util.CollectionFactory;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -88,6 +88,10 @@ import org.antlr.stringtemplate.StringTemplate;
 import org.antlr.stringtemplate.StringTemplateGroup;
 import org.antlr.stringtemplate.AutoIndentWriter;
 import org.antlr.stringtemplate.language.DefaultTemplateLexer;
+
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SetMultimap;
 
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
@@ -127,29 +131,17 @@ public class DcacheResourceFactory
      * Used to hand over the redirection URL to the proper transfer
      * request.
      */
-    private final MultiMap<RedirectKey,HttpTransfer> _redirect =
-        new ArrayHashMultiMap<RedirectKey,HttpTransfer>();
+    private final SetMultimap<PnfsId,HttpTransfer> _redirects =
+        Multimaps.synchronizedSetMultimap(LinkedHashMultimap.<PnfsId,HttpTransfer>create());
 
     private static final Splitter PATH_SPLITTER =
         Splitter.on('/').omitEmptyStrings();
 
     /**
-     * In progress write transfers.
+     * In progress transfers.
      */
-    private final Set<Transfer> _transfers =
-        new ConcurrentSkipListSet<Transfer>();
-
-    /**
-     * Write transfers with a mover.
-     */
-    private final Map<PnfsId,Transfer> _uploads =
-        CollectionFactory.newConcurrentHashMap();
-
-    /**
-     * Read transfers with a mover. The key is the session ID.
-     */
-    private final Map<Integer,Transfer> _downloads =
-        CollectionFactory.newConcurrentHashMap();
+    private final Map<Long,Transfer> _transfers =
+        new ConcurrentHashMap<Long,Transfer>();
 
     private ListDirectoryHandler _list;
 
@@ -434,7 +426,7 @@ public class DcacheResourceFactory
     public void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
-        _executor.scheduleAtFixedRate(new PingMoversTask(_transfers),
+        _executor.scheduleAtFixedRate(new PingMoversTask(_transfers.values()),
                                       PING_DELAY, PING_DELAY,
                                       TimeUnit.MILLISECONDS);
     }
@@ -538,7 +530,7 @@ public class DcacheResourceFactory
 
         WriteTransfer transfer =
             new WriteTransfer(_pnfs, subject, path);
-        _transfers.add(transfer);
+        _transfers.put(transfer.getSessionId(), transfer);
         try {
             boolean success = false;
             transfer.createNameSpaceEntry();
@@ -547,7 +539,6 @@ public class DcacheResourceFactory
                 transfer.setLength(length);
                 transfer.openServerChannel();
                 try {
-                    _uploads.put(pnfsid, transfer);
                     transfer.selectPoolAndStartMover(_ioQueue,
                                                      TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE));
                     try {
@@ -557,7 +548,6 @@ public class DcacheResourceFactory
                         transfer.killMover(_killTimeout);
                     }
                 } finally {
-                    _uploads.remove(pnfsid);
                     transfer.closeServerChannel();
                 }
 
@@ -584,7 +574,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _transfers.remove(transfer);
+            _transfers.remove(transfer.getSessionId());
         }
 
         return getResource(path);
@@ -617,8 +607,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _downloads.remove((int) transfer.getSessionId());
-            _transfers.remove(transfer);
+            _transfers.remove(transfer.getSessionId());
         }
     }
 
@@ -791,20 +780,14 @@ public class DcacheResourceFactory
         String uri = null;
         ReadTransfer transfer =
             new ReadTransfer(_pnfs, subject, path, pnfsid);
-        _transfers.add(transfer);
+        _transfers.put(transfer.getSessionId(), transfer);
         try {
-            Integer sessionId = (int) transfer.getSessionId();
             transfer.setPnfsId(pnfsid);
             transfer.readNameSpaceEntry();
-
-            _downloads.put(sessionId, transfer);
             try {
                 while (true) {
                     transfer.selectPool();
-
-                    RedirectKey key =
-                        new RedirectKey(pnfsid, transfer.getPool());
-                    _redirect.put(key, transfer);
+                    _redirects.put(pnfsid, transfer);
                     try {
                         try {
                             transfer.startMover(_ioQueue);
@@ -820,15 +803,12 @@ public class DcacheResourceFactory
                             throw new TimeoutCacheException("Server is busy (internal timeout)");
                         }
                     } finally {
-                        _redirect.remove(key);
+                        _redirects.remove(pnfsid, transfer);
                     }
                     break;
                 }
             } finally {
                 transfer.setStatus(null);
-                if (uri == null) {
-                    _downloads.remove(sessionId);
-                }
             }
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                transfer.getMoverId() + ": Waiting for completion");
@@ -845,7 +825,7 @@ public class DcacheResourceFactory
             throw e;
         } finally {
             if (uri == null) {
-                _transfers.remove(transfer);
+                _transfers.remove(transfer.getSessionId());
             }
         }
         return transfer;
@@ -857,12 +837,19 @@ public class DcacheResourceFactory
     public void messageArrived(CellMessage envelope,
                                HttpDoorUrlInfoMessage message)
     {
-        RedirectKey key =
-            new RedirectKey(new PnfsId(message.getPnfsId()),
-                            envelope.getSourceAddress().getCellName());
-        HttpTransfer transfer = _redirect.remove(key);
-        if (transfer != null) {
-            transfer.redirect(message.getUrl());
+        PnfsId pnfsId = new PnfsId(message.getPnfsId());
+        String pool = envelope.getSourceAddress().getCellName();
+
+        synchronized (_redirects) {
+            Iterator<HttpTransfer> i = _redirects.get(pnfsId).iterator();
+            while (i.hasNext()) {
+                HttpTransfer transfer = i.next();
+                if (pool.equals(transfer.getPool())) {
+                    i.remove();
+                    transfer.redirect(message.getUrl());
+                    return;
+                }
+            }
         }
     }
 
@@ -872,15 +859,7 @@ public class DcacheResourceFactory
      */
     public void messageArrived(DoorTransferFinishedMessage message)
     {
-        Transfer transfer = null;
-        ProtocolInfo protocolInfo = message.getProtocolInfo();
-        if (protocolInfo instanceof HttpProtocolInfo) {
-            int sessionId =
-                ((HttpProtocolInfo) protocolInfo).getSessionId();
-            transfer = _downloads.get(sessionId);
-        } else {
-            transfer = _uploads.get(message.getPnfsId());
-        }
+        Transfer transfer = _transfers.get(message.getId());
         if (transfer != null) {
             transfer.finished(message);
         }
@@ -939,7 +918,7 @@ public class DcacheResourceFactory
     public Object ac_get_door_info(Args args)
     {
         List<IoDoorEntry> transfers = new ArrayList<IoDoorEntry>();
-        for (Transfer transfer: _transfers) {
+        for (Transfer transfer: _transfers.values()) {
             transfers.add(transfer.getIoDoorEntry());
         }
 
@@ -1057,8 +1036,7 @@ public class DcacheResourceFactory
         {
             super.finished(error);
 
-            _downloads.remove((int) getSessionId());
-            _transfers.remove(this);
+            _transfers.remove(getSessionId());
 
             if (error == null) {
                 notifyBilling(0, "");
