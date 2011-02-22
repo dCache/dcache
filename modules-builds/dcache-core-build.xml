@@ -64,7 +64,6 @@
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
         <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
-        <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
@@ -174,7 +173,6 @@
 
     <path id="dcache-auth-enhance.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${dcache.build.dir}" />
         <path refid="dependency.classpath" />
     </path>
