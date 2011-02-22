@@ -72,7 +72,7 @@ documents or software obtained from this server.
 package diskCacheV111.srm.dcache;
 
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
@@ -83,6 +83,8 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dmg.cells.nucleus.CellPath;
 
 /**
  *
@@ -96,8 +98,8 @@ import org.slf4j.LoggerFactory;
  * the process to continue
  */
 public final class SrmReserveSpaceCompanion
-        implements MessageCallback<Reserve> {
-
+    extends AbstractMessageCallback<Reserve>
+{
     private final static Logger _log =
             LoggerFactory.getLogger(SrmReserveSpaceCompanion.class);
     private final long sizeInBytes;
@@ -140,7 +142,7 @@ public final class SrmReserveSpaceCompanion
                 " error:" + error);
     }
 
-    public void noroute() {
+    public void noroute(CellPath path) {
         _log.error("No Route to SrmSpaceManager");
         callbacks.ReserveSpaceFailed("No Route to SrmSpaceManager");
     }
@@ -152,7 +154,7 @@ public final class SrmReserveSpaceCompanion
                 reservationResponse.getSizeInBytes());
     }
 
-    public void timeout() {
+    public void timeout(CellPath path) {
         _log.error("Timeout waiting for answer from SrmSpaceManager");
         callbacks.ReserveSpaceFailed("Timeout waiting for answer from " +
                 "SrmSpaceManager");

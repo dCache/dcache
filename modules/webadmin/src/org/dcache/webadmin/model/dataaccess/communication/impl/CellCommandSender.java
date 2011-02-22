@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
@@ -71,8 +72,8 @@ public class CellCommandSender implements CommandSender {
      * Callback to handle answer of a Cell to a Message.
      * @author jans
      */
-    private class CellMessageCallback implements MessageCallback<Serializable> {
-
+    private class CellMessageCallback extends AbstractMessageCallback<Serializable>
+    {
         private CellMessageRequest _messageRequest;
 
         public CellMessageCallback(CellMessageRequest messageRequest) {
@@ -108,13 +109,13 @@ public class CellCommandSender implements CommandSender {
         }
 
         @Override
-        public void noroute() {
+        public void noroute(CellPath path) {
             processFailure();
             setAnswered();
         }
 
         @Override
-        public void timeout() {
+        public void timeout(CellPath path) {
             processFailure();
             setAnswered();
         }

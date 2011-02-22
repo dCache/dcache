@@ -73,7 +73,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import diskCacheV111.util.FsPath;
 import org.dcache.auth.AuthorizationRecord;
@@ -107,7 +107,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
  * @author  timur
  */
 
-public final class PutCompanion implements MessageCallback<PnfsMessage>
+public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 {
     private final static Logger _log = LoggerFactory.getLogger(PutCompanion.class);
 

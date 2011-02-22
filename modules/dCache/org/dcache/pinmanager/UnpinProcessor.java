@@ -3,7 +3,7 @@ package org.dcache.pinmanager;
 import java.util.concurrent.Semaphore;
 
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.pinmanager.model.Pin;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.util.CacheException;
@@ -79,7 +79,7 @@ public class UnpinProcessor implements Runnable
                                      0);
         _poolStub.send(new CellPath(pin.getPool()), msg,
                        PoolSetStickyMessage.class,
-                       new MessageCallback<PoolSetStickyMessage>() {
+                       new AbstractMessageCallback<PoolSetStickyMessage>() {
                            @Override
                            public void success(PoolSetStickyMessage msg)
                            {
@@ -99,20 +99,6 @@ public class UnpinProcessor implements Runnable
                                    _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
                                    break;
                                }
-                           }
-
-                           @Override
-                           public void noroute()
-                           {
-                               finished.release();
-                               _logger.warn("No route to {}", pin.getPool());
-                           }
-
-                           @Override
-                           public void timeout()
-                           {
-                               finished.release();
-                               _logger.warn("Timeout while clearing sticky flag");
                            }
                        });
     }

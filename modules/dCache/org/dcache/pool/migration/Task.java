@@ -28,7 +28,7 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.ReflectionUtils;
 
@@ -472,7 +472,7 @@ public class Task
      * (SMC state machines do not allow transitions to be triggered
      * from within transitions).
      */
-    class Callback<T extends Message> implements MessageCallback<T>
+    class Callback<T extends Message> extends AbstractMessageCallback<T>
     {
         private final String _prefix;
 
@@ -533,13 +533,13 @@ public class Task
         }
 
         @Override
-        public void timeout()
+        public void timeout(CellPath path)
         {
             transition("timeout");
         }
 
         @Override
-        public void noroute()
+        public void noroute(CellPath path)
         {
             transition("noroute");
         }

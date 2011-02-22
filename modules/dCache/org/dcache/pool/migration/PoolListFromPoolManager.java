@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.util.ImmutableList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class PoolListFromPoolManager
-    implements RefreshablePoolList,
-               MessageCallback<PoolManagerGetPoolsMessage>
+    extends AbstractMessageCallback<PoolManagerGetPoolsMessage>
+    implements RefreshablePoolList
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PoolListFromPoolManager.class);
@@ -46,18 +46,6 @@ public abstract class PoolListFromPoolManager
     @Override
     public void failure(int rc, Object error)
     {
-        _log.error("Failed to query pool manager " + error + ")");
-    }
-
-    @Override
-    public void noroute()
-    {
-        _log.error("No route to pool manager");
-    }
-
-    @Override
-    public void timeout()
-    {
-        _log.error("Pool manager timeout");
+        _log.error("Failed to query pool manager (" + error + ")");
     }
 }

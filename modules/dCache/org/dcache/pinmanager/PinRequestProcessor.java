@@ -15,7 +15,7 @@ import static java.util.concurrent.TimeUnit.*;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.auth.Subjects;
 import org.dcache.pinmanager.model.Pin;
@@ -203,7 +203,7 @@ public class PinRequestProcessor
         msg.setSubject(task.getSubject());
         _poolManagerStub.send(msg,
                               PoolMgrSelectReadPoolMsg.class,
-                              new MessageCallback<PoolMgrSelectReadPoolMsg>()
+                              new AbstractMessageCallback<PoolMgrSelectReadPoolMsg>()
                               {
                                   @Override
                                   public void success(PoolMgrSelectReadPoolMsg msg)
@@ -226,13 +226,13 @@ public class PinRequestProcessor
                                   }
 
                                   @Override
-                                  public void noroute()
+                                  public void noroute(CellPath path)
                                   {
                                       retry(task, RETRY_DELAY);
                                   }
 
                                   @Override
-                                  public void timeout()
+                                  public void timeout(CellPath path)
                                   {
                                       retry(task, SMALL_DELAY);
                                   }
@@ -253,7 +253,7 @@ public class PinRequestProcessor
                                      poolExpiration);
         _poolStub.send(new CellPath(pool), msg,
                        PoolSetStickyMessage.class,
-                       new MessageCallback<PoolSetStickyMessage>() {
+                       new AbstractMessageCallback<PoolSetStickyMessage>() {
                            @Override
                            public void success(PoolSetStickyMessage msg) {
                                try {
@@ -282,12 +282,12 @@ public class PinRequestProcessor
                            }
 
                            @Override
-                           public void noroute() {
+                           public void noroute(CellPath path) {
                                retry(task, RETRY_DELAY);
                            }
 
                            @Override
-                           public void timeout() {
+                           public void timeout(CellPath path) {
                                fail(task, CacheException.TIMEOUT, "Request timed out");
                            }
                        });

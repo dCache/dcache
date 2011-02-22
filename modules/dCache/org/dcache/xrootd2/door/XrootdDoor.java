@@ -37,6 +37,7 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -566,9 +567,9 @@ public class XrootdDoor
             _requestHandlers.put(uuid, requestHandler);
             pnfsHandler.send(msg);
             requestHandler.resetTimeout();
-        } catch (NoRouteToCellException nrtce) {
+        } catch (NoRouteToCellException e) {
             _requestHandlers.remove(uuid);
-            callback.noroute();
+            callback.noroute(e.getDestinationPath());
         } catch (RejectedExecutionException ree) {
             _requestHandlers.remove(uuid);
             callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -603,7 +604,8 @@ public class XrootdDoor
         public synchronized void success(PnfsListDirectoryMessage msg) {
             if (_requestHandlers.remove(_uuid) == this) {
                 cancelTimeout();
-                _callback.success(msg);
+                _callback.setReply(msg);
+                _callback.success();
             }
         }
 
@@ -613,8 +615,9 @@ public class XrootdDoor
          * @param msg The reply containing the partial directory listing.
          */
         public synchronized void continueListing(PnfsListDirectoryMessage msg) {
+            _callback.setReply(msg);
             try {
-                _callback.success(msg);
+                _callback.success();
                 resetTimeout();
             } catch (RejectedExecutionException ree) {
                 _requestHandlers.remove(_uuid);
@@ -631,6 +634,7 @@ public class XrootdDoor
         public synchronized void failure(PnfsListDirectoryMessage msg) {
             if (_requestHandlers.remove(_uuid) == this) {
                 cancelTimeout();
+                _callback.setReply(msg);
                 _callback.failure(msg.getReturnCode(), msg.getErrorObject());
             }
         }
@@ -646,7 +650,7 @@ public class XrootdDoor
                 public void run() {
                     if (_requestHandlers.remove(_uuid)
                             == DirlistRequestHandler.this) {
-                        _callback.timeout();
+                        _callback.timeout(null);
                     }
                 }
             };

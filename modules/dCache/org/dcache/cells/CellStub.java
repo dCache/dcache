@@ -406,16 +406,17 @@ public class CellStub
         {
             Object o = answer.getMessageObject();
             if (_type.isInstance(o)) {
+                _callback.setReply(_type.cast(o));
                 if (o instanceof Message) {
                     Message msg = (Message) o;
                     int rc = msg.getReturnCode();
                     if (rc == 0) {
-                        _callback.success(_type.cast(o));
+                        _callback.success();
                     } else {
                         _callback.failure(rc, msg.getErrorObject());
                     }
                 } else {
-                    _callback.success(_type.cast(o));
+                    _callback.success();
                 }
             } else if (o instanceof Exception) {
                 exceptionArrived(request, (Exception) o);
@@ -428,14 +429,14 @@ public class CellStub
         @Override
         public void answerTimedOut(CellMessage request)
         {
-            _callback.timeout();
+            _callback.timeout(request.getDestinationPath());
         }
 
         @Override
         public void exceptionArrived(CellMessage request, Exception exception)
         {
             if (exception instanceof NoRouteToCellException) {
-                _callback.noroute();
+                _callback.noroute(request.getDestinationPath());
             } else if (exception instanceof CacheException) {
                 CacheException e = (CacheException) exception;
                 _callback.failure(e.getRc(),

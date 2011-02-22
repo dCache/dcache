@@ -98,7 +98,7 @@ package diskCacheV111.srm.dcache;
 
 import javax.security.auth.Subject;
 
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.cells.CellStub;
 import diskCacheV111.util.PnfsId;
@@ -116,7 +116,7 @@ import static diskCacheV111.util.CacheException.*;
  * @author  timur
  */
 public class UnpinCompanion
-    implements MessageCallback<PinManagerUnpinMessage>
+    extends AbstractMessageCallback<PinManagerUnpinMessage>
 {
     private static final Logger _log =
         LoggerFactory.getLogger(UnpinCompanion.class);
@@ -154,16 +154,6 @@ public class UnpinCompanion
             callbacks.UnpinningFailed(reason);
             break;
         }
-    }
-
-    public void noroute()
-    {
-        failure(TIMEOUT, "No route to PinManager");
-    }
-
-    public void timeout()
-    {
-        failure(TIMEOUT, "Pinning timed out");
     }
 
     public String toString()

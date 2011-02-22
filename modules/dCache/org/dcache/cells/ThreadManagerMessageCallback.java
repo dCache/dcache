@@ -1,5 +1,6 @@
 package org.dcache.cells;
 
+import dmg.cells.nucleus.CellPath;
 import diskCacheV111.util.ThreadManager;
 
 /**
@@ -17,12 +18,17 @@ public class ThreadManagerMessageCallback<T>
         _inner = inner;
     }
 
-    public void success(final T message)
+    public void setReply(T message)
+    {
+        _inner.setReply(message);
+    }
+
+    public void success()
     {
         ThreadManager.execute(new Runnable() {
                 public void run()
                 {
-                    _inner.success(message);
+                    _inner.success();
                 }
             });
     }
@@ -37,22 +43,22 @@ public class ThreadManagerMessageCallback<T>
             });
     }
 
-    public void noroute()
+    public void noroute(final CellPath path)
     {
         ThreadManager.execute(new Runnable() {
                 public void run()
                 {
-                    _inner.noroute();
+                    _inner.noroute(path);
                 }
             });
     }
 
-    public void timeout()
+    public void timeout(final CellPath path)
     {
         ThreadManager.execute(new Runnable() {
                 public void run()
                 {
-                    _inner.timeout();
+                    _inner.timeout(path);
                 }
             });
     }

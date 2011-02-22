@@ -18,7 +18,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -625,7 +625,7 @@ class Companion
      * delivery (SMC state machines do not allow transitions to be
      * triggered from within transitions).
      */
-    class Callback<T> implements MessageCallback<T>
+    class Callback<T> extends AbstractMessageCallback<T>
     {
         public void success(T message)
         {
@@ -649,7 +649,7 @@ class Companion
                 }));
         }
 
-        public void timeout()
+        public void timeout(CellPath path)
         {
             _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {
@@ -660,7 +660,7 @@ class Companion
                 }));
         }
 
-        public void noroute()
+        public void noroute(CellPath path)
         {
             _executor.execute(new FireAndForgetTask(new Runnable() {
                     public void run() {

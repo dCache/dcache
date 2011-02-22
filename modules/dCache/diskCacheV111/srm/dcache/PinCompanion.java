@@ -81,7 +81,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.srm.PinCallbacks;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 
 import org.slf4j.Logger;
@@ -107,26 +107,12 @@ public class PinCompanion
     private FileAttributes _attributes;
 
     private abstract class CallbackState<T>
-        implements MessageCallback<T>
+        extends AbstractMessageCallback<T>
     {
-        public abstract void success(T message);
-
         @Override
         public void failure(int rc, Object error)
         {
             fail(rc, error);
-        }
-
-        @Override
-        public void noroute()
-        {
-            fail(TIMEOUT, "No route to PinManager");
-        }
-
-        @Override
-        public void timeout()
-        {
-            fail(TIMEOUT, "Pinning timed out");
         }
     }
 

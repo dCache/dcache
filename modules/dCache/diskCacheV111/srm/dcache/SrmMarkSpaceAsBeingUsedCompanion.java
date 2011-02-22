@@ -72,7 +72,7 @@ documents or software obtained from this server.
 package diskCacheV111.srm.dcache;
 
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmUseSpaceCallbacks;
@@ -96,8 +96,8 @@ import org.slf4j.LoggerFactory;
  * the process to continue
  */
 public final class SrmMarkSpaceAsBeingUsedCompanion
-        implements MessageCallback<Use> {
-
+    extends AbstractMessageCallback<Use>
+{
     private final static Logger _log =
             LoggerFactory.getLogger(SrmMarkSpaceAsBeingUsedCompanion.class);
     private final long spaceToken;

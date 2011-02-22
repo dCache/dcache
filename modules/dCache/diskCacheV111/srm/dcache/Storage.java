@@ -77,7 +77,7 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
@@ -2760,7 +2760,7 @@ public final class Storage
             _poolManagerStub.send(
                  message,
                  PoolManagerGetFileLocalityMessage.class,
-                 new MessageCallback<PoolManagerGetFileLocalityMessage>() {
+                 new AbstractMessageCallback<PoolManagerGetFileLocalityMessage>() {
                       @Override
                       public void success(PoolManagerGetFileLocalityMessage message)
                       {
@@ -2780,20 +2780,6 @@ public final class Storage
                            _available.release();
                            _log.error("Locality lookup failed: {} [{}]", error, rc);
                       }
-
-                      @Override
-                      public void noroute()
-                      {
-                           _available.release();
-                           _log.error("No route to PoolManager");
-                      }
-
-                      @Override
-                      public void timeout()
-                      {
-                           _available.release();
-                           _log.error("GetFileLocality timed out");
-                      }
                  });
         }
 
@@ -2805,7 +2791,7 @@ public final class Storage
             _spaceManagerStub.send(
                  new GetFileSpaceTokensMessage(attributes.getPnfsId()),
                  GetFileSpaceTokensMessage.class,
-                 new MessageCallback<GetFileSpaceTokensMessage>() {
+                 new AbstractMessageCallback<GetFileSpaceTokensMessage>() {
                       @Override
                       public void success(GetFileSpaceTokensMessage message)
                       {
@@ -2819,20 +2805,6 @@ public final class Storage
                            _available.release();
                            _log.error("Locality lookup failed: {} [{}]",
                                       error, rc);
-                      }
-
-                      @Override
-                      public void noroute()
-                      {
-                           _available.release();
-                           _log.info("No route to SpaceManager");
-                      }
-
-                      @Override
-                      public void timeout()
-                      {
-                           _available.release();
-                           _log.error("GetFileLocality timed out");
                       }
                  });
         }

@@ -40,6 +40,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.Option;
 import org.dcache.util.BroadcastRegistrationTask;
 
@@ -806,8 +807,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     private class RemoveMessageCallback
-            implements MessageCallback<PoolRemoveFilesMessage> {
-
+        extends AbstractMessageCallback<PoolRemoveFilesMessage>
+    {
         private final String _poolName;
         private final List<String> _filesToRemove;
 
@@ -841,7 +842,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
 
         @Override
-        public synchronized void noroute() {
+        public synchronized void noroute(CellPath path) {
             try {
                 _log.warn("Pool {} is down.", _poolName);
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());
@@ -851,7 +852,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
 
         @Override
-        public synchronized void timeout() {
+        public synchronized void timeout(CellPath path) {
             try {
                 _log.warn("remove message to {} timed out.", _poolName);
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());

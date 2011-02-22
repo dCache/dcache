@@ -81,7 +81,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
@@ -96,7 +96,7 @@ import org.slf4j.LoggerFactory;
 import static org.dcache.namespace.FileType.*;
 
 public class RemoveFileCompanion
-    implements MessageCallback<PnfsDeleteEntryMessage>
+    extends AbstractMessageCallback<PnfsDeleteEntryMessage>
 {
     private static Logger _log =
         LoggerFactory.getLogger(RemoveFileCompanion.class);

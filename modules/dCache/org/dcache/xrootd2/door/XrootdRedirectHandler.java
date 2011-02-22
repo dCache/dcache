@@ -15,12 +15,15 @@ import java.nio.channels.ClosedChannelException;
 
 import javax.security.auth.Subject;
 
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.Origin;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.protocol.messages.AbstractResponseMessage;
@@ -708,7 +711,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
             _log.info("Listing directory {}", authPath);
             MessageCallback<PnfsListDirectoryMessage> callback =
-                                    new ListCallback(request, context, event);
+                new ListCallback(request, context, event);
             _door.listPath(authPath, _subject, _rootPath, callback);
 
         } catch (CacheException ce) {
@@ -944,7 +947,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      *
      */
     private class ListCallback
-        implements MessageCallback<PnfsListDirectoryMessage>
+        extends AbstractMessageCallback<PnfsListDirectoryMessage>
     {
         private final DirListRequest _request;
         private final ChannelHandlerContext _context;
@@ -1001,7 +1004,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
          *
          */
         @Override
-        public void noroute() {
+        public void noroute(CellPath path) {
             respondWithError(_context,
                              _event,
                              _request,
@@ -1044,7 +1047,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
          * Respond to client in the case of a timeout.
          */
         @Override
-        public void timeout() {
+        public void timeout(CellPath path) {
             respondWithError(_context,
                              _event,
                              _request,

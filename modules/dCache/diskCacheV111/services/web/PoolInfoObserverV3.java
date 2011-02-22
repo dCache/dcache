@@ -14,7 +14,7 @@ import diskCacheV111.util.CacheException;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
-import org.dcache.cells.MessageCallback;
+import org.dcache.cells.AbstractMessageCallback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +122,7 @@ public class PoolInfoObserverV3 extends AbstractCell
         for (final String pool: pools) {
             final long start = System.currentTimeMillis();
             _pool.send(new CellPath(pool), "xgetcellinfo", PoolCellInfo.class,
-                       new MessageCallback<PoolCellInfo>() {
+                       new AbstractMessageCallback<PoolCellInfo>() {
                 public void success(PoolCellInfo info)
                 {
                     long now = System.currentTimeMillis();
@@ -138,18 +138,6 @@ public class PoolInfoObserverV3 extends AbstractCell
                 public void failure(int rc, Object error)
                 {
                     _log.warn("Failed to query {}: {}", pool, error);
-                    latch.countDown();
-                }
-
-                public void noroute()
-                {
-                    _log.warn("No route to {}", pool);
-                    latch.countDown();
-                }
-
-                public void timeout()
-                {
-                    _log.warn("Timeout querying {}", pool);
                     latch.countDown();
                 }
             });
