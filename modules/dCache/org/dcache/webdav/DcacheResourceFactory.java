@@ -65,6 +65,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Transfer;
+import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.PingMoversTask;
@@ -126,7 +127,6 @@ public class DcacheResourceFactory
 
     private static final long PING_DELAY = 300000;
 
-
     /**
      * Used to hand over the redirection URL to the proper transfer
      * request.
@@ -168,6 +168,9 @@ public class DcacheResourceFactory
 
     private String _staticContentPath;
     private StringTemplateGroup _listingGroup;
+
+    private TransferRetryPolicy _retryPolicy =
+        TransferRetryPolicies.tryOncePolicy(_moverTimeout);
 
     public DcacheResourceFactory()
         throws UnknownHostException
@@ -217,6 +220,7 @@ public class DcacheResourceFactory
             throw new IllegalArgumentException("Timeout must be positive");
         }
         _moverTimeout = timeout;
+        _retryPolicy = TransferRetryPolicies.tryOncePolicy(_moverTimeout);
     }
 
     /**
@@ -539,15 +543,10 @@ public class DcacheResourceFactory
                 transfer.setLength(length);
                 transfer.openServerChannel();
                 try {
-                    transfer.selectPoolAndStartMover(_ioQueue,
-                                                     TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE));
-                    try {
-                        transfer.relayData(inputStream);
-                    } finally {
-                        transfer.setStatus(null);
-                        transfer.killMover(_killTimeout);
-                    }
+                    transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                    transfer.relayData(inputStream);
                 } finally {
+                    transfer.killMover(_killTimeout);
                     transfer.closeServerChannel();
                 }
 
@@ -778,36 +777,21 @@ public class DcacheResourceFactory
         Subject subject = getSubject();
 
         String uri = null;
-        ReadTransfer transfer =
-            new ReadTransfer(_pnfs, subject, path, pnfsid);
+        ReadTransfer transfer = new ReadTransfer(_pnfs, subject, path, pnfsid);
         _transfers.put(transfer.getSessionId(), transfer);
         try {
-            transfer.setPnfsId(pnfsid);
             transfer.readNameSpaceEntry();
             try {
-                while (true) {
-                    transfer.selectPool();
-                    _redirects.put(pnfsid, transfer);
-                    try {
-                        try {
-                            transfer.startMover(_ioQueue);
-                        } catch (CacheException e) {
-                            _log.warn("Pool error: " + e.getMessage());
-                            continue;
-                        }
-
-                        transfer.setStatus("Mover " + transfer.getPool() + "/" +
-                                           transfer.getMoverId() + ": Waiting for URI");
-                        uri = transfer.waitForRedirect(_moverTimeout);
-                        if (uri == null) {
-                            throw new TimeoutCacheException("Server is busy (internal timeout)");
-                        }
-                    } finally {
-                        _redirects.remove(pnfsid, transfer);
-                    }
-                    break;
+                _redirects.put(pnfsid, transfer);
+                transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                transfer.setStatus("Mover " + transfer.getPool() + "/" +
+                                   transfer.getMoverId() + ": Waiting for URI");
+                uri = transfer.waitForRedirect(_moverTimeout);
+                if (uri == null) {
+                    throw new TimeoutCacheException("Server is busy (internal timeout)");
                 }
             } finally {
+                _redirects.remove(pnfsid, transfer);
                 transfer.setStatus(null);
             }
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
