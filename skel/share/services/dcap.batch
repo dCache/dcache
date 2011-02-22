@@ -13,6 +13,8 @@ exec file:${dcache.paths.share}/cells/stage.fragment doors
 
 # Define required variables
 check -strong port
+check -strong poolmanager
+check -strong pnfsmanager
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
@@ -26,7 +28,9 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -brokerUpdateTime=30 \
              -protocolFamily=dcap \
              -protocolVersion=1.3.0 \
-             -poolProxy=PoolManager \
+             -pnfsManager=${pnfsmanager} \
+             -poolManager=${poolmanager} \
+             -poolProxy=${poolmanager} \
              -io-queue=${dcapIoQueue} \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -io-queue-overwrite=${dcapIoQueueOverwrite} \

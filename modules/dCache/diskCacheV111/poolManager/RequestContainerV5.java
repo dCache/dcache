@@ -1187,8 +1187,12 @@ public class RequestContainerV5
                if( _stateEngineActive )return ;
                _log.info( "Starting Engine" ) ;
                _stateEngineActive = true ;
-
-               _threadPool.invokeLater( new RunEngine() , "Read-"+_pnfsId ) ;
+               try {
+                   _threadPool.invokeLater(new RunEngine(), "Read-"+_pnfsId);
+               } catch (RuntimeException e) {
+                   _stateEngineActive = false;
+                   throw e;
+               }
            }
         }
         private void stateLoop(){
