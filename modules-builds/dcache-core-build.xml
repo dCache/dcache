@@ -131,34 +131,12 @@
         Compile state machines using SMC
     -->
     <target name="-dcache.smc">
-        <mkdir dir="${dcache.build.dir}/org/dcache/services/pinmanager1" />
         <mkdir dir="${dcache.build.dir}/org/dcache/pool/migration" />
-
-        <smc target="java"
-            smfile="${dcache.src}/org/dcache/services/pinmanager1/Extender.sm"
-            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
-            smcjar="${smc.jar}"
-        />
-        <smc target="java"
-            smfile="${dcache.src}/org/dcache/services/pinmanager1/Unpinner.sm"
-            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
-            smcjar="${smc.jar}"
-        />
         <smc target="java"
             smfile="${dcache.src}/org/dcache/pool/migration/Task.sm"
             destdir="${dcache.build.dir}/org/dcache/pool/migration/"
             smcjar="${smc.jar}"
         />
-        <smc target="java"
-            smfile="${dcache.src}/org/dcache/services/pinmanager1/Pinner.sm"
-            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
-            smcjar="${smc.jar}"
-        />
-        <smc target="java"
-            smfile="${dcache.src}/org/dcache/services/pinmanager1/PinMover.sm"
-            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
-            smcjar="${smc.jar}"
-         />
 
         <mkdir dir="${dcache.build.dir}/org/dcache/pool/p2p" />
         <smc target="java"
