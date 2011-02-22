@@ -110,7 +110,7 @@ public class PinManagerTest {
         assertTrue("failed to pin", pinManagerPinMessage.getReturnCode() == 0 );
         if(pinManagerPinMessage.getReturnCode() == 0) {
             PinManagerUnpinMessage unpin =
-                new PinManagerUnpinMessage(attributes);
+                new PinManagerUnpinMessage(pnfsId);
             unpin.setPinId(pinManagerPinMessage.getPinId());
             unpin =
                 (PinManagerUnpinMessage)

@@ -94,7 +94,6 @@
       <property name="pinProcessor" ref="pin-processor"/>
       <property name="unpinProcessor" ref="unpin-processor"/>
       <property name="moveProcessor" ref="move-pin-processor"/>
-      <property name="executor" ref="message-thread-pool"/>
   </bean>
 
   <bean id="pdp" class="org.dcache.pinmanager.DefaultAuthorizationPolicy">

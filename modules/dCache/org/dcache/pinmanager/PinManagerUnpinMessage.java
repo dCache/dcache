@@ -4,9 +4,6 @@ import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.FileAttribute;
-import static org.dcache.namespace.FileAttribute.*;
 import static com.google.common.base.Preconditions.*;
 
 public class PinManagerUnpinMessage extends Message
@@ -15,12 +12,12 @@ public class PinManagerUnpinMessage extends Message
 
     private Long _pinId;
     private String _requestId;
-    private FileAttributes _fileAttributes;
+    private PnfsId _pnfsId;
 
-    public PinManagerUnpinMessage(FileAttributes fileAttributes)
+    public PinManagerUnpinMessage(PnfsId pnfsId)
     {
-        checkNotNull(fileAttributes);
-        _fileAttributes = fileAttributes;
+        checkNotNull(pnfsId);
+        _pnfsId = pnfsId;
     }
 
     public void setPinId(long pinId)
@@ -45,22 +42,12 @@ public class PinManagerUnpinMessage extends Message
 
     public PnfsId getPnfsId()
     {
-        return _fileAttributes.getPnfsId();
-    }
-
-    public FileAttributes getFileAttributes()
-    {
-        return _fileAttributes;
+        return _pnfsId;
     }
 
     @Override
     public String toString()
     {
-        return "PinManagerUnpinMessage[" + _requestId + "," + _pinId + "," + _fileAttributes + "]";
-    }
-
-    public static EnumSet<FileAttribute> getRequiredAttributes()
-    {
-        return EnumSet.of(PNFSID);
+        return "PinManagerUnpinMessage[" + _requestId + "," + _pinId + "," + _pnfsId + "]";
     }
 }

@@ -57,8 +57,7 @@ import org.slf4j.LoggerFactory;
  *
  * If a DB error occurs it is considered fatal and the pinning
  * operation is not completed. The DB entry will stay in PINNING until
- * either explicitly unpinned or it expires the next time the
- * PinManager is started.
+ * either explicitly unpinned or it expires.
  *
  * Database operations are blocking. Communication with PoolManager
  * and pools is asynchronous.
@@ -121,16 +120,26 @@ public class PinRequestProcessor
         return _maxLifetime;
     }
 
+    private void enforceLifetimeLimit(PinManagerPinMessage message)
+    {
+        if (_maxLifetime > -1) {
+            long requestedLifetime = message.getLifetime();
+            if (requestedLifetime == -1) {
+                message.setLifetime(_maxLifetime);
+            } else {
+                message.setLifetime(Math.min(_maxLifetime, requestedLifetime));
+            }
+        }
+    }
+
     public MessageReply<PinManagerPinMessage>
         messageArrived(PinManagerPinMessage message)
-        throws CacheException, InterruptedException, ExecutionException
+        throws CacheException
     {
         MessageReply<PinManagerPinMessage> reply =
             new MessageReply<PinManagerPinMessage>();
 
-        if (_maxLifetime > -1) {
-            message.setLifetime(Math.min(_maxLifetime, message.getLifetime()));
-        }
+        enforceLifetimeLimit(message);
 
         PinTask task = createTask(message, reply);
         if (task != null) {
@@ -191,6 +200,7 @@ public class PinRequestProcessor
                                          task.getProtocolInfo(),
                                          0,
                                          checkStaging(task));
+        msg.setSubject(task.getSubject());
         _poolManagerStub.send(msg,
                               PoolMgrSelectReadPoolMsg.class,
                               new MessageCallback<PoolMgrSelectReadPoolMsg>()

@@ -48,7 +48,7 @@ public class UnpinRequestProcessor
         throws CacheException
     {
         Subject subject = message.getSubject();
-        PnfsId pnfsId = message.getFileAttributes().getPnfsId();
+        PnfsId pnfsId = message.getPnfsId();
         if (message.getPinId() != null) {
             unpin(message, _dao.getPin(pnfsId, message.getPinId()));
         } else if (message.getRequestId() != null) {

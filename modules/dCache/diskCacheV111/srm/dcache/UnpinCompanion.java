@@ -105,7 +105,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.Message;
 import org.dcache.srm.UnpinCallbacks;
-import org.dcache.vehicles.FileAttributes;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,10 +179,8 @@ public class UnpinCompanion
     {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(pnfsId);
         PinManagerUnpinMessage msg =
-            new PinManagerUnpinMessage(attributes);
+            new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
@@ -198,10 +195,8 @@ public class UnpinCompanion
     {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(pnfsId);
         PinManagerUnpinMessage msg =
-            new PinManagerUnpinMessage(attributes);
+            new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(String.valueOf(srmRequestId));
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
@@ -215,10 +210,8 @@ public class UnpinCompanion
     {
         _log.info("UnpinCompanion.unpinFile({}", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(pnfsId);
         PinManagerUnpinMessage msg =
-            new PinManagerUnpinMessage(attributes);
+            new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
                             new ThreadManagerMessageCallback(companion));

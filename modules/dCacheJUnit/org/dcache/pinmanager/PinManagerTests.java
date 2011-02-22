@@ -150,7 +150,7 @@ public class PinManagerTests
         processor.setAuthorizationPolicy(new DefaultAuthorizationPolicy());
 
         PinManagerUnpinMessage message =
-            new PinManagerUnpinMessage(getAttributes(PNFS_ID1));
+            new PinManagerUnpinMessage(PNFS_ID1);
         message.setPinId(pin.getPinId());
         message = processor.messageArrived(message);
 
@@ -177,7 +177,7 @@ public class PinManagerTests
         processor.setAuthorizationPolicy(new DefaultAuthorizationPolicy());
 
         PinManagerUnpinMessage message =
-            new PinManagerUnpinMessage(getAttributes(PNFS_ID1));
+            new PinManagerUnpinMessage(PNFS_ID1);
         message.setRequestId(pin.getRequestId());
         message = processor.messageArrived(message);
 

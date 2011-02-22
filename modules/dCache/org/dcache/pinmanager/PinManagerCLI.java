@@ -8,12 +8,12 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.Future;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.dcache.cells.AbstractCellComponent;
@@ -44,8 +44,9 @@ public class PinManagerCLI
 {
     private final static AtomicInteger _counter =
         new AtomicInteger(0);
-    private final Map<Integer,Future<String>> _jobs =
-        new ConcurrentHashMap<Integer,Future<String>>();
+
+    private final Map<Integer,BulkJob> _jobs =
+        new ConcurrentHashMap<Integer,BulkJob>();
 
     private PnfsHandler _pnfs;
     private PinManager _pinManager;
@@ -53,7 +54,6 @@ public class PinManagerCLI
     private PinRequestProcessor _pinProcessor;
     private UnpinRequestProcessor _unpinProcessor;
     private MovePinRequestProcessor _moveProcessor;
-    private ExecutorService _executor;
 
     @Required
     public void setPnfsStub(CellStub stub)
@@ -86,19 +86,14 @@ public class PinManagerCLI
     }
 
     @Required
-    public void setExecutor(ExecutorService executor)
-    {
-        _executor = executor;
-    }
-
-    @Required
     public void setDao(PinDao dao)
     {
         _dao = dao;
     }
 
-    private PinManagerPinMessage pin(PnfsId pnfsId, long lifetime)
-        throws CacheException, ExecutionException, InterruptedException
+    private Future<PinManagerPinMessage>
+        pin(PnfsId pnfsId, String requestId, long lifetime)
+        throws CacheException
     {
         Set<FileAttribute> attributes =
             PinManagerPinMessage.getRequiredAttributes();
@@ -107,20 +102,8 @@ public class PinManagerCLI
         DCapProtocolInfo protocolInfo =
             new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
         PinManagerPinMessage message =
-            new PinManagerPinMessage(fileAttributes, protocolInfo, null, lifetime);
-        return _pinProcessor.messageArrived(message).get();
-    }
-
-    private void unpin(PnfsId pnfsId)
-        throws CacheException
-    {
-        Set<FileAttribute> attributes =
-            PinManagerUnpinMessage.getRequiredAttributes();
-        FileAttributes fileAttributes =
-            _pnfs.getFileAttributes(pnfsId, attributes);
-        PinManagerUnpinMessage message =
-            new PinManagerUnpinMessage(fileAttributes);
-        _unpinProcessor.messageArrived(message);
+            new PinManagerPinMessage(fileAttributes, protocolInfo, requestId, lifetime);
+        return _pinProcessor.messageArrived(message);
     }
 
     public final static String hh_pin =
@@ -141,7 +124,7 @@ public class PinManagerCLI
         if (lifetime != -1) {
             lifetime *= 1000;
         }
-        PinManagerPinMessage message = pin(pnfsId, lifetime);
+        PinManagerPinMessage message = pin(pnfsId, null, lifetime).get();
         if (message.getExpirationTime() == null) {
             return String.format("[%d] %s pinned", message.getPinId(), pnfsId);
         } else {
@@ -161,12 +144,8 @@ public class PinManagerCLI
                ExecutionException, InterruptedException
     {
         PnfsId pnfsId = new PnfsId(args.argv(1));
-        Set<FileAttribute> attributes =
-            PinManagerUnpinMessage.getRequiredAttributes();
-        FileAttributes fileAttributes =
-            _pnfs.getFileAttributes(pnfsId, attributes);
         PinManagerUnpinMessage message =
-            new PinManagerUnpinMessage(fileAttributes);
+            new PinManagerUnpinMessage(pnfsId);
         if (!args.argv(0).equals("*")) {
             message.setPinId(Long.parseLong(args.argv(0)));
         }
@@ -238,9 +217,8 @@ public class PinManagerCLI
     public final static String hh_bulk_pin =
         "<file> <seconds> # pin pnfsids from <file> for <seconds>";
     public final static String fh_bulk_pin =
-        "Pin a list of pnfsids from a file for a specified number of\n"+
-        "seconds read a list of pnfsids to pin from a file each line\n"+
-        "in a file is a pnfsid.\n";
+        "Pin a list of PNFS IDs from a file for a specified number of\n"+
+        "seconds. Each line of the file must be a PNFS ID.\n";
     public Object ac_bulk_pin_$_2(Args args)
         throws IOException, InterruptedException, CacheException
     {
@@ -249,19 +227,33 @@ public class PinManagerCLI
         if (lifetime != -1) {
             lifetime *= 1000;
         }
-        return addJob(new BulkPinJob(parse(file), lifetime));
+
+        BulkJob job = new BulkJob(parse(file), lifetime);
+        _jobs.put(job.getId(), job);
+        new Thread(job, "BulkPin-" + job.getId()).start();
+        return job.getJobDescription();
     }
 
     public final static String hh_bulk_unpin =
         "<file> # unpin pnfsids from <file>";
     public final static String fh_bulk_unpin =
-        "Unpin a list of pnfsids from a file read a list of pnfsids\n"+
-        "to pin from a file each line in a file is a pnfsid.\n";
+        "Unpin a list of PNFS IDs from a file. Each line of the file\n" +
+        "must be a PNFS ID.";
     public Object ac_bulk_unpin_$_1(final Args args)
         throws IOException, InterruptedException, CacheException
     {
         File file = new File(args.argv(0));
-        return addJob(new BulkUnpinJob(parse(file)));
+        StringBuilder out = new StringBuilder();
+        for (PnfsId pnfsId: parse(file)) {
+            try {
+                PinManagerUnpinMessage message =
+                    new PinManagerUnpinMessage(pnfsId);
+                _unpinProcessor.messageArrived(message);
+            } catch (CacheException e) {
+                out.append(pnfsId).append(": ").append(e.getMessage()).append('\n');
+            }
+        }
+        return out.toString();
     }
 
 
@@ -269,10 +261,10 @@ public class PinManagerCLI
     public final static String fh_bulk_clear =
         "Removes completed jobs. For reference, information\n" +
         "about background jobs is kept until explicitly cleared.\n";
-    public String ac_jobs_clear(Args args)
+    public String ac_bulk_clear(Args args)
     {
         int count = 0;
-        Iterator<Future<String>> i = _jobs.values().iterator();
+        Iterator<BulkJob> i = _jobs.values().iterator();
         while (i.hasNext()) {
             if (i.next().isDone()) {
                 i.remove();
@@ -282,44 +274,45 @@ public class PinManagerCLI
         return String.format("%d jobs removed", count);
     }
 
-    public final static String hh_jobs_cancel =
+    public final static String hh_bulk_cancel =
         "<id> # cancels a background job";
-    public final static String fh_jobs_cancel =
-        "Cancels a background job. Notice that a job is not transactional.\n" +
-        "For this reason a cancelled job may already have pinned or unpinned\n" +
-        "some files.\n";
-    public String ac_jobs_cancel_$_1(Args args)
-        throws NumberFormatException
+    public final static String fh_bulk_cancel =
+        "Cancels a background job. Notice that a cancelling a bulk job will\n" +
+        "cause all pins already created by the job to be released.";
+    public String ac_bulk_cancel_$_1(Args args)
+        throws NumberFormatException, CacheException
     {
-        int id = Integer.parseInt(args.argv(0));
-        Future<String> future = _jobs.get(id);
-        if (future == null) {
+        BulkJob job = _jobs.get(Integer.parseInt(args.argv(0)));
+        if (job == null) {
             return "No such job";
         }
-        future.cancel(true);
-        return getJobDescription(id, future);
+        job.cancel();
+        return job.getJobDescription();
     }
 
-    public final static String hh_jobs_ls =
-        "# list background jobs";
-    public final static String fh_jobs_ls =
-        "Lists all background jobs.";
-    public String ac_jobs_ls(Args args)
+    public final static String hh_bulk_ls =
+        "[<id>] # list background jobs";
+    public final static String fh_bulk_ls =
+        "Lists background jobs. If a job id is specified then additional" +
+        "status information about the job is provided.";
+    public String ac_bulk_ls_$_0_1(Args args)
         throws NumberFormatException, InterruptedException
     {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Integer,Future<String>> entry: _jobs.entrySet()) {
-            Future<String> future = entry.getValue();
-            sb.append(getJobDescription(entry.getKey(), future)).append('\n');
-            if (future.isDone()) {
-                try {
-                    sb.append(future.get()); // Bulk job output is \n terminated
-                } catch (ExecutionException e) {
-                    sb.append(e.getCause().toString()).append('\n');
-                }
+        if (args.argc() == 0) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<Integer,BulkJob> entry: _jobs.entrySet()) {
+                int id = entry.getKey();
+                BulkJob job = entry.getValue();
+                sb.append(job.getJobDescription()).append('\n');
             }
+            return sb.toString();
+        } else {
+            BulkJob job = _jobs.get(Integer.parseInt(args.argv(0)));
+            if (job == null) {
+                return "No such job";
+            }
+            return job.toString();
         }
-        return sb.toString();
     }
 
     private List<PnfsId> parse(File file)
@@ -342,82 +335,127 @@ public class PinManagerCLI
         return list;
     }
 
-    private String addJob(Callable<String> job)
+    private class BulkJob
+        implements Runnable
     {
-        int id = _counter.incrementAndGet();
-        Future<String> future = _executor.submit(job);
-        _jobs.put(id, future);
-        return getJobDescription(id, future);
-    }
+        protected final Map<PnfsId,Future<PinManagerPinMessage>> _tasks =
+            new HashMap<PnfsId,Future<PinManagerPinMessage>>();
+        private final StringBuilder _errors =
+            new StringBuilder();
+        protected final String _requestId = UUID.randomUUID().toString();
+        protected final int _id;
+        protected final long _lifetime;
+        protected boolean _cancelled;
 
-    private String getJobDescription(long id, Future<?> future)
-    {
-        return String.format("[%d] %s", id, getState(future));
-    }
-
-    private String getState(Future<?> future)
-    {
-        if (future.isCancelled()) {
-            return "CANCELLED";
-        } else if (future.isDone()) {
-            return "DONE";
-        } else {
-            return "PROCESSING";
-        }
-    }
-
-    private class BulkPinJob implements Callable<String>
-    {
-        protected List<PnfsId> _ids;
-        private long _lifetime;
-
-        public BulkPinJob(List<PnfsId> ids, long lifetime)
-            throws CacheException
+        public BulkJob(List<PnfsId> files, long lifetime)
         {
-            _ids = ids;
+            _id = _counter.incrementAndGet();
             _lifetime = lifetime;
+            for (PnfsId pnfsId: files) {
+                _tasks.put(pnfsId, null);
+            }
         }
 
         @Override
-        public String call()
-            throws InterruptedException
+        public void run()
         {
-            StringBuilder out = new StringBuilder();
-            for (PnfsId id: _ids) {
+            List<PnfsId> list = new ArrayList(_tasks.keySet());
+            for (PnfsId pnfsId: list) {
                 try {
-                    pin(id, _lifetime);
-                } catch (ExecutionException e) {
-                    out.append(id).append(": ").append(e.getCause().getMessage()).append('\n');
+                    _tasks.put(pnfsId, pin(pnfsId, _requestId, _lifetime));
                 } catch (CacheException e) {
-                    out.append(id).append(": ").append(e.getMessage()).append('\n');
+                    _tasks.remove(pnfsId);
+                    _errors.append("    ").append(pnfsId).
+                        append(": ").append(e.getMessage()).append('\n');
+                } catch (RuntimeException e) {
+                    _tasks.remove(pnfsId);
+                    _errors.append("    ").append(pnfsId).
+                        append(": ").append(e.toString()).append('\n');
                 }
             }
-            return out.toString();
         }
-    }
 
-    private class BulkUnpinJob implements Callable<String>
-    {
-        protected List<PnfsId> _ids;
+        public int getId()
+        {
+            return _id;
+        }
 
-        public BulkUnpinJob(List<PnfsId> ids)
+        public synchronized void cancel()
             throws CacheException
         {
-            _ids = ids;
+            if (!_cancelled) {
+                for (PnfsId pnfsId: _tasks.keySet()) {
+                    PinManagerUnpinMessage message =
+                        new PinManagerUnpinMessage(pnfsId);
+                    message.setRequestId(_requestId);
+                    _unpinProcessor.messageArrived(message);
+                }
+                _cancelled = true;
+            }
+        }
+
+        public synchronized boolean isCancelled()
+        {
+            return _cancelled;
+        }
+
+        public boolean isDone()
+        {
+            for (Future<PinManagerPinMessage> task: _tasks.values()) {
+                if (task == null || !task.isDone()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public String getJobDescription()
+        {
+            String state;
+            if (isCancelled()) {
+                state = "CANCELLED";
+            } else if (isDone()) {
+                state = "DONE";
+            } else {
+                state = "PROCESSING";
+            }
+            return String.format("[%d] %s", _id, state);
         }
 
         @Override
-        public String call()
+        public String toString()
         {
-            StringBuilder out = new StringBuilder();
-            for (PnfsId id: _ids) {
-                try {
-                    unpin(id);
-                } catch (CacheException e) {
-                    out.append(id).append(": ").append(e.getMessage()).append('\n');
+            try {
+                StringBuilder out = new StringBuilder();
+                for (Map.Entry<PnfsId,Future<PinManagerPinMessage>> entry: _tasks.entrySet()) {
+                    out.append("  ").append(entry.getKey()).append(": ");
+                    try {
+                        Future<PinManagerPinMessage> future = entry.getValue();
+                        if (future == null) {
+                            out.append("INITIALIZING");
+                        } else if (!future.isDone()) {
+                            out.append("PROCESSING");
+                        } else if (isCancelled()) {
+                            out.append("CANCELLED");
+                        } else {
+                            future.get();
+                            out.append("DONE");
+                        }
+                    } catch (ExecutionException e) {
+                        out.append(e.getMessage());
+                    }
+                    out.append('\n');
                 }
+
+                if (_errors.length() > 0) {
+                    out.append("Failed during initialization:\n");
+                    out.append(_errors);
+                }
+
+                return out.toString();
+            } catch (InterruptedException e) {
+                return e.toString();
             }
-            return out.toString();
         }
     }
 }
