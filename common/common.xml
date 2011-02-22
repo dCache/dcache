@@ -107,7 +107,7 @@
         <dependency groupId="org.datanucleus" artifactId="datanucleus-cache" version="2.1.2"/>
         <dependency groupId="org.datanucleus" artifactId="datanucleus-enhancer" version="2.1.3"/>
         <dependency groupId="org.datanucleus" artifactId="datanucleus-jpa" version="2.1.5"/>
-        <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.2.2"/>
+        <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.2.2_dcache1"/>
         <dependency groupId="toplink.essentials" artifactId="toplink-essentials" version="2.1-60f"/>
         <dependency groupId="com.google.guava" artifactId="guava" version="r07"/>
         <dependency groupId="com.caucho" artifactId="hessian" version="4.0.7" />
