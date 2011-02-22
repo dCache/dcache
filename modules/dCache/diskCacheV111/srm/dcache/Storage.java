@@ -1745,13 +1745,12 @@ public final class Storage
         AuthorizationRecord duser = (AuthorizationRecord)user;
         try {
             CopyManagerMessage copyRequest =
-                new CopyManagerMessage(duser.getUid(),
-                                       duser.getGid(),
-                                       actualFromFilePath.toString(),
+                new CopyManagerMessage(actualFromFilePath.toString(),
                                        actualToFilePath.toString(),
                                        id,
                                        config.getBuffer_size(),
                                        config.getTcp_buffer_size());
+            copyRequest.setSubject(Subjects.getSubject((AuthorizationRecord) user));
             _copyManagerStub.sendAndWait(copyRequest);
         } catch (TimeoutCacheException e) {
             _log.error("CopyManager is unavailable");
