@@ -7,34 +7,32 @@ package diskCacheV111.vehicles.transferManager;
  */
 
 public class RemoteGsiftpDelegateUserCredentialsMessage extends TransferManagerMessage
- 
 {
   private String host;
   private int port;
   private Long requestCredentialId;
-  
-  public RemoteGsiftpDelegateUserCredentialsMessage(long id,long callerUniqueId,String host,int port,Long requestCredentialId)
+
+  public RemoteGsiftpDelegateUserCredentialsMessage(String host,int port,Long requestCredentialId)
   {
-      super(id,callerUniqueId);
-    this.host = host;
-    this.port = port;
-    this.requestCredentialId =  requestCredentialId;
+      this.host = host;
+      this.port = port;
+      this.requestCredentialId =  requestCredentialId;
   }
-   
-  
+
+
   public String getHost() {
       return host;
   }
-  
+
   public int getPort() {
       return port;
-  }  
-  
+  }
+
   public Long getRequestCredentialId(){
       return requestCredentialId;
   }
-  
-  
+
+
 }
 
 

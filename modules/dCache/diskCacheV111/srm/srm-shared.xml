@@ -23,9 +23,9 @@
     <property name="timeout" value="#{ 3 * 60 * 1000 }"/>
   </bean>
 
-  <bean id="gridftp-transfer-manager-stub" class="org.dcache.cells.CellStub">
-    <description>GridFTP transfer manager communication stub</description>
-    <property name="destination" value="RemoteGsiftpTransferManager"/>
+  <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
+    <description>Transfer manager communication stub</description>
+    <property name="destination" value="RemoteTransferManager"/>
     <property name="timeout" value="#{ 24 * 60 * 60 * 1000}"/>
   </bean>
 
@@ -108,7 +108,7 @@
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
     <property name="spaceManagerStub" ref="space-manager-stub"/>
-    <property name="gridftpTransferManagerStub" ref="gridftp-transfer-manager-stub"/>
+    <property name="transferManagerStub" ref="transfer-manager-stub"/>
     <property name="copyManagerStub" ref="copy-manager-stub"/>
     <property name="pinManagerStub" ref="pin-manager-stub"/>
     <property name="loginBrokerUpdatePeriod"

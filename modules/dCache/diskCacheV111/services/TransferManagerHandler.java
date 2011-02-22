@@ -34,7 +34,6 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
@@ -385,7 +384,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
         public void selectPool()
         {
 		try {
-			protocol_info = manager.getProtocolInfo(getId(), transferRequest);
+			protocol_info = manager.getProtocolInfo(transferRequest);
 		}
 		catch(IOException ioe) {
 			log.error(ioe.toString());

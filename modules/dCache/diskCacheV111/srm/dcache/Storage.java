@@ -90,6 +90,8 @@ import diskCacheV111.util.Version;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerGetFileLocalityMessage;
+import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import diskCacheV111.vehicles.IpProtocolInfo;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.services.login.RemoteLoginStrategy;
@@ -104,7 +106,9 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.pinmanager.PinManagerExtendPinMessage;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.transferManager.
-    RemoteGsiftpTransferManagerMessage;
+    RemoteTransferManagerMessage;
+import diskCacheV111.vehicles.transferManager.
+    RemoteGsiftpTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.
     RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
@@ -250,7 +254,7 @@ public final class Storage
     private CellStub _poolStub;
     private CellStub _spaceManagerStub;
     private CellStub _copyManagerStub;
-    private CellStub _gridftpTransferManagerStub;
+    private CellStub _transferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _loginBrokerStub;
 
@@ -362,9 +366,9 @@ public final class Storage
     }
 
     @Required
-    public void setGridftpTransferManagerStub(CellStub gridftpTransferManagerStub)
+    public void setTransferManagerStub(CellStub transferManagerStub)
     {
-        _gridftpTransferManagerStub = gridftpTransferManagerStub;
+        _transferManagerStub = transferManagerStub;
     }
 
     @Required
@@ -2238,6 +2242,8 @@ public final class Storage
                                                 " is not subpath of the user's root");
         }
 
+        IpProtocolInfo protocolInfo;
+
         if (remoteTURL.getScheme().equals("gsiftp")) {
             //call this for the sake of checking that user is reading
             // from the "root" of the user
@@ -2247,80 +2253,91 @@ public final class Storage
                                        actualFilePath);
             }
 
-
-            RemoteGsiftpTransferManagerMessage gsiftpTransferRequest;
-
-            if (store && spaceReservationId != null && size != null) {
-                // space reservation was performed for a file of known size
-                gsiftpTransferRequest =
-                    new RemoteGsiftpTransferManagerMessage(remoteTURL.toString(),
-                                                           actualFilePath.toString(),
-                                                           store,
-                                                           remoteCredentialId,
-                                                           config.getBuffer_size(),
-                                                           config.getTcp_buffer_size(),
-                                                           spaceReservationId,
-                                                           config.isSpace_reservation_strict(),
-                                                           size);
-            } else {
-                gsiftpTransferRequest =
-                    new RemoteGsiftpTransferManagerMessage(remoteTURL.toString(),
-                                                           actualFilePath.toString(),
-                                                           store,
-                                                           remoteCredentialId,
-                                                           config.getBuffer_size(),
-                                                           config.getTcp_buffer_size());
-            }
-            gsiftpTransferRequest.setSubject(subject);
-            gsiftpTransferRequest.setStreams_num(config.getParallel_streams());
-            try {
-                RemoteGsiftpTransferManagerMessage reply =
-                    _gridftpTransferManagerStub.sendAndWait(gsiftpTransferRequest);
-                long id = reply.getId();
-                _log.debug("received first RemoteGsiftpTransferManagerMessage "
-                           + "reply from transfer manager, id ="+id);
-                GridftpTransferInfo info =
-                    new GridftpTransferInfo(id, remoteCredentialId, callbacks,
-                                            _gridftpTransferManagerStub.getDestinationPath());
-                _log.debug("storing info for callerId = " + id);
-                callerIdToHandler.put(id, info);
-                return String.valueOf(id);
-            } catch (TimeoutCacheException e) {
-                throw new SRMInternalErrorException("Transfer manager is unavailable: " +
-                                                    e.getMessage(), e);
-            } catch (CacheException e) {
-                throw new SRMException("TransferManager error: "+
-                                       e.getMessage(), e);
-            } catch (InterruptedException e) {
-                throw new SRMException("Request to transfer manager got interruptd", e);
-            }
+            String[] hosts = new String[] { remoteTURL.getHost() };
+            RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
+                new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
+                                                     1, 1, hosts, 0,
+                                                     remoteTURL.toString(),
+                                                     getCellName(),
+                                                     getCellDomainName(),
+                                                     config.getBuffer_size(),
+                                                     config.getTcp_buffer_size(),
+                                                     remoteCredentialId);
+            gsiftpProtocolInfo.setEmode(true);
+            gsiftpProtocolInfo.setStreams_num(config.getParallel_streams());
+            protocolInfo = gsiftpProtocolInfo;
+        } else if (remoteTURL.getScheme().equals("http")) {
+            String[] hosts = new String[] { remoteTURL.getHost() };
+            protocolInfo =
+                new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
+                                                       1, 1, hosts, 0,
+                                                       config.getBuffer_size(),
+                                                       remoteTURL.toString());
+        } else {
+            throw new SRMException("not implemented");
         }
-        throw new SRMException("not implemented");
+
+        RemoteTransferManagerMessage request;
+        if (store && spaceReservationId != null && size != null) {
+            // space reservation was performed for a file of known size
+            request =
+                new RemoteTransferManagerMessage(remoteTURL,
+                                                 actualFilePath,
+                                                 store,
+                                                 remoteCredentialId,
+                                                 spaceReservationId,
+                                                 config.isSpace_reservation_strict(),
+                                                 size,
+                                                 protocolInfo);
+        } else {
+            request =
+                new RemoteTransferManagerMessage(remoteTURL,
+                                                 actualFilePath,
+                                                 store,
+                                                 remoteCredentialId,
+                                                 protocolInfo);
+        }
+        request.setSubject(subject);
+        try {
+            RemoteTransferManagerMessage reply =
+                _transferManagerStub.sendAndWait(request);
+            long id = reply.getId();
+            _log.debug("received first RemoteGsiftpTransferManagerMessage "
+                       + "reply from transfer manager, id ="+id);
+            TransferInfo info =
+                new TransferInfo(id, remoteCredentialId, callbacks,
+                                 _transferManagerStub.getDestinationPath());
+            _log.debug("storing info for callerId = {}", id);
+            callerIdToHandler.put(id, info);
+            return String.valueOf(id);
+        } catch (TimeoutCacheException e) {
+            throw new SRMInternalErrorException("Transfer manager is unavailable: " +
+                                                e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMException("TransferManager error: "+
+                                   e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new SRMException("Request to transfer manager got interruptd", e);
+        }
     }
 
-    private final Map<Long, GridftpTransferInfo> callerIdToHandler =
-        new ConcurrentHashMap<Long, GridftpTransferInfo>();
+    private final Map<Long,TransferInfo> callerIdToHandler =
+        new ConcurrentHashMap<Long,TransferInfo>();
 
-    private class TransferInfo {
-        private long transferId;
-        private CopyCallbacks callbacks;
-        private CellPath cellPath;
+    private static class TransferInfo
+    {
+        final long transferId;
+        final Long remoteCredentialId;
+        final CopyCallbacks callbacks;
+        final CellPath cellPath;
 
-        public TransferInfo(long transferId,CopyCallbacks callbacks,
-            CellPath cellPath ) {
+        public TransferInfo(long transferId, Long remoteCredentialId,
+                            CopyCallbacks callbacks, CellPath cellPath)
+        {
             this.transferId = transferId;
+            this.remoteCredentialId = remoteCredentialId;
             this.callbacks = callbacks;
             this.cellPath = cellPath;
-        }
-    }
-
-    private class GridftpTransferInfo extends TransferInfo {
-        private Long remoteCredentialId;
-
-        public GridftpTransferInfo(long transferId,Long remoteCredentialId,
-            CopyCallbacks callbacks,CellPath cellPath) {
-            super( transferId,callbacks,cellPath);
-            this.remoteCredentialId = remoteCredentialId;
         }
     }
 

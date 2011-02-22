@@ -21,8 +21,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
   private int    sessionId        = 0 ;
   private String gsiftpTranferManagerName;
   private String gsiftpTranferManagerDomain;
-  private long id;
-  private long sourceId;
   private boolean emode = true;
   private int streams_num = 5;
   private int bufferSize = 0;
@@ -40,8 +38,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     String gsiftpUrl,
     String gsiftpTranferManagerName,
     String gsiftpTranferManagerDomain,
-    long id,
-    long sourceId,
     int bufferSize,
     int tcpBufferSize,
     Long requestCredentialId,
@@ -56,8 +52,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     gsiftpUrl,
     gsiftpTranferManagerName,
     gsiftpTranferManagerDomain,
-    id,
-    sourceId,
     bufferSize,
     tcpBufferSize,
     requestCredentialId);
@@ -72,8 +66,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     String gsiftpUrl,
     String gsiftpTranferManagerName,
     String gsiftpTranferManagerDomain,
-    long id,
-    long sourceId,
     int bufferSize,
     int tcpBufferSize,
     Long requestCredentialId
@@ -88,8 +80,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     this.gsiftpUrl = gsiftpUrl;
     this.gsiftpTranferManagerName = gsiftpTranferManagerName;
     this.gsiftpTranferManagerDomain = gsiftpTranferManagerDomain;
-    this.id = id;
-    this.sourceId = sourceId;
     this.bufferSize =bufferSize;
     this.tcpBufferSize = tcpBufferSize;
     this.requestCredentialId = requestCredentialId;
@@ -166,20 +156,6 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
    */
   public java.lang.String getGsiftpTranferManagerDomain() {
       return gsiftpTranferManagerDomain;
-  }
-
-  /** Getter for property id.
-   * @return Value of property id.
-   */
-  public long getId() {
-      return id;
-  }
-
-  /** Getter for property sourceId.
-   * @return Value of property sourceId.
-   */
-  public long getSourceId() {
-      return sourceId;
   }
 
   /** Getter for property emode.

@@ -174,9 +174,7 @@ public class RemoteGsiftpTransferProtocol_1
         InetAddress localAddress = NetworkUtils.getLocalAddressForClient(remoteGsiftpProtocolInfo.getHosts());
 
         RemoteGsiftpDelegateUserCredentialsMessage cred_request =
-            new RemoteGsiftpDelegateUserCredentialsMessage(remoteGsiftpProtocolInfo.getId(),
-                                                           remoteGsiftpProtocolInfo.getSourceId(),
-                                                           localAddress.getCanonicalHostName(),
+            new RemoteGsiftpDelegateUserCredentialsMessage(localAddress.getCanonicalHostName(),
                                                            serverSocket.getLocalPort(),
                                                            remoteGsiftpProtocolInfo.getRequestCredentialId());
 

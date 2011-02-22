@@ -56,7 +56,7 @@ for arg in $args;
 	  skip=1
 	  continue
 	  ;; 
-      srm:*|gsiftp:*|gridftp:*|file:*)
+      srm:*|gsiftp:*|gridftp:*|file:*|http:*)
 	  skip=1
 	  continue
 	  ;;

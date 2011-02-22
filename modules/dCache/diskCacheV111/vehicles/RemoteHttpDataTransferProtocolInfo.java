@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
  * @author Timur Perelmutov. timur@fnal.gov
  * @version 0.0, 28 Jun 2002
  */
-
 public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
 {
   private String name  = "Unkown" ;

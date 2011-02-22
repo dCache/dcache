@@ -18,7 +18,6 @@ set context -c srmPoolTimeout          300
 set context -c srmPnfsTimeout          300
 set context -c srmMoverTimeout        7200
 set context -c remoteCopyMaxTransfers  150
-set context -c remoteHttpMaxTransfers   30
 set context -c srmCopyReqThreadPoolSize                250
 set context -c remoteGsiftpMaxTransfers  ${srmCopyReqThreadPoolSize}
 set context -c remoteGsiftpIoQueue       ""
@@ -70,24 +69,7 @@ onerror shutdown
 #
 #
 
-
-#
-# RemoteHttpTransferManager
-#
-#
-create diskCacheV111.doors.RemoteHttpTransferManager RemoteHttpTransferManager \
-        "default \
-        -export \
-        -pool_manager_timeout=${srmPoolManagerTimeout} \
-        -pool_timeout=${srmPoolTimeout} \
-        -pnfs_timeout=${srmPnfsTimeout} \
-        -mover_timeout=${srmMoverTimeout} \
-        -max_transfers=${remoteHttpMaxTransfers} \
-"
-#
-# RemoteGsiftpTransferManager
-#
-create diskCacheV111.services.GsiftpTransferManager RemoteGsiftpTransferManager \
+create diskCacheV111.services.RemoteTransferManager RemoteTransferManager \
         "default -export \
         -pool_manager_timeout=${srmPoolManagerTimeout} \
         -pool_timeout=${srmPoolTimeout} \

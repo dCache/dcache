@@ -485,8 +485,6 @@ public abstract class TransferManager extends AbstractCell
 		return "io_queue was set to "+_ioQueueName;
 	}
 
-	public abstract boolean _messageArrived(CellMessage cellMessage);
-
 	public void messageArrived(CellMessage envelope, DoorTransferFinishedMessage message)
         {
                 long id = message.getId();
@@ -519,14 +517,6 @@ public abstract class TransferManager extends AbstractCell
 		new TransferManagerHandler(this, message, envelope.getSourceAddress()).handle();
                 return message;
         }
-
-        @Override
-	public void messageArrived(CellMessage envelope)
-        {
-		if (!_messageArrived(envelope)) {
-                        super.messageArrived(envelope);
-                }
-	}
 
 	public int getMaxTransfers()
         {
@@ -579,7 +569,7 @@ public abstract class TransferManager extends AbstractCell
 		return nextMessageID;
 	}
 
-	protected abstract IpProtocolInfo getProtocolInfo(long callerId, TransferManagerMessage transferRequest)
+	protected abstract IpProtocolInfo getProtocolInfo(TransferManagerMessage transferRequest)
 		throws IOException;
 
 	protected TransferManagerHandler getHandler(long handlerId)

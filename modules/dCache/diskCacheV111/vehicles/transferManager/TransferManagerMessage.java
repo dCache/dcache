@@ -41,8 +41,7 @@ public abstract class TransferManagerMessage extends Message {
             boolean store,
             Long remoteCredentialId,
             String spaceReservationId,boolean spaceReservationStrict,
-            Long size
-            ) {
+            Long size) {
         this.pnfsPath = pnfsPath;
         this.remoteUrl = remoteUrl;
         this.store = store;
@@ -64,10 +63,7 @@ public abstract class TransferManagerMessage extends Message {
 
     }
 
-    public TransferManagerMessage(long id, long callerUniqueId) {
-        super();
-        setId(id);
-
+    public TransferManagerMessage() {
     }
 
     /** Getter for property store.
