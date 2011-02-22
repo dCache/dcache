@@ -85,7 +85,7 @@
         <dependency groupId="org.slf4j" artifactId="jul-to-slf4j" version="1.6.1"/>
         <dependency groupId="commons-codec" artifactId="commons-codec" version="1.4"/>
         <dependency groupId="commons-httpclient" artifactId="commons-httpclient" version="3.1"/>
-        <dependency groupId="ch.qos.logback" artifactId="logback-classic" version="0.9.26"/>
+        <dependency groupId="ch.qos.logback" artifactId="logback-classic" version="0.9.28"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-server" version="7.2.2.v20101205"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-deploy" version="7.2.2.v20101205"/>
         <dependency groupId="org.eclipse.jetty" artifactId="jetty-webapp" version="7.2.2.v20101205"/>
