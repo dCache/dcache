@@ -165,6 +165,7 @@ public class DcacheResourceFactory
     private String _path;
     private boolean _doRedirectOnRead = true;
     private boolean _isOverwriteAllowed = false;
+    private boolean _isAnonymousListingAllowed;
 
     private String _staticContentPath;
     private StringTemplateGroup _listingGroup;
@@ -348,6 +349,16 @@ public class DcacheResourceFactory
     public boolean isOverwriteAllowed()
     {
         return _isOverwriteAllowed;
+    }
+
+    public void setAnonymousListing(boolean isAllowed)
+    {
+        _isAnonymousListingAllowed = isAllowed;
+    }
+
+    public boolean isAnonymousListing()
+    {
+        return _isAnonymousListingAllowed;
     }
 
     /**
@@ -617,6 +628,10 @@ public class DcacheResourceFactory
     public List<DcacheResource> list(final FsPath path)
         throws InterruptedException, CacheException
     {
+        if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
+            throw new PermissionDeniedCacheException("Access denied");
+        }
+
         final List<DcacheResource> result = new ArrayList<DcacheResource>();
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
@@ -646,6 +661,10 @@ public class DcacheResourceFactory
     public void list(FsPath path, OutputStream out)
         throws InterruptedException, CacheException, IOException
     {
+        if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
+            throw new PermissionDeniedCacheException("Access denied");
+        }
+
         Request request = HttpManager.request();
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(request.getAbsolutePath()), String.class);
