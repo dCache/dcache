@@ -1529,14 +1529,14 @@ public final class CopyFileRequest extends FileRequest {
             }
 		}
 
-		public void copyFailed(Exception e) {
+		public void copyFailed(SRMException e) {
 			CopyFileRequest  copyFileRequest ;
-            try {
-                 copyFileRequest   = getCopyFileRequest();
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-                return;
-            }
+                        try {
+                            copyFileRequest = getCopyFileRequest();
+                        } catch (SRMInvalidRequestException ire) {
+                            logger.error(ire.toString());
+                            return;
+                        }
 			copyFileRequest.setTransferError(e);
 			logger.error("copy failed:");
 			logger.error(e.toString());

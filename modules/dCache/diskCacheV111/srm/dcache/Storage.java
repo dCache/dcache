@@ -2230,6 +2230,8 @@ public final class Storage
                                          CopyCallbacks callbacks)
         throws SRMException
     {
+        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+
         _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
         if (!verifyUserPathIsRootSubpath(actualFilePath,user)) {
             throw new SRMAuthorizationException("user's path "+actualFilePath+
@@ -2237,8 +2239,6 @@ public final class Storage
         }
 
         if (remoteTURL.getScheme().equals("gsiftp")) {
-            AuthorizationRecord duser = (AuthorizationRecord)user;
-
             //call this for the sake of checking that user is reading
             // from the "root" of the user
             String path = getTurlPath(actualFilePath,"gsiftp",user);
@@ -2250,40 +2250,28 @@ public final class Storage
 
             RemoteGsiftpTransferManagerMessage gsiftpTransferRequest;
 
-            // if space reservation was performed for a file of known size
-
-            RequestCredential remoteCredential =
-                RequestCredential.getRequestCredential(remoteCredentialId);
-            String credentialName = "Unknown";
-            if (remoteCredential != null)
-            	credentialName = remoteCredential.getCredentialName();
-
             if (store && spaceReservationId != null && size != null) {
+                // space reservation was performed for a file of known size
                 gsiftpTransferRequest =
-                    new RemoteGsiftpTransferManagerMessage(duser,
-                                                           remoteTURL.toString(),
+                    new RemoteGsiftpTransferManagerMessage(remoteTURL.toString(),
                                                            actualFilePath.toString(),
                                                            store,
                                                            remoteCredentialId,
-                                                           credentialName,
                                                            config.getBuffer_size(),
                                                            config.getTcp_buffer_size(),
                                                            spaceReservationId,
                                                            config.isSpace_reservation_strict(),
-                                                           size
-                                                           );
+                                                           size);
             } else {
                 gsiftpTransferRequest =
-                    new RemoteGsiftpTransferManagerMessage(duser,
-                                                           remoteTURL.toString(),
+                    new RemoteGsiftpTransferManagerMessage(remoteTURL.toString(),
                                                            actualFilePath.toString(),
                                                            store,
                                                            remoteCredentialId,
-                                                           credentialName,
                                                            config.getBuffer_size(),
-                                                           config.getTcp_buffer_size()
-                                                           );
+                                                           config.getTcp_buffer_size());
             }
+            gsiftpTransferRequest.setSubject(subject);
             gsiftpTransferRequest.setStreams_num(config.getParallel_streams());
             try {
                 RemoteGsiftpTransferManagerMessage reply =
@@ -2375,24 +2363,27 @@ public final class Storage
             info.callbacks.copyComplete(null);
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
-        } else if(message instanceof TransferFailedMessage) {
-            Object error =                 message.getErrorObject();
-            if(error != null ) {
-                if(error instanceof Exception) {
-                    info.callbacks.copyFailed((Exception)error);
-                } else {
-                    info.callbacks.copyFailed(new CacheException(error.toString()));
-                }
-
-            } else {
-                info.callbacks.copyFailed(new CacheException("transfer failed: "+
-                    message.toString()));
+        } else if (message instanceof TransferFailedMessage) {
+            Object error =  message.getErrorObject();
+            if (error instanceof CacheException) {
+                error = ((CacheException) error).getMessage();
             }
+            SRMException e;
+            switch (message.getReturnCode()) {
+            case CacheException.PERMISSION_DENIED:
+                e = new SRMAuthorizationException(String.format("Access denied: %s", error));
+                break;
+            case CacheException.FILE_NOT_FOUND:
+                e = new SRMInvalidPathException(String.valueOf(error));
+            default:
+                e = new SRMException(String.format("Transfer failed: %s [%d]",
+                                                   error, message.getReturnCode()));
+            }
+            info.callbacks.copyFailed(e);
 
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
         }
-
     }
 
     private void delegate(GSSCredential credential, String host, int port) {

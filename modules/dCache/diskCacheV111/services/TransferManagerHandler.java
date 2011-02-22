@@ -20,6 +20,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -39,9 +40,12 @@ import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferCompleteMessage;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import java.net.URI;
+import java.net.InetAddress;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.EnumSet;
+import javax.security.auth.Subject;
 import diskCacheV111.doors.FTPTransactionLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +55,9 @@ import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
-
+import org.dcache.auth.Subjects;
 
 public class TransferManagerHandler implements CellMessageAnswerable
 {
@@ -76,8 +81,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	public static final int INITIAL_STATE=0;
 	public static final int WAITING_FOR_PNFS_INFO_STATE=1;
 	public static final int RECEIVED_PNFS_INFO_STATE=2;
-	public static final int WAITING_FOR_PNFS_PARENT_INFO_STATE=3;
-	public static final int RECEIVED_PNFS_PARENT_INFO_STATE=4;
 	public static final int WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE=5;
 	public static final int RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE=6;
 	public static final int WAITING_FOR_POOL_INFO_STATE=7;
@@ -114,46 +117,43 @@ public class TransferManagerHandler implements CellMessageAnswerable
 				      TransferManagerMessage message,
 				      CellPath sourcePath)
         {
-	    info =
-			new DoorRequestInfoMessage(tManager.getNucleus().getCellName()+"@"+
-						   tManager.getNucleus().getCellDomainName());
-		numberOfRetries=0;
+		numberOfRetries = 0;
 		creationTime = System.currentTimeMillis();
-	    info.setTransactionTime(creationTime);
 		manager      = tManager;
 		id           = manager.getNextMessageID();
 		message.setId(id);
-		this.transferRequest = message;
-		Long longId          = new Long(id);
 
+		transferRequest = message;
 		pnfsPath = transferRequest.getPnfsPath();
 		store    = transferRequest.isStore();
 		remoteUrl= transferRequest.getRemoteURL();
                 credentialId = transferRequest.getCredentialId();
-        info.setGid(transferRequest.getUser().getGid());
-        info.setUid(transferRequest.getUser().getUid());
-        info.setPath(pnfsPath);
-        info.setOwner(transferRequest.getUser().getName());
-        info.setTimeQueued(-System.currentTimeMillis());
-        info.setMessageType("request");
-        this.sourcePath = sourcePath;
-        if (transferRequest instanceof RemoteGsiftpTransferManagerMessage)
-            info.setOwner(((RemoteGsiftpTransferManagerMessage)transferRequest).getCredentialName());
-        try {
-        	info.setClient(new org.globus.util.GlobusURL(transferRequest.getRemoteURL()).getHost());
-        } catch (Exception e){
+                Subject subject = transferRequest.getSubject();
 
-        }
+                info = new DoorRequestInfoMessage(manager.getCellName()+"@"+
+                                                  manager.getCellDomainName());
+                info.setTransactionTime(creationTime);
+                info.setGid((int) Subjects.getPrimaryGid(subject));
+                info.setUid((int) Subjects.getUid(subject));
+                info.setPath(pnfsPath);
+                info.setOwner(Subjects.getDn(subject));
+                info.setTimeQueued(-System.currentTimeMillis());
+                info.setMessageType("request");
+                this.sourcePath = sourcePath;
+                try {
+                        info.setClient(new URI(transferRequest.getRemoteURL()).getHost());
+                } catch (Exception e){
+                }
+
 		try {
-			if(manager.getLogRootName() != null) {
+			if (manager.getLogRootName() != null) {
 				tlog = new FTPTransactionLog(manager.getLogRootName());
-				String user_info = transferRequest.getUser().getName()+
-					"("+transferRequest.getUser().getUid() +"."+
-                    transferRequest.getUser().getGid()+")";
+				String user_info =
+                                        Subjects.getDn(transferRequest.getSubject()) +
+					"("+info.getUid() +"."+info.getGid()+")";
 				String rw = store?"write":"read";
-				java.net.InetAddress remoteaddr =
-					java.net.InetAddress.getByName(
-						new org.globus.util.GlobusURL(transferRequest.getRemoteURL()).getHost());
+				InetAddress remoteaddr =
+					InetAddress.getByName(new URI(transferRequest.getRemoteURL()).getHost());
 				tlog.begin(user_info, "remotegsiftp", rw, transferRequest.getPnfsPath(), remoteaddr);
 			}
 		}
@@ -163,7 +163,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		this.spaceReservationId       = transferRequest.getSpaceReservationId();
 		this.space_reservation_strict = transferRequest.isSpaceReservationStrict();
 		this.size                     = transferRequest.getSize();
-                manager.addActiveTransfer(longId,this);
+                manager.addActiveTransfer(id,this);
 		setState(INITIAL_STATE);
         permissionHandler =
             new ChainedPermissionHandler(
@@ -181,26 +181,26 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			return;
 		}
 		parentDir = pnfsPath.substring(0,last_slash_pos);
-		PnfsGetFileMetaDataMessage sInfo;
-		if(store) {
-			sInfo = new PnfsGetFileMetaDataMessage(
-                    permissionHandler.getRequiredAttributes()) ;
-			sInfo.setPnfsPath( parentDir ) ;
-			setState(WAITING_FOR_PNFS_PARENT_INFO_STATE);
-		}
-		else {
-                    EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
-                    attributes.addAll(permissionHandler.getRequiredAttributes());
-                    attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-                    sInfo = new PnfsGetStorageInfoMessage(attributes);
-                    sInfo.setPnfsPath( pnfsPath ) ;
-                    setState(WAITING_FOR_PNFS_INFO_STATE);
+		PnfsMessage message;
+		if (store) {
+                        message = new PnfsCreateEntryMessage(pnfsPath);
+                        message.setSubject(transferRequest.getSubject());
+                        setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
+		} else {
+                        EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
+                        attributes.addAll(permissionHandler.getRequiredAttributes());
+                        attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+                        message = new PnfsGetStorageInfoMessage(attributes);
+                        message.setPnfsPath(pnfsPath) ;
+                        message.setSubject(transferRequest.getSubject());
+                        message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
+                        setState(WAITING_FOR_PNFS_INFO_STATE);
 		}
 		manager.persist(this);
 		try {
 			manager.sendMessage(
 				new CellMessage(new CellPath(manager.getPnfsManagerName()),
-						sInfo ),
+                                                message),
 				true ,
 				true,
 				this,
@@ -246,12 +246,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			else     if( message instanceof PnfsGetFileMetaDataMessage) {
 				PnfsGetFileMetaDataMessage storage_metadata =
 					(PnfsGetFileMetaDataMessage)message;
-				if(state == WAITING_FOR_PNFS_PARENT_INFO_STATE) {
-					setState(RECEIVED_PNFS_PARENT_INFO_STATE);
-					parentDirectorMetadataArrived(storage_metadata);
-					return;
-				}
-				else if ( state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE ) {
+                                if ( state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE ) {
 					if (storage_metadata.getReturnCode() != 0) {
 						log.error("We were about to delete entry that does not exist : "+storage_metadata.toString()+
 						     " PnfsGetFileMetaDataMessage return code="+storage_metadata.getReturnCode()+
@@ -321,101 +316,34 @@ public class TransferManagerHandler implements CellMessageAnswerable
 /**      */
 	public void exceptionArrived(CellMessage request, Exception exception) {
 	}
-/**      */
-	public void parentDirectorMetadataArrived(PnfsGetFileMetaDataMessage file_metadata) {
-		log.debug("parentInfoArrived(TransferManagerHandler)");
-		if(file_metadata.getReturnCode() != 0) {
-			sendErrorReply(3,  new java.io.IOException(
-					       "can't get metadata for parent directory "+parentDir));
-			return;
-		}
-        FileAttributes attributes = file_metadata.getFileAttributes();
-        attributes.setPnfsId(file_metadata.getPnfsId());
 
-        AccessType canCreateFile =
-                  permissionHandler.canCreateFile(
-                      transferRequest.getUser().getSubject(),
-                      attributes);
-        if(canCreateFile != AccessType.ACCESS_ALLOWED ) {
-            log.debug("user has no permission to write to directory "+parentDir);
-			sendErrorReply(3,  new java.io.IOException(
-					       "user has no permission to write to directory "+parentDir));
-			return;
-        }
-
-		PnfsCreateEntryMessage create = new PnfsCreateEntryMessage(
-                pnfsPath ,
-                getUid(),
-                getGid() ,
-                0644,
-                permissionHandler.getRequiredAttributes()) ;
-		setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
-		manager.persist(this);
-		try {
-			manager.sendMessage(new CellMessage(new CellPath( manager.getPnfsManagerName()),
-						    create ) ,
-				    true ,
-				    true,
-				    this,
-				    manager.getPnfsManagerTimeout()*1000
-				);
-		}
-		catch(Exception ee ) {
-			log.error(ee.toString());
-			sendErrorReply(4,ee);
-			return ;
-		}
-	}
-
-    /**      */
-	public void createEntryResponseArrived(PnfsCreateEntryMessage create) {
-        	if(create.getReturnCode() == 0) {
-			created = true;
-			manager.persist(this);
-		}
-		else {
-			sendErrorReply(5, "failed to create pnfs entry: "+create.getErrorObject());
-			return;
+	public void createEntryResponseArrived(PnfsCreateEntryMessage create)
+        {
+                if (create.getReturnCode() != 0) {
+                        sendErrorReply(create.getReturnCode(),
+                                       create.getErrorObject());
+                        return;
 		}
 
-        storageInfo  = create.getStorageInfo();
+                created = true;
+                manager.persist(this);
+
+                storageInfo  = create.getStorageInfo();
 		fileAttributes = create.getFileAttributes();
-        create.getMetaData();
-        pnfsId        = create.getPnfsId();
-        if(storageInfo == null || fileAttributes == null || pnfsId == null) {
-            PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage(
-                    permissionHandler.getRequiredAttributes()) ;
-            sInfo.setPnfsPath( pnfsPath ) ;
-            setState(WAITING_FOR_PNFS_INFO_STATE);
-            manager.persist(this);
-            try {
-                    manager.sendMessage(new CellMessage(
-                            new CellPath(manager.getPnfsManagerName()),
-                                sInfo),
-                            true,
-                            true,
-                            this,
-                            manager.getPnfsManagerTimeout()*1000
-                        );
-            }
-            catch(Exception ee ) {
-                    log.error(ee.toString());
-                    transferRequest.setFailed(2, ee);
-                    return ;
-            }
-            return;
-        }
+                pnfsId  = create.getPnfsId();
 		pnfsIdString  = pnfsId.toString();
 		info.setPnfsId(pnfsId);
-                checkPermissionAndSelectPool();
+                selectPool();
 	}
+
 /**      */
-	public void storageInfoArrived( PnfsGetStorageInfoMessage storage_info_msg){
-		if( storage_info_msg.getReturnCode() != 0 ) {
-			sendErrorReply(6, new
-				       CacheException( "cant get storage info for file "+pnfsPath+" : "+
-						       storage_info_msg.getErrorObject() ) );
-			return;
+
+	public void storageInfoArrived(PnfsGetStorageInfoMessage storage_info_msg)
+        {
+                if (storage_info_msg.getReturnCode() != 0) {
+                        sendErrorReply(storage_info_msg.getReturnCode(),
+                                       storage_info_msg.getErrorObject());
+                        return;
 		}
 		if(!store && tlog != null) {
 			tlog.middle(storage_info_msg.getStorageInfo().getFileSize());
@@ -448,46 +376,16 @@ public class TransferManagerHandler implements CellMessageAnswerable
                     fileAttributes =
                             storage_info_msg.getFileAttributes();
                 }
-		log.debug("storageInfoArrived(uid="+
-                transferRequest.getUser().getUid()+
-                " gid="+transferRequest.getUser().getGid()+
-                " pnfsid="+pnfsId+" storageInfo="+storageInfo+
-                " fileAttributes="+fileAttributes);
-                checkPermissionAndSelectPool();
 
+		log.debug("storageInfoArrived(uid={} gid={} pnfsid={} storageInfo={} fileAttributes={}",
+                          new Object[] { info.getUid(), info.getGid(), pnfsId, storageInfo, fileAttributes });
+                selectPool();
         }
 
-        public void checkPermissionAndSelectPool() {
-		if(store) {
-			boolean can_write =
-                AccessType.ACCESS_ALLOWED  ==permissionHandler.canWriteFile(
-                     transferRequest.getUser().getSubject(),
-                     fileAttributes);
-			if(!can_write) {
-				sendErrorReply(3,  new java.io.IOException(
-						       "user has no permission to write to file"+pnfsPath));
-				return;
-			}
-			if(fileAttributes.getSize() != 0 && !manager.isOverwrite()) {
-				sendErrorReply(3,  new java.io.IOException(
-						       "file size is not 0, user has no permission to write to file"+pnfsPath));
-				return;
-
-			}
-		}
-		else {
-			boolean can_read =
-                AccessType.ACCESS_ALLOWED  ==permissionHandler.canReadFile(
-                     transferRequest.getUser().getSubject(),
-                     fileAttributes);
-			if(!can_read) {
-				sendErrorReply(3,  new java.io.IOException(
-						       "user has no permission to read file "+pnfsPath));
-				return;
-			}
-		}
+        public void selectPool()
+        {
 		try {
-			protocol_info = manager.getProtocolInfo(getId(),transferRequest);
+			protocol_info = manager.getProtocolInfo(getId(), transferRequest);
 		}
 		catch(IOException ioe) {
 			log.error(ioe.toString());
@@ -510,6 +408,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                                                  protocol_info,
                                                  sizeToSend);
                 request.setPnfsPath(pnfsPath);
+                request.setSubject(transferRequest.getSubject());
 		log.debug("PoolMgrSelectPoolMsg: " + request );
 		setState(WAITING_FOR_POOL_INFO_STATE);
 		manager.persist(this);
@@ -884,7 +783,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 			return sb.toString();
 		}
 		sb.append("\n  state=").append(state);
-		sb.append("\n  user=").append(transferRequest.getUser());
+		sb.append("\n  user=").append(transferRequest.getSubject());
 		if(pnfsId != null) {
 			sb.append("\n   pnfsId=").append(pnfsId);
 		}
@@ -947,8 +846,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
             System.out.println("This is a main in handler");
         }
 
-	public int getUid() { return transferRequest.getUser().getUid(); }
-	public int getGid() { return transferRequest.getUser().getGid(); }
 	public String getPnfsPath() { return pnfsPath; }
 	public boolean getStore() { return store; }
 	public boolean getCreated() { return created; }

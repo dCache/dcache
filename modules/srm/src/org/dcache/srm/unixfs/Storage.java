@@ -850,7 +850,7 @@ public class Storage
                     callbacks.copyComplete(getFileMetaData(user, surl, false));
                 }
                 catch (Exception e){
-                    callbacks.copyFailed(e);
+                    callbacks.copyFailed(new SRMException(e));
                 }
             }
         };
@@ -887,7 +887,7 @@ public class Storage
                     callbacks.copyComplete(getFileMetaData(user,surl, true));
                 }
                 catch (Exception e){
-                    callbacks.copyFailed(e);
+                    callbacks.copyFailed(new SRMException(e));
                 }
             }
         };
