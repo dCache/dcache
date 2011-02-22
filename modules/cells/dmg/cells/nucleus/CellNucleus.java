@@ -751,7 +751,17 @@ public class CellNucleus implements ThreadFactory
                             _logNucleus.info("addToEventQueue : dest. was triggered : "+msg);
                         } else {
                             _logNucleus.info("addToEventQueue : is asynchronous : "+msg);
-                            _callbackExecutor.execute(new CallbackTask(lock, msg));
+                            try {
+                                _callbackExecutor.execute(new CallbackTask(lock, msg));
+                            } catch (RejectedExecutionException e) {
+                                /* Put it back; the timeout handler
+                                 * will eventually take care of it.
+                                 */
+                                synchronized (_waitHash) {
+                                    _waitHash.put(msg.getLastUOID(), lock);
+                                }
+                                throw e;
+                            }
                         }
                         return;
                     }
