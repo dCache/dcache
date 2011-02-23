@@ -52,7 +52,7 @@ public class GPlazmaVORolePlugin implements GPlazmaAuthenticationPlugin, GPlazma
 
     public GPlazmaVORolePlugin(String[] args) throws IOException {
 
-        Map<String, String> kvmap = ArgumentMapFactory.create(KEYNAMES, args);
+        Map<String, String> kvmap = ArgumentMapFactory.createFromAllKeyValuePairs(KEYNAMES, args);
         _cachedVOMap = new SourceBackedPredicateMap<NameRolePair, String>(new FileLineSource(kvmap.get(VOROLEMAP_KEYNAME), 10000), new VOMapLineParser());
         _cachedAuthzMap = new SourceBackedPredicateMap<String, AuthzMapLineParser.UserAuthzInformation>(new FileLineSource(kvmap.get(AUTHZDB_KEYNAME), 10000), new AuthzMapLineParser());
     }

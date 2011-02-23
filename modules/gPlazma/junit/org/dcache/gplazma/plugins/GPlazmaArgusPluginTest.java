@@ -84,20 +84,13 @@ public class GPlazmaArgusPluginTest {
     public void testGPlazmaArgusPluginWithValidArgs()
             throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                RESOURCE_ID,
-                VALID_RESOURCE,
-                ACTION_ID,
-                VALID_ACTION,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+VALID_ENDPOINT,
+                RESOURCE_ID+"="+VALID_RESOURCE,
+                ACTION_ID+"="+VALID_ACTION,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
@@ -112,22 +105,14 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Fails because ArgumentMap currently cannot handle multiple entries with the same key.")
     public void testGPlazmaArgusPluginWithValidArgsAndMultipleEndpoints() throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                INVALID_ENDPOINT,
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                RESOURCE_ID,
-                VALID_RESOURCE,
-                ACTION_ID,
-                VALID_ACTION,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+INVALID_ENDPOINT,
+                PEP_ENDPOINT+"="+VALID_ENDPOINT,
+                RESOURCE_ID+"="+VALID_RESOURCE,
+                ACTION_ID+"="+VALID_ACTION,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
@@ -144,20 +129,13 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithUnknownDN() throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                RESOURCE_ID,
-                VALID_RESOURCE,
-                ACTION_ID,
-                VALID_ACTION,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+VALID_ENDPOINT,
+                RESOURCE_ID+"="+VALID_RESOURCE,
+                ACTION_ID+"="+VALID_ACTION,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
@@ -172,16 +150,11 @@ public class GPlazmaArgusPluginTest {
     public void testGPlazmaArgusPluginWithValidArgsButMissingResourceAndAction()
     throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+VALID_ENDPOINT,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
@@ -197,20 +170,13 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithValidArgsBannedUser() throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                RESOURCE_ID,
-                VALID_RESOURCE,
-                ACTION_ID,
-                VALID_ACTION,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+VALID_ENDPOINT,
+                RESOURCE_ID+"="+VALID_RESOURCE,
+                ACTION_ID+"="+VALID_ACTION,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
@@ -226,20 +192,13 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithValidArgsMixedUser() throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                VALID_ENDPOINT,
-                RESOURCE_ID,
-                VALID_RESOURCE,
-                ACTION_ID,
-                VALID_ACTION,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+VALID_ENDPOINT,
+                RESOURCE_ID+"="+VALID_RESOURCE,
+                ACTION_ID+"="+VALID_ACTION,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
@@ -255,20 +214,13 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithNonExistendPEPEndpoint() throws AuthenticationException {
         String[] args = {
-                PEP_ENDPOINT,
-                INVALID_ENDPOINT,
-                RESOURCE_ID,
-                VALID_RESOURCE,
-                ACTION_ID,
-                VALID_ACTION,
-                TRUST_MATERIAL,
-                VALID_CERT_PATH,
-                HOST_CERT,
-                VALID_HOSTCERT,
-                HOST_KEY,
-                VALID_HOSTKEY,
-                KEY_PASS,
-                ""
+                PEP_ENDPOINT+"="+INVALID_ENDPOINT,
+                RESOURCE_ID+"="+VALID_RESOURCE,
+                ACTION_ID+"="+VALID_ACTION,
+                TRUST_MATERIAL+"="+VALID_CERT_PATH,
+                HOST_CERT+"="+VALID_HOSTCERT,
+                HOST_KEY+"="+VALID_HOSTKEY,
+                KEY_PASS+"="+""
         };
 
         GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);

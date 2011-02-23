@@ -60,7 +60,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String RESOURCE_ID = "ResourceID";
     private static final String PEP_ENDPOINT = "PEPEndpoint";
 
-    private static final Set<String> KeyNames = new HashSet<String>(Arrays.asList( new String[] { PEP_ENDPOINT, RESOURCE_ID, ACTION_ID, TRUST_MATERIAL, HOST_CERT, HOST_KEY, KEY_PASS } ));
+    private static final Set<String> KEYNAMES = new HashSet<String>(Arrays.asList( new String[] { PEP_ENDPOINT, RESOURCE_ID, ACTION_ID, TRUST_MATERIAL, HOST_CERT, HOST_KEY, KEY_PASS } ));
 
 
     private final PEPClient _pepClient;
@@ -106,7 +106,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
         _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
-        Map<String, String> kvmap = ArgumentMapFactory.create(KeyNames, args);
+        Map<String, String> kvmap = ArgumentMapFactory.createFromAllKeyValuePairs(KEYNAMES, args);
         if (kvmap.get(PEP_ENDPOINT) != null) pepConfig.addPEPDaemonEndpoint(kvmap.get(PEP_ENDPOINT));
         _resourceId = kvmap.get(RESOURCE_ID) != null? _resourceId = kvmap.get(RESOURCE_ID) : "DUMMY-RESOURCE";
         _actionId = kvmap.get(ACTION_ID) != null? _actionId = kvmap.get(ACTION_ID) : "DUMMY-ACTION";
