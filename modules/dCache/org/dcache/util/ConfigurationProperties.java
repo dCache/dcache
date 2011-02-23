@@ -231,6 +231,7 @@ public class ConfigurationProperties
         LineNumberReader lnr = new LineNumberReader(reader);
         lnr.setLineNumber(line);
         _problemConsumer.setFilename(source);
+        _problemConsumer.setLineNumberReader(lnr);
         try {
             load(new ConfigurationParserAwareReader(lnr));
         } finally {
