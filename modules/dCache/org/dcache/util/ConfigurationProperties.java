@@ -123,11 +123,6 @@ public class ConfigurationProperties
         return _problemConsumer;
     }
 
-    public void setFilename(String filename)
-    {
-        _problemConsumer.setFilename(filename);
-    }
-
     public void setIsService(boolean isService)
     {
         _isService = isService;
