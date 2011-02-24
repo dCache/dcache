@@ -332,14 +332,14 @@ public class ConfigurationProperties
         String synonym = null;
         String simpleReference = "${" + propertyName + "}";
 
-        for(Map.Entry<Object,Object> entry : entrySet()) {
-            String value = entry.getValue().toString();
+        for(String name : stringPropertyNames()) {
+            String value = getProperty(name);
             if( value.equals(simpleReference)) {
                 if( synonym != null) {
                     return null;
                 }
 
-                synonym = entry.getKey().toString();
+                synonym = name;
             }
         }
 
