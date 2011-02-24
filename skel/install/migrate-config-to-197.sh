@@ -871,3 +871,31 @@ if [ -n "$redefinedProperties" ]; then
   echo
   echo "        This affects the following properties: $redefinedProperties"
 fi
+
+echo
+printp "Checking the migrated configuration for any problems."
+echo
+rc=0
+${DCACHE_BIN}/dcache check-config || rc=$?
+case $rc in
+    2)
+        echo
+        printp "dCache can't work with the current configuration.
+                Please fix (at least) all the ERRORs and rerun the
+                check with the command:"
+        echo
+        echo "    ${DCACHE_BIN}/dcache check-config"
+        exit 2
+        ;;
+    1)
+        echo
+        printp "The migrated configuration seem OK.  The WARNINGs
+                are worth investigating, but dCache should work fine.
+                You can re-check the configuration with the command:"
+        echo
+        echo "    ${DCACHE_BIN}/dcache check-config"
+        exit 1
+        ;;
+    0)
+        ;;
+esac
