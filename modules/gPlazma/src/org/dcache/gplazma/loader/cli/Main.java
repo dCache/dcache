@@ -27,6 +27,7 @@ public class Main {
             System.exit(1);
         }
 
+        @SuppressWarnings("unchecked") // we checked
         Class<? extends Command> commandName = (Class<? extends Command>) className;
 
         Constructor<? extends Command> constructor;

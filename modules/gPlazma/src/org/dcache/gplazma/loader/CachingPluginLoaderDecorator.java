@@ -1,7 +1,7 @@
 package org.dcache.gplazma.loader;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
@@ -21,7 +21,7 @@ public class CachingPluginLoaderDecorator implements PluginLoader {
     @Override
     public void init() {
         pluginLoader.init();
-        foundPlugins = new HashMap();
+        foundPlugins = new HashMap<String, GPlazmaPlugin>();
     }
 
     @Override

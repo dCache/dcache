@@ -9,21 +9,20 @@
 
 package gplazma.authz.plugins.vorolemap;
 
-import java.util.*;
-import java.lang.*;
+import gplazma.authz.AuthorizationException;
+import gplazma.authz.plugins.RecordMappingPlugin;
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
+import gplazma.authz.util.X509CertUtil;
+
 import java.net.Socket;
 import java.security.cert.X509Certificate;
+import java.util.Iterator;
 
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSContext;
 import org.gridforum.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import gplazma.authz.records.*;
-import gplazma.authz.AuthorizationException;
-import gplazma.authz.util.X509CertUtil;
-import gplazma.authz.plugins.RecordMappingPlugin;
 
 /**
  *
@@ -32,8 +31,8 @@ import gplazma.authz.plugins.RecordMappingPlugin;
 
 public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
     private static final Logger logger = LoggerFactory.getLogger(VORoleMapAuthzPlugin.class);
-    private String gridVORoleMapPath;
-    private long authRequestID=0;
+    private final String gridVORoleMapPath;
+    private final long authRequestID=0;
     gPlazmaAuthorizationRecord authRecord;
     GSSContext context;
     String desiredUserName;
@@ -82,6 +81,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
         return authorize(gssIdentity, fqanValue, null, desiredUserName, serviceUrl, socket);
     }
 
+    @Override
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
