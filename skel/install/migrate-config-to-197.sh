@@ -606,41 +606,47 @@ fi
 . ${DCACHE_HOME}/share/lib/loadConfig.sh
 . ${DCACHE_LIB}/utils.sh
 
+# Determine file names
+layout_file="${DCACHE_ETC}/layouts/$(getProperty host.name).conf"
+config_file="${DCACHE_ETC}/dcache.conf"
+setup_file="${DCACHE_CONFIG}/dCacheSetup"
+node_config_file="${DCACHE_ETC}/node_config"
+door_config_file="${DCACHE_ETC}/door_config"
+
 # Check preconditions
 require sed cat tr mv cp
 
-if [ ! -f "${DCACHE_ETC}/node_config" -a ! -f "${DCACHE_ETC}/door_config" ]; then
-    fail 1 "Cannot proceed because ${DCACHE_ETC}/node_config does not exist."
+if [ ! -f "${node_config_file}" -a ! -f "${door_config_file}" ]; then
+    fail 1 "Cannot proceed because ${node_config_file} does not exist."
 fi
 
-if [ ! -f "${DCACHE_CONFIG}/dCacheSetup" ]; then
-    fail 1 "Cannot proceed because ${DCACHE_CONFIG}/dCacheSetup does not exist."
+if [ ! -f "${setup_file}" ]; then
+    fail 1 "Cannot proceed because ${setup_file} does not exist."
 fi
 
 
 if [ -z "$force" ]; then
-    if ! fileNotPrecious "${DCACHE_ETC}/dcache.conf"; then
-        fail 1 "Cannot proceed because ${DCACHE_ETC}/dcache.conf already exists."
+    if ! fileNotPrecious "${config_file}"; then
+        fail 1 "Cannot proceed because ${config_file} already exists."
     fi
 
-    if [ -e "${DCACHE_ETC}/layouts/imported.conf" ]; then
-        fail 1 "Cannot proceed because ${DCACHE_ETC}/layouts/imported.conf already exists."
+    if [ -e "${layout_file}" ]; then
+        fail 1 "Cannot proceed because ${layout_file} already exists."
     fi
 fi
 
 # Load old configuration
 ourHomeDir="${DCACHE_HOME}"
-readconf ${DCACHE_ETC}/node_config NODE_CONFIG_ ||
-readconf ${DCACHE_ETC}/door_config NODE_CONFIG_ ||
-fail 1 "Failed to read ${DCACHE_ETC}/node_config"
+readconf "${node_config_file}" NODE_CONFIG_ ||
+readconf "${door_config_file}" NODE_CONFIG_ ||
+fail 1 "Failed to read ${node_config_file}"
 
 loadConfigurationFile dCache dCache ||
 fail 1 "Failed to read dCacheSetup file"
 loadConfigurationFile pool pool || loadConfigurationFile dCache pool
 
 # Create configuration file
-printp "Converting ${DCACHE_CONFIG}/dCacheSetup
-        to ${DCACHE_ETC}/dcache.conf."
+printp "Converting ${setup_file} to ${config_file}."
 
 generateDcacheConf() # in $1 dCacheSetup path
 {
@@ -664,26 +670,25 @@ generateDcacheConf() # in $1 dCacheSetup path
             ;;
     esac
 
-    echo "dcache.layout=imported"
+    echo "dcache.layout=\${host.name}"
     echo
     echo "# The following is taken from the old dCacheSetup file."
     echo "# Some configuration parameters may no longer apply."
     echo
 
     emitDcacheSetup "$1"
-} > "${DCACHE_ETC}/dcache.conf"
+} > "${config_file}"
 
-generateDcacheConf "${DCACHE_CONFIG}/dCacheSetup"
-renameToPreMigration "${DCACHE_CONFIG}/dCacheSetup"
+generateDcacheConf "${setup_file}"
+renameToPreMigration "${setup_file}"
 echo
 
 # Create layout file
-printp "Converting ${DCACHE_ETC}/node_config
-        to ${DCACHE_ETC}/layouts/imported.conf."
+printp "Converting ${node_config_file} to ${layout_file}."
 (
     echo "# Auto generated layout file."
     echo "#"
-    echo "# Source: ${DCACHE_ETC}/node_config"
+    echo "# Source: ${node_config_file}"
     echo "# Date: $(date)"
     echo "#"
     disclaimer "# "
@@ -839,9 +844,9 @@ printp "Converting ${DCACHE_ETC}/node_config
                 echo "WARNING: $domain is unknown" 1>&2
         esac
     done
-) > "${DCACHE_ETC}/layouts/imported.conf"
-renameToPreMigration "${DCACHE_ETC}/node_config"
-renameToPreMigration "${DCACHE_ETC}/door_config"
+) > "${layout_file}"
+renameToPreMigration "${node_config_file}"
+renameToPreMigration "${door_config_file}"
 echo
 
 copyIfNew "${DCACHE_JOBS}/dcache.local.sh" "${DCACHE_BIN}/dcache.local.sh"
