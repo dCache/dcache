@@ -108,8 +108,7 @@
   <!--  DATABASE BEANS
   -->
 
-  <bean id="liquibase"
-        class="liquibase.integration.spring.SpringLiquibase">
+  <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
     <description>Database schema manager</description>
     <property name="dataSource">
       <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
@@ -120,6 +119,7 @@
       </bean>
     </property>
     <property name="changeLog" value="classpath:${db.schema.changelog}"/>
+    <property name="shouldUpdate" value="${db.schema.auto}"/>
   </bean>
 
   <bean id="pmf"
