@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.File;
+import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -62,7 +63,7 @@ public class BootLoader
         System.err.println("  java org.dcache.util.BootLoader [-q] [-f=PATH[:PATH...]] COMMAND [ARGS]");
         System.err.println();
         System.err.println("OPTIONS:");
-        System.err.println("    -q    Suppress warnings.");
+        System.err.println("    -q    Suppress warnings and errors.");
         System.err.println("    -f    Paths to the dCache setup files.");
         System.err.println();
         System.err.println("COMMANDS:");
@@ -152,8 +153,11 @@ public class BootLoader
             ConfigurationProperties config = getDefaults();
             String tmp = args.getOpt(OPT_CONFIG_FILE);
             if (tmp != null) {
+                ProblemConsumer consumer = args.isOneCharOption(OPT_SILENT)
+                        ? new ErrorsAsWarningsProblemConsumer(problemConsumer)
+                        : problemConsumer;
                 config = loadConfiguration(config,
-                        tmp.split(OPT_CONFIG_FILE_DELIMITER),problemConsumer);
+                        tmp.split(OPT_CONFIG_FILE_DELIMITER), consumer);
             }
 
             Layout layout = loadLayout(config);
@@ -233,6 +237,38 @@ public class BootLoader
         Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
         rootLogger.addAppender(ca);
         rootLogger.setLevel(level);
+    }
+
+    /**
+     * An ProblemConsumer adapter that maps errors to warnings.
+     */
+    private static class ErrorsAsWarningsProblemConsumer implements ProblemConsumer
+    {
+        ProblemConsumer _inner;
+
+        ErrorsAsWarningsProblemConsumer( ProblemConsumer inner) {
+            _inner = inner;
+        }
+
+        @Override
+        public void setFilename( String name) {
+            _inner.setFilename(name);
+        }
+
+        @Override
+        public void setLineNumberReader( LineNumberReader reader) {
+            _inner.setLineNumberReader(reader);
+        }
+
+        @Override
+        public void error( String message) {
+            _inner.warning(message);
+        }
+
+        @Override
+        public void warning( String message) {
+            _inner.warning(message);
+        }
     }
 
     /**

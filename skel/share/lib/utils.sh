@@ -79,6 +79,40 @@ printp() # in $1+ = list of paragraphs
     done
 }
 
+
+# Indent aware version of printp.  Lines longer than a maximum
+# of 75 characters and split into several lines.
+printpi() # in $1 = a paragraph, $2 = a pattern to indicate an indentation point
+{
+    local line
+    local line2
+    local indent
+
+    line=
+    indent=
+    for word in $1; do
+        if [ ${#line} -gt 0 ]; then
+	    line2="$line $word"
+        else
+	    line2="$word"
+        fi
+	if [ ${#line2} -gt 75 ]; then
+	    echo "$line"
+	    line="$indent$word"
+	else
+	    line=$line2
+	    if [ "$indent" = "" ]; then
+		rc=0
+		echo "$line" | egrep "$2" > /dev/null || rc=$?
+		if [ $rc -eq 0 ]; then
+                    indent=" $(spaces ${#line})"
+		fi
+	    fi
+	fi
+    done
+    echo "$line"
+}
+
 # Prints an error message to stderr and exist with status $1
 fail() # in $1 = exit status, in $2- = list of paragraphs, see printp
 {
@@ -94,6 +128,21 @@ fail() # in $1 = exit status, in $2- = list of paragraphs, see printp
 isFileEmpty() # in $1 = file
 {
     [ $(wc -l < $1) -eq 0 ]
+}
+
+spaces() # in $1 = number of spaces
+{
+    local i
+    local output
+
+    i=0
+    output=
+    while [ $i -lt $1 ]; do
+	output="$output "
+	i=$(( $i + 1 ))
+    done
+
+    echo "$output"
 }
 
 # Returns whether a process with a given PID is running
