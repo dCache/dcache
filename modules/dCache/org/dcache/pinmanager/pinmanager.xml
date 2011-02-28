@@ -109,7 +109,7 @@
   -->
 
   <bean id="liquibase"
-        class="liquibase.spring.SpringLiquibase">
+        class="liquibase.integration.spring.SpringLiquibase">
     <description>Database schema manager</description>
     <property name="dataSource">
       <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
