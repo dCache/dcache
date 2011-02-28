@@ -59,6 +59,11 @@ define env verify-https.exe enddefine
   exec env failMissingTrustStore.exe -ifnotok=have_truststore
 enddefine
 
+define env verify-https-jglobus.exe enddefine
+  check -strong trustAnchorRefreshPeriod
+  check -strong hostCertificateRefreshPeriod
+enddefine
+
 define env failMissingKeyStore.exe enddefine
    say -level=esay "The key-store file ${webdavKeyStore} is missing.  Please generate it with:"
    say -level=esay "     /opt/d-cache/bin/dcache import hostcert --out=${webdavKeyStore}"
@@ -116,6 +121,8 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdavTransferConfirmationTimeout=${webdavTransferConfirmationTimeout} \
     -webdavWantClientAuth=${webdavWantClientAuth} \
     -webdavNeedClientAuth=${webdavNeedClientAuth} \
+    -hostCertificateRefreshPeriod=${hostCertificateRefreshPeriod} \
+    -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod} \
     -pnfsmanager=${pnfsmanager} \
     -poolmanager=${doorPoolManager} \
     -gplazma=${gplazma} \
