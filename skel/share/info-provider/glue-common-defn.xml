@@ -1,0 +1,58 @@
+<!--+
+    |  This file contains info-provider elements that are
+    |  common to both Glue 1.3 and Glue 2.0
+    +-->
+<xylophone>
+
+
+  <!--+
+      |  Various scale factors
+      +-->
+  <scale>
+    <factor mode="divide" name="bytes-to-gigabytes">1000000000</factor>
+    <factor mode="multiply" name="negative">-1</factor>
+  </scale>
+
+
+  <mapping>
+
+    <!--+
+        |  Strip off the prefix "production-" to make the published
+        |  the dCache version more readable.
+        +-->
+    <map name="cell-version-to-dcache-version">
+      <sub match="production-" replace-with=""/>
+    </map>
+
+
+    <!-- RFC 2253 describes how LDAP DNs should escape certain
+         characters.  Unfortunately, BDII is not RFC 2253 compliant;
+         including a escape-required character in the attribute value
+         that is to become part of an object's DN results in BDII
+         alternatively publishing and suppressing publication of that
+         object.  This is described in bug:
+
+         https://savannah.cern.ch/bugs/?57840
+
+         Currently, this problem is only manifest for the GlueSA
+         objects used to provide information on installed capacity:
+         the NAS auto-generated names can include a comma if the set
+         of pools is shared between two or more store units.
+
+         Here we introduce a work-around: we map all must-escape
+	 characters ( ',', '+', '"', '\', '<', '>', '=', ';') to the
+	 colon character. -->
+    <map name="GlueSALocalID-BDII-workaround">
+      <translate from=",+&quot;\&lt;>=;" to="::::::::"/>
+    </map>
+
+    <map name="cleaner-class-to-namespace-impl">
+      <sub match="org.dcache.chimera.namespace.ChimeraCleaner"
+           replace-with="Chimera" />
+      <sub match="diskCacheV111.cells.CleanerV2"
+           replace-with="PNFS" />
+      <default value="UNDEFINEDVALUE"/>
+    </map>
+  </mapping>
+
+</xylophone>

@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--+
+    |   This file affects how dCache's info-provider, the component that is
+    |   responsible for publishing GLUE information into BDII.  Some of the
+    |   information Glue requires is independent of dCache; for example, the
+    |   site's "Unique ID" is something that a dCache instance doesn't know.
+    |   For this reason, you must configure this file to include that information.
+    |
+    |   Each configuration option contains a brief description of option,
+    |   including whether the option is for GLUE 1.3, GLUE 2.0 or both.
+    |
+    |   A word of causion: be careful when using characters that have special
+    |   meaning in XML.  If you wish to use the less-than (<) or the
+    |   ampersand (&) symbols, be sure to write them as '&lt;' and '&amp;'
+    |   respectively.
+    +-->
+
+
+<xylophone>
+
+
+  <!--+
+      |    SINGLE WORDS OR PHRASES THAT DESCRIBE YOUR SITE.
+      +-->
+  <constants>
+
+
+    <!--+
+        |   GlueSiteUniqueID [1.3, 2.0] a unique reference for your site.
+        |   This must match the GlueSiteUniqueID defined in other services.
+        |
+        +-->
+    <constant id="SITE-UNIQUE-ID">EXAMPLESITE-ID</constant>
+
+
+    <!--+
+        |   GlueSEUniqueID [1.3, 2.0] your dCache's Unique ID.  Currently,
+        |   this MUST be the FQDN of your SRM end-point.
+        +-->
+    <constant id="SE-UNIQUE-ID">dcache-srm.example.org</constant>
+
+
+    <!--+
+        |   GlueSEName [1.3, 2.0]: a human understandable name for your SE.
+        |   It may contain spaces.  You may leave this empty and a GlueSEName
+        |   will not be published.
+        +-->
+    <constant id="SE-NAME"></constant>
+
+
+    <!--+
+        |   GlueSEStatus [1.3]: current status of dCache.  This should be one
+        |   of the following values:
+        |
+        |      Production    the SE processes old and new requests
+        |                    according to its policies,
+        |
+        |      Queuing       the SE can accept new requests, but they
+        |                    will be kept on hold,
+        |
+        |      Closed        the SE does not accept new requests and
+        |                    does not process old requests,
+        |
+        |      Draining      the SE does not accept new request but
+        |                    still processes old requests.
+        |
+        |   The default value 'UNDEFINEDVALUE' is not valid, so must be changed.
+        |   In practice, most sites will use 'Production' all the time.
+        +-->
+    <constant id="DCACHE-STATUS">UNDEFINEDVALUE</constant>
+
+
+    <!--+
+        |   Quality level [2.0]: "Maturity of the service in terms of quality
+        |   of the software components"
+        |
+        |   This should be one of the following values (case is significant)
+        |
+        |      development    The component is under active development
+        |                     both in functionalities and interfaces.
+        |
+        |      testing        The component has completed the development
+        |                     phase and is under testing.
+        |
+        |      pre-production The component has completed the development
+        |                     and passed the testing phase; it is being
+        |                     used in real world scenarios.
+        |
+        |      production     The component has completed the development
+        |                     and is considered stable for real world
+        |                     scenarios.
+        |
+        |   The default value 'UNDEFINEVALUE' is not valid, so must be changed.
+        |   In practice, most sites will use 'production' all the time.
+        +-->
+    <constant id="DCACHE-QUALITY-LEVEL">UNDEFINEDVALUE</constant>
+
+
+    <!--+
+        |   GlueSEArchitecture [1.3]: the architecture of the underlying
+        |   storage dCache is using.  This should be one of the following
+        |   values:
+        |
+        |      disk          non-robust, single-disk storage,
+        |
+        |      multidisk     disk-based storage that is robust against
+        |                    single disk failures,
+        |
+        |      tape          dCache has access to an HSM system.
+        |
+        |      other         reserved for other technologies, although setting
+        |                    this value is unlikely to be correct.
+        |
+        |   The default value 'UNDEFINEDVALUE' is not valid, so must be changed.
+        |   In practice, most sites without HSM connectivity will use RAID disk
+        |   pools, so 'multidisk' is appropriate.  Those with an attached HSM
+        |   should use 'tape'.
+        +-->
+    <constant id="DCACHE-ARCHITECTURE">UNDEFINEDVALUE</constant>
+
+
+    <!--+
+        |  DIT-PARENT [1.3]: A site will typically have multiple resource-level
+        |  BDIIs, a single site-level BDII and zero or more top-level BDIIs.
+        |  The site-level BDII is periodically updated with information from
+        |  the various resource-level BDII.
+        |
+        |  Most sites will deploy a resource-level BDII for each dCache
+        |  instance.  The output from running the info provider script is
+        |  injected into this BDII.  If the BDII is on a dCache head node then
+        |  the BDII is very likely a resource-level BDII.  This is the default
+        |  for YAIM based installations.
+        |
+        |  It is also possible to inject information directly into the
+        |  site-level BDII.  This removes the need to have a resource-level
+        |  BDII; however, the site-level BDII requires LDIF that has a slightly
+        |  different structure.
+        |
+        |  If the LDIF output is for a resource-level BDII then the DIT-PARENT
+        |  constant below should have the value: resource.  If the LDIF output
+        |  is for a site-level BDII then it should have the same value as the
+        |  SITE-UNIQUE-ID constant above.
+        |
+        |  If you are unsure, leave this as 'resource'
+        +-->
+    <constant id="DIT-PARENT">resource</constant>
+  </constants>
+
+
+  <!--+
+      |    LISTS OF ITEMS THAT DESCRIBE YOUR SITE.
+      +-->
+  <lists>
+
+    <!--+
+        |    SRM-supported-VOs [1.3, 2.0]  When publishing the SRM interface,
+        |    we list the supported VOs.  You should record this list here.  For
+        |    example:
+        |
+        |        <list name="SRM-supported-VOs">
+        |          <item>atlas</item>
+        |          <item>lhcb</item>
+        |          <item>dteam</item>
+        |          <item>ops</item>
+        |        </list>
+        +-->
+    <list name="SRM-supported-VOs">
+    </list>
+
+
+    <!--+
+        |   GlueServiceOwner [1.3]: when publishing an SRM interface as a
+        |   GlueService, we may specify any number of "owners" for this
+        |   service.  Just add an item element inside the list element for each
+        |   owner.  For example:
+        |
+        |       <list name="SRM-GlueServiceOwners">
+        |         <item>University of X</item>
+        |         <item>Institute Y</item>
+        |         <item>Funding body A</item>
+        |         <item>Funding body B</item>
+        |       </list>
+        |
+        |   It's OK to leave this empty and no owners will be published.
+        +-->
+    <list name="SRM-GlueServiceOwners">
+    </list>
+
+
+    <!--+
+        |  The store unit *@* is special.  It's not a wildcard "match-all"
+        |  unit but rather a default store unit.  It matches all requests
+        |  that have no other store unit matches.  Requests that utilise
+        |  some part of the namespace where no store unit is defined will
+        |  take the *@* (or "default") store unit.
+        |
+        |  A site may choose to configure store units for all parts of the
+        |  namespace that a VO can access; if so, then that requests from
+        |  that VO's members will always have some specific store unit and
+        |  will never utilise the *@* default store unit.
+        |
+        |  If requests from a VO's members may use some part of the namespace
+        |  where no store unit is defined then those requests will utilise
+        |  the *@* default store unit.
+        |
+        |  Those VOs whos members can issue requests that attract the
+        |  *@* default store unit should be present in the following
+        |  list.  Any VO listed in this list must also have a corresponding
+        |  entry in the "VO-to-path" mapping below.
+        |
+        |  Here is an example of the list:
+        |
+        |       <list name="default-store-unit-VOs">
+        |         <item>dteam</item>
+        |         <item>ops</item>
+        |       </list>
+        +-->
+    <list name="default-store-unit-VOs">
+    </list>
+  </lists>
+
+
+
+  <!--+
+      |    MAPPINGS FROM ONE STRING TO ANOTHER.
+      +-->
+  <mapping>
+
+    <!--+
+        |   This describes how to map dCache's store units to their
+        |   corresponding VO.  It is used to publish VO names when some
+        |   dCache storage is accessible (for reading, writing, staging,
+        |   or any combination thereof).
+        |
+        |   If you wish to avoid publishing a VO for a particular store
+        |   unit then use an empty string ('') for the replace-with value.
+        |
+        |   Here is an example.  Note that no VO information will be
+        |   published for store unit local-users:default@osm
+        |
+        |   <map name="unit-to-VO">
+        |     <sub match="atlas:default@osm"        replace-with="atlas"/>
+        |     <sub match="ops:default@osm"          replace-with="ops"/>
+        |     <sub match="alice:disk@osm"           replace-with="alice"/>
+        |     <sub match="alice:tape@osm"           replace-with="alice"/>
+        |     <sub match="local-users:default@osm"  replace-with=""/>
+        |     <default value="UNDEFINEDVO"/>
+        |   </map>
+        |
+        |   It is recommended to keep the default value as 'UNDEFINEDVO' so any
+        |   misconfigurations are easy to identify.
+        +-->
+    <map name="unit-to-VO">
+      <default value="UNDEFINEDVO"/>
+    </map>
+
+
+    <!--+
+        |   The unit-to-path map describes how to map store units to the base
+        |   path that clients should used when writing into dCache.  It is used
+        |   when publishing the Installed Capacity information.
+        |
+        |   In general, the value should be the top-most directory that has the
+        |   store unit tags defined; however, there may be circumstances where
+        |   it makes more sense to publish a different directory.
+        |
+        |   Here is an example:
+        |
+        |   <map name="unit-to-path">
+        |     <sub match="atlas:default@osm"
+        |          replace-with="/pnfs/example.org/data/atlas"/>
+        |     <sub match="ops:default@osm"
+        |          replace-with="/pnfs/example.org/data/ops"/>
+        |     <sub match="alice:disk@osm"
+        |          replace-with="/pnfs/example.org/data/alice/disk"/>
+        |     <sub match="alice:tape@osm"
+        |          replace-with="/pnfs/example.org/data/alice/tape"/>
+        |     <default value="/UNDEFINEDPATH"/>
+        |   </map>
+        |
+        |   It is recommended to keep the default value as '/UNDEFINEDPATH' so
+        |   misconfigurations are easy to identify.
+        +-->
+    <map name="unit-to-path">
+      <default value="/UNDEFINEDPATH"/>
+    </map>
+
+
+    <!--+
+        |  Map the named VO to the corresponding path.
+        |
+        |  This mapping is used when publishing a group of SRM reservations
+        |  with the same SRM space description.  This grouping is done
+        |  per VO, so each such reservation-group has a corresponding
+        |  single VO.
+        |
+        |  When publishing an SRM reservation-group, we are required to
+        |  publish a corresponding path.  This may be used by the SRM client
+        |  to build a path into which they may write.
+        |
+        |  Here is an example:
+        |
+        |  <map name="VO-to-path">
+        |    <sub match="ops"
+        |         replace-with="/pnfs/example.org/data/ops"/>
+        |    <sub match="atlas"
+        |         replace-with="/pnfs/example.org/data/atlas"/>
+        |    <default value="/UNDEFINEDPATH"/>
+        |  </map>
+        |
+        |   It is recommended to keep the default value as '/UNDEFINEDPATH' so
+        |   misconfigurations are easy to identify.
+        +-->
+    <map name="VO-to-path">
+      <default value="/UNDEFINEDPATH"/>
+    </map>
+
+
+    <!--+
+        |  Offline disk storage accounting.
+        |
+        |  The Installed Capacity of WLCG allows for a site to publish
+        |  information about storage that is somehow allocated but not
+        |  actually available for immediate use.  Examples where this might
+        |  be used include:
+        |
+        |    o  if hardware has been purchased but not yet commissioned,
+        |
+        |    o  if pools are offline for any extended period (e.g., hardware
+        |       is being repared) and dCache is then unaware of the pools.
+        |
+        |  Such capacity is unknown to dCache, so must be accounted for
+        |  manually.  This is done with the following map.
+        |
+        |  Such space is accounted for against some specific VO.  To avoid
+        |  configuring yet another list, the list of candidate VOs is taken
+        |  from SRM-supported-VOs (see above).  Therefore, to publish
+        |  offline storage allocated for some VO, that must be listed in
+        |  SRM-supported-VOs.
+        |
+        |  To publish offline storage for a VO, the VO-to-offline-disk map
+        |  should convert the VO name to the corresponding number of bytes
+        |  of offline storage.  The following example shows how to define that
+        |  100 TiB of offline storage is for the Atlas VO.
+        |
+        |  <map name="VO-to-offline-disk">
+        |    <sub match="atlas" replace-with="109951162777600"/>
+        |    <default value="0"/>
+        |  </map>
+        |
+        |  NOTE 1. the values configured here will inflate the reported
+        |          size of the dCache instances "installed capacity".
+        |
+        |  NOTE 2. be very careful that you do not to leave stale
+        |          information here.
+        +-->
+    <map name="VO-to-offline-disk">
+      <default value="0"/>
+    </map>
+
+  </mapping>
+
+
+  <!--+
+      |  Location of tape accounting information
+      |
+      |  The information about a site's tape usage that WLCG would like
+      |  published cannot come from dCache, so must be supplied by the site.
+      |
+      |  This info-provider expects that this information is in a separate
+      |  file.  Sites should write a small script that creates the file with
+      |  up-to-date information.  There is a description of this file's format
+      |  inside the tape-info-empty.xml file.
+      |
+      |  If you are a site with tape storage that is to be published,
+      |  change the tape-info location value below to an appropriate
+      |  location, such as:
+      |
+      |    /var/opt/dcache/tape-info.xml
+      |
+      |  Ensure that that file exists with up-to-date information.
+      |
+      |  If you are a site without tape storage then do not alter the path.
+      +-->
+  <locations>
+    <location name="tape-info">/opt/d-cache/share/xml/tape-info-empty.xml</location>
+  </locations>
+
+</xylophone>

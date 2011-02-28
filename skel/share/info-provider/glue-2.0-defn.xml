@@ -1,0 +1,1326 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--+
+    |   This file defines how an XML file is converted into LDAP,
+    |   specifically, how the XML file that describes dCache's current state
+    |   is converted into LDAP suitable for Glue v1.3.
+    |
+    |   Some of the information that Glue requires is independent of dCache;
+    |   for example, the site's "Unique ID" is something that a dCache
+    |   instance doesn't know.  For this reason, you must configure this
+    |   file to include that information.
+    |
+    |   The general format of this file is described in:
+    |
+    |       ${ourHomeDir}/share/doc/xylophone/Guide.txt
+    |
+    |   That document describes the semantics of the XML elements in this
+    |   file.  However, the layout of this file is designed so you shouldn't
+    |   have to refer to that guide.  Simply edit the configuration as
+    |   described in the comment immediately above.
+    |
+    |   A word of causion: be careful when using characters that are special
+    |   in XML.  If you wish to use the less-than (<) or the ampersand (&)
+    |   symbols, be sure to write them as &lt; and &amp; respectively.
+    +-->
+
+<xylophone xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <!--+
+        |  Publishing information for GLUE 2.0.
+        |
+        |  The following contains information about dCache published so it
+        |  conforms with the GLUE v2.0 information model's LDAP rendition.
+        |  Details about the GLUE 2.0 information model are available here:
+        |
+        |      http://www.ogf.org/documents/GFD.147.pdf
+        |
+        |  and those for the LDAP binding are here:
+        |
+        |      http://forge.gridforum.org/sf/go/doc15518
+        |
+        |  The GLUE 2 LDAP binding is largely DIT (Directory Information Tree)
+        |  independent.  The DIT is the tree of objects stored in an LDAP
+        |  server, based on their Distinguished Names (DNs).  However, objects
+        |  "which represent components of the corresponding Service MUST be placed
+        |  in the subtree below the GLUE2Service object."
+        |
+        |  Overall, the DIT layout is:
+        |
+        |  GLUE2StorageService
+        |   |
+        |   +- GLUE2StorageManager
+        |   |   |
+        |   |   +- GLUE2DataStore
+        |   |
+        |   +- GLUE2StorageServiceCapacity (multiple, when site has tape)
+        |   |
+        |   +- GLUE2StorageAccessProtocol (multiple)
+        |   |
+        |   +- GLUE2StorageEndpoint   -.
+        |   |   |                      | (multiple)
+        |   |   +- GLUE2AccessPolicy  -'
+        |   |
+        |   +- GLUE2StorageShare            -.
+        |       |                            |
+        |       +- GLUE2StorageShareCapacity | (multiple)
+        |       |                            |
+        |       +- GLUE2MappingPolicy       -'
+        |
+        |  A summary of each class is given before that's class' first use,
+        |  along with a diagram showing the immediate child classes.
+        +-->
+  <publish>
+    <object rdn="o" hidden="1">
+      <attr name="o">glue</attr>
+
+      <object rdn="GLUE2GroupID" hidden="1">
+        <attr name="GLUE2GroupID">resource</attr>
+
+        <!--+
+            |  GLUE2StorageService
+            |
+            |  This represents the aggregation of storage capacity, data
+            |  access and software components.
+            |
+            |  GLUE2StorageService
+            |   |
+            |   +- GLUE2StorageManager
+            |   |
+            |   +- GLUE2StorageServiceCapacity
+            |   |
+            |   +- GLUE2StorageAccessProtocol (multiple)
+            |   |
+            |   +- GLUE2StorageEndpoint (multiple)
+            |   |
+            |   +- GLUE2StorageShare (multiple)
+            +-->
+        <object rdn="GLUE2ServiceID"
+                classes="GLUE2StorageService GLUE2Service">
+
+          <attr name="GLUE2ServiceID">glue:<constant id="SE-UNIQUE-ID"/>/data</attr>
+
+          <attr name="GLUE2EntityName"
+                not-empty="1"><constant id="SE-NAME"/></attr>
+
+          <attr name="GLUE2ServiceType">org.dcache.storage</attr>
+          <attr name="GLUE2ServiceQualityLevel"><constant id="DCACHE-QUALITY-LEVEL"/></attr>
+          <attr name="GLUE2ServiceCapability">data.access.flatfiles</attr>
+          <attr name="GLUE2ServiceCapability">data.management.storage</attr>
+          <attr name="GLUE2ServiceCapability">data.management.transfer</attr>
+          <attr name="GLUE2ServiceCapability">data.transfer</attr>
+          <attr name="GLUE2ServiceCapability">security.delegation</attr>
+          <attr name="GLUE2ServiceAdminDomainForeignKey"><constant id="SITE-UNIQUE-ID"/></attr>
+
+
+          <!--+
+              |  GLUE2StorageManager
+              |
+              |  Represents software that manages some storage
+              |  resources.  For us, this is dCache.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +- GLUE2StorageManager
+              |   :   |
+              |       +- GLUE2DataStore
+              +-->
+          <object rdn="GLUE2ManagerID"
+                  classes="GLUE2StorageManager GLUE2Manager">
+
+            <attr name="GLUE2ManagerID">glue:<constant id="SE-UNIQUE-ID"/>/data/m/dCache</attr>
+
+            <attr name="GLUE2StorageManagerStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr not-empty="1"
+                  name="GLUE2EntityName"><constant id="SE-NAME"/></attr>
+
+            <attr name="GLUE2ManagerProductName">dCache</attr>
+            <attr name="GLUE2ManagerProductVersion">
+              <map name="cell-version-to-dcache-version">
+                <lookup default="UNDEFINEDVALUE"
+                        path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+              </map>
+            </attr>
+
+            <attr name="GLUE2EntityOtherInfo">namespace=<map name="cleaner-class-to-namespace-impl">
+                <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.ChimeraCleaner']">
+                  <lookup default="UNDEFINEDVALUE"
+                          path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='diskCacheV111.cells.CleanerV2']"/>
+                </lookup>
+	          </map>
+            </attr>
+
+
+            <!--+
+                |  GLUE2DataStore
+                |
+                |  Represents the aggregation of storage media
+                |  managed by the software.  Multiple
+                |  GLUE2DataStore may be published, but here
+                |  we publish a single object that represents
+                |  all disks managed by dCache.
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +- GLUE2StorageManager
+                |   :   |
+                |       +- GLUE2DataStore
+                +-->
+            <object rdn="GLUE2ResourceID"
+                    classes="GLUE2DataStore Resource">
+
+              <attr name="GLUE2ResourceID">glue:<constant
+                        id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
+
+              <attr name="GLUE2ResourceManagerForeignKey">
+                <parent-rdn rdn="GLUE2ManagerID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2DataStoreLatency">online</attr>
+
+              <attr name="GLUE2DataStoreTotalSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup default="0"
+                          path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2DataStoreFreeSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>    <!-- Free + removable -->
+                    <term>
+                      <lookup default="0"
+                              path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+                    </term>
+                    <term>
+                      <lookup default="0"
+                              path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2DataStoreUsedSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>
+                    <term>
+                      <lookup default="0"
+                              path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+                      </scale>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+                      </scale>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+            </object>
+          </object>
+
+
+          <!--+
+              |  GLUE2StorageServiceCapacity (online)
+              |
+              |  Represents an aggregated view of all storage of the same
+              |  type that is available through this GLUE2StorageService.
+              |  For dCache, this mirrors the GLUE2DataStore object.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +- GLUE2StorageServiceCapacity
+              |   :
+              +-->
+          <object rdn="GLUE2StorageServiceCapacityID"
+                  classes="GLUE2StorageServiceCapacity">
+
+            <attr name="GLUE2StorageServiceCapacityID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ssc/disk</attr>
+
+            <attr name="GLUE2StorageServiceCapacityStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageServiceCapacityType">online</attr>
+
+            <attr name="GLUE2StorageServiceCapacityTotalSize">
+              <scale to-integer="round" factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+              </scale>
+            </attr>
+
+            <attr name="GLUE2StorageServiceCapacityFreeSize">     <!-- free + removable -->
+              <scale to-integer="round" factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+                  </term>
+                  <term>
+                    <lookup default="0"
+                            path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <attr name="GLUE2StorageServiceCapacityUsedSize">
+              <scale to-integer="round" factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+                    </scale>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+                    </scale>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+          </object>
+
+
+          <!--+
+              |  GLUE2StorageServiceCapacity (nearline)
+              |
+              |  If a site is publishing nearline accounting then we publish
+              |  a GLUE2StorageServiceCapacity object representing an
+              |  aggregate view of this nearline capacity.
+              |
+              |  TODO: publish GLUE2StorageManager and GLUE2DataStore
+              |        objects for tape back-end system.  This involves
+              |        the following:
+              |          o  adding extra information to tape-info format,
+              |          o  publishing GLUE2StorageManager based on this
+              |             information,
+              |          o  publish a GLUE2DataStore object for nearline
+              |             storage,
+              |          o  add links from the nearline GLUE2StorageShare
+              |             objects to the nearline GLUE2DataStore object.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +- GLUE2StorageServiceCapacity
+              |   :
+              +-->
+          <optionally>
+            <when check="greater-than" test="0">
+              <lookup xml-src="tape-info" path="count(/tape-info/collection)"/>
+            </when>
+
+            <object rdn="GLUE2StorageServiceCapacityID"
+                    classes="GLUE2StorageServiceCapacity">
+
+              <attr name="GLUE2StorageServiceCapacityID">glue:<constant
+                      id="SE-UNIQUE-ID"/>/data/ssc/tape</attr>
+
+              <attr name="GLUE2StorageServiceCapacityStorageServiceForeignKey">
+                <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2StorageServiceCapacityType">nearline</attr>
+
+              <attr name="GLUE2StorageServiceCapacityTotalSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum xml-src="tape-info"
+                       path="/tape-info/collection/space/total"/>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageServiceCapacityUsedSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum xml-src="tape-info"
+                       path="/tape-info/collection/space/used"/>
+                </scale>
+              </attr>
+            </object>
+          </optionally>
+
+
+
+          <!--+
+              |  GLUE2AccessProtocol
+              |
+              |  These objects represent the StorageService's ability to
+              |  handle requests of a particular type.  We publish multiple
+              |  of these: one for each protocol we support.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +- GLUE2AccessProtocol
+              |   :
+              +-->
+          <object rdn="GLUE2StorageAccessProtocolID"
+                  select="/d:dCache/d:doors/d:door"
+                  classes="GLUE2StorageAccessProtocol">
+
+            <suppress test="SRM">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </suppress>
+
+            <unique> <!-- One object per protocol-version -->
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+              <lookup path="d:protocol/d:metric[@name='version']"/>
+            </unique>
+
+            <attr name="GLUE2StorageAccessProtocolID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ap/<lookup
+                      path="d:protocol/d:metric[@name='family']"/>/<lookup
+                      path="d:protocol/d:metric[@name='version']"/></attr>
+
+            <attr name="GLUE2StorageAccessProtocolStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageAccessProtocolType">
+              <map name="door-protocol-family-to-GLUE2-StorageAccessProtocol_t">
+                <lookup path="d:protocol/d:metric[@name='family']"/>
+              </map>
+            </attr>
+
+            <attr name="GLUE2StorageAccessProtocolVersion">
+              <lookup path="d:protocol/d:metric[@name='version']"/>
+            </attr>
+          </object>
+
+
+          <!--+
+              |  GLUE2EndpointID
+              |
+              |  These objects represent mechanisms that allow interaction
+              |  with the StorageService.  For dCache, these are the doors.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +- GLUE2EndpointID
+              |   :   |
+              |       +- GLUE2AccessPolicy
+              +-->
+          <object rdn="GLUE2EndpointID"
+                  select="/d:dCache/d:doors/d:door"
+                  classes="GLUE2StorageEndpoint GLUE2Endpoint">
+
+            <attr name="GLUE2EndpointID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ep/<lookup
+                    path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>/<lookup
+                    path="d:protocol/d:metric[@name='family']"/>/<lookup
+                    path="d:protocol/d:metric[@name='version']"/>
+            </attr>
+
+            <!-- FIXME a bug in current BDII GLUE2 schema results in requiring
+                       this class to publish GLUE2EndpointServiceForeignKey
+                       and GLUE2StorageEndpointStorageServiceForeignKey -->
+            <attr name="GLUE2StorageEndpointStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2EndpointServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2EndpointInterfaceName">
+              <map name="door-protocol-family-to-GLUE2-InterfaceName_t">
+                <lookup path="d:protocol/d:metric[@name='family']"/>
+              </map>
+            </attr>
+
+            <choose>
+              <optionally>
+                <when test="SRM">
+                  <lookup path="d:protocol/d:metric[@name='family']"/>
+                </when>
+                <attr name="GLUE2EndpointInterfaceVersion">2.2</attr>
+                <attr name="GLUE2EndpointCapability">data.management.storage</attr>
+                <attr name="GLUE2EndpointCapability">data.management.transfer</attr>
+                <attr name="GLUE2EndpointURL">httpg://<constant id="SE-UNIQUE-ID"/>:<lookup
+                        path="d:metric[@name='port']"/>/srm/managerv2</attr>
+              </optionally>
+
+              <otherwise>
+                <attr name="GLUE2EndpointURL">
+                  <map name="door-protocol-family-to-URL-Schema">
+                    <lookup path="d:protocol/d:metric[@name='family']"/>
+                  </map>://<lookup
+                          path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
+                          path="d:metric[@name='port']"/>
+                </attr>
+
+                <attr name="GLUE2EndpointInterfaceVersion">
+                  <lookup path="d:protocol/d:metric[@name='version']"/>
+                </attr>
+
+                <attr name="GLUE2EndpointCapability">data.transfer</attr>
+              </otherwise>
+            </choose>
+
+            <attr name="GLUE2EndpointQualityLevel">
+              <constant id="DCACHE-QUALITY-LEVEL"/>
+            </attr>
+
+            <attr name="GLUE2EndpointHealthState">ok</attr>
+            <attr name="GLUE2EndpointServingState">production</attr>
+
+
+            <!--+
+                |  GLUE2AccessPolicy
+                |
+                |  The GLUE2AccessPolicy objects represent
+                |  the ability for one or more groups to
+                |  use the corresponding GLUE2StorageEndpoint.
+                |  For dCache, we publish a set of VOs for each
+                |  GLUE2StorageEndpoint.
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +- GLUE2EndpointID
+                |   :   |
+                |       +- GLUE2AccessPolicy
+                +-->
+            <object rdn="GLUE2PolicyID"
+                    classes="GLUE2AccessPolicy GLUE2Policy">
+
+              <attr name="GLUE2PolicyID">glue:<constant
+                      id="SE-UNIQUE-ID"/>/data/ep/ap/basic</attr>
+
+              <attr name="GLUE2AccessPolicyEndpointForeignKey">
+                <parent-rdn rdn="GLUE2EndpointID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2PolicyScheme">basic</attr>
+
+              <attr name="GLUE2PolicyRule"
+                    list="SRM-supported-VOs">vo:<item/></attr>
+            </object>
+          </object>
+
+
+
+          <!--+
+              |  GLUE2StorageShare
+              |
+              |  A GLUE2StorageShare represents some part of the available
+              |  storage capacity.  StorageShare objects can represent
+              |  overlapping space and there's an attribute to identify
+              |  a set of overlapping GLUE2StorageShare objects.
+              |
+              |  There are four groups of GLUE2StorageShare objects,
+              |  representing:
+              |    o  physical disk (NAS),
+              |    o  nearline (collection of tapes),
+              |    o  offline (only for accounting),
+              |    o  space reservations.
+              +-->
+
+          <!--+
+              |  GLUE2StorageShare (NAS write view)
+              |
+              |  GLUE2StorageShare representing physical storage.  We
+              |  publish these mainly to allow storage accounting.  Since
+              |  GLUE2StorageShare includes the path, we publish a
+              |  GLUE2StorageShare for each store-unit that can write into
+              |  this NAS, as they may have different GLUE2StorageSharePath.
+              |
+              |  TODO: we may publish more objects than is necessary:
+              |        different store units may have the same path so it may
+              |        be possible to collapse objects.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +-GLUE2StorageShare
+              |   :  |
+              |      +- GLUE2StorageShareCapacity
+              |      |
+              |      +- GLUE2MappingPolicy
+              +-->
+          <object rdn="GLUE2ShareID"
+                  select="/d:dCache/d:nas/d:nas/d:units/d:store/d:write/d:unitref"
+                  classes="GLUE2StorageShare GLUE2Share">
+
+            <attr name="GLUE2ShareID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ss/nas/<map
+                    name="GlueSALocalID-BDII-workaround">
+                <lookup path="../../../../@id"/>-write-<lookup path="@name"/>
+	          </map>
+            </attr>
+
+	        <attr name="GLUE2StorageShareDataStoreForeignKey">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
+
+            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <choose>
+              <optionally>
+                <when test="*@*">
+                  <lookup path="@name"/>
+                </when>
+
+                <!-- FIXME what do we publish for *@* ? -->
+              </optionally>
+
+
+              <otherwise>
+                <attr name="GLUE2StorageSharePath">
+                  <map name="unit-to-path">
+                    <lookup path="@name"/>
+                  </map>
+                </attr>
+              </otherwise>
+            </choose>
+
+
+            <attr name="GLUE2StorageShareSharingID">nas:<lookup
+                    path="../../../../@id"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareServingState">production</attr>
+
+            <attr name="GLUE2StorageShareAccessLatency">online</attr>
+
+
+            <!--+
+                |  GLUE2StorageShareCapacity
+                |
+                |  Describes this share's usage of a specific type of
+                |  storage media.  One can publish multiple objects,
+                |  each representing a different media type, however,
+                |  here we publish just one, for disk.
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2StorageShareCapacity
+                +-->
+            <object rdn="GLUE2StorageShareCapacityID"
+                    select="../../../.."
+                    classes="GLUE2StorageShareCapacity">
+
+              <attr name="GLUE2StorageShareCapacityID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
+
+              <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityType">online</attr>
+
+              <attr name="GLUE2StorageShareCapacityTotalSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup default="0"
+                          child="path">d:space/d:metric[@name='total']</lookup>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityFreeSize"> <!-- Free + Removable -->
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='free']</lookup>
+                    </term>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='removable']</lookup>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityUsedSize">
+                <!-- Total - (Free + Removable) -->
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='total']</lookup>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                child="path">d:space/d:metric[@name='free']</lookup>
+                      </scale>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                child="path">d:space/d:metric[@name='removable']</lookup>
+                      </scale>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+            </object>
+
+
+            <!--+
+                |  GLUE2MappingPolicy
+                |
+                |  Describe who is allowed to use this GLUE2StorageShare
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2MappingPolicy
+                +-->
+	        <object rdn="GLUE2PolicyID"
+                    classes="GLUE2MappingPolicy GLUE2Policy">
+
+              <attr name="GLUE2PolicyID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
+
+              <attr name="GLUE2MappingPolicyShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2PolicyScheme">basic</attr>
+
+              <choose>
+                <optionally>
+                  <when test="*@*">
+                    <lookup path="@name"/>
+                  </when>
+
+                  <attr name="GLUE2PolicyRule"
+                          list="default-store-unit-VOs">vo:<item/></attr>
+                </optionally>
+
+                <otherwise>
+                  <attr name="GLUE2PolicyRule">vo:<map name="unit-to-VO">
+                      <lookup path="@name"/>
+                    </map>
+                  </attr>
+                </otherwise>
+              </choose>
+            </object>
+          </object>
+
+
+          <!--+
+              |  GLUE2StorageShare (NAS read/stage view)
+              |
+              |  We publish a GLUE2StorageShare object for each NAS.  Since
+              |  this doesn't publish VO-specific information (like
+              |  GLUE2StorageSharePath) we can publish a single
+              |  GLUE2StorageShare object.
+              |
+              |  TODO: try to collapse these objects with those of the NAS
+              |        write-view.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +-GLUE2StorageShare
+              |   :  |
+              |      +- GLUE2StorageShareCapacity
+              |      |
+              |      +- GLUE2MappingPolicy
+              +-->
+	      <object rdn="GLUE2ShareID"
+		          select="/d:dCache/d:nas/d:nas[count(d:units/d:store/d:read/d:unitref) > 0 or count(d:units/d:store/d:stage/d:unitref) > 0]"
+		          classes="GLUE2StorageShare GLUE2Share">
+
+            <attr name="GLUE2ShareID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ss/nas/<map
+                    name="GlueSALocalID-BDII-workaround">
+                <lookup path="@id"/>
+              </map>
+            </attr>
+
+            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareSharingID">nas:<lookup path="@id"/></attr>
+
+            <attr name="GLUE2StorageShareDataStoreForeignKey">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
+
+            <attr name="GLUE2StorageShareServingState">production</attr>
+
+            <attr name="GLUE2StorageShareAccessLatency">online</attr>
+
+
+            <!--+
+                |  GLUE2StorageShareCapacity
+                |
+                |  What is the capacity of this NAS?
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2StorageShareCapacity
+                +-->
+            <object rdn="GLUE2StorageShareCapacityID" select="."
+                    classes="GLUE2StorageShareCapacity">
+
+              <attr name="GLUE2StorageShareCapacityID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
+
+              <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityType">online</attr>
+
+              <attr name="GLUE2StorageShareCapacityTotalSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup default="0"
+                          child="path">d:space/d:metric[@name='total']</lookup>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityFreeSize">
+                <!-- Free + Removable -->
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='free']</lookup>
+                    </term>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='removable']</lookup>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityUsedSize">
+                <!-- Total - (Free + Removable) -->
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='total']</lookup>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                child="path">d:space/d:metric[@name='free']</lookup>
+                      </scale>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                child="path">d:space/d:metric[@name='removable']</lookup>
+                      </scale>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+            </object>
+
+
+            <!--+
+                |  GLUE2MappingPolicy
+                |
+                |  Who can use this NAS when reading or staging?
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2MappingPolicy
+                +-->
+            <object rdn="GLUE2PolicyID"
+                    classes="GLUE2MappingPolicy GLUE2Policy">
+
+              <attr name="GLUE2PolicyID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
+
+              <attr name="GLUE2MappingPolicyShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2PolicyScheme">basic</attr>
+
+              <!-- Publish non-default (ie, not "*@*") store-unit VOs -->
+              <attr name="GLUE2PolicyRule"
+                    select="d:units/d:store/d:read/d:unitref | d:units/d:store/d:stage/d:unitref">
+                <suppress test="*@*">
+                  <lookup path="@name"/>
+                </suppress>vo:<map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </attr>
+
+              <!-- Add default store-unit VOs if appropriate -->
+              <optionally>
+                <when test="0" check="greater-than">
+                  <lookup path="count(d:units/d:store/d:read/d:unitref[@name='*@*']) + count(d:units/d:store/d:stage/d:unitref[@name='*@*'])"/>
+                </when>
+
+                <attr name="GLUE2PolicyRule"
+                      list="default-store-unit-VOs">vo:<item/>
+                </attr>
+              </optionally>
+            </object>
+          </object>
+
+
+          <!--+
+              |  GLUE2StorageShare (tape accounting)
+              |
+              |  We publish a GLUE2StorageShare object for 'collection'
+              |  object in the tape accounting file.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +-GLUE2StorageShare
+              |   :  |
+              |      +- GLUE2StorageShareCapacity
+              |      |
+              |      +- GLUE2MappingPolicy
+              +-->
+          <object rdn="GLUE2ShareID"
+                  xml-src="tape-info"
+                  select="/tape-info/collection"
+                  classes="GLUE2StorageShare GLUE2Share">
+
+            <attr name="GLUE2ShareID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ss/tape/<lookup xml-src="tape-info" path="@id"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareAccessLatency">nearline</attr>
+
+            <attr name="GLUE2StorageShareRetentionPolicy">custodial</attr>
+
+            <attr name="GLUE2StorageShareServingState">production</attr>
+
+            <attr name="GLUE2StorageShareSharingID">dedicated</attr>
+
+            <!-- FIXME we don't publish GLUE2StorageSharePath at the moment
+                       as this is VO-specific information and we need to
+                       support tape storage that isn't allocated to any VO.
+                       This is currently only possible by repeating the class
+                       defn and selecting those /tape-info/collection objects
+                       that have no 'for/vo' XML elements -->
+
+
+            <!--+
+                |  GLUE2StorageShareCapacity
+                |
+                |  The size information about this tape collection.
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2StorageShareCapacity
+                +-->
+            <object rdn="GLUE2StorageShareCapacityID"
+                    classes="GLUE2StorageShareCapacity">
+
+              <attr name="GLUE2StorageShareCapacityID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/tape</attr>
+
+              <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityType">nearline</attr>
+
+              <attr name="GLUE2StorageShareCapacityTotalSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup xml-src="tape-info"
+                          path="space/total">0</lookup>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityReservedSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup xml-src="tape-info"
+                          path="space/reserved">0</lookup>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityUsedSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup xml-src="tape-info" path="space/used">0</lookup>
+                </scale>
+              </attr>
+            </object>
+
+
+            <!--+
+                |  GLUE2MappingPolicy
+                |
+                |  Describe who is allowed to use this tape collection
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2MappingPolicy
+                +-->
+            <object rdn="GLUE2PolicyID"
+                    classes="GLUE2MappingPolicy GLUE2Policy">
+
+              <attr name="GLUE2PolicyID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
+
+              <attr name="GLUE2MappingPolicyShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2PolicyScheme">basic</attr>
+
+              <attr name="GLUE2PolicyRule"
+                    xml-src="tape-info"
+                    select="for/vo">vo:<lookup xml-src="tape-info"
+                            path="."/>
+              </attr>
+            </object>
+          </object>
+
+
+          <!--+
+              |  GLUE2StorageShare (offline accounting)
+              |
+              |  The info-provider allows a site to register that some
+              |  storage is ear-marked for a VO but is currently not
+              |  available within dCache; for example, a disk array
+              |  that is off to be repaired or bought hardware that
+              |  hasn't been commissioned yet.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +-GLUE2StorageShare
+              |   :  |
+              |      +- GLUE2StorageShareCapacity
+              |      |
+              |      +- GLUE2MappingPolicy
+              +-->
+          <object rdn="GLUE2ShareID"
+                  list="SRM-supported-VOs"
+                  classes="Glue2StorageShare GLUE2Share">
+
+	        <!-- Suppress publishing any object if there's no map entry -->
+	        <suppress test="0" check="equal">
+              <map name="VO-to-offline-disk">
+                <item/>
+              </map>
+            </suppress>
+
+            <attr name="GLUE2ShareID">glue:<constant
+                  id="SE-UNIQUE-ID"/>/data/ss/offline/<item/>
+            </attr>
+
+            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
+              <parent-rdn rdn="GLUE2ShareID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareAccessLatency">online</attr>
+
+            <attr name="GLUE2StorageShareRetentionPolicy">replica</attr>
+
+            <attr name="GLUE2StorageShareServingState">production</attr>
+
+            <attr name="GLUE2StorageShareSharingID">dedicated</attr>
+
+
+            <!--+
+                |  GLUE2StorageShareCapacity
+                |
+                |  Storage size information about offline storage.
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2StorageShareCapacity
+                +-->
+            <object rdn="GLUE2StorageShareCapacityID"
+                    classes="GLUE2StorageShareCapacity">
+
+              <attr name="GLUE2StorageShareCapacityID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
+
+              <attr name="GLUE2StorageShareCapacityType">installedonline</attr>
+
+              <attr name="GLUE2StorageShareCapacityTotalSize">
+                <map name="VO-to-offline-disk">
+                  <item/>
+                </map>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityUsedSize">0</attr>
+            </object>
+
+
+            <!--+
+                |  GLUE2MappingPolicy
+                |
+                |  Who would be able to use this space if it was available?
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2MappingPolicy
+                +-->
+            <object rdn="GLUE2PolicyID"
+                    classes="GLUE2MappingPolicy GLUE2Policy">
+
+              <attr name="GLUE2PolicyID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
+
+              <attr name="GLUE2MappingPolicyShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2PolicyScheme">basic</attr>
+
+              <attr name="GLUE2PolicyRule">vo:<item/>
+              </attr>
+            </object>
+          </object>
+
+
+          <!--+
+              |  GLUE2StorageShare  (SRM space reservations)
+              |
+              |  Here we publish a GLUE2StorageShare for each SRM space
+              |  reservation, grouped by VO and description.
+              |
+              |  GLUE2StorageService
+              |   |
+              |   +-GLUE2StorageShare
+              |   :  |
+              |      +- GLUE2StorageShareCapacity
+              |      |
+              |      +- GLUE2MappingPolicy
+              +-->
+          <object rdn="GLUE2ShareID"
+                  select="/d:dCache/d:summary/d:reservations/d:by-VO/d:VO/d:by-description/d:reservation-group"
+                  classes="GLUE2StorageShare GLUE2Share">
+
+            <attr name="GLUE2ShareID">glue:<constant
+                    id="SE-UNIQUE-ID"/>/data/ss/space/<lookup path="../../@name"/>/<lookup path="@description"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
+            </attr>
+
+            <attr name="GLUE2StorageShareSharingID">dedicated</attr>
+
+            <attr name="GLUE2StorageShareServingState">production</attr>
+
+            <!-- If a space summary (by description) contains at least one
+                 ONLINE reservation, publish as 'online', otherwise if at
+                 least one NEARLINE, publish as 'nearline', otherwise publish
+                 as 'UNKNOWNVALUE' (indicating a problem) -->
+            <choose>
+              <optionally>
+                <when check="contains" test="ONLINE">
+                  <lookup path="/d:dCache/d:reservations/d:reservation[d:metric[@name='description']=current()/@description]/d:metric[@name='access-latency']"/>
+                </when>
+
+                <attr name="GLUE2StorageShareAccessLatency">online</attr>
+              </optionally>
+
+              <optionally>
+                <when check="contains" test="NEARLINE">
+                  <lookup path="/d:dCache/d:reservations/d:reservation[d:metric[@name='description']=current()/@description]/d:metric[@name='access-latency']"/>
+                </when>
+
+                <attr name="GLUE2StorageShareAccessLatency">nearline</attr>
+              </optionally>
+
+              <otherwise>
+                <attr name="GLUE2StorageShareAccessLatency">UNKNOWNVALUE</attr>
+              </otherwise>
+            </choose>
+
+            <!-- Publish an attribute for each distinct retention policy of
+                 the underlying reservations -->
+            <attr select="/d:dCache/d:reservations/d:reservation[d:metric[@name='description']=current()/@description]/d:metric[@name='retention-policy']"
+                  name="GLUE2StorageShareRetentionPolicy">
+              <unique>
+                <lookup path="."/>
+              </unique>
+              <map name="dCache-ALRP-values-to-Glue20">
+                <lookup path="."/>
+              </map>
+            </attr>
+
+            <attr name="GLUE2StorageShareTag">
+              <lookup path="@description"/>
+            </attr>
+
+
+            <!--+
+                |  GLUE2StorageShareCapacity
+                |
+                |  How much storage capacity has this reservation?
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2StorageShareCapacity
+                +-->
+            <object rdn="GLUE2StorageShareCapacityID"
+                    select="."
+                    classes="GLUE2StorageShareCapacity">
+
+              <attr name="GLUE2StorageShareCapacityID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>-disk</attr>
+
+              <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityType">online</attr>
+
+              <attr name="GLUE2StorageShareCapacityTotalSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <lookup default="0"
+                          child="path">d:space/d:metric[@name='total']</lookup>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityFreeSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>   <!-- Free + Removable -->
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='free']</lookup>
+                    </term>
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='removable']</lookup>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+
+              <attr name="GLUE2StorageShareCapacityUsedSize">
+                <scale to-integer="round" factor="bytes-to-gigabytes">
+                  <sum>    <!-- Total - (Free + Removable) -->
+                    <term>
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='total']</lookup>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                child="path">d:space/d:metric[@name='free']</lookup>
+                      </scale>
+                    </term>
+                    <term>
+                      <scale factor="negative">
+                        <lookup default="0"
+                                child="path">d:space/d:metric[@name='removable']</lookup>
+                      </scale>
+                    </term>
+                  </sum>
+                </scale>
+              </attr>
+            </object>
+
+
+            <!--+
+                |  GLUE2MappingPolicy
+                |
+                |  Who is allowed to use this reservation?
+                |
+                |  GLUE2StorageService
+                |   |
+                |   +-GLUE2StorageShare
+                |   :  |
+                |      +- GLUE2MappingPolicy
+                +-->
+            <object rdn="GLUE2PolicyID"
+                    classes="GLUE2MappingPolicy GLUE2Policy">
+
+              <attr name="GLUE2PolicyID">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
+
+              <attr name="GLUE2MappingPolicyShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
+
+              <attr name="GLUE2PolicyScheme">basic</attr>
+
+              <attr name="GLUE2PolicyRule"
+                    select="d:metric[@name='vo']">vo:<lookup path="."/>
+              </attr>
+            </object>
+          </object>
+
+        </object>
+      </object>
+    </object>
+  </publish>
+
+
+  <!--+
+      |  Various scale factors
+      +-->
+  <scale>
+    <factor mode="divide" name="bytes-to-gigabytes">1000000000</factor>
+    <factor mode="multiply" name="negative">-1</factor>
+  </scale>
+
+
+  <!--+
+      |  Some fixed mappings: you shouldn't have to edit these.
+      +-->
+  <mapping>
+
+    <map name="door-protocol-family-to-URL-Schema">
+      <sub match="root" replace-with="xroot"/>
+    </map>
+
+    <map name="door-protocol-family-to-GLUE2-InterfaceName_t">
+      <sub match="root" replace-with="xroot"/>
+    </map>
+
+    <map name="door-protocol-family-to-GLUE2-StorageAccessProtocol_t">
+      <sub match="root" replace-with="xrootd"/>
+    </map>
+
+    <map name="dCache-ALRP-values-to-Glue20">
+      <sub match="REPLICA"   replace-with="replica"/>
+      <sub match="OUTPUT"    replace-with="output"/>
+      <sub match="CUSTODIAL" replace-with="custodial"/>
+      <sub match="ONLINE"    replace-with="online"/>
+      <sub match="NEARLINE"  replace-with="nearline"/>
+    </map>
+
+  </mapping>
+
+</xylophone>

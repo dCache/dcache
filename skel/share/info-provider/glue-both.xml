@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--+
+    |   This file defines how an XML file is converted into LDAP,
+    |   specifically, how the XML file that describes dCache's current state
+    |   is converted into LDAP suitable for Glue v1.3.
+    |
+    |   Some of the information that Glue requires is independent of dCache;
+    |   for example, the site's "Unique ID" is something that a dCache
+    |   instance doesn't know.  For this reason, you must configure this
+    |   file to include that information.
+    |
+    |   The general format of this file is described in:
+    |
+    |       ${ourHomeDir}/share/doc/xylophone/Guide.txt
+    |
+    |   That document describes the semantics of the XML elements in this
+    |   file.  However, the layout of this file is designed so you shouldn't
+    |   have to refer to that guide.  Simply edit the configuration as
+    |   described in the comment immediately above.
+    |
+    |   A word of causion: be careful when using characters that are special
+    |   in XML.  If you wish to use the less-than (<) or the ampersand (&)
+    |   symbols, be sure to write them as &lt; and &amp; respectively.
+    +-->
+
+<xylophone xmlns:xi="http://www.w3.org/2001/XInclude">
+
+  <!-- Pull in site configuration -->
+  <xi:include href="../../etc/info-provider.xml"
+	      xpointer="xpointer(/xylophone/*)"/>
+
+  <!-- Pull in common definitions -->
+  <xi:include href="glue-common-defn.xml"
+	      xpointer="xpointer(/xylophone/*)"/>
+
+  <!-- Pull in Glue-1.3-specific definitions -->
+  <xi:include href="glue-1.3-defn.xml"
+	      xpointer="xpointer(/xylophone/*)"/>
+
+  <!-- Pull in Glue-2.0-specific definitions -->
+  <xi:include href="glue-2.0-defn.xml"
+	      xpointer="xpointer(/xylophone/*)"/>
+</xylophone>

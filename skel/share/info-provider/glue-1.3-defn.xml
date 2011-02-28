@@ -1,0 +1,1416 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--+
+    |   This file defines how an XML file is converted into LDAP,
+    |   specifically, how the XML file that describes dCache's current state
+    |   is converted into LDAP suitable for Glue v1.3.
+    |
+    |   Some of the information that Glue requires is independent of dCache;
+    |   for example, the site's "Unique ID" is something that a dCache
+    |   instance doesn't know.  For this reason, you must configure this
+    |   file to include that information.
+    |
+    |   The general format of this file is described in:
+    |
+    |       ${ourHomeDir}/share/doc/xylophone/Guide.txt
+    |
+    |   That document describes the semantics of the XML elements in this
+    |   file.  However, the layout of this file is designed so you shouldn't
+    |   have to refer to that guide.  Simply edit the configuration as
+    |   described in the comment immediately above.
+    |
+    |   A word of causion: be careful when using characters that are special
+    |   in XML.  If you wish to use the less-than (<) or the ampersand (&)
+    |   symbols, be sure to write them as &lt; and &amp; respectively.
+    +-->
+
+<xylophone>
+
+  <!--+
+      |   This section describes the LDAP tree structure.  If you wish to
+      |   publish additional (hard-coded) attributes, then you may add that
+      |   information here.
+      +-->
+  <publish>
+    <object rdn="o" hidden="1">
+      <attr name="o">grid</attr>
+
+      <object rdn="mds-vo-name" hidden="1">
+        <attr name="mds-vo-name">
+          <constant id="DIT-PARENT"/>
+        </attr>
+
+
+        <!-- Publish the Top-level GlueSE object -->
+
+        <object rdn="GlueSEUniqueID"
+                classes="GlueSETop GlueSE GlueKey GlueSchemaVersion">
+
+          <!--+
+              |    PUBLISH DOORS
+              |
+              |    We publish one GlueSEAccessProtocol for each
+              |    door
+              |
+              |    GlueSE
+              |     |
+              |     +- GlueSEAccessProtocol
+              |     :
+              +-->
+          <object rdn="GlueSEAccessProtocolLocalID"
+                  select="/d:dCache/d:doors/d:door"
+                  classes="GlueSETop GlueSEAccessProtocol GlueKey GlueSchemaVersion">
+            <!-- Never publish SRM here -->
+            <suppress test="SRM">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </suppress>
+
+            <!-- Don't publish any dcap doors -->
+            <suppress test="dcap">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </suppress>
+
+            <!-- Don't publish any xrootd doors -->
+            <suppress test="Xrootd">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </suppress>
+
+            <!-- Uncomment the next section to suppress publishing gsidcap -->
+<!--
+            <suppress test="gsidcap">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </suppress>
+-->
+
+            <attr name="GlueChunkKey">
+              <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
+            </attr>
+          </object>
+
+
+          <!--+
+              |    PUBLISH SRM AS GlueSEControlProtocol
+              |
+              |    We must also publish the SRM as a GlueService.  This
+              |    happens further down.
+              |
+              |    GlueSE
+              |     |
+              |     +- GlueSEControlProtocol
+              |     :
+              +-->
+          <object rdn="GlueSEControlProtocolLocalID"
+                  select="/d:dCache/d:doors/d:door"
+                  select-mode="default-suppress"
+                  classes="GlueSETop GlueSEControlProtocol GlueKey GlueSchemaVersion">
+            <!-- Only publish the SRM door here -->
+            <allow test="SRM">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </allow>
+
+            <attr name="GlueChunkKey">
+              <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
+            </attr>
+          </object>
+
+
+
+          <!--+
+              |    PUBLISH SPACE RESERVATIONS (a.k.a space tokens)
+              |
+              |    We publish one GlueSA and one VOInfo for each
+              |    SRM space description.
+              |
+              |    GlueSE
+              |     |
+              |     +- GlueSA        |
+              |     |   |            |- Repeated for each space
+              |     |   +- VOInfo    |  description.
+              |     :
+              +-->
+          <object rdn="GlueSALocalID"
+                  select="/d:dCache/d:summary/d:reservations/d:by-VO/d:VO/d:by-description/d:reservation-group"
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion GlueKey">
+
+            <!-- Suppress publishing reservations without a description -->
+            <suppress test="" check="is">
+              <lookup path="@description"/>
+            </suppress>
+
+            <!-- Publish the single VOInfo object for this reservation -->
+            <object rdn="GlueVOInfoLocalID"
+                    classes="GlueVOInfo GlueSchemaVersion GlueKey">
+
+              <attr name="GlueVOInfoLocalID">
+                <lookup path="d:metric[@name='vo']"/>
+              </attr>
+
+              <attr name="GlueVOInfoName">Information about <lookup
+                  path="@description"/> for VO <lookup
+                  path="d:metric[@name='vo']"/>
+              </attr>
+
+              <attr name="GlueVOInfoTag"><lookup path="@description"/></attr>
+
+              <attr name="GlueVOInfoAccessControlBaseRule">VO:<lookup
+                  path="d:metric[@name='vo']"/>
+              </attr>
+
+              <attr name="GlueVOInfoPath">
+                <map name="VO-to-path">
+                  <lookup path="d:metric[@name='vo']"/>
+                </map>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
+              </attr>
+            </object>
+
+            <attr name="GlueSALocalID">
+              <lookup path="d:metric[@name='vo']"/>:<lookup
+                  path="@description"/>
+            </attr>
+
+            <attr name="GlueSAName">SRM reservations with description [<lookup
+                path="@description"/>] made for VO <lookup
+                path="d:metric[@name='vo']"/>
+            </attr>
+
+            <!-- HACK: when publishing GlueSAAccessLatency and
+                 GlueSARetentionPolicy attributes, we use the values from
+                 the first reservation (in XML document order).  There is
+                 currently no guarantee that all reservations with the same
+                 description and for the same VO will have the same
+                 AL & RP, but common usage means having mismatching AL & RP
+                 values is unlikely.  The correct solution is to fix the
+                 dCache info service to group on AL & RP too. -->
+
+            <attr name="GlueSAAccessLatency">
+              <map name="dCache-ALRP-values-to-Glue">
+                <lookup child="path">/d:dCache/d:reservations/d:reservation[@reservation-id='<lookup
+                  path="d:reservations/d:reservation[1]/@id"/>']/d:metric[@name='access-latency']</lookup>
+              </map>
+            </attr>
+
+            <attr name="GlueSARetentionPolicy">
+              <map name="dCache-ALRP-values-to-Glue">
+                <lookup child="path">/d:dCache/d:reservations/d:reservation[@reservation-id='<lookup
+                  path="d:reservations/d:reservation[1]/@id"/>']/d:metric[@name='retention-policy']</lookup>
+              </map>
+            </attr>
+
+            <attr name="GlueSAAccessControlBaseRule">VO:<lookup
+                  path="d:metric[@name='vo']"/>
+            </attr>
+
+            <!-- Publish the total size of the space as the ReservedOnlineSize -->
+            <attr name="GlueSAReservedOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        child="path">d:space/d:metric[@name='total']</lookup>
+              </scale>
+            </attr>
+
+            <attr name="GlueSATotalOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        child="path">d:space/d:metric[@name='total']</lookup>
+              </scale>
+            </attr>
+
+            <!-- Publish UsedOnlineSize as Allocated + Used: we include the
+                 space needed for currently ongoing transfers -->
+            <attr name="GlueSAUsedOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='allocated']</lookup>
+                  </term>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='used']</lookup>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAFreeOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        child="path">d:space/d:metric[@name='free']</lookup>
+              </scale>
+            </attr>
+
+            <!-- We are required to publish these attributes -->
+            <attr name="GlueSAReservedNearlineSize">0</attr>
+            <attr name="GlueSATotalNearlineSize">0</attr>
+            <attr name="GlueSAUsedNearlineSize">0</attr>
+            <attr name="GlueSAFreeNearlineSize">0</attr>
+
+            <!-- We hard-code 0 to avoid SRM reservations from being
+                 included in any accounting -->
+            <attr name="GlueSACapability">InstalledOnlineCapacity=0</attr>
+            <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
+
+            <!-- We also mark that this is a SRM reservation.  This may be
+                 useful information-->
+            <attr name="GlueSACapability">dCacheUsage=SRM-reservation-group</attr>
+
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
+          </object>
+
+
+
+          <!--+
+              |    PUBLISH THE INSTALLED CAPACITY INFORMATION
+              |
+              |    dCache storage is split into non-overlapping sets of
+              |    pools that have consistent accessibility for VOs:
+              |    the Normalised Access Space (NAS).
+              |
+              |    We publish one GlueSA object for each NAS and zero or
+              |    more VOInfo objects for each store unit that can write
+              |    into these pools.  For simplicity, we assume that
+              |    sites are configured so that each store unit is to be
+              |    used by only one specific VO.
+              |
+              |    GlueSE
+              |     |
+              |     +- GlueSA     |- The GlueSA for some NAS.
+              |     |   |
+              |     |   +- VOInfo    |
+              |     |   |            |- Zero or more VOInfo objects.
+              |     |   +- VOInfo    |
+              |     |   :            |
+              |     |   +- VOInfo    |
+              |     :
+              +-->
+          <object rdn="GlueSALocalID"
+                  select="/d:dCache/d:nas/d:nas"
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion GlueKey">
+
+            <!-- Publish a VOInfo object for write units -->
+            <object rdn="GlueVOInfoLocalID"
+                    select="d:units/d:store/d:write/d:unitref"
+                    classes="GlueVOInfo GlueSchemaVersion GlueKey">
+
+              <!-- Avoid publishing anything that doesn't have a path -->
+              <suppress test="" check="is">
+                <map name="unit-to-path">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+
+              <!-- Don't publish the default store-units here -->
+              <suppress test="*@*" check="is">
+                <lookup path="@name"/>
+              </suppress>
+
+              <!-- Avoid publishing anything that doesn't have a VO -->
+              <suppress test="" check="is">
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+
+              <!-- Ensure the combination of VO and path is unique -->
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+                <map name="unit-to-path">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+
+              <attr name="GlueVOInfoLocalID">store-unit-<lookup path="@name"/>
+              </attr>
+
+              <attr name="GlueVOInfoPath">
+                <map name="unit-to-path">
+                  <lookup path="@name"/>
+                </map>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueVOInfoAccessControlBaseRule">VO:<map
+                       name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </attr>
+            </object>
+
+
+            <!-- Publish a VOInfo object for VOs in default store units -->
+            <object rdn="GlueVOInfoLocalID"
+                    list="default-store-unit-VOs"
+                    classes="GlueVOInfo GlueSchemaVersion GlueKey">
+
+              <!-- Suppress publishing if *@* cannot write -->
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+
+              <attr name="GlueVOInfoLocalID">default-store-<item/></attr>
+
+              <attr name="GlueVOInfoPath">
+                <map name="VO-to-path">
+                  <item/>
+                </map>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueVOInfoAccessControlBaseRule">VO:<item/></attr>
+            </object>
+
+
+            <attr name="GlueSALocalID">nas-<map name="GlueSALocalID-BDII-workaround">
+                <lookup path="@id"/>
+              </map>
+            </attr>
+
+            <attr name="GlueSAName">Storage accessible via <lookup
+                path="@id"/>
+            </attr>
+
+
+            <!-- Publish those VOs that can write.  These will be repeated in VOInfo
+                 object(s) -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  select="d:units/d:store/d:write/d:unitref">VO:<map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+
+            <!-- Publish those VOs that can read -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  select="d:units/d:store/d:read/d:unitref">VO:<map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+
+            <!-- Publish those VOs that can stage from tape -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  select="d:units/d:store/d:stage/d:unitref">VO:<map
+                      name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+
+            <!-- publish *@* VOs, if appropriate -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:read/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:stage/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
+
+            <!-- We repeat publishing the access rules with the deprecated
+                 format as a work-around for a bug present in:
+                   lcg-infosites:
+                     https://savannah.cern.ch/bugs/?57787
+                   SAM:
+                     https://savannah.cern.ch/bugs/?57919
+                  -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  not-empty="1"
+                  select="d:units/d:store/d:write/d:unitref"><map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  not-empty="1"
+                  select="d:units/d:store/d:read/d:unitref"><map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  not-empty="1"
+                  select="d:units/d:store/d:stage/d:unitref"><map
+                      name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+
+            <!-- Again, publish the *@* VOs separately, if appropriate, but this
+                 time without the "VO:" prefix -->
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">
+              <item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:read/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">
+              <item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+            <attr name="GlueSAAccessControlBaseRule"
+                  list="default-store-unit-VOs">
+              <item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:stage/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
+            <!-- Publish a hard-coded ReservedOnlineSize of zero since
+                 this is a "Storage Area representing an unreserved
+                 space." (from WLCG Installed Capacity document) -->
+            <attr name="GlueSAReservedOnlineSize">0</attr>
+
+            <attr name="GlueSATotalOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        child="path">d:space/d:metric[@name='total']</lookup>
+              </scale>
+            </attr>
+
+            <!-- Publish UsedOnlineSize as Total - (Free + Removable) -->
+            <attr name="GlueSAUsedOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='total']</lookup>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='free']</lookup>
+                    </scale>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='removable']</lookup>
+                    </scale>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <!-- Publish FreeOnlineSize as Free + Removable -->
+            <attr name="GlueSAFreeOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='free']</lookup>
+                  </term>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='removable']</lookup>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <!-- We are required to publish these attributes -->
+            <attr name="GlueSAReservedNearlineSize">0</attr>
+            <attr name="GlueSATotalNearlineSize">0</attr>
+            <attr name="GlueSAUsedNearlineSize">0</attr>
+            <attr name="GlueSAFreeNearlineSize">0</attr>
+
+
+            <!--  The StorageAreaState attributes (GlueSAStateAvailableSpace
+                  and GlueSAStateUsedSpace) are both marked as deprecated in
+                  Glue v1.3.  They have been superseded by the eight
+                  GlueSA*Size attributes.
+
+                  Unfortunately, various tools continue to use this attribute
+                    lcg-infosites:
+                      https://savannah.cern.ch/bugs/?57799
+                    SAM:
+                      https://savannah.cern.ch/bugs/?57918
+
+                  As a work-around, we publish GlueSAStateAvailableSpace
+                  and GlueSAStateUsedSpace -->
+
+            <!-- Publish State.UsedSpace as Total - (Free + Removable),
+                 in kiloBytes -->
+            <attr name="GlueSAStateUsedSpace">
+              <scale to-integer="round" factor="bytes-to-kilobytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='total']</lookup>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='free']</lookup>
+                    </scale>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              child="path">d:space/d:metric[@name='removable']</lookup>
+                    </scale>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <!-- Publish State.AvailableSpace as Free + Removable,
+                 in kiloBytes -->
+            <attr name="GlueSAStateAvailableSpace">
+              <scale to-integer="round" factor="bytes-to-kilobytes">
+                <sum>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='free']</lookup>
+                  </term>
+                  <term>
+                    <lookup default="0"
+                            child="path">d:space/d:metric[@name='removable']</lookup>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+
+            <attr name="GlueSACapability">InstalledOnlineCapacity=<scale
+                  to-integer="round"
+                  factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        child="path">d:space/d:metric[@name='total']</lookup>
+              </scale>
+            </attr>
+
+            <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
+
+            <!-- Publish some dCache-specific information -->
+            <attr select="d:units/d:store/d:stage/d:unitref"
+                  name="GlueSACapability">dCacheCanStage=VO:<map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+            <attr name="GlueSACapability"
+                  list="default-store-unit-VOs">dCacheCanStage=VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:stage/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
+
+            <attr select="d:units/d:store/d:read/d:unitref"
+                  name="GlueSACapability">dCacheCanRead=VO:<map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+            <attr name="GlueSACapability"
+                  list="default-store-unit-VOs">dCacheCanRead=VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:read/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
+            <attr select="d:units/d:store/d:write/d:unitref"
+                  name="GlueSACapability">dCacheCanWrite=VO:<map
+                    name="unit-to-VO">
+                <lookup path="@name"/>
+              </map>
+              <!-- Don't publish the default store-unit here -->
+              <suppress test="*@*"><lookup path="@name"/></suppress>
+              <suppress test=""><map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </suppress>
+              <unique>
+                <map name="unit-to-VO">
+                  <lookup path="@name"/>
+                </map>
+              </unique>
+            </attr>
+            <attr name="GlueSACapability"
+                  list="default-store-unit-VOs">dCacheCanWrite=VO:<item/>
+              <suppress test="">
+                <lookup path="d:units/d:store/d:write/d:unitref[@name='*@*']/@name"/>
+              </suppress>
+            </attr>
+
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
+          </object>
+
+          <!--+
+              |    PUBLISH NEARLINE STORAGE
+              |
+              |    We wish to publish tape accounting information.  WLCG
+              |    requires that this information take into account tape
+              |    compression; therefore, we cannot use any component
+              |    within dCache to figure out nearline information.
+              |
+              |    Published information must come from an external source.
+              |    This external source is an XML file tape-info.xml, which
+              |    is at a fixed location.  The default contents of this
+              |    file will publish no nearline space, but the site-admin
+              |    may override the file with the information they wish to
+              |    publish.
+              |
+              |    The file allows publishing of zero or more "collections".
+              |    Each collection is published as a GlueSA object.  The
+              |    collection may be assigned to one (or more) VOs, which
+              |    will be reflected by that GlueSA's ACBR attributes.  The
+              |    tapes may be writable by some (usually all) of those VOs
+              |    In this case, a VOInfo object is created that describes
+              |    how to write into that particular collection.
+              |
+              |    GlueSE
+              |     :
+              |     +- GlueSA     |- Repeated for each collection.
+              |     |   :
+              |     |   +- VOInfo  |- Repeated for each VO mentioned within
+              |     |              |  the collection's write-path element
+              |     :
+              +-->
+          <object rdn="GlueSALocalID"
+                  xml-src="tape-info"
+                  select="/tape-info/collection"
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSAState GlueSchemaVersion GlueKey">
+
+            <!-- Publish a VOInfo object for each vo in write-paths -->
+            <object rdn="GlueVOInfoLocalID"
+                    xml-src="tape-info"
+                    select="write-paths/vo"
+                    classes="GlueVOInfo GlueSchemaVersion GlueKey">
+              <attr name="GlueVOInfoLocalID">
+                <lookup xml-src="tape-info"
+                        path="@name"/>
+              </attr>
+
+              <attr name="GlueVOInfoPath">
+                <lookup xml-src="tape-info"
+                        path="."/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSALocalID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueChunkKey">
+                <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
+              </attr>
+
+              <attr name="GlueVOInfoAccessControlBaseRule">VO:<lookup
+                        xml-src="tape-info"
+                        path="@name"/></attr>
+            </object>
+
+            <attr name="GlueSALocalID">tape-<lookup xml-src="tape-info"
+                                               path="@id"/></attr>
+
+            <attr name="GlueSAName"
+                  not-empty="1"><lookup xml-src="tape-info"
+                                        path="name"/></attr>
+
+            <attr name="GlueSAReservedNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup xml-src="tape-info"
+                        default="0"
+                        path="space/reserved"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueSATotalNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup xml-src="tape-info"
+                        default="0"
+                        path="space/total"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAUsedNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <lookup default="0"
+                        xml-src="tape-info"
+                        path="space/used"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAFreeNearlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <sum>
+                  <term>
+                    <lookup xml-src="tape-info"
+                            default="0"
+                            path="space/total"/>
+                  </term>
+                  <term>
+                    <scale factor="negative">
+                      <lookup default="0"
+                              xml-src="tape-info"
+                              path="space/used"/>
+                    </scale>
+                  </term>
+                </sum>
+              </scale>
+            </attr>
+
+            <attr name="GlueSAReservedOnlineSize">0</attr>
+            <attr name="GlueSATotalOnlineSize">0</attr>
+            <attr name="GlueSAUsedOnlineSize">0</attr>
+            <attr name="GlueSAFreeOnlineSize">0</attr>
+
+            <attr name="GlueSAAccessControlBaseRule"
+                  xml-src="tape-info"
+                  select="for/vo">VO:<lookup xml-src="tape-info"
+                                             path="."/></attr>
+
+            <attr name="GlueSACapability">InstalledOnlineCapacity=0</attr>
+            <attr name="GlueSACapability">InstalledNearlineCapacity=<scale
+                    to-integer="round"
+                    factor="bytes-to-gigabytes">
+                <lookup xml-src="tape-info"
+                        default="0"
+                        path="space/reserved"/>
+              </scale>
+            </attr>
+
+            <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
+          </object>
+
+
+          <!--+
+              |    PUBLISH OFFLINE DISK STORAGE
+              |
+              |    WLCG allows for publishing storage that is part of a
+              |    storage element but that, for whatever reason, is not
+              |    accessible.  This might include pools that are not yet
+              |    commissioned.
+              |
+              |    The intention is to allow GlueSAReservedOnlineSize to carry
+              |    this information.  Its value should be the sum of
+              |    GlueSATotalOnlineSize and whatever is currently offline.
+              |    So, if all storage in a GlueSA is currently available,
+              |    GlueSAReservedOnlineSize == GlueSATotalOnlineSize.
+              |
+              |    However, if a GlueSA represents "unreserved" capacity then
+              |    GlueSAReservedOnlineSize must be zero: the attribute can
+              |    only be non-zero if the GlueSA represents capacity
+              |    "reserved" for a VO.  This most likely means SRM space
+              |    reservations.  Since SRM reservations have late binding
+              |    in dCache, we can't publish offline storage against some
+              |    existing SRM reservation.
+              |
+              |    So, we take use another tactic: we publish new GlueSA
+              |    objects.  These will hold information about only the offline
+              |    data, but are (nominally) assigned to a VO using an
+              |    ACBR attribute.  We leave out the VOInfo object so not
+              |    to confuse broken clients that don't check the GlueSA
+              |    GlueSATotalOnlineSize.
+              |
+              |    GlueSE
+              |     :
+              |     +- GlueSA      |- Repeated for each VO with offline storage
+              |     :
+              +-->
+          <object rdn="GlueSALocalID"
+                  list="SRM-supported-VOs"
+                  classes="GlueSATop GlueSA GlueSAAccessControlBase GlueSchemaVersion GlueKey">
+
+            <!-- Suppress publishing any object if there's no map entry -->
+            <suppress test="0"
+                      check="equal">
+              <map name="VO-to-offline-disk">
+                <item/>
+              </map>
+            </suppress>
+
+            <attr name="GlueSALocalID">OL-<item/></attr>
+            <attr name="GlueSAName">Offline storage for VO <item/></attr>
+
+            <attr name="GlueSAAccessControlBaseRule">VO:<item/></attr>
+
+            <attr name="GlueSAReservedOnlineSize">
+              <scale to-integer="round"
+                     factor="bytes-to-gigabytes">
+                <map name="VO-to-offline-disk">
+                  <item/>
+                </map>
+              </scale>
+            </attr>
+
+            <attr name="GlueSATotalOnlineSize">0</attr>
+            <attr name="GlueSAUsedOnlineSize">0</attr>
+            <attr name="GlueSAFreeOnlineSize">0</attr>
+
+            <!-- We are required to publish these attributes -->
+            <attr name="GlueSAReservedNearlineSize">0</attr>
+            <attr name="GlueSATotalNearlineSize">0</attr>
+            <attr name="GlueSAUsedNearlineSize">0</attr>
+            <attr name="GlueSAFreeNearlineSize">0</attr>
+
+            <attr name="GlueSACapability">InstalledOnlineCapacity=<scale
+                    to-integer="round" factor="bytes-to-gigabytes">
+                <map name="VO-to-offline-disk">
+                  <item/>
+                </map>
+              </scale>
+            </attr>
+
+            <attr name="GlueSACapability">InstalledNearlineCapacity=0</attr>
+          </object>
+
+          <attr name="GlueChunkKey"><parent-rdn rdn="GlueSEUniqueID" use="rdn"/></attr>
+        </object>
+
+
+        <!--+
+            |   PUBLISH SRM AS GlueService
+            |
+            |   We must publish the SRM as a GlueService.  We also
+            |   publish it as a GlueSEControlProtocol further up.
+            |
+            |    GlueSite
+            |     |
+            |     +- GlueSE
+            |     |   |
+            |     |   +- GlueControlProtocol
+            |     |
+            |     +- GlueService
+            |
+            +-->
+        <object rdn="GlueServiceUniqueID"
+                select="/d:dCache/d:doors/d:door"
+                select-mode="default-suppress"
+                classes="GlueTop GlueKey GlueSchemaVersion GlueService">
+
+          <!-- Publish only SRM door here -->
+          <allow test="SRM">
+            <lookup path="d:protocol/d:metric[@name='family']"/>
+          </allow>
+
+
+          <!-- The GlueService's UniqueID MUST be the URI of the end-point.
+               This is acknowledged as a broken requirement, but it
+               persists.  To support DNS aliases we may need to
+               publish something other than the self-discovered (public)
+               FQDN of the interface.  Currently, the SE-UNIQUE-ID
+               MUST be the SRM's FQDN.  We use this here to support
+               aliases  -->
+          <attr name="GlueServiceUniqueID">httpg://<constant
+              id="SE-UNIQUE-ID"/>:<lookup
+              path="d:metric[@name='port']"/>/srm/managerv2</attr>
+
+          <!-- GlueServiceName is a human-readable string -->
+          <attr name="GlueServiceName">SRM endpoint for <constant
+              id="SITE-UNIQUE-ID"/>
+          </attr>
+
+          <!-- Some hard-coded values -->
+          <attr name="GlueServiceType">SRM</attr>
+          <attr name="GlueServiceVersion">2.2.0</attr>
+
+          <!-- as above, we use the fact that the SRM FQDN must be
+               the SRM FQDN to support DNS aliases -->
+          <attr name="GlueServiceEndpoint">httpg://<constant
+            id="SE-UNIQUE-ID"/>:<lookup
+            path="d:metric[@name='port']"/>/srm/managerv2</attr>
+
+          <!-- When should we publish something other than "OK" ? -->
+          <attr name="GlueServiceStatus">OK</attr>
+          <attr name="GlueServiceStatusInfo">No Problems</attr>
+
+          <attr list="SRM-GlueServiceOwners"
+                name="GlueServiceOwner">
+            <item/>
+          </attr>
+
+          <!-- Report the start time of the corresponding cell -->
+          <attr name="GlueServiceStartTime">
+            <lookup default="1970-01-01T00:00:00Z"
+                    child="path">/d:dCache/d:domains/d:domain[@name='<lookup
+                    path="d:metric[@name='domain']"/>']/d:cells/d:cell[@name='<lookup
+                    path="d:metric[@name='cell']"/>']/d:created/d:metric[@name='ISO-8601']</lookup>
+          </attr>
+
+          <!-- Our list of supported VOs -->
+          <attr name="GlueServiceAccessControlBaseRule"
+                list="SRM-supported-VOs">VO:<item/></attr>
+
+
+          <!-- FTS ignores GlueServiceAccessControlBaseRule attributes.
+               This bug is described here:
+
+                   https://savannah.cern.ch/bugs/?57827
+
+               The work-around is to publish the values as
+               GlueServiceAccessControlRule attributes.  This attribute
+               is not documented *at all* in Glue v1.3 and is marked
+               deprecated in the LDAP schema (it's a hang-over from pre-
+               glue v1.2 days, circa 2004!) -->
+          <attr name="GlueServiceAccessControlRule"
+                list="SRM-supported-VOs"><item/></attr>
+
+          <attr name="GlueForeignKey">
+            <other-rdn rdn="GlueSiteUniqueID">
+              <constant id="SITE-UNIQUE-ID"/>
+            </other-rdn>
+          </attr>
+        </object>
+
+      </object>
+    </object>
+  </publish>
+
+
+
+  <!--+
+      |
+      |  These are the attribute definitions for each class
+      |
+      +-->
+  <classes>
+
+    <!-- A class defn with no attributes -->
+    <class name="GlueSETop"/>
+
+    <!-- Hardcode all GlueSchemaVersion as 1.3 -->
+    <class name="GlueSchemaVersion">
+      <attr name="GlueSchemaVersionMajor">1</attr>
+      <attr name="GlueSchemaVersionMinor">3</attr>
+    </class>
+
+
+    <!-- The GlueSE object: we move much of the attributes here to
+         avoid cluttering the DIT hierarchy -->
+    <class name="GlueSE">
+      <attr name="GlueSEStatus"><constant id="DCACHE-STATUS"/></attr>
+      <attr name="GlueSEUniqueID"><constant id="SE-UNIQUE-ID"/></attr>
+      <attr not-empty="1" name="GlueSEName"><constant id="SE-NAME"/></attr>
+      <attr name="GlueSEImplementationName">dCache</attr>
+
+      <attr name="GlueSEArchitecture">
+        <constant id="DCACHE-ARCHITECTURE"/>
+      </attr>
+
+      <attr name="GlueSEImplementationVersion" not-empty="1">
+        <map name="cell-version-to-dcache-version">
+          <lookup default="UNDEFINEDVALUE"
+                  path="/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+        </map> (ns=<map name="cleaner-class-to-namespace-impl">
+          <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.ChimeraCleaner']">
+            <lookup default="UNDEFINEDVALUE"
+                    path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='diskCacheV111.cells.CleanerV2']"/>
+          </lookup>
+        </map>)</attr>
+
+      <!-- GlueSESizeTotal and GlueSESizeFree are marked as
+           "deprecated" in Glue-1.3, but Installed Capacity document
+           says we SHOULD publish them -->
+
+      <attr name="GlueSESizeTotal">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <lookup default="0"
+                  path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+        </scale>
+      </attr>
+
+      <attr name="GlueSESizeFree">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <!-- Publish Free as free + removable -->
+          <sum>
+            <term>
+              <lookup default="0"
+                      path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+            </term>
+            <term>
+              <lookup default="0"
+                      path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+            </term>
+          </sum>
+        </scale>
+      </attr>
+
+      <attr name="GlueSETotalOnlineSize">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <lookup default="0"
+                  path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+        </scale>
+      </attr>
+
+      <!-- Publish GlueSEUsedOnlineSize as total - (free + removable) -->
+      <attr name="GlueSEUsedOnlineSize">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <sum>
+            <term>
+              <lookup default="0"
+                      path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='total']"/>
+            </term>
+            <term>
+              <scale factor="negative">
+                <lookup default="0"
+                        path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='free']"/>
+              </scale>
+            </term>
+            <term>
+              <scale factor="negative">
+                <lookup default="0"
+                        path="/d:dCache/d:summary/d:pools/d:space/d:metric[@name='removable']"/>
+              </scale>
+            </term>
+          </sum>
+        </scale>
+      </attr>
+
+      <!-- We must publish Nearline sizes -->
+      <attr name="GlueSETotalNearlineSize">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <sum xml-src="tape-info"
+               path="/tape-info/collection/space/total"/>
+        </scale>
+      </attr>
+
+      <attr name="GlueSEUsedNearlineSize">
+        <scale to-integer="round" factor="bytes-to-gigabytes">
+          <sum xml-src="tape-info"
+               path="/tape-info/collection/space/used"/>
+        </scale>
+      </attr>
+
+      <attr name="GlueForeignKey">
+        <other-rdn rdn="GlueSiteUniqueID">
+          <constant id="SITE-UNIQUE-ID"/>
+        </other-rdn>
+      </attr>
+    </class>
+
+
+
+    <!--+
+        |  Publish information about our doors.
+        +-->
+    <class name="GlueSEAccessProtocol">
+
+      <attr name="GlueSEAccessProtocolLocalID"><lookup path="@name"/></attr>
+
+      <attr name="GlueSEAccessProtocolType">
+        <map name="door-type-to-access-proto-type">
+            <lookup path="d:protocol/d:metric[@name='family']"/>
+        </map>
+      </attr>
+
+      <!-- Publish the URI.  The interfaces are ordered (with the order
+           metric) indicating some preference. Order 1 will always be
+           have a public-accessible FQDN, if any interface does -->
+      <attr name="GlueSEAccessProtocolEndpoint">
+        <lookup path="d:protocol/d:metric[@name='family']"/>://<lookup
+            path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
+            path="d:metric[@name='port']"/>
+      </attr>
+
+      <!-- Hardcode value, based on protocol family -->
+      <attr name="GlueSEAccessProtocolMaxStreams">
+        <map name="door-family-to-max-streams">
+          <lookup path="d:protocol/d:metric[@name='family']"/>
+        </map>
+      </attr>
+
+      <!-- Hardcoded values for now -->
+      <attr name="GlueSEAccessProtocolCapability">file transfer</attr>
+
+      <!-- Hardcoded value, based on protocol family -->
+      <attr name="GlueSEAccessProtocolVersion">
+        <map name="door-family-to-version">
+          <lookup path="d:protocol/d:metric[@name='family']"/>
+        </map>
+      </attr>
+
+      <attr not-empty="1" name="GlueSEAccessProtocolSupportedSecurity">
+        <map name="door-family-to-GSI">
+          <lookup path="d:protocol/d:metric[@name='family']"/>
+        </map>
+      </attr>
+    </class>
+
+
+
+    <!--+
+        |   Publish information about our SRM.
+        +-->
+    <class name="GlueSEControlProtocol">
+      <attr name="GlueSEControlProtocolLocalID">
+        <lookup path="@name"/>
+      </attr>
+
+      <attr name="GlueSEControlProtocolType">
+        <map name="door-family-to-ctrl-proto-type">
+          <lookup path="d:protocol/d:metric[@name='family']"/>
+        </map>
+      </attr>
+
+      <!-- Publish the URI.  To support DNS aliases we may need to
+           publish something other than the self-discovered (public)
+           FQDN of the interface.  Currently, the SE-UNIQUE-ID
+           MUST be the SRM's FQDN.  We use this here to support
+           aliases  -->
+      <attr name="GlueSEControlProtocolEndpoint">httpg://<constant id="SE-UNIQUE-ID"/>:<lookup
+          path="d:metric[@name='port']"/>/srm/managerv2</attr>
+
+      <!-- For now we hard-code this, which is wrong -->
+      <attr name="GlueSEControlProtocolVersion">2.2.0</attr>
+
+      <!-- The following two attributes should depend in whether we are
+           publishing SRM v1.1 or SRM v2.2.  We currently don't publish
+           SRM v1.1 interface, so this doesn't matter -->
+
+      <!-- We make publishing these attributes dependent on whether the
+           SrmSpaceManager is running.  This monster 'select' ensures we
+           emit the attribute only if the SrmSpaceManager is running.
+           We use the dCache domain's routing table to avoid hard-coding
+           in which domain the SrmSpaceManager is running. -->
+      <attr select="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='SrmSpaceManager']/d:domainref/@name]/d:cells/d:cell[@name='SrmSpaceManager']"
+            name="GlueSEControlProtocolCapability">space allocation</attr>
+
+      <!-- The same for the space manager -->
+      <attr select="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='SrmSpaceManager']/d:domainref/@name]/d:cells/d:cell[@name='SrmSpaceManager']"
+            name="GlueSEControlProtocolCapability">space manager</attr>
+
+      <!-- As with the previous two attributes, we emit a
+           GlueSEControlProtocolCapability attribute with the value
+           "file pinning" only if the PinManager is running -->
+      <attr select="/d:dCache/d:domains/d:domain[@name=/d:dCache/d:domains/d:domain[@name='dCacheDomain']/d:routing/d:named-cells/d:cell[@name='PinManager']/d:domainref/@name]/d:cells/d:cell[@name='PinManager']"
+            name="GlueSEControlProtocolCapability">file pinning</attr>
+    </class>
+
+
+
+    <!-- Classes to do with Glue Storage Area -->
+
+    <class name="GlueSATop"/>
+
+    <class name="GlueSA">
+      <!-- dCache will never expire data -->
+      <attr name="GlueSAExpirationMode">neverExpire</attr>
+
+    </class>
+
+
+
+    <!-- This class is marked DEPRECATED in Glue v1.3 -->
+    <class name="GlueSAPolicy">
+<!--
+      <attr name="GlueSAPolicyMaxFileSize">999999</attr>
+      <attr name="GlueSAPolicyMinFileSize">999999</attr>
+      <attr name="GlueSAPolicyMaxData">999999</attr>
+      <attr name="GlueSAPolicyMaxNumFiles">999999</attr>
+      <attr name="GlueSAPolicyMaxPinDuration">999999</attr>
+      <attr name="GlueSAPolicyQuota">999999</attr>
+      <attr name="GlueSAPolicyFileLifeTime">volatile</attr>
+-->
+    </class>
+
+
+
+    <!--  This class is marked DEPRECATED in Glue v1.3 -->
+    <class name="GlueSAState">
+<!--
+      <attr name="GlueSAStateUsedSpace">999999</attr>
+      <attr name="GlueSAStateAvailableSpace">999999</attr>
+-->
+    </class>
+
+
+    <class name="GlueSAAccessControlBase">
+      <!-- This is too object-type specific to be defined in the
+           general class -->
+    </class>
+
+  </classes>
+
+
+
+  <!--+
+      |  Various scale factors
+      +-->
+  <scale>
+    <factor mode="divide" name="bytes-to-kilobytes">1000</factor>
+  </scale>
+
+
+  <!--+
+      |  Some fixed mappings: you shouldn't have to edit these.
+      +-->
+  <mapping>
+
+    <!--+
+        |   The schema type for the access protocol URI.  For example,
+        |   "gsiftp" maps to "gsiftp" (identical), but "Xrootd" maps
+        |   to "root" (for root://<hostname>:<port>/)
+        +-->
+    <map name="door-type-to-access-proto-type">
+      <sub match="Xrootd" replace-with="root"/>
+    </map>
+
+    <map name="door-family-to-ctrl-proto-type">
+      <sub match="srm_v2" replace-with="SRM"/>
+    </map>
+
+
+    <!-- Whether a protocol family supports GSI -->
+    <map name="door-family-to-GSI">
+      <sub match="gsiftp"  replace-with="GSI"/>
+      <sub match="gsidcap" replace-with="GSI"/>
+      <default value=""/>
+    </map>
+
+
+    <!--+
+        |  The mapping between a protocol family and the maximum
+        |  number of streams to publish.
+        +-->
+    <map name="door-family-to-max-streams">
+      <sub match="gsiftp"  replace-with="10"/>
+      <default value="5"/>
+    </map>
+
+
+    <!--  For now, we hard-code our protocol versions -->
+    <map name="door-family-to-version">
+      <sub match="gsiftp"  replace-with="2.0"/>
+      <sub match="gsidcap" replace-with="1.0"/>
+      <sub match="dcap"    replace-with="1.0"/>
+      <sub match="Xrootd"  replace-with="2.89"/>
+      <sub match="root"    replace-with="2.89"/>
+      <sub match="https"   replace-with="1.1"/>
+    </map>
+
+    <map name="dCache-ALRP-values-to-Glue">
+      <sub match="REPLICA"   replace-with="Replica"/>
+      <sub match="OUTPUT"    replace-with="Output"/>
+      <sub match="CUSTODIAL" replace-with="Custodial"/>
+      <sub match="ONLINE"    replace-with="Online"/>
+      <sub match="NEARLINE"  replace-with="Nearline"/>
+    </map>
+  </mapping>
+
+</xylophone>
