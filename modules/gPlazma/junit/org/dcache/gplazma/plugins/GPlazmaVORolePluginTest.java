@@ -197,15 +197,19 @@ public class GPlazmaVORolePluginTest {
     public void testMapWithValidParams() throws AuthenticationException, IOException {
 
         GPlazmaVORolePlugin plugin = new GPlazmaVORolePlugin(CachedMapsProvider.createCachedVOMap(), CachedMapsProvider.createCachedAuthzMap());
-        Set<Principal> principals = new LinkedHashSet<Principal>();
 
-        plugin.map(null, principals, ValidMappingPrincipals);
+        Set<Principal> authorizedPrincipals = new HashSet<Principal>();
 
-        Assert.assertEquals(4, principals.size());
-        AssertContainsPrincipal(principals, new UidPrincipal(CachedMapsProvider.VALID_USERNAME_UID));
-        AssertContainsPrincipal(principals, new GidPrincipal(CachedMapsProvider.VALID_USERNAME_GID, true));
-        AssertContainsPrincipal(principals, new UidPrincipal(1001));
-        AssertContainsPrincipal(principals, new GidPrincipal(101, true));
+        plugin.map(null, ValidMappingPrincipals, authorizedPrincipals);
+
+        @SuppressWarnings("unchecked")
+        Set<Principal> expectedPrincipalsSet = new HashSet<Principal>(Arrays.asList(
+                new UidPrincipal(CachedMapsProvider.VALID_USERNAME_UID),
+                new GidPrincipal(CachedMapsProvider.VALID_USERNAME_GID, true),
+                new UidPrincipal(1001),
+                new GidPrincipal(101, true)));
+
+        Assert.assertEquals(expectedPrincipalsSet, authorizedPrincipals);
     }
 
 

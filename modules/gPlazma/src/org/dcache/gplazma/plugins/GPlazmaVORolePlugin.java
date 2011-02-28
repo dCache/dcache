@@ -112,9 +112,9 @@ public class GPlazmaVORolePlugin implements GPlazmaAuthenticationPlugin, GPlazma
     @Override
     public void map(SessionID sID, Set<Principal> principals,
             Set<Principal> authorizedPrincipals) throws AuthenticationException {
-        if (principals == null || authorizedPrincipals == null) throw new IllegalArgumentException();
+        if (authorizedPrincipals == null) throw new IllegalArgumentException();
 
-        Collection<Principal> userNamePrincipals = Collections2.filter(authorizedPrincipals, USERNAMEPRINCIPAL_CLASS_TYPE_PREDICATE);
+        Collection<Principal> userNamePrincipals = Collections2.filter(principals, USERNAMEPRINCIPAL_CLASS_TYPE_PREDICATE);
 
         if (userNamePrincipals.isEmpty()) return;
 
@@ -124,8 +124,8 @@ public class GPlazmaVORolePlugin implements GPlazmaAuthenticationPlugin, GPlazma
             Collection<AuthzMapLineParser.UserAuthzInformation> result = _cachedAuthzMap.getValuesForPredicatesMatching(principal.getName());
 
             for (AuthzMapLineParser.UserAuthzInformation mapping : result) {
-                principals.add(new UidPrincipal(mapping.getUid()));
-                principals.add(new GidPrincipal(mapping.getGid(), true));
+                authorizedPrincipals.add(new UidPrincipal(mapping.getUid()));
+                authorizedPrincipals.add(new GidPrincipal(mapping.getGid(), true));
             }
         }
     }
