@@ -118,7 +118,8 @@
                      -dcache-copy-skel,-dcache-classpath"
             description="build deploy-ready server package">
         <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
-        <chmod dir="${server.bin.dir}/install" includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/libexec" includes="**/*.sh" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/libexec" includes="**/*.rb" perm="ugo+rx" />
         <chmod dir="${server.bin.dir}/jobs"    includes="**/*" perm="ugo+rx" />
     </target>
 

@@ -46,8 +46,8 @@ Structure of Build framework:
                             |-psql_install_replicas.sql
 
                       |
-                      \-install-\
-                                |-migrate-config-to-197.sh
+                      \-libexec-\
+                                |-migrate-from-1.9.5.sh
 
 To be able to use build environment ANT >= 1.6 should
 be installed on the system. Please note, that there is no possibility to

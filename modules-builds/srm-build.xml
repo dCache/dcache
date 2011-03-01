@@ -104,7 +104,6 @@
                       |-jobs
                       |-config
                       |-etc
-                      |-install
     -->
 
         <mkdir dir="${server.bin.dir}/classes" />
@@ -116,8 +115,8 @@
         <copy file="${classesDir}/srm.jar" todir="${server.bin.dir}/classes" />
 
         <mkdir dir="${server.bin.dir}/etc" />
-        <mkdir dir="${server.bin.dir}/install" />
-        <copy file="${srm.src}/../sbin/upgrade_space_manager_schema.sh" todir="${server.bin.dir}/install" />
+
+        <copy file="${srm.src}/../sbin/upgrade_space_manager_schema.sh" todir="${server.bin.dir}/libexec" />
 
     </target>
 
