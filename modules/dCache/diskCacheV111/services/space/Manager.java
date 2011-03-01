@@ -118,7 +118,7 @@ public final class Manager
         private String linkGroupAuthorizationFileName = null;
         private boolean spaceManagerEnabled =true;
         private boolean matchVoGroupAndVoRole=false;
-        public static final int currentSchemaVersion = 3;
+        public static final int currentSchemaVersion = 4;
         private int previousSchemaVersion;
         private Args _args;
         private long _poolManagerTimeout = 60;
@@ -1613,6 +1613,9 @@ public final class Manager
                                                          ManagerSchemaConstants.LinkGroupTableName+
                                                          " DROP  COLUMN  hsmType ";
 
+
+        private static final Object createIndexLock = new Object();
+
         private void updateSchema() throws SQLException {
                 if(previousSchemaVersion == currentSchemaVersion) {
                         return;
@@ -1682,6 +1685,23 @@ public final class Manager
                 if (previousSchemaVersion==2) {
                         manager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.SpaceFileTableName+ " ADD COLUMN  deleted INTEGER");
                         previousSchemaVersion=3;
+                }
+                if (previousSchemaVersion==3) {
+                        new Thread() {
+                                public void run() {
+                                        synchronized(createIndexLock) {
+                                                try {
+                                                        manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,
+                                                                              "pnfspath,state");
+                                                }
+                                                catch (SQLException e) {
+                                                        logger.error("Failed to create index on table {} columns , \"pnfspath,state\"",
+                                                                     ManagerSchemaConstants.SpaceFileTableName);
+                                                }
+                                        }
+                                }
+                        }.start();
+                        previousSchemaVersion=4;
                 }
         }
 

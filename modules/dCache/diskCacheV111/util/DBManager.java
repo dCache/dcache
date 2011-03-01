@@ -30,16 +30,16 @@ public class DBManager {
 				       String driver,
 				       String user,
 				       String password ) throws SQLException {
-		
+
 		connectionPool=JdbcConnectionPool.getPool(url,
 							  driver,
 							  user,
 							  (password!=null?password:"srm"));
-		
+
 	}
 	synchronized public static final DBManager getInstance()  {
 		if ( DBManager._instance==null) {
-			DBManager._instance = new DBManager();	
+			DBManager._instance = new DBManager();
 		}
 		return DBManager._instance;
 	}
@@ -47,8 +47,8 @@ public class DBManager {
 	public JdbcConnectionPool getConnectionPool() {
 		return connectionPool;
 	}
-	
-	
+
+
 	public HashSet select(IoPackage pkg,
 			  String query) throws SQLException {
 		//
@@ -74,7 +74,7 @@ public class DBManager {
 			}
 		}
 	}
-        
+
 	public Object selectForUpdate(Connection connection,
 				      IoPackage pkg,
                                       String query,
@@ -94,11 +94,11 @@ public class DBManager {
                                         stmt.close();
                                         stmt=null;
                                 }
-                                catch (SQLException e1) { } 
+                                catch (SQLException e1) { }
                         }
                 }
         }
-                        
+
 	public HashSet selectPrepared(IoPackage pkg,
 				      String query,
 				      Object ... args) throws SQLException {
@@ -125,7 +125,7 @@ public class DBManager {
                                                 stmt.close();
                                                 stmt=null;
                                         }
-                                        catch (SQLException e1) { } 
+                                        catch (SQLException e1) { }
                                 }
 				connectionPool.returnFailedConnection(connection);
                                 connection=null;
@@ -133,9 +133,9 @@ public class DBManager {
 		}
 	}
 
-        
+
 //------------------------------------------------------------------------------
-        
+
 	public Object selectPrepared(int columnIndex,
 				     String query,
 				     Object ... args) throws SQLException {
@@ -169,7 +169,7 @@ public class DBManager {
                                                 stmt.close();
                                                 stmt=null;
                                         }
-                                        catch (SQLException e1) { } 
+                                        catch (SQLException e1) { }
                                 }
 				connectionPool.returnFailedConnection(connection);
                                 connection=null;
@@ -281,12 +281,30 @@ public class DBManager {
 				}
 				for (Iterator<String> i=listOfColumnsToBeIndexed.iterator();i.hasNext();) {
 					String column = i.next();
-					String indexName=name.toLowerCase()+"_"+column+"_idx";
-					String createIndexStatementText = "CREATE INDEX "+indexName+" ON "+name+" ("+column+")";
+                                        //
+                                        // column contains name(s) of columns on which we would like to
+                                        // create an index. Comma separated column names imply creation
+                                        // of compound index. Replace non alpha-numeric characters with "_".
+                                        // an index will be named like :
+                                        // tableName_column1_column2_idx
+                                        //
+                                        StringBuilder indexName = new StringBuilder();
+                                        indexName.append(name.toLowerCase()).
+                                                append("_").
+                                                append(column.replaceAll("\\W","_")).
+                                                append("_idx");
+                                        StringBuilder createIndexStatementText=new StringBuilder();
+                                        createIndexStatementText.append("CREATE INDEX ").
+                                                append(indexName.toString()).
+                                                append(" ON ").
+                                                append(name).
+                                                append(" (").
+                                                append(column).
+                                                append(")");
                                         Statement s=null;
                                         try {
                                                 s = connection.createStatement();
-                                                int result = s.executeUpdate(createIndexStatementText);
+                                                int result = s.executeUpdate(createIndexStatementText.toString());
                                                 connection.commit();
                                                 s.close();
                                                 s=null;
@@ -299,7 +317,7 @@ public class DBManager {
                                                                 s=null;
                                                         }
                                                 }
-                                                catch (SQLException e1) { } 
+                                                catch (SQLException e1) { }
                                         }
                                 }
                 }
@@ -310,7 +328,7 @@ public class DBManager {
                                                 set.close();
                                                 set=null;
                                         }
-                                        catch (SQLException e1) { } 
+                                        catch (SQLException e1) { }
                                 }
 				connectionPool.returnFailedConnection(connection);
 				connection = null;
@@ -324,7 +342,7 @@ public class DBManager {
                                                 set.close();
                                                 set=null;
                                         }
-                                        catch (SQLException e1) { } 
+                                        catch (SQLException e1) { }
                                 }
 				connectionPool.returnConnection(connection);
 				connection = null;
@@ -358,17 +376,17 @@ public class DBManager {
                                                 stmt=null;
                                         }
                                 }
-                                catch (SQLException e1) { } 
+                                catch (SQLException e1) { }
 				connectionPool.returnConnection(connection);
                                 connection=null;
 			}
 		}
 	}
-	
+
 	public int delete(String query,Object ... args)  throws SQLException {
 		return update(query,args);
 	}
-	
+
 	public int insert(String query, Object ... args)  throws SQLException {
 		return update(query,args);
 	}
@@ -412,7 +430,7 @@ public class DBManager {
                                         stmt.close();
                                         stmt=null;
                                 }
-                                catch (SQLException e1) { } 
+                                catch (SQLException e1) { }
                         }
                 }
         }
