@@ -235,6 +235,20 @@ documentation is written as HTML to the output directory specified.
 .SH DEBUGGING COMMANDS
 
 .TP
+.B check-config
+Checks the dCache main configuration file, dcache.conf, and the node's
+layout file for any problems with these files' structure or their use
+of properties and generates appropriate warning or error messages.
+Warning messages describe problems that do not prevent dCache from
+starting whereas error messages indicate a problem that must be fixed
+before dCache will start correctly.
+
+A warning message is generated if dCache configuration attempts to
+assign a value to a deprecated or obsolete property and an error
+message is reported if a file attempts to adjust the value of a
+forbidden property.
+
+.TP
 .B dump heap [--force] DOMAIN FILE
 Dumps the Java heap of DOMAIN to FILE. The file will contain
 information about all objects and can be analysed with the Java
@@ -313,7 +327,3 @@ dCache is a joint venture between the Deutsches Elektronen-Synchrotron
 (DESY), the Fermi National Accelerator Laboratory (FNAL), and the
 Nordic Data Grid Facility (NDGF).
 
-.SH AUTHORS
-
-This man page and the dcache script was written by
-Gerd Behrmann <behrmann@ndgf.org>.
