@@ -508,32 +508,65 @@ fileNotPrecious() # $1 filename
 # emit lines of a dCacheSetup file suitable for dcache.conf
 emitDcacheSetup() # in $1 filename
 {
+    cat "$1" | \
+        filterOutDataCopiedFromTemplate | \
+        filterFixPropertyReferences | \
+        filterOutMultipleAssigments
+}
+
+
+filterOutDataCopiedFromTemplate()
+{
+    tmp=$(mktemp)
+    sed -f ${DCACHE_LIB}/config.sed > $tmp
+    diff -u ${DCACHE_HOME}/share/migration/dCacheSetup-from-195.canonical $tmp | \
+        tail +4 | \
+        grep ^+ | \
+        cut -b2- | \
+        sed -e 's/="\(.*\)"$/=\1/'
+    rm -f $tmp
+}
+
+
+filterFixPropertyReferences()
+{
+    sed -e 's/\${ourHomeDir}/${dcache.home}/'
+}
+
+
+# print lines of a dCacheSetup file so assigments that have their
+# property reassigned a different value later on are commented-out
+filterOutMultipleAssigments() # in $1 filename
+{
+    tmp=$(mktemp)
+    cat - > $tmp
+
     redefined_properties_file=$(mktemp)
-
     line_number=0
-    cat "$1" | while IFS="" read -r line_text; do
-	line_number=$(( $line_number + 1 ))
+    cat $tmp | while IFS="" read -r line_text; do
+        line_number=$(( $line_number + 1 ))
 
-	if shouldLineBeExcluded "$1" $line_number "$line_text"; then
-	    echo "# $line_text"
+        if shouldLineBeExcluded $tmp $line_number "$line_text"; then
+            echo "# $line_text"
         else
-	    echo "$line_text"
-	fi
+            echo "$line_text"
+        fi
     done
 
     redefinedProperties=$(cat $redefined_properties_file)
-    rm $redefined_properties_file
+    rm -f $redefined_properties_file $tmp
 }
+
 
 shouldLineBeExcluded() # in $1 filename, $2 line number, $3 line text
 {
     if isLineAPropertyAssignment "$3"; then
-	extractPropertyFromAssignment property "$3"
+        extractPropertyFromAssignment property "$3"
 
-	if isPropertyRedefinedLater "$1" $2 "$property"; then
-	    acceptRedefinedProperty "$property"
-	    return 0
-	fi
+        if isPropertyRedefinedLater "$1" $2 "$property"; then
+            acceptRedefinedProperty "$property"
+            return 0
+        fi
     fi
 
     return 1
