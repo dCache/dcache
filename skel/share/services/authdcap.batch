@@ -2,18 +2,20 @@
 #  Authenticated dCap  D o o r
 #
 
-# Define defaults
-onerror continue
-   set context -c dcapMaxLogin         1500
-   set context -c dcapIoQueue          ""
-   set context -c dcapIoQueueOverwrite denied
-   set context -c dcapPasswdFile       "/opt/d-cache/etc/passwd4dCapDoor"
 onerror shutdown
+check -strong cell.name
+check -strong dcapMaxLogin
+check -strong dcapIoQueueOverwrite
+check -strong port
+check -strong pnfsmanager
+check -strong poolmanager
+check -strong loginBroker
+check -strong truncate
+check -strong dcache.paths.share
+check dcapIoQueue
+check dcapPasswdFile
 
 exec file:${dcache.paths.share}/cells/stage.fragment doors
-
-# Define required variables
-check -strong port
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
@@ -28,11 +30,14 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -brokerUpdateTime=30 \
              -protocolFamily=dcap \
              -protocolVersion=1.3.0 \
-             -poolProxy=PoolManager \
+             -pnfsManager=${pnfsmanager} \
+             -poolManager=${poolmanager} \
+             -poolProxy=${poolmanager} \
+             -pinManager=PinManager \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \
              -io-queue=${dcapIoQueue} \
              -io-queue-overwrite=${dcapIoQueueOverwrite} \
-             -loginBroker=LoginBroker  \
+             -loginBroker=${loginBroker}  \
 "
 #
 #

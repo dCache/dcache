@@ -2,6 +2,16 @@
 
 onerror shutdown
 
+check -strong dcache.paths.share
+check -strong cell.name
+check -strong config
+check -strong selectionUnit
+check -strong costCalculator
+check -strong threadPool
+check -strong quotaManager
+check -strong poolStatusRelay
+check -strong pnfsmanager
+
 # External settings
 exec -shell file:${dcache.paths.share}/cells/stage.fragment PoolManager
 
@@ -40,20 +50,7 @@ define context poolmanager.defaults endDefine
     psu create link default-link any-store world-net any-protocol
     psu set link default-link -readpref=10 -writepref=10 -cachepref=10 -p2ppref=-1
     psu add link default-link default
-
 endDefine
-
-check -strong cell.name
-check -strong config
-
-onerror continue
-set context -c selectionUnit diskCacheV111.poolManager.PoolSelectionUnitV2
-set context -c costCalculator diskCacheV111.pools.CostCalculationV5
-set context -c threadPool diskCacheV111.util.ThreadPoolNG
-set context -c quotaManager none
-set context -c poolStatusRelay broadcast
-set context -c stageConfigurationFilePath ""
-onerror shutdown
 
 # Start PoolManager
 create org.dcache.cells.UniversalSpringCell ${cell.name} \

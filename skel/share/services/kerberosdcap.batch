@@ -1,17 +1,17 @@
 # Kerberos DCAP cell
 
 onerror shutdown
+check -strong dcache.paths.share
 check -strong port
+check -strong cell.name
 check -string kerberos.service-principle-name
 check -strong poolmanager
 check -strong pnfsmanager
 check -strong spacemanager
-
-# Defaults
-onerror continue
-set context -c kerberosdcapIoQueue              ""
-set context -c kerberosdcapIoQueueOverwrite     denied
-set context -c kerberosdcapMaxLogin             1500
+check -strong loginBroker
+check -strong kerberosdcapIoQueueOverwrite
+check -strong kerberosdcapMaxLogin
+check kerberosdcapIoQueue
 
 #
 #  ----  Usage of Srm Space Manager
@@ -19,15 +19,14 @@ set context -c kerberosdcapMaxLogin             1500
 #   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
 #   as both poolManager and poolProxy
 #
-set context -c srmSpaceManagerEnabled no
+onerror continue
 define env srmSpaceManagerOn.exe endExe
   set env -c doorPoolManager "${spacemanager}"
 endExe
 eval ${srmSpaceManagerEnabled} yes ==
 exec env srmSpaceManagerOn.exe -ifok
-set context -c doorPoolManager "${poolmanager}"
+set env -c doorPoolManager "${poolmanager}"
 onerror shutdown
-
 
 # External definitions
 exec file:${dcache.paths.share}/cells/stage.fragment doors
@@ -45,7 +44,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
               -poolManager=${doorPoolManager}  \
               -poolProxy=${doorPoolManager} \
               -pinManager=PinManager \
-              -loginBroker=LoginBroker \
+              -loginBroker=${loginBroker} \
               -brokerUpdateTime=120 \
               -protocolFamily=dcap \
               -protocolVersion=1.3.0 \

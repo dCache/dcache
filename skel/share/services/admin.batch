@@ -1,18 +1,14 @@
 # Starts admin door
 
-# Define defaults
-onerror continue
-set context -c knownUsersFile    ${keyBase}/authorized_keys
-set context -c serverKeyFile     ${keyBase}/server_key
-set context -c hostKeyFile       ${keyBase}/host_key
-set env     -c AccessControlCell acm
-#set context -c userPasswordFile  cell:pam
-set context -c userPasswordFile  cell:${AccessControlCell}
-set context -c adminHistoryFile  ""
 onerror shutdown
-
-# Required variables
+check -strong knownUsersFile
+check -strong serverKeyFile
+check -strong hostKeyFile
+check -strong userPasswordFile
+check -strong AccessControlCell
 check -strong port
+check adminHistoryFile
+
 
 
 define env failMissingServerKey.exe endDefine
@@ -49,6 +45,11 @@ exec env failMissingHostKey.exe -ifnotok=have_host_key
 #                       ~/.ssh/authorized_keys, must be SSHv1 keys)
 #    userPasswordFile - how to authorise username/password logins
 #
+set context hostKeyFile "${hostKeyFile}"
+set context serverKeyFile "${serverKeyFile}"
+set context knownUsersFile "${knownUsersFile}"
+set context userPasswordFile "${userPasswordFile}"
+
 create dmg.cells.services.login.SshKeyManager    skm
 
 #create dmg.cells.services.login.LoginManager slm \

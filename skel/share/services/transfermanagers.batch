@@ -2,33 +2,25 @@
 #
 #   t r a n s f e r    m a n a g e r     c e l l s
 #
-#
-#   Default values
-#
-onerror continue
 
-set context -c srmDbHost          localhost
-set context -c srmDatabaseHost    ${srmDbHost}
-set context -c srmDbName          dcache
-set context -c srmDbUser          srmdcache
-set context -c srmDbPassword      srmdcache
-set context -c srmPasswordFile    ""
+onerror shutdown
 
-set context -c srmPoolTimeout          300
-set context -c srmPnfsTimeout          300
-set context -c srmMoverTimeout        7200
-set context -c remoteCopyMaxTransfers  150
-set context -c srmCopyReqThreadPoolSize                250
-set context -c remoteGsiftpMaxTransfers  ${srmCopyReqThreadPoolSize}
-set context -c remoteGsiftpIoQueue       ""
+check -strong srmSpaceManagerEnabled
+check -strong poolmanager
+check -strong srmPoolManagerTimeout
+check -strong srmPoolTimeout
+check -strong srmPnfsTimeout
+check -strong srmMoverTimeout
+check -strong remoteCopyMaxTransfers
+check -strong remoteGsiftpMaxTransfers
+check remoteGsiftpIoQueue
+check -strong srmDatabaseHost
+check -strong srmDbName
+check -strong srmDbUser
+check -strong srmDbPassword
+check -strong srmDbLogEnabled
+check srmPasswordFile
 
-set context -c srmDbLogEnabled   false
-
-#login broker timeout in millis
-set context -c srmLoginBrokerUpdatePeriod 3000
-
-#pool manager timeout in seconds
-set context -c srmPoolManagerTimeout 300
 
 #
 #  ----  Usage of Srm Space Manager
@@ -37,19 +29,17 @@ set context -c srmPoolManagerTimeout 300
 #   as both poolManager and poolProxy
 #
 onerror continue
-set context -c srmSpaceManagerEnabled no
-
 
 define env srmSpaceManagerOn.exe endExe
   set env -c remoteTransferManagerPoolProxy        "SrmSpaceManager"
   set env -c remoteTransferManagerPoolManager      "SrmSpaceManager"
-  set context -c srmImplicitSpaceManagerEnabled true
-  set context -c srmSpaceReservationStrict true
+  set env -c srmImplicitSpaceManagerEnabled true
+  set env -c srmSpaceReservationStrict true
 endExe
 
 define env srmSpaceManagerOff.exe endExe
-  srmSpaceReservation=false
-  srmSpaceReservationStrict=false
+  set env srmSpaceReservation false
+  set env srmSpaceReservationStrict false
 endExe
 
 eval ${srmSpaceManagerEnabled} yes ==
@@ -60,8 +50,8 @@ eval ${srmSpaceManagerEnabled} yes !=
 set env srmSpaceManagerIsOff ${rc}
 exec env srmSpaceManagerOff.exe -ifok=srmSpaceManagerIsOff
 
-set context -c remoteTransferManagerPoolProxy                "PoolManager"
-set context -c remoteTransferManagerPoolManager              "PoolManager"
+set env -c remoteTransferManagerPoolProxy ${poolmanager}
+set env -c remoteTransferManagerPoolManager ${poolmanager}
 
 #
 #
