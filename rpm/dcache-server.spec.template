@@ -100,7 +100,6 @@ fi
 /opt/d-cache/share
 /opt/d-cache/libexec/README
 /opt/d-cache/libexec/chimera
-%attr(0755,root,root) /opt/d-cache/install
 %attr(0755,root,root) /opt/d-cache/jobs
 %attr(0755,root,root) /opt/d-cache/bin
 %attr(0755,root,root) /opt/d-cache/libexec/nsp-performance.sh
@@ -108,6 +107,9 @@ fi
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
 %attr(0755,root,root) /opt/d-cache/libexec/migration-check.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
+%attr(0755,root,root) /opt/d-cache/libexec/migrate-from-1.9.5.sh
+%attr(0755,root,root) /opt/d-cache/libexec/preparePnfs.sh
+%attr(0755,root,root) /opt/d-cache/libexec/upgrade_space_manager_schema.sh
 %config(noreplace) /opt/d-cache/etc
 %config(noreplace) /opt/d-cache/config
 
