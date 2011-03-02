@@ -625,15 +625,15 @@ public class PoolMonitorV5
         return info;
     }
 
-    private Collection<PoolManagerPoolInformation> getPoolInformation(Collection<PoolSelectionUnit.SelectionPool> pools) {
-        return transform(pools,
-            new Function<PoolSelectionUnit.SelectionPool, PoolManagerPoolInformation>()   {
-
-                @Override
-                public PoolManagerPoolInformation apply(SelectionPool pool) {
-                    return getPoolInformation(pool);
-                }
-            });
+    private Collection<PoolManagerPoolInformation>
+        getPoolInformation(Collection<PoolSelectionUnit.SelectionPool> pools)
+    {
+        List<PoolManagerPoolInformation> result =
+            new ArrayList<PoolManagerPoolInformation>();
+        for (PoolSelectionUnit.SelectionPool pool: pools) {
+            result.add(getPoolInformation(pool));
+        }
+        return result;
     }
 
     public PoolManagerPoolInformation getPoolInformation(String name)
@@ -652,7 +652,7 @@ public class PoolMonitorV5
     {
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return getPoolInformation(link.pools());
+        return new ArrayList(getPoolInformation(link.pools()));
     }
 
     public Collection<PoolManagerPoolInformation>
@@ -661,7 +661,7 @@ public class PoolMonitorV5
     {
         Collection<PoolSelectionUnit.SelectionPool> pools =
             _selectionUnit.getPoolsByPoolGroup(poolGroup);
-        return getPoolInformation(pools);
+        return new ArrayList(getPoolInformation(pools));
     }
 
     /**
