@@ -54,19 +54,15 @@ public class SpringLiquibase
             try {
                 Liquibase liquibase = createLiquibase(c);
                 try {
-                    List<ChangeSet> changeSets =
-                        liquibase.listUnrunChangeSets(getContexts());
-                    for (ChangeSet changeSet: changeSets) {
-                        _log.warn("Unapplied database schema change found: {}",
-                                  changeSet.getDescription());
-                    }
-
                     if (_shouldUpdate) {
-                        _log.warn("Applying database schema changes");
                         liquibase.update(getContexts());
-                    } else if (!changeSets.isEmpty()) {
-                        throw new MigrationFailedException(changeSets.get(0),
-                                                           "Automatic schema migration is disabled. Please apply missing changes.");
+                    } else {
+                        List<ChangeSet> changeSets =
+                            liquibase.listUnrunChangeSets(getContexts());
+                        if (!changeSets.isEmpty()) {
+                            throw new MigrationFailedException(changeSets.get(0),
+                                                               "Automatic schema migration is disabled. Please apply missing changes.");
+                        }
                     }
                 } finally {
                     liquibase.forceReleaseLocks();
