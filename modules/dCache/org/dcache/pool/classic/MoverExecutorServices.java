@@ -8,9 +8,10 @@ import java.util.Map;
  */
 public class MoverExecutorServices {
 
-    private static final MoverExecutorService DEFAULT = new LegacyMoverExecutorService();
-    private static final PostTransferExecutionService DEFAULT_POST = new ClassicPostExecutionService();
-
+    private final MoverExecutorService _defaultExecutorService =
+        new LegacyMoverExecutorService();
+    private final PostTransferExecutionService _defaultPostService =
+        new ClassicPostExecutionService();
     private final Map<String, MoverExecutorService> _executionService;
 
     public MoverExecutorServices(Map<String, MoverExecutorService> executionService) {
@@ -23,10 +24,10 @@ public class MoverExecutorServices {
             return service;
         }
 
-        return DEFAULT;
+        return _defaultExecutorService;
     }
 
     public PostTransferExecutionService getPostExecutorService(String protocol) {
-        return DEFAULT_POST;
+        return _defaultPostService;
     }
 }
