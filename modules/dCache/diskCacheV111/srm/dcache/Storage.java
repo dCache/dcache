@@ -1668,7 +1668,7 @@ public final class Storage
                     _poolManagerStub.sendAndWait(message).getFileLocality();
                 fmd.locality = locality.toTFileLocality();
                 switch (locality) {
-                case NEARLINE:
+                case ONLINE:
                 case ONLINE_AND_NEARLINE:
                     fmd.isCached = true;
                 }
@@ -2768,7 +2768,7 @@ public final class Storage
                            FileLocality locality = message.getFileLocality();
                            fmd.locality = locality.toTFileLocality();
                            switch (locality) {
-                           case NEARLINE:
+                           case ONLINE:
                            case ONLINE_AND_NEARLINE:
                                 fmd.isCached = true;
                            }
