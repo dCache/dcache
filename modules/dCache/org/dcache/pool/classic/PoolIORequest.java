@@ -197,7 +197,7 @@ public class PoolIORequest implements IoProcessable {
          * assuming, that get transter called by a thread
          * which going to execute the transfer.
          */
-        _cdcContext.restore();
+        _cdcContext.apply();
         return _transfer;
     }
 
