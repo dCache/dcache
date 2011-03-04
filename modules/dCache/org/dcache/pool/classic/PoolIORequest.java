@@ -5,6 +5,7 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -55,6 +56,7 @@ public class PoolIORequest implements IoProcessable {
 
     /** transfer status error message */
     private volatile String _errorMessage = "";
+    private final CDC _cdcContext;
 
     /**
      * @param transfer the read or write transfer to execute
@@ -81,6 +83,7 @@ public class PoolIORequest implements IoProcessable {
         _cellEndpoint = cellEndpoint;
         _billingCell = billingCell;
         _faultListener = faultListener;
+        _cdcContext = new CDC();
     }
 
     void sendBillingMessage() {
@@ -190,6 +193,11 @@ public class PoolIORequest implements IoProcessable {
     }
 
     public PoolIOTransfer getTransfer() {
+        /*
+         * assuming, that get transter called by a thread
+         * which going to execute the transfer.
+         */
+        _cdcContext.restore();
         return _transfer;
     }
 
