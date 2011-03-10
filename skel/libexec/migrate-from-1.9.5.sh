@@ -437,12 +437,37 @@ printChimeraOptions()
     saxonDir=$(getProperty saxonDir)
     xsltDir="$(getProperty dcache.paths.share)/xml/xslt"
 
+    chimeraConfig=$(findFirstFileOf ${DCACHE_CONFIG}/chimera-config.xml \
+	${DCACHE_CONFIG}/chimera-confg.xml.rpmsave \
+	${DCACHE_HOME}/share/migration/chimera-config-from-195.xml)
+
     "${JAVA}" -classpath "${saxonDir}/saxon.jar" com.icl.saxon.StyleSheet  \
-        "${DCACHE_CONFIG}/chimera-config.xml"  \
+        "${chimeraConfig}"  \
         "${xsltDir}/convert-chimera-config.xsl" \
 	"defaults-uri=$xmlFile"
 
     rm $xmlFile
+}
+
+
+#  Print the first available file from a list of candidates and return 0. Returns
+#  non-zero if none of the files exist.
+findFirstFileOf()
+{
+    local searched_files
+
+    searched_files=
+    while [ $# -gt 0 ]; do
+      if [ -f "$1" ]; then
+        echo "$1"
+        return 0
+      fi
+      searched_files="$searched_files $1"
+      shift
+    done
+
+    printp "Cannot find any of $searched_files" 1>&2
+    return 1
 }
 
 
