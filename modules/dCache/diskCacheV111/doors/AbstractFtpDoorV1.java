@@ -3150,8 +3150,7 @@ public abstract class AbstractFtpDoorV1
             _cdc.restore();
 
             CellMessage msg =
-                new CellMessage(new CellPath(_pool),
-                                "mover ls -binary " + _moverId);
+                new CellMessage(new CellPath(_pool), "mover ls -binary");
             sendMessage(msg, this, _timeout);
         }
 
@@ -3174,27 +3173,38 @@ public abstract class AbstractFtpDoorV1
             sendMarker();
         }
 
+        private IoJobInfo findJobInfo(IoJobInfo[] infos)
+        {
+            for (IoJobInfo info: infos) {
+                if (info.getJobId() == _moverId) {
+                    return info;
+                }
+            }
+            return null;
+        }
+
         public synchronized void answerArrived(CellMessage req, CellMessage answer)
         {
             Object msg = answer.getMessageObject();
-            if (msg instanceof IoJobInfo) {
-                IoJobInfo ioJobInfo = (IoJobInfo)msg;
-                String status = ioJobInfo.getStatus();
-
-                if (status == null) {
-                    sendMarker();
-                } else if (status.equals("A") || status.equals("RUNNING")) {
-                    // "Active" job
-                    setProgressInfo(ioJobInfo.getBytesTransferred(),
-                                    ioJobInfo.getLastTransferred());
-                    sendMarker();
-                } else if (status.equals("K") || status.equals("R")) {
-                    // "Killed" or "Removed" job
-                } else if (status.equals("W") || status.equals("QUEUED")) {
-                    sendMarker();
-                } else {
-                    _logger.error("Performance marker engine received unexcepted status from mover: {}",
-                                  status);
+            if (msg instanceof IoJobInfo[]) {
+                IoJobInfo ioJobInfo = findJobInfo((IoJobInfo[]) msg);
+                if (ioJobInfo != null) {
+                    String status = ioJobInfo.getStatus();
+                    if (status == null) {
+                        sendMarker();
+                    } else if (status.equals("A") || status.equals("RUNNING")) {
+                        // "Active" job
+                        setProgressInfo(ioJobInfo.getBytesTransferred(),
+                                        ioJobInfo.getLastTransferred());
+                        sendMarker();
+                    } else if (status.equals("K") || status.equals("R")) {
+                        // "Killed" or "Removed" job
+                    } else if (status.equals("W") || status.equals("QUEUED")) {
+                        sendMarker();
+                    } else {
+                        _logger.error("Performance marker engine received unexcepted status from mover: {}",
+                                      status);
+                    }
                 }
             } else if (msg instanceof Exception) {
                 _logger.warn("Performance marker engine: {}",
