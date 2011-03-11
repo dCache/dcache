@@ -545,13 +545,24 @@ filterOutDataCopiedFromTemplate()
     tmp=$(mktemp)
     sed -f ${DCACHE_LIB}/config.sed > $tmp
     diff -u ${DCACHE_HOME}/share/migration/dCacheSetup-from-195.canonical $tmp | \
-        tail +4 | \
+        doTail +4 | \
         grep ^+ | \
         cut -b2- | \
         sed -e 's/="\(.*\)"$/=\1/'
     rm -f $tmp
 }
 
+doTail()
+{
+    case "$(uname -s)" in
+        SunOS)
+            tail $1
+            ;;
+        *)
+            tail -n$1
+            ;;
+    esac
+}
 
 filterFixPropertyReferences()
 {
@@ -619,7 +630,7 @@ extractPropertyFromAssignment() # out $1 property, in $2 line of config file.
 isPropertyRedefinedLater() # $1 filename, $2 line number of assignment, $3 property name
 {
     makeReFromString re_fragment "$3"
-    tail -n +$(($2 + 1)) "$1" | grep "^[ \t]*$re_fragment[ \t]*=" >/dev/null
+    doTail +$(($2 + 1)) "$1" | grep "^[ \t]*$re_fragment[ \t]*=" >/dev/null
 }
 
 makeReFromString() # out $1 RE, in $2 an arbitrary string
