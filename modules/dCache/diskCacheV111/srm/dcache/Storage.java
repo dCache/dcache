@@ -2276,7 +2276,7 @@ public class Storage
             }
             else {
                 fmd.locality = getFileLocality(storage_info, pnfsId);
-                if (fmd.locality == TFileLocality.NEARLINE ||
+                if (fmd.locality == TFileLocality.ONLINE ||
                     fmd.locality == TFileLocality.ONLINE_AND_NEARLINE)  {
                     fmd.isCached = true;
                 }
