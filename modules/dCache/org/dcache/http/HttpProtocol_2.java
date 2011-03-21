@@ -113,7 +113,8 @@ public class HttpProtocol_2 implements MoverProtocol
             int totalLimit = args.getIntOption("http-mover-max-memory");
             int maxChunkSize =  args.getIntOption("http-mover-max-chunk-size");
 
-            int clientIdleTimeout = args.getIntOption("http-mover-client-idle-timeout");
+            int timeoutInSeconds = args.getIntOption("http-mover-client-idle-timeout") ;
+            int clientIdleTimeout = (int)TimeUnit.SECONDS.toMillis(timeoutInSeconds);
 
             String socketThreads = args.getOpt("http-mover-socket-threads");
 
