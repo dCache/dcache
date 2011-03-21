@@ -243,15 +243,13 @@ public class Subjects extends dmg.util.Subjects
      * Returns the collection of FQANs of a subject.
      */
     public static Collection<String> getFqans(Subject subject) {
-        Set<FQANPrincipal> principals =
-                subject.getPrincipals(FQANPrincipal.class);
-        if (principals.size() == 0) {
-            return Collections.emptySet();
-        }
 
         Collection<String> fqans = new ArrayList<String>();
-        for (FQANPrincipal principal : principals) {
-            fqans.add(principal.getName());
+        for (Principal principal : subject.getPrincipals()) {
+
+            if (principal instanceof FQANPrincipal) {
+                fqans.add(principal.getName());
+            }
         }
         return fqans;
     }
