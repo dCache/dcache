@@ -199,5 +199,5 @@ create diskCacheV111.cells.WebCollectorV3 collector \
 ####################################################################
 
 onerror shutdown
-create dmg.cells.services.HttpServiceCell ${cell.name} \
+create org.dcache.services.httpd.HttpServiceCell ${cell.name} \
        "!httpdSetupExtra ${port}"
