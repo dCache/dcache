@@ -1,7 +1,6 @@
-check -strong amqUrl
+# jms is a deprecated name
 
-create org.dcache.cells.UniversalSpringCell JMS \
-     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq.xml \
-      -amqUrl=${amqUrl} \
-     "
+say -level=2 "broker.scheme=jms is deprecated"
+
+exec file:${dcache.paths.share}/cells/tunnel-amq.fragment
 

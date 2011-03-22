@@ -4,6 +4,8 @@
 # Needed by info service and dCache GUI
 #
 
+onerror shutdown
+
 define env topo-cells.exe end
   set context -c topoWaitTime 300000
   set context -c topoTimeout 20000
@@ -19,12 +21,12 @@ define env topo-cells.exe end
      "
 end
 
-define env topo-jms.exe end
+define env topo-amq.exe end
   set context -c topoWaitTime 300000
   set context -c topoTimeout 20000
 
   create org.dcache.cells.UniversalSpringCell topo \
-     "classpath:org/dcache/services/topology/jms.xml \
+     "classpath:org/dcache/services/topology/amq.xml \
       -export \
       -cellClass=TopoCell \
       -topoWaitTime=\"${topoWaitTime}\" \
@@ -33,11 +35,23 @@ define env topo-jms.exe end
 end
 
 define env topo-embedded-jms.exe end
-  exec env topo-jms.exe
+  exec env topo-amq.exe
 end
 
 define env topo-hybrid.exe end
-  exec env topo-jms.exe
+  exec env topo-amq.exe
+end
+
+define env topo-jms.exe end
+  exec env topo-amq.exe
+end
+
+define env topo-amq-embedded.exe end
+  exec env topo-amq.exe
+end
+
+define env topo-cells+amq-embedded.exe end
+  exec env topo-amq.exe
 end
 
 define env topo-none.exe end
