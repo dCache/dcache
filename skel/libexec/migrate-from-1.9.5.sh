@@ -437,12 +437,37 @@ printChimeraOptions()
     saxonDir=$(getProperty saxonDir)
     xsltDir="$(getProperty dcache.paths.share)/xml/xslt"
 
+    chimeraConfig=$(findFirstFileOf ${DCACHE_CONFIG}/chimera-config.xml \
+	${DCACHE_CONFIG}/chimera-confg.xml.rpmsave \
+	${DCACHE_HOME}/share/migration/chimera-config-from-195.xml)
+
     "${JAVA}" -classpath "${saxonDir}/saxon.jar" com.icl.saxon.StyleSheet  \
-        "${DCACHE_CONFIG}/chimera-config.xml"  \
+        "${chimeraConfig}"  \
         "${xsltDir}/convert-chimera-config.xsl" \
 	"defaults-uri=$xmlFile"
 
     rm $xmlFile
+}
+
+
+#  Print the first available file from a list of candidates and return 0. Returns
+#  non-zero if none of the files exist.
+findFirstFileOf()
+{
+    local searched_files
+
+    searched_files=
+    while [ $# -gt 0 ]; do
+      if [ -f "$1" ]; then
+        echo "$1"
+        return 0
+      fi
+      searched_files="$searched_files $1"
+      shift
+    done
+
+    printp "Cannot find any of $searched_files" 1>&2
+    return 1
 }
 
 
@@ -520,13 +545,24 @@ filterOutDataCopiedFromTemplate()
     tmp=$(mktemp)
     sed -f ${DCACHE_LIB}/config.sed > $tmp
     diff -u ${DCACHE_HOME}/share/migration/dCacheSetup-from-195.canonical $tmp | \
-        tail +4 | \
+        doTail +4 | \
         grep ^+ | \
         cut -b2- | \
         sed -e 's/="\(.*\)"$/=\1/'
     rm -f $tmp
 }
 
+doTail()
+{
+    case "$(uname -s)" in
+        SunOS)
+            tail $1
+            ;;
+        *)
+            tail -n$1
+            ;;
+    esac
+}
 
 filterFixPropertyReferences()
 {
@@ -594,7 +630,7 @@ extractPropertyFromAssignment() # out $1 property, in $2 line of config file.
 isPropertyRedefinedLater() # $1 filename, $2 line number of assignment, $3 property name
 {
     makeReFromString re_fragment "$3"
-    tail -n +$(($2 + 1)) "$1" | grep "^[ \t]*$re_fragment[ \t]*=" >/dev/null
+    doTail +$(($2 + 1)) "$1" | grep "^[ \t]*$re_fragment[ \t]*=" >/dev/null
 }
 
 makeReFromString() # out $1 RE, in $2 an arbitrary string
