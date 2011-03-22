@@ -582,9 +582,7 @@ public class      HttpServiceCell
            }
            return sb.toString();
        }
-       private void sendFile( File base , String [] tokens )throws Exception{
-
-           File f = null ;
+       private void sendFile( File base , String [] tokens ) throws IOException, HttpException {
 
            String filename = null ;
            if(  tokens.length < 2 ){
@@ -596,9 +594,13 @@ public class      HttpServiceCell
                  sb.append( "/" ).append( tokens[i] ) ;
               filename = sb.toString() ;
            }
-           f = base.isFile() ? base : new File( base , filename ) ;
+
+           File f = base.isFile() ? base : new File( base , filename ) ;
+           if(!f.getCanonicalFile().getAbsolutePath().startsWith(base.getCanonicalFile().getAbsolutePath()))
+               throw new HttpException(HttpStatus.FORBIDDEN, "Forbidden");
+
            if( ! f.isFile() )
-              throw new Exception( "Url Not found : "+f ) ;
+              throw new HttpException( HttpStatus.NOT_FOUND , "Not found : "+ filename);
 
            FileInputStream binary = new FileInputStream(f);
            try {
