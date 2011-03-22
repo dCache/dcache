@@ -244,8 +244,8 @@ public class SubjectsTest
     @Test
     public void testGetFqans()
     {
-        assertEquals("Root must not have FQANs", Collections.emptySet(),
-                     Subjects.getFqans(Subjects.ROOT));
+        assertTrue("Root must not have FQANs",
+                    Subjects.getFqans(Subjects.ROOT).isEmpty());
         assertEquals("Subject with primary FQAN must have correct FQAN",
                      asSet(FQAN1),
                      new HashSet<String>(Subjects.getFqans(_subject1)));
