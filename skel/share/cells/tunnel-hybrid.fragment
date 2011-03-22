@@ -1,7 +1,5 @@
-onerror continue
+# hybrid is a deprecated name
 
-eval ${domain.name} ${broker.domain} ==
-exec file:${dcache.paths.share}/cells/jms-broker.fragment -ifok
+say -level=2 "broker.scheme=hybrid is deprecated"
 
-eval ${domain.name} ${broker.domain} !=
-exec file:${dcache.paths.share}/cells/tunnel-jms.fragment -ifok
+exec file:${dcache.paths.share}/cells/tunnel-cells+amq-embedded.fragment

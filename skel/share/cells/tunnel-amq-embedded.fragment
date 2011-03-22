@@ -1,0 +1,32 @@
+onerror shutdown
+check -strong dcache.paths.share
+check -strong broker.domain
+check -strong domain.name
+
+#
+# Instantiate ActiveMQ broker if this is the broker domain
+##############################################################
+
+onerror continue
+eval ${domain.name} ${broker.domain} ==
+set env is_broker ${rc}
+onerror shutdown
+
+define env amq-embedded.exe endDefine
+  check -strong broker.amq.port
+  check -strong broker.amq.spool
+
+  create org.dcache.cells.UniversalSpringCell JMS \
+    "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml \
+     -amqSpool=${broker.amq.spool} \
+     -amqPort=${broker.amq.port} \
+    "
+endDefine
+
+exec env amq-embedded.exe -ifok=is_broker
+
+#
+# Instantiate ActiveMQ tunnel if this is not the broker domain
+##############################################################
+
+exec file:${dcache.paths.share}/cells/tunnel-amq.fragment -ifnotok=is_broker
