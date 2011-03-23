@@ -1,5 +1,6 @@
 package org.dcache.pinmanager;
 
+import javax.jdo.JDOException;
 import java.util.concurrent.Semaphore;
 
 import org.dcache.cells.CellStub;
@@ -27,6 +28,8 @@ public class UnpinProcessor implements Runnable
     private final static Logger _logger =
         LoggerFactory.getLogger(UnpinProcessor.class);
 
+    private final static int MAX_RUNNING = 1000;
+
     private final PinDao _dao;
     private final CellStub _poolStub;
 
@@ -39,16 +42,23 @@ public class UnpinProcessor implements Runnable
     public void run()
     {
         try {
+            Semaphore idle = new Semaphore(MAX_RUNNING);
             Semaphore finished = new Semaphore(0);
-            int running = unpin(finished);
+            int running = unpin(idle, finished);
             finished.acquire(running);
         } catch (InterruptedException e) {
             _logger.debug(e.toString());
+        } catch (JDOException e) {
+            _logger.error("Database failure while unpinning: {}",
+                          e.getMessage());
+        } catch (RuntimeException e) {
+            _logger.error("Unexpected failure while unpinning", e);
         }
     }
 
     @Transactional
-    protected int unpin(Semaphore finished)
+    protected int unpin(Semaphore idle, Semaphore finished)
+        throws InterruptedException
     {
         int running = 0;
         for (Pin pin: _dao.getPins(Pin.State.UNPINNING)) {
@@ -63,14 +73,17 @@ public class UnpinProcessor implements Runnable
                 continue;
             }
 
-            clearStickyFlag(finished, pin);
+            clearStickyFlag(idle, finished, pin);
             running++;
         }
         return running;
     }
 
-    private void clearStickyFlag(final Semaphore finished, final Pin pin)
+    private void clearStickyFlag(final Semaphore idle,
+                                 final Semaphore finished, final Pin pin)
+        throws InterruptedException
     {
+        idle.acquire();
         PoolSetStickyMessage msg =
             new PoolSetStickyMessage(pin.getPool(),
                                      pin.getPnfsId(),
@@ -83,6 +96,7 @@ public class UnpinProcessor implements Runnable
                            @Override
                            public void success(PoolSetStickyMessage msg)
                            {
+                               idle.release();
                                finished.release();
                                _dao.deletePin(pin);
                            }
@@ -90,6 +104,7 @@ public class UnpinProcessor implements Runnable
                            @Override
                            public void failure(int rc, Object error)
                            {
+                               idle.release();
                                finished.release();
                                switch (rc) {
                                case CacheException.FILE_NOT_IN_REPOSITORY:
