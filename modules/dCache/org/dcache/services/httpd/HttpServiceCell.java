@@ -487,6 +487,7 @@ public class HttpServiceCell
             _out = response.getOutputStream();
             _br = new BufferedReader(new InputStreamReader(_in));
             _pw = new PrintWriter(new OutputStreamWriter(_out));
+            setContentType("text/html");
         }
 
         private String getContentTypeFor(String fileName)
@@ -603,7 +604,6 @@ public class HttpServiceCell
                     return;
                 }
 
-                setContentType("text/html");
                 _pw.println(html);
             } else if(type.equals("class")) {
                 HttpResponseEngine engine =
