@@ -1,3 +1,5 @@
-# embedded-jms is the legacy name for a hybrid tunnel
+# embedded-jms is a deprecated name
 
-exec file:${dcache.paths.share}/cells/tunnel-hybrid.fragment
+say -level=2 "broker.scheme=embedded-jms is deprecated"
+
+exec file:${dcache.paths.share}/cells/tunnel-cells+amq-embedded.fragment

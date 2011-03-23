@@ -1154,7 +1154,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<td class=\"f-table-b\"><input name=net value=\""+net+"\"></td>");
         pw.println("<td class=\"f-table-b\"><input name=protocol value=\""+protocol+"\"></td>");
         pw.println("</tr></table>");
-        pw.println("</td></tr><td  class=\"f-table-a\"");
+        pw.println("</td></tr><td  class=\"f-table-a\">");
         pw.println("<input type=submit value=\"Send Query\">");
         pw.println("</form>");
         pw.println("</td></tr>");
