@@ -1,5 +1,7 @@
 package org.dcache.pinmanager;
 
+import javax.jdo.JDOException;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import static java.util.concurrent.TimeUnit.*;
@@ -80,8 +82,11 @@ public class PinManager
         {
             try {
                 _dao.expirePins();
+            } catch (JDOException e) {
+                _log.error("Database failure while expiring pins: {}",
+                           e.getMessage());
             } catch (RuntimeException e) {
-                _log.error(e.toString());
+                _log.error("Unexpected failure while expiring pins", e);
             }
         }
     }
