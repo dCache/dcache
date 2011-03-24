@@ -118,7 +118,7 @@ public class CDC
      */
     static public void createSession(String prefix)
     {
-        setSession(prefix + "-" + _sessionCounter.next());
+        setSession(prefix + _sessionCounter.next());
     }
 
     /**
@@ -136,7 +136,7 @@ public class CDC
         if (domain == null)
             throw new IllegalStateException("Missing domain name in MDC");
 
-        createSession(domain.toString());
+        createSession(domain.toString() + "-");
     }
 
     /**

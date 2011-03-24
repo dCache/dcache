@@ -14,11 +14,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import java.io.IOException;
 
 import org.dcache.cells.CellMessageSender;
+import org.dcache.util.Transfer;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellEndpoint;
-import org.dcache.commons.util.NDC;
 
 /**
  * A Jetty handler that wraps a Milton HttpManager. Makes it possible
@@ -49,8 +49,7 @@ public class MiltonHandler
         throws IOException, ServletException
     {
         CDC.setCellsContext(_cellName, _domainName);
-        CDC.createSession();
-        NDC.push(CDC.getSession());
+        Transfer.initSession();
         try {
             ServletRequest req = new ServletRequest(request) {
                     @Override

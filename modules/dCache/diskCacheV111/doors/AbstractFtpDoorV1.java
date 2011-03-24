@@ -1119,7 +1119,7 @@ public abstract class AbstractFtpDoorV1
     {
         super.init();
 
-        CDC.createSession();
+        Transfer.initSession();
 
         Args args = getArgs();
         _out      = new PrintWriter(_engine.getWriter());
