@@ -14,6 +14,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.commons.util.NDC;
 
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -51,6 +52,7 @@ import dmg.util.TimebasedCounter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
@@ -305,6 +307,33 @@ public abstract class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Initialises the session value in the cells diagnostic context
+     * (CDC). The session value is attached to the thread.
+     *
+     * The session key is pushed to the NDC for purposes of logging.
+     *
+     * The format of the session value is chosen to be compatible with
+     * the transaction ID format as found in the
+     * InfoMessage.getTransaction method.
+     *
+     * @throws IllegalStateException when the thread is not already
+     *         associcated with a cell through the CDC.
+     */
+    public static void initSession()
+    {
+        Object domainName = MDC.get(CDC.MDC_DOMAIN);
+        if (domainName == null) {
+            throw new IllegalStateException("Missing domain name in MDC");
+        }
+        Object cellName = MDC.get(CDC.MDC_CELL);
+        if (cellName == null) {
+            throw new IllegalStateException("Missing cell name in MDC");
+        }
+        CDC.createSession("door:" + cellName + "@" + domainName + ":");
+        NDC.push(CDC.getSession());
+    }
+
+    /**
      * The transaction uniquely (with a high probably) identifies this
      * transfer.
      */
@@ -312,8 +341,8 @@ public abstract class Transfer implements Comparable<Transfer>
     {
         if (_session != null) {
             return _session.toString() + "-" + _sessionId;
-        } else if (_domainName != null) {
-            return _domainName + "-" + _sessionId;
+        } else if (_cellName != null && _domainName != null) {
+            return "door:" + _cellName + "@" + _domainName + "-" + _sessionId;
         } else {
             return String.valueOf(_sessionId);
         }
