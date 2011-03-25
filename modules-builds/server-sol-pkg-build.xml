@@ -12,10 +12,10 @@
         </copy>
 
         <exec executable="/bin/sh" dir="${buildTop}">
-              <arg value="${buildTop}/pkgs/solaris/mk-sol-pkg.sh" />
-              <arg value="${package.root.dir}/server" />
-              <arg value="${buildDir}" />
-              <arg value="${distDir}" />
+              <arg file="${buildTop}/pkgs/solaris/mk-sol-pkg.sh" />
+              <arg file="${package.root.dir}/server" />
+              <arg file="${buildDir}" />
+              <arg file="${distDir}" />
               <arg value="${version}-${patch}" />
         </exec>
 
