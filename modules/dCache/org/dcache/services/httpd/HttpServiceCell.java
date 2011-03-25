@@ -7,12 +7,8 @@ import dmg.util.HttpBasicAuthenticationException;
 import dmg.util.HttpResponseEngine;
 import dmg.util.CollectionFactory;
 import dmg.protocols.kerberos.Base64;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.SortedMap;
-import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.util.Date;
@@ -670,8 +666,6 @@ public class HttpServiceCell
 
         private void sendFile(File base, String [] tokens) throws Exception
         {
-            File f = null;
-
             String filename = null;
             if( tokens.length < 2) {
                 filename = "index.html";
@@ -682,9 +676,12 @@ public class HttpServiceCell
                     sb.append("/").append(tokens[i]);
                 filename = sb.toString();
             }
-            f = base.isFile() ? base : new File(base, filename);
+            File f = base.isFile() ? base : new File(base, filename);
+            if(!f.getCanonicalFile().getAbsolutePath().startsWith(base.getCanonicalFile().getAbsolutePath()))
+               throw new HttpException(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+
             if(! f.isFile())
-                throw new Exception("Url Not found : "+f);
+                throw new HttpException(HttpServletResponse.SC_NOT_FOUND, "Not found : "+ filename);
 
             FileInputStream binary = new FileInputStream(f);
             try {
