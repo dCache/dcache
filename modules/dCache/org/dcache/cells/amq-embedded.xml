@@ -14,7 +14,8 @@
 
   <broker id="broker"
           xmlns="http://activemq.apache.org/schema/core"
-          brokerName="localhost" dataDirectory="${amqSpool}">
+          brokerName="localhost" useJmx="false" persistent="false"
+          useShutdownHook="false">
     <!-- Destination specific policies using destination names or wildcards -->
     <destinationPolicy>
       <policyMap>
@@ -33,16 +34,6 @@
         </policyEntries>
       </policyMap>
     </destinationPolicy>
-
-    <!-- Use the following to configure how ActiveMQ is exposed in JMX -->
-    <managementContext>
-      <managementContext createConnector="false"/>
-    </managementContext>
-
-    <persistenceAdapter>
-      <amqPersistenceAdapter syncOnWrite="false" directory="${amqSpool}"
-                             maxFileLength="20 mb"/>
-    </persistenceAdapter>
 
 <!--
     <sslContext>
@@ -81,7 +72,7 @@
   <amq:connectionFactory id="jmsFactory" brokerURL="vm://localhost"/>
 
   <bean id="tunnel" class="org.dcache.cells.JMSTunnel"
-        destroy-method="kill"
+        destroy-method="shutdown"
         depends-on="broker">
     <description>JMS Gateway</description>
     <constructor-arg value="RoutingMgr"/>
