@@ -34,6 +34,21 @@ define env topo-amq.exe end
      "
 end
 
+define env topo-openmq.exe end
+  set context -c topoWaitTime 300000
+  set context -c topoTimeout 20000
+
+  create org.dcache.cells.UniversalSpringCell topo \
+     "classpath:org/dcache/services/topology/openmq.xml \
+      -export \
+      -cellClass=TopoCell \
+      -topoWaitTime=\"${topoWaitTime}\" \
+      -topoTimeout=\"${topoTimeout}\" \
+      -broker.openmq.host=\"${broker.openmq.host}\" \
+      -broker.openmq.port=\"${broker.openmq.port}\" \
+     "
+end
+
 define env topo-embedded-jms.exe end
   exec env topo-amq.exe
 end
@@ -52,6 +67,10 @@ end
 
 define env topo-cells+amq-embedded.exe end
   exec env topo-amq.exe
+end
+
+define env topo-cells+openmq.exe end
+  exec env topo-openmq.exe
 end
 
 define env topo-none.exe end
