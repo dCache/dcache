@@ -87,6 +87,7 @@ printpi() # in $1 = a paragraph, $2 = a pattern to indicate an indentation point
     local line
     local line2
     local indent
+    local rc
 
     line=
     indent=
@@ -103,7 +104,7 @@ printpi() # in $1 = a paragraph, $2 = a pattern to indicate an indentation point
 	    line=$line2
 	    if [ "$indent" = "" ]; then
 		rc=0
-		echo "$line" | egrep "$2" > /dev/null || rc=$?
+		echo "$line" | grep -E "$2" > /dev/null || rc=$?
 		if [ $rc -eq 0 ]; then
                     indent=" $(spaces ${#line})"
 		fi
@@ -302,4 +303,4 @@ processUser() # $1 = process ID
 }
 
 # Check prerequisites
-require awk df sed wc dirname which ps
+require awk df sed wc dirname which ps grep
