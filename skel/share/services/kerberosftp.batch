@@ -29,6 +29,7 @@ check -strong overwriteEnabled
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check FtpTLogDir
+check listen
 
 onerror continue
 
@@ -58,6 +59,7 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
+             -listen=${listen} \
              -export \
              diskCacheV111.doors.KerberosFtpDoorV1 \
              -kdc-list=${kerberos.key-distribution-center-list} \

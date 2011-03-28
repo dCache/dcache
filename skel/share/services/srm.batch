@@ -4,6 +4,7 @@
 
 onerror shutdown
 check -strong port
+check listen
 check -strong srmGssMode
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
@@ -178,6 +179,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/srm-${srmJettyConnectorType}.xml \
         -export \
         -srmPort=${port} \
+        -listen=${listen} \
         -srmHost=${srmHost} \
         -srmGssMode=${srmGssMode} \
         -localSrmHosts=${localSrmHosts} \

@@ -14,11 +14,13 @@ check -strong pnfsmanager
 check -strong loginBroker
 check -strong truncate
 check dcapIoQueue
+check listen
 
 exec file:${dcache.paths.share}/cells/stage.fragment doors
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
+             -listen=${listen} \
              -export \
              diskCacheV111.doors.DCapDoor \
              -keepAlive=300 \
