@@ -14,6 +14,7 @@
   <bean id="connector"
         class="org.dcache.util.JettyGSIConnector">
     <property name="port" value="${srmPort}"/>
+    <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull( '${listen}' ) }"/>
 
     <property name="acceptors" value="${srmJettyConnectorAcceptors}"/>
     <property name="maxIdleTime" value="${srmJettyConnectorMaxIdleTime}"/>

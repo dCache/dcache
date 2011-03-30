@@ -12,6 +12,7 @@ check -strong loginBroker
 check -strong gsidcapIoQueueOverwrite
 check -strong gsidcapMaxLogin
 check gsidcapIoQueue
+check listen
 
 #
 #  ----  Usage of Srm Space Manager
@@ -34,6 +35,7 @@ exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
              "${port} \
+              -listen=${listen} \
               diskCacheV111.doors.DCapDoor \
               -export \
               -prot=telnet -localOk \

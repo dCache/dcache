@@ -8,6 +8,7 @@ check -strong userPasswordFile
 check -strong AccessControlCell
 check -strong port
 check adminHistoryFile
+check listen
 
 
 
@@ -54,6 +55,7 @@ create dmg.cells.services.login.SshKeyManager    skm
 
 #create dmg.cells.services.login.LoginManager slm \
 #      "${port}  \
+#       -listen=${listen} \
 #       dmg.cells.services.StreamLoginCell \
 #       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_X"
 
@@ -62,6 +64,7 @@ create dmg.cells.services.login.LoginManager alm \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
        -history=${adminHistoryFile} \
+       -listen=${listen} \
        diskCacheV111.admin.UserAdminShell"
 
 create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
