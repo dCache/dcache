@@ -1,0 +1,34 @@
+onerror shutdown
+check -strong dcache.paths.share
+check -strong broker.domain
+check -strong domain.name
+
+#
+# Instantiate regular OpenMQ support
+##############################################################
+
+exec file:${dcache.paths.share}/cells/tunnel-openmq.fragment
+
+#
+# Instantiate cells lmd if this is the broker domain
+##############################################################
+
+onerror continue
+eval ${domain.name} ${broker.domain} ==
+set env is_broker ${rc}
+onerror shutdown
+
+define env lmd.exe endDefine
+  check -strong broker.host
+  check -strong broker.port
+
+  exec file:${dcache.paths.share}/cells/lmd.fragment
+  create dmg.cells.services.LocationManager lm \
+    "${broker.host} ${broker.port}"
+endDefine
+
+exec env lmd.exe -ifok=is_broker
+
+
+
+

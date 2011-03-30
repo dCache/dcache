@@ -65,6 +65,8 @@
 
         <!-- external dependencies -->
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
+        <dependency groupId="com.sun.messaging.mq" artifactId="jms" version="4.4.2"/>
+        <dependency groupId="com.sun.messaging.mq" artifactId="imq" version="4.4.2"/>
         <dependency groupId="org.dcache.chimera" artifactId="grizzly-rpc" version="0.0.3"/>
         <dependency groupId="org.springframework" artifactId="spring-beans" version="3.0.5.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-context" version="3.0.5.RELEASE"/>

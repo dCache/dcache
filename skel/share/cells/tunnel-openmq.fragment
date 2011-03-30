@@ -1,0 +1,10 @@
+onerror shutdown
+check -strong broker.openmq.host
+check -strong broker.openmq.port
+
+create org.dcache.cells.UniversalSpringCell JMS \
+     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/openmq.xml \
+      -broker.openmq.host=${broker.openmq.host} \
+      -broker.openmq.port=${broker.openmq.port} \
+     "
+
