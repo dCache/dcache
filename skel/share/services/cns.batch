@@ -1,0 +1,41 @@
+#
+# Cell Name Service
+#
+
+onerror shutdown
+
+define env cns-cells.exe end
+  # Do nothing
+end
+
+define env cns-amq.exe end
+  check -strong broker.amq.url
+
+  create org.dcache.cells.UniversalSpringCell cns \
+     "classpath:org/dcache/cells/cns-amq.xml \
+      -cellClass=TopoCell \
+      -amqUrl=${broker.amq.url} \
+     "
+end
+
+define env cns-embedded-jms.exe end
+  exec env cns-amq.exe
+end
+
+define env cns-hybrid.exe end
+  exec env cns-amq.exe
+end
+
+define env cns-jms.exe end
+  exec env cns-amq.exe
+end
+
+define env cns-amq-embedded.exe end
+  exec env cns-amq.exe
+end
+
+define env cns-cells+amq-embedded.exe end
+  exec env cns-amq.exe
+end
+
+exec env cns-${broker.scheme}.exe

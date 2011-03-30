@@ -42,11 +42,18 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Message;
 import javax.jms.TextMessage;
+import javax.jms.StreamMessage;
 import javax.jms.ObjectMessage;
 import javax.jms.MessageListener;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.ConnectionMetaData;
+import javax.jms.ExceptionListener;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.HashMultimap;
+import com.google.common.base.Strings;
 
 /**
  * Gateway between Cells and JMS.
@@ -66,30 +73,31 @@ import javax.jms.ConnectionMetaData;
  */
 public class JMSTunnel
     extends AbstractCell
-    implements CellTunnel
+    implements CellTunnel, ExceptionListener
 {
     private final static Logger _logMessages =
         LoggerFactory.getLogger("logger.org.dcache.cells.messages");
     private final static Logger _log =
         LoggerFactory.getLogger(JMSTunnel.class);
 
-    private final static long ARP_TIMEOUT = 10000;
-    private final static long CACHE_TIME = 120000;
+    public final static long CNS_TIMEOUT = 20000;
+    public final static long CNS_REGISTRATION_PERIOD = 120000;
+    public final static long CACHE_TIME = 120000;
+    public final static long MESSAGE_TTL = 300000;
 
-    public final static String ARP_TOPIC = "cells.arp";
-    public final static String WILDCARD_QUERY = "*";
-
-    private final Set<String> _localExports = new HashSet();
+    private final Set<String> _localExports =
+        new HashSet<String>();
 
     /** Domain to well known cells in that domain. */
-    private final Map<String,Set<String>> _domains = new HashMap();
+    private final Map<String,Set<String>> _domains =
+        new HashMap<String,Set<String>>();
 
     private Timer _timer;
 
     private final CellNucleus  _nucleus;
     private final ConnectionFactory _factory;
     private Connection _connection;
-    private ArpServer _arp;
+    private CnsClient _cns;
     private Receiver _receiver;
     private Sender _sender;
 
@@ -116,12 +124,14 @@ public class JMSTunnel
          */
         _nucleus.routeAdd(new CellRoute(null, getCellName(), CellRoute.DEFAULT));
         _connection = _factory.createConnection();
-        _connection.start();
+        _connection.setExceptionListener(this);
 
-        _arp = new ArpServer(getNucleus(), _connection);
+        _cns = new CnsClient(getNucleus(), _connection);
         _sender = new Sender(_connection);
         _receiver = new Receiver(_connection);
         _receiver.addConsumer(getCellDomainName());
+
+        _connection.start();
     }
 
     /**
@@ -135,6 +145,17 @@ public class JMSTunnel
         getNucleus().join(getCellName(), 1000);
     }
 
+    /**
+     * Called by JMS on fatal exceptions.
+     *
+     * We restart the domain.
+     */
+    public void onException(JMSException exception)
+    {
+        _log.error("Fatal failure in JMS connection: {}", exception);
+        getNucleus().kill("System");
+    }
+
     protected String getDomainQueue(String domain)
     {
         return "cells.domain." + domain;
@@ -143,9 +164,20 @@ public class JMSTunnel
     @Override
     synchronized public void cleanUp()
     {
-        try {
+        if (_timer != null) {
             _timer.cancel();
+        }
 
+        try {
+            if (_cns != null) {
+                _cns.unregister();
+            }
+        } catch (JMSException e) {
+            _log.warn("Failed to unregister from cell name service: {}",
+                      e.getMessage());
+        }
+
+        try {
             if (_connection != null) {
                 _connection.close();
             }
@@ -173,8 +205,8 @@ public class JMSTunnel
             pw.append(' ').println(getDomainQueue(domain));
         }
 
-        pw.println("ARP cache:");
-        for (Map.Entry<String,CacheEntry> e: _sender.getArpCache().entrySet()) {
+        pw.println("CNS cache:");
+        for (Map.Entry<String,CacheEntry> e: _sender.getCnsCache().entrySet()) {
             pw.println(String.format(" %-20s %s",
                                      e.getKey(), e.getValue().domain));
         }
@@ -259,7 +291,7 @@ public class JMSTunnel
             try {
                 _sender.send(envelope);
             } catch (JMSException e) {
-                _log.error("Error while sending message: {}", e.getMessage());
+                _log.error("Failed to send message: {}", e.getMessage());
                 returnToSender(envelope,
                                new NoRouteToCellException(envelope.getUOID(),
                                                           envelope.getDestinationPath(),
@@ -420,21 +452,23 @@ public class JMSTunnel
     class Sender
         implements MessageListener
     {
-        /** JMS Message ID to ARP lookup. */
-        private final Map<String,Lookup> _lookups = new ConcurrentHashMap();
+        /** Cell to CNS lookup. */
+        private final Multimap<String,Lookup> _lookups =
+            Multimaps.synchronizedMultimap(HashMultimap.<String,Lookup>create());
 
-        /** ARP cache. */
-        private final Map<String,CacheEntry> _cache = new LinkedHashMap();
+        /** CNS cache. */
+        private final Map<String,CacheEntry> _cache =
+            new LinkedHashMap<String,CacheEntry>();
 
         private final Session _session;
 
         /** Producer for outgoing messages. */
         private final MessageProducer _producer;
 
-        /** Producer for ARP. */
-        private final MessageProducer _arp;
+        /** Producer for CNS. */
+        private final MessageProducer _cns;
 
-        /** Queue for receiving ARP replies. */
+        /** Queue for receiving CNS replies. */
         private final Destination _replyQueue;
 
         /** Message counter. */
@@ -449,17 +483,20 @@ public class JMSTunnel
             _producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
             _producer.setDisableMessageID(true);
             _producer.setDisableMessageTimestamp(true);
+            _producer.setTimeToLive(MESSAGE_TTL);
 
-            _arp = _session.createProducer(_session.createTopic(ARP_TOPIC));
-            _arp.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-            _arp.setDisableMessageTimestamp(true);
+            _cns = _session.createProducer(_session.createQueue(CellNameService.DESTINATION_LOOKUP));
+            _cns.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            _cns.setDisableMessageID(true);
+            _cns.setDisableMessageTimestamp(true);
+            _cns.setTimeToLive(2 * CNS_TIMEOUT);
 
             /* We have to use a second session for the message
              * listener, as we are not allowed to issue calls to the
              * session from outside the listener.
              */
             Session session =
-                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
             _replyQueue = session.createTemporaryQueue();
             session.createConsumer(_replyQueue).setMessageListener(this);
         }
@@ -478,7 +515,7 @@ public class JMSTunnel
             }
         }
 
-        synchronized public Map<String,CacheEntry> getArpCache()
+        synchronized public Map<String,CacheEntry> getCnsCache()
         {
             return new HashMap(_cache);
         }
@@ -501,57 +538,71 @@ public class JMSTunnel
 
         synchronized public void addToCache(String cell, String domain)
         {
-            CacheEntry entry =
-                new CacheEntry(System.currentTimeMillis() + CACHE_TIME, domain);
-            _cache.put(cell, entry);
+            Collection<Lookup> lookupsForCell = _lookups.removeAll(cell);
+
+            if (Strings.isNullOrEmpty(domain)) {
+                for (Lookup lookup: lookupsForCell) {
+                    if (lookup.cancel()) {
+                        CellMessage envelope = lookup.envelope;
+                        returnToSender(envelope,
+                                       new NoRouteToCellException(envelope.getUOID(),
+                                                                  envelope.getDestinationPath(),
+                                                                  "No route to " + cell));
+                    }
+                }
+            } else {
+                CacheEntry entry =
+                    new CacheEntry(System.currentTimeMillis() + CACHE_TIME, domain);
+                _cache.put(cell, entry);
+
+                for (Lookup lookup: lookupsForCell) {
+                    if (lookup.cancel()) {
+                        CellMessage envelope = lookup.envelope;
+                        try {
+                            send(envelope);
+                            continue;
+                        } catch (JMSException e) {
+                            _log.error("Failed to send message: {}",
+                                       e.getMessage());
+                        }
+                        returnToSender(envelope,
+                                       new NoRouteToCellException(envelope.getUOID(),
+                                                                  envelope.getDestinationPath(),
+                                                                  "Communication failure. Message could not be delivered."));
+                    }
+                }
+            }
         }
 
         synchronized public void resolve(String cell, CellMessage envelope)
             throws JMSException
         {
-            /* Send arp request.
+            /* Send CNS lookup request.
              */
             TextMessage request = _session.createTextMessage(cell);
             request.setJMSReplyTo(_replyQueue);
-            _arp.send(request);
+            _cns.send(request);
 
             /* Register request.
              */
-            String id = request.getJMSMessageID();
-            Lookup lookup = new Lookup(id, cell, envelope);
-            _lookups.put(id, lookup);
-            _timer.schedule(lookup, ARP_TIMEOUT);
+            Lookup lookup = new Lookup(cell, envelope);
+            _lookups.put(cell, lookup);
+            _timer.schedule(lookup, CNS_TIMEOUT);
         }
 
-        /** Called by JMS on ARP reply. */
+        /** Called by JMS on CNS reply. */
         @Override
         synchronized public void onMessage(Message message)
         {
             CDC cdc = CDC.reset(_nucleus);
             try {
-                Lookup lookup = _lookups.remove(message.getJMSCorrelationID());
-                if (lookup != null && lookup.cancel()) {
-                    CellMessage envelope = lookup.envelope;
-                    try {
-                        TextMessage textMessage = (TextMessage) message;
-                        String domain = textMessage.getText();
-
-                        addToCache(lookup.cell, domain);
-
-                        send(envelope);
-                        return;
-                    } catch (ClassCastException e) {
-                        _log.error("Received unexpected reply to ARP request: " + message);
-                    } catch (JMSException e) {
-                        _log.error("Error while resolving well known cell: " + e.getMessage());
-                    }
-                    returnToSender(envelope,
-                                   new NoRouteToCellException(envelope.getUOID(),
-                                                              envelope.getDestinationPath(),
-                                                              "Communication failure. Message could not be delivered."));
-                } else {
-                    _log.warn("ARP reply was late: " + message);
-                }
+                TextMessage textMessage = (TextMessage) message;
+                String cell = textMessage.getJMSCorrelationID();
+                String domain = textMessage.getText();
+                addToCache(cell, domain);
+            } catch (ClassCastException e) {
+                _log.error("Received unexpected reply to CNS request: {}",
+                           message);
             } catch (JMSException e) {
                 _log.error("Error while resolving well known cell: {}",
                            e.getMessage());
@@ -589,32 +640,36 @@ public class JMSTunnel
             return _counter;
         }
 
-        /** ARP request object and expiration timer. */
+        /** CNS request object and expiration timer. */
         class Lookup extends TimerTask
         {
-            final String id;
             final String cell;
             final CellMessage envelope;
 
-            Lookup(String id, String cell, CellMessage envelope)
+            Lookup(String cell, CellMessage envelope)
             {
-                this.id = id;
                 this.cell = cell;
                 this.envelope = envelope;
             }
 
+            @Override
             public void run()
             {
-                _lookups.remove(id);
-                returnToSender(envelope,
-                               new NoRouteToCellException(envelope.getUOID(),
-                                                          envelope.getDestinationPath(),
-                                                          "Failed to resolve well known cell"));
+                try {
+                    _lookups.remove(cell, this);
+                    returnToSender(envelope,
+                                   new NoRouteToCellException(envelope.getUOID(),
+                                                              envelope.getDestinationPath(),
+                                                              "Failed to resolve well known cell"));
+                } catch (RuntimeException e) {
+                    _logger.error("Message timeout failed", e);
+
+                }
             }
         }
     }
 
-    /** ARP cache entry. */
+    /** CNS cache entry. */
     static class CacheEntry
     {
         final long time;
@@ -726,10 +781,17 @@ public class JMSTunnel
     }
 
     /**
-     * Implements the ARP server. The ARP server responds to ARP
-     * lookups on locally exported cells.
+     * Implements the CNS client.
+     *
+     * The client periodically and when well known cells are added
+     * registers the domain with the cell name service. Removal of
+     * well known cells do not trigger a reregistration: The periodic
+     * update will unregister those lazily.
+     *
+     * Responds to refresh broadcasts.
      */
-    class ArpServer
+    class CnsClient
+        extends TimerTask
         implements MessageListener,
                    CellEventListener
     {
@@ -737,44 +799,84 @@ public class JMSTunnel
         protected final MessageConsumer _consumer;
         protected final MessageProducer _producer;
 
-        /** Name of local domain. Lookups resolve to this domain. */
+        /** Name of local domain. */
         protected final String _domain;
 
         /** Known well known cells. */
-        protected final Set<String> _names = new HashSet();
+        protected final Set<String> _names = new HashSet<String>();
 
-        public ArpServer(CellNucleus nucleus, Connection connection)
+        public CnsClient(CellNucleus nucleus, Connection connection)
             throws JMSException
         {
             _domain = nucleus.getCellDomainName();
             _session =
                 connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            _producer = _session.createProducer(null);
+            _producer = _session.createProducer(_session.createTopic(CellNameService.DESTINATION_REGISTRATION));
+            _producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            _producer.setDisableMessageID(true);
+            _producer.setDisableMessageTimestamp(true);
+            _producer.setTimeToLive(CNS_REGISTRATION_PERIOD);
+
+            Session session =
+                connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
             _consumer =
-                _session.createConsumer(_session.createTopic(ARP_TOPIC));
+                session.createConsumer(session.createTopic(CellNameService.DESTINATION_REFRESH));
             _consumer.setMessageListener(this);
             nucleus.addCellEventListener(this);
+
+            /* FIXME: How can we be sure that there are not already
+             * unregistered exported cells?
+             */
+
+            _timer.schedule(this, 0, CNS_REGISTRATION_PERIOD);
+        }
+
+        @Override
+        public void run()
+        {
+            try {
+                register();
+            } catch (RuntimeException e) {
+                _logger.error("Failed to register with cell name service", e);
+            }
+        }
+
+        synchronized public void register()
+        {
+            try {
+                StreamMessage msg = _session.createStreamMessage();
+                msg.writeString(_domain);
+                msg.writeLong(3 * CNS_REGISTRATION_PERIOD);
+                msg.writeInt(_names.size());
+                for (String name: _names) {
+                    msg.writeString(name);
+                }
+                _producer.send(msg);
+            } catch (JMSException e) {
+                _logger.error("Failed to register with cell name service: {}",
+                              e.getMessage());
+            }
+        }
+
+        synchronized public void unregister()
+            throws JMSException
+        {
+            StreamMessage msg = _session.createStreamMessage();
+            msg.writeString(_domain);
+            msg.writeLong(0);
+            msg.writeInt(0);
+            _producer.send(msg);
         }
 
         /**
          * Handles messages from JMS.
          */
-        synchronized public void onMessage(Message message)
+        @Override
+        public void onMessage(Message message)
         {
             CDC cdc = CDC.reset(_nucleus);
             try {
-                TextMessage textMessage = (TextMessage) message;
-                String name = textMessage.getText();
-                if (_names.contains(name) || WILDCARD_QUERY.equals(name)) {
-                    TextMessage reply = _session.createTextMessage(_domain);
-                    reply.setText(_domain);
-                    reply.setJMSCorrelationID(textMessage.getJMSMessageID());
-                    _producer.send(textMessage.getJMSReplyTo(), reply);
-                }
-            } catch (ClassCastException e) {
-                _log.warn("Dropping unknown message: " + message);
-            } catch (JMSException e) {
-                _log.error("JMS failure in cell name resolver: " + e);
+                register();
             } finally {
                 cdc.restore();
             }
@@ -810,6 +912,7 @@ public class JMSTunnel
         {
             String name = (String) ce.getSource();
             _names.add(name);
+            register();
         }
 
         @Override
