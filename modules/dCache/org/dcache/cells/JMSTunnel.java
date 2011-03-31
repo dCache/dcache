@@ -103,6 +103,7 @@ public class JMSTunnel
         doInit();
     }
 
+    @Override
     protected void init()
         throws JMSException
     {
@@ -123,11 +124,23 @@ public class JMSTunnel
         _receiver.addConsumer(getCellDomainName());
     }
 
+    /**
+     * Kills the tunnel and waits for it to shut down. Times out after
+     * 1 second.
+     */
+    public void shutdown()
+        throws InterruptedException
+    {
+        kill();
+        getNucleus().join(getCellName(), 1000);
+    }
+
     protected String getDomainQueue(String domain)
     {
         return "cells.domain." + domain;
     }
 
+    @Override
     synchronized public void cleanUp()
     {
         try {
@@ -137,10 +150,12 @@ public class JMSTunnel
                 _connection.close();
             }
         } catch (JMSException e) {
-            _log.warn("Failed to close JMS connection: " + e);
+            _log.warn("Failed to close JMS connection: {}",
+                      e.getMessage());
         }
     }
 
+    @Override
     synchronized public void getInfo(PrintWriter pw)
     {
         pw.println("Cell name  : " + getCellName());
@@ -171,11 +186,12 @@ public class JMSTunnel
             pw.append(" Provider name: ").println(data.getJMSProviderName());
             pw.append(" Provider version: ").println(data.getProviderVersion());
         } catch (JMSException e) {
-            _log.error("Failed to query JMS meta data: " + e.getMessage());
+            _log.error("Failed to query JMS meta data: {}", e.getMessage());
             pw.println(" Information unavailable");
         }
     }
 
+    @Override
     synchronized public CellTunnelInfo getCellTunnelInfo()
     {
         return new CellTunnelInfo(getCellName(),
@@ -191,7 +207,7 @@ public class JMSTunnel
     {
         try {
             if (!(msg instanceof CellExceptionMessage)) {
-                _log.info("Cannot deliver " + msg);
+                _log.info("Cannot deliver {}", msg);
 
                 CellPath retAddr = (CellPath)msg.getSourcePath().clone();
                 retAddr.revert();
@@ -200,7 +216,7 @@ public class JMSTunnel
                 sendMessage(ret);
             }
         } catch (NoRouteToCellException f) {
-            _log.warn("Unable to deliver message and unable to return it to sender: " + msg);
+            _log.warn("Unable to deliver message and unable to return it to sender: {}", msg);
         }
     }
 
@@ -209,6 +225,7 @@ public class JMSTunnel
      * messages contain information about cells and domains known by
      * the downstream domain.
      */
+    @Override
     synchronized public void messageArrived(CellMessage msg)
     {
         Object obj = msg.getMessageObject();
@@ -218,7 +235,7 @@ public class JMSTunnel
 
         String[] info = (String[]) obj;
         if (info.length > 0){
-            _log.info("Routing info arrived for domain: " + info[0]);
+            _log.info("Routing info arrived for domain: {}", info[0]);
 
             String domain = info[0];
             Set<String> newCells = new HashSet<String>();
@@ -234,6 +251,7 @@ public class JMSTunnel
      * JMS. Whether the origin of the message is the local cell or a
      * downstream cell does not matter.
      */
+    @Override
     synchronized public void messageArrived(MessageEvent me)
     {
         if (me instanceof RoutedMessageEvent) {
@@ -241,7 +259,7 @@ public class JMSTunnel
             try {
                 _sender.send(envelope);
             } catch (JMSException e) {
-                _log.error("Error while sending message: " + e.getMessage());
+                _log.error("Error while sending message: {}", e.getMessage());
                 returnToSender(envelope,
                                new NoRouteToCellException(envelope.getUOID(),
                                                           envelope.getDestinationPath(),
@@ -280,11 +298,11 @@ public class JMSTunnel
             if (!_localExports.contains(cell) && !oldCells.remove(cell)) {
                 // entry not found, so make it
                 if (!cell.startsWith("@")) {
-                    _log.info("Adding: " + cell);
+                    _log.info("Adding: {}", cell);
                     try {
                         _nucleus.routeAdd(createWellKnownRoute(cell, domain));
                     } catch (IllegalArgumentException e) {
-                        _log.error("Could not add wellknown route: " + e);
+                        _log.error("Could not add wellknown route: {}", e.toString());
                     }
                 }
             }
@@ -293,11 +311,12 @@ public class JMSTunnel
         // all new routes added now, need to remove the rest
         for (String cell: oldCells) {
             if (!cell.startsWith("@")) {
-                _log.info("Removing: " + cell);
+                _log.info("Removing: {}", cell);
                 try {
                     _nucleus.routeDelete(createWellKnownRoute(cell, domain));
                 } catch (IllegalArgumentException e) {
-                    _log.warn("Could not delete wellknown route: " + e);
+                    _log.warn("Could not delete wellknown route: {}",
+                              e.getMessage());
                 }
             }
         }
@@ -307,6 +326,7 @@ public class JMSTunnel
     /**
      * Cell event listener: Keeps track of locally exported cells.
      */
+    @Override
     synchronized public void cellDied(CellEvent ce)
     {
         String name = (String) ce.getSource();
@@ -316,6 +336,7 @@ public class JMSTunnel
     /**
      * Cell event listener: Keeps track of locally exported cells.
      */
+    @Override
     synchronized public void cellExported(CellEvent ce)
     {
         String name = (String) ce.getSource();
@@ -326,6 +347,7 @@ public class JMSTunnel
      * Cell event listener: Adds a JMS consumer whenever a new DOMAIN
      * route is registered in the cells routing table.
      */
+    @Override
     synchronized public void routeAdded(CellEvent ce)
     {
         try {
@@ -334,7 +356,7 @@ public class JMSTunnel
                 _receiver.addConsumer(cr.getDomainName());
             }
         } catch (JMSException e) {
-            _log.error("Failed to create JMS consumer: " + e);
+            _log.error("Failed to create JMS consumer: {}", e.getMessage());
         }
     }
 
@@ -343,6 +365,7 @@ public class JMSTunnel
      * its DOMAIN route is removed. Also removes any well-known routes
      * to cells in that domain.
      */
+    @Override
     synchronized public void routeDeleted(CellEvent ce)
     {
         try {
@@ -354,7 +377,7 @@ public class JMSTunnel
                 _receiver.removeConsumer(domain);
             }
         } catch (JMSException e) {
-            _log.error("Failed to remove JMS consumer: " + e);
+            _log.error("Failed to remove JMS consumer: {}", e.getMessage());
         }
     }
 
@@ -501,6 +524,7 @@ public class JMSTunnel
         }
 
         /** Called by JMS on ARP reply. */
+        @Override
         synchronized public void onMessage(Message message)
         {
             CDC cdc = CDC.reset(_nucleus);
@@ -529,8 +553,8 @@ public class JMSTunnel
                     _log.warn("ARP reply was late: " + message);
                 }
             } catch (JMSException e) {
-                _log.error("Error while resolving well known cell: "
-                           + e.getMessage());
+                _log.error("Error while resolving well known cell: {}",
+                           e.getMessage());
             } finally {
                 cdc.restore();
             }
@@ -652,6 +676,7 @@ public class JMSTunnel
         /**
          * Handles messages from JMS. These are forwarded to cells.
          */
+        @Override
         synchronized public void onMessage(Message message)
         {
             CDC cdc = CDC.reset(_nucleus);
@@ -667,9 +692,10 @@ public class JMSTunnel
                     returnToSender(envelope, e);
                 }
             } catch (ClassCastException e) {
-                _log.warn("Dropping unknown message: " + message);
+                _log.warn("Dropping unknown message: {}", message);
             } catch (JMSException e) {
-                _log.error("Failed to retrieve object from JMS message: " + e);
+                _log.error("Failed to retrieve object from JMS message: {}",
+                           e.getMessage());
             } finally {
                 cdc.restore();
             }
@@ -754,6 +780,7 @@ public class JMSTunnel
             }
         }
 
+        @Override
         synchronized public void routeAdded(CellEvent ce)
         {
             CellRoute cr = (CellRoute) ce.getSource();
@@ -762,6 +789,7 @@ public class JMSTunnel
             }
         }
 
+        @Override
         synchronized public void routeDeleted(CellEvent ce)
         {
             CellRoute cr = (CellRoute) ce.getSource();
@@ -770,18 +798,21 @@ public class JMSTunnel
             }
         }
 
+        @Override
         synchronized public void cellDied(CellEvent ce)
         {
             String name = (String) ce.getSource();
             _names.remove(name);
         }
 
+        @Override
         synchronized public void cellExported(CellEvent ce)
         {
             String name = (String) ce.getSource();
             _names.add(name);
         }
 
+        @Override
         public void cellCreated(CellEvent ce) {}
     }
 }
