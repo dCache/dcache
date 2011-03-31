@@ -65,12 +65,12 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
-        GridMapFileHandler gridmapServ;
+        GridMapFile gridmapServ;
         this.desiredUserName = desiredUserName;
         String user_name;
 
         try {
-            gridmapServ = new GridMapFileHandler(gridMapFilePath, getAuthRequestID());
+            gridmapServ = new GridMapFile(gridMapFilePath);
         }
         catch(Exception ase) {
             logger.error("Exception in reading grid-mapfile configuration file: ");
