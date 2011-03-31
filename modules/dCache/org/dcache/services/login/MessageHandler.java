@@ -118,5 +118,19 @@ public class MessageHandler
         }
 
         return message;
-   }
+    }
+
+    public MapMessage messageArrived(MapMessage message)
+        throws CacheException
+    {
+        message.setMappedPrincipal(_loginStrategy.map(message.getPrincipal()));
+        return message;
+    }
+
+    public ReverseMapMessage messageArrived(ReverseMapMessage message)
+        throws CacheException
+    {
+        message.setMappedPrincipals(_loginStrategy.reverseMap(message.getPrincipal()));
+        return message;
+    }
 }

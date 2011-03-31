@@ -2,6 +2,9 @@ package org.dcache.auth;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Set;
+import java.util.Collections;
+import java.security.Principal;
 import javax.security.auth.Subject;
 
 import org.dcache.auth.attributes.HomeDirectory;
@@ -98,6 +101,18 @@ public class CachingLoginStrategyTests {
         public LoginReply login( Subject subject) throws CacheException {
             _count++;
             return _result;
+        }
+
+        @Override
+        public Principal map(Principal principal) throws CacheException
+        {
+            return null;
+        }
+
+        @Override
+        public Set<Principal> reverseMap(Principal principal) throws CacheException
+        {
+            return Collections.emptySet();
         }
 
         public void setLoginReply( LoginReply result) {

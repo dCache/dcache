@@ -1,9 +1,12 @@
 package org.dcache.auth;
 
 import java.util.Set;
+import java.util.Collections;
+import java.util.Set;
 import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;
+import java.security.Principal;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
@@ -134,5 +137,17 @@ public class KauthFileLoginStrategy implements LoginStrategy
             }
         }
         return false;
+    }
+
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        return Collections.emptySet();
     }
 }

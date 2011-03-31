@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -112,6 +113,15 @@ public class GplazmaLoginStrategy implements LoginStrategy
         throw new IllegalArgumentException("Subject is not supported by GplazmaLoginStrategy");
     }
 
-    // map
-    // reverse
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        return Collections.emptySet();
+    }
 }

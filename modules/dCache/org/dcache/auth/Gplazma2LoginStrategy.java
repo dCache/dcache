@@ -14,6 +14,9 @@ import org.dcache.auth.attributes.ReadOnly;
 
 import javax.security.auth.Subject;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.Collections;
+import java.security.Principal;
 
 /**
  * A LoginStrategy that wraps a org.dcache.gplazma.GPlazma
@@ -77,6 +80,15 @@ public class Gplazma2LoginStrategy implements LoginStrategy
         }
     }
 
-    // map
-    // reverse
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        return Collections.emptySet();
+    }
 }
