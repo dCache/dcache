@@ -2380,7 +2380,7 @@ public final class Manager
                                                null,
                                                null,
                                                null,
-                                               Integer.valueOf(spaceState.getStateId()));
+                                               spaceState);
                         connection.commit();
                         connection_pool.returnConnection(connection);
                         connection = null;
@@ -2427,7 +2427,7 @@ public final class Manager
                                            Long sizeInBytes,
                                            Long lifetime,
                                            String description,
-                                           Integer state) throws SQLException {
+                                           SpaceState state) throws SQLException {
 
                 Space space = selectSpaceForUpdate(connection,id);
                 updateSpaceReservation(connection,
@@ -2452,7 +2452,7 @@ public final class Manager
                                            Long sizeInBytes,
                                            Long lifetime,
                                            String description,
-                                           Integer state,
+                                           SpaceState state,
                                            Space space) throws SQLException {
                 if (voGroup!=null)         space.setVoGroup(voGroup);
                 if (voRole!=null)          space.setVoRole(voRole);
@@ -2485,7 +2485,7 @@ public final class Manager
                                 group = selectLinkGroupForUpdate(connection,
                                                                  space.getLinkGroupId());
                         }
-                        space.setState(SpaceState.getState(state.intValue()));
+                        space.setState(state);
                 }
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+SpaceReservationIO.UPDATE+",?="+space.getId());
@@ -2533,7 +2533,7 @@ public final class Manager
                                            Long sizeInBytes,
                                            Long lifetime,
                                            String description,
-                                           Integer state) throws SQLException {
+                                           SpaceState state) throws SQLException {
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -2626,7 +2626,7 @@ public final class Manager
                                                                null,
                                                                null,
                                                                null,
-                                                               Integer.valueOf(SpaceState.EXPIRED.getStateId()));
+                                                               SpaceState.EXPIRED);
                                 }
                                 catch (SQLException e) {
                                         logger.error("Failed to expire space resevation ="+
