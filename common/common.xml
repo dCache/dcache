@@ -113,8 +113,8 @@
         <dependency groupId="toplink.essentials" artifactId="toplink-essentials" version="2.1-60f"/>
         <dependency groupId="com.google.guava" artifactId="guava" version="r07"/>
         <dependency groupId="com.caucho" artifactId="hessian" version="4.0.7" />
-        <dependency groupId="com.ettrema" artifactId="milton-api" version="1.5.6"/>
-        <dependency groupId="com.ettrema" artifactId="milton-servlet" version="1.5.6"/>
+        <dependency groupId="com.ettrema" artifactId="milton-api" version="1.5.9"/>
+        <dependency groupId="com.ettrema" artifactId="milton-servlet" version="1.5.9"/>
         <dependency groupId="postgresql" artifactId="postgresql" version="9.0-801.jdbc4"/>
         <dependency groupId="commons-dbcp" artifactId="commons-dbcp" version="1.4"/>
         <dependency groupId="c3p0" artifactId="c3p0" version="0.9.1.2"/>
