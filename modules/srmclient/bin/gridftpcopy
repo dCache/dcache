@@ -38,6 +38,11 @@ do
     SRM_CP=$SRM_CP:${jar}
 done
 
+for i in $SRM_PATH/lib/security/*.jar
+  do
+  SRM_CP=$SRM_CP:$i
+done
+
 
 OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
 
