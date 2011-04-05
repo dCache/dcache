@@ -19,7 +19,7 @@ import org.dcache.srm.v2_2.TAccessLatency;
  */
 public class PutFileRequestStorage extends DatabaseFileRequestStorage {
     public static final String TABLE_NAME="putfilerequests";
-    
+
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
         "CREATIONTIME=?,  " +
@@ -31,16 +31,16 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         "NUMOFRETR=?," +
         "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
-    
 
-    public PreparedStatement getStatement(Connection connection, 
-                                          String query, 
-                                          Job job) throws SQLException { 
+
+    public PreparedStatement getStatement(Connection connection,
+                                          String query,
+                                          Job job) throws SQLException {
         PutFileRequest request = (PutFileRequest)job;
         TRetentionPolicy retentionPolicy = request.getRetentionPolicy();
         TAccessLatency  accessLatency = request.getAccessLatency();
         PreparedStatement stmt = getPreparedStatement(connection,
-                                                      query, 
+                                                      query,
                                                       request.getNextJobId(),
                                                       request.getCreationTime(),
                                                       request.getLifetime(),
@@ -79,9 +79,9 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
             "RETENTIONPOLICY=? ,"+
             "ACCESSLATENCY=? "+
             "WHERE ID=? ";
-    public PreparedStatement getUpdateStatement(Connection connection, 
-                                                Job job) 
-        throws SQLException { 
+    public PreparedStatement getUpdateStatement(Connection connection,
+                                                Job job)
+        throws SQLException {
         if(job == null || !(job instanceof PutFileRequest)) {
             throw new IllegalArgumentException("job is not PutFileRequest" );
         }
@@ -113,9 +113,9 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
             "RETENTIONPOLICY ," +
             "ACCESSLATENCY )"+
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    
-    public PreparedStatement getCreateStatement(Connection connection, 
-                                                Job job) 
+
+    public PreparedStatement getCreateStatement(Connection connection,
+                                                Job job)
         throws SQLException {
         if(job == null || !(job instanceof PutFileRequest)) {
             throw new IllegalArgumentException("fr is not PutFileRequest" );
@@ -151,12 +151,12 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
     }
 
    /** Creates a new instance of PutFileRequestStorage */
-    public PutFileRequestStorage(Configuration configuration) throws SQLException {
+    public PutFileRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
         super(
         configuration
         );
     }
-    
+
     protected FileRequest getFileRequest(
     Connection _con,
     Long ID,
@@ -180,17 +180,17 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         String FILEID = set.getString(next_index++);
         String PARENTFILEID = set.getString(next_index++);
         String SPACERESERVATIONID = set.getString(next_index++);
-        long SIZE = set.getLong(next_index++);        
+        long SIZE = set.getLong(next_index++);
         String RETENTIONPOLICY = set.getString(next_index++);
         String ACCESSLATENCY = set.getString(next_index++);
-        TRetentionPolicy retentionPolicy = 
+        TRetentionPolicy retentionPolicy =
                 RETENTIONPOLICY == null || RETENTIONPOLICY.equalsIgnoreCase("null") ?
                     null:TRetentionPolicy.fromString(RETENTIONPOLICY);
-        TAccessLatency accessLatency = 
+        TAccessLatency accessLatency =
                 ACCESSLATENCY == null || ACCESSLATENCY.equalsIgnoreCase("null") ?
                     null:TAccessLatency.fromString(ACCESSLATENCY);
 
-        Job.JobHistory[] jobHistoryArray = 
+        Job.JobHistory[] jobHistoryArray =
         getJobHistory(ID,_con);
         return new PutFileRequest(
         ID,
@@ -217,7 +217,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         retentionPolicy,
         accessLatency);
     }
-    
+
     public String getFileRequestCreateTableFields() {
         return
         ", "+
@@ -237,18 +237,18 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         ", "+
         "ACCESSLATENCY "+ stringType;
     }
-    
+
    private static int ADDITIONAL_FIELDS = 8;
 
-    
+
     public String getTableName() {
         return TABLE_NAME;
     }
-    
+
     public String getRequestTableName() {
          return PutRequestStorage.TABLE_NAME;
-    }    
-    
+    }
+
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         if(columnIndex == nextIndex) {
             verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
@@ -256,7 +256,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         else if(columnIndex == nextIndex+1)
         {
             verifyStringType("TURL",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+2)
         {
@@ -291,9 +291,9 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         }
 
     }
-    
+
      protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }
-   
+
 }

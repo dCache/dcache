@@ -25,9 +25,9 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
    private final static Logger logger =
             LoggerFactory.getLogger(DatabaseContainerRequestStorage.class);
 
-    
+
     /** Creates a new instance of DatabaseContainerRequestStorage */
-    public DatabaseContainerRequestStorage(Configuration configuration) throws SQLException {
+    public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
         super(configuration);
     }
 
@@ -36,15 +36,15 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         return getTableName()+"_filerequestids";
     }
     **/
-    
+
     public abstract void dbInit1() throws SQLException;
-    
+
     protected void _dbInit() throws SQLException {
         dbInit1();
-        
+
     }
-    
-    
+
+
     protected abstract ContainerRequest getContainerRequest(
     Connection _con,
     Long ID,
@@ -68,7 +68,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     FileRequest[] fileRequests,
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException;
-    
+
     protected org.dcache.srm.request.Request
     getRequest(
     Connection _con,
@@ -92,7 +92,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
-        
+
         String sqlStatementString = "SELECT ID FROM " + getFileRequestsTableName() +
         " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
@@ -130,7 +130,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         MAXNUMOFRETR,
         LASTSTATETRANSITIONTIME,
         CREDENTIALID,
-        RETRYDELTATIME, 
+        RETRYDELTATIME,
         SHOULDUPDATERETRYDELTATIME,
         DESCRIPTION,
         CLIENTHOST,
@@ -139,22 +139,22 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         set,
         next_index );
     }
-    
+
     public abstract String getTableName();
-    
-    
+
+
     public abstract  void getCreateList(ContainerRequest cr,StringBuffer sb);
-    
+
     public void getCreateList(Request r, StringBuffer sb) {
-        
+
         if(r == null || !(r instanceof ContainerRequest)) {
             throw new IllegalArgumentException("Request is not ContainerRequest" );
         }
         ContainerRequest cr = (ContainerRequest)r;
-        
+
         getCreateList(cr,sb);
-        
+
     }
-    
+
 }
 

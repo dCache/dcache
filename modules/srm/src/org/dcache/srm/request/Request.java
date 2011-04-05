@@ -228,7 +228,7 @@ public abstract class Request extends Job {
     private String description;
 
     public void addDebugHistoryEvent(String description) {
-        if(getConfiguration().isJdbcLogRequestHistoryInDBEnabled()) {
+        if(getJobStorage().isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
     }

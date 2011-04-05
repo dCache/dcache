@@ -56,7 +56,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         "STATUSCODE ,"+
         "USERID  ) " +
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    
+
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         GetRequest gr = (GetRequest)job;
@@ -121,19 +121,19 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
 
         return stmt;
     }
-    
-    
+
+
     /** Creates a new instance of GetRequestStorage */
     public GetRequestStorage(
-            Configuration configuration
+            Configuration.DatabaseParameters configuration
             )  throws SQLException {
         super(configuration);
     }
-    
+
     private String getProtocolsTableName() {
         return getTableName()+"_protocols";
     }
-    
+
     public void dbInit1() throws SQLException {
         logger.debug("dbInit1");
         String protocolsTableName = getProtocolsTableName().toLowerCase();
@@ -143,7 +143,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         try {
             _con = pool.getConnection();
             _con.setAutoCommit(true);
-            
+
             DatabaseMetaData md = _con.getMetaData();
             ResultSet columns = md.getColumns(null, null, protocolsTableName, null);
             if(columns.next()){
@@ -157,7 +157,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
                     verifyLongType("RequestID",2,getProtocolsTableName(),
                             columnName,columnDataType);
                 } else {
-                    
+
                     should_reanamed_old_table = true;
                 }
             } else {
@@ -187,7 +187,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
             }
         }
         try {
-            
+
             if(should_reanamed_old_table) {
                 renameTable(protocolsTableName);
             }
@@ -208,12 +208,12 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
             "RequestID"};
         createIndex(protocols_columns,getProtocolsTableName());
     }
-    
+
     public void getCreateList(ContainerRequest r, StringBuffer sb) {
-        
+
     }
     private static int ADDITIONAL_FIELDS = 0;
-    
+
     protected ContainerRequest getContainerRequest(
             Connection _con,
             Long ID,
@@ -237,7 +237,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
             FileRequest[] fileRequests,
             java.sql.ResultSet set,
             int next_index)throws java.sql.SQLException {
-        
+
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
@@ -273,19 +273,19 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
                 CLIENTHOST,
                 STATUSCODE,
                 protocols);
-        
+
     }
-    
+
     public String getRequestCreateTableFields() {
         return "";
     }
     public String getTableName() {
         return TABLE_NAME;
     }
-    
+
     public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
     }
-    
+
     private final String insertProtocols =
         "INSERT INTO "+getProtocolsTableName()+
         " (PROTOCOL, RequestID) "+
@@ -309,17 +309,17 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
         }
         return statements;
     }
-    
+
     public String getFileRequestsTableName() {
         return GetFileRequestStorage.TABLE_NAME;
     }
-    
+
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
     }
-    
-    
+
+
     protected int getMoreCollumnsNum() {
         return ADDITIONAL_FIELDS;
     }
-    
+
 }

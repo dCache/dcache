@@ -17,29 +17,29 @@ import java.util.Set;
  * @author  timur
  */
 public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
-    
+
     /** Creates a new instance of FileRequestStorage */
     public DatabaseFileRequestStorage
-    (
-    Configuration configuration)  throws SQLException {
+        (Configuration.DatabaseParameters configuration)  throws SQLException
+    {
         super(configuration);
     }
-     
+
     /**
      * empty emplementations
      */
     protected void _dbInit() throws SQLException{
-       
+
 	    String columns[] = {
 		    "REQUESTID"};
 	   createIndex(columns, getTableName().toLowerCase());
     }
-    
-       
+
+
     public abstract String getFileRequestCreateTableFields();
-    
+
     public abstract String getRequestTableName();
-    
+
     public String getCreateTableFields() {
         return
         ","+
@@ -49,9 +49,9 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         "STATUSCODE "+ stringType+
         getFileRequestCreateTableFields();
     }
-   
+
     private static int ADDITIONAL_FIELDS_NUM=3;
- 
+
     protected abstract FileRequest getFileRequest(
     Connection _con,
     Long ID,
@@ -70,7 +70,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException;
-    
+
     protected org.dcache.srm.scheduler.Job
     getJob(
     Connection _con,
@@ -91,7 +91,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         Long CREDENTIALID = set.getLong(next_index++);
         String STATUSCODE= set.getString(next_index++);
         return getFileRequest(
-        _con, 
+        _con,
         ID,
         NEXTJOBID ,
         CREATIONTIME,
@@ -109,11 +109,11 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         set,
         next_index );
     }
-    
+
     public abstract String getTableName();
-    
+
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
-    
+
     protected void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
          *additional fields:
@@ -125,7 +125,7 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         else if(columnIndex == nextIndex+1)
         {
             verifyLongType("CREDENTIALID",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+2)
         {
@@ -136,17 +136,17 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
             __verify(nextIndex+3,columnIndex,tableName, columnName, columnType);
         }
    }
-    
+
     protected abstract int getMoreCollumnsNum();
     protected int getAdditionalColumnsNum() {
         return ADDITIONAL_FIELDS_NUM +getMoreCollumnsNum();
     }
-    
+
     /*protected java.util.Set getFileRequests(String requestId) throws java.sql.SQLException{
         return getJobsByCondition(" REQUESTID = '"+requestId+"'");
     }*/
-    
-    
+
+
     public Set<Long> getActiveFileRequestIds(String schedulerid)  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
         "' AND STATE !="+State.DONE.getStateId()+
@@ -154,5 +154,5 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  {
         " AND STATE !="+State.FAILED.getStateId();
         return getJobIdsByCondition(condition);
     }
-    
+
 }

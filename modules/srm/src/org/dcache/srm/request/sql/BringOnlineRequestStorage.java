@@ -31,7 +31,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
    private final static Logger logger =
             LoggerFactory.getLogger(BringOnlineRequestStorage.class);
      public static final String TABLE_NAME ="bringonlinerequests";
-    
+
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+
         "NEXTJOBID=?, " +
         "CREATIONTIME=?,  " +
@@ -66,7 +66,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     "USERID  ) " +
     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
-    
+
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         BringOnlineRequest bor = (BringOnlineRequest)job;
@@ -131,15 +131,15 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
 
         return stmt;
     }
-    
-      
+
+
     /** Creates a new instance of BringOnlineRequestStorage */
-    public BringOnlineRequestStorage(    
-    Configuration configuration
+    public BringOnlineRequestStorage(
+    Configuration.DatabaseParameters configuration
     )  throws SQLException {
         super(configuration);
     }
-       
+
     private String getProtocolsTableName()
     {
         return getTableName()+"_protocols";
@@ -148,7 +148,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     public void dbInit1() throws SQLException {
              if(reanamed_old_table) {
                     renameTable(getProtocolsTableName());
-                
+
             }
            String protocolsTableName = getProtocolsTableName().toLowerCase();
             String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
@@ -160,9 +160,9 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             " )";
             createTable(protocolsTableName, createProtocolsTable);
    }
-    
+
     public void getCreateList(ContainerRequest r, StringBuffer sb) {
-        
+
     }
     private static int ADDITIONAL_FIELDS = 0;
 
@@ -189,7 +189,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     FileRequest[] fileRequests,
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException {
-           
+
             String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
             " WHERE RequestID='"+ID+"'";
             Statement sqlStatement = _con.createStatement();
@@ -201,10 +201,10 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
             }
             String [] protocols = (String[]) utilset.toArray(new String[0]);
             sqlStatement.close();
-            Job.JobHistory[] jobHistoryArray = 
+            Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);
-            return new  BringOnlineRequest( 
-                        ID, 
+            return new  BringOnlineRequest(
+                        ID,
                         NEXTJOBID,
                         CREATIONTIME,
                         LIFETIME,
@@ -212,8 +212,8 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
                         ERRORMESSAGE,
                         user,
                         SCHEDULERID,
-                        SCHEDULER_TIMESTAMP, 
-                        NUMOFRETR, 
+                        SCHEDULER_TIMESTAMP,
+                        NUMOFRETR,
                         MAXNUMOFRETR,
                         LASTSTATETRANSITIONTIME,
                         jobHistoryArray,
@@ -227,14 +227,14 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
                         protocols);
 
     }
-    
+
     public String getRequestCreateTableFields() {
         return "";
     }
     public String getTableName() {
         return TABLE_NAME;
     }
- 
+
     private final String insertProtocols =
         "INSERT INTO "+getProtocolsTableName()+
         " (PROTOCOL, RequestID) "+
@@ -257,17 +257,17 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
                     bor.getId());
         }
         return statements;
-   }    
-    
-    
+   }
+
+
     public String getFileRequestsTableName() {
         return BringOnlineFileRequestStorage.TABLE_NAME;
     }
-    
+
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
     }
-    
-  
+
+
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

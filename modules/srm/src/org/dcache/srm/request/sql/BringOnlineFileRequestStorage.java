@@ -38,36 +38,36 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
 
-    
+
     /** Creates a new instance of BringOnlineFileRequestStorage */
-    public BringOnlineFileRequestStorage(    
-    Configuration configuration
+    public BringOnlineFileRequestStorage(
+    Configuration.DatabaseParameters configuration
     )  throws SQLException {
         super(configuration);
     }
-   
-        
+
+
     protected FileRequest getFileRequest(Connection _con,
-        Long ID, 
-        Long NEXTJOBID, 
-        long CREATIONTIME, 
-        long LIFETIME, 
-        int STATE, 
-        String ERRORMESSAGE, 
-        String SCHEDULERID, 
-        long SCHEDULER_TIMESTAMP, 
-        int NUMOFRETR, 
-        int MAXNUMOFRETR, 
-        long LASTSTATETRANSITIONTIME, 
-        Long REQUESTID, 
-        Long CREDENTIALID, 
+        Long ID,
+        Long NEXTJOBID,
+        long CREATIONTIME,
+        long LIFETIME,
+        int STATE,
+        String ERRORMESSAGE,
+        String SCHEDULERID,
+        long SCHEDULER_TIMESTAMP,
+        int NUMOFRETR,
+        int MAXNUMOFRETR,
+        long LASTSTATETRANSITIONTIME,
+        Long REQUESTID,
+        Long CREDENTIALID,
         String STATUSCODE,
-        java.sql.ResultSet set, 
+        java.sql.ResultSet set,
         int next_index) throws SQLException {
            String SURL = set.getString(next_index++);
            String FILEID = set.getString(next_index++);
            String PINID = set.getString(next_index);
-            Job.JobHistory[] jobHistoryArray = 
+            Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);
            return new BringOnlineFileRequest(
             ID,
@@ -89,9 +89,9 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
             FILEID,
             PINID);
     }
-    
+
     public String getFileRequestCreateTableFields() {
-        return                     
+        return
         ","+
         "SURL "+  stringType+
         ","+
@@ -99,7 +99,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         ","+
         "PINID "+  stringType;
     }
-    
+
     private static int ADDITIONAL_FIELDS = 3;
 
     public String getTableName() {
@@ -108,12 +108,12 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
 
     @Override
     public PreparedStatement[] getAdditionalCreateStatements(Connection connection,
-                                                             Job job) throws SQLException { 
+                                                             Job job) throws SQLException {
         return null;
     }
-    public PreparedStatement getStatement(Connection connection, 
-                                          String query, 
-                                          Job fr) throws SQLException { 
+    public PreparedStatement getStatement(Connection connection,
+                                          String query,
+                                          Job fr) throws SQLException {
         BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
         PreparedStatement stmt = getPreparedStatement(connection,
                                   query,
@@ -145,9 +145,9 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
             ", SURL=?" +
             ", FILEID=?" +
             ", PINID=? WHERE ID=?";
-    public PreparedStatement getUpdateStatement(Connection connection, 
-                                                Job fr) 
-        throws SQLException { 
+    public PreparedStatement getUpdateStatement(Connection connection,
+                                                Job fr)
+        throws SQLException {
         return getStatement(connection,UPDATE_REQUEST_SQL, fr);
     }
 
@@ -172,10 +172,10 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
         "FILEID ,"+
         "PINID  ) " +
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    
-    public PreparedStatement getCreateStatement(Connection connection, 
-                                                Job fr) 
-        throws SQLException { 
+
+    public PreparedStatement getCreateStatement(Connection connection,
+                                                Job fr)
+        throws SQLException {
         BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
         PreparedStatement stmt = getPreparedStatement(connection,
                                   INSERT_SQL,
@@ -200,11 +200,11 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
                                   gfr.getPinId());
        return stmt;
     }
-   
+
      public String getRequestTableName() {
          return GetRequestStorage.TABLE_NAME;
-     }     
-     
+     }
+
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         if(columnIndex == nextIndex) {
             verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
@@ -225,9 +225,9 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage {
                     " this column should not be present!!!");
         }
      }
-     
+
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }
-     
+
 }
