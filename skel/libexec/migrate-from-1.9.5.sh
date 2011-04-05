@@ -545,7 +545,7 @@ filterOutDataCopiedFromTemplate()
     tmp=$(mktemp)
     sed -f "${DCACHE_LIB}/config.sed" > $tmp
     diff -u "$(getProperty dcache.paths.share)/migration/dCacheSetup-from-195.canonical" $tmp | \
-        doTail -n +4 | \
+        doTail +4 | \
         grep ^+ | \
         cut -b2- | \
         sed -e 's/="\(.*\)"$/=\1/'
