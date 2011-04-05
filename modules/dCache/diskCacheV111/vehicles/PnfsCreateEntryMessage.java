@@ -8,19 +8,22 @@ import java.util.Set;
 
 public class PnfsCreateEntryMessage extends PnfsGetStorageInfoMessage {
 
-    private String      _path        = null;
-    private int _uid = NameSpaceProvider.DEFAULT;
-    private int _gid = NameSpaceProvider.DEFAULT;
-    private int _mode = NameSpaceProvider.DEFAULT;
+    private final String _path;
+    private final int _uid;
+    private final int _gid;
+    private final int _mode;
 
     private static final long serialVersionUID = -8197311585737333341L;
 
     public PnfsCreateEntryMessage(String path){
         _path = path;
+        _uid = NameSpaceProvider.DEFAULT;
+        _gid = NameSpaceProvider.DEFAULT;
+        _mode = NameSpaceProvider.DEFAULT;
         setReplyRequired(true);
     }
     public PnfsCreateEntryMessage(String path, int uid , int gid , int mode ){
-	_path = path;
+        _path = path;
         _uid  = uid ;
         _gid  = gid ;
         _mode = mode ;
