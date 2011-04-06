@@ -45,6 +45,11 @@ s/^kerberosKdcList *=/kerberos.key-distribution-center-list=/
 s/^authLoginConfig *=/kerberos.jaas.config=/
 s/^kerberosSvcPrincipal *=/kerberos.servie-principle-name=/
 s/^httpPort *=/httpdPort=/
+s/^srmNumberOfDaysInDatabaseHistory *=/srmKeepRequestHistoryPeriod=/
+s/^srmOldRequestRemovalPeriodSeconds *=/srmExpiredRequestRemovalPeriod=/
+s/^srmJdbcMonitoringLogEnabled *=/srmRequestHistoryDatabaseEnabled=/
+s/^srmJdbcSaveCompletedRequestsOnly *=/srmStoreCompleteRequestsOnly=/
+s/^srmJdbcEnabled *=/srmDatabaseEnabled=/
 
 s/^useFileSystem *=.*//
 s/^srmVacuum *=.*//
