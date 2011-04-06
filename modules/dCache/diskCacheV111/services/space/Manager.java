@@ -3773,6 +3773,10 @@ public final class Manager
                                 spaceMessage.setFailed(0,se);
                         }
                 }
+                catch(SQLException e) {
+                        logger.error(e.getMessage());
+                        spaceMessage.setFailed(-1,e);
+                }
                 catch(Throwable t) {
                         logger.error(t.getMessage(),t);
                         spaceMessage.setFailed(-1,t);
