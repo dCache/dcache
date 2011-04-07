@@ -13,6 +13,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.vehicles.Message;
 import static diskCacheV111.util.CacheException.*;
 
@@ -57,9 +58,11 @@ public class CacheExceptionFactory {
                 return new NotInTrashCacheException(message);
             case TIMEOUT:
                 return new TimeoutCacheException(message);
+            case OUT_OF_DATE:
+                return new OutOfDateCacheException(message);
 
             /*
-             * thoes do not have own exceptions
+             * these do not have exception classes
              */
             case PANIC:
             case FILE_PRECIOUS:
@@ -70,6 +73,7 @@ public class CacheExceptionFactory {
             case ATTRIBUTE_FORMAT_ERROR:
             case HSM_DELAY_ERROR:
             case FILE_NOT_STORED:
+            case POOL_DISABLED:
             default:
                 return new CacheException(errorCode, message);
         }

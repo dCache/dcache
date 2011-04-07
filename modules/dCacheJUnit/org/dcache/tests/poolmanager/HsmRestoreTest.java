@@ -179,7 +179,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction );
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);
@@ -265,7 +265,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);
@@ -355,7 +355,7 @@ public class HsmRestoreTest {
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);
@@ -448,7 +448,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);

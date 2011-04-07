@@ -8,13 +8,13 @@ import org.dcache.vehicles.FileAttributes;
 
 public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
 
+    private static final long serialVersionUID = -5874326080375390208L;
 
     private ProtocolInfo _protocolInfo;
     private long         _fileSize;
     private String       _ioQueueName = null ;
     private String       _pnfsPath;
     private String       _linkGroup = null;
-    private static final long serialVersionUID = -5874326080375390208L;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,

@@ -1060,10 +1060,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( ( _timer > 0L ) && ( _timer < System.currentTimeMillis() ) ){
                     _timer = 0L ;
                     _log.warn("Restarting session {}", _sessionId);
-                    try{
-                        askForFileAttributes();
-                    }catch(Exception ee ){
-                        sendReply( "keepAlive" , 111 , ee.getMessage() )  ;
+                    try {
+                        again(true);
+                    } catch (Exception e) {
+                        sendReply("keepAlive", 111, e.getMessage());
                         removeUs() ;
                         return ;
                     }
@@ -1076,8 +1076,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 _timer = timeout == 0L ? 0L : System.currentTimeMillis() + timeout ;
             }
         }
-        public void again( boolean strong ) throws Exception {
-            askForFileAttributes() ;
+
+        public void again(boolean strong)
+            throws IllegalArgumentException, NoRouteToCellException
+        {
+            askForFileAttributes();
         }
 
         protected void askForFileAttributes()
@@ -1805,6 +1808,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String            _accessLatency = null;
         private String            _retentionPolicy = null;
         private boolean _isUrl;
+        private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
             throws CacheException, CommandException
@@ -1910,7 +1914,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        public void again( boolean strong ) throws Exception {
+        public void again(boolean strong)
+            throws IllegalArgumentException, NoRouteToCellException
+        {
             if( strong )_poolRequestDone = false ;
             super.again(strong);
         }
@@ -2109,6 +2115,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                    new PoolMgrSelectReadPoolMsg(_fileAttributes,
                                                 _protocolInfo,
                                                 0,
+                                                _previousSelectReadPoolMsg,
                                                 allowedStates);
                getPoolMessage.setIoQueueName(_ioQueueName );
             }
@@ -2147,7 +2154,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         public void
-        poolMgrSelectPoolArrived( PoolMgrSelectPoolMsg reply ){
+            poolMgrSelectPoolArrived( PoolMgrSelectPoolMsg reply )
+        {
 
             setTimer(0L);
             _log.debug("poolMgrGetPoolArrived : {}", reply);
@@ -2155,10 +2163,20 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                        _fileAttributes.getPnfsId(),
                        (System.currentTimeMillis() - _started));
 
-            if( reply.getReturnCode() != 0 ){
-                sendReply( "poolMgrGetPoolArrived" , reply )  ;
-                removeUs() ;
-                return ;
+            if (reply.getReturnCode() != 0) {
+                if (reply.getReturnCode() == CacheException.OUT_OF_DATE ||
+                    _poolRetry == 0) {
+                    try {
+                        again(true);
+                    } catch (NoRouteToCellException e) {
+                        _log.error("No route to {}", e.getDestinationPath());
+                        sendReply( "poolMgrGetPoolArrived" , reply )  ;
+                        removeUs();
+                    }
+                } else {
+                    setTimer(_poolRetry);
+                }
+                return;
             }
             String pool = null ;
             if( ( pool = reply.getPoolName() ) == null ){
@@ -2174,6 +2192,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             PoolIoFileMessage poolMessage  = null ;
 
             if( reply instanceof PoolMgrSelectReadPoolMsg ){
+                _previousSelectReadPoolMsg = (PoolMgrSelectReadPoolMsg) reply;
                 poolMessage =
                 new PoolDeliverFileMessage(
                 pool,
@@ -2234,20 +2253,20 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _log.debug("poolIoFileArrived : {}", reply);
             if( reply.getReturnCode() != 0 ){
-
-
                 // bad entry in cacheInfo and pool Manager did not check it ( for performance reason )
                 // try again
-                if( reply.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY ) {
-                    _poolRequestDone = false;
-                    this.fileAttributesAvailable();
-                    return;
+                if (reply.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY) {
+                    try {
+                        again(true);
+                        return;
+                    } catch (NoRouteToCellException e) {
+                        _log.error("No route to {}", e.getDestinationPath());
+                    }
                 }
 
-
-                sendReply( "poolIoFileArrived" , reply )  ;
-                removeUs() ;
-                return ;
+                sendReply("poolIoFileArrived", reply);
+                removeUs();
+                return;
             }
             _moverId = reply.getMoverId();
             //

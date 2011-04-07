@@ -10,6 +10,7 @@ import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
@@ -24,6 +25,7 @@ public class PinTask
     private PinManagerPinMessage _request;
     private MessageReply _reply;
     private Pin _pin;
+    private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
 
     public PinTask(PinManagerPinMessage request, MessageReply reply, Pin pin)
     {
@@ -90,6 +92,16 @@ public class PinTask
     public String getSticky()
     {
         return _pin.getSticky();
+    }
+
+    public PoolMgrSelectReadPoolMsg getPreviousSelectReadPoolMsg()
+    {
+        return _previousSelectReadPoolMsg;
+    }
+
+    public void setPreviousSelectReadPoolMsg(PoolMgrSelectReadPoolMsg message)
+    {
+        _previousSelectReadPoolMsg = message;
     }
 
     public Date freezeExpirationTime()
