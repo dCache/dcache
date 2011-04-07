@@ -43,7 +43,7 @@ s/^httpAllowedPaths *=/httpAllowedPaths=/
 s/^kerberosRealm *=/kerberos.realm=/
 s/^kerberosKdcList *=/kerberos.key-distribution-center-list=/
 s/^authLoginConfig *=/kerberos.jaas.config=/
-s/^kerberosSvcPrincipal *=/kerberos.servie-principle-name=/
+s/^kerberosSvcPrincipal *=/kerberos.service-principle-name=/
 s/^httpPort *=/httpdPort=/
 s/^srmNumberOfDaysInDatabaseHistory *=/srmKeepRequestHistoryPeriod=/
 s/^srmOldRequestRemovalPeriodSeconds *=/srmExpiredRequestRemovalPeriod=/
