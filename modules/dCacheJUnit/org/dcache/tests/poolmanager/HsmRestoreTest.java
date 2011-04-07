@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.EnumSet;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.dcache.tests.cells.GenericMockCellHelper;
@@ -29,8 +30,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.ThreadPoolNG;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
@@ -85,7 +84,6 @@ public class HsmRestoreTest {
         _pnfsHandler.setCellEndpoint(_cell);
         _poolMonitor = new PoolMonitorV5();
         _poolMonitor.setPoolSelectionUnit(_selectionUnit);
-        _poolMonitor.setPnfsHandler(_pnfsHandler);
         _poolMonitor.setCostModule(_costModule);
         _poolMonitor.setPartitionManager(_partitionManager);
 
@@ -102,6 +100,7 @@ public class HsmRestoreTest {
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);
+        _rc.setPnfsHandler(_pnfsHandler);
         __messages = new ArrayList<CellMessage>();
     }
 
@@ -120,16 +119,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -142,7 +131,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -205,16 +194,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -227,7 +206,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -297,16 +276,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -319,7 +288,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -387,16 +356,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -409,7 +368,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);

@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.NoSuchElementException;
+import java.io.Serializable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCheckable;
@@ -29,16 +29,19 @@ import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.vehicles.FileAttributes;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 public class PoolMonitorV5
+    implements Serializable
 {
     private final static Logger _log =
         LoggerFactory.getLogger(PoolMonitorV5.class);
 
+    static final long serialVersionUID = -2400834413958127412L;
+
     private PoolSelectionUnit _selectionUnit ;
-    private PnfsHandler       _pnfsHandler   ;
     private CostModule        _costModule    ;
     private double            _maxWriteCost          = 1000000.0;
     private PartitionManager  _partitionManager ;
@@ -50,11 +53,6 @@ public class PoolMonitorV5
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
     {
         _selectionUnit = selectionUnit;
-    }
-
-    public void setPnfsHandler(PnfsHandler pnfsHandler)
-    {
-        _pnfsHandler = pnfsHandler;
     }
 
     public void setCostModule(CostModule costModule)
@@ -77,15 +75,16 @@ public class PoolMonitorV5
     // output[2] -> allowed but not available (sorted, cpu + space)
     // output[3] -> pools from pnfs
     // output[4] -> List of List (all allowed pools)
-   public PnfsFileLocation getPnfsFileLocation(
-                               PnfsId pnfsId ,
-                               StorageInfo storageInfo ,
-                               ProtocolInfo protocolInfo, String linkGroup){
 
-      return new PnfsFileLocation( pnfsId, storageInfo ,protocolInfo , linkGroup) ;
+    public PnfsFileLocation getPnfsFileLocation(FileAttributes fileAttributes,
+                                                ProtocolInfo protocolInfo,
+                                                String linkGroup)
+    {
+        return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup);
+    }
 
-   }
-   public class PnfsFileLocation {
+   public class PnfsFileLocation
+   {
        private List<PoolManagerParameter> _listOfPartitions;
        private List<List<PoolCostCheckable>> _allowedAndAvailableMatrix;
 
@@ -104,33 +103,25 @@ public class PoolMonitorV5
 
       private boolean  _calculationDone       = false ;
 
-      private final PnfsId       _pnfsId       ;
-      private final StorageInfo  _storageInfo  ;
+      private final FileAttributes _fileAttributes;
       private final ProtocolInfo _protocolInfo ;
       private final String _linkGroup          ;
 
       //private PoolManagerParameter _recentParameter = _partitionManager.getParameterCopyOf()  ;
 
-      private PnfsFileLocation( PnfsId pnfsId ,
-                                StorageInfo storageInfo ,
-                                ProtocolInfo protocolInfo ,
-                                String linkGroup){
-
-         _pnfsId       = pnfsId ;
-         _storageInfo  = storageInfo ;
-         _protocolInfo = protocolInfo ;
-         _linkGroup    = linkGroup;
-      }
+       private PnfsFileLocation(FileAttributes fileAttributes,
+                                ProtocolInfo protocolInfo,
+                                String linkGroup)
+       {
+           _fileAttributes = fileAttributes;
+           _protocolInfo = protocolInfo;
+           _linkGroup    = linkGroup;
+       }
 
        public List<PoolManagerParameter> getListOfParameter()
        {
            return _listOfPartitions;
        }
-
-      public void clear(){
-          _allowedAndAvailableMatrix = null ;
-          _calculationDone           = false ;
-      }
 
        public PoolManagerParameter getCurrentParameterSet()
        {
@@ -208,7 +199,7 @@ public class PoolMonitorV5
       //   +----------------------------------------------------+
       //
        /*
-        *   Input : storage info , pnfsid
+        *   Input : _fileAttributes
         *   Output :
         *             _onlinePools
         *             _allowedAndAvailableMatrix
@@ -217,22 +208,14 @@ public class PoolMonitorV5
        private void calculateFileAvailableMatrix()
            throws CacheException, InterruptedException
        {
-
-         if( _storageInfo == null )
-            throw new
-            CacheException(189,"Storage Info not available");
-
          String hostName     = _protocolInfo instanceof IpProtocolInfo  ?((IpProtocolInfo)_protocolInfo).getHosts()[0] : null ;
          String protocolString = _protocolInfo.getProtocol() + "/" + _protocolInfo.getMajorVersion() ;
-         //
-         // will ask the PnfsManager for a hint
-         // about the pool locations of this
-         // pnfsId. Returns an enumeration of
-         // the possible pools.
-         //
-         List<String> expectedFromPnfs = _pnfsHandler.getCacheLocations( _pnfsId ) ;
+
+         Collection<String> expectedFromPnfs = _fileAttributes.getLocations();
+
          _log.debug("calculateFileAvailableMatrix _expectedFromPnfs : {}",
                     expectedFromPnfs);
+
          //
          // check if pools are up and file is really there.
          // (returns unsorted list of costs)
@@ -243,13 +226,14 @@ public class PoolMonitorV5
              if (cost != null) {
                  PoolCheckAdapter check = new PoolCheckAdapter(cost);
                  check.setHave(true);
-                 check.setPnfsId(_pnfsId);
+                 check.setPnfsId(_fileAttributes.getPnfsId());
                  _onlinePools.add(check);
              }
          }
 
          _log.debug("calculateFileAvailableMatrix _onlinePools : {}",
                     _onlinePools);
+
          Map<String, PoolCostCheckable> availableHash =
              new HashMap<String, PoolCostCheckable>() ;
          for( PoolCostCheckable cost: _onlinePools ){
@@ -264,7 +248,7 @@ public class PoolMonitorV5
              _selectionUnit.match( DirectionType.READ ,
                                    hostName ,
                                    protocolString ,
-                                   _storageInfo,
+                                   _fileAttributes.getStorageInfo(),
                                    _linkGroup ) ;
 
          _listOfPartitions          = new ArrayList<PoolManagerParameter>();
@@ -333,36 +317,22 @@ public class PoolMonitorV5
        }
 
        public List<List<PoolCostCheckable>>
-           getStagePoolMatrix(StorageInfo  storageInfo,
-                              ProtocolInfo protocolInfo,
-                              long         filesize)
-           throws CacheException, InterruptedException
-       {
-           return getFetchPoolMatrix(DirectionType.CACHE,
-                                     storageInfo,
-                                     protocolInfo,
-                                     filesize);
-       }
-
-       public List<List<PoolCostCheckable>>
            getFetchPoolMatrix(DirectionType       mode ,        /* cache, p2p */
-                              StorageInfo  storageInfo ,
-                              ProtocolInfo protocolInfo ,
                               long         filesize  )
            throws CacheException, InterruptedException
        {
 
          String hostName     =
-                    protocolInfo instanceof IpProtocolInfo ?
-                    ((IpProtocolInfo)protocolInfo).getHosts()[0] :
-                    null ;
+             _protocolInfo instanceof IpProtocolInfo ?
+             ((IpProtocolInfo) _protocolInfo).getHosts()[0] :
+             null ;
 
 
          PoolPreferenceLevel [] level =
              _selectionUnit.match( mode ,
                                    hostName ,
-                                   protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
-                                   storageInfo,
+                                   _protocolInfo.getProtocol()+"/"+_protocolInfo.getMajorVersion() ,
+                                   _fileAttributes.getStorageInfo(),
                                    _linkGroup) ;
          //
          //
@@ -437,40 +407,32 @@ public class PoolMonitorV5
          }
 
          return costMatrix ;
-      }
-
-       public List<PoolCostCheckable> getStorePoolList(long filesize)
-           throws CacheException, InterruptedException
-       {
-           return getStorePoolList(_storageInfo, _protocolInfo, filesize);
        }
 
-       private List<PoolCostCheckable>
-           getStorePoolList(StorageInfo  storageInfo,
-                            ProtocolInfo protocolInfo,
-                            long         filesize)
-           throws CacheException, InterruptedException
-       {
+      public List<PoolCostCheckable> getStorePoolList(long filesize)
+          throws CacheException, InterruptedException
+      {
          String  hostName    =
-                    protocolInfo instanceof IpProtocolInfo ?
-                    ((IpProtocolInfo)protocolInfo).getHosts()[0] :
+                    _protocolInfo instanceof IpProtocolInfo ?
+                    ((IpProtocolInfo)_protocolInfo).getHosts()[0] :
                     null ;
          int  maxDepth      = 9999 ;
          PoolPreferenceLevel [] level =
              _selectionUnit.match( DirectionType.WRITE ,
                                    hostName ,
-                                   protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
-                                   storageInfo,
+                                   _protocolInfo.getProtocol()+"/"+_protocolInfo.getMajorVersion() ,
+                                   _fileAttributes.getStorageInfo(),
                                    _linkGroup ) ;
          //
          // this is the final knock out.
          //
-         if( level.length == 0 )
-            throw new
-            CacheException( 19 ,
-                             "No write pools configured for <"+ storageInfo +
-                                "> in the linkGroup " +
-                                ( _linkGroup == null ? "[none]" : _linkGroup) ) ;
+         if (level.length == 0) {
+             throw new CacheException(19,
+                                      "No write pools configured for <" +
+                                      _fileAttributes.getStorageInfo() +
+                                      "> in the linkGroup " +
+                                      (_linkGroup == null ? "[none]" : _linkGroup));
+         }
 
          List<PoolCostCheckable> costs = null ;
 
@@ -487,7 +449,7 @@ public class PoolMonitorV5
 
          if( costs == null || costs.isEmpty() )
             throw new CacheException( 20 ,
-                            "No write pool available for <"+ storageInfo +
+                                      "No write pool available for <"+ _fileAttributes.getStorageInfo() +
                                 "> in the linkGroup " +
                                 ( _linkGroup == null ? "[none]" : _linkGroup));
 

@@ -47,6 +47,9 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 
     private PoolMgrSelectReadPoolMsg _previousMessage;
 
+    private int _retryCounter;
+    private String _previousStageHost;
+
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
                                     ProtocolInfo protocolInfo,
                                     long fileSize,
@@ -83,5 +86,32 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
     public PoolMgrSelectReadPoolMsg getPreviousMessage()
     {
         return _previousMessage;
+    }
+
+    /**
+     * Number of retries. Used internally by PoolManager.
+     */
+    public void setRetryCounter(int counter)
+    {
+        _retryCounter = counter;
+    }
+
+    public int getRetryCounter()
+    {
+        return _retryCounter;
+    }
+
+    /**
+     * Host on which the file was previously attempted to be
+     * staged. Used internally by PoolManager.
+     */
+    public String getPreviousStageHost()
+    {
+        return _previousStageHost;
+    }
+
+    public void setPreviousStageHost(String host)
+    {
+        _previousStageHost = host;
     }
 }
