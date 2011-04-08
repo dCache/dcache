@@ -147,6 +147,12 @@ public class UniversalSpringCell
         if (_setupController != null && _setupClass == null)
             throw new IllegalArgumentException("Setup class must be specified when a setup controller is used");
 
+        /* To ensure that all required file systems are mounted, the
+         * admin may specify some required files. We will block until
+         * they become available.
+         */
+        waitForFiles();
+
         /* Instantiate Spring application context. This will
          * eagerly instantiate all beans.
          */
@@ -170,12 +176,6 @@ public class UniversalSpringCell
          * timeouts.
          */
         startTimeoutTask();
-
-        /* To ensure that all required file systems are mounted, the
-         * admin may specify some required files. We will block until
-         * they become available.
-         */
-        waitForFiles();
 
         /* The setup may be provided as static configuration in the
          * domain context, as a setup file on disk or through a setup
