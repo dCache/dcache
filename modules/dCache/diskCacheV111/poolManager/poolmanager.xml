@@ -58,7 +58,8 @@
     <property name="partitionManager" ref="pm"/>
   </bean>
 
-  <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5">
+  <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
+        destroy-method="shutdown">
     <description>Request container</description>
     <property name="poolSelectionUnit" ref="psu"/>
     <property name="poolMonitor" ref="poolMonitor"/>

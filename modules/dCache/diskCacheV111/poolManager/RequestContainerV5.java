@@ -116,6 +116,8 @@ public class RequestContainerV5
     /** value in milliseconds */
     private final int _stagingRetryInterval;
 
+    private final Thread _tickerThread;
+
     /**
      * define host selection behaviour on restore retry
      */
@@ -134,12 +136,18 @@ public class RequestContainerV5
 
     public RequestContainerV5( int stagingRetryInterval) {
         _stagingRetryInterval = stagingRetryInterval;
-        new Thread(this,"Container-ticker").start();
+        _tickerThread = new Thread(this, "Container-ticker");
+        _tickerThread.start();
     }
 
     public RequestContainerV5()
     {
         this( DEFAULT_RETRY_INTERVAL);
+    }
+
+    public void shutdown()
+    {
+        _tickerThread.interrupt();
     }
 
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
@@ -2387,7 +2395,6 @@ public class RequestContainerV5
             if( matrix.size() == 0 )
                   throw new
                   CacheException( 149 , "No pool candidates available/configured/left for "+mode ) ;
-
 
             PoolCostCheckable cost = null ;
             if( _poolCandidate == null ){
