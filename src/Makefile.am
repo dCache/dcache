@@ -133,10 +133,10 @@ libpdcap_la_SOURCES = $(p_loadsrc) $(c_sources)
 libpdcap_la_LIBADD = $(ZLIB) -lpthread -ldl
 libpdcap_la_LDFLAGS = -no-undefined -version-info $(LIBRARY_VERSION)
 
-bin_PROGRAMS = dccp dcap_test dcsuck readv_test wdccp dcap_url-test
+bin_PROGRAMS = dccp dcap_test dcsuck readv_test wdccp dcap_url_test
 
 dccp_SOURCES = dccp.c $(h_internal) print_size.c sigfig.c
-dccp_LDFLAGS = -lm
+dccp_LDFLAGS =
 dccp_LDADD = $(LDADDS) libdcap.la
 dccp_CFLAGS = $(AM_CFLAGS)
 

@@ -165,7 +165,12 @@ if test "${nossl}" != "0" ; then
 AC_MSG_RESULT([Disabling ssl plugin as header files not found.])
 else
 AC_CHECK_LIB(ssl,SSL_library_init,[
-SSL_LIBS="-lssl ${SSL_LIBS}"
+SSL_LIBS="-lssl"
+],[
+nossl=1
+])
+AC_CHECK_LIB(crypto,ERR_print_errors_fp,[
+SSL_LIBS="${SSL_LIBS} -lcrypto"
 ],[
 nossl=1
 ])
@@ -231,66 +236,6 @@ GCC64DBGPTHR_LIBS_NOT=0
 GCC32PTHR_LIBS_NOT=0
 GCC32DBGPTHR_LIBS_NOT=0
 
-AC_CHECK_LIB(globus_common, globus_version_print, [
-GLOBUS_EPEL_LIBS="-lglobus_common ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_proxy_ssl, X509V3_conf_free, [
-GLOBUS_EPEL_LIBS="-lglobus_proxy_ssl ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_oldgaa, internal_error_handler, [
-GLOBUS_EPEL_LIBS="-lglobus_oldgaa ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_error, globus_module_getenv, [
-GLOBUS_EPEL_LIBS="-lglobus_openssl_error ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_sysconfig, globus_fifo_enqueue, [
-GLOBUS_EPEL_LIBS="-lglobus_gsi_sysconfig ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl, globus_module_activate, [
-GLOBUS_EPEL_LIBS="-lglobus_openssl ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_credential,globus_module_getenv, [
-GLOBUS_EPEL_LIBS="-lglobus_gsi_credential ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_proxy_core,X509_sign, [
-GLOBUS_EPEL_LIBS="-lglobus_gsi_proxy_core ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_cert_utils,X509_get_subject_name, [
-GLOBUS_EPEL_LIBS="-lglobus_gsi_cert_utils ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_callback,X509_get_subject_name, [
-GLOBUS_EPEL_LIBS="-lglobus_gsi_callback ${GLOBUS_EPEL_LIBS}"
-],[
-EPEL_LIBS_NOT=1
-])
-
 AC_CHECK_LIB(globus_gssapi_gsi,gss_wrap, [
 GLOBUS_EPEL_LIBS="-lglobus_gssapi_gsi ${GLOBUS_EPEL_LIBS}"
 ],[
@@ -299,66 +244,6 @@ EPEL_LIBS_NOT=1
 
 
 dnl == 64pthreads library checking version ==
-
-AC_CHECK_LIB(globus_common_gcc64pthr, globus_version_print, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_common_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_proxy_ssl_gcc64pthr, X509V3_conf_free, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_proxy_ssl_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_oldgaa_gcc64pthr, internal_error_handler, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_oldgaa_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_error_gcc64pthr, globus_module_getenv, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_openssl_error_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_sysconfig_gcc64pthr, globus_fifo_enqueue, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_gsi_sysconfig_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_gcc64pthr, globus_module_activate, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_openssl_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_credential_gcc64pthr,globus_module_getenv, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_gsi_credential_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_proxy_core_gcc64pthr,X509_sign, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_gsi_proxy_core_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_cert_utils_gcc64pthr,X509_get_subject_name, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_gsi_cert_utils_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_callback_gcc64pthr,X509_get_subject_name, [
-GLOBUS_GCC64PTHR_LIBS="-lglobus_gsi_callback_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
-],[
-GCC64PTHR_LIBS_NOT=1
-])
 
 AC_CHECK_LIB(globus_gssapi_gsi_gcc64pthr,gss_wrap, [
 GLOBUS_GCC64PTHR_LIBS="-lglobus_gssapi_gsi_gcc64pthr ${GLOBUS_GCC64PTHR_LIBS}"
@@ -369,66 +254,6 @@ GCC64PTHR_LIBS_NOT=1
 
 dnl == 64dbgpthr library checking version ==
 
-AC_CHECK_LIB(globus_common_gcc64dbgpthr, globus_version_print, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_common_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_proxy_ssl_gcc64dbgpthr, X509V3_conf_free, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_proxy_ssl_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_oldgaa_gcc64dbgpthr, internal_error_handler, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_oldgaa_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_error_gcc64dbgpthr, globus_module_getenv, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_openssl_error_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_sysconfig_gcc64dbgpthr, globus_fifo_enqueue, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gsi_sysconfig_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_gcc64dbgpthr, globus_module_activate, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_openssl_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_credential_gcc64dbgpthr,globus_module_getenv, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gsi_credential_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_proxy_core_gcc64dbgpthr,X509_sign, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gsi_proxy_core_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_cert_utils_gcc64dbgpthr,X509_get_subject_name, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gsi_cert_utils_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_callback_gcc64dbgpthr,X509_get_subject_name, [
-GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gsi_callback_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
-],[
-GCC64DBGPTHR_LIBS_NOT=1
-])
-
 AC_CHECK_LIB(globus_gssapi_gsi_gcc64dbgpthr,gss_wrap, [
 GLOBUS_GCC64DBGPTHR_LIBS="-lglobus_gssapi_gsi_gcc64dbgpthr ${GLOBUS_GCC64DBGPTHR_LIBS}"
 ],[
@@ -438,66 +263,6 @@ GCC64DBGPTHR_LIBS_NOT=1
 
 dnl == 32pthreads library checking version ==
 
-AC_CHECK_LIB(globus_common_gcc32pthr, globus_version_print, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_common_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_proxy_ssl_gcc32pthr, X509V3_conf_free, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_proxy_ssl_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_oldgaa_gcc32pthr, internal_error_handler, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_oldgaa_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_error_gcc32pthr, globus_module_getenv, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_openssl_error_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_sysconfig_gcc32pthr, globus_fifo_enqueue, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_gsi_sysconfig_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_gcc32pthr, globus_module_activate, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_openssl_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_credential_gcc32pthr,globus_module_getenv, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_gsi_credential_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_proxy_core_gcc32pthr,X509_sign, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_gsi_proxy_core_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_cert_utils_gcc32pthr,X509_get_subject_name, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_gsi_cert_utils_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_callback_gcc32pthr,X509_get_subject_name, [
-GLOBUS_GCC32PTHR_LIBS="-lglobus_gsi_callback_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
-],[
-GCC32PTHR_LIBS_NOT=1
-])
-
 AC_CHECK_LIB(globus_gssapi_gsi_gcc32pthr,gss_wrap, [
 GLOBUS_GCC32PTHR_LIBS="-lglobus_gssapi_gsi_gcc32pthr ${GLOBUS_GCC32PTHR_LIBS}"
 ],[
@@ -506,66 +271,6 @@ GCC32PTHR_LIBS_NOT=1
 
 
 dnl == 32dbgpthr library checking version ==
-
-AC_CHECK_LIB(globus_common_gcc32dbgpthr, globus_version_print, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_common_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_proxy_ssl_gcc32dbgpthr, X509V3_conf_free, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_proxy_ssl_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_oldgaa_gcc32dbgpthr, internal_error_handler, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_oldgaa_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_error_gcc32dbgpthr, globus_module_getenv, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_openssl_error_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_sysconfig_gcc32dbgpthr, globus_fifo_enqueue, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gsi_sysconfig_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_openssl_gcc32dbgpthr, globus_module_activate, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_openssl_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_credential_gcc32dbgpthr,globus_module_getenv, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gsi_credential_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_proxy_core_gcc32dbgpthr,X509_sign, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gsi_proxy_core_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_cert_utils_gcc32dbgpthr,X509_get_subject_name, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gsi_cert_utils_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
-
-AC_CHECK_LIB(globus_gsi_callback_gcc32dbgpthr,X509_get_subject_name, [
-GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gsi_callback_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
-],[
-GCC32DBGPTHR_LIBS_NOT=1
-])
 
 AC_CHECK_LIB(globus_gssapi_gsi_gcc32dbgpthr,gss_wrap, [
 GLOBUS_GCC32DBGPTHR_LIBS="-lglobus_gssapi_gsi_gcc32dbgpthr ${GLOBUS_GCC32DBGPTHR_LIBS}"
@@ -647,24 +352,6 @@ else
 
 AC_CHECK_LIB(gssapi_krb5,gss_import_name, [
 KRB_LIBS="-lgssapi_krb5 ${KRB_LIBS}"
-],[
-nokrb=1
-])
-
-AC_CHECK_LIB(crypto,fread, [
-KRB_LIBS="-lcrypto ${KRB_LIBS}"
-],[
-nokrb=1
-])
-
-AC_CHECK_LIB(c,strcmp, [
-KRB_LIBS="-lc ${KRB_LIBS}"
-],[
-nokrb=1
-])
-
-AC_CHECK_LIB(resolv,fopen, [
-KRB_LIBS="-lresolv ${KRB_LIBS}"
 ],[
 nokrb=1
 ])
