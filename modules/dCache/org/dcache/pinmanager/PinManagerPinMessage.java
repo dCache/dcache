@@ -71,6 +71,11 @@ public class PinManagerPinMessage extends Message
         return _fileAttributes;
     }
 
+    public void setFileAttributes(FileAttributes attributes)
+    {
+        _fileAttributes = attributes;
+    }
+
     public ProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;

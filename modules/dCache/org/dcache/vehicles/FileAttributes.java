@@ -136,6 +136,11 @@ public class FileAttributes implements Serializable {
         return _definedAttributes.contains(attribute);
     }
 
+    public boolean isDefined(Set<FileAttribute> attributes)
+    {
+        return _definedAttributes.containsAll(attributes);
+    }
+
     /**
      * Get the set of available attributes. The set may have zero or
      * more entries.
