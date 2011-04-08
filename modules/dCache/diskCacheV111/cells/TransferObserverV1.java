@@ -536,7 +536,7 @@ public class TransferObserverV1
                 _log.info("Requesting doorInfo from LoginBroker " + loginBroker);
                 try {
                     LoginBrokerInfo [] infos =
-                        (LoginBrokerInfo [])request(loginBroker, "ls -binary");
+                        (LoginBrokerInfo [])request(loginBroker, "ls -binary -all");
 
                     StringBuilder sb = new StringBuilder();
                     sb.append("LoginBroker (" + loginBroker + ") : ");
