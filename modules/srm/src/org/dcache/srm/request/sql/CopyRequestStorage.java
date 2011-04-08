@@ -58,7 +58,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
     "RETENTIONPOLICY, "+
     "ACCESSLATENCY ) " +
     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    
+
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         CopyRequest cr = (CopyRequest)job;
@@ -157,16 +157,16 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
 
         return stmt;
     }
-     
+
     /** Creates a new instance of GetRequestStorage */
-     public CopyRequestStorage(Configuration configuration) throws SQLException {
+     public CopyRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
         super(configuration
         );
     }
-        
+
     public void dbInit1() throws SQLException {
    }
-    
+
     public void getCreateList(ContainerRequest r, StringBuffer sb) {
         CopyRequest cr = (CopyRequest)r;
         TFileStorageType storageType = cr.getStorageType();
@@ -175,7 +175,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
         } else {
             sb.append(", '").append(storageType.getValue()).append("' ");
         }
-        
+
         TRetentionPolicy retentionPolicy = cr.getTargetRetentionPolicy();
         if(retentionPolicy == null) {
             sb.append(", NULL ");
@@ -188,50 +188,50 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
         } else {
             sb.append(", '").append(accessLatency.getValue()).append('\'');
         }
-        
+
     }
-    
-    protected ContainerRequest getContainerRequest(Connection _con, 
-            Long ID, 
-            Long NEXTJOBID, 
-            long CREATIONTIME, 
-            long LIFETIME, 
-            int STATE, 
-            String ERRORMESSAGE, 
-            SRMUser user, 
-            String SCHEDULERID, 
-            long SCHEDULER_TIMESTAMP, 
-            int NUMOFRETR, 
+
+    protected ContainerRequest getContainerRequest(Connection _con,
+            Long ID,
+            Long NEXTJOBID,
+            long CREATIONTIME,
+            long LIFETIME,
+            int STATE,
+            String ERRORMESSAGE,
+            SRMUser user,
+            String SCHEDULERID,
+            long SCHEDULER_TIMESTAMP,
+            int NUMOFRETR,
             int MAXNUMOFRETR,
-            long LASTSTATETRANSITIONTIME, 
-            Long CREDENTIALID, 
-            int RETRYDELTATIME, 
-            boolean SHOULDUPDATERETRYDELTATIME, 
+            long LASTSTATETRANSITIONTIME,
+            Long CREDENTIALID,
+            int RETRYDELTATIME,
+            boolean SHOULDUPDATERETRYDELTATIME,
             String DESCRIPTION,
             String CLIENTHOST,
             String STATUSCODE,
-            FileRequest[] fileRequests, 
-            java.sql.ResultSet set, 
+            FileRequest[] fileRequests,
+            java.sql.ResultSet set,
             int next_index) throws java.sql.SQLException {
-           
-        Job.JobHistory[] jobHistoryArray = 
+
+        Job.JobHistory[] jobHistoryArray =
         getJobHistory(ID,_con);
         String STORAGETYPE = set.getString(next_index++);
         String RETENTIONPOLICY = set.getString(next_index++);
         String ACCESSLATENCY = set.getString(next_index++);
-        TFileStorageType storageType = 
+        TFileStorageType storageType =
                 STORAGETYPE == null || STORAGETYPE.equalsIgnoreCase("null") ?
                     null:TFileStorageType.fromString(STORAGETYPE);
-        
-        TRetentionPolicy retentionPolicy = 
+
+        TRetentionPolicy retentionPolicy =
                 RETENTIONPOLICY == null || RETENTIONPOLICY.equalsIgnoreCase("null") ?
                     null:TRetentionPolicy.fromString(RETENTIONPOLICY);
-        TAccessLatency accessLatency = 
+        TAccessLatency accessLatency =
                 ACCESSLATENCY == null || ACCESSLATENCY.equalsIgnoreCase("null") ?
                     null:TAccessLatency.fromString(ACCESSLATENCY);
 
-            return new  CopyRequest( 
-                        ID, 
+            return new  CopyRequest(
+                        ID,
                         NEXTJOBID,
                         CREATIONTIME,
                         LIFETIME,
@@ -239,8 +239,8 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
                         ERRORMESSAGE,
                         user,
                         SCHEDULERID,
-                        SCHEDULER_TIMESTAMP, 
-                        NUMOFRETR, 
+                        SCHEDULER_TIMESTAMP,
+                        NUMOFRETR,
                         MAXNUMOFRETR,
                         LASTSTATETRANSITIONTIME,
                         jobHistoryArray,
@@ -256,7 +256,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
                         accessLatency);
 
     }
-    
+
     public String getRequestCreateTableFields() {
         return ", "+
                 "STORAGETYPE "+ stringType+
@@ -265,13 +265,13 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
         ", "+
         "ACCESSLATENCY "+ stringType;
     }
-    
+
     private static int ADDITIONAL_FIELDS = 3;
-    
+
     public String getTableName() {
         return TABLE_NAME;
     }
-    
+
     public void getUpdateAssignements(ContainerRequest r, StringBuffer sb) {
         CopyRequest cr = (CopyRequest)r;
 
@@ -294,12 +294,12 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
             sb.append(", ACCESSLATENCY='").append(accessLatency.getValue()).append('\'');
         }
     }
-    
-   
+
+
     public String getFileRequestsTableName() {
         return CopyFileRequestStorage.TABLE_NAME;
-    }    
-     
+    }
+
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         if(columnIndex == nextIndex)
         {
@@ -321,8 +321,8 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
                     " this column should not be present!!!");
         }
     }
-    
-   
+
+
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }

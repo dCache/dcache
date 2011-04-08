@@ -75,6 +75,7 @@ import java.sql.*;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
@@ -94,7 +95,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
     protected static final String INDEX_SUFFIX="_idx";
 
-    protected Configuration configuration;
+    protected Configuration.DatabaseParameters configuration;
     private final String jdbcUrl;
     private final String jdbcClass;
     private final String user;
@@ -110,22 +111,26 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     protected static final int intType_int=java.sql.Types.INTEGER;
     protected static final int dateTimeType_int= java.sql.Types.TIMESTAMP;
     protected static final int booleanType_int= java.sql.Types.INTEGER;
-    public DatabaseJobStorage(      Configuration configuration)
-    throws SQLException {
+    public DatabaseJobStorage(Configuration.DatabaseParameters configuration)
+        throws SQLException
+    {
         this.configuration = configuration;
 
         this.jdbcUrl = configuration.getJdbcUrl();
         this.jdbcClass = configuration.getJdbcClass();
         this.user = configuration.getJdbcUser();
         this.pass = configuration.getJdbcPass();
-        this.logHistory = configuration.isJdbcLogRequestHistoryInDBEnabled();
+        this.logHistory = configuration.isRequestHistoryDatabaseEnabled();
 
         dbInit(configuration.isCleanPendingRequestsOnRestart());
         //updatePendingJobs();
         new Thread(this,"update"+getTableName()).start();
     }
 
-
+    public boolean isJdbcLogRequestHistoryInDBEnabled()
+    {
+        return logHistory;
+    }
 
     public static final String createFileRequestTablePrefix =
     "ID "+         longType+" NOT NULL PRIMARY KEY"+
@@ -1347,8 +1352,10 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
     }
 
     public void run(){
-        long update_period = configuration.getOldRequestRemovePeriodSecs()*1000L;
-        long history_lifetime = 1000L*24*3600*configuration.getNumDaysHistory();
+        long update_period =
+            TimeUnit.SECONDS.toMillis(configuration.getExpiredRequestRemovalPeriod());
+        long history_lifetime =
+            TimeUnit.DAYS.toMillis(configuration.getKeepRequestHistoryPeriod());
         while(true) {
             try {
                 Thread.sleep(update_period);

@@ -29,13 +29,13 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         "NUMOFRETR=?," +
         "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
-    
-    public PreparedStatement getStatement(Connection connection, 
-                                          String query, 
-                                          Job job) throws SQLException { 
+
+    public PreparedStatement getStatement(Connection connection,
+                                          String query,
+                                          Job job) throws SQLException {
         GetFileRequest request = (GetFileRequest)job;
         PreparedStatement stmt = getPreparedStatement(connection,
-                                                      query, 
+                                                      query,
                                                       request.getNextJobId(),
                                                       request.getCreationTime(),
                                                       request.getLifetime(),
@@ -67,9 +67,9 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             "FILEID=? ,"+
             "PINID=? "+
             "WHERE ID=? ";
-    public PreparedStatement getUpdateStatement(Connection connection, 
-                                                Job job) 
-        throws SQLException { 
+    public PreparedStatement getUpdateStatement(Connection connection,
+                                                Job job)
+        throws SQLException {
         if(job == null || !(job instanceof GetFileRequest)) {
             throw new IllegalArgumentException("fr is not GetFileRequest" );
         }
@@ -98,9 +98,9 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             "FILEID ,"+
             "PINID ) "+
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    
-    public PreparedStatement getCreateStatement(Connection connection, 
-                                                Job job) 
+
+    public PreparedStatement getCreateStatement(Connection connection,
+                                                Job job)
         throws SQLException {
         if(job == null || !(job instanceof GetFileRequest)) {
             throw new IllegalArgumentException("job is not GetFileRequest" );
@@ -128,36 +128,36 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
                                                       request.getPinId());
         return stmt;
     }
-    
+
     /** Creates a new instance of GetFileRequestStorage */
-    public GetFileRequestStorage(    
-    Configuration configuration
+    public GetFileRequestStorage(
+    Configuration.DatabaseParameters configuration
     )  throws SQLException {
         super(configuration);
     }
-   
+
     protected FileRequest getFileRequest(Connection _con,
-        Long ID, 
-        Long NEXTJOBID, 
-        long CREATIONTIME, 
-        long LIFETIME, 
-        int STATE, 
-        String ERRORMESSAGE, 
-        String SCHEDULERID, 
-        long SCHEDULER_TIMESTAMP, 
-        int NUMOFRETR, 
-        int MAXNUMOFRETR, 
-        long LASTSTATETRANSITIONTIME, 
-        Long REQUESTID, 
-        Long CREDENTIALID, 
+        Long ID,
+        Long NEXTJOBID,
+        long CREATIONTIME,
+        long LIFETIME,
+        int STATE,
+        String ERRORMESSAGE,
+        String SCHEDULERID,
+        long SCHEDULER_TIMESTAMP,
+        int NUMOFRETR,
+        int MAXNUMOFRETR,
+        long LASTSTATETRANSITIONTIME,
+        Long REQUESTID,
+        Long CREDENTIALID,
         String STATUSCODE,
-        java.sql.ResultSet set, 
+        java.sql.ResultSet set,
         int next_index) throws SQLException {
            String SURL = set.getString(next_index++);
            String TURL = set.getString(next_index++);
            String FILEID = set.getString(next_index++);
            String PINID = set.getString(next_index);
-            Job.JobHistory[] jobHistoryArray = 
+            Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);
            return new GetFileRequest(
             ID,
@@ -180,9 +180,9 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             FILEID,
             PINID);
     }
-    
+
     public String getFileRequestCreateTableFields() {
-        return                     
+        return
         ","+
         "SURL "+  stringType+
         ","+
@@ -192,13 +192,13 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         ","+
         "PINID "+  stringType;
     }
-    
+
     private static int ADDITIONAL_FIELDS = 4;
 
     public String getTableName() {
         return TABLE_NAME;
     }
-    
+
     public void getUpdateAssignements(FileRequest fr,StringBuffer sb) {
         if(fr == null || !(fr instanceof GetFileRequest)) {
             throw new IllegalArgumentException("fr is not GetFileRequest" );
@@ -212,7 +212,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         else {
             sb.append("TURL = '").append(tmp).append("', ");
         }
-        
+
         tmp =gfr.getFileId();
         if(tmp == null) {
             sb.append(" FILEID =NULL, ");
@@ -223,12 +223,12 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         tmp =gfr.getPinId();
         if(tmp == null) {
             sb.append(" PINID =NULL ");
-        } 
+        }
         else {
             sb.append("PINID = '").append(tmp).append("' ");
         }
     }
-    
+
      public void getCreateList(FileRequest fr,StringBuffer sb) {
         if(fr == null || !(fr instanceof GetFileRequest)) {
             throw new IllegalArgumentException("fr is not GetFileRequest" );
@@ -257,11 +257,11 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
             sb.append('\'').append(tmp).append("' ");
         }
     }
-   
+
      public String getRequestTableName() {
          return GetRequestStorage.TABLE_NAME;
-     }     
-     
+     }
+
      protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
          /*
           *       "SURL "+  stringType+
@@ -278,7 +278,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
         else if(columnIndex == nextIndex+1)
         {
             verifyStringType("TURL",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+2)
         {
@@ -296,9 +296,9 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage {
                     " this column should not be present!!!");
         }
      }
-     
+
     protected int getMoreCollumnsNum() {
          return ADDITIONAL_FIELDS;
      }
-     
+
 }

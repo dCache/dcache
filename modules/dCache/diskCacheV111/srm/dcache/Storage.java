@@ -217,6 +217,9 @@ import javax.security.auth.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
+
 import org.springframework.beans.factory.annotation.Required;
 
 import static org.dcache.namespace.FileAttribute.*;
@@ -574,52 +577,51 @@ public final class Storage
         return "";
     }
 
+    private static final ImmutableMap<String,String> OPTION_TO_PARAMETER_SET =
+        new ImmutableMap.Builder<String,String>()
+        .put("get", Configuration.GET_PARAMETERS)
+        .put("put", Configuration.PUT_PARAMETERS)
+        .put("ls", Configuration.LS_PARAMETERS)
+        .put("bringonline", Configuration.BRINGONLINE_PARAMETERS)
+        .put("reserve", Configuration.RESERVE_PARAMETERS)
+        .build();
+
     public final static String fh_db_history_log= " Syntax: db history log [on|off] "+
         "# show status or enable db history log ";
-    public final static String hh_db_history_log= " [on|off] " +
+    public final static String hh_db_history_log= "[-get] [-put] [-bringonline] [-ls] [-copy] [-reserve] [on|off] " +
         "# show status or enable db history log ";
-    public String ac_db_history_log_$_0_1(Args args) {
-        if (args.argc()==0) {
-            return "db history logging is " +(
-                config.isJdbcLogRequestHistoryInDBEnabled()?
-                    " enabled":
-                    " disabled");
-        }
-        String on_off= args.argv(0);
-        if(!on_off.equals("on") &&
-            !on_off.equals("off")) {
-            return "syntax error";
+    public String ac_db_history_log_$_0_1(Args args)
+    {
+        Collection<String> sets = new ArrayList<String>();
+        for (Map.Entry<String,String> e: OPTION_TO_PARAMETER_SET.entrySet()) {
+            if (args.getOpt(e.getKey()) != null) {
+                sets.add(e.getValue());
+            }
         }
 
-        config.setJdbcLogRequestHistoryInDBEnabled(on_off.equals("on"));
-        return "db history logging is " +(
-                config.isJdbcLogRequestHistoryInDBEnabled()?
-                    " enabled":
-                    " disabled");
-    }
-
-    public final static String fh_db_debug_history_log= " Syntax: db debug history log [on|off] "+
-        "# show status or enable db history log ";
-    public final static String hh_db_debug_history_log= " [on|off] " +
-        "# show status or enable db history log ";
-    public String ac_db_debug_history_log_$_0_1(Args args) {
-        if(args.argc() == 0) {
-            return "db debug history logging is " +(
-                config.isJdbcLogRequestHistoryInDBEnabled()?
-                    " enabled":
-                    " disabled");
-        }
-        String on_off= args.argv(0);
-        if(!on_off.equals("on") &&
-            !on_off.equals("off")) {
-            return "syntax error";
+        if (sets.isEmpty()) {
+            sets = OPTION_TO_PARAMETER_SET.values();
         }
 
-        config.setJdbcLogRequestHistoryInDBEnabled(on_off.equals("on"));
-        return "db debug history logging is " +(
-                config.isJdbcLogRequestHistoryInDBEnabled()?
-                    " enabled":
-                    " disabled");
+        if (args.argc() > 0) {
+            String arg = args.argv(0);
+            if (!arg.equals("on") && !arg.equals("off")){
+                return "syntax error";
+            }
+            for (String set: sets) {
+                config.getDatabaseParameters(set).setRequestHistoryDatabaseEnabled(arg.equals("on"));
+            }
+        }
+
+        StringBuilder s = new StringBuilder();
+        for (String set: sets) {
+            Configuration.DatabaseParameters parameters = config.getDatabaseParameters(set);
+            s.append("db history logging for ").append(set).append(" is ")
+                .append((parameters.isRequestHistoryDatabaseEnabled()
+                         ? "enabled"
+                         : "disabled")).append("\n");
+        }
+        return s.toString();
     }
 
     public final static String fh_cancel= " Syntax: cancel <id> ";

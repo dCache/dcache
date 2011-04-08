@@ -183,9 +183,19 @@ public abstract class FileRequest extends Job {
     }
 
     public void addDebugHistoryEvent(String description) {
-        if(getConfiguration().isJdbcLogRequestHistoryInDBEnabled()) {
+        if(getJobStorage().isJdbcLogRequestHistoryInDBEnabled()) {
             addHistoryEvent( description);
         }
+    }
+
+    /**
+     * @return the configuration
+     */
+    public final Configuration getConfiguration() {
+        if(configuration == null) {
+            configuration = SRM.getSRM().getConfiguration();
+        }
+        return configuration;
     }
 
     public RequestCredential getCredential() {
@@ -375,16 +385,6 @@ public abstract class FileRequest extends Job {
             storage = SRM.getSRM().getStorage();
         }
         return storage;
-    }
-
-    /**
-     * @return the configuration
-     */
-    public final Configuration getConfiguration() {
-        if(configuration == null) {
-            configuration = SRM.getSRM().getConfiguration();
-        }
-        return configuration;
     }
 
     protected boolean isProtocolSupported(String[] protocols)

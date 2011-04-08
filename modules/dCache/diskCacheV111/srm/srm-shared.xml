@@ -230,26 +230,15 @@
     <property name="copyMaxRunningBySameOwner"
               value="${srmCopyReqMaxNumOfRunningBySameOwner}"/>
 
-    <property name="numDaysHistory"
-              value="${srmNumberOfDaysInDatabaseHistory}"/>
-    <property name="oldRequestRemovePeriodSecs"
-              value="${srmOldRequestRemovalPeriodSeconds}"/>
     <property name="maxQueuedJdbcTasksNum"
               value="${srmMaxNumberOfJdbcTasksInQueue}"/>
     <property name="jdbcExecutionThreadNum"
               value="${srmJdbcExecutionThreadNum}"/>
     <property name="credentialsDirectory"
               value="${srmUserCredentialsDirectory}"/>
-    <property name="jdbcLogRequestHistoryInDBEnabled"
-              value="${srmJdbcMonitoringLogEnabled}"/>
-    <property name="cleanPendingRequestsOnRestart"
-              value="${srmCleanPendingRequestsOnRestart}"/>
     <property name="overwrite" value="${overwriteEnabled}"/>
     <property name="overwrite_by_default" value="${srmOverwriteByDefault}"/>
     <property name="clientDNSLookup" value="${srmClientDNSLookup}"/>
-    <property name="jdbcSaveCompletedRequestsOnly"
-              value="${srmJdbcSaveCompletedRequestsOnly}"/>
-    <property name="jdbcEnabled" value="${srmJdbcEnabled}"/>
     <property name="gsissl" value="true"/>
     <property name="clientTransportByName" value="${srmClientTransport}"/>
     <property name="qosPluginClass" value="${qosPluginClass}"/>
@@ -257,6 +246,84 @@
 
     <property name="storage" ref="srm"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
+
+    <property name="databaseParametersForList.databaseEnabled"
+              value="${srmLsDatabaseEnabled}"/>
+    <property name="databaseParametersForList.expiredRequestRemovalPeriod"
+              value="${srmLsExpiredRequestRemovalPeriod}"/>
+    <property name="databaseParametersForList.keepRequestHistoryPeriod"
+              value="${srmLsKeepRequestHistoryPeriod}"/>
+    <property name="databaseParametersForList.requestHistoryDatabaseEnabled"
+              value="${srmLsRequestHistoryDatabaseEnabled}"/>
+    <property name="databaseParametersForList.cleanPendingRequestsOnRestart"
+              value="${srmLsCleanPendingRequestsOnRestart}"/>
+    <property name="databaseParametersForList.storeCompletedRequestsOnly"
+              value="${srmLsStoreCompletedRequestsOnly}"/>
+
+    <property name="databaseParametersForGet.databaseEnabled"
+              value="${srmGetDatabaseEnabled}"/>
+    <property name="databaseParametersForGet.expiredRequestRemovalPeriod"
+              value="${srmGetExpiredRequestRemovalPeriod}"/>
+    <property name="databaseParametersForGet.keepRequestHistoryPeriod"
+              value="${srmGetKeepRequestHistoryPeriod}"/>
+    <property name="databaseParametersForGet.requestHistoryDatabaseEnabled"
+              value="${srmGetRequestHistoryDatabaseEnabled}"/>
+    <property name="databaseParametersForGet.cleanPendingRequestsOnRestart"
+              value="${srmGetCleanPendingRequestsOnRestart}"/>
+    <property name="databaseParametersForGet.storeCompletedRequestsOnly"
+              value="${srmGetStoreCompletedRequestsOnly}"/>
+
+    <property name="databaseParametersForPut.databaseEnabled"
+              value="${srmPutDatabaseEnabled}"/>
+    <property name="databaseParametersForPut.expiredRequestRemovalPeriod"
+              value="${srmPutExpiredRequestRemovalPeriod}"/>
+    <property name="databaseParametersForPut.keepRequestHistoryPeriod"
+              value="${srmPutKeepRequestHistoryPeriod}"/>
+    <property name="databaseParametersForPut.requestHistoryDatabaseEnabled"
+              value="${srmPutRequestHistoryDatabaseEnabled}"/>
+    <property name="databaseParametersForPut.cleanPendingRequestsOnRestart"
+              value="${srmPutCleanPendingRequestsOnRestart}"/>
+    <property name="databaseParametersForPut.storeCompletedRequestsOnly"
+              value="${srmPutStoreCompletedRequestsOnly}"/>
+
+    <property name="databaseParametersForCopy.databaseEnabled"
+              value="${srmCopyDatabaseEnabled}"/>
+    <property name="databaseParametersForCopy.expiredRequestRemovalPeriod"
+              value="${srmCopyExpiredRequestRemovalPeriod}"/>
+    <property name="databaseParametersForCopy.keepRequestHistoryPeriod"
+              value="${srmCopyKeepRequestHistoryPeriod}"/>
+    <property name="databaseParametersForCopy.requestHistoryDatabaseEnabled"
+              value="${srmCopyRequestHistoryDatabaseEnabled}"/>
+    <property name="databaseParametersForCopy.cleanPendingRequestsOnRestart"
+              value="${srmCopyCleanPendingRequestsOnRestart}"/>
+    <property name="databaseParametersForCopy.storeCompletedRequestsOnly"
+              value="${srmCopyStoreCompletedRequestsOnly}"/>
+
+    <property name="databaseParametersForBringOnline.databaseEnabled"
+              value="${srmBringOnlineDatabaseEnabled}"/>
+    <property name="databaseParametersForBringOnline.expiredRequestRemovalPeriod"
+              value="${srmBringOnlineExpiredRequestRemovalPeriod}"/>
+    <property name="databaseParametersForBringOnline.keepRequestHistoryPeriod"
+              value="${srmBringOnlineKeepRequestHistoryPeriod}"/>
+    <property name="databaseParametersForBringOnline.requestHistoryDatabaseEnabled"
+              value="${srmBringOnlineRequestHistoryDatabaseEnabled}"/>
+    <property name="databaseParametersForBringOnline.cleanPendingRequestsOnRestart"
+              value="${srmBringOnlineCleanPendingRequestsOnRestart}"/>
+    <property name="databaseParametersForBringOnline.storeCompletedRequestsOnly"
+              value="${srmBringOnlineStoreCompletedRequestsOnly}"/>
+
+    <property name="databaseParametersForReserve.databaseEnabled"
+              value="${srmReserveDatabaseEnabled}"/>
+    <property name="databaseParametersForReserve.expiredRequestRemovalPeriod"
+              value="${srmReserveExpiredRequestRemovalPeriod}"/>
+    <property name="databaseParametersForReserve.keepRequestHistoryPeriod"
+              value="${srmReserveKeepRequestHistoryPeriod}"/>
+    <property name="databaseParametersForReserve.requestHistoryDatabaseEnabled"
+              value="${srmReserveRequestHistoryDatabaseEnabled}"/>
+    <property name="databaseParametersForReserve.cleanPendingRequestsOnRestart"
+              value="${srmReserveCleanPendingRequestsOnRestart}"/>
+    <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
+              value="${srmReserveStoreCompletedRequestsOnly}"/>
   </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
