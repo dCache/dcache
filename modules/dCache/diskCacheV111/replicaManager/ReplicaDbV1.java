@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static org.dcache.commons.util.SqlHelper.*;
 
 //import uk.org.primrose.GeneralException;
 //import uk.org.primrose.vendor.standalone.*;
@@ -85,11 +86,6 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 + " SQLStatement=[" + sql + "]");
     }
 
-    private void reportSQLException(SQLException ex) {
-        _log.warn("Database access error");
-        ex.printStackTrace();
-    }
-
     /**
      * Add record (poolname, pnfsid) to the table 'replicas'
      */
@@ -124,12 +120,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 _log.warn("Database access error");
             }
         } finally {
-            try { if (null!=pstmt) pstmt.close();  } catch (SQLException e) { }
-            if (_conn == null) {
-//1             try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
-
+            tryToClose(pstmt);
+            tryToClose(conn);
         }
     }
 
@@ -197,11 +189,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             //
 //            stmt.execute("COMMIT");
         } finally {
-            try { if (null!=pstmt) pstmt.close();  } catch (SQLException e) { }
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(pstmt);
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -221,10 +211,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     + "' from replicas DB table");
             reportSQLException("removePool()", ex, sql);
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
 
     }
@@ -251,11 +239,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             reportSQLException("countPools()", ex, sql);
             return -1;
         } finally {
-            if (_conn == null) {
-                try { if (null!=rset) rset.close();  } catch (SQLException e) { }
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(rset);
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -279,10 +265,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Database access error");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -324,9 +308,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         public void close() {
-            try { if (null!=rset) rset.close();  } catch (SQLException e) { }
-            try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-            try { if (null!=conn) conn.close();  } catch (SQLException e) { }
+            tryToClose(rset);
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -534,10 +518,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //          ex.printStackTrace();
             _log.warn("Can't clear the tables");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -562,10 +544,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //          ex.printStackTrace();
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -743,10 +723,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -778,10 +756,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 _log.warn("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
             }
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -807,11 +783,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             _log.warn("DB: Can't get status for pool '" + poolName + "' from pools table, return 'UNKNOWN'");
             return "UNKNOWN";
         } finally {
-            if (_conn == null) {
-                try { if (null!=rset) rset.close();  } catch (SQLException e) { }
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(rset);
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -841,10 +815,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Can't add transaction to the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -870,10 +842,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Can't add transaction to the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -892,10 +862,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Can't remove transaction from the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -915,10 +883,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Can't delete old records from the 'excluded' table");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
 
         return count;
@@ -942,10 +908,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Can't clear transactions from the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -968,11 +932,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             _log.warn("Can't get data from the DB");
             return -1;
         } finally {
-            if (_conn == null) {
-                try { if (null!=rset) rset.close();  } catch (SQLException e) { }
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(rset);
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -1019,10 +981,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //          ex.printStackTrace();
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -1147,10 +1107,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 _log.warn("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
             }
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 
@@ -1169,10 +1127,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             ex.printStackTrace();
             _log.warn("Database access error");
         } finally {
-            if (_conn == null) {
-                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
-                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
-            }
+            tryToClose(stmt);
+            tryToClose(conn);
         }
     }
 

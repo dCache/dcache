@@ -182,7 +182,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   //
 
-  private Object _dbLock = new Object();
+  private final Object _dbLock = new Object();
   private boolean _initDbActive = false;
   private boolean _runPoolWatchDog = false;
   private boolean _hotRestart = true;
