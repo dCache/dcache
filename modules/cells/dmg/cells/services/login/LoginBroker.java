@@ -65,7 +65,7 @@ public class LoginBroker
   public CellVersion getCellVersion(){
       return new CellVersion(super.getCellVersion().getRelease(),"$Revision: 1.6 $" );
   }
-    public String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time]";
+    public String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
     public Object ac_ls(Args args)
     {
         boolean   binary   = args.getOpt("binary") != null;
@@ -73,6 +73,8 @@ public class LoginBroker
         ArrayList list     = new ArrayList();
         StringBuffer sb    = new StringBuffer();
         boolean   showTime = args.getOpt("l") != null;
+        boolean   showAll = args.getOpt("all") != null;
+
         Set<String> protocolSet = null;
 
         if(protocols != null){
@@ -94,7 +96,7 @@ public class LoginBroker
                 }
 
                 if (binary) {
-                    if (!disabled) {
+                    if (showAll || !disabled) {
                         list.add(info);
                     }
                 } else {
