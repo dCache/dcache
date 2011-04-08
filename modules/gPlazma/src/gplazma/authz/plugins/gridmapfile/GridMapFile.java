@@ -12,55 +12,46 @@ import java.util.Collection;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMultimap;
 
-/**
- *
- *  @author Abhishek Singh Rana
- */
 public class GridMapFile
 {
-    private static final Logger log =
+    private static final Logger _log =
         LoggerFactory.getLogger(GridMapFile.class);
 
-    private static final String GRIDMAP_FILENAME = "grid-mapfile";
-    private static ImmutableMultimap<String,String> cache =
-        ImmutableMultimap.of();
-    private static long previousRefreshTime;
-
-    private ImmutableMultimap<String,String> gridMap;
+    private File _file;
+    private long _loaded;
+    private ImmutableMultimap<String,String> _map;
 
     public GridMapFile(File file)
-        throws IOException
     {
-        if (!file.getName().equals(GRIDMAP_FILENAME)) {
-            log.warn("The grid-mapfile filename {} is not as expected.", file);
-            log.warn("WARNING: Possible security violation.");
-        }
-        log.debug("GridMapFileHandler reading {}", file);
-        refresh(file);
-        gridMap = cache;
+        _file = file;
+        refresh();
     }
 
     public GridMapFile(String filename)
-        throws IOException
     {
         this(new File(filename));
     }
 
-    private static synchronized void refresh(File file) throws IOException
+    public synchronized void refresh()
     {
-        long now = System.currentTimeMillis();
-        boolean readable = file.canRead() || previousRefreshTime==0;
-        if (!readable) {
-            log.error("WARNING: Could not read grid-mapfile. Will use cached copy.");
-        }
-        if (readable && previousRefreshTime < file.lastModified()) {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            try {
-                cache = read(reader);
-                previousRefreshTime = now;
-            } finally {
-                reader.close();
+        try {
+            long now = System.currentTimeMillis();
+            boolean readable = _file.canRead() || _loaded == 0;
+            if (!readable) {
+                _log.error("WARNING: Could not read grid-mapfile. Will use cached copy.");
+            } else if (_loaded < _file.lastModified()) {
+                _log.debug("GridMapFileHandler reading {}", _file);
+                BufferedReader reader =
+                    new BufferedReader(new FileReader(_file));
+                try {
+                    _map = read(reader);
+                    _loaded = now;
+                } finally {
+                    reader.close();
+                }
             }
+        } catch (IOException e) {
+            _log.error("Failed to load grid-mapfile: " + e.getMessage());
         }
     }
 
@@ -99,12 +90,12 @@ public class GridMapFile
 
     public String getMappedUsername(String dn)
     {
-        ImmutableCollection<String> names = gridMap.get(dn);
+        ImmutableCollection<String> names = _map.get(dn);
         return names.isEmpty() ? null : names.asList().get(0);
     }
 
     public Collection<String> getMappedUsernames(String dn)
     {
-        return gridMap.get(dn);
+        return _map.get(dn);
     }
 }

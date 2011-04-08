@@ -60,8 +60,10 @@ public class StringArrayPluginFactory implements PluginFactory {
             throw new IllegalArgumentException("Failed to create plugin " +
                                                 constructor.getName(), e);
         } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException("Plugin constructor threw exception " +
-                                               constructor.getName(), e.getCause());
+            throw new IllegalArgumentException("Plugin constructor " +
+                                               constructor.getName() +
+                                               " threw exception " +
+                                               e.getCause(), e.getCause());
         }
 
         return plugin;
