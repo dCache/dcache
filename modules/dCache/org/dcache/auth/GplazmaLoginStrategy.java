@@ -22,6 +22,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.ReadOnly;
 
 /**
  * A LoginStrategy that wraps a gPlazma AuthorizationController.
@@ -66,6 +67,7 @@ public class GplazmaLoginStrategy implements LoginStrategy
             new LoginReply(Subjects.getSubject(authrec), new HashSet<LoginAttribute>());
         reply.getLoginAttributes().add(new HomeDirectory(authrec.getHome()));
         reply.getLoginAttributes().add(new RootDirectory(authrec.getRoot()));
+        reply.getLoginAttributes().add(new ReadOnly(authrec.isReadOnly()));
         return reply;
     }
 
