@@ -503,7 +503,7 @@ addServiceIfNotInOwnDomain() # $1 domain $2 service
 renameToPreMigration() # $1 = file name
 {
   if [ -f "$1" ]; then
-    printp "Renaming $1 to $1.pre-197"
+    printpi "Renaming $1 to $(basename $1).pre-197" "^Renaming"
     mv "$1" "$1.pre-197"
   fi
 }
@@ -511,7 +511,7 @@ renameToPreMigration() # $1 = file name
 copyIfNew() # $1 = src, $2 = dst
 {
   if [ -f "$1" ] && [ ! -f "$2" ]; then
-    printp "Copying $1 to $2"
+    printpi "Copying $1 to $2" "^Copying"
     cp -p "$1" "$2"
     renameToPreMigration "$1"
   fi
@@ -543,8 +543,8 @@ emitDcacheSetup() # in $1 filename
 filterOutDataCopiedFromTemplate()
 {
     tmp=$(mktemp)
-    sed -f ${DCACHE_LIB}/config.sed > $tmp
-    diff -u ${DCACHE_HOME}/share/migration/dCacheSetup-from-195.canonical $tmp | \
+    sed -f "${DCACHE_LIB}/config.sed" > $tmp
+    diff -u "$(getProperty dcache.paths.share)/migration/dCacheSetup-from-195.canonical" $tmp | \
         doTail +4 | \
         grep ^+ | \
         cut -b2- | \
@@ -566,7 +566,7 @@ doTail()
 
 filterFixPropertyReferences()
 {
-    sed -e 's/\${ourHomeDir}/${dcache.home}/'
+    sed -f "$(getProperty dcache.paths.share)/migration/deprecated.sed"
 }
 
 
@@ -683,7 +683,7 @@ node_config_file="${DCACHE_ETC}/node_config"
 door_config_file="${DCACHE_ETC}/door_config"
 
 # Check preconditions
-require sed cat tr mv cp
+require sed cat tr mv cp basename tail date uname mktemp
 
 if [ ! -f "${node_config_file}" -a ! -f "${door_config_file}" ]; then
     fail 1 "Cannot proceed because ${node_config_file} does not exist."
@@ -692,7 +692,6 @@ fi
 if [ ! -f "${setup_file}" ]; then
     fail 1 "Cannot proceed because ${setup_file} does not exist."
 fi
-
 
 if [ -z "$force" ]; then
     if ! fileNotPrecious "${config_file}"; then
@@ -714,8 +713,19 @@ loadConfigurationFile dCache dCache ||
 fail 1 "Failed to read dCacheSetup file"
 loadConfigurationFile pool pool || loadConfigurationFile dCache pool
 
+# Keep the java setting
+if [ -n "$dCache_java" ]; then
+    if [ -d "/etc/default/" ]; then
+        echo "Generating /etc/default/dcache"
+        echo "JAVA=\"$dCache_java\"" >> /etc/default/dcache
+    else
+        echo "Generating /etc/dcache.env"
+        echo "JAVA=\"$dCache_java\"" >> /etc/dcache.env
+    fi
+fi
+
 # Create configuration file
-printp "Converting ${setup_file} to ${config_file}."
+printp "Generating ${config_file}"
 
 generateDcacheConf() # in $1 dCacheSetup path
 {
@@ -726,6 +736,8 @@ generateDcacheConf() # in $1 dCacheSetup path
     echo "#"
     disclaimer "# "
     echo
+
+    echo "dcache.layout=\${host.name}"
 
     # Name space declaration
     case "$NODE_CONFIG_NAMESPACE" in
@@ -739,7 +751,6 @@ generateDcacheConf() # in $1 dCacheSetup path
             ;;
     esac
 
-    echo "dcache.layout=\${host.name}"
     echo
     echo "# The following is taken from the old dCacheSetup file."
     echo "# Some configuration parameters may no longer apply."
@@ -750,10 +761,12 @@ generateDcacheConf() # in $1 dCacheSetup path
 
 generateDcacheConf "${setup_file}"
 renameToPreMigration "${setup_file}"
-echo
+if [ "$NODE_CONFIG_NAMESPACE" = "chimera" ]; then
+    renameToPreMigration "${DCACHE_CONFIG}/chimera-config.xml"
+fi
 
 # Create layout file
-printp "Converting ${node_config_file} to ${layout_file}."
+printp "Generating ${layout_file}"
 (
     echo "# Auto generated layout file."
     echo "#"

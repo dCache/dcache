@@ -269,9 +269,9 @@ public abstract class Job  {
         localMemoryCache.updateSharedMemoryChache(this);
     }
 
-   private JobStorage getJobStorage() {
-       return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
-   }
+    protected JobStorage getJobStorage() {
+        return JobStorageFactory.getJobStorageFactory().getJobStorage(this);
+    }
 
 
     public void saveJob() {

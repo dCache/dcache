@@ -20,7 +20,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage {
         "LASTSTATETRANSITIONTIME=? ";//10
 
         private static int ADDITIONAL_FIELDS = 1;
-        public LsFileRequestStorage(Configuration configuration)
+        public LsFileRequestStorage(Configuration.DatabaseParameters configuration)
                 throws SQLException {
                 super(configuration);
         }

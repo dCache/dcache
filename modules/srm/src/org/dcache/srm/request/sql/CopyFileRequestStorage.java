@@ -171,7 +171,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage {
 
 
     /** Creates a new instance of CopyFileRequestStorage */
-    public CopyFileRequestStorage(Configuration configuration) throws SQLException {
+    public CopyFileRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
         super(configuration        );
     }
 

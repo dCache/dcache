@@ -61,7 +61,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
                 "?,?,?,?,?,?,?," +//Request
                 "?,?,?,?,?)";
 
-    
+
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         ReserveSpaceRequest rsr = (ReserveSpaceRequest)job;
@@ -158,16 +158,16 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
 
         return stmt;
     }
-    
+
     /** Creates a new instance of FileRequestStorage */
-    public ReserveSpaceRequestStorage(Configuration configuration) throws SQLException {
+    public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
         super(configuration);
     }
-    
+
     protected void _dbInit() throws SQLException {
-        
+
     }
-    
+
     public String getRequestCreateTableFields() {
         return
         ","+
@@ -181,8 +181,8 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         ","+
         "ACCESSLATENCY "+  stringType;
     }
-    
-    
+
+
     protected Request getRequest(
     Connection _con,
     Long ID,
@@ -205,8 +205,8 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
-        
-            Job.JobHistory[] jobHistoryArray = 
+
+            Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);
 
         long SIZEINBYTES = set.getLong(next_index++);
@@ -238,12 +238,12 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
                 CLIENTHOST,
                 STATUSCODE);
     }
-    
+
     public String getTableName() {
         return TABLE_NAME;
     }
-    
-    
+
+
     public void getUpdateAssignements(Request request,StringBuffer sb) {
         if(request == null || !(request instanceof ReserveSpaceRequest)) {
             throw new IllegalArgumentException("Request is not ReserveSpaceRequest" );
@@ -284,21 +284,21 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
          sb.append(", ACCESSLATENCY =NULL");
         } else {
          sb.append(", ACCESSLATENCY = \'").append( r.getAccessLatency().getValue()).append('\'');
-        }        
+        }
     }
-    
+
     private static int ADDITIONAL_FIELDS_NUM=5;
     protected int getMoreCollumnsNum() {
         return ADDITIONAL_FIELDS_NUM;
-    }  
-    
+    }
+
     public void getCreateList(Request request, StringBuffer sb) {
-        
+
         if(request == null || !(request instanceof ReserveSpaceRequest)) {
             throw new IllegalArgumentException("request is not ReserveSpaceRequest" );
         }
         ReserveSpaceRequest r = (ReserveSpaceRequest)request;
-        
+
         /*
          *additional fields:
                  ","+
@@ -335,12 +335,12 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
             sb.append(", '").append(r.getAccessLatency().getValue()).append('\'');
         }
     }
-    
+
     public void updateJob(Job job, Connection _con) throws SQLException {
     }
-    
-    
-       
+
+
+
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
          *additional fields:
@@ -362,12 +362,12 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         */
         if(columnIndex == nextIndex) {
             verifyLongType("SIZEINBYTES",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+1)
         {
             verifyLongType("RESERVATIONLIFETIME",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+2)
         {
@@ -381,7 +381,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
         {
             verifyStringType("ACCESSLATENCY",columnIndex,tableName, columnName, columnType);
         }
-   }    
+   }
 
 }
 

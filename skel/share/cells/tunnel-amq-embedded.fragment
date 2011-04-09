@@ -14,11 +14,9 @@ onerror shutdown
 
 define env amq-embedded.exe endDefine
   check -strong broker.amq.port
-  check -strong broker.amq.spool
 
   create org.dcache.cells.UniversalSpringCell JMS \
     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/amq-embedded.xml \
-     -amqSpool=${broker.amq.spool} \
      -amqPort=${broker.amq.port} \
     "
 endDefine

@@ -134,7 +134,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage{
 
         private static int ADDITIONAL_FIELDS = 5;
 
-        public LsRequestStorage(Configuration configuration)
+        public LsRequestStorage(Configuration.DatabaseParameters configuration)
                 throws SQLException {
                 super(configuration);
         }

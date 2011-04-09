@@ -6,10 +6,13 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.SchedulerFactory;
 import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.NoopJobStorage;
+import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
 import org.dcache.srm.util.Configuration;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.lang.reflect.InvocationTargetException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,53 +23,89 @@ import org.slf4j.LoggerFactory;
 public class DatabaseJobStorageFactory extends JobStorageFactory{
     private static final Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorageFactory.class);
-    private Map<Class,DatabaseJobStorage> dbJobStorageMap;
+    private static final NoopJobStorage noop = new NoopJobStorage();
+    private final Map<Class<?>,JobStorage> jobStorageMap =
+        new HashMap<Class<?>,JobStorage>();
+
+    private void add(Configuration.DatabaseParameters config,
+                     Class<?> entityClass,
+                     Class<? extends DatabaseJobStorage> storageClass)
+        throws InstantiationException,
+               IllegalAccessException,
+               IllegalArgumentException,
+               InvocationTargetException,
+               NoSuchMethodException,
+               SecurityException
+    {
+        if (config.isDatabaseEnabled()) {
+            JobStorage js =
+                storageClass.getConstructor(Configuration.DatabaseParameters.class).newInstance(config);
+            if (config.getStoreCompletedRequestsOnly()) {
+                js = new FinalStateOnlyJobStorageDecorator(js);
+            }
+            jobStorageMap.put(entityClass, js);
+        } else {
+            jobStorageMap.put(entityClass, noop);
+        }
+    }
 
     public DatabaseJobStorageFactory(Configuration config) {
         try {
-            dbJobStorageMap = new HashMap<Class,DatabaseJobStorage>();
+            add(config.getDatabaseParametersForBringOnline(),
+                BringOnlineFileRequest.class,
+                BringOnlineFileRequestStorage.class);
+            add(config.getDatabaseParametersForBringOnline(),
+                BringOnlineRequest.class,
+                BringOnlineRequestStorage.class);
 
-            dbJobStorageMap.put(BringOnlineFileRequest.class,
-                    new BringOnlineFileRequestStorage(config) );
-            dbJobStorageMap.put(BringOnlineRequest.class,
-                    new BringOnlineRequestStorage(config) );
+            add(config.getDatabaseParametersForCopy(),
+                CopyFileRequest.class,
+                CopyFileRequestStorage.class);
+            add(config.getDatabaseParametersForCopy(),
+                CopyRequest.class,
+                CopyRequestStorage.class);
 
-            dbJobStorageMap.put(CopyFileRequest.class,
-                    new CopyFileRequestStorage(config) );
-            dbJobStorageMap.put(CopyRequest.class,
-                    new CopyRequestStorage(config) );
+            add(config.getDatabaseParametersForPut(),
+                PutFileRequest.class,
+                PutFileRequestStorage.class);
+            add(config.getDatabaseParametersForPut(),
+                PutRequest.class,
+                PutRequestStorage.class);
 
-            dbJobStorageMap.put(PutFileRequest.class,
-                    new PutFileRequestStorage(config) );
-            dbJobStorageMap.put(PutRequest.class,
-                    new PutRequestStorage(config) );
+            add(config.getDatabaseParametersForGet(),
+                GetFileRequest.class,
+                GetFileRequestStorage.class);
+            add(config.getDatabaseParametersForGet(),
+                GetRequest.class,
+                GetRequestStorage.class);
 
-            dbJobStorageMap.put(GetFileRequest.class,
-                    new GetFileRequestStorage(config) );
-            dbJobStorageMap.put(GetRequest.class,
-                    new GetRequestStorage(config) );
+            add(config.getDatabaseParametersForList(),
+                LsFileRequest.class,
+                LsFileRequestStorage.class);
+            add(config.getDatabaseParametersForList(),
+                LsRequest.class,
+                LsRequestStorage.class);
 
-            dbJobStorageMap.put(LsFileRequest.class,
-                    new LsFileRequestStorage(config) );
-            dbJobStorageMap.put(LsRequest.class,
-                    new LsRequestStorage(config) );
+            add(config.getDatabaseParametersForReserve(),
+                ReserveSpaceRequest.class,
+                ReserveSpaceRequestStorage.class);
 
-            dbJobStorageMap.put(ReserveSpaceRequest.class,
-                    new ReserveSpaceRequestStorage(config) );
-            for(DatabaseJobStorage djs:dbJobStorageMap.values()) {
-                Job.registerJobStorage(djs);
+            for (JobStorage js: jobStorageMap.values()) {
+                Job.registerJobStorage(js);
             }
-            for(DatabaseJobStorage djs:dbJobStorageMap.values()) {
+            for (JobStorage js: jobStorageMap.values()) {
                 try {
-                    djs.updatePendingJobs();
+                    if (js instanceof DatabaseJobStorage) {
+                        ((DatabaseJobStorage) js).updatePendingJobs();
+                    }
                 } catch (Exception e) {
                     logger.error("updatePendingJobs failed",e);
                 }
             }
-            SchedulerFactory schedulerFactory = 
+            SchedulerFactory schedulerFactory =
                     SchedulerFactory.getSchedulerFactory();
 
-            for(Class jobType:dbJobStorageMap.keySet()) {
+            for(Class jobType: jobStorageMap.keySet()) {
                 Scheduler scheduler;
                 try {
                     scheduler = schedulerFactory.getScheduler(jobType);
@@ -75,7 +114,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                     //some are just containers for file requests
                     continue;
                 }
-                DatabaseJobStorage djs = dbJobStorageMap.get(jobType);
+                JobStorage djs = jobStorageMap.get(jobType);
                 scheduler.jobStorageAdded(djs);
                 // get all pending unsheduled jobs
                 Set<Job> jobs = djs.getJobs(null, State.PENDING);
@@ -99,9 +138,9 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
     }
 
     public JobStorage getJobStorage(Class jobClass) {
-        DatabaseJobStorage djs = dbJobStorageMap.get(jobClass);
-        if(djs != null) return djs;
-         throw new UnsupportedOperationException(
+        JobStorage js = jobStorageMap.get(jobClass);
+        if (js != null) return js;
+        throw new UnsupportedOperationException(
                  "JobStorage for class "+jobClass+ " is not supported");
     }
 

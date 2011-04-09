@@ -45,4 +45,8 @@ public class FinalStateOnlyJobStorageDecorator implements JobStorage {
         }
     }
 
+    public boolean isJdbcLogRequestHistoryInDBEnabled()
+    {
+        return jobStorage.isJdbcLogRequestHistoryInDBEnabled();
+    }
 }

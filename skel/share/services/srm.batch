@@ -4,6 +4,7 @@
 
 onerror shutdown
 check -strong port
+check listen
 check -strong srmGssMode
 check -strong hostCertificateRefreshPeriod
 check -strong trustAnchorRefreshPeriod
@@ -125,16 +126,16 @@ check -strong srmPoolManagerTimeout
 
 check -strong srmNumberOfDoorsInRandomSelection
 
-check -strong srmNumberOfDaysInDatabaseHistory
+check -strong srmKeepRequestHistoryPeriod
 
-check -strong srmOldRequestRemovalPeriodSeconds
+check -strong srmExpiredRequestRemovalPeriod
 
-check -strong srmJdbcMonitoringLogEnabled
+check -strong srmRequestHistoryDatabaseEnabled
 
 check -strong srmJdbcExecutionThreadNum
 check -strong srmMaxNumberOfJdbcTasksInQueue
-check -strong srmJdbcSaveCompletedRequestsOnly
-check -strong srmJdbcEnabled
+check -strong srmStoreCompletedRequestsOnly
+check -strong srmDatabaseEnabled
 
 check -strong srmCleanPendingRequestsOnRestart
 
@@ -178,6 +179,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/srm/srm-${srmJettyConnectorType}.xml \
         -export \
         -srmPort=${port} \
+        -listen=${listen} \
         -srmHost=${srmHost} \
         -srmGssMode=${srmGssMode} \
         -localSrmHosts=${localSrmHosts} \
@@ -209,6 +211,12 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmGetReqRetryTimeout=${srmGetReqRetryTimeout} \
         -srmGetReqMaxNumOfRunningBySameOwner=${srmGetReqMaxNumOfRunningBySameOwner} \
         -srmGetReqSwitchToAsynchronousModeDelay=${srmGetReqSwitchToAsynchronousModeDelay} \
+        -srmGetRequestHistoryDatabaseEnabled=${srmGetRequestHistoryDatabaseEnabled} \
+        -srmGetKeepRequestHistoryPeriod=${srmGetKeepRequestHistoryPeriod} \
+        -srmGetExpiredRequestRemovalPeriod=${srmGetExpiredRequestRemovalPeriod} \
+        -srmGetStoreCompletedRequestsOnly=${srmGetStoreCompletedRequestsOnly} \
+        -srmGetDatabaseEnabled=\"${srmGetDatabaseEnabled}\" \
+        -srmGetCleanPendingRequestsOnRestart=${srmGetCleanPendingRequestsOnRestart}\
         -srmBringOnlineReqThreadQueueSize=${srmBringOnlineReqThreadQueueSize} \
         -srmBringOnlineReqThreadPoolSize=${srmBringOnlineReqThreadPoolSize} \
         -srmBringOnlineReqMaxWaitingRequests=${srmBringOnlineReqMaxWaitingRequests} \
@@ -218,6 +226,12 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmBringOnlineReqRetryTimeout=${srmBringOnlineReqRetryTimeout} \
         -srmBringOnlineReqMaxNumOfRunningBySameOwner=${srmBringOnlineReqMaxNumOfRunningBySameOwner} \
         -srmBringOnlineReqSwitchToAsynchronousModeDelay=${srmBringOnlineReqSwitchToAsynchronousModeDelay} \
+        -srmBringOnlineRequestHistoryDatabaseEnabled=${srmBringOnlineRequestHistoryDatabaseEnabled} \
+        -srmBringOnlineKeepRequestHistoryPeriod=${srmBringOnlineKeepRequestHistoryPeriod} \
+        -srmBringOnlineExpiredRequestRemovalPeriod=${srmBringOnlineExpiredRequestRemovalPeriod} \
+        -srmBringOnlineStoreCompletedRequestsOnly=${srmBringOnlineStoreCompletedRequestsOnly} \
+        -srmBringOnlineDatabaseEnabled=\"${srmBringOnlineDatabaseEnabled}\" \
+        -srmBringOnlineCleanPendingRequestsOnRestart=${srmBringOnlineCleanPendingRequestsOnRestart}\
         -srmPutReqThreadQueueSize=${srmPutReqThreadQueueSize} \
         -srmPutReqThreadPoolSize=${srmPutReqThreadPoolSize} \
         -srmPutReqMaxWaitingRequests=${srmPutReqMaxWaitingRequests} \
@@ -227,12 +241,24 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmPutReqRetryTimeout=${srmPutReqRetryTimeout} \
         -srmPutReqMaxNumOfRunningBySameOwner=${srmPutReqMaxNumOfRunningBySameOwner} \
         -srmPutReqSwitchToAsynchronousModeDelay=${srmPutReqSwitchToAsynchronousModeDelay} \
+        -srmPutRequestHistoryDatabaseEnabled=${srmPutRequestHistoryDatabaseEnabled} \
+        -srmPutKeepRequestHistoryPeriod=${srmPutKeepRequestHistoryPeriod} \
+        -srmPutExpiredRequestRemovalPeriod=${srmPutExpiredRequestRemovalPeriod} \
+        -srmPutStoreCompletedRequestsOnly=${srmPutStoreCompletedRequestsOnly} \
+        -srmPutDatabaseEnabled=\"${srmPutDatabaseEnabled}\" \
+        -srmPutCleanPendingRequestsOnRestart=${srmPutCleanPendingRequestsOnRestart}\
         -srmCopyReqThreadQueueSize=${srmCopyReqThreadQueueSize} \
         -srmCopyReqThreadPoolSize=${srmCopyReqThreadPoolSize} \
         -srmCopyReqMaxWaitingRequests=${srmCopyReqMaxWaitingRequests} \
         -srmCopyReqMaxNumberOfRetries=${srmCopyReqMaxNumberOfRetries} \
         -srmCopyReqRetryTimeout=${srmCopyReqRetryTimeout} \
         -srmCopyReqMaxNumOfRunningBySameOwner=${srmCopyReqMaxNumOfRunningBySameOwner} \
+        -srmCopyRequestHistoryDatabaseEnabled=${srmCopyRequestHistoryDatabaseEnabled} \
+        -srmCopyKeepRequestHistoryPeriod=${srmCopyKeepRequestHistoryPeriod} \
+        -srmCopyExpiredRequestRemovalPeriod=${srmCopyExpiredRequestRemovalPeriod} \
+        -srmCopyStoreCompletedRequestsOnly=${srmCopyStoreCompletedRequestsOnly} \
+        -srmCopyDatabaseEnabled=\"${srmCopyDatabaseEnabled}\" \
+        -srmCopyCleanPendingRequestsOnRestart=${srmCopyCleanPendingRequestsOnRestart}\
         -RecursiveDirectoryCreation=${RecursiveDirectoryCreation} \
         -AdvisoryDelete=${AdvisoryDelete} \
         -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
@@ -240,13 +266,8 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmDbUser=${srmDbUser} \
         -srmDbPassword=${srmDbPassword} \
         -srmPasswordFile=${srmPasswordFile}   \
-        -srmJdbcMonitoringLogEnabled=${srmJdbcMonitoringLogEnabled} \
-        -srmNumberOfDaysInDatabaseHistory=${srmNumberOfDaysInDatabaseHistory} \
-        -srmOldRequestRemovalPeriodSeconds=${srmOldRequestRemovalPeriodSeconds} \
         -srmJdbcExecutionThreadNum=${srmJdbcExecutionThreadNum} \
         -srmMaxNumberOfJdbcTasksInQueue=${srmMaxNumberOfJdbcTasksInQueue} \
-        -srmJdbcSaveCompletedRequestsOnly=${srmJdbcSaveCompletedRequestsOnly} \
-        -srmJdbcEnabled=\"${srmJdbcEnabled}\" \
         -useLoginService=${useLoginService} \
         -srmAuthzCacheLifetime=${srmAuthzCacheLifetime} \
         -srmLoginBroker=srm-LoginBroker \
@@ -260,7 +281,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmCustomGetHostByAddr=${srmCustomGetHostByAddr} \
         -srmIgnoreClientProtocolOrder=${srmIgnoreClientProtocolOrder}\
         -srmSizeOfSingleRemoveBatch=${srmSizeOfSingleRemoveBatch}\
-        -srmCleanPendingRequestsOnRestart=${srmCleanPendingRequestsOnRestart}\
         -srmLsMaxNumberOfEntries=${srmLsMaxNumberOfEntries}\
         -srmLsMaxNumberOfLevels=${srmLsMaxNumberOfLevels}\
         -srmLsRequestLifetime=${srmLsRequestLifetime}\
@@ -271,6 +291,18 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -srmLsRequestRetryTimeout=${srmLsRequestRetryTimeout}\
         -srmLsRequestMaxNumberOfRunningBySameOwner=${srmLsRequestMaxNumberOfRunningBySameOwner}\
         -srmLsRequestSwitchToAsynchronousModeDelay=${srmLsRequestSwitchToAsynchronousModeDelay}\
+        -srmLsRequestHistoryDatabaseEnabled=${srmLsRequestHistoryDatabaseEnabled} \
+        -srmLsKeepRequestHistoryPeriod=${srmLsKeepRequestHistoryPeriod} \
+        -srmLsExpiredRequestRemovalPeriod=${srmLsExpiredRequestRemovalPeriod} \
+        -srmLsStoreCompletedRequestsOnly=${srmLsStoreCompletedRequestsOnly} \
+        -srmLsDatabaseEnabled=\"${srmLsDatabaseEnabled}\" \
+        -srmLsCleanPendingRequestsOnRestart=${srmLsCleanPendingRequestsOnRestart}\
+        -srmReserveRequestHistoryDatabaseEnabled=${srmReserveRequestHistoryDatabaseEnabled} \
+        -srmReserveKeepRequestHistoryPeriod=${srmReserveKeepRequestHistoryPeriod} \
+        -srmReserveExpiredRequestRemovalPeriod=${srmReserveExpiredRequestRemovalPeriod} \
+        -srmReserveStoreCompletedRequestsOnly=${srmReserveStoreCompletedRequestsOnly} \
+        -srmReserveDatabaseEnabled=\"${srmReserveDatabaseEnabled}\" \
+        -srmReserveCleanPendingRequestsOnRestart=${srmReserveCleanPendingRequestsOnRestart}\
         -srmClientDNSLookup=${srmClientDNSLookup}\
         -srmJettyConnectorAcceptors=${srmJettyConnectorAcceptors}\
         -srmJettyConnectorMaxIdleTime=${srmJettyConnectorMaxIdleTime}\

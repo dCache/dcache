@@ -4,23 +4,19 @@ import dmg.cells.network.CellDomainNode;
 import dmg.util.Args;
 
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.JMSTunnel;
+import org.dcache.cells.CellNameService;
+import org.dcache.cells.CellNameServiceRegistry;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
-import javax.jms.Message;
-import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.ConnectionFactory;
 import javax.jms.Connection;
 import javax.jms.Session;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.TextMessage;
-import javax.jms.MessageListener;
-import javax.jms.DeliveryMode;
+import javax.jms.ExceptionListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,28 +24,26 @@ import org.slf4j.LoggerFactory;
 /**
  * CellsTopology for JMS based dCache installations.
  *
- * The algorithm used is to broadcast a wildcard query no the
- * cells.arp topic and listen for replies. For each domain that
- * replies we query the System cell of that domain for classic cells
- * tunnels.
+ * Subscribes to cell name service updates. For each domain it queries
+ * the System cell of that domain for classic cells tunnels.
  */
 public class JmsCellsTopology
     extends AbstractCellsTopology
     implements CellsTopology,
                CellCommandListener,
-               MessageListener
+               ExceptionListener
 {
     private static final Logger _log =
         LoggerFactory.getLogger(JmsCellsTopology.class);
 
-    private Destination _arpReplyQueue;
     private Executor _executor;
     private ConnectionFactory _connectionFactory;
     private Connection _connection;
     private Session _sendSession;
     private Session _receiveSession;
-    private MessageProducer _arpProducer;
-    private MessageConsumer _arpConsumer;
+    private MessageConsumer _cnsConsumer;
+
+    private CellNameServiceRegistry _registry;
 
     private volatile Map<String,CellDomainNode> _currentMap =
         new ConcurrentHashMap<String,CellDomainNode>();
@@ -66,23 +60,31 @@ public class JmsCellsTopology
         _executor = executor;
     }
 
+    public void setCellNameServiceRegistry(CellNameServiceRegistry registry)
+    {
+        _registry = registry;
+    }
+
     public void start()
         throws JMSException
     {
         _connection = _connectionFactory.createConnection();
+        _connection.setExceptionListener(this);
 
         _sendSession =
             _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _arpProducer =
-            _sendSession.createProducer(_sendSession.createTopic(JMSTunnel.ARP_TOPIC));
-        _arpProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        _arpProducer.setDisableMessageTimestamp(true);
-
         _receiveSession =
-            _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _arpReplyQueue = _receiveSession.createTemporaryQueue();
-        _arpConsumer = _receiveSession.createConsumer(_arpReplyQueue);
-        _arpConsumer.setMessageListener(this);
+            _connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
+
+        _cnsConsumer =
+            _receiveSession.createConsumer(_receiveSession.createTopic(CellNameService.DESTINATION_REGISTRATION));
+        _cnsConsumer.setMessageListener(_registry);
+
+        try {
+            CellNameService.requestUpdate(_sendSession);
+        } catch (JMSException e) {
+            _log.debug("Failed to request CNS update: {}", e.getMessage());
+        }
 
         _connection.start();
     }
@@ -93,38 +95,59 @@ public class JmsCellsTopology
         _connection.close();
     }
 
-    private void sendArpRequest()
-        throws JMSException
+    /**
+     * Called by the JMS provider on fatal errors.
+     */
+    @Override
+    public void onException(JMSException exception)
     {
-        TextMessage request =
-            _sendSession.createTextMessage(JMSTunnel.WILDCARD_QUERY);
-        request.setJMSReplyTo(_arpReplyQueue);
-        _arpProducer.send(request);
+        _log.error("Fatal JMS connection failure: {}", exception.getMessage());
+
+        /* We will stop the connection and start a new one with new
+         * sessions and all. We do this in a separate thread as I'm
+         * not certain how the JMS provider would react to doing this
+         * in the callback.
+         *
+         * It is quite likely that other operations in the process of
+         * using the old connection will fail miserably.
+         */
+        new Thread("topo-recover") {
+            @Override
+            public void run()
+            {
+                while (true) {
+                    try {
+                        JmsCellsTopology.this.stop();
+                    } catch (JMSException e) {
+                        _log.error("Failed to shut down JMS connection: {}",
+                                   e.getMessage());
+                    }
+                    try {
+                        JmsCellsTopology.this.start();
+                        return;
+                    } catch (JMSException e) {
+                        _log.error("Failed to shut down JMS connection: {}",
+                                   e.getMessage());
+                    }
+                }
+            }
+        }.start();
     }
 
-    /** Called by JMS on ARP reply. */
-    public void onMessage(Message message)
+    private void addDomain(final String domain)
     {
-        try {
-            if (message instanceof TextMessage) {
-                TextMessage textMessage = (TextMessage) message;
-                final String domain = textMessage.getText();
-                _executor.execute(new Runnable() {
-                        public void run() {
-                            try {
-                                Map<String,CellDomainNode> map =
-                                    buildTopologyMap(domain);
-                                _currentMap.putAll(map);
-                                _nextMap.putAll(map);
-                            } catch (InterruptedException e) {
-                                _log.info("Topology construction was interrupted");
-                            }
-                        }
-                    });
-            }
-        } catch (JMSException e) {
-            _log.error("Error while processing ARP reply: " + e.getMessage());
-        }
+        _executor.execute(new Runnable() {
+                public void run() {
+                    try {
+                        Map<String,CellDomainNode> map =
+                            buildTopologyMap(domain);
+                        _currentMap.putAll(map);
+                        _nextMap.putAll(map);
+                    } catch (InterruptedException e) {
+                        _log.info("Topology construction was interrupted");
+                    }
+                }
+            });
     }
 
     /**
@@ -144,7 +167,9 @@ public class JmsCellsTopology
     {
         _currentMap = _nextMap;
         _nextMap = new ConcurrentHashMap<String,CellDomainNode>();
-        sendArpRequest();
+        for (String domain: _registry.getDomains()) {
+            addDomain(domain);
+        }
     }
 
     @Override
@@ -157,7 +182,10 @@ public class JmsCellsTopology
     public String ac_update(Args args)
         throws JMSException
     {
-        sendArpRequest();
+        CellNameService.requestUpdate(_sendSession);
+        for (String domain: _registry.getDomains()) {
+            addDomain(domain);
+        }
         return "Background update started";
     }
 }

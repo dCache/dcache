@@ -97,6 +97,8 @@ import java.io.FileWriter;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 import java.sql.SQLException;
 
 import com.google.common.base.Strings;
@@ -113,6 +115,13 @@ public class Configuration {
     private static final String XML_LABEL_TRANSPORT_CLIENT = "client_transport";
 
     private static final String INFINITY = "infinity";
+
+    public static final String LS_PARAMETERS = "ls";
+    public static final String PUT_PARAMETERS = "put";
+    public static final String GET_PARAMETERS = "get";
+    public static final String COPY_PARAMETERS = "copy";
+    public static final String BRINGONLINE_PARAMETERS = "bringonline";
+    public static final String RESERVE_PARAMETERS = "reserve";
 
     private boolean debug = false;
 
@@ -244,7 +253,6 @@ public class Configuration {
     private boolean removeDirectory=false;
     private boolean removeFile=false;
     private boolean saveMemory=false;
-    private boolean jdbcEnabled=true;
     private String jdbcUrl;
     private String jdbcClass;
     private String jdbcUser;
@@ -261,13 +269,9 @@ public class Configuration {
     private String putPriorityPolicyPlugin="DefaultJobAppraiser";
     private String copyPriorityPolicyPlugin="DefaultJobAppraiser";
     private String lsPriorityPolicyPlugin="DefaultJobAppraiser";
-    private int numDaysHistory = 30;
-    private long oldRequestRemovePeriodSecs = 3600;
     private Integer maxQueuedJdbcTasksNum ; //null by default
     private Integer jdbcExecutionThreadNum;//null by default
     private String credentialsDirectory="/opt/d-cache/credentials";
-    private boolean jdbcLogRequestHistoryInDBEnabled = false;
-    private boolean cleanPendingRequestsOnRestart = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     private int sizeOfSingleRemoveBatch = 100;
@@ -279,12 +283,19 @@ public class Configuration {
     private String gaugeRrdDirectory = null;
     private String srmCounterRrdDirectory = null;
     private String srmGaugeRrdDirectory = null;
-    private boolean jdbcSaveCompletedRequestsOnly = false;
     private String clientTransport = Transport.GSI.name();
+
+    private Map<String,DatabaseParameters> databaseParameters =
+        new HashMap<String,DatabaseParameters>();
 
     /** Creates a new instance of Configuration */
     public Configuration() {
-
+        databaseParameters.put(PUT_PARAMETERS, new DatabaseParameters("Put"));
+        databaseParameters.put(GET_PARAMETERS, new DatabaseParameters("Get"));
+        databaseParameters.put(LS_PARAMETERS, new DatabaseParameters("Ls"));
+        databaseParameters.put(COPY_PARAMETERS, new DatabaseParameters("Copy"));
+        databaseParameters.put(BRINGONLINE_PARAMETERS, new DatabaseParameters("Bring Online"));
+        databaseParameters.put(RESERVE_PARAMETERS, new DatabaseParameters("Reserve Space"));
     }
 
     public Configuration(String configuration_file) throws Exception {
@@ -1326,11 +1337,9 @@ public class Configuration {
         sb.append("\n\tuseHttpForSrmCopy=").append(this.useHttpForSrmCopy);
         sb.append("\n\tuseDcapForSrmCopy=").append(this.useDcapForSrmCopy);
         sb.append("\n\tuseFtpForSrmCopy=").append(this.useFtpForSrmCopy);
-        sb.append("\n\tjdbcEnabled=").append(this.jdbcEnabled);
         sb.append("\n\tjdbcUrl=").append(this.jdbcUrl);
         sb.append("\n\tjdbcClass=").append(this.jdbcClass);
         sb.append("\n\tjdbcUser=").append(this.jdbcUser);
-        sb.append("\n\tjdbcSaveCompletedRequestsOnly=").append(this.jdbcSaveCompletedRequestsOnly);
         for(int i = 0; i<this.protocols.length; ++i) {
             sb.append("\n\tprotocols["+i+"]=").append(this.protocols[i]);
         }
@@ -1400,13 +1409,16 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.copyMaxRunningBySameOwner);
         sb.append("\n\t\t copyRequestRestorePolicy=").append(this.copyRequestRestorePolicy);
+
+        for (DatabaseParameters parameters: databaseParameters.values()) {
+            sb.append(parameters);
+        }
+
         sb.append("\n\treserve_space_implicitely=").append(this.reserve_space_implicitely);
         sb.append("\n\tspace_reservation_strict=").append(this.space_reservation_strict);
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
         sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);
         sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
-        sb.append("\n\tjdbcLogRequestHistoryInDBEnabled=").append(this.jdbcLogRequestHistoryInDBEnabled);
-        sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         sb.append("\n\tclientDNSLookup=").append(this.clientDNSLookup);
         sb.append( "\n\tclientTransport=").append(clientTransport);
         return sb.toString();
@@ -2341,22 +2353,6 @@ public class Configuration {
     	this.qosConfigFile = Strings.emptyToNull(qosConfigFile);
     }
 
-    public int getNumDaysHistory() {
-        return numDaysHistory;
-    }
-
-    public void setNumDaysHistory(int numDaysHistory) {
-        this.numDaysHistory = numDaysHistory;
-    }
-
-    public long getOldRequestRemovePeriodSecs() {
-        return oldRequestRemovePeriodSecs;
-    }
-
-    public void setOldRequestRemovePeriodSecs(long oldRequestRemovePeriodSecs) {
-        this.oldRequestRemovePeriodSecs = oldRequestRemovePeriodSecs;
-    }
-
     public long getDefaultSpaceLifetime() {
         return defaultSpaceLifetime;
     }
@@ -2494,13 +2490,6 @@ public class Configuration {
         this.overwrite_by_default = overwrite_by_default;
     }
 
-    public boolean isJdbcLogRequestHistoryInDBEnabled() {
-        return jdbcLogRequestHistoryInDBEnabled;
-    }
-
-    public void setJdbcLogRequestHistoryInDBEnabled(boolean jdbcMonitoringDebugLevel) {
-        this.jdbcLogRequestHistoryInDBEnabled = jdbcMonitoringDebugLevel;
-    }
 
     public SRMUserPersistenceManager getSrmUserPersistenceManager() {
         return srmUserPersistenceManager;
@@ -2508,14 +2497,6 @@ public class Configuration {
 
     public void setSrmUserPersistenceManager(SRMUserPersistenceManager srmUserPersistenceManager) {
         this.srmUserPersistenceManager = srmUserPersistenceManager;
-    }
-
-    public boolean isCleanPendingRequestsOnRestart() {
-        return cleanPendingRequestsOnRestart;
-    }
-
-    public void setCleanPendingRequestsOnRestart(boolean cleanPendingRequestsOnRestart) {
-        this.cleanPendingRequestsOnRestart = cleanPendingRequestsOnRestart;
     }
 
     public int getBringOnlineReqTQueueSize() {
@@ -2778,34 +2759,6 @@ public class Configuration {
         this.srmHost = srmHost;
     }
 
-    /**
-     * @return the jdbcSaveCompletedRequestsOnly
-     */
-    public boolean isJdbcSaveCompletedRequestsOnly() {
-        return jdbcSaveCompletedRequestsOnly;
-    }
-
-    /**
-     * @param jdbcSaveCompletedReqeustsOnly the jdbcSaveCompletedRequestsOnly to set
-     */
-    public void setJdbcSaveCompletedRequestsOnly(boolean jdbcSaveCompletedReqeustsOnly) {
-        this.jdbcSaveCompletedRequestsOnly = jdbcSaveCompletedReqeustsOnly;
-    }
-
-    /**
-     * @return the jdbcEnabled
-     */
-    public boolean isJdbcEnabled() {
-        return jdbcEnabled;
-    }
-
-    /**
-     * @param jdbcEnabled the jdbcEnabled to set
-     */
-    public void setJdbcEnabled(boolean jdbcEnabled) {
-        this.jdbcEnabled = jdbcEnabled;
-    }
-
     public Transport getClientTransport() {
         return Transport.transportFor(clientTransport);
     }
@@ -2816,5 +2769,129 @@ public class Configuration {
 
     public void setClientTransportByName(String name) {
         clientTransport = Transport.transportFor(name).name();
+    }
+
+    public DatabaseParameters getDatabaseParametersForList() {
+        return databaseParameters.get(LS_PARAMETERS);
+    }
+
+    public DatabaseParameters getDatabaseParametersForGet() {
+        return databaseParameters.get(GET_PARAMETERS);
+    }
+
+    public DatabaseParameters getDatabaseParametersForPut() {
+        return databaseParameters.get(PUT_PARAMETERS);
+    }
+
+    public DatabaseParameters getDatabaseParametersForBringOnline() {
+        return databaseParameters.get(BRINGONLINE_PARAMETERS);
+    }
+
+    public DatabaseParameters getDatabaseParametersForCopy() {
+        return databaseParameters.get(COPY_PARAMETERS);
+    }
+
+    public DatabaseParameters getDatabaseParametersForReserve() {
+        return databaseParameters.get(RESERVE_PARAMETERS);
+    }
+
+    public DatabaseParameters getDatabaseParameters(String name) {
+        return databaseParameters.get(name);
+    }
+
+    public class DatabaseParameters
+    {
+        private final String name;
+        private boolean databaseEnabled = true;
+        private boolean requestHistoryDatabaseEnabled = false;
+        private boolean storeCompletedRequestsOnly = false;
+        private int keepRequestHistoryPeriod = 30;
+        private long expiredRequestRemovalPeriod = 3600;
+        private boolean cleanPendingRequestsOnRestart = false;
+
+        public DatabaseParameters(String name)
+        {
+            this.name = name;
+        }
+
+        public boolean isDatabaseEnabled() {
+            return databaseEnabled;
+        }
+
+        public void setDatabaseEnabled(boolean value) {
+            databaseEnabled = value;
+        }
+
+        public boolean getStoreCompletedRequestsOnly() {
+            return storeCompletedRequestsOnly;
+        }
+
+        public void setStoreCompletedRequestsOnly(boolean value) {
+            storeCompletedRequestsOnly = value;
+        }
+
+        public boolean isRequestHistoryDatabaseEnabled() {
+            return requestHistoryDatabaseEnabled;
+        }
+
+        public void setRequestHistoryDatabaseEnabled(boolean value) {
+            requestHistoryDatabaseEnabled = value;
+        }
+
+        public int getKeepRequestHistoryPeriod() {
+            return keepRequestHistoryPeriod;
+        }
+
+        public void setKeepRequestHistoryPeriod(int value) {
+            keepRequestHistoryPeriod = value;
+        }
+
+        public long getExpiredRequestRemovalPeriod() {
+            return expiredRequestRemovalPeriod;
+        }
+
+        public void setExpiredRequestRemovalPeriod(long value) {
+            expiredRequestRemovalPeriod = value;
+        }
+
+        public boolean isCleanPendingRequestsOnRestart() {
+            return cleanPendingRequestsOnRestart;
+        }
+
+        public void setCleanPendingRequestsOnRestart(boolean value) {
+            cleanPendingRequestsOnRestart = value;
+        }
+
+        public String getJdbcPass() throws SQLException {
+            return Configuration.this.getJdbcPass();
+        }
+
+        public String getJdbcUser() {
+            return Configuration.this.getJdbcUser();
+        }
+
+        public String getJdbcClass() {
+            return Configuration.this.getJdbcClass();
+        }
+
+        public String getJdbcUrl() {
+            return Configuration.this.getJdbcUrl();
+        }
+
+        public SRMUserPersistenceManager getSrmUserPersistenceManager() {
+            return Configuration.this.getSrmUserPersistenceManager();
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n\t\t*** ").append(name).append(" Store Parameters ***");
+            sb.append("\n\t\tdatabaseEnabled=").append(databaseEnabled);
+            sb.append("\n\t\tstoreCompletedRequestsOnly=").append(storeCompletedRequestsOnly);
+            sb.append("\n\t\trequestHistoryDatabaseEnabled=").append(requestHistoryDatabaseEnabled);
+            sb.append("\n\t\tcleanPendingRequestsOnRestart=").append(cleanPendingRequestsOnRestart);
+            sb.append("\n\t\tkeepRequestHistoryPeriod=").append(keepRequestHistoryPeriod).append(" days");
+            sb.append("\n\t\texpiredRequestRemovalPeriod=").append(expiredRequestRemovalPeriod).append(" seconds");
+            return sb.toString();
+        }
     }
 }

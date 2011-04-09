@@ -27,16 +27,16 @@ import org.dcache.srm.SRMUserPersistenceManager;
 public abstract class DatabaseRequestStorage extends DatabaseJobStorage implements RequestStorage{
     SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
-    public DatabaseRequestStorage(Configuration configuration) throws SQLException {
+    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration) throws SQLException {
         super(configuration);
         srmUserPersistenceManager = configuration.getSrmUserPersistenceManager();
         if(srmUserPersistenceManager == null) {
             throw new IllegalArgumentException("srmUserPersistenceManager == null");
         }
     }
-    
+
     public abstract String getRequestCreateTableFields();
-    
+
     public String getCreateTableFields() {
         return
         ", "+
@@ -53,10 +53,10 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         "STATUSCODE "+ stringType+
         ", "+
         "USERID "+ longType+
-         
+
         getRequestCreateTableFields();
     }
-    
+
     protected abstract Request getRequest(
     Connection _con,
     Long ID,
@@ -79,7 +79,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException;
-    
+
     protected final org.dcache.srm.scheduler.Job
     getJob(
     Connection _con,
@@ -96,14 +96,14 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     long LASTSTATETRANSITIONTIME,
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
-        
+
         Long CREDENTIALID = set.getLong(next_index++);
         int RETRYDELTATIME = set.getInt(next_index++);
         boolean SHOULDUPDATERETRYDELTATIME = set.getBoolean(next_index++);
         String DESCRIPTION = set.getString(next_index++);
         String CLIENTHOST = set.getString(next_index++);
         String STATUSCODE= set.getString(next_index++);
-        SRMUser user = 
+        SRMUser user =
             srmUserPersistenceManager.find(set.getLong(next_index++));
         return getRequest(
         _con,
@@ -120,7 +120,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         MAXNUMOFRETR,
         LASTSTATETRANSITIONTIME,
         CREDENTIALID,
-        RETRYDELTATIME, 
+        RETRYDELTATIME,
         SHOULDUPDATERETRYDELTATIME,
         DESCRIPTION,
         CLIENTHOST,
@@ -129,16 +129,16 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         next_index );
     }
     private static int ADDITIONAL_FIELDS_NUM=7;
-    
+
     public abstract  void getCreateList(Request r,StringBuffer sb);
-    
+
     public final void getCreateList(Job job, StringBuffer sb) {
-        
+
         if(job == null || !(job instanceof Request)) {
             throw new IllegalArgumentException("job is not Request" );
         }
         Request r = (Request)job;
-        
+
         sb.append(", ").append(r.getCredentialId()).append(" ");
         sb.append(", ").append(r.getRetryDeltaTime());
         sb.append(", ").append(r.isShould_updateretryDeltaTime() ? 1 : 0);
@@ -163,13 +163,13 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         else {
             sb.append(", '").append(STATUSCODE).append('\'');
         }
-        sb.append(", ").append( 
+        sb.append(", ").append(
             r.getUser().getId()
         ).append(" ");
         getCreateList(r,sb);
-        
+
     }
-    
+
     public Set<Long> getActiveRequestIds(String schedulerid)  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
         "' AND STATE !="+State.DONE.getStateId()+
@@ -192,7 +192,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         }
         return getJobIdsByCondition(condition);
     }
-    
+
     public Set<Long> getLatestCompletedRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition(
         " STATE ="+State.DONE.getStateId()+
@@ -201,27 +201,27 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         " ORDER BY ID"+
         " LIMIT "+maxNum+" ");
     }
-    
+
     public Set getLatestDoneRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
         " ORDERED BY ID"+
         " LIMIT "+maxNum+" ");
     }
-    
+
     public Set getLatestFailedRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
         " ORDERED BY ID"+
         " LIMIT "+maxNum+" ");
     }
-    
+
     public Set getLatestCanceledRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
         " ORDERED BY ID"+
         " LIMIT "+maxNum+" ");
     }
-   
+
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
-    
+
     protected final void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
          *additional fields:
@@ -244,7 +244,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         else if(columnIndex == nextIndex+1)
         {
             verifyIntType("RETRYDELTATIME",columnIndex,tableName, columnName, columnType);
-            
+
         }
         else if(columnIndex == nextIndex+2)
         {
@@ -271,9 +271,9 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             __verify(nextIndex+7,columnIndex,tableName, columnName, columnType);
         }
    }
-       
+
     protected abstract int getMoreCollumnsNum();
-    
+
     protected final int getAdditionalColumnsNum() {
         return ADDITIONAL_FIELDS_NUM +getMoreCollumnsNum();
     }
