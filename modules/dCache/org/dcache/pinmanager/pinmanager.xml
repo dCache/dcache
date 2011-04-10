@@ -66,6 +66,7 @@
       <description>Processes pin requests</description>
       <property name="poolManagerStub" ref="pool-manager-stub"/>
       <property name="poolStub" ref="pool-stub"/>
+      <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>
       <property name="stagePermission" ref="stage-permission"/>

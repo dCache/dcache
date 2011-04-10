@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.EnumSet;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.dcache.tests.cells.GenericMockCellHelper;
@@ -29,8 +30,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.ThreadPoolNG;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
@@ -85,7 +84,6 @@ public class HsmRestoreTest {
         _pnfsHandler.setCellEndpoint(_cell);
         _poolMonitor = new PoolMonitorV5();
         _poolMonitor.setPoolSelectionUnit(_selectionUnit);
-        _poolMonitor.setPnfsHandler(_pnfsHandler);
         _poolMonitor.setCostModule(_costModule);
         _poolMonitor.setPartitionManager(_partitionManager);
 
@@ -102,6 +100,7 @@ public class HsmRestoreTest {
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);
+        _rc.setPnfsHandler(_pnfsHandler);
         __messages = new ArrayList<CellMessage>();
     }
 
@@ -120,16 +119,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -142,7 +131,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -179,7 +168,7 @@ public class HsmRestoreTest {
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction );
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
 
         _rc.messageArrived(cellMessage, selectReadPool);
@@ -195,7 +184,6 @@ public class HsmRestoreTest {
 
         PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
 
-
         /*
          * pre-configure pool selection unit
          */
@@ -204,16 +192,6 @@ public class HsmRestoreTest {
         pools.add("pool2");
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
-        /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
         /*
          * prepare reply for GetStorageInfo
          */
@@ -227,7 +205,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -259,27 +237,41 @@ public class HsmRestoreTest {
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
         final AtomicInteger stageRequests2 = new AtomicInteger(0);
+        final AtomicInteger replyRequest = new AtomicInteger(0);
 
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
         MessageAction messageAction2 = new StageMessageAction(stageRequests2);
+        MessageAction messageAction3 = new StageMessageAction(replyRequest);
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
+        GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
+        cellMessage.getSourcePath().add("door", "local");
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
-        // first pool replays an  error
-        CellMessage m = __messages.get(0);
-        PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
+        // first pool replies with an error
+        CellMessage m = __messages.remove(0);
+        PoolFetchFileMessage ff = (PoolFetchFileMessage) m.getMessageObject();
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
 
+        // pool manager bounces request back to door
+        m = __messages.remove(0);
+        selectReadPool = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
+        assertEquals("Unexpected reply from pool manager",
+                     17, selectReadPool.getReturnCode())
+;
+
+        // resubmit request
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool);
+        CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
+        _rc.messageArrived(cellMessage2, selectReadPool2);
 
         assertEquals("No stage request sent to pools1", 1, stageRequests1.get());
         assertEquals("No stage request sent to pools2", 1, stageRequests2.get());
-
     }
 
 
@@ -297,16 +289,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -319,7 +301,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -351,20 +333,36 @@ public class HsmRestoreTest {
 
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
+        final AtomicInteger replyRequest = new AtomicInteger(0);
 
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
+        MessageAction messageAction2 = new StageMessageAction(replyRequest);
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
+        GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction2);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
+        cellMessage.getSourcePath().add("door", "local");
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
-        // first pool replays an  error
-        CellMessage m = __messages.get(0);
+        // pool replies with an error
+        CellMessage m = __messages.remove(0);
         PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
+
+        // pool manager bounces request back to door
+        m = __messages.remove(0);
+        selectReadPool = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
+        assertEquals("Unexpected reply from pool manager",
+                     17, selectReadPool.getReturnCode())
+;
+
+        // resubmit request
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool);
+        CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
+        _rc.messageArrived(cellMessage2, selectReadPool2);
 
 
         assertEquals("Single Pool excluded on second shot", 2, stageRequests1.get());
@@ -387,16 +385,6 @@ public class HsmRestoreTest {
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
         /*
-         * prepare reply for getCacheLocation request
-         */
-        /*
-         * no locations
-         */
-        List<String> locations = new ArrayList<String>(0);
-        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
-
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
-        /*
          * prepare reply for GetStorageInfo
          */
 
@@ -409,7 +397,7 @@ public class HsmRestoreTest {
         FileAttributes attributes = new FileAttributes();
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
-        attributes.setLocations(locations);
+        attributes.setLocations(Collections.<String>emptyList());
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -442,34 +430,55 @@ public class HsmRestoreTest {
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
         final AtomicInteger stageRequests2 = new AtomicInteger(0);
+        final AtomicInteger replyRequest = new AtomicInteger(0);
 
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
         MessageAction messageAction2 = new StageMessageAction(stageRequests2);
+        MessageAction messageAction3 = new StageMessageAction(replyRequest);
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
         GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
+        GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
-        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize());
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
+        cellMessage.getSourcePath().add("door", "local");
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
-        // first pool replays an error
+        // first pool replies with an error
         CellMessage m = __messages.remove(0);
         PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
-
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
 
-        // second pool replays an error
+        // pool manager bounces request back to door
+        m = __messages.remove(0);
+        selectReadPool = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
+        assertEquals("Unexpected reply from pool manager",
+                     17, selectReadPool.getReturnCode());
+
+        // resubmit request
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool);
+        CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
+        cellMessage2.getSourcePath().add("door", "local");
+        _rc.messageArrived(cellMessage2, selectReadPool2);
+
+        // second pool replies with an error
         m = __messages.remove(0);
         ff = (PoolFetchFileMessage)m.getMessageObject();
         ff.setFailed(17, "pech");
         _rc.messageArrived(m, m.getMessageObject());
 
-        /*
-         * request container retry timeout
-         */
-        Thread.sleep(50);
+        // pool manager bounces request back to door
+        m = __messages.remove(0);
+        selectReadPool2 = (PoolMgrSelectReadPoolMsg) m.getMessageObject();
+        assertEquals("Unexpected reply from pool manager",
+                     17, selectReadPool.getReturnCode());
+
+        // resubmit request
+        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool2);
+        CellMessage cellMessage3 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
+        _rc.messageArrived(cellMessage3, selectReadPool3);
 
         assertEquals("Three stage requests where expected", 3,
                      stageRequests1.get() + stageRequests2.get());
@@ -482,6 +491,7 @@ public class HsmRestoreTest {
 
     @After
     public void clear() {
+        _rc.shutdown();
         GenericMockCellHelper.clean();
     }
 

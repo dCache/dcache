@@ -43,7 +43,6 @@ import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -117,6 +116,8 @@ public class RequestContainerV5
     /** value in milliseconds */
     private final int _stagingRetryInterval;
 
+    private final Thread _tickerThread;
+
     /**
      * define host selection behaviour on restore retry
      */
@@ -135,12 +136,18 @@ public class RequestContainerV5
 
     public RequestContainerV5( int stagingRetryInterval) {
         _stagingRetryInterval = stagingRetryInterval;
-        new Thread(this,"Container-ticker").start();
+        _tickerThread = new Thread(this, "Container-ticker");
+        _tickerThread.start();
     }
 
     public RequestContainerV5()
     {
         this( DEFAULT_RETRY_INTERVAL);
+    }
+
+    public void shutdown()
+    {
+        _tickerThread.interrupt();
     }
 
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
@@ -237,7 +244,7 @@ public class RequestContainerV5
                          */
                         if (rph.getPoolCandidate().equals(POOL_UNKNOWN_STRING) ) {
                             _log.info("Restore Manager : retrying : " + rph);
-                            rph.retry(false);
+                            rph.retry();
                         }
                     case PoolStatusChangedMessage.DOWN:
                         /*
@@ -246,7 +253,7 @@ public class RequestContainerV5
                          */
                         if (rph.getPoolCandidate().equals(poolName) ) {
                             _log.info("Restore Manager : retrying : " + rph);
-                            rph.retry(false);
+                            rph.retry();
                         }
                 }
 
@@ -484,19 +491,14 @@ public class RequestContainerV5
        "           II) rc retry * -force-all [OPTIONS]\n\n"+
        "DESCRIPTION\n"+
        "           Forces a 'restore request' to be retried.\n"+
-       "           While  using syntax I , a single request  is retried,\n"+
+       "           While  using syntax I, a single request  is retried,\n"+
        "           syntax II retries all requests which reported an error.\n"+
        "           If the '-force-all' options is given, all requests are\n"+
-       "           retried, regardless of their current status.\n\n"+
-       "           -update-si\n"+
-       "                   fetch the storage info again before performing\n"+
-       "                   the retry. \n"+
-       "\n" ;
-    public String hh_rc_retry = "<pnfsId>|* -force-all -update-si" ;
+       "           retried, regardless of their current status.\n";
+    public String hh_rc_retry = "<pnfsId>|* -force-all";
     public String ac_rc_retry_$_1( Args args ) throws CacheException {
        StringBuffer sb = new StringBuffer() ;
        boolean forceAll = args.getOpt("force-all") != null ;
-       boolean updateSi = args.getOpt("update-si") != null ;
        if( args.argv(0).equals("*") ){
           List<PoolRequestHandler> all;
           //
@@ -508,7 +510,7 @@ public class RequestContainerV5
           }
           for (PoolRequestHandler rph : all) {
              try{
-                if( forceAll || ( rph._currentRc != 0 ) )rph.retry(updateSi) ;
+                if( forceAll || ( rph._currentRc != 0 ) )rph.retry() ;
              }catch(Exception ee){
                 sb.append(ee.getMessage()).append("\n");
              }
@@ -521,7 +523,7 @@ public class RequestContainerV5
                 throw new
                 IllegalArgumentException("Not found : "+args.argv(0) ) ;
           }
-          rph.retry(updateSi) ;
+          rph.retry() ;
        }
        return sb.toString() ;
     }
@@ -702,7 +704,7 @@ public class RequestContainerV5
 
         protected PnfsId       _pnfsId;
         protected final List<CellMessage>    _messages = new ArrayList<CellMessage>() ;
-        protected int          _retryCounter = -1 ;
+        protected int _retryCounter;
         private final CDC _cdc = new CDC();
 
 
@@ -756,6 +758,7 @@ public class RequestContainerV5
         private   final long   _started       = System.currentTimeMillis() ;
         private   String       _name          = null ;
 
+        private   FileAttributes _fileAttributes;
         private   StorageInfo  _storageInfo   = null ;
         private   ProtocolInfo _protocolInfo  = null ;
         private   String       _linkGroup;
@@ -835,6 +838,8 @@ public class RequestContainerV5
                          */
                         _log.info("CheckFilePingHandler : request died");
                         stop();
+                        setError(CacheException.TIMEOUT,
+                                 "Replication/staging timed out");
                         errorHandler();
                         break;
 
@@ -903,9 +908,17 @@ public class RequestContainerV5
            PoolMgrSelectReadPoolMsg request =
                 (PoolMgrSelectReadPoolMsg)message.getMessageObject() ;
 
-           _storageInfo  = request.getStorageInfo() ;
-           _protocolInfo = request.getProtocolInfo() ;
-           _linkGroup    = request.getLinkGroup();
+           _linkGroup = request.getLinkGroup();
+           _protocolInfo = request.getProtocolInfo();
+           _fileAttributes = request.getFileAttributes();
+           _storageInfo = _fileAttributes.getStorageInfo();
+
+           PoolMgrSelectReadPoolMsg previousRequest =
+               request.getPreviousMessage();
+           if (previousRequest != null) {
+               _retryCounter = previousRequest.getRetryCounter();
+               _stageCandidateHost = previousRequest.getPreviousStageHost();
+           }
 
            if( request instanceof PoolMgrReplicateFileMsg ){
               _enforceP2P            = true ;
@@ -913,11 +926,9 @@ public class RequestContainerV5
            }
 
            _pnfsFileLocation =
-                _poolMonitor.getPnfsFileLocation( _pnfsId ,
-                                                  _storageInfo ,
-                                                  _protocolInfo,
-                                                  _linkGroup);
-
+               _poolMonitor.getPnfsFileLocation(_fileAttributes,
+                                                _protocolInfo,
+                                                _linkGroup);
            //
            //
            //
@@ -984,12 +995,10 @@ public class RequestContainerV5
            add( command ) ;
 
         }
-        private void retry(boolean updateSi) throws CacheException {
-           Object [] command = new Object[2] ;
+        private void retry() throws CacheException {
+           Object [] command = new Object[1];
            command[0] = "retry" ;
-           command[1] = updateSi ? "update" : "" ;
-           _pnfsFileLocation.clear() ;
-           add( command ) ;
+           add(command);
         }
         private void failed( int errorNumber , String errorMessage )
                 throws CacheException {
@@ -1125,7 +1134,10 @@ public class RequestContainerV5
             Iterator<CellMessage> messages = _messages.iterator();
             for (int i = 0; (i < count) && messages.hasNext(); i++) {
                 CellMessage m =  messages.next();
-                PoolMgrSelectPoolMsg rpm = (PoolMgrSelectPoolMsg) m.getMessageObject();
+                PoolMgrSelectReadPoolMsg rpm =
+                    (PoolMgrSelectReadPoolMsg) m.getMessageObject();
+                rpm.setRetryCounter(_retryCounter + 1);
+                rpm.setPreviousStageHost(_stageCandidateHost);
                 if (_currentRc == 0) {
                     rpm.setPoolName(_poolCandidate);
                     rpm.setSucceeded();
@@ -1152,7 +1164,6 @@ public class RequestContainerV5
         private static final int RT_NOT_FOUND  = 3 ;
         private static final int RT_ERROR      = 4 ;
         private static final int RT_OUT_OF_RESOURCES = 5 ;
-        private static final int RT_CONTINUE         = 6 ;
         private static final int RT_COST_EXCEEDED    = 7 ;
         private static final int RT_NOT_PERMITTED    = 8 ;
         private static final int RT_S_COST_EXCEEDED  = 9 ;
@@ -1462,8 +1473,7 @@ public class RequestContainerV5
                                           _currentRc , "Suspended (forced) "+_currentRm );
                          return ;
                     }
-                    _retryCounter ++ ;
-                    _pnfsFileLocation.clear() ;
+
                     //
                     //
                     if( _enforceP2P ){
@@ -1682,7 +1692,6 @@ public class RequestContainerV5
                        //
                        errorHandler() ;
                     }
-
                  }
 
               break ;
@@ -1691,12 +1700,13 @@ public class RequestContainerV5
                  if( inputObject instanceof Message ){
 
                     if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RT_OK ){
-
-                       nextStep( _parameter._p2pForTransfer && ! _enforceP2P ? RequestState.ST_INIT : RequestState.ST_DONE , CONTINUE ) ;
-
-                    }else if( rc == RT_CONTINUE ){
-                        //
-                        //
+                        if (_parameter._p2pForTransfer && ! _enforceP2P) {
+                            setError(CacheException.OUT_OF_DATE,
+                                     "Pool locations changed due to p2p transfer");
+                            nextStep(RequestState.ST_DONE, CONTINUE);
+                        } else {
+                            nextStep(RequestState.ST_DONE, CONTINUE);
+                        }
                     }else{
                         _log.info("ST_POOL_2_POOL : Pool to pool reported a problem");
                         if( _parameter._hasHsmBackend && _storageInfo.isStored() ){
@@ -1724,14 +1734,16 @@ public class RequestContainerV5
                  if( inputObject instanceof Message ){
 
                     if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RT_OK ){
-
-                       nextStep( _parameter._p2pForTransfer ? RequestState.ST_INIT : RequestState.ST_DONE , CONTINUE ) ;
-
+                        if (_parameter._p2pForTransfer) {
+                            setError(CacheException.OUT_OF_DATE,
+                                     "Pool locations changed due to stage");
+                            nextStep(RequestState.ST_DONE, CONTINUE);
+                        } else {
+                            nextStep(RequestState.ST_DONE, CONTINUE);
+                        }
                     }else if( rc == RT_DELAY ){
                         _status = "Suspended By HSM request";
                         nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
-                    }else if( rc == RT_CONTINUE ){
-
                     }else{
 
                        errorHandler() ;
@@ -1765,7 +1777,9 @@ public class RequestContainerV5
                     //
                     synchronized( _handlerHash ){
                        if( answerRequest( _maxRequestClumping ) ){
-                           nextStep(RequestState.ST_INIT , CONTINUE ) ;
+                            setError(CacheException.RESOURCE,
+                                     "Request clumping limit reached");
+                            nextStep(RequestState.ST_DONE, CONTINUE);
                        }else{
                            _handlerHash.remove( _name ) ;
                        }
@@ -1787,13 +1801,10 @@ public class RequestContainerV5
            }else if( command.equals("retry") ){
 
               _status = "Retry enforced" ;
-              _retryCounter = 0 ;
+              _retryCounter = -1;
               clearSteering() ;
-              _pnfsFileLocation.clear() ;
-              setError(0,"");
-              if( ( c.length > 1 ) && c[1].toString().equals("update") )getStorageInfo();
-              nextStep(RequestState.ST_INIT,CONTINUE);
-
+              setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
+              nextStep(RequestState.ST_DONE,CONTINUE);
            }else if( command.equals("alive") ){
 
               long now = System.currentTimeMillis() ;
@@ -1803,35 +1814,14 @@ public class RequestContainerV5
               }
 
               if( ( _waitUntil > 0L ) && ( now > _waitUntil ) ){
-                 nextStep(RequestState.ST_INIT,CONTINUE);
-                 clearSteering() ;
+                  clearSteering() ;
+                  nextStep(_state, CONTINUE);
               }else{
                  _pingHandler.alive() ;
               }
 
            }
 
-        }
-
-        private void getStorageInfo()
-        {
-            try {
-                FileAttributes fileAttributes =
-                    _pnfsHandler.getFileAttributes(_pnfsId,
-                                                   PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-                _storageInfo = fileAttributes.getStorageInfo();
-                _pnfsFileLocation =
-                    _poolMonitor.getPnfsFileLocation(_pnfsId,
-                                                     _storageInfo,
-                                                     _protocolInfo,
-                                                     _linkGroup);
-            } catch (FileNotFoundCacheException e) {
-                setError(e.getRc(), "File not found");
-            } catch (NotInTrashCacheException e) {
-                setError(e.getRc(), "File not found");
-            } catch (CacheException e) {
-                _log.warn("Fetching storage info failed: {}", e.getMessage());
-            }
         }
 
         private void outOfResources( String detail ){
@@ -1843,40 +1833,24 @@ public class RequestContainerV5
            sendInfoMessage( _pnfsId , _storageInfo ,
                             _currentRc , "Failed "+_currentRm );
         }
-        private void errorHandler(){
-           if(_retryCounter == 0 ){
-              //
-              // retry immediately (stager will take another pool)
-              //
-              _pnfsFileLocation.clear() ;
-              getStorageInfo();
-              nextStep(RequestState.ST_INIT, CONTINUE ) ;
-              //
-           }else if( _retryCounter < _maxRetries ){
-              //
-              // now retry only after some time
-              //
-              _pnfsFileLocation.clear() ;
-              getStorageInfo();
-              waitFor( _retryTimer ) ;
-              nextStep(RequestState.ST_INIT , WAIT ) ;
-              _status = "Waiting "+_formatter.format(new Date()) ;
-              //
-           }else{
-              if( _onError.equals( "suspend" ) ){
-                 _status = "Suspended "+_formatter.format(new Date()) ;
-                 nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
-                 sendInfoMessage( _pnfsId , _storageInfo ,
-                                  _currentRc , "Suspended "+_currentRm );
-              }else{
-                 nextStep(RequestState.ST_DONE , CONTINUE ) ;
-                 _status = "Failed" ;
-                 sendInfoMessage( _pnfsId , _storageInfo ,
-                                  _currentRc , "Failed "+_currentRm );
-              }
-           }
 
+        private void errorHandler()
+        {
+            if (_retryCounter >= _maxRetries && _onError.equals("suspend")) {
+                _status = "Suspended " + _formatter.format(new Date());
+                nextStep(RequestState.ST_SUSPENDED, WAIT);
+                sendInfoMessage(_pnfsId, _storageInfo,
+                                _currentRc, "Suspended " + _currentRm);
+            } else {
+                if (_currentRc == 0) {
+                    _log.error("Error handler called without an error");
+                    setError(CacheException.DEFAULT_ERROR_CODE,
+                             "Pool selection failed");
+                }
+                nextStep(RequestState.ST_DONE, CONTINUE);
+            }
         }
+
         private int exerciseStageReply( Message messageArrived ){
            try{
 
@@ -2229,8 +2203,7 @@ public class RequestContainerV5
 
 				List<List<PoolCostCheckable>> matrix =
                                     _pnfsFileLocation.getFetchPoolMatrix(DirectionType.P2P,
-						_storageInfo, _protocolInfo, _storageInfo
-								.getFileSize());
+                                                                         _storageInfo.getFileSize());
 
 				if (matrix.size() == 0) {
 					setError(
@@ -2414,8 +2387,6 @@ public class RequestContainerV5
             List<List<PoolCostCheckable>> matrix =
                     _pnfsFileLocation.getFetchPoolMatrix (
                                 mode ,
-                                _storageInfo ,
-                                _protocolInfo ,
                                 _storageInfo.getFileSize() ) ;
 
 
@@ -2424,7 +2395,6 @@ public class RequestContainerV5
             if( matrix.size() == 0 )
                   throw new
                   CacheException( 149 , "No pool candidates available/configured/left for "+mode ) ;
-
 
             PoolCostCheckable cost = null ;
             if( _poolCandidate == null ){

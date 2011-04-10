@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
@@ -22,6 +23,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Version;
 import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
@@ -58,6 +60,7 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 
 public class PoolManagerV5
@@ -77,6 +80,7 @@ public class PoolManagerV5
 
     private CostModule   _costModule  ;
     private CellPath     _poolStatusRelayPath = null ;
+    private PnfsHandler _pnfsHandler;
 
     private RequestContainerV5 _requestContainer ;
     private WatchdogThread     _watchdog         = null ;
@@ -125,6 +129,11 @@ public class PoolManagerV5
     {
         _quotaManager = quotaManager;
         _quotasEnabled = !_quotaManager.equals("none");
+    }
+
+    public void setPnfsHandler(PnfsHandler pnfsHandler)
+    {
+        _pnfsHandler = pnfsHandler;
     }
 
     public void init()
@@ -655,12 +664,17 @@ public class PoolManagerV5
           XStorageInfo storageInfo = new XStorageInfo( args.argv(1) , args.argv(2) ) ;
           XProtocolInfo protocolInfo = new XProtocolInfo( args.argv(3) ) ;
 
-          PoolMonitorV5.PnfsFileLocation  _pnfsFileLocation =
-                    _poolMonitor.getPnfsFileLocation( pnfsId ,
-                                                      storageInfo ,
-                                                      protocolInfo, null ) ;
+          FileAttributes fileAttributes =
+              _pnfsHandler.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.LOCATIONS));
+          fileAttributes.setPnfsId(pnfsId);
+          fileAttributes.setStorageInfo(storageInfo);
 
-          List<List<PoolCostCheckable>> available = _pnfsFileLocation.getFileAvailableMatrix() ;
+          PoolMonitorV5.PnfsFileLocation pnfsFileLocation =
+              _poolMonitor.getPnfsFileLocation(fileAttributes,
+                                               protocolInfo, null ) ;
+
+          List<List<PoolCostCheckable>> available =
+              pnfsFileLocation.getFileAvailableMatrix() ;
 
           StringBuffer sb = new StringBuffer() ;
           sb.append("Available and allowed\n");
@@ -910,9 +924,12 @@ public class PoolManagerV5
 
            try{
 
-              List<PoolCostCheckable> storeList = _poolMonitor.
-                               getPnfsFileLocation( _pnfsId , storageInfo , protocolInfo, _request.getLinkGroup() ).
-                               getStorePoolList( expectedLength ) ;
+               FileAttributes fileAttributes = new FileAttributes();
+               fileAttributes.setPnfsId(_pnfsId);
+               fileAttributes.setStorageInfo(storageInfo);
+               List<PoolCostCheckable> storeList = _poolMonitor.
+                   getPnfsFileLocation(fileAttributes, protocolInfo, _request.getLinkGroup()).
+                   getStorePoolList( expectedLength ) ;
               /*
               List storeList =
                   _poolMonitor.getStorePoolList(  storageInfo ,

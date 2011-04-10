@@ -42,6 +42,7 @@ import com.bradmcevoy.http.Range;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;

@@ -3,6 +3,7 @@ package org.dcache.pinmanager;
 import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
+import java.util.Set;
 import java.util.EnumSet;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -18,7 +19,12 @@ import org.dcache.cells.MessageReply;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.auth.Subjects;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
+import org.dcache.namespace.FileAttribute;
+
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.pinmanager.PinManagerPinMessage;
 import static org.dcache.pinmanager.model.Pin.State.*;
 
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
@@ -29,8 +35,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.poolManager.RequestContainerV5;
-import org.dcache.vehicles.FileAttributes;
-import org.dcache.pinmanager.PinManagerPinMessage;
 
 import dmg.cells.nucleus.CellPath;
 
@@ -75,6 +79,7 @@ public class PinRequestProcessor
     private ScheduledExecutorService _executor;
     private PinDao _dao;
     private CellStub _poolStub;
+    private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
     private CheckStagePermission _checkStagePermission;
     private long _maxLifetime;
@@ -95,6 +100,12 @@ public class PinRequestProcessor
     public void setPoolStub(CellStub stub)
     {
         _poolStub = stub;
+    }
+
+    @Required
+    public void setPnfsStub(CellStub stub)
+    {
+        _pnfsStub = stub;
     }
 
     @Required
@@ -173,10 +184,11 @@ public class PinRequestProcessor
             _executor.schedule(new Runnable() {
                     public void run() {
                         try {
-                            refreshTimeout(task);
-                            selectReadPool(task);
+                            rereadNameSpaceEntry(task);
                         } catch (CacheException e) {
                             fail(task, e.getRc(), e.getMessage());
+                        } catch (RuntimeException e) {
+                            fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
                         }
                     }
                 }, delay, TimeUnit.MILLISECONDS);
@@ -193,12 +205,52 @@ public class PinRequestProcessor
         }
     }
 
+    private void rereadNameSpaceEntry(final PinTask task)
+        throws CacheException
+    {
+        refreshTimeout(task, getExpirationTimeForNameSpaceLookup());
+        Set<FileAttribute> attributes =
+            task.getFileAttributes().getDefinedAttributes();
+        _pnfsStub.send(new PnfsGetFileAttributes(task.getPnfsId(), attributes),
+                       PnfsGetFileAttributes.class,
+                       new AbstractMessageCallback<PnfsGetFileAttributes>()
+                       {
+                           @Override
+                           public void success(PnfsGetFileAttributes msg) {
+                               try {
+                                   refreshTimeout(task, getExpirationTimeForPoolSelection());
+                                   selectReadPool(task);
+                               } catch (CacheException e) {
+                                   fail(task, e.getRc(), e.getMessage());
+                               } catch (RuntimeException e) {
+                                   fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
+                               }
+                           }
+
+                           @Override
+                           public void failure(int rc, Object error) {
+                               fail(task, rc, error.toString());
+                           }
+
+                           @Override
+                           public void noroute(CellPath path) {
+                               retry(task, RETRY_DELAY);
+                           }
+
+                           @Override
+                           public void timeout(CellPath path) {
+                               retry(task, SMALL_DELAY);
+                           }
+                       });
+    }
+
     private void selectReadPool(final PinTask task)
     {
         PoolMgrSelectReadPoolMsg msg =
             new PoolMgrSelectReadPoolMsg(task.getFileAttributes(),
                                          task.getProtocolInfo(),
                                          0,
+                                         task.getPreviousSelectReadPoolMsg(),
                                          checkStaging(task));
         msg.setSubject(task.getSubject());
         _poolManagerStub.send(msg,
@@ -209,6 +261,7 @@ public class PinRequestProcessor
                                   public void success(PoolMgrSelectReadPoolMsg msg)
                                   {
                                       try {
+                                          task.setPreviousSelectReadPoolMsg(msg);
                                           String pool = msg.getPoolName();
                                           setPool(task, pool);
                                           setStickyFlag(task, pool);
@@ -222,7 +275,13 @@ public class PinRequestProcessor
                                   @Override
                                   public void failure(int rc, Object error)
                                   {
-                                      fail(task, rc, error.toString());
+                                      task.setPreviousSelectReadPoolMsg(getReply());
+                                      if (rc == CacheException.OUT_OF_DATE) {
+                                          // TODO: Refresh file attributes
+                                          retry(task, 0);
+                                      } else {
+                                          fail(task, rc, error.toString());
+                                      }
                                   }
 
                                   @Override
@@ -239,7 +298,7 @@ public class PinRequestProcessor
                               });
     }
 
-    private void setStickyFlag(final PinTask task, String pool)
+    private void setStickyFlag(final PinTask task, final String pool)
     {
         Date pinExpiration = task.freezeExpirationTime();
         long poolExpiration =
@@ -291,6 +350,13 @@ public class PinRequestProcessor
                                fail(task, CacheException.TIMEOUT, "Request timed out");
                            }
                        });
+    }
+
+    private Date getExpirationTimeForNameSpaceLookup()
+    {
+        long now = System.currentTimeMillis();
+        long timeout = _pnfsStub.getTimeout();
+        return new Date(now + 2 * (timeout + RETRY_DELAY));
     }
 
     private Date getExpirationTimeForPoolSelection()
@@ -351,11 +417,11 @@ public class PinRequestProcessor
     }
 
     @Transactional(isolation=REPEATABLE_READ)
-    protected void refreshTimeout(PinTask task)
+    protected void refreshTimeout(PinTask task, Date date)
         throws CacheException
     {
         Pin pin = load(task);
-        pin.setExpirationTime(getExpirationTimeForPoolSelection());
+        pin.setExpirationTime(date);
         task.setPin(_dao.storePin(pin));
     }
 

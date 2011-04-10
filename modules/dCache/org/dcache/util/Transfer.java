@@ -24,6 +24,7 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.poolManager.RequestContainerV5;
@@ -94,6 +95,8 @@ public class Transfer implements Comparable<Transfer>
     private boolean _isWrite;
     private InetSocketAddress _clientAddress;
     private long _allocated;
+
+    private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
 
     private boolean _isBillingNotified;
     private boolean _isOverwriteAllowed;
@@ -651,10 +654,31 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Returns the previous read pool selection message.
+     */
+    protected synchronized
+        PoolMgrSelectReadPoolMsg getPreviousSelectReadPoolMsg()
+    {
+        return _previousSelectReadPoolMsg;
+    }
+
+    /**
+     * Sets the previous read pool selection message. The message
+     * contains state that is maintained accross repeated pool
+     * selections.
+     */
+    protected synchronized
+        void setPreviousSelectReadPoolMsg(PoolMgrSelectReadPoolMsg message)
+    {
+        _previousSelectReadPoolMsg = message;
+    }
+
+    /**
      * Selects a pool suitable for the transfer.
      */
     public void selectPool()
-            throws CacheException, InterruptedException {
+        throws CacheException, InterruptedException
+    {
         selectPool(_poolManager.getTimeout());
     }
 
@@ -669,35 +693,45 @@ public class Transfer implements Comparable<Transfer>
         setStatus("PoolManager: Selecting pool");
         try {
             ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
-            PoolMgrSelectPoolMsg request;
             if (isWrite()) {
                 long allocated = _allocated;
                 if (allocated == 0) {
                     allocated = fileAttributes.getSize();
                 }
-                request =
+                PoolMgrSelectWritePoolMsg request =
                     new PoolMgrSelectWritePoolMsg(fileAttributes,
                                                   protocolInfo,
                                                   allocated);
+                request.setId(_sessionId);
+                request.setSubject(_subject);
+                request.setPnfsPath(_path.toString());
+
+                PoolMgrSelectWritePoolMsg reply =
+                    _poolManager.sendAndWait(request, timeout);
+                setPool(reply.getPoolName());
+                setStorageInfo(reply.getStorageInfo());
             } else {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
                     _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
                     ? RequestContainerV5.allStates
                     : RequestContainerV5.allStatesExceptStage;
 
-                request =
+                PoolMgrSelectReadPoolMsg request =
                     new PoolMgrSelectReadPoolMsg(fileAttributes,
                                                  protocolInfo,
                                                  fileAttributes.getSize(),
+                                                 getPreviousSelectReadPoolMsg(),
                                                  allowedStates);
-            }
-            request.setId(_sessionId);
-            request.setSubject(_subject);
-            request.setPnfsPath(_path.toString());
+                request.setId(_sessionId);
+                request.setSubject(_subject);
+                request.setPnfsPath(_path.toString());
 
-            PoolMgrSelectPoolMsg reply = _poolManager.sendAndWait(request, timeout);
-            setPool(reply.getPoolName());
-            setStorageInfo(reply.getStorageInfo());
+                PoolMgrSelectReadPoolMsg reply =
+                    _poolManager.sendAndWait(request, timeout);
+                setPool(reply.getPoolName());
+                setStorageInfo(reply.getStorageInfo());
+                setPreviousSelectReadPoolMsg(reply);
+            }
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -935,6 +969,7 @@ public class Transfer implements Comparable<Transfer>
                 lastFailure = e;
             } catch (CacheException e) {
                 switch (e.getRc()) {
+                case CacheException.OUT_OF_DATE:
                 case CacheException.POOL_DISABLED:
                 case CacheException.FILE_NOT_IN_REPOSITORY:
                     _log.info("Retrying pool selection: {}", e.getMessage());

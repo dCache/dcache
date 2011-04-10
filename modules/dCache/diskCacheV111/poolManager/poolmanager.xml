@@ -22,6 +22,7 @@
       </bean>
     </property>
     <property name="quotaManager" value="${quotaManager}"/>
+    <property name="pnfsHandler" ref="pnfs"/>
   </bean>
 
   <bean id="psu" class="${selectionUnit}">
@@ -53,12 +54,12 @@
   <bean id="poolMonitor" class="diskCacheV111.poolManager.PoolMonitorV5">
     <description>Pool monitor</description>
     <property name="poolSelectionUnit" ref="psu"/>
-    <property name="pnfsHandler" ref="pnfs"/>
     <property name="costModule" ref="cm"/>
     <property name="partitionManager" ref="pm"/>
   </bean>
 
-  <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5">
+  <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
+        destroy-method="shutdown">
     <description>Request container</description>
     <property name="poolSelectionUnit" ref="psu"/>
     <property name="poolMonitor" ref="poolMonitor"/>

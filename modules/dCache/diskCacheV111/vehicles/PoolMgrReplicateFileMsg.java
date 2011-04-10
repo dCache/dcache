@@ -23,7 +23,7 @@ public class PoolMgrReplicateFileMsg extends PoolMgrSelectReadPoolMsg {
     /** Creates a new instance of PoolMgrReplicateFile */
     public PoolMgrReplicateFileMsg(FileAttributes fileAttributes, ProtocolInfo protocolInfo, long fileSize)
     {
-         super(fileAttributes, protocolInfo, fileSize);
+        super(fileAttributes, protocolInfo, fileSize, null);
     }
     public void setAllowRestore( boolean allowRestore ){
         _allowRestore = allowRestore ;

@@ -118,6 +118,13 @@ public class CacheException extends Exception {
     public final static int LOCKED = 10020;
 
     /**
+     * The request information is suspected to be out of date. The
+     * client should retry with updated request information if
+     * available.
+     */
+    public final static int OUT_OF_DATE = 10021;
+
+    /**
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
      */
