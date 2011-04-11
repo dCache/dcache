@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+           http://activemq.apache.org/schema/core
+           http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
+
+  <amq:connectionFactory id="connection-factory" brokerURL="${amqUrl}"/>
+
+  <bean id="registry" class="org.dcache.cells.CellNameServiceRegistry">
+    <description>Registry of domains and well known cells</description>
+  </bean>
+
+  <bean id="cns" class="org.dcache.cells.CellNameService"
+        init-method="start" destroy-method="stop">
+    <description>Cell Name Service</description>
+    <property name="connectionFactory" ref="connection-factory"/>
+    <property name="cellNameServiceRegistry" ref="registry"/>
+  </bean>
+</beans>
