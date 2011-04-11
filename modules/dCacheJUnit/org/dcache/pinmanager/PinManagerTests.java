@@ -48,6 +48,7 @@ public class PinManagerTests
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(STORAGE_INFO);
+        attributes.setLocations(Collections.singleton(POOL1));
         return attributes;
     }
 
