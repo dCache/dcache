@@ -27,12 +27,15 @@
     <property name="timeout" value="${topoTimeout}"/>
   </bean>
 
+  <bean id="registry" class="org.dcache.cells.CellNameServiceRegistry"/>
+
   <bean id="topology" class="org.dcache.services.topology.JmsCellsTopology"
         init-method="start" destroy-method="stop">
     <description>Updatable topology map of all domains</description>
     <property name="cellStub" ref="stub"/>
     <property name="connectionFactory" ref="connection-factory"/>
     <property name="executor" ref="scheduler"/>
+    <property name="cellNameServiceRegistry" ref="registry"/>
   </bean>
 
   <bean id="ui" class="org.dcache.services.topology.CellsTopologyInterpreter">

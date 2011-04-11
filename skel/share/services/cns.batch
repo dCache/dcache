@@ -18,6 +18,18 @@ define env cns-amq.exe end
      "
 end
 
+define env cns-openmq.exe end
+  check -strong broker.openmq.host
+  check -strong broker.openmq.port
+
+  create org.dcache.cells.UniversalSpringCell cns \
+     "classpath:org/dcache/cells/cns-openmq.xml \
+      -cellClass=TopoCell \
+      -broker.openmq.host=${broker.openmq.host} \
+      -broker.openmq.port=${broker.openmq.port} \
+     "
+end
+
 define env cns-embedded-jms.exe end
   exec env cns-amq.exe
 end
@@ -36,6 +48,10 @@ end
 
 define env cns-cells+amq-embedded.exe end
   exec env cns-amq.exe
+end
+
+define env cns-cells+openmq.exe end
+  exec env cns-openmq.exe
 end
 
 exec env cns-${broker.scheme}.exe
