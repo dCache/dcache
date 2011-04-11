@@ -48,6 +48,15 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         return longs;
     }
 
+    private static String stripQuotes(String s)
+    {
+        if (s.startsWith("\"") && s.endsWith("\"") && s.length() > 1) {
+            return s.substring(1, s.length() - 1);
+        } else {
+            return s;
+        }
+    }
+
     @Override
     public Map.Entry<StringPredicate,UserAuthzInformation> accept(String line) {
         line = line.trim();
@@ -60,9 +69,9 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
             final String access = matcher.group(UM_ACCESS_GROUP);
             final String uid = matcher.group(UM_UID_GROUP);
             final long[] gids = toLongs(matcher.group(UM_GID_GROUP).split(","));
-            final String home = matcher.group(UM_HOME_GROUP);
-            final String root = matcher.group(UM_ROOT_GROUP);
-            final String fsroot = matcher.group(UM_FS_ROOT_GROUP);
+            final String home = stripQuotes(matcher.group(UM_HOME_GROUP));
+            final String root = stripQuotes(matcher.group(UM_ROOT_GROUP));
+            final String fsroot = stripQuotes(matcher.group(UM_FS_ROOT_GROUP));
 
             return new SimpleImmutableEntry(new StringPredicate(key), new UserAuthzInformation( key, access, Long.parseLong(uid), gids, home, root, fsroot ) );
         }
