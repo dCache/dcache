@@ -18,6 +18,9 @@
       <constructor-arg>
           <props>
               <prop key="imqAddressList">${broker.openmq.host}:${broker.openmq.port}</prop>
+              <prop key="imqReconnectEnabled">true</prop>
+              <prop key="imqReconnectAttempts">-1</prop>
+              <prop key="imqReconnectInterval">${broker.openmq.reconnect.interval}</prop>
           </props>
       </constructor-arg>
   </bean>
