@@ -24,7 +24,7 @@ findJava()
 
 bootLoader()
 {
-    $JAVA -client -cp "$DCACHE_HOME/classes/*:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/lib/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
+    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/dcache-common.jar:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/lib/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
 }
 
 if ! findJava || ! "$JAVA" -version 2>&1 | egrep -e 'version "1\.[6]' >/dev/null ; then
