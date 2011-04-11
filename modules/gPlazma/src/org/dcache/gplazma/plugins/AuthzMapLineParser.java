@@ -50,7 +50,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
 
     private static String stripQuotes(String s)
     {
-        if (s.startsWith("\"") && s.endsWith("\"") && s.length() > 1) {
+        if (s != null && s.startsWith("\"") && s.endsWith("\"") && s.length() > 1) {
             return s.substring(1, s.length() - 1);
         } else {
             return s;
