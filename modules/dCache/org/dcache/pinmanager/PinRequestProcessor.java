@@ -10,7 +10,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 import static java.util.concurrent.TimeUnit.*;
 
@@ -51,6 +50,7 @@ import org.slf4j.LoggerFactory;
  * A pin request goes through several steps to pin a file on a pool:
  *
  * - Create DB entry in state PINNING
+ * - Optionally read the name space entry
  * - Select a read pool (which may involve staging)
  * - Update DB entry with the pool name
  * - Create sticky flag on pool
@@ -72,9 +72,27 @@ public class PinRequestProcessor
     private final static Logger _log =
         LoggerFactory.getLogger(PinRequestProcessor.class);
 
+    /**
+     * The delay we use after a pin request failed and before retrying
+     * the request.
+     */
     private final static long RETRY_DELAY = SECONDS.toMillis(30);
+
+    /**
+     * The delay we use after transient failures that should be
+     * retried immediately. The small delay prevents tight retry
+     * loops.
+     */
     private final static long SMALL_DELAY = MILLISECONDS.toMillis(10);
-    private final static long POOL_LIFETIME_MARGIN = MINUTES.toMillis(30);
+
+    /**
+     * Safety margin added to the lifetime of the sticky bit to
+     * account for clock drift.
+     */
+    private final static long CLOCK_DRIFT_MARGIN = MINUTES.toMillis(30);
+
+    private final static Set<FileAttribute> REQUIRED_ATTRIBUTES =
+        PoolMgrSelectReadPoolMsg.getRequiredAttributes();
 
     private ScheduledExecutorService _executor;
     private PinDao _dao;
@@ -154,7 +172,11 @@ public class PinRequestProcessor
 
         PinTask task = createTask(message, reply);
         if (task != null) {
-            selectReadPool(task);
+            if (!task.getFileAttributes().isDefined(REQUIRED_ATTRIBUTES)) {
+                rereadNameSpaceEntry(task);
+            } else {
+                selectReadPool(task);
+            }
         }
 
         return reply;
@@ -208,9 +230,18 @@ public class PinRequestProcessor
     private void rereadNameSpaceEntry(final PinTask task)
         throws CacheException
     {
+        /* Ensure that task is still valid and stays valid for the
+         * duration of the name space lookup.
+         */
         refreshTimeout(task, getExpirationTimeForNameSpaceLookup());
-        Set<FileAttribute> attributes =
-            task.getFileAttributes().getDefinedAttributes();
+
+        /* We allow the set of provided attributes to be incomplete
+         * and thus add attributes required by pool manager.
+         */
+        Set<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
+        attributes.addAll(task.getFileAttributes().getDefinedAttributes());
+        attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+
         _pnfsStub.send(new PnfsGetFileAttributes(task.getPnfsId(), attributes),
                        PnfsGetFileAttributes.class,
                        new AbstractMessageCallback<PnfsGetFileAttributes>()
@@ -218,6 +249,12 @@ public class PinRequestProcessor
                            @Override
                            public void success(PnfsGetFileAttributes msg) {
                                try {
+                                   task.setFileAttributes(msg.getFileAttributes());
+
+                                   /* Ensure that task is still valid
+                                    * and stays valid for the duration
+                                    * of the pool selection.
+                                    */
                                    refreshTimeout(task, getExpirationTimeForPoolSelection());
                                    selectReadPool(task);
                                } catch (CacheException e) {
@@ -234,11 +271,19 @@ public class PinRequestProcessor
 
                            @Override
                            public void noroute(CellPath path) {
+                               /* PnfsManager is unreachable. We
+                                * expect this to be a transient
+                                * problem and retry in a moment.
+                                */
                                retry(task, RETRY_DELAY);
                            }
 
                            @Override
                            public void timeout(CellPath path) {
+                               /* PnfsManager did not respond. We
+                                * expect this to be a transient
+                                * problem and retry in a moment.
+                                */
                                retry(task, SMALL_DELAY);
                            }
                        });
@@ -261,9 +306,20 @@ public class PinRequestProcessor
                                   public void success(PoolMgrSelectReadPoolMsg msg)
                                   {
                                       try {
+                                          /* Pool manager expects us
+                                           * to keep some state
+                                           * between retries.
+                                           */
                                           task.setPreviousSelectReadPoolMsg(msg);
+
+                                          /* Store the pool name in
+                                           * the DB so we know what to
+                                           * clean up if something
+                                           * fails.
+                                           */
                                           String pool = msg.getPoolName();
                                           setPool(task, pool);
+
                                           setStickyFlag(task, pool);
                                       } catch (CacheException e) {
                                           fail(task, e.getRc(), e.getMessage());
@@ -275,11 +331,21 @@ public class PinRequestProcessor
                                   @Override
                                   public void failure(int rc, Object error)
                                   {
+                                      /* Pool manager expects us to
+                                       * keep some state between
+                                       * retries.
+                                       */
                                       task.setPreviousSelectReadPoolMsg(getReply());
                                       if (rc == CacheException.OUT_OF_DATE) {
-                                          // TODO: Refresh file attributes
+                                          /* Pool manager asked for a
+                                           * refresh of the request.
+                                           * Retry right away.
+                                           */
                                           retry(task, 0);
                                       } else {
+                                          /* REVISIT: Maybe we should
+                                           * retry here too?
+                                           */
                                           fail(task, rc, error.toString());
                                       }
                                   }
@@ -287,12 +353,22 @@ public class PinRequestProcessor
                                   @Override
                                   public void noroute(CellPath path)
                                   {
+                                      /* Pool manager is
+                                       * unreachable. We expect this
+                                       * to be transient and retry in
+                                       * a moment.
+                                       */
                                       retry(task, RETRY_DELAY);
                                   }
 
                                   @Override
                                   public void timeout(CellPath path)
                                   {
+                                      /* Pool manager did not
+                                       * respond. We expect this to be
+                                       * transient and retry in a
+                                       * moment.
+                                       */
                                       retry(task, SMALL_DELAY);
                                   }
                               });
@@ -300,9 +376,17 @@ public class PinRequestProcessor
 
     private void setStickyFlag(final PinTask task, final String pool)
     {
+        /* The pin lifetime should be from the moment the file is
+         * actually pinned. Due to staging and pool to pool transfers
+         * this may be much later than when the pin was requested.
+         */
         Date pinExpiration = task.freezeExpirationTime();
+
+        /* To allow for some drift in clocks we add a safety margin to
+         * the lifetime of the sticky bit.
+         */
         long poolExpiration =
-            (pinExpiration == null) ? -1 : pinExpiration.getTime() + POOL_LIFETIME_MARGIN;
+            (pinExpiration == null) ? -1 : pinExpiration.getTime() + CLOCK_DRIFT_MARGIN;
 
         PoolSetStickyMessage msg =
             new PoolSetStickyMessage(pool,
@@ -329,9 +413,20 @@ public class PinRequestProcessor
                            public void failure(int rc, Object error) {
                                switch (rc) {
                                case CacheException.POOL_DISABLED:
+                                   /* Pool manager had outdated
+                                    * information about the pool. Give
+                                    * it a chance to be updated and
+                                    * then retry.
+                                    */
                                    retry(task, RETRY_DELAY);
                                    break;
                                case CacheException.FILE_NOT_IN_REPOSITORY:
+                                   /* Pnfs manager had stale location
+                                    * information. The pool clears
+                                    * this information as a result of
+                                    * this error, so we retry in a
+                                    * moment.
+                                    */
                                    retry(task, SMALL_DELAY);
                                    break;
                                default:
@@ -342,12 +437,20 @@ public class PinRequestProcessor
 
                            @Override
                            public void noroute(CellPath path) {
+                               /* The pool must have gone down. Give
+                                * pool manager a moment to notice this
+                                * and then retry.
+                                */
                                retry(task, RETRY_DELAY);
                            }
 
                            @Override
                            public void timeout(CellPath path) {
-                               fail(task, CacheException.TIMEOUT, "Request timed out");
+                               /* No response from pool. Typically this is
+                                * because the pool is overloaded.
+                                */
+                               fail(task, CacheException.TIMEOUT,
+                                    "Request timed out");
                            }
                        });
     }
@@ -406,7 +509,13 @@ public class PinRequestProcessor
         return new PinTask(message, reply, _dao.storePin(pin));
     }
 
-    protected Pin load(PinTask task)
+    /**
+     * Load the pin belonging to the PinTask.
+     *
+     * @throw CacheException if the pin no longer exists or is no
+     *                       longer in PINNING.
+     */
+    protected Pin loadPinBelongingTo(PinTask task)
         throws CacheException
     {
         Pin pin = _dao.getPin(task.getPinId(), task.getSticky(), PINNING);
@@ -420,7 +529,7 @@ public class PinRequestProcessor
     protected void refreshTimeout(PinTask task, Date date)
         throws CacheException
     {
-        Pin pin = load(task);
+        Pin pin = loadPinBelongingTo(task);
         pin.setExpirationTime(date);
         task.setPin(_dao.storePin(pin));
     }
@@ -429,7 +538,7 @@ public class PinRequestProcessor
     protected void setPool(PinTask task, String pool)
         throws CacheException
     {
-        Pin pin = load(task);
+        Pin pin = loadPinBelongingTo(task);
         pin.setExpirationTime(getExpirationTimeForSettingFlag());
         pin.setPool(pool);
         task.setPin(_dao.storePin(pin));
@@ -439,7 +548,7 @@ public class PinRequestProcessor
     protected void setToPinned(PinTask task)
         throws CacheException
     {
-        Pin pin = load(task);
+        Pin pin = loadPinBelongingTo(task);
         pin.setExpirationTime(task.getExpirationTime());
         pin.setState(PINNED);
         task.setPin(_dao.storePin(pin));
@@ -448,17 +557,28 @@ public class PinRequestProcessor
     @Transactional
     protected void clearPin(PinTask task)
     {
-        /* If there is no pool, then don't bother updating the record
-         * - it will expire by itself. If there is a pool then we may
-         * have a sticky flag set and an expired record. To cover this
-         * case we delete the original record and create a new record
-         * in UNPINNING.
-         */
         if (task.getPool() != null) {
+            /* If the pin record expired or the pin was explicitly
+             * unpinned, then the unpin processor may already have
+             * submitted a request to the pool to clear the sticky
+             * flag. Although out of order delivery of messages is
+             * unlikely, if it would happen then we have a race
+             * between the set sticky and clear sticky messages. To
+             * cover this case we delete the old record and create a
+             * fresh one in UNPINNING.
+             */
             _dao.deletePin(task.getPin());
             Pin pin = new Pin(task.getSubject(), task.getPnfsId());
             pin.setState(UNPINNING);
             _dao.storePin(pin);
+        } else {
+            /* We didn't create a sticky flag yet, so there is no
+             * reason to keep the record. It will expire by itself,
+             * but we delete the record now to avoid that we get
+             * tickets from admins wondering why they have records
+             * staying in PINNING.
+             */
+            _dao.deletePin(task.getPin());
         }
     }
 }

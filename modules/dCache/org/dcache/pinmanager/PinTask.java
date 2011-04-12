@@ -1,6 +1,7 @@
 package org.dcache.pinmanager;
 
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 
@@ -8,6 +9,7 @@ import org.dcache.cells.MessageReply;
 import org.dcache.auth.Subjects;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileAttribute;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
@@ -57,6 +59,11 @@ public class PinTask
     public FileAttributes getFileAttributes()
     {
         return _request.getFileAttributes();
+    }
+
+    public void setFileAttributes(FileAttributes attributes)
+    {
+        _request.setFileAttributes(attributes);
     }
 
     public ProtocolInfo getProtocolInfo()

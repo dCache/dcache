@@ -95,14 +95,12 @@ public class PinManagerCLI
         pin(PnfsId pnfsId, String requestId, long lifetime)
         throws CacheException
     {
-        Set<FileAttribute> attributes =
-            PinManagerPinMessage.getRequiredAttributes();
-        FileAttributes fileAttributes =
-            _pnfs.getFileAttributes(pnfsId, attributes);
+        FileAttributes attributes = new FileAttributes();
+        attributes.setPnfsId(pnfsId);
         DCapProtocolInfo protocolInfo =
             new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
         PinManagerPinMessage message =
-            new PinManagerPinMessage(fileAttributes, protocolInfo, requestId, lifetime);
+            new PinManagerPinMessage(attributes, protocolInfo, requestId, lifetime);
         return _pinProcessor.messageArrived(message);
     }
 
