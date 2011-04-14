@@ -46,6 +46,7 @@ define env topo-openmq.exe end
       -topoTimeout=\"${topoTimeout}\" \
       -broker.openmq.host=\"${broker.openmq.host}\" \
       -broker.openmq.port=\"${broker.openmq.port}\" \
+      -broker.openmq.reconnect.interval=${broker.openmq.reconnect.interval} \
      "
 end
 

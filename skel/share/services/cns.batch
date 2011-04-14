@@ -21,12 +21,14 @@ end
 define env cns-openmq.exe end
   check -strong broker.openmq.host
   check -strong broker.openmq.port
+  check -strong broker.openmq.reconnect.interval
 
   create org.dcache.cells.UniversalSpringCell cns \
      "classpath:org/dcache/cells/cns-openmq.xml \
       -cellClass=TopoCell \
       -broker.openmq.host=${broker.openmq.host} \
       -broker.openmq.port=${broker.openmq.port} \
+      -broker.openmq.reconnect.interval=${broker.openmq.reconnect.interval} \
      "
 end
 
