@@ -16,7 +16,7 @@ import com.google.common.io.Files;
 class FileLineSource implements LineSource {
 
     private final File _file;
-    private final int _minCheckInterval;
+    private final long _minCheckInterval;
     private long _lastRefresh;
 
     /**
@@ -24,7 +24,7 @@ class FileLineSource implements LineSource {
      * @param minCheckIntervalMillis minimum interval to check the file's modification time
      * @throws FileNotFoundException
      */
-    public FileLineSource(String filepath, int minCheckIntervalMillis) throws FileNotFoundException {
+    public FileLineSource(String filepath, long minCheckIntervalMillis) throws FileNotFoundException {
         _file = new File(filepath);
         _minCheckInterval = minCheckIntervalMillis;
         if (!_file.exists())

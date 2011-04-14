@@ -23,6 +23,7 @@
                 <uptodate targetfile="${gplazma.jar}">
                     <srcfiles dir="${gplazma.junit.src}">
                         <include name="**/*.java" />
+                        <include name="**/*.fixture" />
                     </srcfiles>
                     <srcfiles dir="${gplazma.src}">
                         <include name="**/*.java" />
@@ -60,7 +61,6 @@
         </javac>
         <!--and the plugins xml-->
         <copy file="${gplazma.src}/../skel/META-INF/gplazma-plugins.xml" todir="${gplazma.build.dir}/META-INF"/>
-
     </target>
 
     <!--
@@ -75,8 +75,10 @@
             <fileset dir="${gplazma.build.dir}">
                     <filename name="**/*.xml" />
             </fileset>
+            <fileset dir="${gplazma.junit.src}">
+                <filename name="**/*.fixture" />
+            </fileset>
         </jar>
-
     </target>
 
     <!-- For deployment -->

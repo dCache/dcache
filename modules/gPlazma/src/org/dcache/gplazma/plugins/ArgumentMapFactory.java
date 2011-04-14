@@ -115,4 +115,10 @@ class ArgumentMapFactory {
 
         return argMap;
     }
+
+    public static String getValue(Map<String,String> map, String key, String defaultValue)
+    {
+        String value = map.get(key);
+        return (value == null) ? defaultValue : value;
+    }
 }
