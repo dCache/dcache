@@ -3,8 +3,8 @@ package org.dcache.gplazma.plugins;
 import java.security.Principal;
 import java.util.Set;
 import org.dcache.auth.Password;
+import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.VerifiedUserPincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.SessionID;
@@ -12,12 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Does the authentication Part that is needed for an Authenticationmechanism
- * with Username and Password. The UserNamePrincipal is
- * expected to be in the identifiedPrincipals. The Password is expected to be
- * in the privateCredentials.
- * The first Username/Password found is processed.
- * If there are more than one the surplus ones are ignored.
+ * Does the authentication part that is needed for an authentication
+ * mechanism with username and password. The LoginNamePrincipal is
+ * expected to be in the identifiedPrincipals. The password is
+ * expected to be in the privateCredentials.  The first Name/Password
+ * found is processed.  If there are more than one the surplus ones
+ * are ignored.
+ *
  * @author jans
  */
 public abstract class UsernamePasswordAuthenticationPlugin implements
@@ -42,10 +43,10 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     public void authenticate(SessionID sID, Set<Object> publicCredentials,
             Set<Object> privateCredentials, Set<Principal> identifiedPrincipals)
             throws AuthenticationException {
-        String user = getUser(identifiedPrincipals).getName();
+        String user = getLoginName(identifiedPrincipals).getName();
         authenticate(user,
                 getPassword(privateCredentials).getPassword().toCharArray());
-        identifiedPrincipals.add(new VerifiedUserPincipal(user));
+        identifiedPrincipals.add(new UserNamePrincipal(user));
     }
 
     /*
@@ -57,7 +58,7 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     public void map(SessionID sID, Set<Principal> principals,
             Set<Principal> authorizedPrincipals) throws AuthenticationException {
         _log.debug("map of username/pw is called");
-        UserNamePrincipal user = new UserNamePrincipal(getVerifiedUser(principals).getName());
+        UserNamePrincipal user = getUserName(principals);
         authorizedPrincipals.add(user);
         map(user.getName(), principals, authorizedPrincipals);
     }
@@ -69,7 +70,7 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     @Override
     public void session(SessionID sID, Set<Principal> authorizedPrincipals,
             Set<SessionAttribute> attrib) throws AuthenticationException {
-        session(getUser(authorizedPrincipals).getName(), attrib);
+        session(getUserName(authorizedPrincipals).getName(), attrib);
     }
 
     /*
@@ -90,19 +91,21 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     protected abstract void session(String username, Set<SessionAttribute> attrib)
             throws AuthenticationException;
 
-    private VerifiedUserPincipal getVerifiedUser(Set<Principal> principals)
-            throws AuthenticationException {
-        for (Principal principal : principals) {
-            if (principal instanceof VerifiedUserPincipal) {
-                return (VerifiedUserPincipal) principal;
+    private LoginNamePrincipal getLoginName(Set<Principal> principals)
+        throws AuthenticationException
+    {
+        for (Principal principal: principals) {
+            if (principal instanceof LoginNamePrincipal) {
+                return (LoginNamePrincipal) principal;
             }
         }
-        throw new AuthenticationException("no verified user to map");
+        throw new AuthenticationException("no username provided");
     }
 
-    private UserNamePrincipal getUser(Set<Principal> identifiedPrincipals)
-            throws AuthenticationException {
-        for (Principal principal : identifiedPrincipals) {
+    private UserNamePrincipal getUserName(Set<Principal> principals)
+        throws AuthenticationException
+    {
+        for (Principal principal: principals) {
             if (principal instanceof UserNamePrincipal) {
                 return (UserNamePrincipal) principal;
             }
@@ -111,8 +114,9 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     }
 
     private Password getPassword(Set<Object> privateCredentials)
-            throws AuthenticationException {
-        for (Object privateCredential : privateCredentials) {
+        throws AuthenticationException
+    {
+        for (Object privateCredential: privateCredentials) {
             if (privateCredential instanceof Password) {
                 return (Password) privateCredential;
             }
