@@ -375,9 +375,6 @@
         <copy file="${classesDir}/srm.jar" todir="${server.bin.dir}/classes" />
         <copy file="${classesDir}/cells-protocols.jar" todir="${server.bin.dir}/classes" />
 
-        <!-- Web services stuff   -->
-        <copy file="${dcache.src}/diskCacheV111/config/JHRM.map" todir="${server.bin.dir}/config" />
-
         <!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
 
         <!-- external jars -->
