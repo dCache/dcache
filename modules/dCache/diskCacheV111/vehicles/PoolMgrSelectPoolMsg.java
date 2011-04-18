@@ -14,6 +14,7 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private String       _linkGroup = null;
     private static final long serialVersionUID = -5874326080375390208L;
     private final int    _allowedStates;
+    private boolean _skipCostUpdate = false;
 
     public PoolMgrSelectPoolMsg( PnfsId       pnfsId ,
                                  StorageInfo  storageInfo,
@@ -34,6 +35,16 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         _protocolInfo = protocolInfo;
         _fileSize     = fileSize;
         _allowedStates = allowedStates;
+    }
+
+    public void setSkipCostUpdate(boolean value)
+    {
+        _skipCostUpdate = value;
+    }
+
+    public boolean getSkipCostUpdate()
+    {
+        return _skipCostUpdate;
     }
 
     public void setFileSize(long fileSize)
