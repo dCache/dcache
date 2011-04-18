@@ -7,7 +7,7 @@ import org.dcache.auth.Password;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.VerifiedUserPincipal;
+import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.loader.PluginLoader;
@@ -45,10 +45,10 @@ public class UsernamePasswordAuthenticationPluginTest {
         InputWrapper inputs = getProperInputs();
         Set<Principal> identifiedPrincipals = inputs.getPrincipals();
         doAuthentication(inputs, identifiedPrincipals);
-        VerifiedUserPincipal user = null;
-        for (Principal principal : identifiedPrincipals) {
-            if (principal instanceof VerifiedUserPincipal) {
-                user = (VerifiedUserPincipal) principal;
+        UserNamePrincipal user = null;
+        for (Principal principal: identifiedPrincipals) {
+            if (principal instanceof UserNamePrincipal) {
+                user = (UserNamePrincipal) principal;
             }
         }
         assertEquals(USERNAME, user.getName());
@@ -61,7 +61,8 @@ public class UsernamePasswordAuthenticationPluginTest {
         Set<Principal> authorizedPrincipals = new HashSet<Principal>();
         SessionID se = null;
         _authPlugin.map(se, inputs.getPrincipals(), authorizedPrincipals);
-        UserNamePrincipal user = ((UserNamePrincipal) authorizedPrincipals.toArray()[0]);
+        UserNamePrincipal user =
+            (UserNamePrincipal) authorizedPrincipals.toArray()[0];
         assertEquals(USERNAME, user.getName());
     }
 
@@ -120,7 +121,7 @@ public class UsernamePasswordAuthenticationPluginTest {
         Set<Object> publicCredentials = new HashSet<Object>();
         privateCredentials.add(new Password(PASSWORD));
         Set<Principal> principals = new HashSet<Principal>();
-        principals.add(new UserNamePrincipal(USERNAME));
+        principals.add(new LoginNamePrincipal(USERNAME));
         input.setPrivateCredentials(privateCredentials);
         input.setPublicCredentials(publicCredentials);
         input.setPrincipals(principals);
