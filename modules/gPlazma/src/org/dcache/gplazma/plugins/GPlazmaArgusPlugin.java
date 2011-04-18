@@ -37,19 +37,19 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
     private static final Logger _log = LoggerFactory.getLogger(GPlazmaArgusPlugin.class);
 
-    private static final String CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params = "Creating Argus Plugin with parameters: %s";
+    private static final String CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params = "Creating Argus Plugin with parameters: {}";
     private static final String COULD_NOT_CREATE_PEP_CLIENT_exception = "Could not create PEP Client";
     private static final String INVALID_CONFIGURATION_FOR_ARGUS_PLUGIN = "Invalid configuration for ARGUS plugin.";
     private static final String G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL = "GPlazmaArgusPlugin: args must not be null.";
     private static final String INITIALISING_PEP_CLIENT_CONFIGURATION = "Initialising PEPClientConfiguration";
-    private static final String CONFIGURATION_resourceid_actionid = "Configuration: [%s]; [%s]";
-    private static final String AUTHORISING_SUBJECT_dn_FOR_SESSION_session = "Authorising subject %s for session %s.";
-    private static final String CREATED_REQUEST_request = "Created request: %s";
-    private static final String RECEIVED_RESPONSE_response = "Received response: %s";
+    private static final String CONFIGURATION_resourceid_actionid = "Configuration: [{}]; [{}]";
+    private static final String AUTHORISING_SUBJECT_dn_FOR_SESSION_session = "Authorising subject {} for session {}.";
+    private static final String CREATED_REQUEST_request = "Created request: {}";
+    private static final String RECEIVED_RESPONSE_response = "Received response: {}";
     private static final String USER_dn_IS_BLACKLISTED = "User '%s' is blacklisted.";
     private static final String BLACKLIST_CHECK_FAILED_FOR_USER_WITH_DN_dn = "Blacklist check failed for user with dn '%s'.";
     private static final String INDETERMINATE_RESULT_FOR_USER_dn = "Indeterminate result for user '%s'";
-    private static final String BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN = "Blacklist check for user '%s' failed due to exception in plugin.";
+    private static final String BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN = "Blacklist check for user '{}' failed due to exception in plugin.";
     private static final String DECISION_CODE_code = "Decision code: ";
 
     private static final String KEY_PASS = "KeyPass";
