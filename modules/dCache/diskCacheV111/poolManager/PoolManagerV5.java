@@ -798,7 +798,9 @@ public class PoolManagerV5
             _request.setSucceeded();
             try {
                 send(_request);
-                _costModule.messageArrived(_envelope);
+                if (!_request.getSkipCostUpdate()) {
+                    _costModule.messageArrived(_envelope);
+                }
             } catch (Exception e) {
                 _log.warn("Exception in requestSucceeded : " + e, e);
             }
