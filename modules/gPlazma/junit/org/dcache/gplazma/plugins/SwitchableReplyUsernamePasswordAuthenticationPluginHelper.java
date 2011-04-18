@@ -3,9 +3,8 @@ package org.dcache.gplazma.plugins;
 import java.security.Principal;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.RootDirectory;
-import org.dcache.gplazma.SessionAttribute;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.SessionID;
 
 /**
@@ -55,7 +54,7 @@ public class SwitchableReplyUsernamePasswordAuthenticationPluginHelper
     }
 
     @Override
-    protected void session(String username, Set<SessionAttribute> attrib) throws AuthenticationException {
+    protected void session(String username, Set<Object> attrib) throws AuthenticationException {
         attrib.add(new HomeDirectory(EXAMPLE_HOMEDIRECTORY));
         attrib.add(new RootDirectory(EXAMPLE_ROOTDIRECTORY));
     }

@@ -6,10 +6,9 @@ import java.util.Set;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.gplazma.SessionAttribute;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.RootDirectory;
-import org.dcache.gplazma.ReadOnly;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.gplazma.SessionID;
 
 import org.dcache.gplazma.AuthenticationException;
@@ -38,7 +37,7 @@ public class DoorValidationStrategy  implements ValidationStrategy {
         }
         Set<Principal> principals = getPrincipalsFromLoginReply(loginReply);
         validatePrincipals(sessionId,principals);
-        Set<SessionAttribute> attributes = getSessionAttributesFromLoginReply(loginReply);
+        Set<Object> attributes = getSessionAttributesFromLoginReply(loginReply);
         validateAttributes(sessionId,attributes);
     }
 
@@ -110,12 +109,12 @@ public class DoorValidationStrategy  implements ValidationStrategy {
      * @throws AuthenticationException if check fails
      */
     private static void validateAttributes(SessionID sessionId,
-            Set<SessionAttribute> attributes)
+            Set<Object> attributes)
             throws  AuthenticationException {
         boolean homeDirectoryFound = false;
         boolean rootDirectoryFound = false;
         boolean readOnlyFound = false;
-        for(SessionAttribute attribute:attributes) {
+        for(Object attribute:attributes) {
             if(attribute instanceof HomeDirectory) {
                if(homeDirectoryFound ) {
                     throw new AuthenticationException(
@@ -156,8 +155,8 @@ public class DoorValidationStrategy  implements ValidationStrategy {
         throw new AuthenticationException(errorMsg.toString());
     }
 
-    private static final Set<SessionAttribute> getSessionAttributesFromLoginReply(LoginReply loginReply) throws AuthenticationException {
-        Set<SessionAttribute> attributes = loginReply.getSessionAttributes();
+    private static final Set<Object> getSessionAttributesFromLoginReply(LoginReply loginReply) throws AuthenticationException {
+        Set<Object> attributes = loginReply.getSessionAttributes();
         if (attributes == null) {
             throw new AuthenticationException("loginReply attributes set is null");
         }

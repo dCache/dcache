@@ -1,24 +1,24 @@
 package org.dcache.gplazma.util;
-import org.dcache.gplazma.SessionAttribute;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.RootDirectory;
-import org.dcache.gplazma.ReadOnly;
+
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.ReadOnly;
 
 import java.util.Set;
-/**
- *
- * @author timur
- */
-public final class SessionAttributes {
 
+import static com.google.common.collect.Iterables.*;
+
+public final class SessionAttributes
+{
     /**
      * a utility method for finding an attribute of type RootDirectory
      * in a set of session attributes
      * @param attributes
      * @return instance of RootDirectory, if found, null otherwise
      */
-    public static RootDirectory getRootDirectory(Set<SessionAttribute> attributes) {
-        return getAttribute(attributes,RootDirectory.class);
+    public static RootDirectory getRootDirectory(Set<Object> attributes)
+    {
+        return getFirst(filter(attributes, RootDirectory.class), null);
     }
 
     /**
@@ -28,8 +28,9 @@ public final class SessionAttributes {
      * @param attributes
      * @return instance of HomeDirectory, if found, null otherwise
      */
-    public static HomeDirectory getHomeDirectory(Set<SessionAttribute> attributes) {
-        return getAttribute(attributes,HomeDirectory.class);
+    public static HomeDirectory getHomeDirectory(Set<Object> attributes)
+    {
+        return getFirst(filter(attributes, HomeDirectory.class), null);
     }
 
     /**
@@ -39,25 +40,8 @@ public final class SessionAttributes {
      * @param attributes
      * @return instance of HomeDirectory, if found, null otherwise
      */
-    public static ReadOnly getReadOnly(Set<SessionAttribute> attributes) {
-        return getAttribute(attributes,ReadOnly.class);
-    }
-
-
-    /**
-     *
-     * @param <T> a type of session attribute
-     * @param attributes a set of session attribures
-     * @param type class of type T
-     * @return a first instance of session attribute of type t found in
-     * a set of session attributes, null, if none are found.
-     */
-    public static final <T extends SessionAttribute> T getAttribute(Set<SessionAttribute> attributes, Class<T> type) {
-        for (SessionAttribute attribute : attributes) {
-            if (type.isInstance(attribute)) {
-                return (T) attribute;
-            }
-        }
-        return null;
+    public static ReadOnly getReadOnly(Set<Object> attributes)
+    {
+        return getFirst(filter(attributes, ReadOnly.class), null);
     }
 }

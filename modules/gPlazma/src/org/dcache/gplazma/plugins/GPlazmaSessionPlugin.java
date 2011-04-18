@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.SessionID;
 
 /**
@@ -13,9 +12,10 @@ import org.dcache.gplazma.SessionID;
  * tied to a certain SessionID.
  *
  */
-public interface GPlazmaSessionPlugin extends GPlazmaPlugin {
+public interface GPlazmaSessionPlugin extends GPlazmaPlugin
+{
     public void session(SessionID sID,
                         Set<Principal> authorizedPrincipals,
-                        Set<SessionAttribute> attrib)
-                throws AuthenticationException;
+                        Set<Object> attrib)
+        throws AuthenticationException;
 }

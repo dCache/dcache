@@ -8,11 +8,10 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.KAuthFile;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserPwdRecord;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.ReadOnly;
-import org.dcache.gplazma.RootDirectory;
-import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.SessionID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +72,9 @@ public class KpwdFileUsernamePasswordAuthenticationPlugin
     }
 
     @Override
-    protected void session(String username, Set<SessionAttribute> attrib) throws AuthenticationException {
+    protected void session(String username, Set<Object> attrib)
+        throws AuthenticationException
+    {
         KAuthFile kauthFile = loadKauthFile();
         UserPwdRecord userEntry = kauthFile.getUserPwdRecord(username);
         if (userEntry == null) {

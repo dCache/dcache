@@ -23,6 +23,25 @@ public class RootDirectory implements LoginAttribute, Serializable
     }
 
     @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof RootDirectory)) {
+            return false;
+        }
+        RootDirectory other = (RootDirectory) obj;
+        return _root.equals(other._root);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _root.hashCode();
+    }
+
+    @Override
     public String toString()
     {
         return "RootDirectory[" + _root + "]";

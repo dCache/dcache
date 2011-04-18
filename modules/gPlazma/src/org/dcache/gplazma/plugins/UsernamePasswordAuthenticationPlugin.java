@@ -6,7 +6,6 @@ import org.dcache.auth.Password;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.SessionID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +68,7 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
      */
     @Override
     public void session(SessionID sID, Set<Principal> authorizedPrincipals,
-            Set<SessionAttribute> attrib) throws AuthenticationException {
+            Set<Object> attrib) throws AuthenticationException {
         session(getUserName(authorizedPrincipals).getName(), attrib);
     }
 
@@ -88,7 +87,7 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     protected abstract void map(String username, Set<Principal> principals,
             Set<Principal> authorizedPrincipals) throws AuthenticationException;
 
-    protected abstract void session(String username, Set<SessionAttribute> attrib)
+    protected abstract void session(String username, Set<Object> attrib)
             throws AuthenticationException;
 
     private LoginNamePrincipal getLoginName(Set<Principal> principals)

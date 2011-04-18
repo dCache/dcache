@@ -6,13 +6,14 @@ import java.util.Set;
 
 import javax.security.auth.Subject;
 
-/**
- * Message returned as a result of a login operation by the LoginHandler
- *
- */
-public class LoginReply {
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Iterables;
+
+public class LoginReply
+{
     private Subject _subject;
-    private Set<SessionAttribute> _sessionAttributes = Collections.emptySet();
+    private Set<Object> _sessionAttributes = Collections.emptySet();
 
     public void setSubject(Subject subject) {
         _subject = subject;
@@ -22,51 +23,23 @@ public class LoginReply {
         return _subject;
     }
 
-    public void setSessionAttributes(Set<SessionAttribute> sessionAttributes) {
-        if( sessionAttributes == null) {
-            throw new IllegalArgumentException("Not allowed to pass null as a parameter");
+    public void setSessionAttributes(Set<Object> sessionAttributes) {
+        if (sessionAttributes == null) {
+            throw new NullPointerException();
         }
-
         _sessionAttributes = sessionAttributes;
     }
 
-    public Set<SessionAttribute> getSessionAttributes() {
-        return Collections.unmodifiableSet( _sessionAttributes);
+    public Set<Object> getSessionAttributes() {
+        return Collections.unmodifiableSet(_sessionAttributes);
     }
 
-    public Set<SessionAttribute> getSessionAttributeByName( String name) {
-        Set<SessionAttribute> resultSet = new HashSet<SessionAttribute>();
-
-        for( SessionAttribute attribute : _sessionAttributes) {
-            if( name.equals( attribute.getName())) {
-                resultSet.add( attribute);
-            }
-        }
-
-        return resultSet;
-    }
-
-    public Set<SessionAttribute> getSessionAttributesByType( Class<? extends SessionAttribute> type) {
-        Set<SessionAttribute> resultSet = new HashSet<SessionAttribute>();
-
-        for( SessionAttribute attribute : _sessionAttributes) {
-            if( type.isInstance( attribute)) {
-                resultSet.add( attribute);
-            }
-        }
-
-        return resultSet;
+    public <T> Set<T> getSessionAttributesByType(Class<T> c) {
+        return Sets.newHashSet(Iterables.filter(_sessionAttributes, c));
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("LoginReply [");
-        sb.append(_subject).append(", [");
-        for(SessionAttribute sessionAttribute:_sessionAttributes ) {
-            sb.append(sessionAttribute).append(", ");
-        }
-        sb.append("]]");
-        return sb.toString();
-
+        return "LoginReply[" + _subject + "," + Joiner.on(',').join(_sessionAttributes) + "]";
     }
 }
