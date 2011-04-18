@@ -4,33 +4,34 @@ Index: @DebPatchRoot@/opt/d-cache/share/defaults/paths.properties
 ===================================================================
 --- @DebPatchRoot@.orig/opt/d-cache/share/defaults/paths.properties	@TimestampOrig@.725302203 +0200
 +++ @DebPatchRoot@/opt/d-cache/share/defaults/paths.properties	@Timestamp@.154677085 +0200
-@@ -4,17 +4,17 @@
- # These parameters may change in future versions. Avoid redefining
- # them.
+@@ -15,17 +15,17 @@
 
 -dcache.paths.share=${dcache.home}/share/
-+dcache.paths.share=/usr/share/d-cache/share
++dcache.paths.share=/usr/share/dcache/share
  dcache.paths.share.lib=${dcache.paths.share}/lib
--dcache.paths.config=${dcache.home}/config
+ (deprecated)config=${dcache.home}/config
+-dcache.paths.config=${config}
 -dcache.paths.etc=${dcache.home}/etc
 -dcache.paths.bin=${dcache.home}/bin
 -dcache.paths.jobs=${dcache.home}/jobs
-+dcache.paths.etc=/etc/d-cache
-+dcache.paths.config=${dcache.paths.etc}/config
++(deprecated)config=${dcache.paths.etc}
++dcache.paths.config=${config}
++dcache.paths.etc=/etc/dcache
 +dcache.paths.bin=/usr/share/bin
-+dcache.paths.jobs=/usr/share/d-cache/jobs
++dcache.paths.jobs=/usr/share/dcache/jobs
  dcache.paths.lock.file=/var/run/subsys/cache
  dcache.paths.pnfs=/pnfs
--dcache.paths.classes=${dcache.home}/classes
+-(deprecated)classesDir=${dcache.home}/classes
+-dcache.paths.classes=${classesDir}
 -dcache.paths.lib=${dcache.home}/lib
 -dcache.paths.docs=${dcache.home}/docs
 -dcache.paths.billing=${dcache.home}/billing
 -dcache.paths.statistics=${dcache.home}/statistics
 -dcache.paths.local=${dcache.home}/local
-\ No newline at end of file
-+dcache.paths.classes=/usr/share/d-cache/classes
-+dcache.paths.lib=/usr/share/d-cache/lib
-+dcache.paths.docs=/usr/share/doc/d-cache
-+dcache.paths.billing=/var/log/d-cache/billing
-+dcache.paths.statistics=/usr/share/d-cache/statistics
-+dcache.paths.local=/usr/share/d-cache/local
++(deprecated)classesDir=/usr/share/dcache/classes
++dcache.paths.classes=${classesDir}
++dcache.paths.lib=/usr/share/dcache/lib
++dcache.paths.docs=/usr/share/doc/dcache
++dcache.paths.billing=/var/log/dcache/billing
++dcache.paths.statistics=/usr/share/dcache/statistics
++dcache.paths.local=/usr/share/dcache/local
