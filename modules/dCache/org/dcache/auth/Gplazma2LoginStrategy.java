@@ -8,12 +8,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.ReadOnly;
 
 import javax.security.auth.Subject;
 import java.util.HashSet;
+
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 /**
  * A LoginStrategy that wraps a org.dcache.gplazma.GPlazma
@@ -39,32 +39,14 @@ public class Gplazma2LoginStrategy implements LoginStrategy
         return configurationFile;
     }
 
-    private LoginReply convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply)
+    private LoginReply
+        convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply)
     {
-        LoginReply reply =
-            new LoginReply(
-                gPlazmaLoginReply.getSubject(),
-                new HashSet<LoginAttribute>());
-
-        for(org.dcache.gplazma.SessionAttribute sessionAttribute:
-            gPlazmaLoginReply.getSessionAttributes()) {
-            if(sessionAttribute instanceof
-                   org.dcache.gplazma.HomeDirectory ) {
-                reply.getLoginAttributes().add(
-                    new HomeDirectory((String)sessionAttribute.getValue()));
-            }
-            if(sessionAttribute instanceof
-                   org.dcache.gplazma.RootDirectory ) {
-                reply.getLoginAttributes().add(
-                    new RootDirectory((String)sessionAttribute.getValue()));
-            }
-            if(sessionAttribute instanceof
-                   org.dcache.gplazma.ReadOnly ) {
-                reply.getLoginAttributes().add(
-                    new ReadOnly((Boolean)sessionAttribute.getValue()));
-            }
-        }
-        return reply;
+        Set<Object> sessionAttributes =
+            gPlazmaLoginReply.getSessionAttributes();
+        Set<LoginAttribute> loginAttributes =
+            Sets.newHashSet(Iterables.filter(sessionAttributes, LoginAttribute.class));
+        return new LoginReply(gPlazmaLoginReply.getSubject(), loginAttributes);
     }
 
     @Override

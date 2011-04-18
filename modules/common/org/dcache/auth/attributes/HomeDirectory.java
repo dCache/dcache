@@ -23,6 +23,25 @@ public class HomeDirectory implements LoginAttribute, Serializable
     }
 
     @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof HomeDirectory)) {
+            return false;
+        }
+        HomeDirectory other = (HomeDirectory) obj;
+        return _home.equals(other._home);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _home.hashCode();
+    }
+
+    @Override
     public String toString()
     {
         return "HomeDirectory[" + _home + "]";

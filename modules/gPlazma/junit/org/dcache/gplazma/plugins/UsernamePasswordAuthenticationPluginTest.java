@@ -8,7 +8,8 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.VerifiedUserPincipal;
-import org.dcache.gplazma.SessionAttribute;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.StaticClassPluginLoader;
 import org.dcache.gplazma.plugins.SwitchableReplyUsernamePasswordAuthenticationPluginHelper.AuthState;
@@ -68,15 +69,14 @@ public class UsernamePasswordAuthenticationPluginTest {
     public void testSessionAfterSuccess() throws AuthenticationException {
         InputWrapper inputs = getProperInputs();
         doAuthentication(inputs, inputs.getPrincipals());
-        Set<SessionAttribute> attributes = new HashSet<SessionAttribute>();
+        Set<Object> attributes = new HashSet<Object>();
         _authPlugin.session(null, inputs.getPrincipals(), attributes);
         if (attributes.isEmpty()) {
             fail("couldn't find session attributes");
         }
-        for (SessionAttribute attribute : attributes) {
-            String value = (String) attribute.getValue();
-            if (!(value.equals(_authPlugin.EXAMPLE_HOMEDIRECTORY) ||
-                    value.equals(_authPlugin.EXAMPLE_ROOTDIRECTORY))) {
+        for (Object attribute : attributes) {
+            if (!(attribute.equals(new HomeDirectory(SwitchableReplyUsernamePasswordAuthenticationPluginHelper.EXAMPLE_HOMEDIRECTORY)) ||
+                  attribute.equals(new RootDirectory(SwitchableReplyUsernamePasswordAuthenticationPluginHelper.EXAMPLE_ROOTDIRECTORY)))) {
                 fail("couldn't find session attributes");
             }
         }

@@ -4,6 +4,10 @@ import java.security.Principal;
 import java.util.Set;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+
 /**
  * This plugin adds a specified home, root and readOnly attribute to
  * authorizedPrincipals if is detects a specified user principal in
@@ -31,7 +35,7 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
     @Override
     public void session(SessionID sID,
             Set<Principal> authorizedPrincipals,
-            Set<SessionAttribute> attrib) throws AuthenticationException {
+            Set<Object> attrib) throws AuthenticationException {
         for(Principal principal:authorizedPrincipals ) {
             if(principal.equals(user)) {
                 attrib.add(home);

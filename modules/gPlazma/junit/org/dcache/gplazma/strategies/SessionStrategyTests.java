@@ -3,14 +3,13 @@ package org.dcache.gplazma.strategies;
 import java.security.Principal;
 import java.util.Set;
 import java.util.HashSet;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.RootDirectory;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.dcache.gplazma.SessionID;
-import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
@@ -120,7 +119,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -140,7 +139,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -155,7 +154,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -170,7 +169,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -185,7 +184,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -199,7 +198,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -214,7 +213,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -234,7 +233,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -254,7 +253,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -275,7 +274,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -296,7 +295,7 @@ public class SessionStrategyTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Set<Principal> authorizedPrincipals = new HashSet();
-        Set<SessionAttribute> sessionAttributes = new HashSet();
+        Set<Object> sessionAttributes = new HashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -306,7 +305,7 @@ public class SessionStrategyTests {
 
         public void session(SessionID sID,
                 Set<Principal> authorizedPrincipals,
-                Set<SessionAttribute> sessionAttributes)
+                Set<Object> sessionAttributes)
                 throws AuthenticationException {
         }
     }
@@ -316,7 +315,7 @@ public class SessionStrategyTests {
 
         public void session(SessionID sID,
                 Set<Principal> authorizedPrincipals,
-                Set<SessionAttribute> sessionAttributes)
+                Set<Object> sessionAttributes)
                 throws AuthenticationException {
             HomeDirectory homeDir = new HomeDirectory("/home/user");
             RootDirectory rootDir = new RootDirectory("/pnfs/org");
@@ -331,7 +330,7 @@ public class SessionStrategyTests {
 
         public void session(SessionID sID,
                 Set<Principal> authorizedPrincipals,
-                Set<SessionAttribute> sessionAttributes)
+                Set<Object> sessionAttributes)
                 throws AuthenticationException {
             throw new AuthenticationException("I always fail");
         }
@@ -342,7 +341,7 @@ public class SessionStrategyTests {
 
         public void session(SessionID sID,
                 Set<Principal> authorizedPrincipals,
-                Set<SessionAttribute> sessionAttributes)
+                Set<Object> sessionAttributes)
                 throws AuthenticationException {
             throw new TestAuthenticationException("I always fail too");
         }
@@ -353,7 +352,7 @@ public class SessionStrategyTests {
 
         public void session(SessionID sID,
                 Set<Principal> authorizedPrincipals,
-                Set<SessionAttribute> sessionAttributes)
+                Set<Object> sessionAttributes)
                 throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
         }

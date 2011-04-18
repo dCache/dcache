@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionAttribute;
 import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.slf4j.Logger;
@@ -14,7 +13,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author timur
  */
-public class DefaultSessionStrategy  implements SessionStrategy{
+public class DefaultSessionStrategy  implements SessionStrategy
+{
     private static final Logger logger = LoggerFactory.getLogger(DefaultSessionStrategy.class);
 
     private PAMStyleStrategy<GPlazmaSessionPlugin> pamStyleSessionStrategy;
@@ -30,7 +30,7 @@ public class DefaultSessionStrategy  implements SessionStrategy{
 
     /**
      * Devegates execution of the
-     * {@link GPlazmaSessionPlugin#session(SessionID, Set<Principal>,Set<SessionAttribute>) GPlazmaSessionPlugin.session}
+     * {@link GPlazmaSessionPlugin#session(SessionID, Set<Principal>,Set<Object>) GPlazmaSessionPlugin.session}
      * methods of the plugins supplied by
      * {@link GPlazmaStrategy#setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
      *  to
@@ -50,7 +50,8 @@ public class DefaultSessionStrategy  implements SessionStrategy{
     public synchronized void session(
             final SessionID sessionID,
             final Set<Principal> authorizedPrincipals,
-            final Set<SessionAttribute> attrib) throws AuthenticationException {
+            final Set<Object> attrib) throws AuthenticationException
+    {
         logger.debug("call to session");
         pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>() {
             @Override

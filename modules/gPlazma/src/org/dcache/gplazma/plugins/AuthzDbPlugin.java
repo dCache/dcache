@@ -17,12 +17,11 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginUidPrincipal;
 import org.dcache.auth.LoginGidPrincipal;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
-import org.dcache.gplazma.SessionAttribute;
-import org.dcache.gplazma.HomeDirectory;
-import org.dcache.gplazma.RootDirectory;
-import org.dcache.gplazma.ReadOnly;
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 import gplazma.authz.util.NameRolePair;
 
@@ -249,7 +248,7 @@ public class AuthzDbPlugin
     @Override
     public void session(SessionID sID,
                         Set<Principal> authorizedPrincipals,
-                        Set<SessionAttribute> attrib)
+                        Set<Object> attrib)
         throws AuthenticationException
     {
         Principal principal =

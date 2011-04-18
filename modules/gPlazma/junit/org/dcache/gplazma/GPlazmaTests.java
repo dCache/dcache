@@ -22,6 +22,9 @@ import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
@@ -188,14 +191,14 @@ public class GPlazmaTests {
         Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
         assertEquals(resultPrincipals, expectedPrincipals);
 
-        Set<SessionAttribute> expectedAttributes = new HashSet<SessionAttribute>();
+        Set<Object> expectedAttributes = new HashSet<Object>();
         expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
         expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
         expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
 
-        Set<SessionAttribute> resulAttributes = result.getSessionAttributes();
+        Set<Object> resultAttributes = result.getSessionAttributes();
 
-        assertEquals(resulAttributes, expectedAttributes);
+        assertEquals(resultAttributes, expectedAttributes);
    }
 
     /**
@@ -231,12 +234,12 @@ public class GPlazmaTests {
         Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
         assertEquals(resultPrincipals, expectedPrincipals);
 
-        Set<SessionAttribute> expectedAttributes = new HashSet<SessionAttribute>();
+        Set<Object> expectedAttributes = new HashSet<Object>();
         expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
         expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
         expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
-        Set<SessionAttribute> resulAttributes = result.getSessionAttributes();
-        assertEquals(resulAttributes, expectedAttributes);
+        Set<Object> resultAttributes = result.getSessionAttributes();
+        assertEquals(resultAttributes, expectedAttributes);
    }
 
     /**
