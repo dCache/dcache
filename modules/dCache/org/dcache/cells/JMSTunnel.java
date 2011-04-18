@@ -158,7 +158,7 @@ public class JMSTunnel
 
     protected String getDomainQueue(String domain)
     {
-        return "cells.domain." + domain;
+        return "cells.domain." + domain.replaceAll("_", "__").replaceAll("-", "_");
     }
 
     @Override
