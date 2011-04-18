@@ -2,6 +2,28 @@
 
 set -e
 
+
+#  Look to see if there are ssh related files located in the config
+#  directory.  If there are, migrate them to $DCACHE_HOME/etc.
+migrateSshFiles()
+{
+    migrateFileFromConfigToEtc authorized_keys
+    migrateFileFromConfigToEtc server_key
+    migrateFileFromConfigToEtc server_key.pub
+    migrateFileFromConfigToEtc host_key
+    migrateFileFromConfigToEtc host_key.pub
+}
+
+
+migrateFileFromConfigToEtc() # in $1 = name of file
+{
+    config_path=$(getProperty dcache.paths.config)
+    etc_path=$(getProperty dcache.paths.etc)
+
+    copyIfNew "$config_path/$1" "$etc_path/$1"
+}
+
+
 # Returns 0 if option is set to 'yes' or 'y' in node_config or
 # door_config, 1 otherwise.
 isNodeConfigEnabled() # in $1 = option name
@@ -684,6 +706,9 @@ door_config_file="${DCACHE_ETC}/door_config"
 
 # Check preconditions
 require sed cat tr mv cp basename tail date uname mktemp
+
+# Migrate SSH admin files from config to etc
+migrateSshFiles
 
 if [ ! -f "${node_config_file}" -a ! -f "${door_config_file}" ]; then
     fail 1 "Cannot proceed because ${node_config_file} does not exist."

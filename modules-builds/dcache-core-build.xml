@@ -280,10 +280,11 @@
         <mkdir dir="${server.bin.dir}/classes" />
         <mkdir dir="${server.bin.dir}/jobs" />
         <mkdir dir="${server.bin.dir}/config" />
-        <mkdir dir="${server.bin.dir}/config/users" />
-        <mkdir dir="${server.bin.dir}/config/users/meta" />
-        <mkdir dir="${server.bin.dir}/config/users/relations" />
-        <mkdir dir="${server.bin.dir}/config/users/acls" />
+        <mkdir dir="${server.bin.dir}/etc" />
+        <mkdir dir="${server.bin.dir}/etc/users" />
+        <mkdir dir="${server.bin.dir}/etc/users/acls" />
+        <mkdir dir="${server.bin.dir}/etc/users/relations" />
+        <mkdir dir="${server.bin.dir}/etc/users/meta" />
         <mkdir dir="${server.bin.dir}/docs" />
         <mkdir dir="${server.bin.dir}/docs/images" />
         <mkdir dir="${server.bin.dir}/docs/skins" />
