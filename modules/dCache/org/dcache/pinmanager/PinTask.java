@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class PinTask
 {
-    private final Logger _log = LoggerFactory.getLogger(PinTask.class);
+    private final static Logger _log = LoggerFactory.getLogger(PinTask.class);
 
     private PinManagerPinMessage _request;
     private MessageReply _reply;
