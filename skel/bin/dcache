@@ -229,6 +229,29 @@ userForProcessOrDomain() # $1 pid, $2=domain
 }
 
 
+#  A simple check for a dCache instance with non-migrated
+#  configuration.  If the heuristics show this is likely then an error
+#  message is printed and the script aborts with a non-zero return
+#  code.
+checkForNonMigratedDcache()
+{
+    if [ -f ${DCACHE_CONFIG}/dCacheSetup ] && \
+       [ -f ${DCACHE_CONFIG}/node_config ]; then
+
+        fail 1 "Cowardly refusing to do anything as you appear to have      \
+                upgraded from an old dCache version without adjusting the   \
+                configuration."                                             \
+                                                                            \
+               "Simply running the script                                   \
+                ${DCACHE_HOME}/libexec/migrate-from-1.9.5.sh will migrate   \
+                many sites correctly.  For more complicated sites, the      \
+                output from this script may serve as a good starting        \
+                point.  Please review the release notes for more            \
+                information."
+    fi
+}
+
+
 # Parse global options
 parseOptions "d" "$@" || shift $?
 
@@ -262,6 +285,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
+        checkForNonMigratedDcache
         domains=$(printDomains "$@")
         for domain in $domains; do
             domainStart $domain || :
@@ -275,6 +299,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
+        checkForNonMigratedDcache
         domains=$(printDomains "$@")
         reverse domains_backward $domains
         for domain in $domains_backward; do
@@ -289,6 +314,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
+        checkForNonMigratedDcache
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -306,6 +332,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
+        checkForNonMigratedDcache
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -327,6 +354,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
+        checkForNonMigratedDcache
         (
             printf "DOMAIN\tSTATUS\tPID\tUSER\n"
             for domain in $(getProperty dcache.domains); do
@@ -342,6 +370,7 @@ case "$1" in
         shift
         loadConfig
         . ${DCACHE_LIB}/utils.sh
+        checkForNonMigratedDcache
         (
             printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
             for domain in $(getProperty dcache.domains); do
@@ -369,6 +398,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/pool.sh
+        checkForNonMigratedDcache
 
         command=$1
         shift
@@ -448,6 +478,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
+        checkForNonMigratedDcache
 
         command=$1
         shift
@@ -521,6 +552,7 @@ case "$1" in
 
         loadConfig
         . ${DCACHE_LIB}/utils.sh
+        checkForNonMigratedDcache
 
         command=$1
         shift
@@ -581,6 +613,7 @@ case "$1" in
         loadConfig
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/database.sh
+        checkForNonMigratedDcache
 
         command=$1
         shift
@@ -735,6 +768,7 @@ case "$1" in
         shift
         loadConfig
         . ${DCACHE_LIB}/utils.sh
+        checkForNonMigratedDcache
         bootLoader check-config | while read line; do
             printpi "$line" "^[^:]*:[^:]*:"
         done
