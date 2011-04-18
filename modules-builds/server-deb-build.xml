@@ -87,7 +87,7 @@
 
         <mkdir dir="${server.debPatchDir}" />
         <copy todir="${server.debPatchDir}">
-            <fileset dir="${server.debPatchSourceDir}" />
+            <fileset dir="${server.debFHSTemplateDir}/patches" />
             <filterset>
                 <filter token="DebPatchRoot" value="${server.debPatchRoot}" />
                 <filter token="TimestampOrig" value="${quilt-timestamp-orig}" />

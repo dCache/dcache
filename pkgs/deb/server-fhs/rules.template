@@ -8,8 +8,8 @@ install_app_data:
 	dh_prep
 	dh_installdirs
 	dh_quilt_patch
-	cp -Rf opt/d-cache/etc/* debian/@PackageName@/etc/d-cache/
-	cp -Rf opt/d-cache/config debian/@PackageName@/etc/d-cache/
+	cp -Rf opt/d-cache/etc/* debian/@PackageName@/etc/dcache/
+	cp -Rf opt/d-cache/config/* debian/@PackageName@/etc/dcache/
 
 	cp -Rf opt/d-cache/share/man/man8/* debian/@PackageName@/usr/share/man/man8/
 	# manpages on debian should be gzipped
@@ -17,16 +17,15 @@ install_app_data:
 	# don't copy the man-folder into the normal share directory
 	rm -Rf opt/d-cache/share/man
 
-	cp -Rf opt/d-cache/share/doc/* debian/@PackageName@/usr/share/doc/d-cache/
+	cp -Rf opt/d-cache/share/doc/* debian/@PackageName@/usr/share/doc/dcache/
 	rm -Rf opt/d-cache/share/doc
 
-	cp -Rf opt/d-cache/share debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/bin debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/classes debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/docs/* debian/@PackageName@/usr/share/doc/d-cache/
-	cp -Rf opt/d-cache/install debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/jobs debian/@PackageName@/usr/share/d-cache/
-	cp -Rf opt/d-cache/libexec debian/@PackageName@/usr/share/d-cache/
+	cp -Rf opt/d-cache/share debian/@PackageName@/usr/share/dcache/
+	cp -Rf opt/d-cache/bin debian/@PackageName@/usr/share/dcache/
+	cp -Rf opt/d-cache/classes debian/@PackageName@/usr/share/dcache/
+	cp -Rf opt/d-cache/docs/* debian/@PackageName@/usr/share/doc/dcache/
+	cp -Rf opt/d-cache/jobs debian/@PackageName@/usr/share/dcache/
+	cp -Rf opt/d-cache/libexec debian/@PackageName@/usr/share/dcache/
 
 install_package_data:
 	dh_installchangelogs
