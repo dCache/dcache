@@ -19,7 +19,6 @@ public class NFSv41ProtocolMover implements ManualMover {
     private long _bytesTransferred = 0;
     private long _lastAccessTime = 0;
     private long _started = 0;
-    private long _ended = 0;
 
     private IoMode _ioMode = IoMode.READ;
     private static final Logger _log = LoggerFactory.getLogger(NFSv41ProtocolMover.class);
@@ -68,11 +67,10 @@ public class NFSv41ProtocolMover implements ManualMover {
 	@Override
     public long getTransferTime() {
 
-        if (_ended < _started) {
-            return System.currentTimeMillis() - _started;
-        } else {
-            return _ended - _started;
+        if (_started == 0) {
+            return 0;
         }
+        return System.currentTimeMillis() - _started;
     }
 
     /*
@@ -126,6 +124,9 @@ public class NFSv41ProtocolMover implements ManualMover {
 
         _bytesTransferred += bytesTransferred;
         _lastAccessTime = System.currentTimeMillis();
+        if(_started == 0) {
+            _started = _lastAccessTime;
+        }
     }
 
 }

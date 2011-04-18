@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.CompoundContext;
@@ -23,7 +22,6 @@ import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.dcache.pool.movers.IoMode;
 
-import org.dcache.pool.movers.MoverProtocol;
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
@@ -52,7 +50,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             }
 
             if( moverBridge.getIoMode() != IoMode.WRITE ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_PERM, "an attermp to write without IO mode enabled");
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_PERM, "an attempt to write without IO mode enabled");
             }
 
             long offset = _args.opwrite.offset.value.value;
@@ -66,10 +64,6 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             }
             _args.opwrite.data.rewind();
             int bytesWritten = fc.write(_args.opwrite.data, offset);
-
-            if( bytesWritten < 0 ) {
-                throw new IOHimeraFsException("IO not allowed");
-            }
 
             moverBridge.getMover().setBytesTransferred(bytesWritten);
 
@@ -87,9 +81,6 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
                         bytesWritten
                     });
 
-        }catch(IOHimeraFsException hioe) {
-            _log.debug(hioe.getMessage());
-            res.status = nfsstat4.NFS4ERR_IO;
         }catch(ChimeraNFSException he) {
             _log.debug(he.getMessage());
             res.status = he.getStatus();
