@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.CompoundContext;
@@ -50,10 +49,6 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             bb.rewind();
             int bytesReaded = fc.read(bb, offset);
 
-            if( bytesReaded < 0 ) {
-                throw new IOHimeraFsException("IO not allowed");
-            }
-
             moverBridge.getMover().setBytesTransferred(bytesReaded);
 
             res.status = nfsstat4.NFS4_OK;
@@ -71,8 +66,6 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                         _args.opread.count.value.value
                     });
 
-        }catch(IOHimeraFsException hioe) {
-            res.status = nfsstat4.NFS4ERR_IO;
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();
             _log.debug(he.getMessage());
