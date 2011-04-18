@@ -1116,7 +1116,9 @@ public class RequestContainerV5
                 try {
                     m.revertDirection();
                     sendMessage(m);
-                    _poolMonitor.messageToCostModule(m);
+                    if (!rpm.getSkipCostUpdate()) {
+                        _poolMonitor.messageToCostModule(m);
+                    }
                 } catch (Exception e) {
                     _log.warn("Exception requestSucceeded : " + e);
                     _log.warn(e.toString());

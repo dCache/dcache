@@ -118,6 +118,7 @@ class Pinner extends SMCTask
                                          0,
                                          _allowedStates);
         request.setSubject(_job.getSubject());
+        request.setSkipCostUpdate(true);
 
         sendMessage(_poolManager, request, 60*60*1000);
     }
