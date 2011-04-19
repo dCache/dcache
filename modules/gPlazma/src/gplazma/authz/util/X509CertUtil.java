@@ -141,9 +141,7 @@ public class X509CertUtil {
         return buf.toString();
     }
 
-    public static String getSubjectFromX509Chain(X509Certificate[] chain, boolean omitEmail)
-            throws AuthorizationException {
-
+    public static String getSubjectFromX509Chain(X509Certificate[] chain, boolean omitEmail) throws Exception {
         String subjectDN;
 
         TBSCertificateStructure tbsCert = getUserTBSCertFromX509Chain(chain);
@@ -152,29 +150,20 @@ public class X509CertUtil {
         return subjectDN;
     }
 
-    public static TBSCertificateStructure getUserTBSCertFromX509Chain(X509Certificate[] chain)
-            throws AuthorizationException {
-
-        TBSCertificateStructure tbsCert = null;
-        X509Certificate clientcert = null;
-        try {
-            for (int i = 0; i < chain.length; i++) {
-                X509Certificate testcert = chain[i];
-                tbsCert = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-                int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-                if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
-                    clientcert = chain[i];
-                    break;
-                }
+    public static TBSCertificateStructure getUserTBSCertFromX509Chain(X509Certificate[] chain) throws Exception {
+        TBSCertificateStructure tbsCert=null;
+        X509Certificate	clientcert=null;
+        for (int i=0; i<chain.length; i++) {
+            X509Certificate	testcert = chain[i];
+            tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
+            int certType = BouncyCastleUtil.getCertificateType(tbsCert);
+            if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                clientcert = chain[i];
+                break;
             }
-
-        } catch (IOException e) {
-            throw new AuthorizationException("Can't extract client certificate: " + e.getMessage(), e);
-        } catch (CertificateException e) {
-            throw new AuthorizationException("Can't extract client certificate: " + e.getMessage(), e);
         }
 
-        if (clientcert == null) {
+        if(clientcert == null) {
             throw new AuthorizationException("could not find clientcert");
         }
 

@@ -118,12 +118,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         primaryGroupList.setGroups(new ArrayList<Group>());
         groupLists.add(primaryGroupList);
 
-        /* Identity is not allowed to be null. However both user name
-         * and group name are optional. Hence we fall back to an empty
-         * identity is neither user name nor group name are provided.
-         */
-        setIdentity("");
-
         for (Principal principal: login.getSubject().getPrincipals()) {
             if (principal instanceof UidPrincipal) {
                 if (hasUid) {
@@ -155,12 +149,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
             } else if (principal instanceof GlobusPrincipal) {
                 setName(((GlobusPrincipal) principal).getName());
             } else if (principal instanceof UserNamePrincipal) {
-                identity = ((UserNamePrincipal) principal).getName();
-            } else if (principal instanceof GroupNamePrincipal) {
-                GroupNamePrincipal group = (GroupNamePrincipal) principal;
-                if (identity != null && group.isPrimaryGroup()) {
-                    identity = ((GroupNamePrincipal) principal).getName();
-                }
+                setIdentity(((UserNamePrincipal) principal).getName());
             }
         }
 
@@ -169,9 +158,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
 
         setGroupLists(groupLists);
-
-        setRoot("/");
-        setHome("/");
 
         for (LoginAttribute attribute: login.getLoginAttributes()) {
             if (attribute instanceof RootDirectory) {

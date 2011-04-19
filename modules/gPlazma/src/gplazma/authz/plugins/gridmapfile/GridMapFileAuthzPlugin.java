@@ -13,7 +13,6 @@ import java.util.*;
 import java.lang.*;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
-import java.io.File;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSName;
@@ -31,28 +30,15 @@ import gplazma.authz.plugins.RecordMappingPlugin;
 
 public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
     private static final Logger logger = LoggerFactory.getLogger(GridMapFileAuthzPlugin.class);
-    private static final String GRIDMAP_FILENAME = "grid-mapfile";
-    private static GridMapFile gridmap;
+    private String gridMapFilePath;
     gPlazmaAuthorizationRecord authRecord;
     GSSContext context;
     String desiredUserName;
 
-    public GridMapFileAuthzPlugin(String gridMapFilePath, String storageAuthzPath, long authRequestID)
-    {
+    public GridMapFileAuthzPlugin(String gridMapFilePath, String storageAuthzPath, long authRequestID) {
         super(storageAuthzPath, authRequestID);
-        logger.info("grid-mapfile plugin will use {}", gridMapFilePath);
-
-        synchronized (GridMapFileAuthzPlugin.class) {
-            if (gridmap == null) {
-                File file = new File(gridMapFilePath);
-                if (!file.getName().equals(GRIDMAP_FILENAME)) {
-                    logger.warn("The grid-mapfile filename {} is not as expected.", file);
-                    logger.warn("WARNING: Possible security violation.");
-                }
-
-                gridmap = new GridMapFile(file);
-            }
-        }
+        this.gridMapFilePath = gridMapFilePath;
+        logger.info("grid-mapfile plugin will use " + gridMapFilePath);
     }
 
     public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
@@ -79,10 +65,18 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
+        GridMapFileHandler gridmapServ;
         this.desiredUserName = desiredUserName;
         String user_name;
 
-        gridmap.refresh();
+        try {
+            gridmapServ = new GridMapFileHandler(gridMapFilePath, getAuthRequestID());
+        }
+        catch(Exception ase) {
+            logger.error("Exception in reading grid-mapfile configuration file: ");
+            logger.error(gridMapFilePath + " " + ase);
+            throw new AuthorizationException(ase.toString());
+        }
 
         if (desiredUserName != null) {
             logger.debug("Desired Username requested as: " +desiredUserName);
@@ -91,7 +85,7 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
         logger.info("Requesting mapping for User with DN: " + subjectDN);
 
         try {
-            user_name = gridmap.getMappedUsername(subjectDN);
+            user_name = gridmapServ.getMappedUsername(subjectDN);
         }
         catch(Exception e) {
             throw new AuthorizationException(e.toString());

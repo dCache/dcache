@@ -16,11 +16,6 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
     private FQAN _fqan;
     private boolean _primary;
 
-    public FQANPrincipal(String fqan)
-    {
-        this(fqan, false);
-    }
-
     public FQANPrincipal(String fqan, boolean primary)
     {
         this(new FQAN(fqan), primary);

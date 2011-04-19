@@ -1,31 +1,15 @@
 
 <plugins>
     <plugin>
-        <name>kpwd</name>
+        <name>KpwdUsernamePassword</name>
         <class>org.dcache.gplazma.plugins.KpwdFileUsernamePasswordAuthenticationPlugin</class>
     </plugin>
     <plugin>
-        <name>vorolemap</name>
-        <class>org.dcache.gplazma.plugins.VoRoleMapPlugin</class>
+        <name>VORoleMap</name>
+        <class>org.dcache.gplazma.plugins.GPlazmaVORolePlugin</class>
     </plugin>
     <plugin>
-        <name>gridmap</name>
-        <class>org.dcache.gplazma.plugins.GridMapFilePlugin</class>
-    </plugin>
-    <plugin>
-        <name>authzdb</name>
-        <class>org.dcache.gplazma.plugins.AuthzDbPlugin</class>
-    </plugin>
-    <plugin>
-        <name>argus</name>
+        <name>Argus</name>
         <class>org.dcache.gplazma.plugins.GPlazmaArgusPlugin</class>
-    </plugin>
-    <plugin>
-        <name>voms</name>
-        <class>org.dcache.gplazma.plugins.VomsPlugin</class>
-    </plugin>
-    <plugin>
-        <name>x509</name>
-        <class>org.dcache.gplazma.plugins.X509Plugin</class>
     </plugin>
 </plugins>
