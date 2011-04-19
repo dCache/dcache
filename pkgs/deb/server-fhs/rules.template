@@ -8,8 +8,9 @@ install_app_data:
 	dh_prep
 	dh_installdirs
 	dh_quilt_patch
+	cp -Rf opt/d-cache/etc/users debian/@PackageName@/etc/dcache/admin/
+	rm -Rf opt/d-cache/etc/users
 	cp -Rf opt/d-cache/etc/* debian/@PackageName@/etc/dcache/
-	cp -Rf opt/d-cache/config/* debian/@PackageName@/etc/dcache/
 
 	cp -Rf opt/d-cache/share/man/man8/* debian/@PackageName@/usr/share/man/man8/
 	# manpages on debian should be gzipped

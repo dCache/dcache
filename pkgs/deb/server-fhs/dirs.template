@@ -4,6 +4,7 @@ usr/share/doc/dcache-server
 usr/share/man
 usr/share/man/man8
 etc/dcache
+etc/dcache/admin
 var/log/dcache
 var/lib/dcache
 var/lib/dcache/config
