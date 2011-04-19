@@ -19,7 +19,7 @@ public class GridMapFile
 
     private File _file;
     private long _loaded;
-    private ImmutableMultimap<String,String> _map = ImmutableMultimap.of();
+    private ImmutableMultimap<String,String> _map;
 
     public GridMapFile(File file)
     {
