@@ -92,7 +92,7 @@ public class GPlazma {
          Set<Principal> identifiedPrincipals = new HashSet<Principal>();
          identifiedPrincipals.addAll(subject.getPrincipals());
          Set<Principal>  authorizedPrincipals = new HashSet<Principal>();
-         Set<SessionAttribute> attributes = new HashSet<SessionAttribute>();
+         Set<Object> attributes = new HashSet<Object>();
          currentAuthenticationStrategy.authenticate(
                  sessionId,
                  subject.getPublicCredentials(),

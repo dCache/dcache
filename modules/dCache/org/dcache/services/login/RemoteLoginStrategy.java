@@ -1,5 +1,8 @@
 package org.dcache.services.login;
 
+import java.util.Set;
+import java.util.Collections;
+import java.security.Principal;
 import javax.security.auth.Subject;
 
 import org.dcache.auth.LoginStrategy;
@@ -8,6 +11,8 @@ import org.dcache.cells.CellStub;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+
+import org.springframework.beans.factory.annotation.Required;
 
 public class RemoteLoginStrategy implements LoginStrategy
 {
@@ -22,6 +27,7 @@ public class RemoteLoginStrategy implements LoginStrategy
         setCellStub(stub);
     }
 
+    @Required
     public void setCellStub(CellStub stub)
     {
         if (stub == null) {
@@ -35,6 +41,7 @@ public class RemoteLoginStrategy implements LoginStrategy
         return _stub;
     }
 
+    @Override
     public LoginReply login(Subject subject) throws CacheException
     {
         if (_stub == null) {
@@ -73,6 +80,34 @@ public class RemoteLoginStrategy implements LoginStrategy
             } else {
                 throw e;
             }
+        } catch (InterruptedException e) {
+            throw new CacheException("Login failed because the operation was interrupted");
+        }
+    }
+
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        if (_stub == null) {
+            throw new IllegalStateException("CellStub is not set");
+        }
+
+        try {
+            return _stub.sendAndWait(new MapMessage(principal)).getMappedPrincipal();
+        } catch (InterruptedException e) {
+            throw new CacheException("Login failed because the operation was interrupted");
+        }
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        if (_stub == null) {
+            throw new IllegalStateException("CellStub is not set");
+        }
+
+        try {
+            return _stub.sendAndWait(new ReverseMapMessage(principal)).getMappedPrincipals();
         } catch (InterruptedException e) {
             throw new CacheException("Login failed because the operation was interrupted");
         }

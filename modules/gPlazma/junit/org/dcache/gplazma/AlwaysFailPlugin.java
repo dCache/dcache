@@ -48,7 +48,7 @@ public class AlwaysFailPlugin implements
     }
 
     @Override
-    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<SessionAttribute> attrib) throws AuthenticationException {
+    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }
 

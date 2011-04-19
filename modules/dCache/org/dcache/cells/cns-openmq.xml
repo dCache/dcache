@@ -22,10 +22,14 @@
       </constructor-arg>
   </bean>
 
-  <bean id="tunnel" class="org.dcache.cells.JMSTunnel"
-        destroy-method="kill">
-    <description>JMS Gateway</description>
-    <constructor-arg value="RoutingMgr"/>
-    <constructor-arg ref="connection-factory"/>
+  <bean id="registry" class="org.dcache.cells.CellNameServiceRegistry">
+    <description>Registry of domains and well known cells</description>
+  </bean>
+
+  <bean id="cns" class="org.dcache.cells.CellNameService"
+        init-method="start" destroy-method="stop">
+    <description>Cell Name Service</description>
+    <property name="connectionFactory" ref="connection-factory"/>
+    <property name="cellNameServiceRegistry" ref="registry"/>
   </bean>
 </beans>

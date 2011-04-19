@@ -1,5 +1,8 @@
 package org.dcache.auth;
 
+import java.util.Set;
+import java.util.Collections;
+import java.security.Principal;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.CacheException;
@@ -30,5 +33,17 @@ public class CachingLoginStrategy implements LoginStrategy
                                        subject.getPrivateCredentials());
         }
         return _lastReply;
+    }
+
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        return Collections.emptySet();
     }
 }

@@ -17,9 +17,33 @@ public class ReadOnly implements LoginAttribute, Serializable
         _isReadOnly = isReadOnly;
     }
 
+    public ReadOnly(String readOnly)
+    {
+        this(Boolean.valueOf(readOnly));
+    }
+
     public boolean isReadOnly()
     {
         return _isReadOnly;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ReadOnly)) {
+            return false;
+        }
+        ReadOnly other = (ReadOnly) obj;
+        return _isReadOnly == other._isReadOnly;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _isReadOnly ? 1 : 0;
     }
 
     @Override

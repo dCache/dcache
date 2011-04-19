@@ -1,8 +1,12 @@
 package org.dcache.auth;
 
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.security.Principal;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.CacheException;
@@ -100,5 +104,27 @@ public class UnionLoginStrategy implements LoginStrategy
             _log.debug( "Login failed");
             throw new PermissionDeniedCacheException("Access denied");
         }
+    }
+
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        for (LoginStrategy strategy: _loginStrategies) {
+            Principal result = strategy.map(principal);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        Set<Principal> result = new HashSet<Principal>();
+        for (LoginStrategy strategy: _loginStrategies) {
+            result.addAll(strategy.reverseMap(principal));
+        }
+        return result;
     }
 }

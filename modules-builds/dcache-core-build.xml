@@ -280,10 +280,11 @@
         <mkdir dir="${server.bin.dir}/classes" />
         <mkdir dir="${server.bin.dir}/jobs" />
         <mkdir dir="${server.bin.dir}/config" />
-        <mkdir dir="${server.bin.dir}/config/users" />
-        <mkdir dir="${server.bin.dir}/config/users/meta" />
-        <mkdir dir="${server.bin.dir}/config/users/relations" />
-        <mkdir dir="${server.bin.dir}/config/users/acls" />
+        <mkdir dir="${server.bin.dir}/etc" />
+        <mkdir dir="${server.bin.dir}/etc/users" />
+        <mkdir dir="${server.bin.dir}/etc/users/acls" />
+        <mkdir dir="${server.bin.dir}/etc/users/relations" />
+        <mkdir dir="${server.bin.dir}/etc/users/meta" />
         <mkdir dir="${server.bin.dir}/docs" />
         <mkdir dir="${server.bin.dir}/docs/images" />
         <mkdir dir="${server.bin.dir}/docs/skins" />
@@ -374,9 +375,6 @@
         <!-- jar file  -->
         <copy file="${classesDir}/srm.jar" todir="${server.bin.dir}/classes" />
         <copy file="${classesDir}/cells-protocols.jar" todir="${server.bin.dir}/classes" />
-
-        <!-- Web services stuff   -->
-        <copy file="${dcache.src}/diskCacheV111/config/JHRM.map" todir="${server.bin.dir}/config" />
 
         <!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
 
