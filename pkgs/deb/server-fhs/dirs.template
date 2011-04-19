@@ -6,5 +6,7 @@ usr/share/man/man8
 etc/dcache
 var/log/dcache
 var/lib/dcache
+var/lib/dcache/config
 var/lib/dcache/billing
 var/lib/dcache/statistics
+var/lib/dcache/credentials

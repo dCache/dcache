@@ -1,6 +1,4 @@
 #!/bin/sh -e
-. /usr/share/debconf/confmodule
-db_stop
 
 if [ "$1" = configure ]; then
     # Make sure the administrative user exists
@@ -21,7 +19,13 @@ Please fix this and reinstall this package." >&2
         exit 1
     fi
 
-    # ensure home directory ownership
-    mkdir -p /var/lib/dcache
+    # ensure directory ownership
     chown dcache:dcache /var/lib/dcache
+    chown dcache:dcache /var/lib/dcache/config
+    chown dcache:dcache /var/lib/dcache/billing
+    chown dcache:dcache /var/lib/dcache/statistics
+    chown dcache:dcache /var/lib/dcache/credentials
+
+    # delegated proxies should not be accessible to anybody else
+    chmod 700 /var/lib/dcache/credentials
 fi
