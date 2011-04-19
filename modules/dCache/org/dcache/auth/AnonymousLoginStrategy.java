@@ -59,6 +59,18 @@ public class AnonymousLoginStrategy implements LoginStrategy
         return reply;
     }
 
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
     /**
      * Parses a string on the form UID:GID(,GID)* and returns a
      * corresponding Subject.

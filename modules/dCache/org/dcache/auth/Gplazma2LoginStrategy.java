@@ -11,6 +11,9 @@ import org.dcache.auth.attributes.LoginAttribute;
 
 import javax.security.auth.Subject;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.Collections;
+import java.security.Principal;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -59,6 +62,15 @@ public class Gplazma2LoginStrategy implements LoginStrategy
         }
     }
 
-    // map
-    // reverse
+    @Override
+    public Principal map(Principal principal) throws CacheException
+    {
+        return null;
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws CacheException
+    {
+        return Collections.emptySet();
+    }
 }
