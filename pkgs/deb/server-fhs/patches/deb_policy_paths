@@ -39,8 +39,99 @@ Index: @DebPatchRoot@/opt/d-cache/share/defaults/dcache.properties
 ===================================================================
 --- @DebPatchRoot@.orig/opt/d-cache/share/defaults/dcache.properties	@TimestampOrig@.725302203 +0200
 +++ @DebPatchRoot@/opt/d-cache/share/defaults/dcache.properties	@Timestamp@.154677085 +0200
+@@ -24,2 +24,2 @@
+-(deprecated,not-for-services)user=
+-(not-for-services)dcache.user=${user}
++(deprecated,not-for-services)user=dcache
++(not-for-services)dcache.user=${user}
 @@ -50,2 +50,2 @@
 -(deprecated,not-for-services)logArea=/var/log
 -(not-for-services)dcache.log.dir=${logArea}
 +(deprecated,not-for-services)logArea=/var/log/dcache
 +(not-for-services)dcache.log.dir=${logArea}
+Index: @DebPatchRoot@/opt/d-cache/bin/dcache
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/bin/dcache	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/bin/dcache	@Timestamp@.154677085 +0200
+@@ -211,4 +211,4 @@
+-loadConfig()
+-{
+-    . ${DCACHE_HOME}/share/lib/loadConfig.sh
+-}
++loadConfig()
++{
++    . /usr/share/dcache/lib/loadConfig.sh
++}
+Index: @DebPatchRoot@/opt/d-cache/libexec/migration-check.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/libexec/migration-check.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/libexec/migration-check.sh	@Timestamp@.154677085 +0200
+@@ -40,1 +40,1 @@
+-. $DCACHE_HOME/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/libexec/migrate-from-1.9.5.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/libexec/migrate-from-1.9.5.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/libexec/migrate-from-1.9.5.sh	@Timestamp@.154677085 +0200
+@@ -675,1 +675,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh	@Timestamp@.154677085 +0200
+@@ -68,1 +68,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/libexec/upgrade_space_manager_schema.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/libexec/upgrade_space_manager_schema.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/libexec/upgrade_space_manager_schema.sh	@Timestamp@.154677085 +0200
+@@ -22,1 +22,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/bin/meta2yaml
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/bin/meta2yaml	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/bin/meta2yaml	@Timestamp@.154677085 +0200
+@@ -31,1 +31,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/bin/chimera-get.acl.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/bin/chimera-get-acl.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/bin/chimera-get-acl.sh	@Timestamp@.154677085 +0200
+@@ -19,1 +19,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/bin/chimera-cli.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/bin/chimera-cli.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/bin/chimera-cli.sh	@Timestamp@.154677085 +0200
+@@ -75,1 +75,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/bin/chimera-set-acl.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/bin/chimera-set-acl.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/bin/chimera-set-acl.sh	@Timestamp@.154677085 +0200
+@@ -19,1 +19,1 @@
+-. ${DCACHE_HOME}/share/lib/loadConfig.sh
++. /usr/share/lib/loadConfig.sh
+Index: @DebPatchRoot@/opt/d-cache/share/lib/loadConfig.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/share/lib/loadConfig.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/share/lib/loadConfig.sh	@Timestamp@.154677085 +0200
+@@ -27,1 +27,1 @@
+-. ${DCACHE_HOME}/share/lib/bootLoader.sh
++. /usr/share/dcache/lib/bootLoader.sh
+Index: @DebPatchRoot@/opt/d-cache/share/lib/bootLoader.sh
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/share/lib/bootLoader.sh	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/share/lib/bootLoader.sh	@Timestamp@.154677085 +0200
+@@ -26,1 +26,1 @@
+-    $JAVA -client -cp "$DCACHE_HOME/classes/dcache.jar:$DCACHE_HOME/classes/dcache-common.jar:$DCACHE_HOME/classes/logback/*:$DCACHE_HOME/classes/lib/*" "-Ddcache.home=$DCACHE_HOME" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
++    $JAVA -client -cp "/usr/share/dcache/classes/dcache.jar:/usr/share/dcache/classes/dcache-common.jar:/usr/share/dcache/classes/logback/*:/usr/share/dcache/classes/lib/*" "-Ddcache.home=/usr/share/dcache" org.dcache.boot.BootLoader -f="$DCACHE_SETUP" "$@"
+@@ -35,1 +35,1 @@
+-DCACHE_SETUP="${DCACHE_HOME}/share/defaults:${DCACHE_HOME}/etc/dcache.conf"
++DCACHE_SETUP="/usr/share/dcache/defaults:/etc/dcache/dcache.conf"
