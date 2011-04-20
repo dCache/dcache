@@ -91,11 +91,9 @@ fi
 
 %files
 %defattr(-,root,root)
-%docdir /opt/d-cache/docs
 %docdir /opt/d-cache/share/doc
 %docdir /opt/d-cache/share/man
 /opt/d-cache/billing
-/opt/d-cache/docs
 /opt/d-cache/classes
 /opt/d-cache/share
 /opt/d-cache/libexec/README
