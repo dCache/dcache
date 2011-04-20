@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7), quilt (>= 0.46-7), gzip
 Standards-Version: 3.9.0
 
 Package: @PackageName@
-Depends: ssh-client
+Depends: ssh-client, adduser, ssl-cert
 Architecture: all
 Suggests: ruby
 Description: A distributed mass storage system.

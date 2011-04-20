@@ -5,6 +5,7 @@ if [ "$1" = configure ]; then
     if ! getent passwd dcache > /dev/null; then
         adduser --system --quiet --home /var/lib/dcache --no-create-home \
             --shell /bin/bash --group --gecos "dCache administrator" dcache
+        adduser --quiet dcache ssl-cert
     fi
 
     # check validity of dcache user and group
