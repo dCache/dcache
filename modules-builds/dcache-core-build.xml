@@ -264,14 +264,11 @@
 
       <dCache home>-|
             |-classes
-            |-jobs
-            |-config-|
+            |-etc-|
                                |-users-|
                                        |-acls
                                        |-meta
                                        |-relations
-            |-docs-|
-                   |-images
     -->
 
 
@@ -285,28 +282,9 @@
         <mkdir dir="${server.bin.dir}/etc/users/acls" />
         <mkdir dir="${server.bin.dir}/etc/users/relations" />
         <mkdir dir="${server.bin.dir}/etc/users/meta" />
-        <mkdir dir="${server.bin.dir}/docs" />
-        <mkdir dir="${server.bin.dir}/docs/images" />
-        <mkdir dir="${server.bin.dir}/docs/skins" />
-        <mkdir dir="${server.bin.dir}/docs/styles" />
-        <mkdir dir="${server.bin.dir}/docs/scripts" />
-        <mkdir dir="${server.bin.dir}/docs/scripts/sorting" />
 
         <!-- jar file  -->
         <copy file="${classesDir}/dcache.jar" todir="${server.bin.dir}/classes" />
-
-        <!-- httpd images, etc -->
-        <copy todir="${server.bin.dir}/docs/images">
-            <fileset dir="${dcache.src}/diskCacheV111/docs/images" />
-        </copy>
-        <copy todir="${server.bin.dir}/docs/styles">
-            <fileset dir="${dcache.src}/diskCacheV111/docs/styles" />
-        </copy>
-        <copy todir="${server.bin.dir}/docs/scripts">
-            <fileset dir="${dcache.src}/diskCacheV111/docs/scripts" />
-        </copy>
-        <copy file="${dcache.src}/diskCacheV111/docs/skins/home-skin-basic.html" todir="${server.bin.dir}/docs/skins" />
-        <copy file="${dcache.src}/diskCacheV111/docs/statisticsHelp.html" todir="${server.bin.dir}/docs" />
 
         <!-- HSM flush scripts -->
         <copy file="${dcache.src}/diskCacheV111/jobs/encp.sh" todir="${server.bin.dir}/jobs" />
@@ -446,7 +424,7 @@
 
 
     <property name="batik.home" location="${libDir}/batik-1.7" />
-    <property name="output.image" value="${server.bin.dir}/docs/images/bg.jpg" />
+    <property name="output.image" value="${server.bin.dir}/share/httpd/static/images/bg.jpg" />
     <property name="input.svg" value="dCache-web-bg-logo.svg" />
 
     <target name="-is.batik.present" >
@@ -473,7 +451,7 @@
             </classpath>
         </taskdef>
 
-        <copy todir="${buildDir}/batik" file="${dcache.src}/diskCacheV111/docs/images/${input.svg}"
+        <copy todir="${buildDir}/batik" file="${server.bin.dir}/share/httpd/static/images/${input.svg}"
             overwrite="true">
             <filterset>
                 <filter token="VERSION" value="${version}-${patch}"/>

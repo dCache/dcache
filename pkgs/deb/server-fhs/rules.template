@@ -13,6 +13,7 @@ install_app_data:
 	rm -rf opt/d-cache/bin/dCacheConfigure.sh
 	rm -rf opt/d-cache/share/dCacheConfigure
 	rm -rf opt/d-cache/share/lib/dCacheConfigure
+	rm -rf opt/d-cache/share/doc/dCacheConfigure
 
 	# Debian policy says not to have sh ending for files in /usr/bin
 	mv -f opt/d-cache/bin/chimera-get-acl.sh opt/d-cache/bin/chimera-get-acl
@@ -27,11 +28,12 @@ install_app_data:
 	gzip -9 debian/@PackageName@/usr/share/man/man8/*
 
 	mv -f opt/d-cache/share/doc/* debian/@PackageName@/usr/share/doc/dcache-server/
+	rmdir opt/d-cache/share/doc
 
 	mv -f opt/d-cache/share/* debian/@PackageName@/usr/share/dcache/
 	mv -f opt/d-cache/bin/* debian/@PackageName@/usr/bin/
 	mv -f opt/d-cache/classes debian/@PackageName@/usr/share/dcache/
-	mv -f opt/d-cache/docs/* debian/@PackageName@/usr/share/doc/dcache-server/
+
 	# merge jobs/ libexec/ and lib/ and promote some of the subdirs
 	mv -f opt/d-cache/libexec/chimera debian/@PackageName@/usr/share/dcache/
 	mv -f opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh debian/@PackageName@/usr/sbin/dcache-info-provider
