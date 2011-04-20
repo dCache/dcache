@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+if [ -x "/etc/init.d/dcache-server" ]; then
+        invoke-rc.d dcache-server stop || exit $?
+fi
+
+#DEBHELPER#
