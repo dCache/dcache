@@ -58,7 +58,7 @@
             </fileset>
         </copy>
         <!--get our special, generated background picture-->
-        <copy file="${server.bin.dir}/docs/images/bg.jpg"
+        <copy file="${server.bin.dir}/share/httpd/static/images/bg.jpg"
         tofile="${webappPackageDir}/images/bg.jpg" overwrite="true" />
 
         <!--copy the built files to the package directory-->

@@ -114,8 +114,8 @@
     </target>
 
     <target name="install-server"
-            depends="dcache,javatunnel,
-                     -dcache-copy-skel,-dcache-classpath"
+            depends="-dcache-copy-skel,dcache,javatunnel,
+                     -dcache-classpath"
             description="build deploy-ready server package">
         <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
         <chmod dir="${server.bin.dir}/libexec" includes="**/*.sh" perm="ugo+rx" />
