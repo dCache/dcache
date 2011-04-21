@@ -1,0 +1,29 @@
+#!/bin/sh -e
+#
+# dcache-server dCache distributed mass storage system
+#
+# chkconfig:   2345 90 10
+# description: dCache distributed mass storage system
+
+### BEGIN INIT INFO
+# Provides:             dcache
+# Required-Start:       $local_fs $remote_fs $network $time
+# Required-Stop:        $local_fs $remote_fs $network $time
+# Should-Start:         postgresql
+# Should-Stop:          postgresql
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    dCache distributed mass storage system
+### END INIT INFO
+
+case "$1" in
+    try-restart)
+        /usr/bin/dcache condrestart
+        ;;
+    force-reload)
+        /usr/bin/dcache condrestart
+        ;;
+    *)
+        /usr/bin/dcache "$1"
+        ;;
+esac
