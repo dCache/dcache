@@ -1,0 +1,27 @@
+<project name="Core" basedir=".">
+
+    <target name="-dcache-copy-skel-opt">
+        <!-- rpm directory structure with some defaults scripts -->
+        <copy todir="${server.bin.dir}">
+            <fileset dir="${skelDir}">
+	      <exclude name="etc/PlotConfiguration.xml"/>
+	      <exclude name="share/httpd/static/images/*"/>
+	    </fileset>
+            <filterset filtersfile="common/opt-layout.properties"/>
+        </copy>
+        <copy todir="${server.bin.dir}/share/httpd/static/images">
+            <fileset dir="${skelDir}/share/httpd/static/images"/>
+        </copy>
+    </target>
+
+    <target name="install-server"
+            depends="-dcache-copy-skel-opt,dcache,javatunnel,
+                     -dcache-classpath"
+            description="build deploy-ready server package">
+        <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/libexec" includes="**/*.sh" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/libexec" includes="**/*.rb" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/jobs"    includes="**/*" perm="ugo+rx" />
+    </target>
+
+</project>
