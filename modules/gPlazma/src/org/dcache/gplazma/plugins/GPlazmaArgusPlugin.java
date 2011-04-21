@@ -1,10 +1,8 @@
 package org.dcache.gplazma.plugins;
 
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,8 +58,15 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String RESOURCE_ID = "ResourceID";
     private static final String PEP_ENDPOINT = "PEPEndpoint";
 
-    private static final Set<String> KEYNAMES = new HashSet<String>(Arrays.asList( new String[] { PEP_ENDPOINT, RESOURCE_ID, ACTION_ID, TRUST_MATERIAL, HOST_CERT, HOST_KEY, KEY_PASS } ));
+    // private static final Set<String> KEYNAMES = new HashSet<String>(Arrays.asList( new String[] { PEP_ENDPOINT, RESOURCE_ID, ACTION_ID, TRUST_MATERIAL, HOST_CERT, HOST_KEY, KEY_PASS } ));
 
+    private static final String DEFAULT_KEY_PASS = "";
+    private static final String DEFAULT_HOST_KEY = "/etc/grid-security/hostkey.pem";
+    private static final String DEFAULT_HOST_CERT = "/etc/grid-security/hostcert.pem";
+    private static final String DEFAULT_TRUST_MATERIAL = "/etc/grid-security/certificates";
+    private static final String DEFAULT_ACTION_ID = "access";
+    private static final String DEFAULT_RESOURCE_ID = "dcache";
+    private static final String DEFAULT_PEP_ENDPOINT = "https://localhost:8154/authz";
 
     private final PEPClient _pepClient;
 
@@ -106,14 +111,14 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
         _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
-        Map<String, String> kvmap = ArgumentMapFactory.createFromAllKeyValuePairs(KEYNAMES, args);
-        if (kvmap.get(PEP_ENDPOINT) != null) pepConfig.addPEPDaemonEndpoint(kvmap.get(PEP_ENDPOINT));
-        _resourceId = kvmap.get(RESOURCE_ID) != null? _resourceId = kvmap.get(RESOURCE_ID) : "DUMMY-RESOURCE";
-        _actionId = kvmap.get(ACTION_ID) != null? _actionId = kvmap.get(ACTION_ID) : "DUMMY-ACTION";
-        String trustMaterial = com.google.common.base.Strings.nullToEmpty(kvmap.get(TRUST_MATERIAL));
-        String hostCert = com.google.common.base.Strings.nullToEmpty(kvmap.get(HOST_CERT));
-        String hostKey = com.google.common.base.Strings.nullToEmpty(kvmap.get(HOST_KEY));
-        String keyPass = com.google.common.base.Strings.nullToEmpty(kvmap.get(KEY_PASS));
+        Map<String, String> kvmap = ArgumentMapFactory.createFromKeyValuePairs(args);
+        pepConfig.addPEPDaemonEndpoint(ArgumentMapFactory.getValue(kvmap, PEP_ENDPOINT, DEFAULT_PEP_ENDPOINT));
+        _resourceId = ArgumentMapFactory.getValue(kvmap, RESOURCE_ID, DEFAULT_RESOURCE_ID);
+        _actionId = ArgumentMapFactory.getValue(kvmap, ACTION_ID, DEFAULT_ACTION_ID);
+        String trustMaterial = ArgumentMapFactory.getValue(kvmap, TRUST_MATERIAL, DEFAULT_TRUST_MATERIAL);
+        String hostCert = ArgumentMapFactory.getValue(kvmap, HOST_CERT, DEFAULT_HOST_CERT);
+        String hostKey = ArgumentMapFactory.getValue(kvmap, HOST_KEY, DEFAULT_HOST_KEY);
+        String keyPass = ArgumentMapFactory.getValue(kvmap, KEY_PASS, DEFAULT_KEY_PASS);
 
         pepConfig.setTrustMaterial(trustMaterial);
         pepConfig.setKeyMaterial(hostCert, hostKey, keyPass);
