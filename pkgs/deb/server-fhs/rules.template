@@ -44,6 +44,7 @@ install_app_data:
 install_package_data:
 	dh_installchangelogs
 	dh_compress
+	dh_installlogrotate
 	dh_installdebconf
 	dh_installdeb
 	dh_installdocs
