@@ -7,9 +7,9 @@ Index: @DebPatchRoot@/opt/d-cache/share/defaults/paths.properties
 @@ -15,17 +15,17 @@
 
 -dcache.paths.share=${dcache.home}/share/
-+dcache.paths.share=/usr/share/dcache/share
++dcache.paths.share=/usr/share/dcache/
  dcache.paths.share.lib=${dcache.paths.share}/lib
- (deprecated)config=${dcache.home}/config
+-(deprecated)config=${dcache.home}/config
 -dcache.paths.config=${config}
 -dcache.paths.etc=${dcache.home}/etc
 -dcache.paths.bin=${dcache.home}/bin
@@ -17,8 +17,8 @@ Index: @DebPatchRoot@/opt/d-cache/share/defaults/paths.properties
 +(deprecated)config=${dcache.paths.etc}
 +dcache.paths.config=${config}
 +dcache.paths.etc=/etc/dcache
-+dcache.paths.bin=/usr/share/bin
-+dcache.paths.jobs=/usr/share/dcache/jobs
++dcache.paths.bin=/usr/share/dcache/bin
++dcache.paths.jobs=/usr/share/dcache/libexec
  dcache.paths.lock.file=/var/run/subsys/cache
  dcache.paths.pnfs=/pnfs
 -(deprecated)classesDir=${dcache.home}/classes
@@ -31,7 +31,16 @@ Index: @DebPatchRoot@/opt/d-cache/share/defaults/paths.properties
 +(deprecated)classesDir=/usr/share/dcache/classes
 +dcache.paths.classes=${classesDir}
 +dcache.paths.lib=/usr/share/dcache/lib
-+dcache.paths.docs=/usr/share/doc/dcache
-+dcache.paths.billing=/var/log/dcache/billing
-+dcache.paths.statistics=/usr/share/dcache/statistics
++dcache.paths.docs=/usr/share/doc/dcache-server
++dcache.paths.billing=/var/lib/dcache/billing
++dcache.paths.statistics=/var/lib/dcache/statistics
 +dcache.paths.local=/usr/share/dcache/local
+Index: @DebPatchRoot@/opt/d-cache/share/defaults/dcache.properties
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/share/defaults/dcache.properties	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/share/defaults/dcache.properties	@Timestamp@.154677085 +0200
+@@ -50,2 +50,2 @@
+-(deprecated,not-for-services)logArea=/var/log
+-(not-for-services)dcache.log.dir=${logArea}
++(deprecated,not-for-services)logArea=/var/log/dcache
++(not-for-services)dcache.log.dir=${logArea}
