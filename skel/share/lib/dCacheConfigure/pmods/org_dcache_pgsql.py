@@ -48,8 +48,8 @@ def setup_dcache_pgsql(cfg,hostname):
     for username in ['pnfsserver','srmdcache','bill']:
         org_pgsql_cfg.postgresql_user_add(username)
     db_defs = {
-        'companion':'etc/psql_install_companion.sql',
-        'replicas':'etc/psql_install_replicas.sql'
+        'companion':'share/pnfs/psql_install_companion.sql',
+        'replicas':'share/replica/psql_install_replicas.sql'
     }
     dCache_home = org_dcache_cfg_query.get_dcache_path_home(cfg)
     for db in dcache_pgsql_databases_list(cfg,hostname):

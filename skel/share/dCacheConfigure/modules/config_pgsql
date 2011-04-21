@@ -426,10 +426,10 @@ check_postgresql_database_all()
             yaimlog INFO "Could not find '$RDBMS' so installing"
             case "${RDBMS}" in
                 "companion")
-                    create_postgresql_database $RDBMS ${INSTALL_ROOT}/d-cache/etc/psql_install_companion.sql
+                    create_postgresql_database $RDBMS ${INSTALL_ROOT}/d-cache/share/pnfs/psql_install_companion.sql
                 ;;      
                 "replicas")
-                    create_postgresql_database $RDBMS ${INSTALL_ROOT}/d-cache/etc/psql_install_replicas.sql
+                    create_postgresql_database $RDBMS ${INSTALL_ROOT}/d-cache/share/replica/psql_install_replicas.sql
                 ;;
                 * )
                     create_postgresql_database $RDBMS
