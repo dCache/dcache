@@ -66,6 +66,15 @@ Index: @DebPatchRoot@/opt/d-cache/share/defaults/srm.properties
 @@ -417,1 +417,1 @@
 -srmUserCredentialsDirectory=${dcache.home}/credentials
 +srmUserCredentialsDirectory=/var/lib/dcache/credentials
+Index: @DebPatchRoot@/opt/d-cache/share/defaults/admin.properties
+===================================================================
+--- @DebPatchRoot@.orig/opt/d-cache/share/defaults/admin.properties	@TimestampOrig@.725302203 +0200
++++ @DebPatchRoot@/opt/d-cache/share/defaults/admin.properties	@Timestamp@.154677085 +0200
+@@ -32,2 +32,2 @@
+-(deprecated)keyBase=${dcache.paths.etc}
+-dcache.paths.ssh-keys=${keyBase}
++(deprecated)keyBase=/etc/dcache/admin
++dcache.paths.ssh-keys=${keyBase}
 Index: @DebPatchRoot@/opt/d-cache/bin/dcache
 ===================================================================
 --- @DebPatchRoot@.orig/opt/d-cache/bin/dcache	@TimestampOrig@.725302203 +0200
