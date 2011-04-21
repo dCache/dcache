@@ -1,0 +1,27 @@
+#!/bin/sh -e
+. /usr/share/debconf/confmodule
+db_stop
+
+if [ "$1" = configure ]; then
+    # Make sure the administrative user exists
+    if ! getent passwd dcache > /dev/null; then
+        adduser --system --quiet --home /var/lib/dcache --no-create-home \
+            --shell /bin/bash --group --gecos "dCache administrator" dcache
+    fi
+
+    # check validity of dcache user and group
+    if [ "`id -u dcache`" -eq 0 ]; then
+        echo "The dcache system user must not have uid 0 (root).
+Please fix this and reinstall this package." >&2
+        exit 1
+    fi
+    if [ "`id -g dcache`" -eq 0 ]; then
+        echo "The dcache system user must not have root as primary group.
+Please fix this and reinstall this package." >&2
+        exit 1
+    fi
+
+    # ensure home directory ownership
+    mkdir -p /var/lib/dcache
+    chown dcache:dcache /var/lib/dcache
+fi
