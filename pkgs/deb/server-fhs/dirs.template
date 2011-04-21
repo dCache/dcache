@@ -1,12 +1,9 @@
 usr/bin
 usr/share/dcache
 usr/share/doc/dcache-server
-usr/share/man
-usr/share/man/man8
-etc/dcache
+usr/sbin
 etc/dcache/admin
 var/log/dcache
-var/lib/dcache
 var/lib/dcache/config
 var/lib/dcache/billing
 var/lib/dcache/statistics

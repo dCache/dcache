@@ -8,25 +8,36 @@ install_app_data:
 	dh_prep
 	dh_installdirs
 	dh_quilt_patch
-	cp -Rf opt/d-cache/etc/users debian/@PackageName@/etc/dcache/admin/
-	rm -Rf opt/d-cache/etc/users
-	cp -Rf opt/d-cache/etc/* debian/@PackageName@/etc/dcache/
 
-	cp -Rf opt/d-cache/share/man/man8/* debian/@PackageName@/usr/share/man/man8/
-	# manpages on debian should be gzipped
+	# dCacheConfigure doesn't understand the FHS structure anyway
+	rm -rf opt/d-cache/bin/dCacheConfigure.sh
+	rm -rf opt/d-cache/share/dCacheConfigure
+	rm -rf opt/d-cache/share/lib/dCacheConfigure
+
+	# Debian policy says not to have sh ending for files in /usr/bin
+	mv -f opt/d-cache/bin/chimera-get-acl.sh opt/d-cache/bin/chimera-get-acl
+	mv -f opt/d-cache/bin/chimera-set-acl.sh opt/d-cache/bin/chimera-set-acl
+	mv -f opt/d-cache/bin/chimera-cli.sh opt/d-cache/bin/chimera-cli
+
+	mv -f opt/d-cache/etc/users debian/@PackageName@/etc/dcache/admin/
+	mv -f opt/d-cache/etc/* debian/@PackageName@/etc/dcache/
+
+	# manpages go in /usr/share/man and are gzipped on Debian
+	mv -f opt/d-cache/share/man debian/@PackageName@/usr/share/
 	gzip -9 debian/@PackageName@/usr/share/man/man8/*
-	# don't copy the man-folder into the normal share directory
-	rm -Rf opt/d-cache/share/man
 
-	cp -Rf opt/d-cache/share/doc/* debian/@PackageName@/usr/share/doc/dcache-server/
-	rm -Rf opt/d-cache/share/doc
+	mv -f opt/d-cache/share/doc/* debian/@PackageName@/usr/share/doc/dcache-server/
 
-	cp -Rf opt/d-cache/share/* debian/@PackageName@/usr/share/dcache/
-	cp -Rf opt/d-cache/bin/* debian/@PackageName@/usr/bin/
-	cp -Rf opt/d-cache/classes debian/@PackageName@/usr/share/dcache/
-	cp -Rf opt/d-cache/docs/* debian/@PackageName@/usr/share/doc/dcache-server/
-	cp -Rf opt/d-cache/libexec debian/@PackageName@/usr/share/dcache/
-	cp -Rf opt/d-cache/jobs/* debian/@PackageName@/usr/share/dcache/libexec/
+	mv -f opt/d-cache/share/* debian/@PackageName@/usr/share/dcache/
+	mv -f opt/d-cache/bin/* debian/@PackageName@/usr/bin/
+	mv -f opt/d-cache/classes debian/@PackageName@/usr/share/dcache/
+	mv -f opt/d-cache/docs/* debian/@PackageName@/usr/share/doc/dcache-server/
+	# merge jobs/ libexec/ and lib/ and promote some of the subdirs
+	mv -f opt/d-cache/libexec/chimera debian/@PackageName@/usr/share/dcache/
+	mv -f opt/d-cache/libexec/infoProvider/info-based-infoProvider.sh debian/@PackageName@/usr/sbin/dcache-info-provider
+	rmdir opt/d-cache/libexec/infoProvider
+	mv -f opt/d-cache/libexec/* debian/@PackageName@/usr/share/dcache/lib/
+	mv -f opt/d-cache/jobs/* debian/@PackageName@/usr/share/dcache/lib/
 
 install_package_data:
 	dh_installchangelogs
