@@ -29,8 +29,6 @@ import static org.junit.Assert.*;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 
-import static org.dcache.gplazma.plugins.CachedMapsProvider.*;
-
 public class AuthzDbPluginTest
 {
     private final static URL TEST_FIXTURE =

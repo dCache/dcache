@@ -1,0 +1,5 @@
+# some comment with a following empty line
+
+"/O=GermanGrid/OU=DESY/CN=Tigran Mkrtchyan" "/dteam/Role=NULL/Capability=NULL" tigran
+"/O=GermanGrid/OU=DESY/CN=Tigran Mkrtchyan" "/cms/Role=NULL/Capability=NULL" tigrancms # comment
+"/O=GermanGrid/OU=DESY/CN=Klaus Maus" "/dteam/Role=NULL/Capability=NULL" klaus # comment"
