@@ -10,14 +10,18 @@ import org.dcache.auth.FQAN;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.util.Glob;
 import com.google.common.base.Strings;
 
 /**
- * Parser for vorolemap files ("<DN>" "<FQAN>" "<USERNAME>") mapping dn/fqan pairs to a username.
+ * Parser for vorolemap files ("<DN>" "<FQAN>" "<USERNAME>") mapping
+ * dn/fqan pairs to a username.
+ *
  * @author karsten
  */
-class VOMapLineParser implements LineParser<VOMapLineParser.DNFQANPredicate, String> {
-
+class VOMapLineParser
+    implements LineParser<VOMapLineParser.DNFQANPredicate, String>
+{
     private static final Logger _log = LoggerFactory.getLogger(VOMapLineParser.class);
 
     private static final String SOME_WS = "\\s+";
@@ -43,33 +47,38 @@ class VOMapLineParser implements LineParser<VOMapLineParser.DNFQANPredicate, Str
         Matcher matcher = ROLE_MAP_FILE_LINE_PATTERN.matcher(line);
         if (matcher.lookingAt()) {
             String dn = matcher.group(RM_DN_GROUP).replace("\"", "");
-            String vorole = matcher.group(RM_FQAN_GROUP) == null? "":matcher.group(RM_FQAN_GROUP).replace("\"", "");
-
-            FQAN fqan = new FQAN(vorole);
-
-            return new DNFQANStringEntry(new DNFQANPredicate(dn, fqan.toString()), matcher.group(RM_KEY_GROUP));
+            String vorole =
+                Strings.nullToEmpty(matcher.group(RM_FQAN_GROUP));
+            FQAN fqan = new FQAN(vorole.replace("\"", ""));
+            return new DNFQANStringEntry(new DNFQANPredicate(dn, fqan),
+                                         matcher.group(RM_KEY_GROUP));
         }
         _log.warn("Ignored malformed line in VORoleMap-File: '{}'", line);
         return null;
     }
 
-    static class DNFQANPredicate implements MapPredicate<NameRolePair> {
-
+    static class DNFQANPredicate implements MapPredicate<NameRolePair>
+    {
         private final Pattern _dnPattern;
-        private final Pattern _fqanPattern;
+        private final FQAN _fqan;
 
-        public DNFQANPredicate(String dnPattern, String fqanPattern) {
-            _dnPattern = Pattern.compile(dnPattern.replaceAll("\\*", ".*"));
-            _fqanPattern = Pattern.compile(fqanPattern.replaceAll("\\*",".*"));
+        public DNFQANPredicate(String dnGlob, FQAN fqan) {
+            _dnPattern = Glob.parseGlobToPattern(dnGlob);
+            _fqan = fqan;
         }
 
         @Override
         public boolean matches(NameRolePair dnfqan) {
-            return _dnPattern.matcher(dnfqan.getName()).matches() && _fqanPattern.matcher(dnfqan.getRole()).lookingAt();
+            String dn = Strings.nullToEmpty(dnfqan.getName());
+            FQAN fqan = new FQAN(Strings.nullToEmpty(dnfqan.getRole()));
+            return _dnPattern.matcher(dn).matches() &&
+                (_fqan.toString().isEmpty() || _fqan.equals(fqan));
         }
     }
 
-    private final class DNFQANStringEntry implements Map.Entry<DNFQANPredicate, String> {
+    private final static class DNFQANStringEntry
+        implements Map.Entry<DNFQANPredicate, String>
+        {
 
         private final DNFQANPredicate _key;
         private String _value;

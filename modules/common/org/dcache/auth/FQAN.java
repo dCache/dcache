@@ -171,6 +171,12 @@ public class FQAN implements java.io.Serializable {
         return !capability.isEmpty();
     }
 
+    public FQAN getParent()
+    {
+        int i = fqan.lastIndexOf('/');
+        return (i > 1) ? new FQAN(fqan.substring(0, i)) : null;
+    }
+
     @Override
     public int hashCode() {
         return fqan.hashCode();

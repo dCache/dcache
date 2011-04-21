@@ -1,22 +1,45 @@
 package org.dcache.gplazma.plugins;
 
 import java.util.Collection;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.io.IOException;
 
 import junit.framework.AssertionFailedError;
+
+import com.google.common.io.Resources;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
-import static org.dcache.gplazma.plugins.CachedMapsProvider.*;
 
 public class CachedAuthzMapTest
 {
+    public static final String VALID_USERNAME_RESPONSE = "tigran";
+    public static final String INVALID_USERNAME = "SomeInvalidUser";
+
+    public static final int VALID_USERNAME_UID = 3750;
+    public static final int VALID_USERNAME_GID = 500;
+    public static final int INVALID_GID = 666;
+    public static final int INVALID_UID = 666;
+
+    private final static URL TEST_FIXTURE =
+        Resources.getResource("org/dcache/gplazma/plugins/authzdb-parser.fixture");
+
+    private SourceBackedPredicateMap<String,UserAuthzInformation>
+        loadFixture(URL fixture)
+        throws IOException
+    {
+        return new SourceBackedPredicateMap(new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())), new AuthzMapLineParser());
+    }
+
     @Test
     public void testValidUsername()
+        throws IOException
     {
         Collection<UserAuthzInformation> results =
-            createCachedAuthzMap().getValuesForPredicatesMatching(VALID_USERNAME_RESPONSE);
+            loadFixture(TEST_FIXTURE).getValuesForPredicatesMatching(VALID_USERNAME_RESPONSE);
 
         assertCollectionContains(results, new UserAuthzInformation(
                 VALID_USERNAME_RESPONSE,
@@ -39,9 +62,10 @@ public class CachedAuthzMapTest
 
     @Test
     public void testInvalidUsername()
+        throws IOException
     {
         Collection<UserAuthzInformation> results =
-            createCachedAuthzMap().getValuesForPredicatesMatching(INVALID_USERNAME);
+            loadFixture(TEST_FIXTURE).getValuesForPredicatesMatching(INVALID_USERNAME);
 
         Assert.assertTrue(results.isEmpty());
     }

@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -82,25 +83,32 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
         boolean authorized = false;
 
         for (FQANPrincipal fqanPrincipal: fqanPrincipals) {
+            boolean found = false;
             boolean primary = fqanPrincipal.isPrimaryGroup();
-            for (GlobusPrincipal globusPrincipal: globusPrincipals) {
-                NameRolePair pair =
-                    new NameRolePair(globusPrincipal.getName(),
-                                     fqanPrincipal.getName());
-                List<String> names = _map.getValuesForPredicatesMatching(pair);
-                if (!names.isEmpty()) {
-                    String name = names.get(0);
-                    Principal groupPrincipal =
-                        new GroupNamePrincipal(name, primary);
-                    principals.add(groupPrincipal);
-                    authorizedPrincipals.add(groupPrincipal);
-                    authorizedPrincipals.add(fqanPrincipal);
-                    authorizedPrincipals.add(globusPrincipal);
-                    authorized = true;
-                    _log.info("VOMS authorzation successful for user with DN: {} and FQAN: {} for user name: {}.",
-                              new Object[] { globusPrincipal.getName(), fqanPrincipal.getName(), name });
+            FQAN fqan = fqanPrincipal.getFqan();
+            do {
+                for (GlobusPrincipal globusPrincipal: globusPrincipals) {
+                    NameRolePair pair =
+                        new NameRolePair(globusPrincipal.getName(),
+                                         fqan.toString());
+                    List<String> names =
+                        _map.getValuesForPredicatesMatching(pair);
+                    if (!names.isEmpty()) {
+                        String name = names.get(0);
+                        Principal groupPrincipal =
+                            new GroupNamePrincipal(name, primary);
+                        principals.add(groupPrincipal);
+                        authorizedPrincipals.add(groupPrincipal);
+                        authorizedPrincipals.add(fqanPrincipal);
+                        authorizedPrincipals.add(globusPrincipal);
+                        authorized = true;
+                        found = true;
+                        _log.info("VOMS authorzation successful for user with DN: {} and FQAN: {} for user name: {}.",
+                                  new Object[] { globusPrincipal.getName(), fqanPrincipal.getName(), name });
+                    }
                 }
-            }
+                fqan = fqan.getParent();
+            } while (primary && !found && fqan != null);
         }
 
         if (!authorized) {
