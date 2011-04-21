@@ -44,4 +44,49 @@
 
     </target>
 
+    <target name="server-fhs.rpm" depends="install-server-fhs"
+            description="Build the dcache-server-xxx.rpm">
+
+        <!-- Create config files for RPM from Templates -->
+
+        <copy todir="${server.rpmTopDir}" overwrite="true">
+            <fileset dir="${rpmTemplateDir}">
+                <or>
+                    <filename name="rpm*.template" />
+                    <filename name="dcache-server-fhs.spec.template" />
+                </or>
+            </fileset>
+            <mapper type="glob" from="*.template" to="*" />
+            <filterset>
+                <filter token="rpmMacrosFile" value="${server.rpmMacrosFile}" />
+                <!-- This is only used in the rpmrc file -->
+
+                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
+                <!-- These are used in the rpmmacros file -->
+                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
+                <filter token="rpmTopDir" value="${server.rpmTopDir}" />
+
+                <filter token="Version" value="${version}" />
+                <filter token="Release" value="${patch}" />
+            </filterset>
+        </copy>
+
+        <mkdir dir="${package.root.dir}/server/etc/rc.d/init.d"/>
+        <copy file="${rpmTemplateDir}/dcache-server.init"
+              tofile="${package.root.dir}/server/etc/rc.d/init.d/dcache-server"/>
+
+        <exec executable="rpmbuild" failonerror="true">
+            <!-- output="${buildDir}/rpm.log" -->
+            <arg value="--buildroot" />
+            <arg file="${package.root.dir}/server" />
+            <arg value="--rcfile" />
+            <arg file="/usr/lib/rpm/rpmrc:${server.rpmRcFile}" />
+            <!-- some documentation claims that /usr/lib/rpm/rpmrc
+                                                            will always be parsed. But it currently isnt if not set here -->
+            <arg value="-bb" />
+            <arg file="${server.rpmTopDir}/dcache-server-fhs.spec" />
+        </exec>
+
+    </target>
+
 </project>
