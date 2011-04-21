@@ -5,7 +5,7 @@
 <project name="server-deb-build-new">
     <property file="common/deb.properties" />
 
-    <target name="-server.deb-common" depends="install-server">
+    <target name="-server.deb-common">
         <!--  timestamp for the changelog -->
         <tstamp>
             <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z"
@@ -25,7 +25,7 @@
         </chmod>
     </target>
 
-    <target name="server.deb" depends="-server.deb-common"
+    <target name="server.deb" depends="install-server,-server.deb-common"
         description="Build the dcache-server-xxx.deb">
 
         <!--  copy the package control files, replace variables -->
@@ -56,7 +56,8 @@
     </target>
 
     <!-- debian package with debian compliant file structure -->
-    <target name="server-fhs.deb" depends="-server.deb-common"
+    <target name="server-fhs.deb"
+            depends="install-server-fhs,-server.deb-common"
         description="Build a Debian FHS policy compliant dcache-server-xxx.deb">
         <tstamp>
             <format property="quilt-timestamp-orig" offset="-5" unit="second" pattern="yyyy-MM-dd HH:mm:ss" />
@@ -82,16 +83,6 @@
                 <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
                 <filter token="Timestamp" value="${timestamp}" />
                 <filter token="PackageName" value="${server.packageName}" />
-            </filterset>
-        </copy>
-
-        <mkdir dir="${server.debPatchDir}" />
-        <copy todir="${server.debPatchDir}">
-            <fileset dir="${server.debFHSTemplateDir}/patches" />
-            <filterset>
-                <filter token="DebPatchRoot" value="${server.debPatchRoot}" />
-                <filter token="TimestampOrig" value="${quilt-timestamp-orig}" />
-                <filter token="Timestamp" value="${quilt-timestamp}" />
             </filterset>
         </copy>
 

@@ -509,7 +509,7 @@ usage()
   echo "Imports pre 1.9.7 configuration files."
   echo
   echo "-h --help             Show this help"
-  echo "-d PATH               Path to dCache installation (default is /opt/dcache)"
+  echo "-d PATH               Path to dCache installation (default is @dcache.home@)"
   echo "-f --force            Overwrite existing configuration files, if any"
   echo
   disclaimer
@@ -663,7 +663,7 @@ makeReFromString() # out $1 RE, in $2 an arbitrary string
 
 # Set home path
 if [ -z "$DCACHE_HOME" ]; then
-    DCACHE_HOME="/opt/d-cache"
+    DCACHE_HOME="@dcache.home@"
 fi
 
 # Process the command line
@@ -694,7 +694,7 @@ if [ ! -d "$DCACHE_HOME" ]; then
 fi
 
 # Load libraries
-. ${DCACHE_HOME}/share/lib/loadConfig.sh
+. @dcache.paths.bootloader@/loadConfig.sh
 . ${DCACHE_LIB}/utils.sh
 
 # Determine file names

@@ -115,9 +115,6 @@
         <copy file="${classesDir}/srm.jar" todir="${server.bin.dir}/classes" />
 
         <mkdir dir="${server.bin.dir}/etc" />
-
-        <copy file="${srm.src}/../sbin/upgrade_space_manager_schema.sh" todir="${server.bin.dir}/libexec" />
-
     </target>
 
 

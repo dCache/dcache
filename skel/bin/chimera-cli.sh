@@ -65,14 +65,14 @@ shift
 
 # Set home path
 if [ -z "$DCACHE_HOME" ]; then
-    DCACHE_HOME="/opt/d-cache"
+    DCACHE_HOME="@dcache.home@"
 fi
 if [ ! -d "$DCACHE_HOME" ]; then
     echo "$DCACHE_HOME is not a directory"
     exit 2
 fi
 
-. ${DCACHE_HOME}/share/lib/loadConfig.sh
+. @dcache.paths.bootloader@/loadConfig.sh
 
 dbpass=$(getProperty chimera.db.password)
 
