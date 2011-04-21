@@ -52,7 +52,9 @@ gplazmalite-vorole-mapping-priority="2"
 # Path to local or remotely accessible authorization repositories|services.
 # A valid path is required if corresponding switch is ON.
 
-# dcache.kpwd
+#  An example dcache.kpwd is located in the share/examples/gplazma directory.
+#  Copy this file into ${dcache.paths.etc} directory and modify the file's
+#  content as appropriate.
 kpwdPath="/opt/d-cache/etc/dcache.kpwd"
 
 # grid-mapfile
