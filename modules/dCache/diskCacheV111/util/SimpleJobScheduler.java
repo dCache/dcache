@@ -362,6 +362,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     }
 
     public void setMaxActiveJobs(int max) {
+        if( max < 0) {
+            throw new IllegalArgumentException( "new maximum value must be zero or greater");
+        }
+
         synchronized (_lock) {
             _maxActiveJobs = max;
             _lock.notifyAll();

@@ -219,7 +219,12 @@ public class HsmStorageHandler2
 
     public synchronized void setMaxActiveRestores(int restores)
     {
-        _fetchQueue.setMaxActiveJobs(restores);
+	try {
+	    _fetchQueue.setMaxActiveJobs(restores);
+	} catch(IllegalArgumentException e) {
+	    throw new IllegalArgumentException("Illegal value of max active restores: " + e.getMessage(),
+					       e);
+	}
     }
 
     @Override
