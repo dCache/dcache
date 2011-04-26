@@ -236,7 +236,7 @@ userForProcessOrDomain() # $1 pid, $2=domain
 checkForNonMigratedDcache()
 {
     if [ -f ${DCACHE_CONFIG}/dCacheSetup ] && \
-       [ -f ${DCACHE_CONFIG}/node_config ]; then
+       [ -f ${DCACHE_ETC}/node_config ]; then
 
         fail 1 "Cowardly refusing to do anything as you appear to have      \
                 upgraded from an old dCache version without adjusting the   \
