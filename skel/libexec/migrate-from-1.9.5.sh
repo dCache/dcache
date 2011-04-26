@@ -12,6 +12,8 @@ migrateSshFiles()
     migrateFileFromConfigToEtc server_key.pub
     migrateFileFromConfigToEtc host_key
     migrateFileFromConfigToEtc host_key.pub
+
+    copyAllFilesFromConfigSubdirToEtc users
 }
 
 
@@ -23,6 +25,18 @@ migrateFileFromConfigToEtc() # in $1 = name of file
     copyIfNew "$config_path/$1" "$etc_path/$1"
 }
 
+
+copyAllFilesFromConfigSubdirToEtc() # in $1 = name of directory
+{
+    src_dir="$(getProperty dcache.paths.config)/$1"
+    dst_dir="$(getProperty dcache.paths.etc)/$1"
+
+    if [ -d "$src_dir" ] && [ -d "$dst_dir" ]; then
+       printpi "Copying all files from $src_dir to $dst_dir" "^Copying"
+       cp -pr "$src_dir"/* "$dst_dir"
+       renameToPreMigration "$src_dir"
+    fi
+}
 
 # Returns 0 if option is set to 'yes' or 'y' in node_config or
 # door_config, 1 otherwise.
@@ -524,7 +538,7 @@ addServiceIfNotInOwnDomain() # $1 domain $2 service
 
 renameToPreMigration() # $1 = file name
 {
-  if [ -f "$1" ]; then
+  if [ -e "$1" ]; then
     printpi "Renaming $1 to $(basename $1).pre-197" "^Renaming"
     mv "$1" "$1.pre-197"
   fi
