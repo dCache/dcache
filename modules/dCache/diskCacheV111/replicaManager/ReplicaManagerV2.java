@@ -18,8 +18,6 @@ import  java.io.* ;
 import  java.sql.SQLException;
 import  java.util.*;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1230,7 +1228,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                synchronized (this) { // synchronization is required only to invoke notify()
                  this.notifyAll();
                }
-               _wCnt = workerCount.up();
+               _wCnt = workerCount.release();
                _log.info("Replicator ID=" + _Id + ", pnfsId=" + _pnfsId
                    + " finished, now " + (_maxWorkers - _wCnt) + "/" + _maxWorkers +
                    " workers are active");
@@ -1431,7 +1429,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          synchronized (this) { // synchronization is required only to invoke notify()
            this.notifyAll();
          }
-         _wCnt = workerCountRM.up();
+         _wCnt = workerCountRM.release();
          _log.info("Reducer ID=" + _Id + ", pnfsId=" + _pnfsId + " finished"
              + ", now " + (_maxWorkers - _wCnt) + "/" + _maxWorkers +
              " workers are active");
@@ -1526,7 +1524,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      do {
        try {
          _log.debug("replicateAsync - get worker");
-         cnt = workerCount.down();
+         cnt = workerCount.acquire();
          _log.debug("replicateAsync - got worker OK");
 
          noWorker = false;
@@ -1566,7 +1564,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      do{
        try {
          _log.debug("reduceAsync - get worker");
-         cnt = workerCountRM.down();
+         cnt = workerCountRM.acquire();
          _log.debug("reduceAsync - got worker - OK");
          noWorker = false;
        }
@@ -1756,21 +1754,21 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //--------------------------------------------------------------------------
     public String hh_show_pool = "<pool>               # show pool status";
     public String ac_show_pool_$_1(Args args) {
-      String poolName = new String(args.argv(0));
+      String poolName = args.argv(0);
       String poolStatus;
       synchronized (_dbLock) {
-        poolStatus = new String(_dbrmv2.getPoolStatus(poolName));
+        poolStatus = _dbrmv2.getPoolStatus(poolName);
       }
-      String s = new String("Pool '" + poolName + "' status " + poolStatus);
-      _log.info("INFO: "+ s);
+      String s = "Pool '" + poolName + "' status " + poolStatus;
+      _log.info("INFO: {}", s);
       return s;
     }
 
     public String hh_set_pool = "<pool> <state>";
     public String ac_set_pool_$_2(Args args) {
 
-      String poolName = new String(args.argv(0));
-      String poolStatus = new String(args.argv(1));
+      String poolName = args.argv(0);
+      String poolStatus = args.argv(1);
       boolean updatedOK = false;
       boolean setOK = false;
 
@@ -1796,7 +1794,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       }
 
       synchronized (_dbLock) {
-        String poolStatusOld = new String(_dbrmv2.getPoolStatus(poolName));
+        String poolStatusOld = _dbrmv2.getPoolStatus(poolName);
 
         _log.info("Pool '" + poolName + "' status was " + poolStatusOld);
 
@@ -1892,7 +1890,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //--------------------------------------------------------------------------
     public String hh_ls_unique = "<pool>               # check if pool drained off (has unique pndfsIds)";
     public String ac_ls_unique_$_1(Args args) {
-      String poolName    = new String(args.argv(0));
+      String poolName    = args.argv(0);
 
       _log.info("pool '" +poolName +"'");
       List uniqueList = findUniqueFiles( poolName );
@@ -1989,7 +1987,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                  }
              }
          } else {
-             poolName = new String(args.argv(0));
+             poolName = args.argv(0);
              if (poolName != null) {
                  synchronized (_hostMap) {
                      hostName = (String)_hostMap.get(poolName);
@@ -2013,8 +2011,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      public String ac_set_hostmap_$_2(Args args) {
          StringBuffer sb = new StringBuffer();
 
-         String poolName = new String(args.argv(0));
-         String hostName = new String(args.argv(1));
+         String poolName = args.argv(0);
+         String hostName = args.argv(1);
 
          if (poolName != null && hostName != null) {
              synchronized (_hostMap) {
@@ -2037,7 +2035,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       */
      public String ac_remove_hostmap_$_1(Args args) {
          StringBuffer sb = new StringBuffer();
-         String poolName = new String(args.argv(0));
+         String poolName = args.argv(0);
 
          if (poolName != null) {
              synchronized (_hostMap) {
@@ -2205,7 +2203,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     //----------------------------------------------------------------------------
     public String hh_pool_inventory = "<pool>          # DEBUG - danger, DB not locked";
     public String ac_pool_inventory_$_1(Args args) {
-      String poolName = new String(args.argv(0));
+      String poolName = args.argv(0);
 
       synchronized (_dbLock) {
         if (_initDbActive)
@@ -2527,7 +2525,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
             // Stay calm if it was "drainoff", "offline", "offline-prepare",
             //  or known to be "online" already
             synchronized (_dbLock) {
-              String poolStatusOld = new String(_db.getPoolStatus(poolName));
+              String poolStatusOld = _db.getPoolStatus(poolName);
               // can be "down" or "UNKNOWN" or who knows what else ("", null) ...
               // ... so explicitly check strings I want ignore
               if (!poolStatusOld.equals("drainoff")
@@ -2819,7 +2817,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     if( onReplicaMgrCommand )
       _log.debug("pool status changed on RM command");
 
-    String poolName = new String(msPool);
+    String poolName = msPool;
     /** @todo - do cleanup
      * string can be "offline" or "oflline-prepare" - it is set above
      */
@@ -2851,7 +2849,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     synchronized (_dbLock) {
 
-      String poolStatusOld = new String(_dbrmv2.getPoolStatus(poolName));
+      String poolStatusOld = _dbrmv2.getPoolStatus(poolName);
 
       if (poolStatusOld.equals("drainoff")) {
         _log.info("poolStatusChanged, Pool '" + poolName + "' status is " +

@@ -6,10 +6,6 @@
 
 package diskCacheV111.replicaManager ;
 
-import  java.io.* ;
-import  java.util.*;
-import  java.lang.*;
-
 public class Semaphore {
   protected int count;
   public Semaphore(int initCount) {
@@ -19,10 +15,10 @@ public class Semaphore {
   }
 
   public Semaphore() {
-    count = 0;
+    this(0);
   }
 
-  public synchronized int down() throws InterruptedException {
+  public synchronized int acquire() throws InterruptedException {
     while (count == 0) {
       wait();
     }
@@ -30,7 +26,7 @@ public class Semaphore {
     return count;
   }
 
-  public synchronized int up() {
+  public synchronized int release() {
     count++;
     notify();
     return count;
