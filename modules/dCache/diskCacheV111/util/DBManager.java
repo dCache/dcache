@@ -11,9 +11,16 @@
 
 package diskCacheV111.util;
 
-import java.util.Iterator;
+import java.util.Set;
+import java.util.List;
 import java.util.HashSet;
-import java.sql.*;
+import java.util.Arrays;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.sql.DatabaseMetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.util.JdbcConnectionPool;
@@ -49,16 +56,15 @@ public class DBManager {
 	}
 
 
-	public HashSet select(IoPackage pkg,
-			  String query) throws SQLException {
+	public <T> Set<T> select(IoPackage<T> pkg,
+                                 String query) throws SQLException {
 		//
 		// Handling of connection is localized here
 		//
 		Connection connection = null;
-		HashSet set=null;
 		try {
 			connection = connectionPool.getConnection();
-			set =  pkg.select(connection,query);
+			Set<T> set =  pkg.select(connection,query);
                         return set;
 		}
 		catch (SQLException e) {
@@ -75,18 +81,17 @@ public class DBManager {
 		}
 	}
 
-	public Object selectForUpdate(Connection connection,
-				      IoPackage pkg,
-                                      String query,
-                                      Object ... args) throws SQLException {
+	public <T> T selectForUpdate(Connection connection,
+                                     IoPackage<T> pkg,
+                                     String query,
+                                     Object ... args) throws SQLException {
 		PreparedStatement stmt = null;
                 try {
                         stmt = connection.prepareStatement(query);
                         for (int i = 0; i < args.length; i++) {
                                 stmt.setObject(i + 1, args[i]);
                         }
-                        Object o =  pkg.selectForUpdate(connection,stmt);
-                        return o;
+                        return  pkg.selectForUpdate(connection,stmt);
                 }
                 finally {
                         if (stmt != null) {
@@ -99,11 +104,10 @@ public class DBManager {
                 }
         }
 
-	public HashSet selectPrepared(IoPackage pkg,
-				      String query,
-				      Object ... args) throws SQLException {
+        public <T> Set<T> selectPrepared(IoPackage<T> pkg,
+                                         String query,
+                                         Object ... args) throws SQLException {
 		Connection connection = null;
-		HashSet set=null;
                 PreparedStatement stmt=null;
 		try {
 			connection = connectionPool.getConnection();
@@ -111,7 +115,7 @@ public class DBManager {
 			for (int i = 0; i < args.length; i++) {
 				stmt.setObject(i + 1, args[i]);
 			}
-			set =  pkg.selectPrepared(connection,stmt);
+			Set<T> set =  pkg.selectPrepared(connection,stmt);
                         stmt.close();
                         connectionPool.returnConnection(connection);
                         connection=null;
@@ -178,31 +182,34 @@ public class DBManager {
 	}
 
 	public boolean hasTable(String table) throws SQLException {
-	    boolean hasTable = false;
-        Connection connection = connectionPool.getConnection();
-        try {
-            hasTable = hasTable(connection, table);
-            connectionPool.returnConnection(connection);
-            connection=null;
-        } finally {
-            if(connection!= null) {
-                connectionPool.returnFailedConnection(connection);
-            }
-        }
+                boolean hasTable = false;
+                Connection connection = connectionPool.getConnection();
+                try {
+                        hasTable = hasTable(connection, table);
+                        connectionPool.returnConnection(connection);
+                        connection=null;
+                }
+                finally {
+                        if(connection!= null) {
+                                connectionPool.returnFailedConnection(connection);
+                        }
+                }
 
-        return hasTable;
+                return hasTable;
 	}
 
-	private boolean hasTable(Connection connection, String table) throws SQLException {
-        DatabaseMetaData metadata = connection.getMetaData();
-        ResultSet set = metadata.getTables(null, null, table, null);
-        boolean hasTable = false;
-        try {
-            hasTable = set.next();
-        } finally {
-            set.close();
-        }
-        return hasTable;
+	private boolean hasTable(Connection connection, String table)
+                throws SQLException {
+                DatabaseMetaData metadata = connection.getMetaData();
+                ResultSet set = metadata.getTables(null, null, table, null);
+                boolean hasTable = false;
+                try {
+                        hasTable = set.next();
+                }
+                finally {
+                        set.close();
+                }
+                return hasTable;
 	}
 
 	public void createTable( String name,
@@ -269,18 +276,15 @@ public class DBManager {
 								      name,
 								      false,
 								      false);
-				HashSet<String> listOfColumnsToBeIndexed = new HashSet<String>();
-				for (String column : columns) {
-					listOfColumnsToBeIndexed.add(column.toLowerCase());
-				}
+                                Set<String> listOfColumnsToBeIndexed = new HashSet<String>(Arrays.asList(columns));
 				while(set.next()) {
 					String s = set.getString("column_name").toLowerCase();
 					if (listOfColumnsToBeIndexed.contains(s)) {
 						listOfColumnsToBeIndexed.remove(s);
 					}
 				}
-				for (Iterator<String> i=listOfColumnsToBeIndexed.iterator();i.hasNext();) {
-					String column = i.next();
+                                //				for (Iterator<String> i=listOfColumnsToBeIndexed.iterator();i.hasNext();) {
+				for (String column : listOfColumnsToBeIndexed) {
                                         //
                                         // column contains name(s) of columns on which we would like to
                                         // create an index. Comma separated column names imply creation

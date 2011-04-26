@@ -1,9 +1,9 @@
 //______________________________________________________________________________
 //
-// $Id: LinkGroupIO.java 8022 2008-01-07 21:25:23Z litvinse $ 
+// $Id: LinkGroupIO.java 8022 2008-01-07 21:25:23Z litvinse $
 // $Author: litvinse $
 //
-// Infrastructure to retrieve objects from DB 
+// Infrastructure to retrieve objects from DB
 //
 // created 11/07 by Dmitry Litvintsev (litvinse@fnal.gov)
 //
@@ -11,9 +11,13 @@
 
 package diskCacheV111.services.space;
 
-import java.sql.*;
 import java.util.Set;
 import java.util.HashSet;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
@@ -22,25 +26,25 @@ import diskCacheV111.util.IoPackage;
 /*
 dcache=# \d srmlinkgroup;
                  Table "public.srmlinkgroup"
-        Column        |           Type           | Modifiers 
+        Column        |           Type           | Modifiers
 ----------------------+--------------------------+-----------
  id                   | bigint                   | not null
- name                 | character varying(32672) | 
- freespaceinbytes     | bigint                   | 
- lastupdatetime       | bigint                   | 
- onlineallowed        | integer                  | 
- nearlineallowed      | integer                  | 
- replicaallowed       | integer                  | 
- outputallowed        | integer                  | 
- custodialallowed     | integer                  | 
- reservedspaceinbytes | bigint                   | 
+ name                 | character varying(32672) |
+ freespaceinbytes     | bigint                   |
+ lastupdatetime       | bigint                   |
+ onlineallowed        | integer                  |
+ nearlineallowed      | integer                  |
+ replicaallowed       | integer                  |
+ outputallowed        | integer                  |
+ custodialallowed     | integer                  |
+ reservedspaceinbytes | bigint                   |
 Indexes:
     "srmlinkgroup_pkey" PRIMARY KEY, btree (id)
 */
 /*
 dcache=# \d srmlinkgroupvos;
            Table "public.srmlinkgroupvos"
-   Column    |           Type           | Modifiers 
+   Column    |           Type           | Modifiers
 -------------+--------------------------+-----------
  vogroup     | character varying(32672) | not null
  vorole      | character varying(32672) | not null
@@ -53,12 +57,12 @@ Foreign-key constraints:
 
 
 
-public class LinkGroupIO extends IoPackage  { 
+public class LinkGroupIO extends IoPackage<LinkGroup>  {
 
 	public static final String LINKGROUP_TABLE  = "srmLinkGroup".toLowerCase();
 	public static final String LINKGROUP_VO_TABLE = "srmLinkGroupVOs".toLowerCase();
-	public static final String INSERT = 
-		"INSERT INTO "+LINKGROUP_TABLE + 
+	public static final String INSERT =
+		"INSERT INTO "+LINKGROUP_TABLE +
 		" (id, name, freeSpaceInBytes, lastUpdateTime, onlineAllowed," +
 		" nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"+
 		" VALUES ( ?,?,?,?,?,?,?,?,?,?)";
@@ -80,18 +84,18 @@ public class LinkGroupIO extends IoPackage  {
 	public static final String DECREMENT_FREE_SPACE = "UPDATE "+LINKGROUP_TABLE+" SET freespaceinbytes = freespaceinbytes - ? where id=?";
 	public static final String INCREMENT_FREE_SPACE = "UPDATE "+LINKGROUP_TABLE+" SET freespaceinbytes = freespaceinbytes + ? where id=?";
 	public static final String UPDATE = "UPDATE "+LINKGROUP_TABLE+" SET freeSpaceInBytes=?,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"+
-		"replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";	
+		"replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";
 	public static final String SELECT_ALL = "SELECT * FROM "+LINKGROUP_TABLE;
 
 	public LinkGroupIO() {
 	}
 
-	public HashSet select(Connection connection,
-			  String txt) throws SQLException {
-		HashSet<LinkGroup> container = new HashSet<LinkGroup>();
+	public Set<LinkGroup> select(Connection connection,
+                                     String txt) throws SQLException {
+		Set<LinkGroup> container = new HashSet<LinkGroup>();
 		Statement stmt = connection.createStatement();
 		ResultSet set = stmt.executeQuery(txt);
-		while (set.next()) { 
+		while (set.next()) {
 			LinkGroup lg = new LinkGroup();
 			long id = set.getLong("id");
 			lg.setId(id);
@@ -108,7 +112,7 @@ public class LinkGroupIO extends IoPackage  {
 			s.setLong(1,id);
 			ResultSet vos = s.executeQuery();
 			Set<VOInfo> volist = new HashSet<VOInfo>();
-			while (vos.next()) { 
+			while (vos.next()) {
 				volist.add(new VOInfo(vos.getString("vogroup"),
 						      vos.getString("vorole")));
 			}
@@ -121,11 +125,11 @@ public class LinkGroupIO extends IoPackage  {
 	}
 
 
-	public HashSet selectPrepared(Connection connection,
+	public Set<LinkGroup> selectPrepared(Connection connection,
 				      PreparedStatement statement) throws SQLException {
-		HashSet<LinkGroup> container = new HashSet<LinkGroup>();
+		Set<LinkGroup> container = new HashSet<LinkGroup>();
 		ResultSet set = statement.executeQuery();
-		while (set.next()) { 
+		while (set.next()) {
 			LinkGroup lg = new LinkGroup();
 			long id = set.getLong("id");
 			lg.setId(id);
@@ -142,7 +146,7 @@ public class LinkGroupIO extends IoPackage  {
 			s.setLong(1,id);
 			ResultSet vos = s.executeQuery();
 			Set<VOInfo> volist = new HashSet<VOInfo>();
-			while (vos.next()) { 
+			while (vos.next()) {
 				volist.add(new VOInfo(vos.getString("vogroup"),
 						      vos.getString("vorole")));
 			}
