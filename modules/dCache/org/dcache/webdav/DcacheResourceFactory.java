@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentHashMap;
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -37,12 +36,10 @@ import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.ResourceFactory;
-import com.bradmcevoy.http.XmlWriter;
 import com.bradmcevoy.http.Range;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -95,9 +92,11 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
+
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
+import org.dcache.auth.UserNamePrincipal;
 /**
  * This ResourceFactory exposes the dCache name space through the
  * Milton WebDAV framework.
@@ -718,6 +717,13 @@ public class DcacheResourceFactory
                 new DoorRequestInfoMessage(cell, "remove");
             Subject subject = getSubject();
 
+            String owner = Subjects.getDn(subject);
+
+            if (owner == null) {
+                owner = Subjects.getUserName(subject);
+            }
+            infoRemove.setOwner(owner);
+
             long[] uids = Subjects.getUids(subject);
             long[] gids = Subjects.getGids(subject);
             if (uids.length > 0) {
@@ -727,7 +733,6 @@ public class DcacheResourceFactory
                 infoRemove.setGid((int) gids[0]);
             }
 
-            infoRemove.setOwner(Subjects.getUserName(subject));
             infoRemove.setPath(path.toString());
             infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
             _billingStub.send(infoRemove);
