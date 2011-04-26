@@ -891,13 +891,11 @@ public class Transfer implements Comparable<Transfer>
 
         try {
             String owner = Subjects.getDn(_subject);
-
+ 
             if (owner == null) {
-                if (owner == null) {
-                    owner = Subjects.getUserName(_subject);
-                }
+                owner = Subjects.getUserName(_subject);
             }
-
+           
             DoorRequestInfoMessage msg =
                 new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
             msg.setOwner(owner);
