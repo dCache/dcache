@@ -1,0 +1,6 @@
+"*" "/atlas/Role=production" atlas-prod
+"*" "/atlas/no" atlas-no
+"*" "/atlas/dk" atlas-dk
+"*" "/atlas" atlas-user
+"*" "/ops.ndgf.org" ops
+"*" "/ops" ops

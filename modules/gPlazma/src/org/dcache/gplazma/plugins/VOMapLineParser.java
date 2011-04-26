@@ -31,10 +31,13 @@ class VOMapLineParser
     private static final String DN = DN_WILDCARD +"|(?:"+ UNQUOTED_DN +")|(?:"+ QUOTED_TERM + ")";
     private static final String UNQUOTED_FQAN = "(?:/[\\w\\d,;:@\\-\\*\\.]+)+(?:/[\\w\\d\\s,;:@\\-\\*=]+)*";
     private static final String FQAN = "(?:" + UNQUOTED_FQAN +")|(?:"+ QUOTED_TERM + ")";
-    private static final String USERNAME = "[\\w\\d]+";
+    private static final String USERNAME = "[\\w.][\\w.\\-]*";
+    private static final String COMMENT = "#.*";
 
-    private static final Pattern ROLE_MAP_FILE_LINE_PATTERN = Pattern.compile("(?:"+SOME_WS+")?" + "("+ DN +")"+ "(?:" + SOME_WS + "("+ FQAN +"))?" + SOME_WS + "("+ USERNAME +")");
-    // assembles to:(?:\s+)?(\*|(?:(?:/[\w\d\s,;:@\*\.=]+)+)|(?:"[^"]*"))(?:\s+((?:(?:/[\w\d,;:@\*\.]+)+(?:/[\w\d\s,;:@\*=]+)*)|(?:"[^"]*")))?\s+([\w\d]+)
+    private static final Pattern ROLE_MAP_FILE_LINE_PATTERN =
+        Pattern.compile("(?:"+SOME_WS+")?" + "("+ DN +")"+ "(?:" + SOME_WS +
+                        "("+ FQAN +"))?" + SOME_WS + "("+ USERNAME +")" +
+                        "(?:"+SOME_WS+")?" + "(?:" + COMMENT + ")?");
 
     private static final int RM_DN_GROUP = 1;
     private static final int RM_FQAN_GROUP = 2;
@@ -45,7 +48,7 @@ class VOMapLineParser
         if (Strings.isNullOrEmpty(line.trim()) || line.startsWith("#")) return null;
 
         Matcher matcher = ROLE_MAP_FILE_LINE_PATTERN.matcher(line);
-        if (matcher.lookingAt()) {
+        if (matcher.matches()) {
             String dn = matcher.group(RM_DN_GROUP).replace("\"", "");
             String vorole =
                 Strings.nullToEmpty(matcher.group(RM_FQAN_GROUP));
