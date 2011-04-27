@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import javax.security.auth.Subject;
 
-import com.sun.security.auth.UserPrincipal;
+import org.dcache.auth.UserNamePrincipal;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
@@ -857,11 +857,10 @@ public class Transfer implements Comparable<Transfer>
 
         try {
             String owner = Subjects.getDn(_subject);
-            if (owner == null)  {
-                Set<UserPrincipal> principals =
-                    _subject.getPrincipals(UserPrincipal.class);
-                if (!principals.isEmpty()) {
-                    owner = principals.iterator().next().getName();
+
+            if (owner == null) {
+                if (owner == null) {
+                    owner = Subjects.getUserName(_subject);
                 }
             }
 
@@ -879,7 +878,7 @@ public class Transfer implements Comparable<Transfer>
             msg.setPath(_path.toString());
             msg.setTransactionTime(_startedAt);
             msg.setTransaction(getTransaction());
-            msg.setClient(_clientAddress.getAddress().getHostName());
+            msg.setClient(_clientAddress.getAddress().getHostAddress());
             msg.setPnfsId(getPnfsId());
             msg.setResult(code, error);
             if (_fileAttributes.isDefined(STORAGEINFO)) {
