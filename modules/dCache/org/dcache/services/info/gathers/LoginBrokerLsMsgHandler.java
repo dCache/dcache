@@ -128,7 +128,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 *     [interfaces]
 	 *       |
 	 *       |
-	 *       +--[ name ] (branch)
+	 *       +--[ id ] (branch)
 	 *       |   |
 	 *       |   +-- "name" (string metric: the host's name, as presented by the door)
 	 *       |   +-- "order"  (integer metric: 1 .. 2 ..)
@@ -145,7 +145,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 */
 	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, String name, int order, long lifetime) {
 
-		StatePath pathToInterfaceBranch = parentPath.newChild(name);
+		String id = name + "-" + order;
+
+		StatePath pathToInterfaceBranch = parentPath.newChild(id);
 
 		// Always add the name
 		update.appendUpdate( pathToInterfaceBranch.newChild( "name"), new StringStateValue( name, lifetime));
