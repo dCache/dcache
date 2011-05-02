@@ -28,6 +28,8 @@ import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
+import org.springframework.beans.factory.annotation.Required;
+
 /**
  * A decorator for NameSpaceProvider which acts as a policy
  * enforcement point. A PermissionHandler is used as a policy decision
@@ -45,12 +47,16 @@ import static org.dcache.namespace.FileAttribute.*;
 public class PermissionHandlerNameSpaceProvider
     extends AbstractNameSpaceProviderDecorator
 {
-    private final PermissionHandler _handler;
+    private PermissionHandler _handler;
 
-    public PermissionHandlerNameSpaceProvider(NameSpaceProvider inner,
-                                              PermissionHandler handler)
+    public PermissionHandlerNameSpaceProvider(NameSpaceProvider inner)
     {
         super(inner);
+    }
+
+    @Required
+    public void setPermissionHandler(PermissionHandler handler)
+    {
         _handler = handler;
     }
 

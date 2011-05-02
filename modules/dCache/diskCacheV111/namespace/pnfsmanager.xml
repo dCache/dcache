@@ -22,12 +22,7 @@
       <property name="folding" value="${folding}"/>
       <property name="directoryListLimit" value="${directoryListLimit}"/>
       <property name="permissionHandler" ref="permission-handler"/>
-      <property name="nameSpaceProvider">
-          <bean class="diskCacheV111.namespace.provider.PermissionHandlerNameSpaceProvider">
-              <constructor-arg ref="name-space-provider"/>
-              <constructor-arg ref="permission-handler"/>
-          </bean>
-      </property>
+      <property name="nameSpaceProvider" ref="name-space-provider"/>
       <property name="cacheLocationProvider" ref="cache-location-provider"/>
       <property name="queueMaxSize" value="${queueMaxSize}"/>
   </bean>
@@ -36,6 +31,7 @@
         factory-method="getProvider">
       <description>Name space provider</description>
       <constructor-arg value="${arguments}"/>
+      <property name="permissionHandler" ref="permission-handler"/>
   </bean>
 
   <bean id="cache-location-provider" class="${cachelocation-provider}"
