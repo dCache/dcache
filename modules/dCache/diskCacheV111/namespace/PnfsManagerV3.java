@@ -31,8 +31,6 @@ import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.ChainedPermissionHandler;
-import org.dcache.namespace.PosixPermissionHandler;
-import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;

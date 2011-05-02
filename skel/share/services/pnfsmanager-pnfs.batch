@@ -8,11 +8,11 @@
 #            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
 #
 #  else if    cacheInfo=<other> or missing
-#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 #  -p.
 #
 onerror continue
-set env cacheInfoProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+set env cacheInfoProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 define context setcontext.exe endDefine
   set env cacheInfoProvider diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
   set context -c pnfsNumberOfLocationThreads 0
@@ -28,7 +28,7 @@ onerror continue
 set context -c companionDatabaseHost localhost
 set context -c defaultPnfsServer localhost
 set context -c pnfs /pnfs/fs
-set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+set context -c namespaceProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 
 set env -c locationThreads 0
 
