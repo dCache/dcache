@@ -135,6 +135,8 @@ public interface PinCallbacks {
 
     public void PinningFailed(String reason);
 
+    public void Unavailable(String reason);
+
     public void Pinned(FileMetaData fileMetaData, String pinId);
 
     public void Exception(Exception e);

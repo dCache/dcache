@@ -44,6 +44,7 @@ import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.PoolManagerGetFileLocalityMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -867,6 +868,13 @@ public class PoolManagerV5
 
             return outputLinkGroups;
         }
+    }
+
+    public PoolManagerGetPoolMonitor
+        messageArrived(PoolManagerGetPoolMonitor msg)
+    {
+        msg.setPoolMonitor(_poolMonitor);
+        return msg;
     }
 
     ///////////////////////////////////////////////////////////////

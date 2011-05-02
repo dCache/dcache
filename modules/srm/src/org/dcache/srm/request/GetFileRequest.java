@@ -647,6 +647,24 @@ public final class GetFileRequest extends FileRequest {
                 catch(IllegalStateTransition ist) {
                     logger.warn("Illegal State Transition : " +ist.getMessage());
                 }
+                logger.warn("GetCallbacks error: "+ reason);
+            }
+            catch(Exception e) {
+                logger.error(e.toString());
+            }
+        }
+
+        public void Unavailable(String reason) {
+            try {
+                GetFileRequest fr = getGetFileRequest();
+                try {
+                    fr.setStateAndStatusCode(State.FAILED,
+                                             reason,
+                                             TStatusCode.SRM_FILE_UNAVAILABLE);
+                }
+                catch(IllegalStateTransition ist) {
+                    logger.warn("Illegal State Transition : " +ist.getMessage());
+                }
                 logger.error("GetCallbacks error: "+ reason);
             }
             catch(Exception e) {

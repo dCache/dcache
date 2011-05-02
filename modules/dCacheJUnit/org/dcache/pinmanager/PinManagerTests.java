@@ -8,6 +8,7 @@ import org.junit.*;
 
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
+import diskCacheV111.poolManager.*;
 
 import org.dcache.pinmanager.model.*;
 import static org.dcache.pinmanager.model.Pin.State.*;
@@ -48,6 +49,7 @@ public class PinManagerTests
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(STORAGE_INFO);
+        attributes.setLocations(Collections.singleton(POOL1));
         return attributes;
     }
 
@@ -72,9 +74,37 @@ public class PinManagerTests
                     msg.setPoolName(POOL1);
                     return msg;
                 }
+
+                public PoolManagerGetPoolMonitor messageArrived(PoolManagerGetPoolMonitor msg)
+                {
+                    msg.setPoolMonitor(new PoolMonitorV5() {
+                            public PnfsFileLocation getPnfsFileLocation(FileAttributes fileAttributes,
+                                                                        ProtocolInfo protocolInfo,
+                                                                        String linkGroup)
+                            {
+                                return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
+                                    public int getAllowedPoolCount() {
+                                        return 1;
+                                    }
+
+                                    public List<PoolCostCheckable> getOnlinePools()
+                                    {
+                                        return Collections.singletonList((PoolCostCheckable) new PoolCheckAdapter(POOL1));
+                                    }
+
+                                    public List<List<PoolCostCheckable>> getFileAvailableMatrix()
+                                    {
+                                        return Collections.singletonList(getOnlinePools());
+                                    }
+                                };
+                            }
+                        });
+                    return msg;
+                }
             });
         processor.setMaxLifetime(-1);
         processor.setStagePermission(new CheckStagePermission(null));
+        processor.init();
 
         Date expiration = new Date(now() + 30);
         PinManagerPinMessage message =
@@ -437,13 +467,13 @@ class TestExecutor
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit)
     {
-        throw new UnsupportedOperationException();
+        return new ImmediateScheduledFuture(submit(command));
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)
     {
-        throw new UnsupportedOperationException();
+        return new ImmediateScheduledFuture(submit(command));
     }
 
     class ImmediateScheduledFuture<T> implements ScheduledFuture<T>

@@ -109,9 +109,9 @@ public class PoolMonitorV5
 
       //private PoolManagerParameter _recentParameter = _partitionManager.getParameterCopyOf()  ;
 
-       private PnfsFileLocation(FileAttributes fileAttributes,
-                                ProtocolInfo protocolInfo,
-                                String linkGroup)
+       public PnfsFileLocation(FileAttributes fileAttributes,
+                               ProtocolInfo protocolInfo,
+                               String linkGroup)
        {
            _fileAttributes = fileAttributes;
            _protocolInfo = protocolInfo;
@@ -119,33 +119,47 @@ public class PoolMonitorV5
        }
 
        public List<PoolManagerParameter> getListOfParameter()
+           throws CacheException
        {
+           if (!_calculationDone) {
+               calculateFileAvailableMatrix();
+           }
            return _listOfPartitions;
        }
 
        public PoolManagerParameter getCurrentParameterSet()
+           throws CacheException
        {
+           if (!_calculationDone) {
+               calculateFileAvailableMatrix();
+           }
            return _listOfPartitions.get(0);
        }
 
        public List<PoolCostCheckable> getOnlinePools()
-           throws CacheException, InterruptedException
+           throws CacheException
        {
-           if (_onlinePools == null)
+           if (!_calculationDone) {
                calculateFileAvailableMatrix();
+           }
            return _onlinePools;
        }
 
        public int getAllowedPoolCount()
+           throws CacheException
        {
+           if (!_calculationDone) {
+               calculateFileAvailableMatrix();
+           }
            return _allowedPoolCount;
        }
 
        public List<List<PoolCostCheckable>> getFileAvailableMatrix()
-           throws CacheException, InterruptedException
+           throws CacheException
        {
-           if (_allowedAndAvailableMatrix == null)
+           if (!_calculationDone) {
                calculateFileAvailableMatrix();
+           }
            return _allowedAndAvailableMatrix;
        }
       //
@@ -206,7 +220,7 @@ public class PoolMonitorV5
         *             _allowedAndAvailable
         */
        private void calculateFileAvailableMatrix()
-           throws CacheException, InterruptedException
+           throws CacheException
        {
          String hostName     = _protocolInfo instanceof IpProtocolInfo  ?((IpProtocolInfo)_protocolInfo).getHosts()[0] : null ;
          String protocolString = _protocolInfo.getProtocol() + "/" + _protocolInfo.getMajorVersion() ;
@@ -303,7 +317,7 @@ public class PoolMonitorV5
       }
 
        public List<PoolCostCheckable> getCostSortedAvailable()
-           throws CacheException, InterruptedException
+           throws CacheException
        {
            //
            // here we don't now exactly which parameter set to use.
@@ -474,6 +488,7 @@ public class PoolMonitorV5
       }
 
        public void sortByCost(List<PoolCostCheckable> list, boolean cpuAndSize)
+           throws CacheException
        {
            sortByCost(list, cpuAndSize, getCurrentParameterSet());
        }

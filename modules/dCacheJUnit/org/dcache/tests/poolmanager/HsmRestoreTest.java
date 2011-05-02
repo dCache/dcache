@@ -266,7 +266,7 @@ public class HsmRestoreTest {
 ;
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool);
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
@@ -360,7 +360,7 @@ public class HsmRestoreTest {
 ;
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool);
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
@@ -458,7 +458,7 @@ public class HsmRestoreTest {
                      17, selectReadPool.getReturnCode());
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool);
+        PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         cellMessage2.getSourcePath().add("door", "local");
         _rc.messageArrived(cellMessage2, selectReadPool2);
@@ -476,7 +476,7 @@ public class HsmRestoreTest {
                      17, selectReadPool.getReturnCode());
 
         // resubmit request
-        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool2);
+        PoolMgrSelectReadPoolMsg selectReadPool3 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, _storageInfo.getFileSize(), selectReadPool2.getContext());
         CellMessage cellMessage3 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
         _rc.messageArrived(cellMessage3, selectReadPool3);
 

@@ -27,7 +27,7 @@ public class PinTask
     private PinManagerPinMessage _request;
     private MessageReply _reply;
     private Pin _pin;
-    private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
+    private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
     public PinTask(PinManagerPinMessage request, MessageReply reply, Pin pin)
     {
@@ -101,14 +101,14 @@ public class PinTask
         return _pin.getSticky();
     }
 
-    public PoolMgrSelectReadPoolMsg getPreviousSelectReadPoolMsg()
+    public PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
     {
-        return _previousSelectReadPoolMsg;
+        return _readPoolSelectionContext;
     }
 
-    public void setPreviousSelectReadPoolMsg(PoolMgrSelectReadPoolMsg message)
+    public void setReadPoolSelectionContext(PoolMgrSelectReadPoolMsg.Context context)
     {
-        _previousSelectReadPoolMsg = message;
+        _readPoolSelectionContext = context;
     }
 
     public Date freezeExpirationTime()

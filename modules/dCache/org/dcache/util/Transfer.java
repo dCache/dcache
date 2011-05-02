@@ -96,7 +96,7 @@ public class Transfer implements Comparable<Transfer>
     private InetSocketAddress _clientAddress;
     private long _allocated;
 
-    private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
+    private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
     private boolean _isBillingNotified;
     private boolean _isOverwriteAllowed;
@@ -654,12 +654,12 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Returns the previous read pool selection message.
+     * Returns the read pool selection context.
      */
     protected synchronized
-        PoolMgrSelectReadPoolMsg getPreviousSelectReadPoolMsg()
+        PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
     {
-        return _previousSelectReadPoolMsg;
+        return _readPoolSelectionContext;
     }
 
     /**
@@ -668,9 +668,9 @@ public class Transfer implements Comparable<Transfer>
      * selections.
      */
     protected synchronized
-        void setPreviousSelectReadPoolMsg(PoolMgrSelectReadPoolMsg message)
+        void setReadPoolSelectionContext(PoolMgrSelectReadPoolMsg.Context context)
     {
-        _previousSelectReadPoolMsg = message;
+        _readPoolSelectionContext = context;
     }
 
     /**
@@ -720,7 +720,7 @@ public class Transfer implements Comparable<Transfer>
                     new PoolMgrSelectReadPoolMsg(fileAttributes,
                                                  protocolInfo,
                                                  fileAttributes.getSize(),
-                                                 getPreviousSelectReadPoolMsg(),
+                                                 getReadPoolSelectionContext(),
                                                  allowedStates);
                 request.setId(_sessionId);
                 request.setSubject(_subject);
@@ -730,7 +730,7 @@ public class Transfer implements Comparable<Transfer>
                     _poolManager.sendAndWait(request, timeout);
                 setPool(reply.getPoolName());
                 setStorageInfo(reply.getStorageInfo());
-                setPreviousSelectReadPoolMsg(reply);
+                setReadPoolSelectionContext(reply.getContext());
             }
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -891,13 +891,11 @@ public class Transfer implements Comparable<Transfer>
 
         try {
             String owner = Subjects.getDn(_subject);
-
+ 
             if (owner == null) {
-                if (owner == null) {
-                    owner = Subjects.getUserName(_subject);
-                }
+                owner = Subjects.getUserName(_subject);
             }
-
+           
             DoorRequestInfoMessage msg =
                 new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
             msg.setOwner(owner);
