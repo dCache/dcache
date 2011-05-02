@@ -913,12 +913,8 @@ public class RequestContainerV5
            _fileAttributes = request.getFileAttributes();
            _storageInfo = _fileAttributes.getStorageInfo();
 
-           PoolMgrSelectReadPoolMsg previousRequest =
-               request.getPreviousMessage();
-           if (previousRequest != null) {
-               _retryCounter = previousRequest.getRetryCounter();
-               _stageCandidateHost = previousRequest.getPreviousStageHost();
-           }
+           _retryCounter = request.getContext().getRetryCounter();
+           _stageCandidateHost = request.getContext().getPreviousStageHost();
 
            if( request instanceof PoolMgrReplicateFileMsg ){
               _enforceP2P            = true ;
@@ -1136,8 +1132,7 @@ public class RequestContainerV5
                 CellMessage m =  messages.next();
                 PoolMgrSelectReadPoolMsg rpm =
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
-                rpm.setRetryCounter(_retryCounter + 1);
-                rpm.setPreviousStageHost(_stageCandidateHost);
+                rpm.setContext(_retryCounter + 1, _stageCandidateHost);
                 if (_currentRc == 0) {
                     rpm.setPoolName(_poolCandidate);
                     rpm.setSucceeded();

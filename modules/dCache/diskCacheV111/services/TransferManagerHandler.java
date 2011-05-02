@@ -111,7 +111,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 	private transient boolean _cancelTimer;
 	private DoorRequestInfoMessage info;
         private PermissionHandler permissionHandler;
-        private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
+        private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
 	public TransferManagerHandler(TransferManager tManager,
 				      TransferManagerMessage message,
@@ -407,7 +407,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
                     new PoolMgrSelectReadPoolMsg(fileAttributes,
                                                  protocol_info,
                                                  sizeToSend,
-                                                 _previousSelectReadPoolMsg);
+                                                 _readPoolSelectionContext);
                 request.setPnfsPath(pnfsPath);
                 request.setSubject(transferRequest.getSubject());
 		log.debug("PoolMgrSelectPoolMsg: " + request );
@@ -433,8 +433,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		log.debug("poolManagerReply = "+pool_info);
 
                 if (pool_info instanceof PoolMgrSelectReadPoolMsg) {
-                        _previousSelectReadPoolMsg =
-                                (PoolMgrSelectReadPoolMsg) pool_info;
+                        _readPoolSelectionContext =
+                                ((PoolMgrSelectReadPoolMsg) pool_info).getContext();
                 }
 
 		if (pool_info.getReturnCode() == CacheException.OUT_OF_DATE) {

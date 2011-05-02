@@ -4,6 +4,7 @@ package diskCacheV111.vehicles ;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.* ;
 import java.util.EnumSet;
+import java.io.Serializable;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import static org.dcache.namespace.FileAttribute.*;
@@ -30,8 +31,8 @@ import static com.google.common.base.Preconditions.*;
  * retry the request. In such cases PoolManager needs access to state
  * from the previous request. It is the responsibility of the
  * requestor to maintain this state and provide when retrying the
- * request. The state is encapsulated in the reply message. This
- * message should be attached to the retry request.
+ * request. The state is encapsulated in the request context. This
+ * context should be attached to the retry request.
  *
  * The requestor should expect that a subsequent request to read the
  * file from a pool may fail. Typical reasons for such failures is
@@ -45,37 +46,33 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 {
     private static final long serialVersionUID = -2126253028981131441L;
 
-    private PoolMgrSelectReadPoolMsg _previousMessage;
-
-    private int _retryCounter;
-    private String _previousStageHost;
+    private Context _context;
 
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
                                     ProtocolInfo protocolInfo,
                                     long fileSize,
-                                    PoolMgrSelectReadPoolMsg previousMessage)
+                                    Context context)
     {
-        this(fileAttributes, protocolInfo, fileSize, previousMessage,
+        this(fileAttributes, protocolInfo, fileSize, context,
              RequestContainerV5.allStates);
         checkArgument(fileAttributes.getDefinedAttributes().containsAll(getRequiredAttributes()),
-                      "Required attributes are missing");
-    }
+                      "Required attributes are missing");    }
 
     /**
      * @param fileAttributes FileAttributes of the file to read
      * @param protocolInfo ProtocolInfo describe the transfer
      * @param fileSize The size of the file
-     * @param previousMessage The message of the previous attempt; may be null
+     * @param context The context of the previous attempt; may be null
      * @param allowedStates Allowed states of the pool manager state machine
      */
     public PoolMgrSelectReadPoolMsg(FileAttributes fileAttributes,
                                     ProtocolInfo protocolInfo,
                                     long fileSize,
-                                    PoolMgrSelectReadPoolMsg previousMessage,
+                                    Context context,
                                     EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
         super(fileAttributes, protocolInfo , fileSize , allowedStates);
-        _previousMessage = previousMessage;
+        _context = (context == null) ? new Context() : context;
     }
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
@@ -83,35 +80,51 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
         return EnumSet.of(PNFSID, STORAGEINFO, LOCATIONS);
     }
 
-    public PoolMgrSelectReadPoolMsg getPreviousMessage()
+    public Context getContext()
     {
-        return _previousMessage;
+        return _context;
+    }
+
+    public void setContext(Context context)
+    {
+        _context = context;
+    }
+
+    public void setContext(int retryCounter, String previousStageHost)
+    {
+        setContext(new Context(retryCounter, previousStageHost));
     }
 
     /**
-     * Number of retries. Used internally by PoolManager.
+     * Pool selection context. Captures the state the pool manager
+     * must maintain between repeated attempt to select a read pool
+     * for a file.
      */
-    public void setRetryCounter(int counter)
+    public static class Context implements Serializable
     {
-        _retryCounter = counter;
-    }
+        private final int _retryCounter;
+        private final String _previousStageHost;
 
-    public int getRetryCounter()
-    {
-        return _retryCounter;
-    }
+        public Context()
+        {
+            _retryCounter = 0;
+            _previousStageHost = null;
+        }
 
-    /**
-     * Host on which the file was previously attempted to be
-     * staged. Used internally by PoolManager.
-     */
-    public String getPreviousStageHost()
-    {
-        return _previousStageHost;
-    }
+        public Context(int retryCounter, String previousStageHost)
+        {
+            _retryCounter = retryCounter;
+            _previousStageHost = previousStageHost;
+        }
 
-    public void setPreviousStageHost(String host)
-    {
-        _previousStageHost = host;
+        public int getRetryCounter()
+        {
+            return _retryCounter;
+        }
+
+        public String getPreviousStageHost()
+        {
+            return _previousStageHost;
+        }
     }
 }

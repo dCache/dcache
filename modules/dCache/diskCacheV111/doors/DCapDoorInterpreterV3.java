@@ -1808,7 +1808,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String            _accessLatency = null;
         private String            _retentionPolicy = null;
         private boolean _isUrl;
-        private PoolMgrSelectReadPoolMsg _previousSelectReadPoolMsg;
+        private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 
         private IoHandler(int sessionId, int commandId, VspArgs args)
             throws CacheException, CommandException
@@ -2115,7 +2115,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                    new PoolMgrSelectReadPoolMsg(_fileAttributes,
                                                 _protocolInfo,
                                                 0,
-                                                _previousSelectReadPoolMsg,
+                                                _readPoolSelectionContext,
                                                 allowedStates);
                getPoolMessage.setIoQueueName(_ioQueueName );
             }
@@ -2192,7 +2192,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             PoolIoFileMessage poolMessage  = null ;
 
             if( reply instanceof PoolMgrSelectReadPoolMsg ){
-                _previousSelectReadPoolMsg = (PoolMgrSelectReadPoolMsg) reply;
+                _readPoolSelectionContext =
+                    ((PoolMgrSelectReadPoolMsg) reply).getContext();
                 poolMessage =
                 new PoolDeliverFileMessage(
                 pool,

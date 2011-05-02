@@ -295,7 +295,7 @@ public class PinRequestProcessor
             new PoolMgrSelectReadPoolMsg(task.getFileAttributes(),
                                          task.getProtocolInfo(),
                                          0,
-                                         task.getPreviousSelectReadPoolMsg(),
+                                         task.getReadPoolSelectionContext(),
                                          checkStaging(task));
         msg.setSubject(task.getSubject());
         _poolManagerStub.send(msg,
@@ -310,7 +310,7 @@ public class PinRequestProcessor
                                            * to keep some state
                                            * between retries.
                                            */
-                                          task.setPreviousSelectReadPoolMsg(msg);
+                                          task.setReadPoolSelectionContext(msg.getContext());
 
                                           /* Store the pool name in
                                            * the DB so we know what to
@@ -335,7 +335,7 @@ public class PinRequestProcessor
                                        * keep some state between
                                        * retries.
                                        */
-                                      task.setPreviousSelectReadPoolMsg(getReply());
+                                      task.setReadPoolSelectionContext(getReply().getContext());
                                       if (rc == CacheException.OUT_OF_DATE) {
                                           /* Pool manager asked for a
                                            * refresh of the request.
