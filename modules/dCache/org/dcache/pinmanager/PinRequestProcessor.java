@@ -5,6 +5,9 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.Set;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.regex.PatternSyntaxException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,19 +30,26 @@ import org.dcache.pinmanager.PinManagerPinMessage;
 import static org.dcache.pinmanager.model.Pin.State.*;
 
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.poolManager.PoolMonitorV5;
 
 import dmg.cells.nucleus.CellPath;
 
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Isolation.*;
+
+import com.google.common.primitives.Ints;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +101,11 @@ public class PinRequestProcessor
      */
     private final static long CLOCK_DRIFT_MARGIN = MINUTES.toMillis(30);
 
+    /**
+     * Period between fetching the pool status from pool manager.
+     */
+    private final static long REFRESH_PERIOD = SECONDS.toMillis(20);
+
     private final static Set<FileAttribute> REQUIRED_ATTRIBUTES =
         PoolMgrSelectReadPoolMsg.getRequiredAttributes();
 
@@ -101,6 +116,8 @@ public class PinRequestProcessor
     private CellStub _poolManagerStub;
     private CheckStagePermission _checkStagePermission;
     private long _maxLifetime;
+
+    private PoolMonitorV5 _poolMonitor;
 
     @Required
     public void setExecutor(ScheduledExecutorService executor)
@@ -144,6 +161,24 @@ public class PinRequestProcessor
         _maxLifetime = maxLifetime;
     }
 
+    public void init()
+        throws CacheException, InterruptedException
+    {
+        while (_poolMonitor == null) {
+            try {
+                _poolMonitor =
+                    _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
+            } catch (CacheException e) {
+                _log.error(e.toString());
+                Thread.sleep(SMALL_DELAY);
+            }
+        }
+
+        _executor.scheduleWithFixedDelay(new UpdatePoolMonitorTask(),
+                                         REFRESH_PERIOD / 2, REFRESH_PERIOD,
+                                         TimeUnit.MILLISECONDS);
+    }
+
     public long getMaxLifetime()
     {
         return _maxLifetime;
@@ -182,7 +217,8 @@ public class PinRequestProcessor
         return reply;
     }
 
-    protected EnumSet<RequestContainerV5.RequestState> checkStaging(PinTask task)
+    protected EnumSet<RequestContainerV5.RequestState>
+        checkStaging(PinTask task)
     {
         try {
             Subject subject = task.getSubject();
@@ -290,6 +326,63 @@ public class PinRequestProcessor
     }
 
     private void selectReadPool(final PinTask task)
+        throws CacheException
+    {
+        PoolMonitorV5.PnfsFileLocation location =
+            _poolMonitor.getPnfsFileLocation(task.getFileAttributes(),
+                                             task.getProtocolInfo(),
+                                             null);
+
+        if (location.getAllowedPoolCount() == 0) {
+            // Talking to PoolManager doesn't help, because there are
+            // no pools in the system that are able to serve the
+            // request even if they had the file.
+            throw new FileNotInCacheException("File is unavailable");
+        }
+
+        if (location.getOnlinePools().isEmpty()){
+            // There is no copy on any online pool. If the file is a
+            // disk only file, then we fail the request. If the file
+            // is on tape, then we have to ask pool manager.
+            StorageInfo info = task.getFileAttributes().getStorageInfo();
+            if (!info.isStored()) {
+                throw new FileNotInCacheException("File is unavailable");
+            }
+
+            askPoolManager(task);
+            return;
+        }
+
+        List<List<PoolCostCheckable>> matrix =
+            location.getFileAvailableMatrix();
+        if (matrix.isEmpty()) {
+            // The file is in on a pool, but not on a pool from which
+            // we can read it. PoolManager may be able to move the
+            // file to a better location.
+            askPoolManager(task);
+            return;
+        }
+
+        // Choose a pool deterministically. We use the same ordering
+        // used by pool manager when it implements min cost cut.
+        final String id = task.getPnfsId().toString();
+        PoolCostCheckable pool =
+            Collections.min(matrix.get(0), new Comparator<PoolCostCheckable>() {
+                    public int compare(PoolCostCheckable o1,
+                                       PoolCostCheckable o2)
+                    {
+                        String s1 = id + o1.getPoolName();
+                        String s2 = id + o2.getPoolName();
+                        return Ints.compare(s1.hashCode(), s2.hashCode());
+                    }
+                });
+
+        String name = pool.getPoolName();
+        setPool(task, name);
+        setStickyFlag(task, name);
+    }
+
+    private void askPoolManager(final PinTask task)
     {
         PoolMgrSelectReadPoolMsg msg =
             new PoolMgrSelectReadPoolMsg(task.getFileAttributes(),
@@ -318,6 +411,7 @@ public class PinRequestProcessor
                                            * fails.
                                            */
                                           String pool = msg.getPoolName();
+                                          task.getFileAttributes().getLocations().add(pool);
                                           setPool(task, pool);
 
                                           setStickyFlag(task, pool);
@@ -579,6 +673,30 @@ public class PinRequestProcessor
              * staying in PINNING.
              */
             _dao.deletePin(task.getPin());
+        }
+    }
+
+    private class UpdatePoolMonitorTask
+        extends AbstractMessageCallback<PoolManagerGetPoolMonitor>
+        implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            _poolManagerStub.send(new PoolManagerGetPoolMonitor(),
+                                  PoolManagerGetPoolMonitor.class, this);
+        }
+
+        @Override
+        public void success(PoolManagerGetPoolMonitor message)
+        {
+            _poolMonitor = message.getPoolMonitor();
+        }
+
+        @Override
+        public void failure(int rc, Object error)
+        {
+            _log.warn("Failed to update pool monitor: {} [{}]", error, rc);
         }
     }
 }

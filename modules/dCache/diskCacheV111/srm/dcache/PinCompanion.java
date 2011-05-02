@@ -203,6 +203,10 @@ public class PinCompanion
             _callbacks.FileNotFound("No such file");
             break;
 
+        case FILE_NOT_IN_REPOSITORY:
+            _callbacks.Unavailable(error.toString());
+            break;
+
         case PERMISSION_DENIED:
             _callbacks.Error("Permission denied");
             break;

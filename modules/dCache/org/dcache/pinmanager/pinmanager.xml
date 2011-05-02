@@ -62,7 +62,8 @@
       <property name="executor" ref="scheduled-executor"/>
   </bean>
 
-  <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">
+  <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor"
+        init-method="init">
       <description>Processes pin requests</description>
       <property name="poolManagerStub" ref="pool-manager-stub"/>
       <property name="poolStub" ref="pool-stub"/>
