@@ -6,6 +6,8 @@ Build-Depends: debhelper (>= 7), quilt (>= 0.46-7), gzip
 Standards-Version: 3.9.0
 
 Package: @PackageName@
+Depends: ssh-client, adduser, ssl-cert
+Recommends: libxml2-utils
 Architecture: all
 Suggests: ruby
 Description: A distributed mass storage system.

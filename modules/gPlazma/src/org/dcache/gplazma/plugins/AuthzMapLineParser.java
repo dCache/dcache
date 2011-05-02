@@ -24,7 +24,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
 
     private static final String SOME_WS = "\\s+";
     private static final String AUTHORIZE = "[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Ee]";
-    private static final String USERNAME = "\\S+";
+    private static final String USERNAME = "[\\w.][\\w.\\-]*";
     private static final String ACCESS = "(?:[Rr][Ee][Aa][Dd]-[Oo][Nn][Ll][Yy])|(?:[Rr][Ee][Aa][Dd]-[Ww][Rr][Ii][Tt][Ee])";
     private static final String UID = "\\d+";
     private static final String GID = "\\d+(?:,\\d+)*";

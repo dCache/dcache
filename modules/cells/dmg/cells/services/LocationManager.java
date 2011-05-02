@@ -240,59 +240,55 @@ public class LocationManager extends CellAdapter {
 
          _setupFile     = new File( _setupFileName ) ;
 
-         boolean fileExists = false , canWrite = false ;
-         try{
-            fileExists = _setupFile.exists() ;
-            canWrite   = _setupFile.canWrite() ;
-         }catch(Exception ee ){
-             _log.warn("Can't check setup file <"+_setupFileName+"> : "+ee.getMessage(), ee) ;
-            throw ee ;
+         boolean fileExists = _setupFile.exists();
+         boolean canWrite = _setupFile.canWrite();
+         boolean canRead = _setupFile.canRead();
+         if (fileExists && !_setupFile.isFile()) {
+            throw new IllegalArgumentException("Not a file: " + _setupFileName);
          }
-         if( fileExists && ! _setupFile.isFile() )
-            throw new
-            IllegalArgumentException("Not a file : "+_setupFileName ) ;
 
-         if( _setupMode == SETUP_AUTO ){
-            if( fileExists ){
-               _setupMode = canWrite ? SETUP_WRITE : SETUP_RDONLY ;
-               return ;
-            }
-            if( ! _setupFile.createNewFile() )
-               throw new
-               IllegalArgumentException(
-                 "File doesn't exist and can't be created : "+_setupFileName ) ;
-            _setupMode = SETUP_WRITE ;
-         }else if( _setupMode == SETUP_WRITE ){
-            //
-            // readwrite case
-            //
-            if( fileExists ){
-
-               if( canWrite )return ;
-               throw new
-               IllegalArgumentException(
-                          "File not writeable : "+_setupFileName ) ;
-            }
-            if( ! _setupFile.createNewFile() )
-               throw new
-               IllegalArgumentException(
-                 "File doesn't exist and can't be created : "+_setupFileName ) ;
-
-         }else if( _setupMode == SETUP_RDONLY ){
-            if( ! fileExists )
-               throw new
-               IllegalArgumentException(
-                   "Setupfile not found : "+_setupFileName) ;
-
-            if( ! _setupFile.canRead() )
-               throw new
-               IllegalArgumentException(
-                   "Setupfile not readable : "+_setupFileName) ;
-         }else if( _setupMode == SETUP_NONE ){
-            _setupFileName = null ;
+         if (_setupMode == SETUP_AUTO) {
+             if (fileExists) {
+                 _setupMode = canWrite ? SETUP_WRITE : SETUP_RDONLY;
+             } else {
+                 try {
+                     _setupFile.createNewFile();
+                     _setupMode = SETUP_WRITE ;
+                 } catch (IOException e) {
+                     /* This is usually a permission error.
+                      */
+                     _log.debug("Failed to create {}: {}", _setupFile, e);
+                     _setupMode = SETUP_NONE;
+                 }
+             }
          }
-         return ;
+
+         switch (_setupMode) {
+         case SETUP_WRITE:
+             if (fileExists) {
+                 if (!canWrite) {
+                     throw new IllegalArgumentException("File not writeable: " +
+                                                        _setupFileName);
+                 }
+             } else {
+                 _setupFile.createNewFile();
+             }
+             break;
+         case SETUP_RDONLY:
+             if (!fileExists) {
+                 _setupMode = SETUP_NONE;
+             } else if (!canRead) {
+                 throw new IllegalArgumentException("Setup file not readable: " +
+                                                    _setupFileName);
+             }
+             break;
+         }
+
+         if (_setupMode == SETUP_NONE) {
+            _setupFileName = null;
+         }
       }
+
       private void execSetupFile( File setupFile )throws Exception {
           BufferedReader br = new BufferedReader( new FileReader( setupFile ) ) ;
           String line = null ;

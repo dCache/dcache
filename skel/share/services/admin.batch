@@ -68,6 +68,6 @@ create dmg.cells.services.login.LoginManager alm \
        diskCacheV111.admin.UserAdminShell"
 
 create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
-            "${keyBase}/users -egpassword=${config}/passwd"
+            "${dcache.paths.ssh-keys}/users -egpassword=${config}/passwd"
 
 create diskCacheV111.admin.PAMAuthentificator pam " -syspassword=/etc/shadow"

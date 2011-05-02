@@ -144,25 +144,6 @@ public class GPlazmaArgusPluginTest {
     }
 
     /**
-     * Test result NOT_APPLICABLE authorisation with valid dn but missing parameters
-     */
-    @Test(expected=IllegalArgumentException.class)
-    public void testGPlazmaArgusPluginWithValidArgsButMissingResourceAndAction()
-    throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+VALID_ENDPOINT,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
-
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
-
-        plugin.account(null, ValidPrincipals);
-    }
-
-    /**
      * Test result DENY authorisation with banned user
      * @throws AuthenticationException
      */

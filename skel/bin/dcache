@@ -210,7 +210,7 @@ showVersion()
 
 loadConfig()
 {
-    . ${DCACHE_HOME}/share/lib/loadConfig.sh
+    . @dcache.paths.bootloader@/loadConfig.sh
 }
 
 #  print either the user a PID is running as (if $1 is non-empty)
@@ -236,7 +236,7 @@ userForProcessOrDomain() # $1 pid, $2=domain
 checkForNonMigratedDcache()
 {
     if [ -f ${DCACHE_CONFIG}/dCacheSetup ] && \
-       [ -f ${DCACHE_CONFIG}/node_config ]; then
+       [ -f ${DCACHE_ETC}/node_config ]; then
 
         fail 1 "Cowardly refusing to do anything as you appear to have      \
                 upgraded from an old dCache version without adjusting the   \
@@ -270,8 +270,7 @@ fi
 if [ -n "$opt_d" ]; then
     DCACHE_HOME="$opt_d"
 elif [ -z "$DCACHE_HOME" ]; then
-    getCanonicalPath "$0" path
-    DCACHE_HOME="${path%/bin/dcache}"
+    DCACHE_HOME="@dcache.home@"
 fi
 
 if [ ! -d "$DCACHE_HOME" ]; then

@@ -24,7 +24,7 @@ undefinedProperty()
     :
 }
 
-. ${DCACHE_HOME}/share/lib/bootLoader.sh
+. @dcache.paths.bootloader@/bootLoader.sh
 
 getProperty=$(bootLoader -q compile -shell)
 eval "$getProperty"

@@ -4,30 +4,30 @@
 # The file has the following format:
 # FILE = TOKENS
 # TOKENS = TOKEN | TONENS NL TOKEN
-# TOKEN = COMMENT | MAPPING | RECORD | PWDRECORD | EMPTYLINE 
+# TOKEN = COMMENT | MAPPING | RECORD | PWDRECORD | EMPTYLINE
 # NL =<new line symbol>
-# WS = <any number of spaces or tabs> 
+# WS = <any number of spaces or tabs>
 # COMMENT = WS '#' <any number of any symbols terminated by new line symbol>
 # PWDRECORD =  WS passwd  WS USER WS PASSWDHASH WS UID WS GID WS HOME WS ROOT WS [FSROOT WS]
 # PASSWDHASH = <hash of password generated using a crytografically strong hash function>
 # PWDRECORD =  WS USER WS PASSWDHASH WS UID WS GID WS HOME WS ROOT WS [FSROOT WS]
-# RECORD = USERAUTHENTICATION [SECUREIDS] EMPTYLINE 
+# RECORD = USERAUTHENTICATION [SECUREIDS] EMPTYLINE
 # USERAUTHENTICATION = WS login  WS USER WS UID WS GID WS HOME WS ROOT WS [FSROOT WS]
-# USER = <username (no white spaces allowed)> 
-# UID = <integer> 
-# GID = <integer> 
-# HOME = <fully qualified unix path> 
-# ROOT = <fully qualified unix path> 
-# FSROOT = <fully qualified unix path> 
-# SECUREIDS = SECUREIDS ([COMMENT] |[SECUREIDLINE]) NL 
+# USER = <username (no white spaces allowed)>
+# UID = <integer>
+# GID = <integer>
+# HOME = <fully qualified unix path>
+# ROOT = <fully qualified unix path>
+# FSROOT = <fully qualified unix path>
+# SECUREIDS = SECUREIDS ([COMMENT] |[SECUREIDLINE]) NL
 # SECUREIDLINE = WS SECUREID WS NL
 # SECUREID = <kerberos principal>|<grid identity (DN from x509 cert)>
 # EMPTYLINE = WS NL
 # MAPPING = WS mapping  WS <double quote> SECUREID <double quote> USER NL
-# 
+#
 
 # the following are the mappings from secure credetials ids to user names
-# these are used to map credentials to the default user, 
+# these are used to map credentials to the default user,
 # if user is not supplied and can not be derived from credentials
 # in user created files this do not have to be in a separate section
 

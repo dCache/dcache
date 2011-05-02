@@ -101,31 +101,10 @@
     </target>
 
     <!--
-          Server package
-    -->
-
-    <target name="-dcache-copy-skel">
-        <!-- rpm directory structure with some defaults scripts -->
-        <copy todir="${server.bin.dir}">
-            <fileset dir="${skelDir}">
-	      <exclude name="etc/PlotConfiguration.xml"/>
-	    </fileset>
-        </copy>
-    </target>
-
-    <target name="install-server"
-            depends="dcache,javatunnel,
-                     -dcache-copy-skel,-dcache-classpath"
-            description="build deploy-ready server package">
-        <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
-        <chmod dir="${server.bin.dir}/libexec" includes="**/*.sh" perm="ugo+rx" />
-        <chmod dir="${server.bin.dir}/libexec" includes="**/*.rb" perm="ugo+rx" />
-        <chmod dir="${server.bin.dir}/jobs"    includes="**/*" perm="ugo+rx" />
-    </target>
-
-    <!--
         package type specific build modules for dcache-server
     -->
+    <import file="modules-builds/server-opt-build.xml" />
+    <import file="modules-builds/server-fhs-build.xml" />
     <import file="modules-builds/server-rpm-build.xml" />
     <import file="modules-builds/server-tgz-build.xml" />
     <import file="modules-builds/server-deb-build.xml" />

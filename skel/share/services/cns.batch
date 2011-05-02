@@ -8,6 +8,10 @@ define env cns-cells.exe end
   # Do nothing
 end
 
+define env cns-none.exe end
+  # Do nothing
+end
+
 define env cns-amq.exe end
   check -strong broker.amq.url
 

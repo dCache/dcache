@@ -1,0 +1,21 @@
+# ----------------------------------------------------------------------------------------------------
+# Repository of Storage Element (SRM-dCache-PNFS) records for all authorized users
+# Required format of a record:
+# WS authorize WS username read-only|read-write WS UID WS GID WS homepath WS rootpath WS [fs-rootpath WS]
+# Example:
+# authorize timur    read-write    500 500       / /pnfs/fnal.gov /pnfs/fnal.gov"
+# authorize rana     read-write    500 19000     / /pnfs/fnal.gov/data /pnfs/fnal.gov/data
+# ----------------------------------------------------------------------------------------------------
+
+version 2.1
+# Version scheme for initial version compatibility with dcache.kpwd
+# directly used by SRM-dCache-PNFS
+
+# --------------------------------------------------------------------------
+# authorize USER     PRIVILEGE     UID GID       HOME ROOT [FSROOT]
+# --------------------------------------------------------------------------
+
+authorize tigran      read-write    3750 500       "/ fff/fff/!@# $% /" /
+authorize horst       read-write    1001 101       "/ fdfd fdf/"        /
+authorize tigrandteam read-write    3750 501       "/ fff/fff/!@# $% /" /
+

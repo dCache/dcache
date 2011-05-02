@@ -30,14 +30,14 @@
 
 
 #  Default location for dCache.
-default_home=/opt/d-cache
+default_home=@dcache.home@
 
 #  Absolute path to the directory this script is running from.
 BASE_DIR=$(cd $(dirname $0); pwd)
 
 #  Ask dCache for the externalLibsClassPath.
 ${DCACHE_HOME:=$default_home}
-. $DCACHE_HOME/share/lib/loadConfig.sh
+. @dcache.paths.bootloader@/loadConfig.sh
 
 LOG4J_FILE=${DCACHE_CONFIG}/log4j.properties
 

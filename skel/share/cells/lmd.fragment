@@ -1,3 +1,7 @@
+check -strong broker.port
+check -strong broker.domain
+check broker.cells.config
+
 define context lmd.defaults endDefine
   define ${broker.domain}
   listen ${broker.domain}
@@ -8,5 +12,5 @@ define context lmd.defaults endDefine
 endDefine
 
 create dmg.cells.services.LocationManager lmd \
-       "!lmd.defaults ${broker.port} -strict=no -noclient -setup=${dcache.paths.etc}/lm.config"
+       "!lmd.defaults ${broker.port} -strict=no -noclient -setup=${broker.cells.config}"
 #

@@ -51,6 +51,8 @@ s/^srmOldRequestRemovalPeriodSeconds *=/srmExpiredRequestRemovalPeriod=/
 s/^srmJdbcMonitoringLogEnabled *=/srmRequestHistoryDatabaseEnabled=/
 s/^srmJdbcSaveCompletedRequestsOnly *=/srmStoreCompleteRequestsOnly=/
 s/^srmJdbcEnabled *=/srmDatabaseEnabled=/
+s/^images *=/httpd.static-content.images=/
+s/^styles *=/httpd.static-content.styles=/
 
 s/^useFileSystem *=.*//
 s/^srmVacuum *=.*//
