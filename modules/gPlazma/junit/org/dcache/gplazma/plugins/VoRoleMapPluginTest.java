@@ -97,8 +97,7 @@ public class VoRoleMapPluginTest
                          new FQANPrincipal(FQAN_DTEAM_SHORT, true),
                          new GroupNamePrincipal(USERNAME_TIGRAN, true)),
               newHashSet(new GlobusPrincipal(DN_TIGRAN),
-                         new FQANPrincipal(FQAN_DTEAM_SHORT, true),
-                         new GroupNamePrincipal(USERNAME_TIGRAN, true)));
+                         new FQANPrincipal(FQAN_DTEAM_SHORT, true)));
     }
 
     @Test
@@ -118,9 +117,7 @@ public class VoRoleMapPluginTest
                          new GroupNamePrincipal(USERNAME_DTEAM, true)),
               newHashSet(new GlobusPrincipal(DN_TIGRAN),
                          new GlobusPrincipal(DN_KLAUS),
-                         new FQANPrincipal(FQAN_DTEAM_LONG, true),
-                         new GroupNamePrincipal(USERNAME_TIGRAN, true),
-                         new GroupNamePrincipal(USERNAME_DTEAM, true)));
+                         new FQANPrincipal(FQAN_DTEAM_LONG, true)));
     }
 
     /**
@@ -177,8 +174,7 @@ public class VoRoleMapPluginTest
                          new FQANPrincipal(FQAN_INVALID, true),
                          new GroupNamePrincipal(USERNAME_HORST, true)),
               newHashSet(new GlobusPrincipal(DN_FLAVIA),
-                         new FQANPrincipal(FQAN_INVALID, true),
-                         new GroupNamePrincipal(USERNAME_HORST, true)));
+                         new FQANPrincipal(FQAN_INVALID, true)));
     }
 
     /**
