@@ -11,7 +11,7 @@ import org.dcache.gplazma.SessionID;
 
 import gplazma.authz.plugins.gridmapfile.GridMapFile;
 
-import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.globus.gsi.jaas.GlobusPrincipal;
@@ -20,12 +20,11 @@ import static com.google.common.collect.Iterables.*;
 import static com.google.common.base.Predicates.*;
 
 /**
- * Maps GlobusPrincipal and KerberosPrincipal to GroupNamePrincipal
+ * Maps GlobusPrincipal and KerberosPrincipal to UserNamePrincipal
  * using a classic grid-mapfile.
  *
  * The plugin is silently skipped if principals already contains a
- * primary group name principal. This allows the plugin to be chained
- * with VORoleMapPlugin.
+ * user name principal.
  */
 public class GridMapFilePlugin
     implements GPlazmaMappingPlugin
@@ -76,7 +75,7 @@ public class GridMapFilePlugin
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException
     {
-        if (any(principals, instanceOf(GroupNamePrincipal.class))) {
+        if (any(principals, instanceOf(UserNamePrincipal.class))) {
             return;
         }
 
@@ -87,9 +86,8 @@ public class GridMapFilePlugin
             throw new AuthenticationException("No mapping for " + principals);
         }
 
-        Principal principal = new GroupNamePrincipal(entry.getValue(), true);
+        Principal principal = new UserNamePrincipal(entry.getValue());
         principals.add(principal);
-        authorizedPrincipals.add(principal);
         authorizedPrincipals.add(entry.getKey());
     }
 
@@ -99,7 +97,7 @@ public class GridMapFilePlugin
         throws AuthenticationException
     {
         _gridMapFile.refresh();
-        if (sourcePrincipal instanceof GroupNamePrincipal) {
+        if (sourcePrincipal instanceof UserNamePrincipal) {
             // TODO: need to extend GridMapFile to allow lookup for
             // reverse map. Also need to add a configuration option
             // that tells us whether the gridmap file maps to personal

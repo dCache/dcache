@@ -27,10 +27,6 @@ import static com.google.common.base.Predicates.*;
 /**
  * Plugin that uses a vorolemap file for mapping FQANPrincipal and
  * GlobusPrincipal to GroupNamePrincipal.
- *
- * The plugin is silently skipped if principals already contains a
- * primary group name principal. This allows the plugin to be chained
- * with GridMapFilePlugin.
  */
 public class VoRoleMapPlugin implements GPlazmaMappingPlugin
 {
@@ -65,50 +61,68 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
         _map = map;
     }
 
+    private boolean containsPrimaryGroupName(Set<Principal> principals)
+    {
+        for (GroupNamePrincipal p: filter(principals, GroupNamePrincipal.class)) {
+            if (p.isPrimaryGroup()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean addMappingFor(FQANPrincipal fqanPrincipal,
+                                  GlobusPrincipal globusPrincipal,
+                                  boolean isPrimary,
+                                  Set<Principal> principals,
+                                  Set<Principal> authorizedPrincipals)
+    {
+        String dn = globusPrincipal.getName();
+        String fqan = fqanPrincipal.getName();
+        List<String> names =
+            _map.getValuesForPredicatesMatching(new NameRolePair(dn, fqan));
+        if (names.isEmpty()) {
+            return false;
+        }
+
+        String name = names.get(0);
+        principals.add(new GroupNamePrincipal(name, isPrimary));
+        authorizedPrincipals.add(fqanPrincipal);
+        authorizedPrincipals.add(globusPrincipal);
+        _log.info("VOMS authorization successful for user with DN: {} and FQAN: {} for user name: {}.",
+                  new Object[] { dn, fqan, name });
+        return true;
+    }
+
     @Override
     public void map(SessionID sID,
                     Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
         throws AuthenticationException
     {
-        if (any(principals, instanceOf(GroupNamePrincipal.class))) {
-            return;
-        }
-
         List<FQANPrincipal> fqanPrincipals =
             Lists.newArrayList(filter(principals, FQANPrincipal.class));
         List<GlobusPrincipal> globusPrincipals =
             Lists.newArrayList(filter(principals, GlobusPrincipal.class));
 
+        boolean hasPrimary = containsPrimaryGroupName(authorizedPrincipals);
         boolean authorized = false;
 
         for (FQANPrincipal fqanPrincipal: fqanPrincipals) {
             boolean found = false;
-            boolean primary = fqanPrincipal.isPrimaryGroup();
+            boolean isPrimary = fqanPrincipal.isPrimaryGroup() && !hasPrimary;
             FQAN fqan = fqanPrincipal.getFqan();
             do {
                 for (GlobusPrincipal globusPrincipal: globusPrincipals) {
-                    NameRolePair pair =
-                        new NameRolePair(globusPrincipal.getName(),
-                                         fqan.toString());
-                    List<String> names =
-                        _map.getValuesForPredicatesMatching(pair);
-                    if (!names.isEmpty()) {
-                        String name = names.get(0);
-                        Principal groupPrincipal =
-                            new GroupNamePrincipal(name, primary);
-                        principals.add(groupPrincipal);
-                        authorizedPrincipals.add(groupPrincipal);
-                        authorizedPrincipals.add(fqanPrincipal);
-                        authorizedPrincipals.add(globusPrincipal);
+                    if (addMappingFor(fqanPrincipal, globusPrincipal, isPrimary,
+                                      principals, authorizedPrincipals)) {
                         authorized = true;
                         found = true;
-                        _log.info("VOMS authorzation successful for user with DN: {} and FQAN: {} for user name: {}.",
-                                  new Object[] { globusPrincipal.getName(), fqanPrincipal.getName(), name });
+                        hasPrimary |= isPrimary;
                     }
                 }
                 fqan = fqan.getParent();
-            } while (primary && !found && fqan != null);
+            } while (isPrimary && !found && fqan != null);
         }
 
         if (!authorized) {
