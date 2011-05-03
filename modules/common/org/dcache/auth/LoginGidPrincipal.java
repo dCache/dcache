@@ -3,31 +3,23 @@ package org.dcache.auth;
 import java.security.Principal;
 import java.io.Serializable;
 
-public class LoginGidPrincipal implements GroupPrincipal, Serializable
+public class LoginGidPrincipal implements Principal, Serializable
 {
     static final long serialVersionUID = -719644742571312959L;
 
     private long _gid;
-    private boolean _isPrimary;
 
-    public LoginGidPrincipal(long gid, boolean isPrimary)
+    public LoginGidPrincipal(long gid)
     {
         if (gid < 0) {
             throw new IllegalArgumentException("GID must be non-negative");
         }
         _gid = gid;
-        _isPrimary = isPrimary;
     }
 
-    public LoginGidPrincipal(String gid, boolean isPrimary)
+    public LoginGidPrincipal(String gid)
     {
-        this(Long.parseLong(gid), isPrimary);
-    }
-
-    @Override
-    public boolean isPrimaryGroup()
-    {
-        return _isPrimary;
+        this(Long.parseLong(gid));
     }
 
     public long getGid()
@@ -44,11 +36,7 @@ public class LoginGidPrincipal implements GroupPrincipal, Serializable
     @Override
     public String toString()
     {
-        if (_isPrimary) {
-            return (getClass().getSimpleName() + "[" + getName() + ",primary]");
-        } else {
-            return (getClass().getSimpleName() + "[" + getName() + "]");
-        }
+        return (getClass().getSimpleName() + "[" + getName() + "]");
     }
 
     @Override
@@ -62,11 +50,11 @@ public class LoginGidPrincipal implements GroupPrincipal, Serializable
             return false;
         }
         LoginGidPrincipal other = (LoginGidPrincipal) obj;
-        return (other._gid == _gid && other._isPrimary == _isPrimary);
+        return (other._gid == _gid);
     }
 
     @Override
     public int hashCode() {
-        return ((int) _gid ^ (_isPrimary ? 1 : 0));
+        return (int) _gid;
     }
 }

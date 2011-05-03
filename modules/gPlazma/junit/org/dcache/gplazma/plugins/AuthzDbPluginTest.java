@@ -53,7 +53,10 @@ public class AuthzDbPluginTest
                       Set<? extends Principal> expectedAuthorizedPrincipals)
         throws AuthenticationException
     {
-        AuthzDbPlugin plugin = new AuthzDbPlugin(testFixture);
+        AuthzDbPlugin plugin =
+            new AuthzDbPlugin(testFixture,
+                              AuthzDbPlugin.UID_DEFAULT,
+                              AuthzDbPlugin.GID_DEFAULT);
         Set<Principal> expectedPrincipals = Sets.newHashSet(principals);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         plugin.map(null, (Set<Principal>) principals, authorizedPrincipals);
@@ -109,11 +112,91 @@ public class AuthzDbPluginTest
     {
         check(Sets.newHashSet(new GroupNamePrincipal("atlas-user", false),
                               new GroupNamePrincipal("atlas-prod", true),
-                              new LoginGidPrincipal(1001, true)),
+                              new LoginGidPrincipal(1001)),
               Sets.newHashSet(new UidPrincipal(1002),
                               new GidPrincipal(1001, true),
                               new GidPrincipal(1002, false),
                               new UserNamePrincipal("atlas-prod")));
+    }
+
+    @Test
+    public void testUserName()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new UserNamePrincipal("behrmann")),
+              Sets.newHashSet(new UidPrincipal(1000),
+                              new GidPrincipal(1000, true),
+                              new UserNamePrincipal("behrmann")));
+    }
+
+    @Test
+    public void testUserNameWithPrimaryGroup()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-user", true)),
+              Sets.newHashSet(new UidPrincipal(1000),
+                              new GidPrincipal(1000, false),
+                              new GidPrincipal(1001, true),
+                              new UserNamePrincipal("behrmann")));
+    }
+
+    @Test
+    public void testUserNameWithSecondaryGroup()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-user", false)),
+              Sets.newHashSet(new UidPrincipal(1000),
+                              new GidPrincipal(1000, true),
+                              new GidPrincipal(1001, false),
+                              new UserNamePrincipal("behrmann")));
+    }
+
+    @Test
+    public void testUserNameWithGroupsAndLoginUidAndLoginGid()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-user", false),
+                              new GroupNamePrincipal("atlas-prod", true),
+                              new LoginUidPrincipal(1001),
+                              new LoginGidPrincipal(1001)),
+              Sets.newHashSet(new UidPrincipal(1001),
+                              new GidPrincipal(1000, false),
+                              new GidPrincipal(1001, true),
+                              new GidPrincipal(1002, false)));
+    }
+
+    @Test
+    public void testUserNameWithLoginName()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+                              new GroupNamePrincipal("atlas-prod", true),
+                              new LoginNamePrincipal("behrmann")),
+              Sets.newHashSet(new UidPrincipal(1000),
+                              new GidPrincipal(1000, true),
+                              new GidPrincipal(1002, false),
+                              new UserNamePrincipal("behrmann")));
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void testMultipleUserNames()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new UserNamePrincipal("atlas-user"),
+                              new UserNamePrincipal("atlas-prod")),
+              Sets.<Principal>newHashSet());
+    }
+
+    @Test(expected=AuthenticationException.class)
+    public void testMultiplePrimaryGroupNames()
+        throws AuthenticationException
+    {
+        check(Sets.newHashSet(new GroupNamePrincipal("atlas-user", true),
+                              new GroupNamePrincipal("atlas-prod", true)),
+              Sets.<Principal>newHashSet());
     }
 
     @Test(expected=AuthenticationException.class)
@@ -138,8 +221,8 @@ public class AuthzDbPluginTest
     public void testMultipleLoginGid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginGidPrincipal(1, true),
-                              new LoginGidPrincipal(2, true)),
+        check(Sets.newHashSet(new LoginGidPrincipal(1),
+                              new LoginGidPrincipal(2)),
               Sets.<Principal>newHashSet());
     }
 
@@ -163,15 +246,7 @@ public class AuthzDbPluginTest
     public void testInvalidLoginGid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginGidPrincipal(1000, true)),
+        check(Sets.newHashSet(new LoginGidPrincipal(1000)),
               Sets.<Principal>newHashSet());
-    }
-
-    private <T> void assertContains(T expected, Collection<T> collection)
-        throws AssertionFailedError
-    {
-        if (!collection.contains(expected)) {
-            throw new AssertionFailedError(String.format("Expected element %s does not exist in collection %s", expected, collection));
-        }
     }
 }
