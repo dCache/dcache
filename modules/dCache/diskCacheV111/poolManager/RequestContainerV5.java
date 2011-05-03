@@ -2,6 +2,7 @@
 
 package diskCacheV111.poolManager ;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -196,30 +197,33 @@ public class RequestContainerV5
     }
 
     @Override
-    public void run(){
-       try{
-          while( ! Thread.interrupted() ){
+    public void run()
+    {
+        while (!Thread.interrupted()) {
+            try {
+                Thread.sleep(_stagingRetryInterval) ;
 
-             Thread.sleep(_stagingRetryInterval) ;
-
-             List<PoolRequestHandler> list = null ;
-             synchronized( _handlerHash ){
-                list = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
-             }
-             try{
-                for( PoolRequestHandler handler: list ){
-                   if( handler == null )continue ;
-                   handler.alive() ;
+                List<PoolRequestHandler> list;
+                synchronized (_handlerHash) {
+                    list = new ArrayList(_handlerHash.values());
                 }
-             }catch(Throwable t){
-                _log.warn(t.toString()) ;
-                continue ;
-             }
-          }
-       }catch(InterruptedException ie ){
-          _log.warn("Container-ticker done");
-       }
+                for (PoolRequestHandler handler: list) {
+                    if (handler != null) {
+                        handler.alive();
+                    }
+                }
+            } catch (InterruptedException e) {
+                break;
+            } catch (Throwable t) {
+                Thread thisThread = Thread.currentThread();
+                UncaughtExceptionHandler ueh =
+                    thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException(thisThread, t);
+            }
+        }
+        _log.debug("Container-ticker done");
     }
+
     public void poolStatusChanged(String poolName, int poolStatus) {
         _log.info("Restore Manager : got 'poolRestarted' for " + poolName);
         try {
@@ -256,11 +260,11 @@ public class RequestContainerV5
                             rph.retry();
                         }
                 }
-
             }
-
-        } catch (Exception ee) {
-            _log.warn("Problem retrying pool " + poolName + " (" + ee + ")");
+        } catch (CacheException e) {
+            _log.warn("Problem retrying pool {} ({})", poolName, e.toString());
+        } catch (RuntimeException e) {
+            _log.error("Problem retrying pool " + poolName, e);
         }
     }
 
@@ -509,10 +513,10 @@ public class RequestContainerV5
              all = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
           }
           for (PoolRequestHandler rph : all) {
-             try{
+             try {
                 if( forceAll || ( rph._currentRc != 0 ) )rph.retry() ;
-             }catch(Exception ee){
-                sb.append(ee.getMessage()).append("\n");
+             } catch (CacheException e) {
+                sb.append(e.getMessage()).append("\n");
              }
           }
        }else{
@@ -689,8 +693,10 @@ public class RequestContainerV5
 
             sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
 
-        } catch (Exception ee) {
-            commandReply = "P2P failed : " + ee.getMessage();
+        } catch (NoRouteToCellException e) {
+            commandReply = "P2P failed : " + e.getMessage();
+        } catch (CacheException e) {
+            commandReply = "P2P failed : " + e.getMessage();
         }
 
         return commandReply;
@@ -870,8 +876,9 @@ public class RequestContainerV5
                         sendMessage(envelope);
                         _waitingFor = envelope.getUOID();
                         _messageHash.put(_waitingFor, PoolRequestHandler.this);
-                    } catch (Exception e) {
-                        _log.warn("Can't send pool ping to " + _candidate + " :", e);
+                    } catch (NoRouteToCellException e) {
+                        _log.warn("Can't send pool ping to {}: {}",
+                                  _candidate, e.toString());
                     }
                 }
             }
@@ -1143,9 +1150,8 @@ public class RequestContainerV5
                     m.revertDirection();
                     sendMessage(m);
                     _poolMonitor.messageToCostModule(m);
-                } catch (Exception e) {
-                    _log.warn("Exception requestSucceeded : " + e);
-                    _log.warn(e.toString());
+                } catch (NoRouteToCellException e) {
+                    _log.warn("Exception answering request: {}", e.toString());
                 }
                 messages.remove();
             }
@@ -1248,12 +1254,10 @@ public class RequestContainerV5
 
                  stateEngine( inputObject ) ;
 
-                 _log.info("StageEngine left with   : " + _state +
-                            "  ("+ ( _forceContinue?"Continue":"Wait")+")");
-
-              }catch(Exception ee ){
-                 _log.warn("Unexpected Exception in state loop for "+_pnfsId+" : "+ee) ;
-                 _log.warn(ee.toString());
+                 _log.info("StageEngine left with: {} ({})",
+                           _state, (_forceContinue ? "Continue" : "Wait"));
+              } catch (RuntimeException e) {
+                  _log.error("Unexpected Exception in state loop for " + _pnfsId, e);
               }
            }
         }
@@ -1683,7 +1687,7 @@ public class RequestContainerV5
 
                     }else{
                        //
-                       // we coudn't find a pool for staging
+                       // we couldn't find a pool for staging
                        //
                        errorHandler() ;
                     }
@@ -1880,14 +1884,19 @@ public class RequestContainerV5
                                 messageArrived.getClass().getName());
 
               }
-           }catch(Exception ee ){
-              _currentRc = ee instanceof CacheException ? ((CacheException)ee).getRc() : 102 ;
-              _currentRm = ee.getMessage();
-              _log.warn("exerciseStageReply : "+ee ) ;
-              _log.warn(ee.toString());
-              return RT_ERROR ;
+           } catch (CacheException e) {
+              _currentRc = e.getRc();
+              _currentRm = e.getMessage();
+              _log.warn("exerciseStageReply: {} ", e.toString());
+              return RT_ERROR;
+           } catch (RuntimeException e) {
+              _currentRc = 102;
+              _currentRm = e.getMessage();
+              _log.error("exerciseStageReply", e) ;
+              return RT_ERROR;
            }
         }
+
         private int exercisePool2PoolReply( Message messageArrived ){
            try{
 
@@ -1913,12 +1922,16 @@ public class RequestContainerV5
                                 messageArrived.getClass().getName());
 
               }
-           }catch(Exception ee ){
-              _currentRc = ee instanceof CacheException ? ((CacheException)ee).getRc() : 102 ;
-              _currentRm = ee.getMessage();
-              _log.warn("exercisePool2PoolReply : "+ee ) ;
-              _log.warn(ee.toString());
-              return RT_ERROR ;
+           } catch (CacheException e) {
+               _currentRc = e.getRc();
+               _currentRm = e.getMessage();
+               _log.warn("exercisePool2PoolReply: {}", e.toString());
+               return RT_ERROR;
+           } catch (RuntimeException e) {
+               _currentRc = 102;
+               _currentRm = e.getMessage();
+               _log.error("exercisePool2PoolReply", e);
+               return RT_ERROR;
            }
         }
         //
@@ -2118,16 +2131,20 @@ public class RequestContainerV5
               setError(0,"") ;
 
               return RT_FOUND ;
-
-           }catch(Exception ee ){
-              _log.warn(err="Exception in getFileAvailableList : "+ee ) ;
-              _log.warn(ee.toString());
-              setError(130,err) ;
-              return RT_ERROR ;
-           }finally{
-              _log.info( "askIfAvailable : Took  "+(System.currentTimeMillis()-_started));
+           } catch (CacheException e) {
+               err = "Exception in getFileAvailableList : " + e;
+               _log.warn(err);
+               setError(130, err);
+               return RT_ERROR;
+           } catch (RuntimeException e) {
+               err = "Exception in getFileAvailableList : " + e;
+               _log.error(err, e);
+               setError(130,err) ;
+               return RT_ERROR;
+           } finally {
+               _log.info("askIfAvailable : Took  {}",
+                         (System.currentTimeMillis() - _started));
            }
-
         }
         //
         // Result :
@@ -2351,22 +2368,25 @@ public class RequestContainerV5
 
                 return RT_FOUND;
 
-            } catch ( CacheException ce) {
-
-                setError( ce.getRc() , ce.getMessage());
-                _log.warn(ce.toString());
-
+            } catch (CacheException e) {
+                setError(e.getRc(), e.getMessage());
+                _log.warn(e.toString());
                 return RT_ERROR;
-
-            } catch (Exception ee) {
-
-                setError( 128 , ee.getMessage());
-                _log.warn(ee.toString());
-
+            } catch (NoRouteToCellException e) {
+                setError(128, e.getMessage());
+                _log.error(e.toString());
                 return RT_ERROR;
-
+            } catch (InterruptedException e) {
+                setError(128, e.getMessage());
+                _log.info(e.toString());
+                return RT_ERROR;
+            } catch (RuntimeException e) {
+                setError(128, e.getMessage());
+                _log.error(e.getMessage(), e);
+                return RT_ERROR;
             } finally {
-                _log.info("Selection pool 2 pool took : "+ (System.currentTimeMillis() - _started));
+                _log.info("Selection pool 2 pool took : {}",
+                          (System.currentTimeMillis() - _started));
             }
 
 		}
@@ -2507,27 +2527,27 @@ public class RequestContainerV5
                setError(0,"");
 
               return RT_FOUND ;
-
-           }catch( CacheException ce ){
-
-               setError( ce.getRc() , ce.getMessage() );
-               _log.warn( ce.toString() );
-
-               return RT_NOT_FOUND ;
-
-           }catch( Exception ee ){
-
-              setError( 128 , ee.getMessage() );
-              _log.warn(ee.toString()) ;
-
-              return RT_ERROR ;
-
-           }finally{
-              _log.info( "Selection cache took : "+(System.currentTimeMillis()-_started));
+           } catch (CacheException e) {
+               setError(e.getRc(), e.getMessage());
+               _log.warn(e.toString());
+               return RT_NOT_FOUND;
+           } catch (NoRouteToCellException e) {
+              setError(128, e.getMessage());
+              _log.error(e.toString());
+              return RT_ERROR;
+           } catch (InterruptedException e) {
+              setError(128, e.getMessage());
+              _log.info(e.toString());
+              return RT_ERROR;
+           } catch (RuntimeException e) {
+              setError(128, e.getMessage());
+              _log.error(e.getMessage(), e);
+              return RT_ERROR;
+           } finally {
+               _log.info("Selection cache took : {}",
+                         (System.currentTimeMillis() - _started));
            }
-
        }
-
     }
 
     private void sendInfoMessage( PnfsId pnfsId ,
@@ -2538,14 +2558,11 @@ public class RequestContainerV5
             new WarningPnfsFileInfoMessage(
                                     "PoolManager","PoolManager",pnfsId ,
                                     rc , infoMessage )  ;
-            info.setStorageInfo( storageInfo ) ;
+        info.setStorageInfo(storageInfo);
 
-        sendMessage(
-         new CellMessage( new CellPath(_warningPath), info )
-                             ) ;
-
-      }catch(Exception ee){
-         _log.warn("Coudn't send WarningInfoMessage : "+ee ) ;
+        sendMessage(new CellMessage(new CellPath(_warningPath), info));
+      } catch (NoRouteToCellException e) {
+          _log.warn("Couldn't send WarningInfoMessage: {}", e.toString());
       }
     }
 
@@ -2555,8 +2572,9 @@ public class RequestContainerV5
             PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, pnfsId);
             msg.setFileCached(cached);
             sendMessage(new CellMessage( new CellPath(_warningPath), msg));
-        } catch (Exception ee) {
-            _log.warn("Couldn't report hit info for : "+pnfsId+" : "+ee);
+        } catch (NoRouteToCellException e) {
+            _log.warn("Couldn't report hit info for {}: {}",
+                      pnfsId, e.toString());
         }
     }
 
