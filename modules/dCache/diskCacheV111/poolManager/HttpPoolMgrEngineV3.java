@@ -839,14 +839,16 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
         private int compareArray(Object[] o1, Object[] o2)
         {
-            if ((_type == null) || (_type.startsWith("i.")) || ((o1 == null) || (o2 == null)))
-                return compareInfo((RestoreHandlerInfo)o1[0], (RestoreHandlerInfo)o2[0]) ;
+            if (_type == null || _type.startsWith("i.")) {
+                return compareInfo((RestoreHandlerInfo) o1[0], (RestoreHandlerInfo) o2[0]);
+            }
 
-            if (_type.equals("path"))
-                return (o1[1].toString().compareTo(o2[1].toString()));
+            if (_type.equals("path")) {
+                return o1[1].toString().compareTo(o2[1].toString());
+            }
 
 
-            return compareStorageInfo((StorageInfo)o1[2], (StorageInfo)o2[2]);
+            return compareStorageInfo((StorageInfo) o1[2], (StorageInfo) o2[2]);
         }
 
         private int compareStorageInfo(StorageInfo s1, StorageInfo s2)
