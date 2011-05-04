@@ -525,10 +525,9 @@ public class      SshStreamEngine
                   writePacket( bad ) ;
                   break ;
                }
-               Md5 digest ;
-               try{ digest = new Md5() ; }catch(Exception ne){ digest=null;}
-               digest.update( challenge ) ;
-               digest.update( _sessionId ) ;
+               Md5 digest = new Md5();
+               digest.update(challenge);
+               digest.update(_sessionId);
                byte [] res = digest.digest() ;
 
                int k ;
