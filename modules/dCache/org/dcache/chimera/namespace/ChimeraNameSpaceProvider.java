@@ -80,6 +80,8 @@ public class ChimeraNameSpaceProvider
     private final RetentionPolicy _defaultRetentionPolicy;
 
     private final boolean _inheritFileOwnership;
+    private final boolean _verifyAllLookups;
+
     private PermissionHandler _permissionHandler;
 
     public ChimeraNameSpaceProvider(Args args) throws Exception {
@@ -115,6 +117,8 @@ public class ChimeraNameSpaceProvider
 
             _inheritFileOwnership =
                 Boolean.valueOf(args.getOpt("inheritFileOwnership"));
+            _verifyAllLookups =
+                Boolean.valueOf(args.getOpt("verifyAllLookups"));
 
         Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         Constructor<ChimeraStorageInfoExtractable>  extractorInit =
@@ -186,9 +190,20 @@ public class ChimeraNameSpaceProvider
     {
         if (Subjects.isRoot(subject)) {
             return _fs.path2inode(path);
-        } else {
-            List<FsInode> inodes = _fs.path2inodes(path);
+        }
 
+        List<FsInode> inodes = _fs.path2inodes(path);
+        if (_verifyAllLookups) {
+            for (FsInode inode: inodes.subList(0, inodes.size() - 1)) {
+                if (inode.isDirectory()) {
+                    FileAttributes attributes =
+                        getFileAttributesForPermissionHandler(inode);
+                    if (_permissionHandler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
+                }
+            }
+        } else {
             for (FsInode inode: Iterables.skip(Lists.reverse(inodes), 1)) {
                 if (inode.isDirectory()) {
                     FileAttributes attributes =
@@ -202,9 +217,8 @@ public class ChimeraNameSpaceProvider
                     break;
                 }
             }
-
-            return inodes.get(inodes.size() - 1);
         }
+        return inodes.get(inodes.size() - 1);
     }
 
     public PnfsId createEntry(Subject subject, String path,
