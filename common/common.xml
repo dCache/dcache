@@ -59,7 +59,6 @@
         <dependency groupId="commons-logging" artifactId="commons-logging" version="1.1.1" scope="provided"/>
         <dependency groupId="org.springframework" artifactId="spring" version="2.5.6" scope="provided"/>
         <dependency groupId="org.springframework" artifactId="spring-webmvc" version="2.5.6" scope="provided"/>
-        <dependency groupId="org.dcache.chimera" artifactId="chimera-core" version="0.0.9" scope="provided"/>
         <dependency groupId="org.slf4j" artifactId="slf4j-log4j12" version="1.5.6" scope="provided"/>
         <dependency groupId="log4j" artifactId="log4j" version="1.2.14" scope="provided"/>
 
@@ -67,7 +66,6 @@
         <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
         <dependency groupId="com.sun.messaging.mq" artifactId="jms" version="4.4.2"/>
         <dependency groupId="com.sun.messaging.mq" artifactId="imq" version="4.4.2"/>
-        <dependency groupId="org.dcache.chimera" artifactId="grizzly-rpc" version="0.0.3"/>
         <dependency groupId="org.springframework" artifactId="spring-beans" version="3.0.5.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-context" version="3.0.5.RELEASE"/>
         <dependency groupId="org.springframework" artifactId="spring-core" version="3.0.5.RELEASE"/>
