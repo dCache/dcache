@@ -63,8 +63,8 @@ public class AbstractBlockingQueueDecorator<E> implements BlockingQueue<E> {
     }
 
     @Override
-    public boolean remove( Object item) {
-        return remove( item);
+    public boolean remove(Object item) {
+        return _queue.remove(item);
     }
 
     @Override
