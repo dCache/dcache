@@ -109,6 +109,12 @@ public interface FileSystemProvider extends Closeable {
     public abstract FsInode path2inode(String path, FsInode startFrom)
             throws ChimeraFsException;
 
+    public abstract List<FsInode> path2inodes(String path)
+        throws ChimeraFsException;
+
+    public abstract List<FsInode> path2inodes(String path, FsInode startFrom)
+        throws ChimeraFsException;
+
     public abstract FsInode inodeOf(FsInode parent, String name)
             throws ChimeraFsException;
 

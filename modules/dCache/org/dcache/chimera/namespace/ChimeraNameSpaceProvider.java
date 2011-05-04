@@ -64,6 +64,9 @@ import static org.dcache.acl.enums.AccessType.*;
 
 import org.springframework.beans.factory.annotation.Required;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
 {
@@ -181,21 +184,27 @@ public class ChimeraNameSpaceProvider
     private FsInode pathToInode(Subject subject, String path)
         throws IOException, ChimeraFsException, ACLException, CacheException
     {
-        if (!Subjects.isRoot(subject)) {
-            File file = new File(path);
-            String parentPath = file.getParent();
+        if (Subjects.isRoot(subject)) {
+            return _fs.path2inode(path);
+        } else {
+            List<FsInode> inodes = _fs.path2inodes(path);
 
-            if (parentPath != null) {
-                FsInode parentInode = _fs.path2inode(parentPath);
-                FileAttributes attributes =
-                    getFileAttributesForPermissionHandler(parentInode);
-                if (_permissionHandler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + path);
+            for (FsInode inode: Iterables.skip(Lists.reverse(inodes), 1)) {
+                if (inode.isDirectory()) {
+                    FileAttributes attributes =
+                        getFileAttributesForPermissionHandler(inode);
+                    if (_permissionHandler.canLookup(subject, attributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
+                    /* dCache only checks the lookup permissions of
+                     * the last directory of a path.
+                     */
+                    break;
                 }
             }
-        }
 
-        return _fs.path2inode(path);
+            return inodes.get(inodes.size() - 1);
+        }
     }
 
     public PnfsId createEntry(Subject subject, String path,

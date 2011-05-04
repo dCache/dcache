@@ -4,6 +4,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import java.util.List;
+import java.util.Collections;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
@@ -249,6 +250,20 @@ public class DummyFileSystemProvider implements FileSystemProvider {
             throws ChimeraFsException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public List<FsInode> path2inodes(String path)
+        throws ChimeraFsException
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<FsInode> path2inodes(String path, FsInode startFrom)
+        throws ChimeraFsException
+    {
+        return Collections.emptyList();
     }
 
     @Override
