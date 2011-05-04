@@ -16,7 +16,7 @@ public class FsExportTest {
 
     @Before
     public void setUp() throws IOException {
-        _exportFile = new ExportFile(new File("test/org/dcache/chimera/nfs/exports"));
+        _exportFile = new ExportFile(new File("modules/dCacheJUnit/org/dcache/chimera/nfs/exports"));
     }
 
     @Test
