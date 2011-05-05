@@ -2172,6 +2172,11 @@ public class RequestContainerV5
                _log.error(err, e);
                setError(130,err) ;
                return RT_ERROR;
+           } catch (InterruptedException e) {
+               err = "Exception in getFileAvailableList : " + e;
+               _log.error(err, e);
+               setError(130,err) ;
+               return RT_ERROR;
            } finally {
                _log.info("askIfAvailable : Took  {}",
                          (System.currentTimeMillis() - _started));
