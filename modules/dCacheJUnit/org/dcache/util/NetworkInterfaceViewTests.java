@@ -14,8 +14,8 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assume.assumeNoException;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 
@@ -50,7 +50,7 @@ public class NetworkInterfaceViewTests {
         try {
             interfaces = NetworkInterface.getNetworkInterfaces();
         } catch (SocketException e) {
-            assumeNoException(e);
+            fail("Could not enumerate interfaces");
             throw new RuntimeException("Code cannot reach this point"); // work-around for Java
         }
 
@@ -66,7 +66,7 @@ public class NetworkInterfaceViewTests {
         }
 
         _interfaces = builder.build();
-        assumeTrue(_interfaces.size() > 0);
+        assertTrue(_interfaces.size() > 0);
     }
 
     @Test
