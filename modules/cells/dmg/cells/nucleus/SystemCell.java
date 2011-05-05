@@ -19,12 +19,16 @@ public class      SystemCell
 {
     private final static Logger _log = LoggerFactory.getLogger(SystemCell.class);
 
+    /* Released on OOM to increase the chance that the shutdown succeeds.
+     */
+    private byte[] _oomSafetyBuffer = new byte[2 << 20];
+
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
    private int  _packetsReceived  = 0 ,
                 _packetsAnswered  = 0 ,
                 _packetsForwarded = 0 ,
-                _packetsReplayed  = 0 ,
+                _packetsReplied  = 0 ,
                 _exceptionCounter = 0 ;
    private DomainInterruptHandler _interruptHandler = null ;
    private Thread                 _interruptThread  = null ;
@@ -105,12 +109,12 @@ public class      SystemCell
    }
     private void shutdownSystem()
     {
-        String [] names = _nucleus.getCellNames();
-        List<String> nonSystem = new ArrayList<String>(names.length);
-        List<String> system = new ArrayList<String>(names.length);
+        List<String> names = _nucleus.getCellNames();
+        List<String> nonSystem = new ArrayList<String>(names.size());
+        List<String> system = new ArrayList<String>(names.size());
 
-        for (int i = 0; i < names.length; i++) {
-            CellInfo info = _nucleus.getCellInfo(names[i]);
+        for (String name: names) {
+            CellInfo info = _nucleus.getCellInfo(name);
             if (info == null) continue;
             String cellName = info.getCellName();
             if (cellName.equals("System")) {
@@ -122,15 +126,15 @@ public class      SystemCell
             }
         }
 
-        _log.info("Will try to shutdown non-system cells " + nonSystem);
+        _log.info("Will try to shutdown non-system cells {}", nonSystem);
         shutdownCells(nonSystem, 3000);
 
-        _log.info("Will try to shutdown remaining cells " + system);
+        _log.info("Will try to shutdown remaining cells {}", system);
         shutdownCells(system, 5000);
     }
 
     /**
-     * Shuts downs named cells. The method will block until the cells
+     * Shuts down named cells. The method will block until the cells
      * are dead or until a timeout has occurred.
      *
      * @param cells List of names of cells to kill.
@@ -138,62 +142,69 @@ public class      SystemCell
      */
     private void shutdownCells(List<String> cells, long timeout)
     {
-       for (String cellName : cells) {
+       for (String cellName: cells) {
            try {
                _nucleus.kill(cellName);
            } catch (IllegalArgumentException e) {
-               _log.info("Problem killing : " + cellName + " -> " + e.getMessage());
+               _log.info("Problem killing : {} -> {}",
+                         cellName, e.getMessage());
            }
        }
 
-       for (String cellName : cells) {
+       for (String cellName: cells) {
            try {
                if (_nucleus.join(cellName, timeout)) {
-                   _log.info("Killed " + cellName);
+                   _log.info("Killed {}", cellName);
                } else {
-                   _log.warn("Timeout waiting for " + cellName);
+                   _log.warn("Timeout waiting for {}", cellName);
                    _nucleus.listThreadGroupOf(cellName);
                    break;
                }
            } catch (InterruptedException e) {
-               _log.warn("Problem killing : " + cellName + " -> " + e.getMessage());
+               _log.warn("Problem killing : {} -> {}",
+                         cellName, e.getMessage());
                break;
            }
        }
     }
 
-   public void cleanUp(){
-       shutdownSystem() ;
-       _log.info("Opening shutdown lock") ;
+    public void cleanUp()
+    {
+        shutdownSystem();
+        _log.info("Opening shutdown lock");
        _shutdownLock.open();
-       System.exit(0) ;
-   }
-   public void getInfo( PrintWriter pw ){
-      pw.println( " CellDomainName   = "+getCellDomainName() ) ;
-      pw.print( " I/O rcv="+_packetsReceived ) ;
-      pw.print( ";asw="+_packetsAnswered ) ;
-      pw.print( ";frw="+_packetsForwarded ) ;
-      pw.print( ";rpy="+_packetsReplayed ) ;
-      pw.println( ";exc="+_exceptionCounter ) ;
-      long fm = _runtime.freeMemory() ;
-      long tm = _runtime.totalMemory() ;
+       System.exit(0);
+    }
 
-      pw.println( " Memory : tot="+tm+";free="+fm+";used="+(tm-fm) ) ;
-      pw.println( " Cells (Threads)" ) ;
-      //
-      // count the threads
-      //
-      String [] names = _nucleus.getCellNames() ;
-      for( int i = 0 ; i < names.length ; i++ ){
-         pw.print( " "+names[i]+"(" ) ;
-         Thread [] threads = _nucleus.getThreads(names[i]) ;
-         if( threads != null ){
-           for( int j = 0 ; j < threads.length ; j++ )
-             pw.print( threads[j].getName()+"," ) ;
-         }
-         pw.println(")");
-      }
-   }
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append(" CellDomainName   = ").println(getCellDomainName());
+        pw.format(" I/O rcv=%d;asw=%d;frw=%d;rpy=%d;exc=%d\n",
+                  _packetsReceived, _packetsAnswered, _packetsForwarded,
+                  _packetsReplied, _exceptionCounter);
+        long fm = _runtime.freeMemory();
+        long tm = _runtime.totalMemory();
+
+        pw.format(" Memory : tot=%d;free=%d;used=%d\n", tm, fm, tm - fm);
+        pw.println(" Cells (Threads)");
+        for (String name: _nucleus.getCellNames()) {
+            pw.append(" ").append(name).append("(");
+            Thread[] threads = _nucleus.getThreads(name);
+            if (threads != null) {
+                boolean first = true;
+                for (Thread thread: threads) {
+                    pw.print(thread.getName());
+                    if (first) {
+                        first = false;
+                    } else {
+                        pw.print(",");
+                    }
+                }
+            }
+            pw.println(")");
+        }
+    }
+
    public void messageToForward( CellMessage msg ){
         msg.nextDestination() ;
         try{
@@ -247,7 +258,7 @@ public class      SystemCell
            msg.revertDirection() ;
            sendMessage( msg ) ;
            _log.info( "Sending : "+msg ) ;
-           _packetsReplayed ++ ;
+           _packetsReplied++ ;
         }catch( Exception e ){
            _exceptionCounter ++ ;
         }
@@ -263,6 +274,7 @@ public class      SystemCell
          * fatal error reoccurs.
          */
         if (e instanceof VirtualMachineError) {
+            _oomSafetyBuffer = null;
             _log.error("Fatal JVM error", e);
             _log.error("Shutting down...");
             kill();

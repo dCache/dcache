@@ -796,13 +796,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private class OurComparator implements Comparator
     {
-        private String _type = null;
-        private OurComparator() {}
+        private final String _type;
 
         private OurComparator(String type)
         {
             _type = type;
-            //           System.out.println("Comparator !!!!iniitialized with "+type);
         }
 
         @Override
@@ -853,12 +851,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
         private int compareStorageInfo(StorageInfo s1, StorageInfo s2)
         {
-            if (_type.equals("sclass"))
-                s1.getStorageClass().compareTo(s2.getStorageClass());
+            if (_type.equals("sclass")) {
+                return s1.getStorageClass().compareTo(s2.getStorageClass());
+            }
 
             String k1 = s1.getKey(_type);
             String k2 = s2.getKey(_type);
-            if ((k1 == null) || (k2 == null))return k1 == null ? -1 : k2 == null ? 1 : 0;
+            if ((k1 == null) || (k2 == null)) {
+                return k1 == null ? -1 : k2 == null ? 1 : 0;
+            }
 
             return  k1.compareTo(k2);
         }

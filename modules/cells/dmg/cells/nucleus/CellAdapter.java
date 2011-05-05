@@ -827,17 +827,15 @@ public class   CellAdapter
      *   If this method is overwritten, the 'cleanUp'
      *   method won't becalled.
      */
-    public void prepareRemoval(KillEvent ce) {
+    public void prepareRemoval(KillEvent ce)
+    {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
         _readyGate.check();
-        try {
-            cleanUp();
-        } catch (Throwable t) {
-            _log.warn("CellAdapter : prepareRemoval : got "+t, t);
-        }
+        cleanUp();
         dumpPinboard();
         _log.info("CellAdapter : prepareRemoval : done");
     }
+
     //
     // package private (we need it in CellShell)
     //
@@ -846,15 +844,15 @@ public class   CellAdapter
         Pinboard pinboard = _nucleus.getPinboard();
         try {
             Map<String,Object> context = getDomainContext();
-            String dumpDir = (String)context.get("dumpDirectory");
+            String dumpDir = (String) context.get("dumpDirectory");
             if (dumpDir == null) {
                 _log.info("Pinboard not dumped (dumpDirectory not sp.)");
                 return;
             }
             File dir = new File(dumpDir);
-            if (! dir.isDirectory()) {
-                _log.info(
-                          "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
+            if (!dir.isDirectory()) {
+                _log.info("Pinboard not dumped (dumpDirectory {} not found)",
+                          dumpDir);
                 return;
             }
             if (pinboard == null) {
@@ -867,8 +865,8 @@ public class   CellAdapter
                                  getCellName()+"-"+
                                  Long.toHexString(System.currentTimeMillis()));
             pinboard.dump(dump);
-        } catch (Throwable t) {
-            _log.warn("Dumping pinboard failed : "+t);
+        } catch (IOException e) {
+            _log.error("Dumping pinboard failed : {}", e.toString());
         }
     }
     /**
