@@ -252,17 +252,15 @@ class CellGlue {
       return v.toArray( new CellTunnelInfo[v.size()] ) ;
 
    }
-   synchronized String [] getCellNames(){
-      int size      = _cellList.size() + _killedCellList.size() ;
 
-      List<String> allCells = new ArrayList<String>(size);
-
-      allCells.addAll(_cellList.keySet());
-      allCells.addAll(_killedCellList.keySet());
-
-      return  allCells.toArray(new String[size]);
-
-   }
+    synchronized List<String> getCellNames()
+    {
+        int size = _cellList.size() + _killedCellList.size();
+        List<String> allCells = new ArrayList<String>(size);
+        allCells.addAll(_cellList.keySet());
+        allCells.addAll(_killedCellList.keySet());
+        return allCells;
+    }
 
    int getUnique(){ return _uniqueCounter.incrementAndGet() ; }
 
@@ -456,30 +454,28 @@ class CellGlue {
 //       sendToAll( new CellEvent( name , CellEvent.CELL_DIED_EVENT ) ) ;
        return ;
    }
-   private synchronized void _kill( CellNucleus source ,
-                                    CellNucleus destination ,
-                                    long to ) {
 
-       _cellEventListener.remove( destination.getCellName() ) ;
+    private synchronized void _kill(CellNucleus source,
+                                    CellNucleus destination,
+                                    long to)
+    {
+        CellPath sourceAddr = new CellPath(source.getCellName(),
+                                           getCellDomainName());
+        KillEvent killEvent = new KillEvent(sourceAddr, to);
+        String cellToKill = destination.getCellName();
+        CellNucleus destNucleus = _cellList.remove(cellToKill);
 
-       CellPath    sourceAddr  = new CellPath( source.getCellName() ,
-                                               getCellDomainName() ) ;
+        if (destNucleus == null) {
+            esay("Warning : (name not found in _kill) " + cellToKill);
+            return;
+        }
 
-       KillEvent    killEvent  = new KillEvent( sourceAddr , to ) ;
+        _cellEventListener.remove(cellToKill);
+        sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
+        _killedCellList.put(cellToKill, destNucleus);
+        destNucleus.sendKillEvent(killEvent);
+    }
 
-       String       cellToKill = destination.getCellName() ;
-
-       CellNucleus destNucleus =  _cellList.remove( cellToKill ) ;
-
-       sendToAll( new CellEvent( cellToKill , CellEvent.CELL_DIED_EVENT ) ) ;
-
-       if( destNucleus == null ){
-           esay( "Warning : (name not found in _kill) "+cellToKill ) ;
-           return ;
-       }
-       _killedCellList.put( destNucleus.getCellName() , destNucleus ) ;
-       destNucleus.sendKillEvent( killEvent ) ;
-   }
    private static final int MAX_ROUTE_LEVELS  =  16 ;
 
    void   sendMessage( CellNucleus nucleus , CellMessage msg )

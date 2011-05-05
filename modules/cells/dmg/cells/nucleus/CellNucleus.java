@@ -195,7 +195,7 @@ public class CellNucleus implements ThreadFactory
     public String getCellDomainName() {
         return __cellGlue.getCellDomainName();
     }
-    public String [] getCellNames() { return __cellGlue.getCellNames(); }
+    public List<String> getCellNames() { return __cellGlue.getCellNames(); }
     public CellInfo getCellInfo(String name) {
         return __cellGlue.getCellInfo(name);
     }
@@ -776,11 +776,11 @@ public class CellNucleus implements ThreadFactory
 
     void sendKillEvent(KillEvent ce)
     {
-        _logNucleus.info("sendKillEvent : received "+ce);
+        _logNucleus.info("sendKillEvent : received {}", ce);
         Thread thread = new KillerThread(ce);
         thread.start();
-        _logNucleus.info("sendKillEvent : " + thread.getName()+" started on group "+
-             thread.getThreadGroup().getName());
+        _logNucleus.info("sendKillEvent : {} started on group {}",
+                         thread.getName(), thread.getThreadGroup().getName());
     }
 
     //
@@ -922,6 +922,8 @@ public class CellNucleus implements ThreadFactory
     public static final int  PRINT_EVERYTHING    =
         PRINT_CELL|PRINT_ERROR_CELL|PRINT_NUCLEUS|PRINT_ERROR_NUCLEUS|PRINT_FATAL;
 
+    private static final CellEvent LAST_MESSAGE_EVENT = new LastMessageEvent();
+
     private class KillerThread extends Thread
     {
         private final KillEvent _event;
@@ -937,7 +939,7 @@ public class CellNucleus implements ThreadFactory
         {
             _logNucleus.info("killerThread : started");
             _state = REMOVING;
-            addToEventQueue(new LastMessageEvent());
+            addToEventQueue(LAST_MESSAGE_EVENT);
             try {
                 _cell.prepareRemoval(_event);
             } catch (Throwable e) {
@@ -947,7 +949,8 @@ public class CellNucleus implements ThreadFactory
 
             shutdownPrivateExecutors();
 
-            _logNucleus.info("killerThread : waiting for all threads in "+_threads+" to finish");
+            _logNucleus.info("killerThread : waiting for all threads in {} to finish",
+                             _threads);
 
             try {
                 Collection<Thread> threads = getNonDaemonThreads(_threads);

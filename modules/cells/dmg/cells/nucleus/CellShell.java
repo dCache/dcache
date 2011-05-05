@@ -273,10 +273,10 @@ public class      CellShell
       }else if( cs.equals( ".getcelltunnelinfos" ) ){
         return  _nucleus.getCellTunnelInfos() ;
       }else if( cs.equals( ".getcellinfos" ) ){
-         String []    list = _nucleus.getCellNames() ;
-         CellInfo []  info = new CellInfo[list.length] ;
-         for( int i = 0 ; i < list.length ; i ++ ){
-            info[i] = _nucleus.getCellInfo( list[i] ) ;
+         List<String> list = _nucleus.getCellNames();
+         CellInfo[] info = new CellInfo[list.size()];
+         for (int i = 0; i < list.size(); i++) {
+             info[i] = _nucleus.getCellInfo(list.get(i));
          }
         return  info ;
       }else{
@@ -323,12 +323,12 @@ public class      CellShell
       return info ;
    }
    public Object ac_getcellinfos( Args args ){
-       String []    list = _nucleus.getCellNames() ;
-       CellInfo []  info = new CellInfo[list.length] ;
-       for( int i = 0 ; i < list.length ; i ++ ){
-          info[i] = _nucleus.getCellInfo( list[i] ) ;
+       List<String> list = _nucleus.getCellNames();
+       CellInfo[] info = new CellInfo[list.size()];
+       for (int i = 0; i < list.size(); i++) {
+           info[i] = _nucleus.getCellInfo(list.get(i));
        }
-       return  info ;
+       return info;
    }
    public Object ac_getcontext_$_0_1( Args args ) throws CommandException {
       if( args.argc() == 0 ){
@@ -553,21 +553,21 @@ public class      CellShell
       StringBuilder sb = new StringBuilder() ;
       if( args.argc() == 0 ){
          sb.append( "  Cell List\n------------------\n" ) ;
-         String [] list = _nucleus.getCellNames() ;
-         if( args.optc() > 0 ){
-            for( int i = 0 ; i < list.length ; i ++ ){
-               CellInfo info = _nucleus.getCellInfo( list[i] ) ;
-               if( info == null ){
-                  sb.append( list[i] ).append(" (defunc)\n" ) ;
-               }else{
-                  sb.append( info.toString() ).append( "\n" ) ;
-               }
-            }
-         }else{
-            for( int i = 0 ; i < list.length ; i ++ )
-               sb.append( list[i] + "\n" ) ;
+         List<String> list = _nucleus.getCellNames();
+         if (args.optc() > 0) {
+             for (String name: list) {
+                 CellInfo info = _nucleus.getCellInfo(name);
+                 if (info == null){
+                     sb.append(name).append(" (defunc)\n" ) ;
+                 } else {
+                     sb.append(info).append( "\n" ) ;
+                 }
+             }
+         } else {
+             for (String name: list) {
+                 sb.append(name).append("\n");
+             }
          }
-
        }else{
          boolean full = ( args.optc() > 0 ) &&
                         ( args.optv(0).indexOf('f') > -1 ) ;
