@@ -20,12 +20,13 @@ package org.dcache.xdr;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RpcCall {
 
-    private final static Logger _log = Logger.getLogger(RpcCall.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(RpcCall.class);
 
     /**
      * XID number generator
@@ -166,9 +167,9 @@ public class RpcCall {
             _transport.send(message);
 
         } catch (OncRpcException e) {
-            _log.log(Level.WARNING, "Xdr exception: ", e);
+            _log.warn("Xdr exception: {}", e.getMessage());
         } catch (IOException e) {
-            _log.log(Level.SEVERE, "Failed send reply: ", e);
+            _log.error("Failed send reply: {}", e.getMessage());
         }
     }
     /**
@@ -198,9 +199,9 @@ public class RpcCall {
             _xdr.close();
 
         } catch (OncRpcException e) {
-            _log.log(Level.WARNING, "Xdr exception: ", e);
+            _log.warn("Xdr exception: {}", e.getMessage());
         } catch (IOException e) {
-            _log.log(Level.SEVERE, "Failed send reply: ", e);
+            _log.error("Failed send reply: {}", e.getMessage());
         }
     }
 
@@ -290,18 +291,18 @@ public class RpcCall {
         try {
             reply = _transport.getReplyQueue().get(xid, timeout);
             if( reply == null ) {
-                _log.log(Level.INFO, "Did not get reply in time");
+                _log.info( "Did not get reply in time");
                 throw new IOException("Did not get reply in time");
             }
         } catch (InterruptedException e) {
-            _log.log(Level.SEVERE, "call processing interrupted");
+            _log.error( "call processing interrupted");
             throw new IOException(e.getMessage());
         }
 
         if(reply.isAccepted() && reply.getAcceptStatus() == RpcAccepsStatus.SUCCESS ) {
             reply.getReplyResult(result);
         } else {
-            _log.log(Level.INFO, "reply not succeeded {0}", reply);
+            _log.info( "reply not succeeded {0}", reply);
             // FIXME: error handling here
 
             if( reply.isAccepted() ) {

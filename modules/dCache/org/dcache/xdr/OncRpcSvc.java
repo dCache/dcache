@@ -34,15 +34,16 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.dcache.xdr.portmap.GenericPortmapClient;
 import org.dcache.xdr.portmap.OncPortmapClient;
 import org.dcache.xdr.portmap.OncRpcPortmap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class OncRpcSvc {
 
-    private final static Logger _log = Logger.getLogger(OncRpcSvc.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(OncRpcSvc.class);
 
     /**
      * Default name of RPC service.
@@ -224,7 +225,7 @@ public class OncRpcSvc {
                                 "udp", netid.toString(udp.getPortLowLevel()), username);
                     }
                 } catch (OncRpcException ex) {
-                    _log.log(Level.SEVERE, "Failed to register program", ex);
+                    _log.error( "Failed to register program", ex);
                 }
             }
         } finally {
@@ -240,7 +241,7 @@ public class OncRpcSvc {
         try {
             _serverReady.await();
         } catch (InterruptedException ex) {
-            _log.log(Level.SEVERE, "failed to start Controller", ex);
+            _log.error( "failed to start Controller", ex);
             throw new IOException(ex.getMessage());
         }
 
@@ -256,7 +257,7 @@ public class OncRpcSvc {
         try {
             _controller.stop();
         } catch (IOException e) {
-           _log.log(Level.SEVERE, "failed to stop Controller", e);
+           _log.error( "failed to stop Controller", e);
         }
     }
 
@@ -275,8 +276,7 @@ public class OncRpcSvc {
      * @param handler RPC requests handler.
      */
     public void register(OncRpcProgram prog, RpcDispatchable handler) {
-        _log.log(Level.INFO, "Registering new program {0} : {1}",
-                new Object[] {prog, handler});
+        _log.info( "Registering new program {} : {}", prog, handler);
         _programs.put(prog, handler);
     }
 
@@ -286,7 +286,7 @@ public class OncRpcSvc {
      * @param prog
      */
     public void unregister(OncRpcProgram prog) {
-        _log.log(Level.INFO, "Inregistering program {0}", prog);
+        _log.info( "Inregistering program {}", prog);
         _programs.remove(prog);
     }
 

@@ -21,8 +21,8 @@ import org.dcache.utils.ByteBufferFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 
@@ -33,7 +33,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      */
     public final static int MAX_XDR_SIZE = 128 * 1024;
 
-    private final static Logger _log = Logger.getLogger(Xdr.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(Xdr.class);
 
     /**
      * Byte buffer used by XDR record.
@@ -98,7 +98,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
 
     public void endEncoding() {
         int len = _body.position() - _position -4 ;
-        _log.log(Level.FINEST, "Encoded XDR size: {0}", len);
+        _log.debug("Encoded XDR size: {}", len);
         /*
          * set record marker:
          */
@@ -127,7 +127,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      */
     public int xdrDecodeInt() {
         int val = _body.getInt();
-        _log.log(Level.FINEST, "Decoding int {0}", val);
+        _log.debug("Decoding int {}", val);
         return val;
     }
 
@@ -139,7 +139,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
     public int[] xdrDecodeIntVector() {
 
         int len = xdrDecodeInt();
-        _log.log(Level.FINEST, "Decoding int array with len = {0}", len);
+        _log.debug("Decoding int array with len = {}", len);
 
         int[] ints = new int[len];
         for (int i = 0; i < len; i++) {
@@ -158,7 +158,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      */
     public void xdrDecodeOpaque(byte[] buf, int offset, int len) {
         int padding = (4 - (len & 3)) & 3;
-        _log.log(Level.FINEST, "padding zeros: {0}", padding);
+        _log.debug("padding zeros: {}", padding);
         _body.get(buf, offset, len);
         _body.position(_body.position() + padding);
     }
@@ -198,7 +198,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
         String ret;
 
         int len = xdrDecodeInt();
-        _log.log(Level.FINEST, "Decoding string with len = {0}", len);
+        _log.debug("Decoding string with len = {}", len);
 
         if (len > 0) {
             byte[] bytes = new byte[len];
@@ -247,7 +247,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * methods can rely on.
      */
     public void xdrEncodeInt(int value) {
-        _log.log(Level.FINEST, "Ecoding int {0}", value);
+        _log.debug("Ecoding int {}", value);
         _body.putInt(value);
     }
 
@@ -265,7 +265,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      *
      */
     public void xdrEncodeIntVector(int[] values) {
-        _log.log(Level.FINEST, "Ecoding int array {0}", Arrays.toString(values));
+        _log.debug("Ecoding int array {}", Arrays.toString(values));
         _body.putInt(values.length);
         for (int value: values) {
             _body.putInt( value );
@@ -277,7 +277,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      *
      */
     public void xdrEncodeString(String string) {
-        _log.log(Level.FINEST, "Encode String:  {0}", string);
+        _log.debug("Encode String:  {}", string);
         if( string == null ) string = "";
         xdrEncodeDynamicOpaque(string.getBytes());
     }
@@ -293,7 +293,7 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
      * vector is not a multiple of four, zero bytes will be used for padding.
      */
     public void xdrEncodeOpaque(byte[] bytes, int offset, int len) {
-        _log.log(Level.FINEST, "Encode Opaque, len = {0}", len);
+        _log.debug("Encode Opaque, len = {}", len);
         int padding = (4 - (len & 3)) & 3;
         _body.put(bytes, offset, len);
         _body.put(paddingZeros, 0, padding);

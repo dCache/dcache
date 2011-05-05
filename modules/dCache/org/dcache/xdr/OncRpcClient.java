@@ -36,12 +36,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OncRpcClient {
 
-    private final static Logger _log = Logger.getLogger(OncRpcClient.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(OncRpcClient.class);
 
     private final CountDownLatch clientReady = new CountDownLatch(1);
     private final Controller controller = new Controller();
@@ -67,11 +68,11 @@ public class OncRpcClient {
         selectionKeyHandler.setConnectionCloseHandler(new ConnectionCloseHandler() {
 
             public void locallyClosed(SelectionKey sk) {
-                _log.log(Level.FINE, "Connection closed (locally)");
+                _log.debug("Connection closed (locally)");
             }
 
             public void remotlyClosed(SelectionKey sk) {
-                 _log.log(Level.FINE, "Remote peer closed connection");
+                 _log.debug("Remote peer closed connection");
             }
         });
 
@@ -90,12 +91,12 @@ public class OncRpcClient {
                     @Override
                     public void onReady() {
                         clientReady.countDown();
-                        _log.log(Level.INFO, "Client ready");
+                        _log.info( "Client ready");
                     }
 
                     @Override
                     public void onException(Throwable e) {
-                        _log.log(Level.SEVERE, "Grizzly controller exception: {0}",
+                        _log.error( "Grizzly controller exception: {}",
                                 e.getMessage());
                     }
                 });
@@ -132,7 +133,7 @@ public class OncRpcClient {
         try{
             clientReady.await();
         }catch(InterruptedException e) {
-            _log.log(Level.SEVERE, "client initialization interrupted");
+            _log.error( "client initialization interrupted");
             throw new IOException(e.getMessage());
         }
 

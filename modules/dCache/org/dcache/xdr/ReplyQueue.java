@@ -18,12 +18,13 @@ package org.dcache.xdr;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReplyQueue<K, V> {
 
-    private final static Logger _log = Logger.getLogger(ReplyQueue.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(ReplyQueue.class);
     private final Map<K, V> _queue = new HashMap<K, V>();
 
     /**
@@ -31,7 +32,7 @@ public class ReplyQueue<K, V> {
      * @param key
      */
     public synchronized void registerKey(K key) {
-        _log.log(Level.FINEST, "Registering key {0}", key);
+        _log.debug("Registering key {}", key);
         _queue.put(key, null);
     }
 
@@ -41,7 +42,7 @@ public class ReplyQueue<K, V> {
      * @param value
      */
     public synchronized void put(K key, V value) {
-        _log.log(Level.FINEST, "updating key {0}", key);
+        _log.debug("updating key {}", key);
         if (_queue.containsKey(key)) {
             _queue.put(key, value);
             notifyAll();
@@ -58,7 +59,7 @@ public class ReplyQueue<K, V> {
      * @throws IllegalArgumentException if key is not registered.
      */
     public synchronized V get(K key) throws InterruptedException {
-        _log.log(Level.FINEST, "query key {0}", key);
+        _log.debug("query key {}", key);
         if (!_queue.containsKey(key)) {
             throw new IllegalArgumentException("defined key does not exist: " + key);
         }
@@ -80,7 +81,7 @@ public class ReplyQueue<K, V> {
      * @throwns IllegalArgumentException if key is not registered.
      */
     public synchronized V get(K key, int timeout) throws InterruptedException {
-        _log.log(Level.FINEST, "query key {0} with timeout", key);
+        _log.debug("query key {} with timeout", key);
         if (!_queue.containsKey(key)) {
             throw new IllegalArgumentException("defined key does not exist: " + key);
         }

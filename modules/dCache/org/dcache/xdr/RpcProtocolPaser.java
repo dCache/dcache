@@ -23,9 +23,8 @@ import com.sun.grizzly.util.WorkerThread;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  *
  * Filter for parsing ONC RPC messages (RFC 1831).
@@ -35,7 +34,7 @@ import java.util.logging.Level;
  */
 public class RpcProtocolPaser implements ProtocolParser<Xdr> {
 
-    private final static Logger _log = Logger.getLogger(RpcProtocolPaser.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(RpcProtocolPaser.class);
 
     /*
      * RPC: 1831
@@ -88,7 +87,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
      */
     @Override
     public boolean isExpectingMoreData() {
-        _log.log(Level.FINEST, "isExpectingMoreData {0}", _expectingMoreData);
+        _log.debug("isExpectingMoreData {}", _expectingMoreData);
         return _expectingMoreData;
     }
 
@@ -103,7 +102,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
             !_expectingMoreData &&
             _buffer.position() > _nextMessageStartPosition;
 
-        _log.log(Level.ALL, "hasMoreBytesToParse {0}, buffer : {1}, next read at: {2}",
+        _log.debug("hasMoreBytesToParse {}, buffer : {}, next read at: {}",
                 new Object[]{rc, _buffer, _nextMessageStartPosition});
         return rc;
     }
@@ -114,7 +113,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
      */
     @Override
     public Xdr getNextMessage() {
-        _log.log(Level.FINEST, "messate retrieved");
+        _log.debug("messate retrieved");
         _lastFragment = false;
         _fragmentToRead = 0;
         Xdr xdr = _xdr;
@@ -133,7 +132,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
          * do we have some data to process?
          */
         if (_buffer == null) {
-            _log.log(Level.FINEST, "hasNextMessage false");
+            _log.debug("hasNextMessage false");
             return false;
         }
 
@@ -143,7 +142,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
              */
             Controller.Protocol protocol = (Controller.Protocol)((WorkerThread)Thread.currentThread()).getAttachment().getAttribute(ProtocolKeeperFilter.CONNECTION_PROTOCOL);
             if( protocol != null && protocol == Controller.Protocol.UDP ) {
-                _log.log(Level.FINEST, "UDP XDR packet");
+                _log.debug("UDP XDR packet");
                 /*
                  * UDP packets arriving in one go.
                  */
@@ -183,7 +182,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
                  * for message size let's wait
                  */
                 if (_xdr == null && bytes.remaining() < 4) {
-                    _log.log(Level.FINEST, "hasNextMessage false (short read)");
+                    _log.debug("hasNextMessage false (short read)");
                     return false;
                 }
 
@@ -191,8 +190,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
                 _nextMessageStartPosition += 4;
                 _lastFragment = (_fragmentToRead & RPC_LAST_FRAG) != 0;
                 _fragmentToRead &= RPC_SIZE_MASK;
-                _log.log(Level.FINEST, "Fragment : lenght = {0}, last = {1}",
-                        new Object[] {_fragmentToRead, _lastFragment});
+                _log.debug("Fragment : lenght = {}, last = {}", _fragmentToRead, _lastFragment);
             }
 
             int n = Math.min(_fragmentToRead, bytes.remaining());
@@ -200,7 +198,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
 
             bytes.limit(bytes.position() + n);
             if (_xdr == null) {
-                _log.log(Level.FINEST, "allocating a new buffer for XDR message");
+                _log.debug("allocating a new buffer for XDR message");
                 _xdr = new Xdr(Xdr.MAX_XDR_SIZE);
             }
             _xdr.fill(bytes);
@@ -214,7 +212,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
             _expectingMoreData = !(_fragmentToRead == 0 && _lastFragment);
         }
 
-        _log.log(Level.FINEST, "hasNextMessage {0}", !_expectingMoreData);
+        _log.debug("hasNextMessage {}", !_expectingMoreData);
 
         return !_expectingMoreData;
     }
@@ -225,8 +223,7 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
      */
     @Override
     public void startBuffer(ByteBuffer buffer) {
-        _log.log(Level.FINEST, "new buffer: {0}. Next message position {1}",
-            new Object[] {buffer, _nextMessageStartPosition});
+        _log.debug("new buffer: {}. Next message position {}", buffer, _nextMessageStartPosition);
         _buffer = buffer;
         _buffer.order(ByteOrder.BIG_ENDIAN);
     }
@@ -248,11 +245,11 @@ public class RpcProtocolPaser implements ProtocolParser<Xdr> {
         if ( !hasMoreBytesToParse() ) {
             _nextMessageStartPosition = 0;
             _buffer.clear();
-            _log.log(Level.FINEST,  "reseting buffer prior release: {0}", _buffer );
+            _log.debug( "reseting buffer prior release: {}", _buffer );
             _buffer = null;
         }
-        _log.log(Level.FINEST, "releaseBuffer: usesame = {0}, current position = {1}",
-                new Object[] {_expectingMoreData, _nextMessageStartPosition});
+        _log.debug("releaseBuffer: usesame = {}, current position = {}",
+                _expectingMoreData, _nextMessageStartPosition);
         return _expectingMoreData;
     }
 

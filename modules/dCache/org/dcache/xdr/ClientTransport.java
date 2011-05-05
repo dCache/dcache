@@ -22,12 +22,13 @@ import com.sun.grizzly.Controller;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientTransport implements XdrTransport {
 
-    private final static Logger _log = Logger.getLogger(ClientTransport.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(ClientTransport.class);
 
     private final ConnectorHandler _connectorHandler;
     private final ReplyQueue<Integer, RpcReply> _replyQueue;
@@ -46,7 +47,7 @@ public class ClientTransport implements XdrTransport {
             data.getInt();
         }
             long n = _connectorHandler.write(data, true);
-            _log.log(Level.FINEST, "Send {0} bytes", n);
+            _log.debug("Send {} bytes", n);
     }
 
     public InetSocketAddress getLocalSocketAddress() {

@@ -20,8 +20,6 @@ package org.dcache.xdr.portmap;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.RpcCall;
 import org.dcache.xdr.RpcDispatchable;
@@ -30,10 +28,12 @@ import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.XdrBoolean;
 import org.dcache.xdr.XdrVoid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OncRpcbindServer implements RpcDispatchable {
 
-    private final static Logger _log = Logger.getLogger(OncRpcbindServer.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(OncRpcbindServer.class);
 
     /**
      * Set of registered services.
@@ -66,7 +66,6 @@ public class OncRpcbindServer implements RpcDispatchable {
                 call.reply(XdrVoid.XDR_VOID);
                 break;
             case OncRpcPortmap.PMAPPROC_SET:
-                _log.log(Level.ALL, "Got PMAPPROC_SET");
                 mapping newMapping = new mapping();
                 call.retrieveCall(newMapping);
                 // we sore every thing in v4 format

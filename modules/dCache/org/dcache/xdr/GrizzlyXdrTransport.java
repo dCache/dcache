@@ -28,8 +28,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GrizzlyXdrTransport implements XdrTransport {
 
@@ -37,7 +38,7 @@ public class GrizzlyXdrTransport implements XdrTransport {
     private final InetSocketAddress _remote;
     private final InetSocketAddress _local;
 
-    private final static Logger _log = Logger.getLogger(GrizzlyXdrTransport.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(GrizzlyXdrTransport.class);
 
     public GrizzlyXdrTransport(Context context) {
         _context = context;
@@ -54,17 +55,17 @@ public class GrizzlyXdrTransport implements XdrTransport {
             default:
                 _local = null;
                 _remote = null;
-                _log.log(Level.SEVERE, "Unsupported protocol: {0}", _context.getProtocol());
+                _log.error( "Unsupported protocol: {}", _context.getProtocol());
 
         }
-        _log.log(Level.FINE, "RPC call: remote/local: {0}/{1}", new Object[] { _remote,  _local } );
+        _log.debug("RPC call: remote/local: {}/{}", _remote,  _local );
     }
 
 
     @Override
     public void send(ByteBuffer data) throws IOException {
 
-        _log.log(Level.FINE, "reply sent: {0}", data);
+        _log.debug("reply sent: {}", data);
         SelectableChannel channel = _context.getSelectionKey().channel();
         switch(_context.getProtocol()) {
             case TCP:
@@ -76,7 +77,7 @@ public class GrizzlyXdrTransport implements XdrTransport {
                 OutputWriter.flushChannel(datagramChannel, address, data);
                 break;
             default:
-                _log.log(Level.SEVERE, "Unsupported protocol: {0}", _context.getProtocol());
+                _log.error( "Unsupported protocol: {}", _context.getProtocol());
         }
     }
 

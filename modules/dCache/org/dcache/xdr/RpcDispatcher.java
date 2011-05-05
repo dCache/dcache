@@ -19,15 +19,16 @@ package org.dcache.xdr;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.sun.grizzly.Context;
 import com.sun.grizzly.ProtocolFilter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class RpcDispatcher implements ProtocolFilter {
 
-    private final static Logger _log = Logger.getLogger(RpcDispatcher.class.getName());
+    private final static Logger _log = LoggerFactory.getLogger(RpcDispatcher.class);
 
     /**
      * List of registered RPC services
@@ -62,7 +63,7 @@ public class RpcDispatcher implements ProtocolFilter {
         int vers = call.getProgramVersion();
         int proc = call.getProcedure();
 
-        _log.log(Level.FINE, "processing request {0}", call);
+        _log.debug("processing request {}", call);
 
         RpcDispatchable program = _programs.get( new OncRpcProgram(prog, vers));
         if( program == null ) {
@@ -71,7 +72,7 @@ public class RpcDispatcher implements ProtocolFilter {
             try {
                 program.dispatchOncRpcCall(call);
             } catch (OncRpcException e) {
-                _log.log(Level.SEVERE, "Failed to process RPC request:", e);
+                _log.error("Failed to process RPC request: {}", e.getMessage());
             }
         }
 
