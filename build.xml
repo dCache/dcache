@@ -263,7 +263,7 @@
 
         <echo file=".classpath"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-    <classpathentry kind="src" path="${dcache-common.src}"/>
+    <classpathentry excluding="org/dcache/commons/plot/" kind="src" path="${dcache-common.src}"/>
     <classpathentry kind="src" path="${cells.src}"/>
     <classpathentry kind="src" path="${gplazma.src}"/>
     <classpathentry kind="src" path="${srm.src}"/>
@@ -273,10 +273,9 @@
     <classpathentry kind="src" path="${unittest.src}"/>
     <classpathentry kind="src" path="${gplazma.unittest.src}"/>
     <classpathentry kind="src" path="${build.dcache}"/>
-    <classpathentry excluding="${web-dcache}/classes/|${web-dcache}/classes/devel/|${web-billing.web-dcache}/src/java/|${web-billing.web-dcache}/src/java/" kind="src" path="modules/dCache"/>
+    <classpathentry excluding="${web-dcache}/classes/|${web-dcache}/classes/devel/|${web-billing.web-dcache}/src/java/|org/dcache/services/plots/" kind="src" path="modules/dCache"/>
     <classpathentry excluding="devel/" kind="src" path="modules/dCache/${web-dcache}/classes"/>
     <classpathentry kind="src" path="modules/dCache/diskCacheV111/scripts/plots/web-dcache/WEB-INF/classes/devel"/>
-    <classpathentry kind="src" path="modules/dCache/${web-billing.web-dcache}/src/java"/>
     <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
     <classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
     <classpathentry kind="lib" path="${eclipse.entries}"/>
