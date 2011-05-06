@@ -5,12 +5,16 @@
         <copy todir="${server.bin.dir}">
             <fileset dir="${skelDir}">
 	      <exclude name="etc/PlotConfiguration.xml"/>
-	      <exclude name="share/httpd/static/images/*"/>
+	      <exclude name="**/*.png"/>
+	      <exclude name="**/*.gif"/>
 	    </fileset>
             <filterset filtersfile="common/opt-layout.properties"/>
         </copy>
-        <copy todir="${server.bin.dir}/share/httpd/static/images">
-            <fileset dir="${skelDir}/share/httpd/static/images"/>
+        <copy todir="${server.bin.dir}/">
+            <fileset dir="${skelDir}/">
+                <include name="**/*.png"/>
+                <include name="**/*.gif"/>
+            </fileset>
         </copy>
     </target>
 
