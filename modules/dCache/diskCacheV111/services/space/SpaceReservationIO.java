@@ -11,10 +11,15 @@
 
 
 package diskCacheV111.services.space;
-import java.sql.*;
+
 import java.util.Set;
 import java.util.HashSet;
-import diskCacheV111.util.*;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -41,7 +46,7 @@ import diskCacheV111.util.RetentionPolicy;
 
 
 
-public class SpaceReservationIO extends IoPackage {
+public class SpaceReservationIO extends IoPackage<Space> {
         public static final String SRM_SPACE_TABLE = ManagerSchemaConstants.SpaceTableName;
         public static final String INSERT = "INSERT INTO "+SRM_SPACE_TABLE+
                 " (id,vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"+
@@ -92,9 +97,9 @@ public class SpaceReservationIO extends IoPackage {
         public SpaceReservationIO() {
         }
 
-        public HashSet select( Connection connection,
-                                String txt) throws SQLException {
-                HashSet<Space>  container = new HashSet<Space>();
+        public Set<Space> select( Connection connection,
+                                  String txt) throws SQLException {
+                Set<Space>  container = new HashSet<Space>();
                 Statement s = connection.createStatement();
                 ResultSet set = s.executeQuery(txt);
                 while (set.next()) {
@@ -117,10 +122,10 @@ public class SpaceReservationIO extends IoPackage {
                 return container;
         }
 
-        public HashSet selectPrepared(Connection connection,
-                                     PreparedStatement statement)
+        public Set<Space> selectPrepared(Connection connection,
+                                       PreparedStatement statement)
                 throws SQLException {
-                HashSet<Space>  container = new HashSet<Space>();
+                Set<Space>  container = new HashSet<Space>();
                 ResultSet set = statement.executeQuery();
                 while (set.next()) {
                         container.add(

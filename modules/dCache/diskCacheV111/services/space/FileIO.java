@@ -11,17 +11,22 @@
 
 
 package diskCacheV111.services.space;
-import java.sql.*;
+
 import java.util.Set;
 import java.util.HashSet;
-import diskCacheV111.util.*;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.PnfsId;
 
+
 /*
-                Table "public.srmspacefile"
+		Table "public.srmspacefile"
        Column       |           Type           | Modifiers
 --------------------+--------------------------+-----------
  id                 | bigint                   | not null
@@ -41,7 +46,7 @@ Indexes:
 
 
 
-public class FileIO extends IoPackage {
+public class FileIO extends IoPackage<File> {
 
 	public static final String SRM_SPACEFILE_TABLE = ManagerSchemaConstants.SpaceFileTableName;
 	public static final String SELECT_BY_SPACERESERVATION_ID =
@@ -56,7 +61,7 @@ public class FileIO extends IoPackage {
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfsid=? AND pnfspath=?";
 	public static final String SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE  pnfspath=? AND spacereservationid=? and (state= "+
-                FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() + ") FOR UPDATE";
+		FileState.RESERVED.getStateId()+" or state = "+ FileState.TRANSFERRING.getStateId() + ") FOR UPDATE";
 	public static final String SELECT_USED_SPACE_IN_SPACEFILES = "SELECT sum(sizeinbytes)  FROM "+
 		SRM_SPACEFILE_TABLE+" WHERE spacereservationid = ? AND state != ? "+FileState.FLUSHED.getStateId();
 	public static final String SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH =
@@ -91,63 +96,64 @@ public class FileIO extends IoPackage {
 		" or state = "+ FileState.TRANSFERRING.getStateId() +") and creationTime+lifetime < ? AND spacereservationid=?";
 	public static final String SELECT_EXPIRED_SPACEFILES1="SELECT * FROM "+SRM_SPACEFILE_TABLE+
 		" WHERE creationTime+lifetime < ? AND spacereservationid=?";
+	public static final String SELECT_DELETED_FILES="SELECT * FROM "+SRM_SPACEFILE_TABLE+
+		" WHERE deleted=1 and  spacereservationid=?";
 
 	public FileIO() {
 	}
 
-	public HashSet select( Connection connection,
-				String txt) throws SQLException {
-		HashSet<File>  container = new HashSet<File>();
- 		Statement s = connection.createStatement();
- 		ResultSet set = s.executeQuery(txt);
- 		while (set.next()) {
-			String pnfsIdString = set.getString("pnfsId");
-			PnfsId pnfsId = null;
-			if ( pnfsIdString != null ) {
-				pnfsId = new PnfsId( pnfsIdString );
-			}
- 			container.add(
- 				new File(set.getLong("id"),
-					 set.getString("vogroup"),
-					 set.getString("vorole"),
-					 set.getLong("spacereservationid"),
-					 set.getLong("sizeinbytes"),
-					 set.getLong("creationtime"),
-					 set.getLong("lifetime"),
-					 set.getString("pnfspath"),
-					 pnfsId,
-					 FileState.getState(set.getInt("state")),
-					 (set.getObject("deleted")!=null?set.getInt("deleted"):0)));
-		}
- 		s.close();
-		return container;
-	}
+	public Set<File> select( Connection connection,
+				 String txt) throws SQLException {
+		Set<File>  container = new HashSet<File>();
+                Statement s = connection.createStatement();
+                ResultSet set = s.executeQuery(txt);
+                while (set.next()) {
+                        String pnfsIdString = set.getString("pnfsId");
+                        PnfsId pnfsId = null;
+                        if ( pnfsIdString != null ) {
+                                pnfsId = new PnfsId( pnfsIdString );
+                        }
+                        container.add(
+                                      new File(set.getLong("id"),
+                                               set.getString("vogroup"),
+                                               set.getString("vorole"),
+                                               set.getLong("spacereservationid"),
+                                               set.getLong("sizeinbytes"),
+                                               set.getLong("creationtime"),
+                                               set.getLong("lifetime"),
+                                               set.getString("pnfspath"),
+                                               pnfsId,
+                                               FileState.getState(set.getInt("state")),
+                                               (set.getObject("deleted")!=null?set.getInt("deleted"):0)));
+                }
+                s.close();
+                return container;
+        }
 
-	public HashSet selectPrepared(Connection connection,
-				     PreparedStatement statement)
-		throws SQLException {
-		HashSet<File>  container = new HashSet<File>();
-		ResultSet set = statement.executeQuery();
- 		while (set.next()) {
-			String pnfsIdString = set.getString("pnfsId");
-			PnfsId pnfsId = null;
-			if ( pnfsIdString != null ) {
-				pnfsId = new PnfsId( pnfsIdString );
-			}
- 			container.add(
- 				new File(set.getLong("id"),
-					 set.getString("vogroup"),
-					 set.getString("vorole"),
-					 set.getLong("spacereservationid"),
-					 set.getLong("sizeinbytes"),
-					 set.getLong("creationtime"),
-					 set.getLong("lifetime"),
-					 set.getString("pnfspath"),
-					 pnfsId,
-					 FileState.getState(set.getInt("state")),
-					 (set.getObject("deleted")!=null?set.getInt("deleted"):0)));
-		}
-		return container;
-	}
-
+        public Set<File> selectPrepared(Connection connection,
+                                        PreparedStatement statement)
+                throws SQLException {
+                Set<File>  container = new HashSet<File>();
+                ResultSet set = statement.executeQuery();
+                while (set.next()) {
+                        String pnfsIdString = set.getString("pnfsId");
+                        PnfsId pnfsId = null;
+                        if ( pnfsIdString != null ) {
+                                pnfsId = new PnfsId( pnfsIdString );
+                        }
+                        container.add(
+                                      new File(set.getLong("id"),
+                                               set.getString("vogroup"),
+                                               set.getString("vorole"),
+                                               set.getLong("spacereservationid"),
+                                               set.getLong("sizeinbytes"),
+                                               set.getLong("creationtime"),
+                                               set.getLong("lifetime"),
+                                               set.getString("pnfspath"),
+                                               pnfsId,
+                                               FileState.getState(set.getInt("state")),
+                                               (set.getObject("deleted")!=null?set.getInt("deleted"):0)));
+                }
+                return container;
+        }
 }

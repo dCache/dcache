@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Collections;
+import com.google.common.collect.Iterables;
 import java.util.concurrent.ExecutionException;
 import javax.security.auth.Subject;
 import diskCacheV111.services.space.message.*;
@@ -131,6 +132,11 @@ public final class Manager
         JdbcConnectionPool connection_pool;
         DBManager manager;
         private static Logger logger = LoggerFactory.getLogger(Manager.class);
+        private static IoPackage<File> fileIO = new FileIO();
+        private static IoPackage<Space> spaceReservationIO = new SpaceReservationIO();
+        private static IoPackage<LinkGroup> linkGroupIO = new LinkGroupIO();
+
+
 
         public Manager(String name, String argString)
                 throws InterruptedException, ExecutionException
@@ -519,8 +525,7 @@ public final class Manager
                                            String group,
                                            String role,
                                            StringBuffer sb) throws Exception {
-                IoPackage pkg = new  SpaceReservationIO();
-                HashSet spaces = null;
+                Set<Space> spaces;
                 long lgId = 0;
                 LinkGroup lg = null;
                 if (linkGroupId!=null) {
@@ -548,7 +553,7 @@ public final class Manager
                 if(id != null) {
                         Long longid = Long.valueOf(id);
                         try {
-                                spaces=manager.selectPrepared(pkg,
+                                spaces=manager.selectPrepared(spaceReservationIO,
                                                               SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
                                                               longid);
                                 if (spaces.isEmpty()==true) {
@@ -568,8 +573,7 @@ public final class Manager
                                         }
                                         return;
                                 }
-                                for (Iterator i=spaces.iterator(); i.hasNext();) {
-                                        Space space=(Space) i.next();
+                                for (Space space : spaces ) {
                                         if (lg!=null) {
                                                 if (space.getLinkGroupId()!=lg.getId()) {
                                                         sb.append("LinkGroup with id=").
@@ -610,11 +614,11 @@ public final class Manager
                                         logger.debug("executing statement: "
                                                 + SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                                 }
-                                spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+                                spaces=manager.selectPrepared(spaceReservationIO,
+                                                              SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                                 int count = spaces.size();
                                 long totalReserved = 0;
-                                for (Iterator i=spaces.iterator(); i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                for (Space space : spaces) {
                                         totalReserved += space.getSizeInBytes();
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
@@ -631,7 +635,7 @@ public final class Manager
                 }
                 if (description==null&&group==null&&role==null&&lg!=null) {
                         try {
-                                spaces=manager.selectPrepared(pkg,
+                                spaces=manager.selectPrepared(spaceReservationIO,
                                                               SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_LINKGROUP_ID,
                                                               lg.getId());
                                 if (spaces.isEmpty()==true) {
@@ -642,8 +646,7 @@ public final class Manager
                                                 append(" does not contain any space reservations\n");
                                         return;
                                 }
-                                for (Iterator i=spaces.iterator();i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                for (Space space : spaces) {
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
                                 }
@@ -666,16 +669,16 @@ public final class Manager
                                                 logger.debug("executing statement: "+
                                                              SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
-                                                                      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC,
-                                                                      description);
+                                        spaces=manager.selectPrepared(spaceReservationIO,
+                                                                                 SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC,
+                                                                                 description);
                                 }
                                 else {
                                         if (logger.isDebugEnabled()) {
                                                 logger.debug("executing statement: "+
                                                              SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID,
                                                                       description,
                                                                       lg.getId());
@@ -696,8 +699,7 @@ public final class Manager
                                         }
                                         return;
                                 }
-                                for (Iterator i=spaces.iterator();i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                for (Space space : spaces) {
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
                                 }
@@ -727,7 +729,7 @@ public final class Manager
                                                 logger.debug("executing statement: "+
                                                              SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE,
                                                                       group,
                                                                       role);
@@ -737,7 +739,7 @@ public final class Manager
                                                 logger.debug("executing statement: "+
                                                              SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID,
                                                                       group,
                                                                       role,
@@ -764,8 +766,7 @@ public final class Manager
                                         }
                                         return;
                                 }
-                                for (Iterator i=spaces.iterator();i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                for (Space space : spaces) {
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
                                 }
@@ -799,7 +800,7 @@ public final class Manager
                                                 logger.debug("executing statement: "
                                                         + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP,
                                                                       group);
                                 }
@@ -808,7 +809,7 @@ public final class Manager
                                                 logger.debug("executing statement: "
                                                         + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID,
                                                                       group,
                                                                       lg.getId());
@@ -829,8 +830,7 @@ public final class Manager
                                         }
                                         return;
                                 }
-                                for (Iterator i=spaces.iterator();i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                for (Space space : spaces) {
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
                                 }
@@ -861,7 +861,7 @@ public final class Manager
                                                         "executing statement: "
                                                         + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                         SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE,
                                                                       group);
                                 }
@@ -870,7 +870,7 @@ public final class Manager
                                                 logger.debug("executing statement: "
                                                         + SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID);
                                         }
-                                        spaces=manager.selectPrepared(pkg,
+                                        spaces=manager.selectPrepared(spaceReservationIO,
                                                                       SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID,
                                                                       group,
                                                                       lg.getId());
@@ -890,8 +890,7 @@ public final class Manager
                                         }
                                         return;
                                 }
-                                for (Iterator i=spaces.iterator();i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                for (Space space : spaces) {
                                         space.toStringBuffer(sb);
                                         sb.append('\n');
                                 }
@@ -920,8 +919,7 @@ public final class Manager
                                     boolean all,
                                     String id,
                                     StringBuffer sb) throws Exception {
-                IoPackage pkg = new LinkGroupIO();
-                HashSet groups = null;
+                Set<LinkGroup> groups;
                 if(id != null) {
                         long longid = Long.parseLong(id);
                         try {
@@ -943,7 +941,7 @@ public final class Manager
                                         logger.debug("executing statement: "+
                                                      LinkGroupIO.SELECT_ALL_LINKGROUPS);
                                 }
-                                groups=manager.selectPrepared(pkg,
+                                groups=manager.selectPrepared(linkGroupIO,
                                                               LinkGroupIO.SELECT_ALL_LINKGROUPS);
                         }
                         else {
@@ -953,15 +951,14 @@ public final class Manager
                                                      " ?,"+
                                                      latestLinkGroupUpdateTime);
                                 }
-                                groups=manager.selectPrepared(pkg,
+                                groups=manager.selectPrepared(linkGroupIO,
                                                               LinkGroupIO.SELECT_CURRENT_LINKGROUPS,
                                                               latestLinkGroupUpdateTime);
                         }
                         int count = groups.size();
                         long totalReservable = 0L;
                         long totalReserved   = 0L;
-                        for (Iterator i=groups.iterator(); i.hasNext();) {
-                                LinkGroup g = (LinkGroup)i.next();
+                        for (LinkGroup g : groups) {
                                 totalReservable  += g.getAvailableSpaceInBytes();
                                 totalReserved    += g.getReservedSpaceInBytes();
                                 g.toStringBuffer(sb);
@@ -1301,24 +1298,15 @@ public final class Manager
         // This method returns an array of all the files in the specified space.
         public List<File> listFilesInSpace(long spaceId)
                 throws SQLException {
-                List<File> result=new ArrayList<File>();
-                try {
-                        HashSet set=manager.selectPrepared(new FileIO(),
-                                                           FileIO.SELECT_BY_SPACERESERVATION_ID,
-                                                           spaceId);
-                        for (Iterator i=set.iterator(); i.hasNext();) {
-                                File f=(File) i.next();
-                                result.add(f);
-                        }
-                }
-                catch (SQLException sqe) {
-                        logger.warn(sqe.getMessage());
-                }
+                Set<File> set=manager.selectPrepared(fileIO,
+                                                     FileIO.SELECT_BY_SPACERESERVATION_ID,
+                                                     spaceId);
+                List<File> result = new ArrayList<File>(set);
                 return result;
         }
 
         public String hh_removeFilesFromSpace=
-                " [-r] [-t] [-s] [-f] <Space Token>"+
+                " [-r] [-t] [-s] [-f] -d] <Space Token>"+
                 "# remove expired files from space, -r(reserved) -t(transferring) -s(stored) -f(flushed)";
 
         public String ac_removeFilesFromSpace_$_1_4( Args args )
@@ -1333,21 +1321,19 @@ public final class Manager
                 boolean doTransferring = args.getOpt( "t" ) != null;
                 boolean doStored       = args.getOpt( "s" ) != null;
                 boolean doFlushed      = args.getOpt( "f" ) != null;
-                HashSet spaces=manager.selectPrepared(new SpaceReservationIO(),
-                                                      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
-                                                      spaceId);
+                Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
+                                                         SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
+                                                         spaceId);
                 if (spaces.isEmpty()==true) {
                         sb.append("Space with ").append(spaceId).append(" does not exist\n");
                         return sb.toString();
                 }
-                for (Iterator i=spaces.iterator(); i.hasNext(); ) {
-                        Space space=(Space) i.next();
-                        HashSet files=manager.selectPrepared(new FileIO(),
-                                                             FileIO.SELECT_EXPIRED_SPACEFILES1,
-                                                             System.currentTimeMillis(),
-                                                             space.getId());
-                        for (Iterator j=files.iterator(); j.hasNext(); ) {
-                                File file = (File)j.next();
+                for (Space space : spaces) {
+                        Set<File> files=manager.selectPrepared(fileIO,
+                                                               FileIO.SELECT_EXPIRED_SPACEFILES1,
+                                                               System.currentTimeMillis(),
+                                                               space.getId());
+                        for (File file : files) {
                                 if (optCount==0) {
                                         if (file.getState()==FileState.STORED||
                                                 file.getState()==FileState.FLUSHED)
@@ -1411,8 +1397,8 @@ public final class Manager
                                         new PnfsHandler(Manager.this,
                                                         new CellPath("PnfsManager"));
                                 logger.info("fix missing size: Searching for files...");
-                                HashSet<File> files=
-                                        manager.select(new FileIO(),
+                                Set<File> files=
+                                        manager.select(fileIO,
                                                        SELECT_RECORDS_WITH_MISSING_SIZE);
                                 int counter=0;
                                 for (File file : files) {
@@ -1634,12 +1620,10 @@ public final class Manager
                         //
                         // Now we need to calculate space one by and as
                         // doing it in one go takes too long
-                        HashSet spaces = null;
                         try {
-                                spaces=manager.selectPrepared( new  SpaceReservationIO(),
-                                                               SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                                for (Iterator i=spaces.iterator(); i.hasNext();) {
-                                        Space space = (Space)i.next();
+                                Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
+                                                                         SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+                                for (Space space : spaces) {
                                         try {
                                                 manager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
                                                                space.getId(),
@@ -1657,13 +1641,11 @@ public final class Manager
                         //
                         // Do the same with linkgroups
                         //
-                        HashSet groups = null;
                         try {
-                                groups=manager.selectPrepared( new LinkGroupIO(),
-                                                               LinkGroupIO.SELECT_ALL);
+                                Set<LinkGroup> groups=manager.selectPrepared( new LinkGroupIO(),
+                                                                              LinkGroupIO.SELECT_ALL);
 
-                                for (Iterator i=groups.iterator(); i.hasNext();) {
-                                        LinkGroup group = (LinkGroup)i.next();
+                                for (LinkGroup group : groups) {
                                         try {
                                                 manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
                                                                group.getId(),
@@ -1708,7 +1690,6 @@ public final class Manager
                         }
                 }
         }
-
 
         private static final String countLatencies =
                 "SELECT count(*) from "+ManagerSchemaConstants.AccessLatencyTableName;
@@ -2018,8 +1999,6 @@ public final class Manager
                                                 select = selectNearlineCustodialLinkGroup;
                                         }
                         }
-                        IoPackage pkg = new LinkGroupIO();
-                        HashSet groups = null;
                         if (logger.isDebugEnabled()) {
                                 logger.debug("executing statement: "+select+
                                              "?="+latestLinkGroupUpdateTime+
@@ -2028,18 +2007,17 @@ public final class Manager
                                              "?="+sizeInBytes
                                              );
                         }
-                        groups=manager.selectPrepared(pkg,
-                                                      select,
-                                                      latestLinkGroupUpdateTime,
-                                                      voGroup,
-                                                      voRole,
-                                                      sizeInBytes);
-                        java.util.Set idset = new java.util.HashSet();
-                        for(Iterator i=groups.iterator();i.hasNext();) {
-                                LinkGroup s = (LinkGroup)i.next();
-                                idset.add(s.getId());
+                        Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                                     select,
+                                                                     latestLinkGroupUpdateTime,
+                                                                     voGroup,
+                                                                     voRole,
+                                                                     sizeInBytes);
+                        List<Long> idlist = new ArrayList<Long>();
+                        for(LinkGroup group : groups) {
+                                idlist.add(group.getId());
                         }
-                        return (Long[])idset.toArray(new Long[0]);
+                        return (Long[])idlist.toArray(new Long[0]);
                 }
                 catch(SQLException sqle) {
                         logger.error("select failed with "+sqle.getMessage());
@@ -2048,9 +2026,9 @@ public final class Manager
         }
 
         private Set<LinkGroup> findLinkGroupIds(
-                long sizeInBytes,
-                AccessLatency al,
-                RetentionPolicy rp) throws SQLException {
+                                                long sizeInBytes,
+                                                AccessLatency al,
+                                                RetentionPolicy rp) throws SQLException {
                 try {
                         if (logger.isDebugEnabled()) {
                                 logger.debug("findLinkGroupIds(sizeInBytes="+sizeInBytes+
@@ -2084,23 +2062,16 @@ public final class Manager
                                                 select = selectAllNearlineCustodialLinkGroup;
                                         }
                         }
-                        IoPackage pkg = new LinkGroupIO();
-                        HashSet groups = null;
                         if (logger.isDebugEnabled()) {
                                 logger.debug("executing statement: "+select+
                                              "?="+latestLinkGroupUpdateTime+
                                              "?="+sizeInBytes);
                         }
-                        groups=manager.selectPrepared(pkg,
-                                                      select,
-                                                      latestLinkGroupUpdateTime,
-                                                      sizeInBytes);
-                        java.util.Set<LinkGroup> linkGroups=new java.util.HashSet();
-                        for(Iterator i=groups.iterator();i.hasNext();) {
-                                LinkGroup s=(LinkGroup) i.next();
-                                linkGroups.add(s);
-                        }
-                        return linkGroups;
+                        Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                                     select,
+                                                                     latestLinkGroupUpdateTime,
+                                                                     sizeInBytes);
+                        return groups;
                 }
                 catch(SQLException sqle) {
                         logger.error("select failed with "+sqle.getMessage());
@@ -2114,51 +2085,49 @@ public final class Manager
                                      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID+
                                      ",?="+id);
                 }
-                HashSet spaces=manager.selectPrepared(new SpaceReservationIO(),
-                                                      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
-                                                      id);
+                Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
+                                                         SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
+                                                         id);
                 if (spaces.isEmpty()==true) {
                         throw new SQLException("space reservation with id="+id+" not found");
                 }
-                return (Space)spaces.toArray()[0];
+                return Iterables.getFirst(spaces,null);
         }
 
         public LinkGroup getLinkGroup(long id)  throws SQLException{
-                HashSet groups=manager.selectPrepared(new LinkGroupIO(),
-                                              LinkGroupIO.SELECT_LINKGROUP_BY_ID,
-                                              id);
+                Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                             LinkGroupIO.SELECT_LINKGROUP_BY_ID,
+                                                             id);
                 if (groups.isEmpty()==true) {
                         throw new SQLException("linkGroup with id="+id+" not found");
                 }
-                return (LinkGroup)groups.toArray()[0];
+                return Iterables.getFirst(groups,null);
         }
 
         public LinkGroup getLinkGroupByName(String name)  throws SQLException{
-                HashSet groups=manager.selectPrepared(new LinkGroupIO(),
-                                                      LinkGroupIO.SELECT_LINKGROUP_BY_NAME,
-                                                      name);
+                Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                             LinkGroupIO.SELECT_LINKGROUP_BY_NAME,
+                                                             name);
                 if (groups.isEmpty()==true) {
                         throw new SQLException("linkGroup with name="+name+" not found");
                 }
-                return (LinkGroup)groups.toArray()[0];
+                return Iterables.getFirst(groups,null);
         }
 
 //------------------------------------------------------------------------------
 // select for update functions
 //------------------------------------------------------------------------------
         public LinkGroup selectLinkGroupForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new LinkGroupIO(),
-                                                    LinkGroupIO.SELECT_LINKGROUP_INFO_FOR_UPDATE,
-                                                    id,
-                                                    sizeInBytes);
+                        return manager.selectForUpdate(connection,
+                                                       linkGroupIO,
+                                                       LinkGroupIO.SELECT_LINKGROUP_INFO_FOR_UPDATE,
+                                                       id,
+                                                       sizeInBytes);
                 }
                 catch (SQLException e) {
                         throw new SQLException("There is no linkgroup with id="+id+" and available space="+sizeInBytes);
                 }
-                return (LinkGroup)o;
         }
 
 
@@ -2167,52 +2136,46 @@ public final class Manager
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID+",?="+id);
                 }
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new LinkGroupIO(),
-                                                    LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID,
-                                                    id);
+                        return manager.selectForUpdate(connection,
+                                                       linkGroupIO,
+                                                       LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID,
+                                                       id);
                 }
                 catch (SQLException e) {
                         throw new SQLException("There is no linkgroup with id="+id);
                 }
-                return (LinkGroup)o;
         }
 
         public Space selectSpaceForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE+",?="+id+","+sizeInBytes);
                 }
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new SpaceReservationIO(),
-                                                    SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE,
-                                                    id,
-                                                    sizeInBytes);
+                        return manager.selectForUpdate(connection,
+                                                       spaceReservationIO,
+                                                       SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE,
+                                                       id,
+                                                       sizeInBytes);
                 }
                 catch (SQLException e) {
                         throw new SQLException("There is no space reservation with id="+id+" and available size="+sizeInBytes);
                 }
-                return (Space)o;
         }
 
         public Space selectSpaceForUpdate(Connection connection,long id)  throws SQLException{
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID+",?="+id);
                 }
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new SpaceReservationIO(),
-                                                    SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID,
-                                                    id);
+                        return manager.selectForUpdate(connection,
+                                                       spaceReservationIO,
+                                                       SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID,
+                                                       id);
                 }
                 catch (SQLException e){
                         throw new SQLException("There is no space reservation with id="+id);
                 }
-                return (Space)o;
         }
 
         public File selectFileForUpdate(Connection connection,
@@ -2224,18 +2187,16 @@ public final class Manager
                                      FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH+",?="+
                                      pnfsPath);
                 }
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new FileIO(),
-                                                    FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH,
-                                                    pnfsPath);
+                        return manager.selectForUpdate(connection,
+                                                       fileIO,
+                                                       FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH,
+                                                            pnfsPath);
                 }
                 catch (SQLException e){
                         throw new SQLException("There is no file with pnfspath="+
                                                pnfsPath);
                 }
-                return (File)o;
         }
 
         public File selectFileForUpdate(Connection connection,
@@ -2246,18 +2207,16 @@ public final class Manager
                                      FileIO.SELECT_FOR_UPDATE_BY_PNFSID+",?="+
                                      pnfsId);
                 }
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new FileIO(),
-                                                    FileIO.SELECT_FOR_UPDATE_BY_PNFSID,
-                                                    pnfsId.toString());
+                        return manager.selectForUpdate(connection,
+                                                       fileIO,
+                                                       FileIO.SELECT_FOR_UPDATE_BY_PNFSID,
+                                                       pnfsId.toString());
                 }
                 catch (SQLException e){
                         throw new SQLException("There is no file with pnfsid="+
                                                pnfsId);
                 }
-                return (File)o;
         }
 
         public File selectFileForUpdate(Connection connection,
@@ -2267,17 +2226,15 @@ public final class Manager
                         logger.debug("executing statement: "+
                                      FileIO.SELECT_FOR_UPDATE_BY_ID+",?="+id);
                 }
-                Object o = null;
                 try {
-                        o = manager.selectForUpdate(connection,
-                                                    new FileIO(),
-                                                    FileIO.SELECT_FOR_UPDATE_BY_ID,
-                                                    id);
+                        return manager.selectForUpdate(connection,
+                                                       fileIO,
+                                                       FileIO.SELECT_FOR_UPDATE_BY_ID,
+                                                       id);
                 }
                 catch (SQLException e){
                         throw new SQLException("There is no file with id="+id);
                 }
-                return (File)o;
         }
 
         public File selectFileFromSpaceForUpdate(Connection connection,
@@ -2290,10 +2247,10 @@ public final class Manager
                                      FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID+
                                      ",?="+pnfsPath+","+reservationId);
                 }
-                return (File)manager.selectForUpdate(connection,
-                                                     new FileIO(),
-                                                     FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID,
-                                                     pnfsPath, reservationId);
+                return manager.selectForUpdate(connection,
+                                               fileIO,
+                                               FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID,
+                                               pnfsPath, reservationId);
         }
 
 
@@ -2561,20 +2518,18 @@ public final class Manager
                                                      SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES+
                                                      "?="+time);
                                 }
-                                HashSet spaces = manager.selectPrepared(new SpaceReservationIO(),
-                                                                        SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES,
-                                                                        time);
-                                for (Iterator i=spaces.iterator(); i.hasNext(); ) {
-                                        Space space = (Space)i.next();
+                                Set<Space> spaces = manager.selectPrepared(spaceReservationIO,
+                                                                           SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES,
+                                                                           time);
+                                for (Space space : spaces) {
                                         //
                                         // for each space make a list of files in this space and clean them up
                                         //
-                                        HashSet files = manager.selectPrepared(new FileIO(),
-                                                                               FileIO.SELECT_EXPIRED_SPACEFILES,
-                                                                               System.currentTimeMillis(),
-                                                                               space.getId());
-                                        for (Iterator j=files.iterator(); j.hasNext(); ) {
-                                                File file = (File)j.next();
+                                        Set<File> files = manager.selectPrepared(fileIO,
+                                                                                 FileIO.SELECT_EXPIRED_SPACEFILES,
+                                                                                 System.currentTimeMillis(),
+                                                                                 space.getId());
+                                        for (File file : files) {
                                                 try {
                                                         removeFileFromSpace(file.getId());
                                                 }
@@ -2591,11 +2546,10 @@ public final class Manager
                         if (logger.isDebugEnabled()) {
                                 logger.debug("Executing: "+SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1);
                         }
-                        HashSet spaces = manager.selectPrepared(new SpaceReservationIO(),
-                                                                SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1,
-                                                                System.currentTimeMillis());
-                        for (Iterator i=spaces.iterator(); i.hasNext(); ) {
-                                Space space = (Space)i.next();
+                        Set<Space> spaces = manager.selectPrepared(spaceReservationIO,
+                                                                   SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1,
+                                                                   System.currentTimeMillis());
+                        for (Space space : spaces ) {
                                 try {
                                         updateSpaceReservation(space.getId(),
                                                                null,
@@ -2725,7 +2679,7 @@ public final class Manager
         //
 
         public void getValidSpaceTokens(GetSpaceTokensMessage msg) throws SQLException {
-                HashSet<Space> spaces = null;
+                Set<Space> spaces;
                 if(msg.getSpaceTokenId()!=null) {
                         spaces = new HashSet<Space>();
                         Space space = getSpace(msg.getSpaceTokenId().longValue());
@@ -2736,35 +2690,31 @@ public final class Manager
                                 logger.debug("executing statement: "+
                                              SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                         }
-                        spaces=manager.selectPrepared(new SpaceReservationIO(),
+                        spaces=manager.selectPrepared(spaceReservationIO,
                                                       SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-
                 }
                 msg.setSpaceTokenSet(spaces);
         }
 
 
         public void getValidSpaceTokenIds(GetSpaceTokenIdsMessage msg) throws SQLException {
-                HashSet<Space> spaces = null;
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+
                                      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                 }
-                spaces=manager.selectPrepared(new SpaceReservationIO(),
-                                              SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-                if (spaces != null) {
-                        long[] ids = new long[spaces.size()];
-                        int j=0;
-                        for (Iterator i=spaces.iterator(); i.hasNext();) {
-                                Space s = (Space)i.next();
-                                ids[j++]=s.getId();
-                        }
-                        msg.setSpaceTokenIds(ids);
+                Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
+                                                         SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+
+                long[] ids = new long[spaces.size()];
+                int j=0;
+                for (Space space : spaces) {
+                        ids[j++]=space.getId();
                 }
+                msg.setSpaceTokenIds(ids);
         }
 
         public void getLinkGroups(GetLinkGroupsMessage msg) throws SQLException {
-                HashSet<LinkGroup> groups = null;
+                Set<LinkGroup> groups;
                 if (msg.getLinkgroupidId()!=null) {
                         groups = new HashSet<LinkGroup>();
                         LinkGroup lg = getLinkGroup(msg.getLinkgroupidId().longValue());
@@ -2774,49 +2724,40 @@ public final class Manager
                         if (logger.isDebugEnabled()) {
                                 logger.debug("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
                         }
-                        groups=manager.selectPrepared(new LinkGroupIO(),
-                                                              LinkGroupIO.SELECT_ALL_LINKGROUPS);
+                        groups=manager.selectPrepared(linkGroupIO,
+                                                      LinkGroupIO.SELECT_ALL_LINKGROUPS);
                 }
                 msg.setLinkGroupSet(groups);
         }
 
         public void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws SQLException {
-                HashSet<LinkGroup> groups = null;
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+
                                      LinkGroupIO.SELECT_ALL_LINKGROUPS);
                 }
-                groups=manager.selectPrepared(new LinkGroupIO(),
-                                              LinkGroupIO.SELECT_ALL_LINKGROUPS);
-                if (groups!=null) {
-                        String[] names = new String[groups.size()];
-                        int j=0;
-                        for (Iterator i=groups.iterator(); i.hasNext();) {
-                                LinkGroup g = (LinkGroup)i.next();
-                                names[j++]=g.getName();
-                        }
-                        msg.setLinkGroupNames(names);
+                Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                             LinkGroupIO.SELECT_ALL_LINKGROUPS);
+                String[] names = new String[groups.size()];
+                int j=0;
+                for (LinkGroup group : groups) {
+                        names[j++]=group.getName();
                 }
+                msg.setLinkGroupNames(names);
         }
 
-
         public void getLinkGroupIds(GetLinkGroupIdsMessage msg) throws SQLException {
-                HashSet<LinkGroup> groups = null;
                 if (logger.isDebugEnabled()) {
                         logger.debug("executing statement: "+
                                      LinkGroupIO.SELECT_ALL_LINKGROUPS);
                 }
-                groups=manager.selectPrepared(new LinkGroupIO(),
-                                              LinkGroupIO.SELECT_ALL_LINKGROUPS);
-                if (groups!=null) {
-                        long[] ids = new long[groups.size()];
-                        int j=0;
-                        for (Iterator i=groups.iterator(); i.hasNext();) {
-                                LinkGroup g = (LinkGroup)i.next();
-                                ids[j++]=g.getId();
-                        }
-                        msg.setLinkGroupIds(ids);
+                Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                             LinkGroupIO.SELECT_ALL_LINKGROUPS);
+                long[] ids = new long[groups.size()];
+                int j=0;
+                for (LinkGroup group : groups) {
+                        ids[j++]=group.getId();
                 }
+                msg.setLinkGroupIds(ids);
         }
 
         public static final String SELECT_SPACE_TOKENS_BY_DESCRIPTION =
@@ -2835,31 +2776,28 @@ public final class Manager
                 "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
                 " WHERE  state = ? AND voGroup = ? AND voRole = ?";
 
-        private Set findSpacesByVoGroupAndRole(String voGroup, String voRole)
+        private Set<Space> findSpacesByVoGroupAndRole(String voGroup, String voRole)
                 throws SQLException {
                 if (voGroup!=null&&!voGroup.isEmpty()&&
                     voRole!=null&&!voRole.isEmpty()) {
-                        return manager.selectPrepared(
-                                new SpaceReservationIO(),
-                                SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE,
-                                SpaceState.RESERVED.getStateId(),
-                                voGroup,
-                                voRole);
+                        return manager.selectPrepared(spaceReservationIO,
+                                                      SELECT_SPACE_TOKENS_BY_VOGROUP_AND_VOROLE,
+                                                      SpaceState.RESERVED.getStateId(),
+                                                      voGroup,
+                                                      voRole);
                 }
                 else {
                         if (voGroup!=null&&!voGroup.isEmpty()) {
-                                return manager.selectPrepared(
-                                        new SpaceReservationIO(),
-                                        SELECT_SPACE_TOKENS_BY_VOGROUP,
-                                        SpaceState.RESERVED.getStateId(),
-                                        voGroup);
+                                return manager.selectPrepared(spaceReservationIO,
+                                                              SELECT_SPACE_TOKENS_BY_VOGROUP,
+                                                              SpaceState.RESERVED.getStateId(),
+                                                              voGroup);
                         }
                         if (voRole!=null&&!voRole.isEmpty()) {
-                                return manager.selectPrepared(
-                                        new SpaceReservationIO(),
-                                        SELECT_SPACE_TOKENS_BY_VOROLE,
-                                        SpaceState.RESERVED.getStateId(),
-                                        voRole);
+                                return manager.selectPrepared(spaceReservationIO,
+                                                              SELECT_SPACE_TOKENS_BY_VOROLE,
+                                                              SpaceState.RESERVED.getStateId(),
+                                                              voRole);
                         }
                 }
                 return Collections.EMPTY_SET;
@@ -2868,44 +2806,38 @@ public final class Manager
         public long[] getSpaceTokens(AuthorizationRecord authRecord,
                                      String description) throws SQLException {
 
-                Set spaces=new HashSet();
+                Set<Space> spaces = new HashSet<Space>();
                 if (description==null) {
                         String voGroup=authRecord.getVoGroup();
                         String voRole=authRecord.getVoRole();
-
                         spaces.addAll(findSpacesByVoGroupAndRole(voGroup, voRole));
 
                         for (GroupList groupList : authRecord.getGroupLists()) {
-                            String attribute = groupList.getAttribute();
-                            Set foundSpaces;
-                            if( FQAN.isValid( attribute)) {
-                                FQAN fqan = new FQAN( attribute);
-                                foundSpaces = findSpacesByVoGroupAndRole( fqan.getGroup(), fqan.getRole());
-                            } else {
-                                foundSpaces = findSpacesByVoGroupAndRole( attribute, "");
-                            }
-                            spaces.addAll( foundSpaces);
+                                String attribute = groupList.getAttribute();
+                                Set<Space> foundSpaces;
+                                if( FQAN.isValid( attribute)) {
+                                        FQAN fqan = new FQAN( attribute);
+                                        foundSpaces = findSpacesByVoGroupAndRole( fqan.getGroup(), fqan.getRole());
+                                } else {
+                                        foundSpaces = findSpacesByVoGroupAndRole( attribute, "");
+                                }
+                                spaces.addAll(foundSpaces);
                         }
                 }
                 else {
-                        Set foundSpaces=manager.selectPrepared(
-                                new SpaceReservationIO(),
-                                SELECT_SPACE_TOKENS_BY_DESCRIPTION,
-                                SpaceState.RESERVED.getStateId(),
-                                description);
+                        Set<Space> foundSpaces=manager.selectPrepared(
+                                                                      spaceReservationIO,
+                                                                      SELECT_SPACE_TOKENS_BY_DESCRIPTION,
+                                                                      SpaceState.RESERVED.getStateId(),
+                                                                      description);
                         if (foundSpaces!=null) {
                                 spaces.addAll(foundSpaces);
                         }
                 }
-                Set<Long> tokenSet=new HashSet<Long>();
-                for (Iterator i=spaces.iterator(); i.hasNext();) {
-                        Space space=(Space) i.next();
-                        tokenSet.add(space.getId());
-                }
-                Long[] tokensLong=tokenSet.toArray(new Long[0]);
-                long[] tokens=new long[tokensLong.length];
-                for (int i=0; i<tokens.length; ++i) {
-                        tokens[i]=tokensLong[i].longValue();
+                long[] tokens=new long[spaces.size()];
+                int i=0;
+                for (Space space : spaces) {
+                        tokens[i++] = space.getId();
                 }
                 return tokens;
         }
@@ -2929,35 +2861,29 @@ public final class Manager
                 if (pnfsId==null&&pnfsPath==null) {
                         throw new IllegalArgumentException("getFileSpaceTokens: all arguments are nulls, not supported");
                 }
-                HashSet files = null;
-                IoPackage pkg = new FileIO();
+                Set<File> files = null;
                 if (pnfsId != null && pnfsPath != null) {
-                        files = manager.selectPrepared(pkg,
+                        files = manager.selectPrepared(fileIO,
                                                        SELECT_SPACE_FILE_BY_PNFSID_AND_PNFSPATH,
                                                        pnfsId.toString(),
                                                        new FsPath(pnfsPath).toString());
                 }
                 else {
                         if (pnfsId != null) {
-                                files = manager.selectPrepared(pkg,
+                                files = manager.selectPrepared(fileIO,
                                                                SELECT_SPACE_FILE_BY_PNFSID,
                                                                pnfsId.toString());
                         }
                         if (pnfsPath != null) {
-                                files = manager.selectPrepared(pkg,
+                                files = manager.selectPrepared(fileIO,
                                                                SELECT_SPACE_FILE_BY_PNFSPATH,
                                                                new FsPath(pnfsPath).toString());
                         }
                 }
-                Set<Long> tokenSet = new HashSet<Long>();
-                for (Iterator i=files.iterator();i.hasNext();){
-                        File f=(File)i.next();
-                        tokenSet.add(f.getSpaceId());
-                }
-                Long[] tokensLong =  tokenSet.toArray(new Long[0]);
-                long[] tokens = new long[tokensLong.length];
-                for(int i = 0; i< tokens.length;++i) {
-                        tokens[i] = tokensLong[i].longValue();
+                long[] tokens = new long[files.size()];
+                int i=0;
+                for (File file : files) {
+                        tokens[i++] = file.getSpaceId();
                 }
                 return tokens;
         }
@@ -3267,9 +3193,9 @@ public final class Manager
                                       int state) throws SQLException,
                                                         SpaceException {
                 pnfsPath=new FsPath(pnfsPath).toString();
-                HashSet files=manager.selectPrepared(new FileIO(),
-                                                     FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
-                                                     pnfsPath);
+                Set<File> files=manager.selectPrepared(fileIO,
+                                                       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
+                                                       pnfsPath);
                 if (files!=null&&files.isEmpty()==false) {
                         throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
                 }
@@ -3403,9 +3329,9 @@ public final class Manager
         }
 
         public File getFile(PnfsId pnfsId)  throws SQLException {
-                HashSet files=manager.selectPrepared(new FileIO(),
-                                                     FileIO.SELECT_BY_PNFSID,
-                                                     pnfsId.toString());
+                Set<File> files=manager.selectPrepared(fileIO,
+                                                       FileIO.SELECT_BY_PNFSID,
+                                                       pnfsId.toString());
                 if (files.isEmpty()==true) {
                         throw new SQLException("file with pnfsId="+pnfsId+
                                                " is not found");
@@ -3414,14 +3340,14 @@ public final class Manager
                         throw new SQLException("found two records with pnfsId="+
                                                pnfsId);
                 }
-                return (File)files.toArray()[0];
+                return Iterables.getFirst(files,null);
         }
 
         public File getFile(String pnfsPath)  throws SQLException{
                 pnfsPath =new FsPath(pnfsPath).toString();
-                HashSet files = manager.selectPrepared(new FileIO(),
-                                                       FileIO.SELECT_BY_PNFSPATH,
-                                                       pnfsPath);
+                Set<File> files = manager.selectPrepared(fileIO,
+                                                         FileIO.SELECT_BY_PNFSPATH,
+                                                         pnfsPath);
                 if (files.isEmpty()==true) {
                         throw new SQLException("file with pnfsPath="+pnfsPath+
                                                " is not found");
@@ -3430,14 +3356,14 @@ public final class Manager
                         throw new SQLException("found two records with pnfsPath="+
                                                pnfsPath);
                 }
-                return (File)files.toArray()[0];
+                return Iterables.getFirst(files,null);
         }
 
         public Set getFiles(String pnfsPath)  throws SQLException{
                 pnfsPath =new FsPath(pnfsPath).toString();
-                HashSet files = manager.selectPrepared(new FileIO(),
-                                                       FileIO.SELECT_BY_PNFSPATH,
-                                                       pnfsPath);
+                Set<File> files = manager.selectPrepared(fileIO,
+                                                         FileIO.SELECT_BY_PNFSPATH,
+                                                         pnfsPath);
                 if (files.isEmpty()==true) {
                         throw new SQLException("file with pnfsPath="+pnfsPath+
                                                " is not found");
@@ -3446,9 +3372,9 @@ public final class Manager
         }
 
         public File getFile(long id)  throws SQLException{
-                HashSet files = manager.selectPrepared(new FileIO(),
-                                                       FileIO.SELECT_BY_ID,
-                                                       id);
+                Set<File> files = manager.selectPrepared(fileIO,
+                                                         FileIO.SELECT_BY_ID,
+                                                         id);
                 if (files.isEmpty()==true) {
                         throw new SQLException("file with id="+id+
                                                " is not found");
@@ -3456,7 +3382,7 @@ public final class Manager
                 if (files.size()>1) {
                         throw new SQLException("found two records with id="+id);
                 }
-                return (File)files.toArray()[0];
+                return Iterables.getFirst(files,null);
         }
 
 
@@ -3541,14 +3467,12 @@ public final class Manager
                                                               "lifetime",
                                                               "creationtime");
                                         manager.update(Manager.updateVersion);
-                                        HashSet spaces = null;
                                         try {
-                                                spaces=manager.selectPrepared( new  SpaceReservationIO(),
-                                                                               SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+                                                Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
+                                                                                          SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
                                                 System.out.println("Found "+spaces.size()+
                                                                    " space reservations to update");
-                                                for (Iterator i=spaces.iterator(); i.hasNext();) {
-                                                        Space space = (Space)i.next();
+                                                for (Space space : spaces) {
                                                         try {
                                                                 manager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
                                                                                space.getId(),
@@ -3569,17 +3493,15 @@ public final class Manager
                                         //
                                         // Do the same with linkgroups
                                         //
-                                        HashSet groups = null;
                                         try {
-                                                groups=manager.selectPrepared( new LinkGroupIO(),
-                                                                               LinkGroupIO.SELECT_ALL);
+                                                Set<LinkGroup> groups=manager.selectPrepared(linkGroupIO,
+                                                                                             LinkGroupIO.SELECT_ALL);
                                                 if (groups != null) {
                                                         System.out.println("Found "+
                                                                            groups.size()+
                                                                            " link groups to update");
                                                 }
-                                                for (Iterator i=groups.iterator(); i.hasNext();) {
-                                                        LinkGroup group = (LinkGroup)i.next();
+                                                for (LinkGroup group : groups) {
                                                         try {
                                                                 manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
                                                                                group.getId(),
@@ -4024,10 +3946,10 @@ public final class Manager
                         connection = connection_pool.getConnection();
                         connection.setAutoCommit(false);
                         try {
-                                LinkGroup group = (LinkGroup) manager.selectForUpdate(connection,
-                                                                                      new LinkGroupIO(),
-                                                                                      LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_NAME,
-                                                                                      linkGroupName);
+                                LinkGroup group = manager.selectForUpdate(connection,
+                                                                          linkGroupIO,
+                                                                          LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_NAME,
+                                                                          linkGroupName);
                                 id=group.getId();
                         }
                         catch (SQLException e) {
@@ -4479,9 +4401,9 @@ public final class Manager
                 //
                 // if this file is not in srmspacefile table, silently quit
                 //
-                HashSet files = manager.selectPrepared(new FileIO(),
-                                                       FileIO.SELECT_BY_PNFSID,
-                                                       pnfsId.toString());
+                Set<File> files = manager.selectPrepared(fileIO,
+                                                         FileIO.SELECT_BY_PNFSID,
+                                                         pnfsId.toString());
                 if (files.isEmpty()==true) return;
                 if (logger.isDebugEnabled()) {
                         logger.debug("fileFlushed("+pnfsId+")");
@@ -5164,14 +5086,14 @@ public final class Manager
                 }
                 File file=null;
                 try {
-                        HashSet files = manager.selectPrepared(new FileIO(),
-                                                               FileIO.SELECT_BY_PNFSID,
-                                                               msg.getPnfsId().toString());
+                        Set<File> files = manager.selectPrepared(fileIO,
+                                                                 FileIO.SELECT_BY_PNFSID,
+                                                                 msg.getPnfsId().toString());
                         if (files.isEmpty()) return;
                         if (files.size()>1) {
                                 throw new SQLException("found two records with pnfsId="+(msg.getPnfsId()!=null?msg.getPnfsId():"null"));
                         }
-                        file=(File)files.toArray()[0];
+                        file=Iterables.getFirst(files,null);
                 }
                 catch (Exception e) {
                         logger.error("Failed to retrieve file by pnfs id "+ (msg.getPnfsId()!=null?msg.getPnfsId():"null")+" "
