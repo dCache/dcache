@@ -267,7 +267,8 @@ public class ForwardStagerV1 extends CellAdapter {
                stager.getStorageInfo(),
                stager.getProtocolInfo(), 0);
 
-        request.setReplyRequired( true ) ;
+        request.setSkipCostUpdate(true);
+        request.setReplyRequired(true);
 
         sendMessage(   new CellMessage(  _poolManagerPath ,  request )  ) ;
 

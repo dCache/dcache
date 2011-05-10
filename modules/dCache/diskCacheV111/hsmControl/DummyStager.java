@@ -21,7 +21,7 @@ public class DummyStager extends CellAdapter {
     private File        _database  = null ;
     private SimpleDateFormat formatter
          = new SimpleDateFormat ("MM.dd hh:mm:ss");
-         
+
     public DummyStager( String name , String  args ) throws Exception {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
@@ -30,7 +30,7 @@ public class DummyStager extends CellAdapter {
           if( _args.argc() < 1 )
             throw new
             IllegalArgumentException("Usage : ... <database>") ;
-            
+
           _database = new File( _args.argv(0) ) ;
           if( ! _database.isDirectory() )
              throw new
@@ -40,7 +40,7 @@ public class DummyStager extends CellAdapter {
           kill() ;
           throw e ;
        }
-       useInterpreter( true ); 
+       useInterpreter( true );
        _nucleus.newThread( new QueueWatch() , "queueWatch").start() ;
        start();
        export();
@@ -72,9 +72,9 @@ public class DummyStager extends CellAdapter {
        Object obj = msg.getMessageObject() ;
        _requests ++ ;
        if( obj instanceof StagerMessage ){
-          StagerMessage stager = (StagerMessage)obj ; 
+          StagerMessage stager = (StagerMessage)obj ;
           say( stager.toString() ) ;
-          try{        
+          try{
              sendStageRequest( stager ) ;
              stager.setSucceeded();
           }catch(Exception iiee ){
@@ -102,7 +102,7 @@ public class DummyStager extends CellAdapter {
           say( "Answer for : "+answer.getMessageObject() ) ;
           _outstandingRequests -- ;
        }
-       public void exceptionArrived( CellMessage request , Exception exception ){      
+       public void exceptionArrived( CellMessage request , Exception exception ){
           esay( "Exception for : "+_stager+" : "+exception  ) ;
           _outstandingRequests -- ;
        }
@@ -112,14 +112,15 @@ public class DummyStager extends CellAdapter {
        }
     }
     private void sendStageRequest( StagerMessage stager ){
-        PoolMgrSelectReadPoolMsg request = 
+        PoolMgrSelectReadPoolMsg request =
           new PoolMgrSelectReadPoolMsg(
                stager.getPnfsId(),
                stager.getStorageInfo(),
-               stager.getProtocolInfo(), 0); 
+               stager.getProtocolInfo(), 0);
+        request.setSkipCostUpdate(true);
         try{
-            sendMessage( 
-               new CellMessage( 
+            sendMessage(
+               new CellMessage(
                         new CellPath("PoolManager") ,
                         request ) ,
                true , true ,
@@ -148,9 +149,9 @@ public class DummyStager extends CellAdapter {
          _pin    = pin ;
          synchronized( _companionMap ){
             if( _companionMap.get(pnfsId) != null )
-               throw new 
+               throw new
                IllegalArgumentException( "Staging "+_pnfsId+" in progess");
-               
+
              _companionMap.put( pnfsId , this ) ;
          }
        }
@@ -166,16 +167,16 @@ public class DummyStager extends CellAdapter {
           if( message instanceof PnfsGetStorageInfoMessage ){
              _storageInfo = ((PnfsGetStorageInfoMessage)message).getStorageInfo() ;
              say( "Manual Stager : storageInfoArrived : "+_storageInfo ) ;
-             
+
              DCapProtocolInfo pinfo = new DCapProtocolInfo( "DCap",3,0,_host,0) ;
-             PoolMgrSelectReadPoolMsg request = 
+             PoolMgrSelectReadPoolMsg request =
                new PoolMgrSelectReadPoolMsg(
                     _pnfsId,
                     _storageInfo ,
-                    pinfo , 0); 
+                    pinfo , 0);
              try{
-                sendMessage( 
-                   new CellMessage( 
+                sendMessage(
+                   new CellMessage(
                             new CellPath("PoolManager") ,
                             request ) ,
                    true , true ,
@@ -192,11 +193,11 @@ public class DummyStager extends CellAdapter {
              say( "Manual Stager : PoolMgrSelectReadPoolMsg : "+select ) ;
              _poolName = select.getPoolName() ;
              if( _pin ){
-                PoolSetStickyMessage sticky = 
+                PoolSetStickyMessage sticky =
                    new PoolSetStickyMessage( _poolName , _pnfsId , true ) ;
                 try{
-                   sendMessage( 
-                      new CellMessage( 
+                   sendMessage(
+                      new CellMessage(
                                new CellPath(_poolName) ,
                                sticky ) ,
                       true , true ,
@@ -218,7 +219,7 @@ public class DummyStager extends CellAdapter {
              _status = " (sticky) O.K." ;
           }
        }
-       public void exceptionArrived( CellMessage request , Exception exception ){      
+       public void exceptionArrived( CellMessage request , Exception exception ){
           esay( _status = "Exception for : "+_pnfsId+" : "+exception  ) ;
        }
        public void answerTimedOut( CellMessage request ){
@@ -254,12 +255,12 @@ public class DummyStager extends CellAdapter {
         PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
         String host   = args.argv(1) ;
         boolean pin   = args.getOpt("pin") != null ;
-        
+
         ExampleCompanion companion = new ExampleCompanion(pnfsId,host,pin) ;
-        
-       PnfsGetStorageInfoMessage storageInfoMsg = 
+
+       PnfsGetStorageInfoMessage storageInfoMsg =
               new PnfsGetStorageInfoMessage( pnfsId ) ;
-        
+
        try{
           sendMessage( new CellMessage(
                              new CellPath("PnfsManager") ,
@@ -269,7 +270,7 @@ public class DummyStager extends CellAdapter {
                        3600 * 1000 ) ;
        }catch(Exception ee ){
            companion.setStatus("Problem sending 'getStorageInfo' : "+ee );
-           esay( "Problem sending 'getStorageInfo' : "+ee ) ; 
+           esay( "Problem sending 'getStorageInfo' : "+ee ) ;
           throw ee ;
        }
        return "" ;
