@@ -18,6 +18,7 @@ import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.*;
 
@@ -82,7 +83,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private final String _value;
         private static final Map<String, DcapCommand> _commands =
-                new HashMap<String, DcapCommand>();
+                new ConcurrentHashMap<String, DcapCommand>();
         static {
             for (DcapCommand command : DcapCommand.values()) {
                 _commands.put(command.getCommand(), command);
@@ -276,7 +277,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
-        
+
         _origin = new Origin((_authorizationStrong || _authorizationRequired) ? AuthType.ORIGIN_AUTHTYPE_STRONG : AuthType.ORIGIN_AUTHTYPE_WEAK, "0");
         _log.debug("Origin: " + _origin.toString());
 
