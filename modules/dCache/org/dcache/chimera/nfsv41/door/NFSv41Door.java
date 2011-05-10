@@ -5,7 +5,6 @@ package org.dcache.chimera.nfsv41.door;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.security.auth.Subject;
 
 import org.dcache.xdr.OncRpcException;
-import org.acplt.oncrpc.apps.jportmap.OncRpcEmbeddedPortmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
@@ -51,8 +49,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
 import java.nio.ByteBuffer;
-import org.acplt.oncrpc.OncRpcPortmapClient;
-import org.acplt.oncrpc.OncRpcProtocols;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellMessageReceiver;
@@ -63,6 +59,8 @@ import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v4.Layout;
 import org.dcache.chimera.nfs.v4.MDSOperationFactory;
+import org.dcache.chimera.nfs.v4.OperationFactoryMXBeanImpl;
+import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfs.v4.xdr.layout4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
@@ -72,10 +70,12 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.utils.Bytes;
+import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.portmap.OncRpcEmbeddedPortmap;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
@@ -165,41 +165,16 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public void init() throws Exception {
 
-        boolean isPortMapRunning = OncRpcEmbeddedPortmap.isPortmapRunning();
-        if (!isPortMapRunning) {
-            _log.info("Portmap is not available, starting embedded one...");
-            new OncRpcEmbeddedPortmap();
-        }
+
+        new OncRpcEmbeddedPortmap();
 
         final NFSv41DeviceManager _dm = this;
 
-        _rpcService = new OncRpcSvc(DEFAULT_PORT);
+        _rpcService = new OncRpcSvc(DEFAULT_PORT, IpProtocolType.TCP, true, "NFSv41 door embedded server");
 
-        _nfs4 = new NFSServerV41(new MDSOperationFactory(),
+        _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
                 _dm, _aclHandler, _fileFileSystemProvider, _exportFile);
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
-
-        OncRpcPortmapClient portmap = new OncRpcPortmapClient(InetAddress.getByName("127.0.0.1"));
-        portmap.getOncRpcClient().setTimeout(2000);
-        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
-            _log.error("Failed to register mountv1 service within portmap.");
-        }
-
-        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3, OncRpcProtocols.ONCRPC_UDP, DEFAULT_PORT)) {
-            _log.error("Failed to register mountv1 service within portmap.");
-        }
-
-        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V1, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
-            _log.error("Failed to register mountv3 service within portmap.");
-        }
-
-        if (!portmap.setPort(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V1, OncRpcProtocols.ONCRPC_UDP, DEFAULT_PORT)) {
-            _log.error("Failed to register mountv3 service within portmap.");
-        }
-
-        if (!portmap.setPort(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4, OncRpcProtocols.ONCRPC_TCP, DEFAULT_PORT)) {
-            _log.error("Failed to register NFSv4 service within portmap.");
-        }
 
         _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
@@ -310,7 +285,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     public device_addr4 getDeviceInfo(NFS4Client client, deviceid4 deviceId) {
         /* in case of MDS access we return the same interface which client already connected to */
         if (deviceId.equals(MDS_ID)) {
-            return DeviceManager.deviceAddrOf(client.getLocalAddress());
+            return DeviceManager.deviceAddrOf( new RoundRobinStripingPattern<InetSocketAddress>(),
+                    client.getLocalAddress());
         }
 
         PoolDS ds = _deviceMap.get(deviceId);
@@ -505,7 +481,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         public PoolDS(deviceid4 deviceId, InetSocketAddress ip) {
             _deviceId = deviceId;
             _socketAddress = ip;
-            _deviceAddr = DeviceManager.deviceAddrOf(ip);
+            _deviceAddr = DeviceManager
+                    .deviceAddrOf(new RoundRobinStripingPattern<InetSocketAddress>(), ip);
         }
 
         public deviceid4 getDeviceId() {
