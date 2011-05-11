@@ -215,7 +215,7 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
                 currentEntry.cookie = new nfs_cookie4( new uint64_t(i) );
 
                 // TODO: catch here error from getattr and reply 'fattr4_rdattr_error' to the client
-                currentEntry.attrs = OperationGETATTR.getAttributes(_args.opreaddir.attr_request, ei);
+                currentEntry.attrs = OperationGETATTR.getAttributes(_args.opreaddir.attr_request, ei, context);
                 currentEntry.nextentry = null;
 
                 // check if writing this entry exceeds the count limit

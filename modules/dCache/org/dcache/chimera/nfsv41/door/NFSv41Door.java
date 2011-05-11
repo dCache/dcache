@@ -61,6 +61,7 @@ import org.dcache.chimera.nfs.v4.Layout;
 import org.dcache.chimera.nfs.v4.MDSOperationFactory;
 import org.dcache.chimera.nfs.v4.OperationFactoryMXBeanImpl;
 import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
+import org.dcache.chimera.nfs.v4.SimpleIdMap;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfs.v4.xdr.layout4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
@@ -173,7 +174,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         _rpcService = new OncRpcSvc(DEFAULT_PORT, IpProtocolType.TCP, true, "NFSv41 door embedded server");
 
         _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
-                _dm, _aclHandler, _fileFileSystemProvider, _exportFile);
+                _dm, _aclHandler, _fileFileSystemProvider, new SimpleIdMap(), _exportFile);
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
         _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);

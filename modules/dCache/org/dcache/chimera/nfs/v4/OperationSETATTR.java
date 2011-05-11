@@ -72,7 +72,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
             }
 
            res.status = nfsstat4.NFS4_OK;
-           res.attrsset = setAttributes(_args.opsetattr.obj_attributes, context.currentInode());
+           res.attrsset = setAttributes(_args.opsetattr.obj_attributes, context.currentInode(), context);
 
         }catch(ChimeraNFSException hfe) {
     		res.status = hfe.getStatus();
@@ -93,7 +93,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
 
 	}
 
-    static bitmap4 setAttributes(fattr4 attributes, FsInode inode) throws Exception {
+    static bitmap4 setAttributes(fattr4 attributes, FsInode inode, CompoundContext context) throws Exception {
 
         _log.debug("set Attribute length: {}", attributes.attrmask.value.length);
 
@@ -115,7 +115,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
             for( int i = 0; i < maxAttr; i++) {
                 int newmask = (mask[i/32] >> (i-(32*(i/32))) );
                 if( (newmask & 1L) != 0 ) {
-                    if( xdr2fattr(i, inode, xdr) ) {
+                    if( xdr2fattr(i, inode, context, xdr) ) {
                         _log.debug("   setAttributes : {} ({}) OK",
                             new Object[] {i, OperationGETATTR.attrMask2String(i)}
                         );
@@ -143,7 +143,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
         return bitmap;
     }
 
-    static boolean xdr2fattr( int fattr , FsInode inode, XdrDecodingStream xdr) throws Exception {
+    static boolean xdr2fattr( int fattr , FsInode inode, CompoundContext context, XdrDecodingStream xdr) throws Exception {
 
         boolean isApplied = false;
 
@@ -208,18 +208,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                 utf8str_cs owner = new utf8str_cs ();
                 owner.xdrDecode(xdr);
                 String new_owner = new String(owner.value.value);
-                _log.debug("new owner: {}", new_owner );
-                if( new_owner.matches("[0-9]+") ){
-                    // already numeric
-                    inode.setUID(Integer.parseInt(new_owner));
-                }
-                //else{
-                //    org.dcache.chimera.posix.UnixUser user = (org.dcache.chimera.posix.UnixUser)_nisDirectory.lookup(new_owner);
-                //    if(user != null) {
-                //       inode.setUID(user.getUID());
-                //    }
-                // }
-                // default is false
+                inode.setUID(context.getIdMapping().principalToUid(new_owner));
                 isApplied = true;
                 break;
             case nfs4_prot.FATTR4_OWNER_GROUP :
@@ -227,11 +216,7 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
                 utf8str_cs owner_group = new utf8str_cs ();
                 owner_group.xdrDecode(xdr);
                 String new_group = new String(owner_group.value.value);
-                _log.debug("new owner_group: {}", new_group);
-                if( new_group.matches("[0-9]+") ){
-                    // already numeric
-                    inode.setGID(Integer.parseInt(new_group));
-                }
+                inode.setGID(context.getIdMapping().principalToGid(new_group));
                 isApplied = true;
                 break;
             case nfs4_prot.FATTR4_SYSTEM :

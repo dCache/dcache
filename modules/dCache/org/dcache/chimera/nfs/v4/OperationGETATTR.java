@@ -117,7 +117,8 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         try {
 
 	        res.resok4 = new GETATTR4resok();
-	        res.resok4.obj_attributes = getAttributes(_args.opgetattr.attr_request, context.currentInode());
+	        res.resok4.obj_attributes = getAttributes(_args.opgetattr.attr_request,
+                        context.currentInode(), context);
 
 	        res.status = nfsstat4.NFS4_OK;
         }catch(ChimeraNFSException he) {
@@ -135,7 +136,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
 	}
 
-    static fattr4  getAttributes(bitmap4 bitmap, FsInode inode) throws Exception {
+    static fattr4  getAttributes(bitmap4 bitmap, FsInode inode, CompoundContext context) throws Exception {
 
         int[] mask = new int[bitmap.value.length];
         for( int i = 0; i < mask.length; i++) {
@@ -155,7 +156,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
                 int newmask = (mask[i/32] >> (i-(32*(i/32))) );
                 if( (newmask & 1) > 0 ) {
-                        XdrAble attrXdr = fattr2xdr(i, inode);
+                        XdrAble attrXdr = fattr2xdr(i, inode, context);
                         if( attrXdr != null) {
                             _log.debug("   getAttributes : {} ({}) OK.",
                                     new Object[] { i, attrMask2String(i)} );
@@ -210,7 +211,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
      */
 
     // read/read-write
-    private static XdrAble fattr2xdr( int fattr , FsInode inode) throws Exception {
+    private static XdrAble fattr2xdr( int fattr , FsInode inode, CompoundContext context) throws Exception {
 
         XdrAble ret = null;
         FsStat fsStat = null;
@@ -399,16 +400,14 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 ret = numlinks;
                 break;
             case nfs4_prot.FATTR4_OWNER :
-                // TODO: use principal
-                int uid = inode.statCache().getUid();
-                utf8str_mixed user = new utf8str_mixed ( new utf8string( Integer.toString(uid).getBytes()) );
+                String owner_s = context.getIdMapping().uidToPrincipal(inode.statCache().getUid());
+                utf8str_mixed user = new utf8str_mixed ( new utf8string( owner_s.getBytes()) );
                 fattr4_owner owner = new fattr4_owner(user);
                 ret = owner;
                 break;
             case nfs4_prot.FATTR4_OWNER_GROUP :
-                // TODO: use principal
-                int gid = inode.statCache().getGid();
-                utf8str_mixed group = new utf8str_mixed ( new utf8string( Integer.toString(gid).getBytes()) );
+                String group_s = context.getIdMapping().gidToPrincipal(inode.statCache().getGid());
+                utf8str_mixed group = new utf8str_mixed ( new utf8string( group_s.getBytes()) );
                 fattr4_owner owner_group = new fattr4_owner(group);
                 ret = owner_group;
                 break;

@@ -121,7 +121,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "Permission denied.");
                             }
 
-                            OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode);
+                            OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode, context);
                         } catch (FileNotFoundHimeraFsException he) {
 
                             // check parent permissions
@@ -139,7 +139,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                             switch (_args.opopen.openhow.how.mode) {
                                 case createmode4.UNCHECKED4:
                                 case createmode4.GUARDED4:
-                                    res.resok4.attrset = OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode);
+                                    res.resok4.attrset = OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode, context);
                                     break;
                                 case createmode4.EXCLUSIVE4:
                                 case createmode4.EXCLUSIVE4_1:

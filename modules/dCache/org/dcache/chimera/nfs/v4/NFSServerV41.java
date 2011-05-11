@@ -47,9 +47,11 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
     private final NFSv41DeviceManager _deviceManager;
     private final AclHandler _aclHandler;
     private final NFSv4StateHandler _statHandler = new NFSv4StateHandler();
+    private final NfsIdMapping _idMapping;
 
     public NFSServerV41(NFSv4OperationFactory operationFactory,
             NFSv41DeviceManager deviceManager, AclHandler aclHandler, FileSystemProvider fs,
+            NfsIdMapping idMapping,
             ExportFile exportFile) throws OncRpcException, IOException {
 
         _deviceManager = deviceManager;
@@ -57,6 +59,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         _exportFile = exportFile;
         _operationFactory = operationFactory;
         _aclHandler = aclHandler;
+        _idMapping = idMapping;
     }
 
     @Override
@@ -86,7 +89,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
             }
 
             CompoundContext context = new CompoundContext(v, arg1.minorversion.value,
-                _fs, _statHandler, _deviceManager, _aclHandler, call$, _exportFile);
+                _fs, _statHandler, _deviceManager, _aclHandler, call$, _idMapping, _exportFile);
 
             for (nfs_argop4 op : arg1.argarray) {
 

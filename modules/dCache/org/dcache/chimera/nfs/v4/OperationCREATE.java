@@ -139,7 +139,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
 
             res.status = nfsstat4.NFS4_OK;
             res.resok4 = new CREATE4resok();
-            res.resok4.attrset = OperationSETATTR.setAttributes(objAttr, inode);
+            res.resok4.attrset = OperationSETATTR.setAttributes(objAttr, inode, context);
             res.resok4.cinfo = new change_info4();
             res.resok4.cinfo.atomic = true;
             res.resok4.cinfo.before = new changeid4(new uint64_t(context.currentInode().statCache().getMTime()));

@@ -41,7 +41,8 @@ public class OperationNVERIFY extends AbstractNFSv4Operation {
 
         try {
 
-            fattr4 currentAttr = OperationGETATTR.getAttributes(_args.opnverify.obj_attributes.attrmask, context.currentInode());
+            fattr4 currentAttr = OperationGETATTR.getAttributes(_args.opnverify.obj_attributes.attrmask,
+                    context.currentInode(), context);
 
             res.status = nfsstat4.NFS4ERR_SAME;
 

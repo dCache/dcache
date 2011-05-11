@@ -54,7 +54,8 @@ public class OperationVERIFY extends AbstractNFSv4Operation {
              */
 
             if( bitSet (_args.opverify.obj_attributes.attrmask ) ) {
-                fattr4 currentAttr = OperationGETATTR.getAttributes(_args.opverify.obj_attributes.attrmask, context.currentInode());
+                fattr4 currentAttr = OperationGETATTR.getAttributes(_args.opverify.obj_attributes.attrmask,
+                        context.currentInode(), context);
 
                 if( Arrays.equals(_args.opverify.obj_attributes.attr_vals.value, currentAttr.attr_vals.value) ) {
                     res.status = nfsstat4.NFS4_OK;
