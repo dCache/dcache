@@ -24,11 +24,13 @@ public class ChecksumCollection
     }
 
     public ChecksumCollection(String s)
+        throws CacheException
     {
         add(s);
     }
 
     public void add(Collection<Checksum> checksums)
+        throws CacheException
     {
         for (Checksum checksum: checksums) {
             put(checksum);
@@ -36,6 +38,7 @@ public class ChecksumCollection
     }
 
     public void add(String s)
+        throws CacheException
     {
         if (s != null) {
             for (String value: s.split(CHECKSUM_DELIMITER)) {
@@ -50,8 +53,17 @@ public class ChecksumCollection
     }
 
     public void put(Checksum checksum)
+        throws CacheException
     {
-        _map.put(checksum.getType(), checksum.getValue());
+        ChecksumType type = checksum.getType();
+        String value = checksum.getValue();
+        String existingValue = _map.get(type);
+        if (existingValue == null) {
+            _map.put(type, value);
+        } else if (!existingValue.equals(value)) {
+            throw new CacheException(CacheException.INVALID_ARGS,
+                                     "Checksum mismatch");
+        }
     }
 
     public void remove(ChecksumType type)
@@ -104,6 +116,7 @@ public class ChecksumCollection
     }
 
     public static ChecksumCollection extract(CacheInfo info)
+        throws CacheException
     {
         CacheInfo.CacheFlags flags = info.getFlags();
         ChecksumCollection collection = new ChecksumCollection();

@@ -642,8 +642,17 @@ public class ChimeraNameSpaceProvider
                         stat.setGid(attr.getGroup());
                         break;
                     case CHECKSUM:
-                        for(Checksum sum: attr.getChecksums() ) {
-                            _fs.setInodeChecksum(inode, sum.getType().getType() , sum.getValue());
+                        for (Checksum sum: attr.getChecksums()) {
+                            int type = sum.getType().getType();
+                            String value = sum.getValue();
+                            String existingValue =
+                                _fs.getInodeChecksum(inode, type);
+                            if (existingValue == null) {
+                                _fs.setInodeChecksum(inode, type, value);
+                            } else if (!existingValue.equals(value)) {
+                                throw new CacheException(CacheException.INVALID_ARGS,
+                                                         "Checksum mismatch");
+                            }
                         }
                         break;
                     case ACCESS_LATENCY:
