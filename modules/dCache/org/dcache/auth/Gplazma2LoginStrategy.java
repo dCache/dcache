@@ -1,5 +1,7 @@
 package org.dcache.auth;
 
+import dmg.cells.nucleus.EnvironmentAware;
+
 import org.dcache.gplazma.GPlazma;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy;
@@ -12,34 +14,56 @@ import org.dcache.auth.attributes.LoginAttribute;
 import javax.security.auth.Subject;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
 import java.util.Collections;
 import java.security.Principal;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import org.springframework.beans.factory.annotation.Required;
+
 /**
  * A LoginStrategy that wraps a org.dcache.gplazma.GPlazma
  *
  */
-public class Gplazma2LoginStrategy implements LoginStrategy
+public class Gplazma2LoginStrategy
+    implements LoginStrategy, EnvironmentAware
 {
-    private String configurationFile;
-    private GPlazma gplazma;
+    private String _configurationFile;
+    private GPlazma _gplazma;
+    private Map<String,Object> _environment = Collections.emptyMap();
 
+    @Required
     public void setConfigurationFile(String configurationFile)
     {
         if (configurationFile == null) {
             throw new NullPointerException();
         }
-        this.configurationFile = configurationFile;
-        gplazma = new GPlazma(
-                new FromFileConfigurationLoadingStrategy(configurationFile));
+        _configurationFile = configurationFile;
     }
 
     public String getConfigurationFile()
     {
-        return configurationFile;
+        return _configurationFile;
+    }
+
+    @Override
+    public void setEnvironment(Map<String,Object> environment)
+    {
+        _environment = environment;
+    }
+
+    public Map<String,Object> getEnvironment()
+    {
+        return _environment;
+    }
+
+    public void init()
+    {
+        _gplazma =
+            new GPlazma(new FromFileConfigurationLoadingStrategy(_configurationFile));
+        // TODO: set environment
     }
 
     private LoginReply
@@ -56,7 +80,7 @@ public class Gplazma2LoginStrategy implements LoginStrategy
     public LoginReply login(Subject subject) throws CacheException
     {
         try {
-            return convertLoginReply(gplazma.login(subject));
+            return convertLoginReply(_gplazma.login(subject));
         } catch (AuthenticationException e) {
             throw new PermissionDeniedCacheException("Login failed: " + e.getMessage());
         }

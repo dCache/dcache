@@ -709,6 +709,7 @@ public class      CellShell
         throws Throwable
     {
         try {
+            Cell cell;
             if( ( args.optc() > 0 ) && ( args.optv(0).equals("-c") ) ){
                 String [] argClasses = new String[1] ;
                 Object [] argObjects = new Object[1] ;
@@ -716,18 +717,22 @@ public class      CellShell
                 argClasses[0] = "java.lang.String" ;
                 argObjects[0] = args.argc()>2?args.argv(2):"" ;
 
-                Cell cell = (Cell)_nucleus.createNewCell(args.argv(0),
-                                                         args.argv(1),
-                                                         argClasses,
-                                                         argObjects);
-                return "created : "+cell.toString() ;
-            }else{
-                Cell cell = _nucleus.createNewCell(args.argv(0),
-                                                   args.argv(1),
-                                                   args.argc()>2?args.argv(2):"",
-                                                   true);
-                return "created : "+cell.toString() ;
+                cell = (Cell) _nucleus.createNewCell(args.argv(0),
+                                                     args.argv(1),
+                                                     argClasses,
+                                                     argObjects);
+            } else {
+                cell = _nucleus.createNewCell(args.argv(0),
+                                              args.argv(1),
+                                              args.argc()>2?args.argv(2):"",
+                                              true);
             }
+
+            if (cell instanceof EnvironmentAware) {
+                ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
+            }
+
+            return "created : " + cell;
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
         }
