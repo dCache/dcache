@@ -512,5 +512,52 @@ public class PoolSelectionUnitTest {
         assertTrue("Pool is not active", pool.isActive());
         assertTrue("Pool is not readable", pool.canRead());
     }
-}
 
+    @Test
+    public void testRestrictedIPAddressExampleFromBook()
+        throws CommandException
+    {
+        PoolSelectionUnitV2 psu = new PoolSelectionUnitV2();
+        CommandInterpreter ci = new CommandInterpreter(psu);
+
+        ci.command(new Args("psu create unit -store *@*"));
+
+        ci.command(new Args("psu create pool read-pool"));
+        ci.command(new Args("psu create pool write-pool"));
+
+        ci.command(new Args("psu create pgroup read-pools"));
+        ci.command(new Args("psu create pgroup write-pools"));
+        ci.command(new Args("psu addto pgroup read-pools read-pool"));
+        ci.command(new Args("psu addto pgroup write-pools write-pool"));
+
+        ci.command(new Args("psu create unit -net 111.111.111.0/255.255.255.0") );
+        ci.command(new Args("psu create ugroup allnet-cond"));
+        ci.command(new Args("psu addto ugroup allnet-cond 111.111.111.0/255.255.255.0"));
+        ci.command(new Args("psu create unit -net 111.111.111.201/255.255.255.255"));
+        ci.command(new Args("psu create unit -net 111.111.111.202/255.255.255.255"));
+        ci.command(new Args("psu create unit -net 111.111.111.203/255.255.255.255"));
+        ci.command(new Args("psu create ugroup write-cond"));
+        ci.command(new Args("psu addto ugroup write-cond 111.111.111.201/255.255.255.255"));
+        ci.command(new Args("psu addto ugroup write-cond 111.111.111.202/255.255.255.255"));
+        ci.command(new Args("psu addto ugroup write-cond 111.111.111.203/255.255.255.255"));
+
+        ci.command(new Args("psu create link read-link allnet-cond"));
+        ci.command(new Args("psu set link read-link -read-pref=10 -writepref=0 -cachepref=10"));
+        ci.command(new Args("psu add link read-link read-pools"));
+
+        ci.command(new Args("psu create link write-link write-cond"));
+        ci.command(new Args("psu set link write-link -readpref=0 -writepref=10 -cachepref=0"));
+        ci.command(new Args("psu add link write-link write-pools"));
+
+        /* We cannot read from a write pool.
+         */
+        StorageInfo si = GenericStorageInfo.valueOf("*", "*");
+        PoolPreferenceLevel[] preference =
+            psu.match(DirectionType.READ,  // operation
+                      "111.111.111.201", // net unit
+                      null,  // protocol
+                      si,
+                      null); // linkGroup
+        assertEquals(0, preference.length);
+   }
+}
