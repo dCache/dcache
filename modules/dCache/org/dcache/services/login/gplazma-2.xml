@@ -11,7 +11,8 @@
 
   <import resource="gplazma-common.xml"/>
 
-  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy">
+  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy"
+        init-method="init">
     <description>Interfaces with gPlazma</description>
     <property name="configurationFile" value="${gplazmaConfig}"/>
   </bean>

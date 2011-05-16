@@ -36,6 +36,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
 import dmg.util.CommandException;
@@ -74,9 +75,15 @@ import org.springframework.beans.BeanWrapperImpl;
  */
 public class UniversalSpringCell
     extends AbstractCell
-    implements BeanPostProcessor
+    implements BeanPostProcessor,
+               EnvironmentAware
 {
     private final static long WAIT_FOR_FILE_SLEEP = 30000;
+
+    /**
+     * Environment map this cell was instantiated in.
+     */
+    private Map<String,Object> _environment = Collections.emptyMap();
 
     /**
      * Spring application context. All beans are created through this
@@ -105,7 +112,6 @@ public class UniversalSpringCell
     private final Set<CellLifeCycleAware> _lifeCycleAware =
         new TreeSet<CellLifeCycleAware>(new ClassNameComparator());
 
-
     /**
      * Cell name of the setup controller.
      */
@@ -126,6 +132,12 @@ public class UniversalSpringCell
     {
         super(cellName, arguments);
         doInit();
+    }
+
+    @Override
+    public void setEnvironment(Map<String,Object> environment)
+    {
+        _environment = environment;
     }
 
     @Override
@@ -757,40 +769,46 @@ public class UniversalSpringCell
      * CellCommunicationAware, CellSetupProvider and
      * ThreadFactoryAware and performs the necessary wiring.
      */
+    @Override
     public Object postProcessBeforeInitialization(Object bean,
                                                   String beanName)
         throws BeansException
     {
-        if (CellCommandListener.class.isInstance(bean)) {
+        if (bean instanceof CellCommandListener) {
             addCommandListener(bean);
         }
 
-        if (CellInfoProvider.class.isInstance(bean)) {
-            addInfoProviderBean((CellInfoProvider)bean, beanName);
+        if (bean instanceof CellInfoProvider) {
+            addInfoProviderBean((CellInfoProvider) bean, beanName);
         }
 
-        if (CellMessageReceiver.class.isInstance(bean)) {
-            addMessageReceiver((CellMessageReceiver)bean);
+        if (bean instanceof CellMessageReceiver) {
+            addMessageReceiver((CellMessageReceiver) bean);
         }
 
-        if (CellMessageSender.class.isInstance(bean)) {
-            addMessageSender((CellMessageSender)bean);
+        if (bean instanceof CellMessageSender) {
+            addMessageSender((CellMessageSender) bean);
         }
 
-        if (CellSetupProvider.class.isInstance(bean)) {
-            addSetupProviderBean((CellSetupProvider)bean);
+        if (bean instanceof CellSetupProvider) {
+            addSetupProviderBean((CellSetupProvider) bean);
         }
 
-        if (CellLifeCycleAware.class.isInstance(bean)) {
-            addLifeCycleAwareBean((CellLifeCycleAware)bean);
+        if (bean instanceof CellLifeCycleAware) {
+            addLifeCycleAwareBean((CellLifeCycleAware) bean);
         }
 
-        if (ThreadFactoryAware.class.isInstance(bean)) {
-            addThreadFactoryAwareBean((ThreadFactoryAware)bean);
+        if (bean instanceof ThreadFactoryAware) {
+            addThreadFactoryAwareBean((ThreadFactoryAware) bean);
+        }
+
+        if (bean instanceof EnvironmentAware) {
+            ((EnvironmentAware) bean).setEnvironment(_environment);
         }
         return bean;
     }
 
+    @Override
     public Object postProcessAfterInitialization(Object bean,
                                                  String beanName)
         throws BeansException
@@ -842,6 +860,7 @@ public class UniversalSpringCell
             };
         }
 
+        @Override
         public Resource getResource(String location)
         {
             if (location.startsWith("arguments:")) {
@@ -851,8 +870,10 @@ public class UniversalSpringCell
             }
         }
 
+        @Override
         protected void customizeBeanFactory(DefaultListableBeanFactory beanFactory)
         {
+            super.customizeBeanFactory(beanFactory);
             beanFactory.addBeanPostProcessor(UniversalSpringCell.this);
         }
     }
