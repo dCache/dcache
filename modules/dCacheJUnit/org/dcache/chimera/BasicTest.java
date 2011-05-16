@@ -12,6 +12,8 @@ import static org.junit.Assert.*;
 
 import org.dcache.chimera.posix.Stat;
 
+import com.google.common.collect.Lists;
+
 public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
@@ -586,7 +588,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testResoveLinkOnPathToId() throws Exception {
+    public void testResolveLinkOnPathToId() throws Exception {
 
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         FsInode linkInode = _rootInode.createLink("aLink", 0, 0, 055, "testDir".getBytes());
@@ -597,7 +599,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testResoveLinkOnPathToIdRelative() throws Exception {
+    public void testResolveLinkOnPathToIds() throws Exception
+    {
+        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
+        FsInode linkInode = _rootInode.createLink("aLink", 0, 0, 055, "testDir".getBytes());
+
+        List<FsInode> inodes = _fs.path2inodes("aLink", _rootInode);
+        assertEquals("Link resolution did not work",
+                     Lists.newArrayList(_rootInode, linkInode, dirInode),
+                     inodes);
+    }
+
+    @Test
+    public void testResolveLinkOnPathToIdRelative() throws Exception {
 
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         FsInode linkInode = _rootInode.createLink("aLink", 0, 0, 055, "../testDir".getBytes());
@@ -608,7 +622,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void testResoveLinkOnPathToIdAbsolute() throws Exception {
+    public void testResolveLinkOnPathToIdsRelative() throws Exception
+    {
+        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
+        FsInode linkInode = _rootInode.createLink("aLink", 0, 0, 055, "../testDir".getBytes());
+
+        List<FsInode> inodes = _fs.path2inodes("aLink", _rootInode);
+        assertEquals("Link resolution did not work",
+                     Lists.newArrayList(_rootInode, linkInode, _rootInode, dirInode),
+                     inodes);
+    }
+
+    @Test
+    public void testResolveLinkOnPathToIdAbsolute() throws Exception {
 
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         FsInode subdirInode = dirInode.mkdir("testDir2", 0, 0, 0755);
@@ -616,7 +642,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         FsInode inode = _fs.path2inode("aLink", dirInode);
         assertEquals("Link resolution did not work", subdirInode, inode);
+    }
 
+    @Test
+    public void testResolveLinkOnPathToIdsAbsolute() throws Exception
+    {
+        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
+        FsInode subdirInode = dirInode.mkdir("testDir2", 0, 0, 0755);
+        FsInode linkInode = dirInode.createLink("aLink", 0, 0, 055, "/testDir/testDir2".getBytes());
+
+        List<FsInode> inodes = _fs.path2inodes("aLink", dirInode);
+        assertEquals("Link resolution did not work",
+                     Lists.newArrayList(dirInode, linkInode, _rootInode, dirInode, subdirInode),
+                     inodes);
     }
 
     @Test

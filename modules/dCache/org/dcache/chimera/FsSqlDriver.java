@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.dcache.chimera.posix.Stat;
@@ -36,6 +37,8 @@ import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.commons.util.SqlHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 /**
  * SQL driver
@@ -2336,6 +2339,76 @@ class FsSqlDriver {
         }
 
         return inode;
+    }
+
+    /**
+     * Get the inodes of given the path starting at <i>root</i>.
+     *
+     * @param dbConnection
+     * @param root staring point
+     * @param path
+     * @return inode or null if path does not exist.
+     * @throws SQLException
+     */
+    List<FsInode>
+        path2inodes(Connection dbConnection, FsInode root, String path)
+        throws SQLException, IOException
+    {
+        File pathFile = new File(path);
+        List<String> pathElements = new ArrayList<String>();
+
+        do {
+            String fileName = pathFile.getName();
+            if (fileName.length() != 0) {
+                /* Skip multiple file separators.
+                 */
+                pathElements.add(pathFile.getName());
+            }
+            pathFile = pathFile.getParentFile();
+        } while (pathFile != null);
+
+        FsInode parentInode = root;
+        FsInode inode = root;
+
+        List<FsInode> inodes = new ArrayList<FsInode>(pathElements.size() + 1);
+        inodes.add(root);
+
+        /* Path elements are in reverse order.
+         */
+        for (String f: Lists.reverse(pathElements)) {
+            inode = inodeOf(dbConnection, parentInode, f);
+
+            if (inode == null) {
+                return Collections.emptyList();
+            }
+
+            inodes.add(inode);
+
+            /* If inode is a link then resolve it.
+             */
+            Stat s = stat(dbConnection, inode);
+            inode.setStatCache(s);
+            if (UnixPermission.getType(s.getMode()) == UnixPermission.S_IFLNK) {
+                byte[] b = new byte[(int) s.getSize()];
+                int n = read(dbConnection, inode, 0, 0, b, 0, b.length);
+                String link = new String(b, 0, n);
+                if (link.charAt(0) == '/') {
+                    // FIXME: has to be done more elegantly
+                    parentInode = new FsInode(parentInode.getFs(), "000000000000000000000000000000000000");
+                    inodes.add(parentInode);
+                }
+                List<FsInode> linkInodes =
+                    path2inodes(dbConnection, parentInode, link);
+                if (linkInodes.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                inodes.addAll(linkInodes.subList(1, linkInodes.size()));
+                inode = linkInodes.get(linkInodes.size() - 1);
+            }
+            parentInode = inode;
+        }
+
+        return inodes;
     }
 
     /**
