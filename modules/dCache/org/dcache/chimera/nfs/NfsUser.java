@@ -42,7 +42,7 @@ public class NfsUser {
         gids = from(Subjects.getGids(subject));
         gid = gids.length > 0 ? gids[0] : -1;
 
-        String host = call.getTransport().getRemoteSocketAddress().getAddress().getHostName();
+        String host = call.getTransport().getRemoteSocketAddress().getAddress().getHostAddress();
 
         // root access only for trusted hosts
         if (uid == 0) {
