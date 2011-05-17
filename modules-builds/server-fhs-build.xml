@@ -82,7 +82,7 @@
         <move file="${server.bin.dir}/share/httpd/static/images/bg.jpg"
               todir="${server.root.dir}/usr/share/dcache/httpd/static/images/"/>
 
-        <delete dir="${server.bin.dir}"/>
+        <delete dir="${server.root.dir}/opt"/>
 
         <chmod dir="${server.root.dir}/usr/bin" includes="*" perm="ugo+rx"/>
         <chmod dir="${server.root.dir}/usr/sbin" includes="*" perm="ugo+rx"/>
