@@ -68,19 +68,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   // Resilient pool Group
 
-  private ResilientPools _resilientPools = null;
+  private final ResilientPools _resilientPools;
 
   public class ResilientPools {
     private List _resPoolsList = null;
     // defaults:
     private String _resilientPoolGroupName = "ResilientPools";
 
-    // ### DO NOT CHANGE - for backward compatibility only ###
-    final private boolean _usePoolGroup = true; // it MUST be true, we do not use '*' anymore
-
-    private boolean usePoolGroup() { return _usePoolGroup ; } // ALWAYS true
     private List getResilientPools() {
-      return ( _usePoolGroup ) ? _resPoolsList : null ; }
+      return _resPoolsList;
+    }
 
     public ResilientPools( Args args ) throws Exception {
       String group = args.getOpt("resilientGroupName");
@@ -88,71 +85,51 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           _resilientPoolGroupName = group;
           _log.warn("resilientGroupName=" + group + "\n");
       }else{
-        _log.warn("Argument 'resilientGroupName' is not defined, use default settings: "
-             + " _usePoolGroup=" +_usePoolGroup
-             + ((_usePoolGroup) ? (", _resilientPoolGroupName="+_resilientPoolGroupName):"")
-             );
+        _log.warn("Argument 'resilientGroupName' is not defined, use default settings:"
+                + " _resilientPoolGroupName={}", _resilientPoolGroupName);
       }
     }
 
     public List init()
             throws Exception {
 
-        boolean fatal = false;
+        _log.debug("Asking for Resilient Pools Group List, resilientPoolGroupName="
+                + _resilientPoolGroupName);
 
-        if (this.usePoolGroup()) {
-            _log.debug("Asking for Resilient Pools Group List, resilientPoolGroupName="
-                 + _resilientPoolGroupName);
-
-            try {
-                _resPoolsList = getPoolGroup(_resilientPoolGroupName);
-            } catch (Exception ex) {
-                _log.warn("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName +" ####");
-                throw ex;
-            }
-            if (_resPoolsList == null) {
-                _log.warn("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName +" ####");
-                throw  new Exception("Can not get Group " + _resilientPoolGroupName) ;
-            }
-
-            _log.info("Got " + _resPoolsList.size() + " pools listed in the group " +
-                _resilientPoolGroupName);
-
-            if (_resPoolsList.size() == 0) {
-                _log.warn("ERROR: ##### Group " + _resilientPoolGroupName + " is empty ####");
-                throw  new Exception("Group " + _resilientPoolGroupName + " is empty") ;
-            }
-
-            _log.info("ResilientPools pools: " + _resPoolsList);
-            return _resPoolsList;
-        }else{
-          _log.debug("Resilient pool group is not used, skip initialization");
+        try {
+            _resPoolsList = getPoolGroup(_resilientPoolGroupName);
+        } catch (Exception ex) {
+            _log.warn("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName + " ####");
+            throw ex;
         }
-        return null;
+        if (_resPoolsList == null) {
+            _log.warn("ERROR: ##### Can not get Resilient Pools Group " + _resilientPoolGroupName + " ####");
+            throw new Exception("Can not get Group " + _resilientPoolGroupName);
+        }
+
+        _log.info("Got " + _resPoolsList.size() + " pools listed in the group "
+                + _resilientPoolGroupName);
+
+        if (_resPoolsList.size() == 0) {
+            _log.warn("ERROR: ##### Group " + _resilientPoolGroupName + " is empty ####");
+            throw new Exception("Group " + _resilientPoolGroupName + " is empty");
+        }
+
+        _log.info("ResilientPools pools: " + _resPoolsList);
+        return _resPoolsList;
     }
   }
-
+ 
   private void initResilientPools() {
     while (true) { // try forever to connect Pool Manager
       try {
-        List l = null;
-        if (_resilientPools != null) {
-          l = _resilientPools.init();
-          if (!_resilientPools.usePoolGroup() || l != null)
+        List l = _resilientPools.init();
+          if (l != null)
             break;
-        }
       }
       catch (Exception ex) {
         _log.warn("InitResilientPools() - got exception '" + ex + "'");
       }
-//      finally { // error processing
-//          _log.debug("Can not get resilient pool list, wait 60 sec. and retry");
-//          try {
-//              Thread.sleep(60 * 1000); // wait 60 sec. for Pool Manager
-//          } catch (InterruptedException ex1) {
-//              _log.debug("Getting resilient pool list, wait interrupted, retry");
-//          }
-//      }
     }
   }
 
@@ -166,15 +143,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   public List getPoolListResilient ()
           throws Exception
   {
-    if( _resilientPools == null ){
-      throw new Exception("ERROR: resilientPools are not defined");
-    }
-
     List poolList    = getPoolList();
 
-    if( _resilientPools.usePoolGroup() ){
-      poolList.retainAll( _resilientPools.getResilientPools() );
-    }
+    poolList.retainAll( _resilientPools.getResilientPools() );
     return poolList;
   }
 
@@ -1780,18 +1751,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           return sErrRet;
       }
 
-      if (_resilientPools.usePoolGroup()) {
-          List l = _resilientPools.getResilientPools();
-          if (l == null) {
-              // usePoolGroup() == true, but we got 'null' list for resilient pools
-              _log.debug( sErrRet );
-              return sErrRet;
-          } else if ( ! l.contains(poolName) ) { // pool is NOT resilient
-              String sErrRet2 = "Pool " + poolName + " is not resilient pool, ignore command";
-              _log.debug( sErrRet2 );
-              return sErrRet2;
-          }
-      }
+        List l = _resilientPools.getResilientPools();
+        if (l == null) {
+            // usePoolGroup() == true, but we got 'null' list for resilient pools
+            _log.debug(sErrRet);
+            return sErrRet;
+        } else if (!l.contains(poolName)) { // pool is NOT resilient
+            String sErrRet2 = "Pool " + poolName + " is not resilient pool, ignore command";
+            _log.debug(sErrRet2);
+            return sErrRet2;
+        }
 
       synchronized (_dbLock) {
         String poolStatusOld = _dbrmv2.getPoolStatus(poolName);
@@ -2620,24 +2589,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         + (wasAdded ? " added to" : " removed from")
         + " pool " + poolName ;
 
-    if( _resilientPools == null ) {
-        // _resilientPools was not set yet
-        _log.debug(strLocModified);
-        _log.debug("Resilient Pools List is not defined (yet), ignore file added/removed");
-        return;
-    } else if (_resilientPools.usePoolGroup()) {
-        List l = _resilientPools.getResilientPools();
-        if (l == null) {
-            // usePoolGroup() == true, but we got 'null' list for resilient pools
-            _log.debug(strLocModified);
-            _log.debug("Resilient Pools List is not defined (yet), ignore file added/removed");
-            return;
-        } else if ( ! l.contains(poolName) ) { // pool is NOT resilient
-            _log.debug(strLocModified);
-            _log.debug("Pool " + poolName + " is not resilient pool, ignore file added/removed");
-            return;
-        }
-    }
+      List l = _resilientPools.getResilientPools();
+      if (l == null) {
+          _log.debug(strLocModified);
+          _log.debug("Resilient Pools List is not defined (yet), ignore file added/removed");
+          return;
+      } else if (!l.contains(poolName)) { // pool is NOT resilient
+          _log.debug(strLocModified);
+          _log.debug("Pool " + poolName + " is not resilient pool, ignore file added/removed");
+          return;
+      }
 
     _log.info( strLocModified );
 
@@ -2697,11 +2658,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   public void cacheLocationAdded( List<PnfsAddCacheLocationMessage> ml )
   {
-    List lres; // Resilient pool List
+    List lres = _resilientPools.getResilientPools();
 
-    if ( (_resilientPools == null)
-        || (lres = _resilientPools.getResilientPools()) == null
-        ) { // _resilientPools not set yet
+    if ( lres == null ) { // _resilientPools not set yet
       _log.debug("Resilient Pools List is not defined (yet), ignore added replica list");
       return;
     }
@@ -2757,24 +2716,17 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     String strStatusChanged = "Pool " +msPool +" status changed to "
         +msPoolStatus;
 
-    if( _resilientPools == null ) {
-        // _resilientPools was not set yet
-        _log.debug(strStatusChanged);
-        _log.debug("Resilient Pools List is not defined (yet), ignore pool status change");
-        return;
-    } else if (_resilientPools.usePoolGroup()) {
-        List l = _resilientPools.getResilientPools();
-        if (l == null) {
-            // usePoolGroup() == true, but we got 'null' list for resilient pools
-            _log.debug(strStatusChanged);
-            _log.debug("Resilient Pools List is not defined (yet), ignore pool status change");
-            return;
-        } else if ( ! l.contains(msPool) ) { // pool is NOT resilient
-            _log.debug(strStatusChanged);
-            _log.debug("Pool " + msPool + " is not resilient pool, ignore pool status change");
-            return;
-        }
-    }
+      List l = _resilientPools.getResilientPools();
+      if (l == null) {
+          // usePoolGroup() == true, but we got 'null' list for resilient pools
+          _log.debug(strStatusChanged);
+          _log.debug("Resilient Pools List is not defined (yet), ignore pool status change");
+          return;
+      } else if (!l.contains(msPool)) { // pool is NOT resilient
+          _log.debug(strStatusChanged);
+          _log.debug("Pool " + msPool + " is not resilient pool, ignore pool status change");
+          return;
+      }
 
     if ( msPoolStatus.equals("DOWN") )
       poolStatus = ReplicaDb1.DOWN;
