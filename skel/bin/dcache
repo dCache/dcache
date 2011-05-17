@@ -43,6 +43,7 @@ usage()
     echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
     echo "                   [--out=<file>] [--password=<password>]"
     echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
+    echo "   kpwd <command> [-debug] [<command argument>]..."
     echo "   pool create [--meta=file|db] [--size=<bytes>]"
     echo "               [--lfs=none|precious|volatile|transient]"
     echo "               <directory> <name> <domain>"
@@ -632,6 +633,28 @@ case "$1" in
                 usage
                 ;;
         esac
+        ;;
+
+    kpwd)
+        shift
+
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        checkForNonMigratedDcache
+
+        if [ $# -eq 0 ]; then
+            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile
+        else
+            command="$1"
+            shift
+
+            kpwdFile="$(getProperty kpwdFile)"
+            if [ ! -e "$kpwdFile" ]; then
+                touch "$kpwdFile"
+            fi
+
+            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile "$command" "$(getProperty kpwdFile)" "$@"
+        fi
         ;;
 
     database)
