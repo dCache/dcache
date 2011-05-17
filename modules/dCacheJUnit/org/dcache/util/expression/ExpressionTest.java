@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.regex.Pattern;
 
 import org.parboiled.Parboiled;
-import org.parboiled.BasicParseRunner;
+import org.parboiled.parserunners.BasicParseRunner;
 import org.parboiled.support.ParsingResult;
 
 public class ExpressionTest
@@ -33,7 +33,7 @@ public class ExpressionTest
         ExpressionParser parser =
             Parboiled.createParser(ExpressionParser.class);
         ParsingResult<Expression> result =
-            BasicParseRunner.run(parser.Top(), s);
+            new BasicParseRunner(parser.Top()).run(s);
         return result.resultValue;
     }
 

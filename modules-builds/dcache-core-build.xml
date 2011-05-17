@@ -63,7 +63,6 @@
     <path id="dcache.external.classpath">
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/smc/statemap.jar" />
-        <fileset dir="${libDir}/parboiled4j/" includes="*.jar" />
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/security" includes="**/*.jar" />
         <fileset dir="${libDir}/terapaths" includes="*.jar" />
@@ -317,14 +316,6 @@
         <!-- SMC -->
         <mkdir dir="${server.bin.dir}/classes/smc/" />
         <copy file="${libDir}/smc/statemap.jar" todir="${server.bin.dir}/classes/smc/" />
-
-        <!-- Parboiled -->
-        <mkdir dir="${server.bin.dir}/classes/parboiled4j/" />
-        <copy todir="${server.bin.dir}/classes/parboiled4j">
-            <fileset dir="${libDir}/parboiled4j/">
-                <include name="*.jar" />
-            </fileset>
-        </copy>
 
         <!-- opensaml -->
         <mkdir dir="${server.bin.dir}/classes/opensaml" />

@@ -45,7 +45,7 @@ import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.util.expression.TypeMismatchException;
 
 import org.parboiled.Parboiled;
-import org.parboiled.ReportingParseRunner;
+import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
 
@@ -383,7 +383,7 @@ public class MigrationModule
             ExpressionParser parser =
                 Parboiled.createParser(ExpressionParser.class);
             ParsingResult<Expression> result =
-                ReportingParseRunner.run(parser.Top(), s);
+                new ReportingParseRunner(parser.Top()).run(s);
 
             if (result.hasErrors()) {
                 throw new IllegalArgumentException("Invalid expression: " +

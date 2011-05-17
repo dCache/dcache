@@ -49,6 +49,8 @@
                           url="http://download.java.net/maven/1/toplink.essentials"/>
         <remoteRepository id="ettrema-repo"
                           url="http://www.ettrema.com/maven2"/>
+        <remoteRepository id="scala-tools"
+                          url="http://scala-tools.org/repo-releases/"/>
         <localRepository id="local" path="${m2.home}" />
 
         <!-- Suppress some dependencies: Dependencies with scope
@@ -119,6 +121,7 @@
         <dependency groupId="hsqldb" artifactId="hsqldb" version="2.0.0" scope="testing" />
         <dependency groupId="org.liquibase" artifactId="liquibase-core" version="2.0.1"/>
         <dependency groupId="org.antlr" artifactId="stringtemplate" version="3.2.1"/>
+        <dependency groupId="org.parboiled" artifactId="parboiled-java" version="1.0.0"/>
     </artifact:dependencies>
 
     <property name="cog.libDir" value="${libDir}/cog" />
