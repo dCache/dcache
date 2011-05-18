@@ -205,8 +205,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _authorizationRequired = ( auth != null ) &&
         ( auth.equals("strong") || auth.equals("required") ) ;
 
-        if( _authorizationRequired )_log.debug("Authorization required");
-        if( _authorizationStrong   )_log.debug("Authorization strong");
+        _log.debug("Authorization required:  {}", _authorizationRequired);
+        _log.debug("Authorization strong: {}", _authorizationStrong);
 
         _loginStrategy = createLoginStrategy();
 
@@ -223,13 +223,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _truncateAllowed = (truncate != null) && truncate.equals("true") ;
 
         _isAccessLatencyOverwriteAllowed = _args.getOpt("allow-access-policy-overwrite") != null ;
-        if(_isAccessLatencyOverwriteAllowed) {
-            _log.debug("Allowes to overwrite AccessLatency");
-        }
+        _log.debug("Allowes to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
+
         _isRetentionPolicyOverwriteAllowed = _args.getOpt("allow-retention-policy-overwrite") != null;
-        if(_isRetentionPolicyOverwriteAllowed){
-            _log.debug("Allowed to overwrite RetentionPolicy");
-        }
+        _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
 
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
         _pinManagerStub = new CellStub(cell, new CellPath(_args.getOpt("pinManager")));
@@ -289,7 +286,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
         _log.debug("Check : {}", _checkStrict ? "Strict" : "Fuzzy");
-        _log.debug("Constructor Done");
     }
 
     private LoginStrategy createLoginStrategy()
@@ -2619,8 +2615,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         Message reply = (Message) object;
         SessionHandler handler = _sessions.get((int) reply.getId());
         if (handler == null) {
-            _log.warn("Unexpected message ({}) for session : {}",
-                      reply.getClass(), reply.getId());
+            _log.info("Reply ({}) for obsolete session: {}", reply.getClass(), reply.getId());
             return;
         }
 
