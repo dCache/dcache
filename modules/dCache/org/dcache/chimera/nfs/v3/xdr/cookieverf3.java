@@ -36,7 +36,7 @@ public class cookieverf3 implements XdrAble {
 
     @Override
     public int hashCode() {
-        return value.length;
+        return Arrays.hashCode(value);
     }
 
     @Override
