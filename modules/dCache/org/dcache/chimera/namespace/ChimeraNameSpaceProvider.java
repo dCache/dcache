@@ -50,7 +50,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.PermissionHandler;
-import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
@@ -221,6 +220,7 @@ public class ChimeraNameSpaceProvider
         return inodes.get(inodes.size() - 1);
     }
 
+    @Override
     public PnfsId createEntry(Subject subject, String path,
                               int uid, int gid, int mode, boolean isDir)
         throws CacheException
@@ -299,6 +299,7 @@ public class ChimeraNameSpaceProvider
         return new PnfsId(inode.toString());
     }
 
+    @Override
     public void deleteEntry(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
@@ -349,6 +350,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public void deleteEntry(Subject subject, String path)
         throws CacheException
     {
@@ -404,6 +406,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public void renameEntry(Subject subject, PnfsId pnfsId,
                             String newName, boolean overwrite)
         throws CacheException
@@ -505,6 +508,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation) throws CacheException {
 
         _log.debug ("add cache location {} for {}", cacheLocation, pnfsId);
@@ -520,6 +524,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public List<String> getCacheLocation(Subject subject, PnfsId pnfsId) throws CacheException {
 
         try {
@@ -538,6 +543,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public void clearCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws CacheException {
 
         _log.debug("clearCacheLocation : {} for {}", cacheLocation, pnfsId) ;
@@ -562,6 +568,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException {
         try {
             FsInode inode = new FsInode(_fs, pnfsId.toIdString() );
@@ -575,6 +582,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public PnfsId pathToPnfsid(Subject subject, String path, boolean followLink)
         throws CacheException
     {
@@ -596,6 +604,7 @@ public class ChimeraNameSpaceProvider
         return new PnfsId( inode.toString() );
     }
 
+    @Override
     public void setStorageInfo(Subject subject, PnfsId pnfsId, StorageInfo storageInfo, int accessMode) throws CacheException {
 
         _log.debug ("setStorageInfo for {}", pnfsId);
@@ -604,6 +613,7 @@ public class ChimeraNameSpaceProvider
         _extractor.setStorageInfo(inode, storageInfo, accessMode);
     }
 
+    @Override
     public void removeFileAttribute(Subject subject, PnfsId pnfsId, String attribute)
         throws CacheException
     {
@@ -623,6 +633,7 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    @Override
     public void removeChecksum(Subject subject, PnfsId pnfsId, ChecksumType type)
         throws CacheException
     {
@@ -647,6 +658,7 @@ public class ChimeraNameSpaceProvider
 
     }
 
+    @Override
     public PnfsId getParentOf(Subject subject, PnfsId pnfsId) throws CacheException {
         FsInode inodeOfResource = new FsInode(_fs, pnfsId.toIdString());
         FsInode inodeParent;
@@ -806,17 +818,18 @@ public class ChimeraNameSpaceProvider
             /* The permission check is performed after we fetched the
              * attributes to avoid fetching the attributes twice.
              */
-            try {
-                FsInode inodeParent = _fs.getParentOf(inode);
+            FsInode inodeParent = _fs.getParentOf(inode);
 
+            if( inodeParent != null) {
                 FileAttributes parent =
                     getFileAttributesForPermissionHandler(inodeParent);
+
                 if (_permissionHandler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
                     throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
                 }
-            } catch (FileNotFoundCacheException e) {
-                /* This usually means that the file doesn't have a
-                 * parent. That is we are fetching attributes of the
+            } else {
+                /* This means that the file doesn't have a parent.
+                 * That is we are fetching attributes of the
                  * root directory. We cannot handle this situation
                  * correctly with the current PermissionHandler. As a
                  * temporary workaround we simply allow fetching
@@ -990,6 +1003,7 @@ public class ChimeraNameSpaceProvider
         stat.setMode(newMode);
     }
 
+    @Override
     public void list(Subject subject, String path, Glob glob, Interval range,
                      Set<FileAttribute> attrs, ListHandler handler)
         throws CacheException
