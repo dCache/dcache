@@ -1564,14 +1564,14 @@ public final class CopyFileRequest extends FileRequest {
 		copyRequestFileStatus.setRemainingFileLifetime((int)(getRemainingLifetime()/1000));
 		org.apache.axis.types.URI to_surl;
 		org.apache.axis.types.URI from_surl;
-		try { to_surl= new org.apache.axis.types.URI(getTo_surl().toString());
+		try { to_surl= new org.apache.axis.types.URI(getTo_surl().toASCIIString());
 		}
 		catch (Exception e) {
 			logger.error(e.toString());
 			throw new java.sql.SQLException("wrong surl format");
 		}
 		try {
-			from_surl=new org.apache.axis.types.URI(getFrom_surl().toString());
+			from_surl=new org.apache.axis.types.URI(getFrom_surl().toASCIIString());
 		}
 		catch (Exception e) {
 			logger.error(e.toString());
@@ -1633,7 +1633,7 @@ public final class CopyFileRequest extends FileRequest {
 		}
 		org.apache.axis.types.URI tsurl;
 		try {
-			tsurl=new org.apache.axis.types.URI(surl.toString());
+			tsurl=new org.apache.axis.types.URI(surl.toASCIIString());
 		}
 		catch (Exception e) {
 			logger.error(e.toString());

@@ -448,7 +448,7 @@ public final class BringOnlineRequest extends ContainerRequest {
             for(int i = 0; i< len; ++i) {
                 org.apache.axis.types.URI surl;
                 try {
-                    surl = new org.apache.axis.types.URI(surls[i].toString());
+                    surl = new org.apache.axis.types.URI(surls[i].toASCIIString());
                 } catch (org.apache.axis.types.URI.MalformedURIException e) {
                     throw new SRMInvalidRequestException("Invalid surl: " + e.getMessage());
                 }

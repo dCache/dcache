@@ -25,7 +25,6 @@ import org.dcache.srm.request.sql.CopyFileRequestStorage;
 import org.dcache.srm.request.sql.CopyRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
-import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,7 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmReleaseSpace {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmReleaseSpace.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
@@ -48,14 +47,14 @@ public class SrmReleaseSpace {
     Scheduler               scheduler;
     RequestCredential       credential;
     Configuration           configuration;
-    
+
     public SrmReleaseSpace(SRMUser user,
             RequestCredential credential,
             SrmReleaseSpaceRequest request,
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -75,7 +74,7 @@ public class SrmReleaseSpace {
             throw new NullPointerException("configuration is null");
         }
     }
-    
+
     public SrmReleaseSpaceResponse getResponse() {
         if(response != null ) return response;
         try {
@@ -90,11 +89,11 @@ public class SrmReleaseSpace {
         }
         return response;
     }
-    
+
     public static final SrmReleaseSpaceResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmReleaseSpaceResponse getFailedResponse(String text, TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;
@@ -110,9 +109,9 @@ public class SrmReleaseSpace {
     /**
      * implementation of srm copy
      */
-    
+
     TReturnStatus status = new TReturnStatus();
-    public SrmReleaseSpaceResponse releaseSpace() 
+    public SrmReleaseSpaceResponse releaseSpace()
         throws SRMException,MalformedURIException {
         if(request==null) {
             return getFailedResponse("srmReleaseSpace: null request passed to SrmReleaseSpace",
@@ -126,17 +125,17 @@ public class SrmReleaseSpace {
         response.setReturnStatus(status);
         return response;
    }
-    
+
    private class  SrmReleaseSpaceCallbacks implements org.dcache.srm.SrmReleaseSpaceCallbacks {
          private boolean completed;
            public SrmReleaseSpaceCallbacks() {
 
            }
-         
+
         public synchronized void waitResult(long timeout)
         {
            //System.out.println("PutCallbacks waitResult() starting for CopyFileRequest "+fileId);
-           long start = System.currentTimeMillis(); 
+           long start = System.currentTimeMillis();
            long current = start;
            while(true)
            {
@@ -163,11 +162,11 @@ public class SrmReleaseSpace {
                 status.setExplanation("release takes longer then "+timeout +" millis");
                 return ;
                }
-               current = System.currentTimeMillis(); 
+               current = System.currentTimeMillis();
 
            }
         }
-        
+
         public synchronized void complete()
         {
             this.completed = true;
@@ -177,22 +176,22 @@ public class SrmReleaseSpace {
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                 status.setExplanation(reason);
                 complete();
-                
+
             }
-    
+
             public void SpaceReleased(String spaceReservationToken,long remainingSpaceSize){
                 status.setStatusCode(TStatusCode.SRM_SUCCESS);
                 status.setExplanation("Space released");
                 complete();
-                
+
             }
-    
+
             public void ReleaseSpaceFailed(Exception e){
                 status.setStatusCode(TStatusCode.SRM_FAILURE);
                 status.setExplanation(e.toString());
                 complete();
             }
-           
+
         }
    public String toString(){
        return "SrmReleaseSpace("+request.getSpaceToken()+")";

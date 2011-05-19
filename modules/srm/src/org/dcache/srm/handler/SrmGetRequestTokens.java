@@ -22,7 +22,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
-import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmGetRequestTokens {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmGetRequestTokens.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
@@ -44,14 +43,14 @@ public class SrmGetRequestTokens {
     SRMUser             user;
     RequestCredential       credential;
     Configuration           configuration;
-    
+
     public SrmGetRequestTokens(SRMUser user,
             RequestCredential credential,
             SrmGetRequestTokensRequest request,
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -67,7 +66,7 @@ public class SrmGetRequestTokens {
             throw new NullPointerException("configuration is null");
         }
     }
-    
+
     public SrmGetRequestTokensResponse getResponse() {
         if(response != null ) return response;
         try {
@@ -82,16 +81,16 @@ public class SrmGetRequestTokens {
         }
         return response;
     }
-    
+
     public static final SrmGetRequestTokensResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmGetRequestTokensResponse getFailedResponse(String text, TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;
         }
-        
+
         SrmGetRequestTokensResponse response = new SrmGetRequestTokensResponse();
         TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
@@ -103,9 +102,9 @@ public class SrmGetRequestTokens {
     /**
      * implementation of srm SrmGetSpaceMetaData
      */
-    
-    public SrmGetRequestTokensResponse srmGetRequestTokens() 
-        throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+
+    public SrmGetRequestTokensResponse srmGetRequestTokens()
+        throws SRMException, MalformedURIException {
         if(request==null) {
             return getFailedResponse(
                     "srmGetRequestTokens: null request passed to SrmGetRequestTokens",
@@ -132,8 +131,8 @@ public class SrmGetRequestTokens {
                TStatusCode.SRM_INVALID_REQUEST);
 
         }
-            
+
    }
-    
-    
+
+
 }

@@ -22,7 +22,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
-import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.SRMProtocol;
 import org.slf4j.Logger;
@@ -34,7 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class SrmGetTransferProtocols {
-   private static Logger logger = 
+   private static Logger logger =
            LoggerFactory.getLogger(SrmGetTransferProtocols.class);
 
     private final static String SFN_STRING="?SFN=";
@@ -46,14 +45,14 @@ public class SrmGetTransferProtocols {
     SrmGetTransferProtocolsRequest request;
     SrmGetTransferProtocolsResponse        response;
     org.dcache.srm.SRM srm;
-    
+
     public SrmGetTransferProtocols(SRMUser user,
             RequestCredential credential,
             SrmGetTransferProtocolsRequest request,
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -74,13 +73,13 @@ public class SrmGetTransferProtocols {
             throw new NullPointerException("configuration is null");
         }
     }
-    
+
     public SrmGetTransferProtocolsResponse getResponse() {
         if(response != null ) return response;
         response = new SrmGetTransferProtocolsResponse();
         String[] protocols;
         try {
-          
+
          protocols = srm.getProtocols(user,credential);
       } catch(Exception e) {
          logger.warn(e.toString());
@@ -88,26 +87,26 @@ public class SrmGetTransferProtocols {
                  TStatusCode.SRM_INTERNAL_ERROR);
       }
 
-        TSupportedTransferProtocol[] arrayOfProtocols = 
+        TSupportedTransferProtocol[] arrayOfProtocols =
                 new TSupportedTransferProtocol[protocols.length];
         for(int i =0 ; i<protocols.length; ++i) {
             arrayOfProtocols[i] = new TSupportedTransferProtocol(protocols[i],null);
         }
         ArrayOfTSupportedTransferProtocol protocolArray =
                 new ArrayOfTSupportedTransferProtocol();
-        
+
         protocolArray.setProtocolArray(arrayOfProtocols);
         response.setProtocolInfo(protocolArray);
         response.setReturnStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS,
                 "success"));
         return response;
     }
-    
+
     public static final SrmGetTransferProtocolsResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
-    public static final SrmGetTransferProtocolsResponse getFailedResponse(String error, 
+
+    public static final SrmGetTransferProtocolsResponse getFailedResponse(String error,
             TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;

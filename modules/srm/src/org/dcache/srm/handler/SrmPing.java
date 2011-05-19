@@ -21,7 +21,6 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
-import org.apache.axis.types.URI;
 import org.dcache.srm.request.ContainerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class SrmPing {
-        private static Logger logger = 
+        private static Logger logger =
                 LoggerFactory.getLogger(SrmPing.class);
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
@@ -40,7 +39,7 @@ public class SrmPing {
 	RequestCredential      credential;
 	SrmPingRequest request;
 	SrmPingResponse        response;
-	
+
 	public SrmPing(SRMUser user,
 		       RequestCredential credential,
 		       SrmPingRequest request,
@@ -58,7 +57,7 @@ public class SrmPing {
 		}
 		this.storage = storage;
 	}
-    
+
 	public SrmPingResponse getResponse() {
 		if(response != null ) return response;
 		response = new SrmPingResponse();
@@ -69,11 +68,11 @@ public class SrmPing {
 						      new TExtraInfo("backend_version", storage.getStorageBackendVersion())}));
 		return response;
 	}
-    
+
 	public static final SrmPingResponse getFailedResponse(String text) {
 		return getFailedResponse(text,null);
 	}
-    
+
 	public static final SrmPingResponse getFailedResponse(String text, TStatusCode statusCode) {
 		if(statusCode == null) {
 			statusCode = TStatusCode.SRM_FAILURE;

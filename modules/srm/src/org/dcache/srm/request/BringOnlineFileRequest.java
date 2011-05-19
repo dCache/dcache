@@ -226,7 +226,7 @@ public final class BringOnlineFileRequest extends FileRequest {
 
 
     public String getSurlString() {
-        return getSurl().toString();
+        return getSurl().toASCIIString();
     }
 
     public String getFileId() {
