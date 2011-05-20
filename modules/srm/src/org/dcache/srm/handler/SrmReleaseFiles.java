@@ -256,7 +256,7 @@ public class SrmReleaseFiles {
         for (int i = 0; i< surls.length; ++i) {
            URI surl = surls[i];
            surlReturnStatusArray[i] = new TSURLReturnStatus();
-           surlReturnStatusArray[i].setSurl(new org.apache.axis.types.URI(surl.toString()));
+           surlReturnStatusArray[i].setSurl(new org.apache.axis.types.URI(surl.toASCIIString()));
             try {
                 BringOnlineFileRequest.unpinBySURLandRequestId(storage,
                     user,requestId,surl);
@@ -295,7 +295,7 @@ public class SrmReleaseFiles {
             new HashMap<URI,TSURLReturnStatus>();
         for(URI surl: surls) {
             TSURLReturnStatus rs = new TSURLReturnStatus();
-            rs.setSurl(new org.apache.axis.types.URI(surl.toString()));
+            rs.setSurl(new org.apache.axis.types.URI(surl.toASCIIString()));
             rs.setStatus(
                 new TReturnStatus(TStatusCode.SRM_INTERNAL_ERROR,"not released"));
             surlsMap.put(surl,rs);

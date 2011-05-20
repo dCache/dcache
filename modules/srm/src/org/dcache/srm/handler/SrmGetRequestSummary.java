@@ -32,8 +32,8 @@ import java.sql.SQLException;
  * @author  timur
  */
 public class SrmGetRequestSummary {
-    
-    private static Logger logger = 
+
+    private static Logger logger =
             LoggerFactory.getLogger(SrmGetRequestSummary.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -59,7 +59,7 @@ public class SrmGetRequestSummary {
         this.storage = storage;
         this.configuration = srm.getConfiguration();
     }
-    
+
     boolean longFormat =false;
     String servicePathAndSFNPart = "";
     int port;
@@ -83,14 +83,14 @@ public class SrmGetRequestSummary {
             logger.error("Illegal State Transition : " +ist.getMessage());
             response = getFailedResponse("Illegal State Transition : " +ist.getMessage());
         }
-        
+
         return response;
     }
-    
+
     public static final SrmGetRequestSummaryResponse getFailedResponse(String error) {
         return getFailedResponse(error,null);
     }
-    
+
     public static final SrmGetRequestSummaryResponse getFailedResponse(String error,TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
@@ -106,7 +106,7 @@ public class SrmGetRequestSummary {
      * implementation of srm ls
      */
     public SrmGetRequestSummaryResponse srmGetRequestSummary()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException,
+    throws SRMException, MalformedURIException,
             java.sql.SQLException, IllegalStateTransition {
         String[] requestTokens = srmGetRequestSummaryRequest.getArrayOfRequestTokens().getStringArray();
         if( requestTokens == null ) {
@@ -114,9 +114,9 @@ public class SrmGetRequestSummary {
         }
         Long[] requestIds = new Long[requestTokens.length];
         TRequestSummary[] requestSummaries = new TRequestSummary[requestTokens.length];
-        
+
         for(int i = 0 ; i<requestTokens.length; ++i) {
-            
+
             String requestToken = requestTokens[i];
             try {
                 requestIds[i] = new Long( requestToken);
@@ -126,7 +126,7 @@ public class SrmGetRequestSummary {
                 " requestToken \""+requestToken+"\"is not valid"));
                 continue;
             }
-        
+
             Job job = Job.getJob(requestIds[i]);
 
             if(job == null) {
@@ -145,10 +145,10 @@ public class SrmGetRequestSummary {
                         TStatusCode.SRM_INVALID_REQUEST,
                         "request for requestToken \""+
                         requestToken+"\"is of wrong type"));
-                
+
             }
         }
-        SrmGetRequestSummaryResponse response = 
+        SrmGetRequestSummaryResponse response =
                 new SrmGetRequestSummaryResponse();
 
         TReturnStatus status = new TReturnStatus();
@@ -156,8 +156,8 @@ public class SrmGetRequestSummary {
         response.setArrayOfRequestSummaries(new ArrayOfTRequestSummary(requestSummaries));
         response.setReturnStatus(status);
         return response;
-        
+
     }
-    
-    
+
+
 }
