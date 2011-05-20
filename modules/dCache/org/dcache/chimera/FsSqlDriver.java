@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
 import java.util.UUID;
+import org.dcache.acl.ACE;
 
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -39,6 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
+import org.dcache.acl.enums.AceType;
+import org.dcache.acl.enums.RsType;
+import org.dcache.acl.enums.Who;
 
 /**
  * SQL driver
@@ -2409,6 +2413,89 @@ class FsSqlDriver {
         }
 
         return inodes;
+    }
+
+    private final static String  sqlGetACL = "SELECT * FROM t_acl WHERE rs_id =  ? ORDER BY ace_order";
+    /**
+     * Get inode's Access Control List. An empty list is returned if there are no ACL assigned
+     * to the <code>inode</code>.
+     * @param dbConnection
+     * @param inode
+     * @return
+     * @throws SQLException
+     */
+    List<ACE> getACL(Connection dbConnection, FsInode inode) throws SQLException {
+        ArrayList<ACE> acl = new ArrayList<ACE>();
+        PreparedStatement stGetAcl = null;
+        ResultSet rs = null;
+        try {
+            stGetAcl = dbConnection.prepareStatement(sqlGetACL);
+            stGetAcl.setString(1, inode.toString());
+
+            rs = stGetAcl.executeQuery();
+            while (rs.next()) {
+
+                int type = rs.getInt("type");
+                acl.add(new ACE(type == 0 ? AceType.ACCESS_ALLOWED_ACE_TYPE : AceType.ACCESS_DENIED_ACE_TYPE,
+                        rs.getInt("flags"),
+                        rs.getInt("access_msk"),
+                        Who.valueOf(rs.getInt("who")),
+                        rs.getInt("who_id"),
+                        rs.getString("address_msk"),
+                        rs.getInt("ace_order")));
+            }
+
+        }finally{
+            SqlHelper.tryToClose(rs);
+            SqlHelper.tryToClose(stGetAcl);
+        }
+        return acl;
+    }
+
+    private static final String sqlDeleteACL = "DELETE FROM t_acl WHERE rs_id = ?";
+    private static final String sqlAddACL = "INSERT INTO t_acl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    /**
+     * Set inode's Access Control List. The existing ACL will be replaced.
+     * @param dbConnection
+     * @param inode
+     * @param acl
+     * @throws SQLException
+     */
+    void setACL(Connection dbConnection, FsInode inode, List<ACE> acl) throws SQLException {
+
+        PreparedStatement stDeleteACL = null;
+        PreparedStatement stAddACL = null;
+
+        try {
+            stDeleteACL = dbConnection.prepareStatement(sqlDeleteACL);
+            stDeleteACL.setString(1, inode.toString());
+            stDeleteACL.executeUpdate();
+
+            if(acl.isEmpty())
+                return;
+            stAddACL = dbConnection.prepareStatement(sqlAddACL);
+
+            RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
+            for (ACE ace : acl) {
+
+                stAddACL.setString(1, inode.toString());
+                stAddACL.setInt(2, rsType.getValue() );
+                stAddACL.setInt(3, ace.getType().getValue());
+                stAddACL.setInt(4, ace.getFlags());
+                stAddACL.setInt(5, ace.getAccessMsk());
+                stAddACL.setInt(6, ace.getWho().getValue());
+                stAddACL.setInt(7, ace.getWhoID());
+                stAddACL.setString(8, ace.getAddressMsk());
+                stAddACL.setInt(9, ace.getOrder());
+
+                stAddACL.addBatch();
+            }
+            stAddACL.executeBatch();
+
+        }finally{
+            SqlHelper.tryToClose(stDeleteACL);
+            SqlHelper.tryToClose(stAddACL);
+        }
     }
 
     /**

@@ -13,6 +13,12 @@ import static org.junit.Assert.*;
 import org.dcache.chimera.posix.Stat;
 
 import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import org.dcache.acl.ACE;
+import org.dcache.acl.enums.AccessMask;
+import org.dcache.acl.enums.AceType;
+import org.dcache.acl.enums.RsType;
+import org.dcache.acl.enums.Who;
 
 public class BasicTest extends ChimeraTestCaseHelper {
 
@@ -695,5 +701,49 @@ public class BasicTest extends ChimeraTestCaseHelper {
         TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setSize(17);
         assertTrue("The mtime is not updated", dirInode.stat().getMTime() > oldMtime);
+    }
+
+    @Test
+    public void testSetAcl() throws Exception {
+        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
+
+
+        RsType rsType = RsType.FILE;
+
+        List<ACE> aces = new ArrayList<ACE>();
+
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
+                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
+                ACE.DEFAULT_ADDRESS_MSK, 0));
+
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+                AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
+                ACE.DEFAULT_ADDRESS_MSK, 1));
+
+        _fs.setACL(dirInode, aces);
+        List<ACE> l2 = _fs.getACL(dirInode);
+        assertEquals(aces, l2);
+    }
+
+    @Test
+    public void testReSetAcl() throws Exception {
+        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
+
+
+        RsType rsType = RsType.FILE;
+
+        List<ACE> aces = new ArrayList<ACE>();
+
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
+                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
+                ACE.DEFAULT_ADDRESS_MSK, 0));
+
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+                AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
+                ACE.DEFAULT_ADDRESS_MSK, 1));
+
+        _fs.setACL(dirInode, aces);
+        _fs.setACL(dirInode, new ArrayList<ACE>() );
+        assertTrue(_fs.getACL(dirInode).isEmpty());
     }
 }

@@ -119,6 +119,45 @@ public class ACE implements Serializable
         return _whoID;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ACE other = (ACE) obj;
+        if (_type != other._type) {
+            return false;
+        }
+        if (_flags != other._flags) {
+            return false;
+        }
+        if (_accessMsk != other._accessMsk) {
+            return false;
+        }
+        if (_who != other._who) {
+            return false;
+        }
+        if (_whoID != other._whoID) {
+            return false;
+        }
+        if (!_addressMsk.equals(other._addressMsk)) {
+            return false;
+        }
+        if (_order != other._order) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode()
+                ^ _whoID ^ _addressMsk.hashCode() ^ _order;
+    }
+
     public String toNFSv4String(RsType rsType) {
         StringBuilder sb = new StringBuilder();
         sb.append(_order).append(SEPARATOR).append(_who.getAbbreviation());

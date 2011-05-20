@@ -5,6 +5,7 @@ import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import java.util.List;
 import java.util.Collections;
+import org.dcache.acl.ACE;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
@@ -514,6 +515,16 @@ public class DummyFileSystemProvider implements FileSystemProvider {
 
     public FsStat getFsStat() {
         return null;
+    }
+
+    @Override
+    public List<ACE> getACL(FsInode inode) throws ChimeraFsException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setACL(FsInode inode, List<ACE> acl) throws ChimeraFsException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 }

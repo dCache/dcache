@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
+import org.dcache.acl.ACE;
 
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -2326,6 +2327,72 @@ public class JdbcFs implements FileSystemProvider {
         }
 
         return checkSum;
+    }
+
+    /**
+     * Get inode's Access Control List. An empty list is returned if there are no ACL assigned
+     * to the <code>inode</code>.
+     * @param inode
+     * @return acl
+     */
+    @Override
+    public List<ACE> getACL(FsInode inode) throws ChimeraFsException {
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        List<ACE> acl;
+        try {
+            dbConnection.setAutoCommit(true);
+
+            acl = _sqlDriver.getACL(dbConnection, inode);
+
+        } catch (SQLException e) {
+            _log.error("Failed go getACL:", e);
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
+        return acl;
+    }
+
+    /**
+     * Set inode's Access Control List. The existing ACL will be replaced.
+     * @param dbConnection
+     * @param inode
+     * @param acl
+     */
+    @Override
+    public void setACL(FsInode inode, List<ACE> acl) throws ChimeraFsException {
+        Connection dbConnection;
+        try {
+            // get from pool
+            dbConnection = _dbConnectionsPool.getConnection();
+        } catch (SQLException e) {
+            throw new BackEndErrorHimeraFsException(e.getMessage());
+        }
+
+        try {
+            dbConnection.setAutoCommit(false);
+
+            _sqlDriver.setACL(dbConnection, inode, acl);
+            dbConnection.commit();
+
+        } catch (SQLException e) {
+            _log.error("Failed to set ACL: ", e);
+            try {
+                dbConnection.rollback();
+            } catch (SQLException ee) {
+                _log.error("setACL rollback ", ee);
+            }
+            throw new IOHimeraFsException(e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
+        }
     }
 
     /**
