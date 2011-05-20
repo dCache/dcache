@@ -45,6 +45,11 @@ This package contains the server components.
 %define poolmanager_conf_installsave  %{poolmanager_conf}.%{version}.%{release}.installsave
 %define poolmanager_conf_rpmsave %{poolmanager_conf}.rpmsave
 
+%define billing_dir ${RPM_INSTALL_PREFIX}/billing
+
+%define restore_state_script /tmp/dCache-restore-state
+
+
 %pretrans
 # save existing PoolManager.conf
 if [ -f %{poolmanager_conf} ]
@@ -52,6 +57,7 @@ then
    cp %{poolmanager_conf} %{poolmanager_conf_installsave}
    echo "Backing up existing PoolManager.conf"
 fi
+
 
 %posttrans
 if [ ! -f %{poolmanager_conf} ] && [ -f %{poolmanager_conf_installsave} ] && [ -f %{poolmanager_conf_rpmsave} ]
@@ -64,6 +70,7 @@ then
   fi
   rm -f %{poolmanager_conf_installsave}
 fi
+
 
 %pre
 if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache ]; then
@@ -78,13 +85,27 @@ if [ -d ${RPM_INSTALL_PREFIX}/classes/gplazma-libs ]; then
    rm -rf ${RPM_INSTALL_PREFIX}/classes/gplazma-libs
 fi
 
+if [ $1 -ge 2 ]; then   # True when upgrading dCache
+    stat -c "chown %u:%g %{billing_dir}" %{billing_dir} >> %{restore_state_script}
+fi
+
+
+%post
+
+if [ $1 -ge 2 ]; then   # True when upgrading
+   if [ -f %{restore_state_script} ]; then
+      . %{restore_state_script}
+      rm %{restore_state_script}
+   fi
+fi
+
+
 %preun
 #
 # stop dCache
 #
-if [ $1 = 0 ]; then
-    if [ -x ${RPM_INSTALL_PREFIX}/bin/dcache ]
-    then
+if [ $1 -eq 0 ]; then   # True when uninstalling dCache
+    if [ -x ${RPM_INSTALL_PREFIX}/bin/dcache ]; then
         ${RPM_INSTALL_PREFIX}/bin/dcache stop > /dev/null 2>&1
     fi
 fi
