@@ -16,6 +16,11 @@
                 <include name="**/*.gif"/>
             </fileset>
         </copy>
+        <copy todir="${server.root.dir}/etc/bash_completion.d/">
+            <fileset dir="${resourcesDir}/etc/bash_completion.d/">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="install-server"

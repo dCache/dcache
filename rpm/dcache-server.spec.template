@@ -114,6 +114,7 @@ fi
 %defattr(-,root,root)
 %docdir /opt/d-cache/share/doc
 %docdir /opt/d-cache/share/man
+/etc/bash_completion.d
 /opt/d-cache/billing
 /opt/d-cache/classes
 /opt/d-cache/share
@@ -121,6 +122,7 @@ fi
 /opt/d-cache/libexec/chimera
 %attr(0755,root,root) /opt/d-cache/jobs
 %attr(0755,root,root) /opt/d-cache/bin
+%attr(0755,root,root) /etc/bash_completion.d
 %attr(0755,root,root) /opt/d-cache/libexec/nsp-performance.sh
 %attr(0755,root,root) /opt/d-cache/libexec/wait-for-cells.sh
 %attr(0755,root,root) /opt/d-cache/libexec/infoprovidercms.rb
