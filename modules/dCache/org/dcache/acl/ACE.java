@@ -25,40 +25,37 @@ public class ACE implements Serializable
     /**
      * Type of ACE (ALLOW / DENY)
      */
-    private AceType _type;
+    private final AceType _type;
 
     /**
      * The ACE flags (combination of values from AceFlags enumeration)
      */
-    private int _flags;
+    private final int _flags;
 
     /**
      * The access mask (combination of values from AccessMask enumeration)
      */
-    private int _accessMsk;
+    private final int _accessMsk;
 
     /**
      * The subject (combination of values from Who enumeration)
      */
-    private Who _who;
+    private final Who _who;
 
     /**
      * Virtual user or group ID (equals to -1 if who is special subject)
      */
-    private int _whoID;
+    private final int _whoID;
 
     /**
      * The request origin address mask
      */
-    private String _addressMsk;
+    private final String _addressMsk;
 
     /**
      * ACE order
      */
-    private int _order;
-
-    public ACE() {
-    }
+    private final int _order;
 
     /**
      * @param type
@@ -90,24 +87,12 @@ public class ACE implements Serializable
         return _order;
     }
 
-    public void setOrder(int order) {
-        _order = order;
-    }
-
     public int getAccessMsk() {
         return _accessMsk;
     }
 
-    public void setAccessMsk(int accessMsk) {
-        _accessMsk = accessMsk;
-    }
-
     public String getAddressMsk() {
         return _addressMsk;
-    }
-
-    public void setAddressMsk(String addressMsk) {
-        _addressMsk = addressMsk;
     }
 
     public boolean isDefaultAddressMsk(String addressMsk) {
@@ -122,36 +107,16 @@ public class ACE implements Serializable
         return _flags;
     }
 
-    public void setFlags(int flags) {
-        _flags = flags;
-    }
-
     public AceType getType() {
         return _type;
-    }
-
-    public void setType(AceType type) {
-        _type = type;
     }
 
     public Who getWho() {
         return _who;
     }
 
-    public void setWho(Who who) {
-        _who = who;
-    }
-
-    public void setWho(int who) throws IllegalArgumentException {
-        _who = Who.valueOf(who);
-    }
-
     public int getWhoID() {
         return _whoID;
-    }
-
-    public void setWhoID(int whoID) {
-        _whoID = whoID;
     }
 
     public String toNFSv4String(RsType rsType) {
