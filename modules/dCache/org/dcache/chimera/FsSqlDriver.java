@@ -2475,6 +2475,7 @@ class FsSqlDriver {
                 return;
             stAddACL = dbConnection.prepareStatement(sqlAddACL);
 
+            int order = 0;
             RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
             for (ACE ace : acl) {
 
@@ -2486,9 +2487,10 @@ class FsSqlDriver {
                 stAddACL.setInt(6, ace.getWho().getValue());
                 stAddACL.setInt(7, ace.getWhoID());
                 stAddACL.setString(8, ace.getAddressMsk());
-                stAddACL.setInt(9, ace.getOrder());
+                stAddACL.setInt(9, order);
 
                 stAddACL.addBatch();
+                order++;
             }
             stAddACL.executeBatch();
             setFileCTime(dbConnection, inode, 0, System.currentTimeMillis());
