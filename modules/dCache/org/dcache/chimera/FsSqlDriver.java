@@ -2491,7 +2491,7 @@ class FsSqlDriver {
                 stAddACL.addBatch();
             }
             stAddACL.executeBatch();
-
+            setFileCTime(dbConnection, inode, 0, System.currentTimeMillis());
         }finally{
             SqlHelper.tryToClose(stDeleteACL);
             SqlHelper.tryToClose(stAddACL);
