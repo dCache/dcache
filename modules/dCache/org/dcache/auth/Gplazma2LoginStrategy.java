@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.Collections;
+import java.io.File;
 import java.security.Principal;
 
 import com.google.common.collect.Iterables;
@@ -37,8 +38,12 @@ public class Gplazma2LoginStrategy
     @Required
     public void setConfigurationFile(String configurationFile)
     {
-        if (configurationFile == null) {
-            throw new NullPointerException();
+        if ((configurationFile == null) || (configurationFile.length() == 0)) {
+            throw new IllegalArgumentException(
+                    "configuration file argument wasn't specified correctly");
+        } else if (!new File(configurationFile).exists()) {
+            throw new IllegalArgumentException(
+                    "configuration file does not exists at " + configurationFile);
         }
         _configurationFile = configurationFile;
     }
