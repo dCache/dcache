@@ -236,7 +236,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 ret = fh_expire_type;
                 break;
             case nfs4_prot.FATTR4_CHANGE :
-                changeid4 cid = new changeid4( new uint64_t(inode.stat().getMTime())  );
+                changeid4 cid = new changeid4( new uint64_t(inode.stat().getCTime())  );
                 fattr4_change change = new fattr4_change( cid );
                 ret = change;
                 break;
