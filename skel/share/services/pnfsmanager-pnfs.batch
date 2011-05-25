@@ -15,29 +15,13 @@ onerror continue
 set env cacheInfoProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
 define context setcontext.exe endDefine
   set env cacheInfoProvider diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
-  set context -c pnfsNumberOfLocationThreads 0
   set env locationThreads ${pnfsNumberOfLocationThreads}
 endDefine
-eval ${cacheInfo} companion ==
+eval "${cacheInfo}" companion ==
 exec context setcontext.exe -ifok=rc
-onerror shutdown
-#
-# If companionDatabaseHost and defaultPnfsServer are not set in dcache.conf, use localhost, for pnfs use /pnfs/fs:
-#
-onerror continue
-set context -c companionDatabaseHost localhost
-set context -c defaultPnfsServer localhost
-set context -c pnfs /pnfs/fs
-set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
 
+set env -c namespaceProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
 set env -c locationThreads 0
-
-#
-# access to Deletion registration
-#
-set context -c  pnfsDeleteRegistration pnfs:
-set context -c  pnfsDeleteRegistrationDbUser ${pnfsDbUser}
-set context -c  pnfsDeleteRegistrationDbPass ${pnfsDbPassword}
 
 onerror shutdown
 
@@ -53,8 +37,8 @@ check -strong pnfsFolding
 check -strong pnfsInheritFileOwnership
 check -strong pnfsQueueMaxSize
 check -strong pnfsDbUser
-check -strong pnfsDbPassword
-check -strong pnfsPasswordFile
+check pnfsDbPassword
+check pnfsPasswordFile
 check -strong cell.name
 check -strong aclEnabled
 check -strong aclTable
@@ -64,12 +48,16 @@ check -strong aclConnUser
 
 check aclConnPswd
 
+onerror continue
+set env -c  pnfsDeleteRegistration pnfs:
+set env -c  pnfsDeleteRegistrationDbUser "${pnfsDbUser}"
+set env -c  pnfsDeleteRegistrationDbPass "${pnfsDbPassword}"
+onerror shutdown
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager.xml \
         ${pnfsInfoExtractor} \
         -export \
-        -enableLargeFileSimulation \
-        -storeFilesize  \
         -cmRelay=broadcast \
         -pnfsDeleteRelay=SrmSpaceManager \
         -threads=${pnfsNumberOfThreads} \
