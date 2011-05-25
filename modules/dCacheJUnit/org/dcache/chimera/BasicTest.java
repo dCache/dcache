@@ -714,11 +714,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         _fs.setACL(dirInode, aces);
         List<ACE> l2 = _fs.getACL(dirInode);
@@ -736,11 +736,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         _fs.setACL(dirInode, aces);
         _fs.setACL(dirInode, new ArrayList<ACE>() );

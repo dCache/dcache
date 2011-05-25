@@ -123,18 +123,18 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 7,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, masks1, Who.USER,
-                7, ACE.DEFAULT_ADDRESS_MSK, 1));
+                7, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 7,
-                ACE.DEFAULT_ADDRESS_MSK, 2));
+                ACE.DEFAULT_ADDRESS_MSK));
         //for another user:
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.DELETE.getValue(), Who.USER, 777,
-                ACE.DEFAULT_ADDRESS_MSK, 3));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
 
@@ -169,11 +169,11 @@ public class ACLTest {
         List<ACE> parentAces = new ArrayList<ACE>();
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 7,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
         //for another user:
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 777,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
         Permission permissionNewParentDir = AclMapper.getPermission(subjectNew,
@@ -249,11 +249,11 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, mask5, Who.USER,
-                1000, ACE.DEFAULT_ADDRESS_MSK, 0));
+                1000, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 1000,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -359,13 +359,13 @@ public class ACLTest {
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
         parentAces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 1,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 222,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 333,
-                ACE.DEFAULT_ADDRESS_MSK, 2));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
@@ -468,11 +468,11 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -517,11 +517,11 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -567,7 +567,7 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue() + AccessMask.READ_DATA.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -603,11 +603,11 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -643,11 +643,11 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue(), Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.READ_DATA.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -685,7 +685,7 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.LIST_DIRECTORY.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -727,17 +727,17 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.DELETE.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.DELETE.getValue(), Who.USER, 222,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
         parentAces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 222,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
 
         ACL childACL = new ACL(rsID, rsType, aces);
@@ -802,11 +802,11 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
         List<ACE> parentAces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.DELETE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.DELETE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK));
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -860,11 +860,11 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
         List<ACE> parentAces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.DELETE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.DELETE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK));
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -910,7 +910,7 @@ public class ACLTest {
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.DELETE_CHILD.getValue() | AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER,
-                111, ACE.DEFAULT_ADDRESS_MSK, 0));
+                111, ACE.DEFAULT_ADDRESS_MSK));
 
 
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
@@ -954,11 +954,11 @@ public class ACLTest {
 
         parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         parentAces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
         AclHandler.setACL(parentACL);
@@ -997,11 +997,11 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1040,11 +1040,11 @@ public class ACLTest {
         //these are ACEs of the directory, that contains a file to be renamed
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1083,11 +1083,11 @@ public class ACLTest {
         //these are ACEs of the directory, that contains a file to be renamed
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 1,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1126,9 +1126,9 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 1));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1169,7 +1169,7 @@ public class ACLTest {
         //For user 222: ADD_FILE is allowed, but DELETE_CHILD is undefined
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
                 AccessMask.ADD_FILE.getValue(), Who.USER, 222,
-                ACE.DEFAULT_ADDRESS_MSK, 2));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1206,11 +1206,11 @@ public class ACLTest {
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.WRITE_DATA.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1247,7 +1247,7 @@ public class ACLTest {
         List<ACE> aces = new ArrayList<ACE>();
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.EXECUTE.getValue() | AccessMask.READ_DATA.getValue() | AccessMask.WRITE_DATA.getValue() | AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 0));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1289,15 +1289,15 @@ public class ACLTest {
         masks |= (AccessMask.WRITE_OWNER.getValue());
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, masks, Who.USER,
-                111, ACE.DEFAULT_ADDRESS_MSK, 0));
+                111, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.APPEND_DATA.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.WRITE_DATA.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 2));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1368,11 +1368,11 @@ public class ACLTest {
         int masks = (AccessMask.READ_ACL.getValue());
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, masks, Who.USER,
-                111, ACE.DEFAULT_ADDRESS_MSK, 0));
+                111, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
                 AccessMask.READ_ATTRIBUTES.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);
@@ -1439,11 +1439,11 @@ public class ACLTest {
 
         List<ACE> aces = new ArrayList<ACE>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.READ_ACL.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.READ_ACL.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
                 AccessMask.READ_ATTRIBUTES.getValue(), Who.USER, 111,
-                ACE.DEFAULT_ADDRESS_MSK, 1));
+                ACE.DEFAULT_ADDRESS_MSK));
 
         ACL newACL = new ACL(rsID, rsType, aces);
         AclHandler.setACL(newACL);

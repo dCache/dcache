@@ -91,7 +91,7 @@ public class AclFsHandler extends DefaultACLHandler {
                             flags |= AceFlags.IDENTIFIER_GROUP.getValue();
 
                     } else if (AceFlags.INHERIT_ONLY_ACE.matches(parentFlags))
-                        logger.warn("Unsupported AceFlags.INHERIT_ONLY_ACE flag in ace: ace.order = " + ace.getOrder() + ", ace.rsID = " + parentID);
+                        logger.warn("Unsupported AceFlags.INHERIT_ONLY_ACE flag in ace: ace.order = " + order + ", ace.rsID = " + parentID);
 
                 } else { // child is non-directory FILE ***********************************
                     if (addACE = AceFlags.FILE_INHERIT_ACE.matches(parentFlags)) {
@@ -99,13 +99,14 @@ public class AclFsHandler extends DefaultACLHandler {
                             flags |= AceFlags.IDENTIFIER_GROUP.getValue();
 
                     } else if (AceFlags.INHERIT_ONLY_ACE.matches(parentFlags) && AceFlags.DIRECTORY_INHERIT_ACE.matches(parentFlags) == false)
-                        logger.warn("Unsupported AceFlags.INHERIT_ONLY_ACE flag in ace: ace.order = " + ace.getOrder() + ", ace.rsID = " + parentID);
+                        logger.warn("Unsupported AceFlags.INHERIT_ONLY_ACE flag in ace: ace.order = " + order + ", ace.rsID = " + parentID);
                 }
 
                 if (addACE) {
                     logger.debug("AclFsHandler::getDefaultACEs in if(addACE), i.e. ACE will be added ");
-                    aces.add(new ACE(ace.getType(), flags, ace.getAccessMsk(), ace.getWho(), ace.getWhoID(), ace.getAddressMsk(), order++));
+                    aces.add(new ACE(ace.getType(), flags, ace.getAccessMsk(), ace.getWho(), ace.getWhoID(), ace.getAddressMsk()));
                 }
+                order++;
             }
 
             if (logger.isDebugEnabled())

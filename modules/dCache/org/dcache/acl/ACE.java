@@ -53,11 +53,6 @@ public class ACE implements Serializable
     private final String _addressMsk;
 
     /**
-     * ACE order
-     */
-    private final int _order;
-
-    /**
      * @param type
      *            Type of ACE (ALLOW / DENY)
      * @param flags
@@ -70,21 +65,14 @@ public class ACE implements Serializable
      *            Virtual user or group ID
      * @param addressMsk
      *            Request origin address mask
-     * @param order
-     *            Defines position of ACE within ACL
      */
-    public ACE(AceType type, int flags, int accessMsk, Who who, int whoID, String addressMsk, int order) {
+    public ACE(AceType type, int flags, int accessMsk, Who who, int whoID, String addressMsk) {
         _type = type;
         _flags = flags;
         _accessMsk = accessMsk;
         _who = who;
         _whoID = whoID;
         _addressMsk = addressMsk;
-        _order = order;
-    }
-
-    public int getOrder() {
-        return _order;
     }
 
     public int getAccessMsk() {
@@ -146,21 +134,19 @@ public class ACE implements Serializable
         if (!_addressMsk.equals(other._addressMsk)) {
             return false;
         }
-        if (_order != other._order) {
-            return false;
-        }
+
         return true;
     }
 
     @Override
     public int hashCode() {
         return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode()
-                ^ _whoID ^ _addressMsk.hashCode() ^ _order;
+                ^ _whoID ^ _addressMsk.hashCode();
     }
 
     public String toNFSv4String(RsType rsType) {
         StringBuilder sb = new StringBuilder();
-        sb.append(_order).append(SEPARATOR).append(_who.getAbbreviation());
+        sb.append(_who.getAbbreviation());
         if (_who == Who.USER || _who == Who.GROUP)
             sb.append(SEPARATOR).append(_whoID);
         sb.append(SEPARATOR).append(AccessMask.asString(_accessMsk, rsType));
@@ -174,7 +160,6 @@ public class ACE implements Serializable
 
     public String toOrgString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(_order).append(SPACE_SEPARATOR);
         sb.append(_type.getValue()).append(SPACE_SEPARATOR);
         sb.append(_flags).append(SPACE_SEPARATOR);
         sb.append(_accessMsk).append(SPACE_SEPARATOR);
@@ -186,8 +171,7 @@ public class ACE implements Serializable
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("order = ").append(_order);
-        sb.append(", type = ").append(_type);
+        sb.append("type = ").append(_type);
         if (_flags != 0)
             sb.append(", flags = ").append(AceFlags.asString(_flags));
         sb.append(", accessMsk = ").append(AccessMask.asString(_accessMsk, null));
@@ -201,7 +185,6 @@ public class ACE implements Serializable
 
     public String toString(RsType rsType) {
         StringBuilder sb = new StringBuilder();
-        sb.append("order = ").append(_order);
         sb.append(", type = ").append(_type);
         if (_flags != 0)
             sb.append(", flags = ").append(AceFlags.asString(_flags));

@@ -79,8 +79,8 @@ public class AclCell  extends AbstractCellComponent
             "Example: \n" +
             "    getfacl /pnfs/example.org/data/MyDir \n" +
             "    ACL: rsId = 00004EEFE7E59A3441198E7EB744B0D8BA54, rsType = DIR \n" +
-            "    order = 0, type = A, accessMsk = lfsD, who = USER, whoID = 12457 \n" +
-            "    order = 1, type = A, flags = f, accessMsk = lfd, who = USER, whoID = 87552 \n" +
+            "    type = A, accessMsk = lfsD, who = USER, whoID = 12457 \n" +
+            "    type = A, flags = f, accessMsk = lfd, who = USER, whoID = 87552 \n" +
             "    In extra format: \n" +
             "    USER:12457:+lfsD \n" +
             "    USER:87552:+lfd:f \n" +
@@ -265,9 +265,8 @@ public class AclCell  extends AbstractCellComponent
 
         for (int i = 1; i < args.argc(); i++) {
             String ace_spec_format2 = args.argv(i);
-            int order = i - 1;
 
-            ace = ACEParser.parseAdm(order, ace_spec_format2);
+            ace = ACEParser.parseAdmACE(ace_spec_format2);
             if ( ace == null )
                 throw new RuntimeException("Set ACE failure.");
             aces.add(ace);

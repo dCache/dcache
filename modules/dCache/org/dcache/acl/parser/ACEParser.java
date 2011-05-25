@@ -63,9 +63,7 @@ public class ACEParser {
      *            String representation of ACE
      * @return Access Control Entry object
      */
-    public static ACE parseNFSv4(int order, String ace_spec) throws IllegalArgumentException, ACLException {
-        if ( order < 0 )
-            throw new IllegalArgumentException("Invalid order: " + order);
+    public static ACE parseNFSv4ACE(String ace_spec) throws IllegalArgumentException, ACLException {
 
         if ( ace_spec == null || ace_spec.length() == 0 )
             throw new IllegalArgumentException("ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
@@ -110,7 +108,7 @@ public class ACEParser {
         if ( accessMsk == 0 )
             throw new IllegalArgumentException("Invalid accessMask: " + sAccessMsk);
 
-        return new ACE(type, flags, accessMsk, who, whoID, ACE.DEFAULT_ADDRESS_MSK, order);
+        return new ACE(type, flags, accessMsk, who, whoID, ACE.DEFAULT_ADDRESS_MSK);
     }
 
     /**
@@ -139,8 +137,8 @@ public class ACEParser {
             throw new IllegalArgumentException("Count ACEs invalid.");
 
         List<ACE> aces = new ArrayList<ACE>(len);
-        for (int order = 0; order < len; order++)
-            aces.add(ACEParser.parseNFSv4(order, split[order]));
+        for (String ace: split)
+            aces.add(ACEParser.parseNFSv4ACE(ace));
 
         return aces;
     }
@@ -231,7 +229,7 @@ public class ACEParser {
         if ( index != len )
             throw new IllegalArgumentException("Check index failure. Invalid ace_spec: " + ace_spec);
 
-        return new ACE(type, flags, accessMsk, who, whoID, addressMsk, order);
+        return new ACE(type, flags, accessMsk, who, whoID, addressMsk);
     }
 
     /**
@@ -248,9 +246,7 @@ public class ACEParser {
      *            String representation of ACE (without 'order')
      */
 
-    public static ACE parseAdm(int order, String ace_spec) throws IllegalArgumentException {
-        if ( order < 0 )
-            throw new IllegalArgumentException("Invalid order: " + order);
+    public static ACE parseAdmACE(String ace_spec) throws IllegalArgumentException {
 
         if ( ace_spec == null || ace_spec.length() == 0 )
             throw new IllegalArgumentException("ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
@@ -328,7 +324,7 @@ public class ACEParser {
         if ( index != len )
             throw new IllegalArgumentException("Check index failure. Invalid ace_spec: " + ace_spec);
 
-        return new ACE(type, flags, accessMsk, who, whoID, addressMsk, order);
+        return new ACE(type, flags, accessMsk, who, whoID, addressMsk);
     }
 
     /**
@@ -354,8 +350,8 @@ public class ACEParser {
             throw new IllegalArgumentException("Count ACEs invalid.");
 
         List<ACE> aces = new ArrayList<ACE>(len);
-        for (int order = 0; order < len; order++)
-            aces.add(ACEParser.parseAdm(order, split[order]));
+        for (String ace: split)
+            aces.add(ACEParser.parseAdmACE(ace));
 
         return aces;
     }

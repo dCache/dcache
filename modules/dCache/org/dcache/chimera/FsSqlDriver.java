@@ -2441,8 +2441,7 @@ class FsSqlDriver {
                         rs.getInt("access_msk"),
                         Who.valueOf(rs.getInt("who")),
                         rs.getInt("who_id"),
-                        rs.getString("address_msk"),
-                        rs.getInt("ace_order")));
+                        rs.getString("address_msk")));
             }
 
         }finally{

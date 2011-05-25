@@ -125,8 +125,7 @@ public class DefaultACLHandler extends THandler implements ACLHandler {
                         rs.getInt(COLUMN_ACCESS_MSK),
                         Who.valueOf(rs.getInt(COLUMN_WHO)),
                         rs.getInt(COLUMN_WHO_ID),
-                        rs.getString(COLUMN_ADDRESS_MSK),
-                        rs.getInt(COLUMN_ACE_ORDER)));
+                        rs.getString(COLUMN_ADDRESS_MSK)));
             }
 
             if ( aces.size() == 0 )
@@ -180,6 +179,7 @@ public class DefaultACLHandler extends THandler implements ACLHandler {
                 return true;
             }
 
+            int order = 0;
             for (ACE ace : aces) {
                 // TODO: performance : try to use update in loop and finally commit
                 pstmt.setString(1, rsId);
@@ -190,9 +190,10 @@ public class DefaultACLHandler extends THandler implements ACLHandler {
                 pstmt.setInt(6, ace.getWho().getValue());
                 pstmt.setInt(7, ace.getWhoID());
                 pstmt.setString(8, ace.getAddressMsk());
-                pstmt.setInt(9, ace.getOrder());
+                pstmt.setInt(9, order);
 
                 pstmt.addBatch();
+                order++;
             }
 
             int[] numUpdates = pstmt.executeBatch();
