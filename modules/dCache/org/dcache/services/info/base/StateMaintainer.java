@@ -12,7 +12,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.dcache.commons.util.NDC;
 import org.dcache.util.FireAndForgetTask;
+
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellEndpoint;
 
 /**
  * The StateMaintainer class provides the machinery for processing
@@ -34,6 +38,9 @@ public class StateMaintainer implements StateUpdateManager {
     /** Our link to the business logic for update dCache state */
     private volatile StateCaretaker _caretaker;
 
+    private String _cellName = "unknown";
+    private String _domainName = "unknown";
+
     /**
      * The Future for the next scheduled metric purge, or null if no such
      * activity has been scheduled.  Access and updates to this object are
@@ -52,6 +59,11 @@ public class StateMaintainer implements StateUpdateManager {
     public StateMaintainer( final StateCaretaker caretaker, final ThreadFactory threadFactory) {
         _caretaker = caretaker;
         _scheduler = Executors.newSingleThreadScheduledExecutor( threadFactory);
+    }
+
+    public void setCellEndpoint(final CellEndpoint endpoint) {
+        _domainName = endpoint.getCellInfo().getDomainName();
+        _cellName = endpoint.getCellInfo().getCellName();
     }
 
     /**
@@ -73,10 +85,14 @@ public class StateMaintainer implements StateUpdateManager {
         if( _log.isDebugEnabled())
             _log.debug(  "enqueing job to process update " + pendingUpdate);
 
+        final NDC ndc = NDC.cloneNdc();
+
         _pendingRequestCount.incrementAndGet();
         _scheduler.execute( new FireAndForgetTask( new Runnable() {
             @Override
             public void run() {
+                CDC.reset(_cellName, _domainName);
+                NDC.set(ndc);
                 try {
                     if( _log.isDebugEnabled())
                         _log.debug(  "starting job to process update " + pendingUpdate);
@@ -88,6 +104,7 @@ public class StateMaintainer implements StateUpdateManager {
                         _log.debug( "finished job to process update " + pendingUpdate);
                 } finally {
                     _pendingRequestCount.decrementAndGet();
+                    CDC.clear();
                 }
             }
         }));
@@ -163,6 +180,7 @@ public class StateMaintainer implements StateUpdateManager {
 
         try {
             _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {
+                @Override
                 public void run() {
                     _log.debug( "Starting metric purge");
                     _caretaker.removeExpiredMetrics();

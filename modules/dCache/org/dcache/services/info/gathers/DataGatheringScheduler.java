@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.dcache.commons.util.NDC;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdateManager;
@@ -109,7 +110,10 @@ public class DataGatheringScheduler implements Runnable {
 			if( now.before(_nextTriggered))
 				return false;
 
+			NDC.push(_dga.toString());
 			_dga.trigger();
+			NDC.pop();
+
 			updateNextTrigger();
 			return true;
 		}
