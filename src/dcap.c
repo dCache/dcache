@@ -667,7 +667,12 @@ parseConfig(const char *str)
 
 			srv->tunnel = addIoPlugin(s);
 			if(srv->tunnel == NULL ) {
-				dc_debug(DC_INFO,"Tunnel %s empty or unavailable, using plain.", s);
+				dc_debug(DC_ERROR,"Failed to add tunnel %s.", s);
+				if(srv->hostname!= NULL) {
+					free(srv->hostname);
+				}
+				free(srv);
+				srv = NULL;
 			}else{
 				dc_debug(DC_INFO, "Added IO tunneling plugin %s for %s:%d.", s , srv->hostname, srv->port);
 			}
