@@ -27,6 +27,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 
 public class AuthzDbPluginTest
@@ -41,12 +42,7 @@ public class AuthzDbPluginTest
         throws IOException
     {
         testFixture =
-            new SourceBackedPredicateMap(new MemoryLineSource(Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())), new AuthzMapLineParser());
-    }
-
-    @After
-    public void cleanup()
-    {
+            new SourceBackedPredicateMap<String,UserAuthzInformation>(new MemoryLineSource(Resources.readLines(TEST_FIXTURE, Charset.defaultCharset())), new AuthzMapLineParser());
     }
 
     public void check(Set<? extends Principal> principals,
@@ -57,10 +53,11 @@ public class AuthzDbPluginTest
             new AuthzDbPlugin(testFixture,
                               AuthzDbPlugin.UID_DEFAULT,
                               AuthzDbPlugin.GID_DEFAULT);
+        Set<Principal> sourcePrincipals = Sets.newHashSet(principals);
         Set<Principal> expectedPrincipals = Sets.newHashSet(principals);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
-        plugin.map(null, (Set<Principal>) principals, authorizedPrincipals);
-        assertEquals(expectedPrincipals, principals);
+        plugin.map(null, sourcePrincipals, authorizedPrincipals);
+        assertEquals(expectedPrincipals, sourcePrincipals);
         assertEquals(expectedAuthorizedPrincipals, authorizedPrincipals);
     }
 
@@ -68,8 +65,8 @@ public class AuthzDbPluginTest
     public void testGroupName()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new GroupNamePrincipal("behrmann", true)),
-              Sets.newHashSet(new UidPrincipal(1000),
+        check(ImmutableSet.of(new GroupNamePrincipal("behrmann", true)),
+              ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
                               new UserNamePrincipal("behrmann")));
     }
@@ -78,17 +75,17 @@ public class AuthzDbPluginTest
     public void testGroupNameNotPrimary()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new GroupNamePrincipal("behrmann", false)),
-              Sets.<Principal>newHashSet());
+        check(ImmutableSet.of(new GroupNamePrincipal("behrmann", false)),
+              ImmutableSet.<Principal>of());
     }
 
     @Test
     public void testGroupNameWithSecondaryGroup()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new GroupNamePrincipal("atlas-user", false),
+        check(ImmutableSet.of(new GroupNamePrincipal("atlas-user", false),
                               new GroupNamePrincipal("atlas-prod", true)),
-              Sets.newHashSet(new UidPrincipal(1002),
+              ImmutableSet.of(new UidPrincipal(1002),
                               new GidPrincipal(1001, false),
                               new GidPrincipal(1002, true),
                               new UserNamePrincipal("atlas-prod")));
@@ -98,10 +95,10 @@ public class AuthzDbPluginTest
     public void testGroupNameWithSecondaryGroupAndLoginUid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new GroupNamePrincipal("atlas-user", false),
+        check(ImmutableSet.of(new GroupNamePrincipal("atlas-user", false),
                               new GroupNamePrincipal("atlas-prod", true),
                               new LoginUidPrincipal(1001)),
-              Sets.newHashSet(new UidPrincipal(1001),
+              ImmutableSet.of(new UidPrincipal(1001),
                               new GidPrincipal(1001, false),
                               new GidPrincipal(1002, true)));
     }
@@ -110,10 +107,10 @@ public class AuthzDbPluginTest
     public void testGroupNameWithSecondaryGroupAndLoginGid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new GroupNamePrincipal("atlas-user", false),
+        check(ImmutableSet.of(new GroupNamePrincipal("atlas-user", false),
                               new GroupNamePrincipal("atlas-prod", true),
                               new LoginGidPrincipal(1001)),
-              Sets.newHashSet(new UidPrincipal(1002),
+              ImmutableSet.of(new UidPrincipal(1002),
                               new GidPrincipal(1001, true),
                               new GidPrincipal(1002, false),
                               new UserNamePrincipal("atlas-prod")));
@@ -123,8 +120,8 @@ public class AuthzDbPluginTest
     public void testUserName()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new UserNamePrincipal("behrmann")),
-              Sets.newHashSet(new UidPrincipal(1000),
+        check(ImmutableSet.of(new UserNamePrincipal("behrmann")),
+              ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
                               new UserNamePrincipal("behrmann")));
     }
@@ -133,9 +130,9 @@ public class AuthzDbPluginTest
     public void testUserNameWithPrimaryGroup()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+        check(ImmutableSet.of(new UserNamePrincipal("behrmann"),
                               new GroupNamePrincipal("atlas-user", true)),
-              Sets.newHashSet(new UidPrincipal(1000),
+              ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, false),
                               new GidPrincipal(1001, true),
                               new UserNamePrincipal("behrmann")));
@@ -145,9 +142,9 @@ public class AuthzDbPluginTest
     public void testUserNameWithSecondaryGroup()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+        check(ImmutableSet.of(new UserNamePrincipal("behrmann"),
                               new GroupNamePrincipal("atlas-user", false)),
-              Sets.newHashSet(new UidPrincipal(1000),
+              ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
                               new GidPrincipal(1001, false),
                               new UserNamePrincipal("behrmann")));
@@ -157,12 +154,12 @@ public class AuthzDbPluginTest
     public void testUserNameWithGroupsAndLoginUidAndLoginGid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+        check(ImmutableSet.of(new UserNamePrincipal("behrmann"),
                               new GroupNamePrincipal("atlas-user", false),
                               new GroupNamePrincipal("atlas-prod", true),
                               new LoginUidPrincipal(1001),
                               new LoginGidPrincipal(1001)),
-              Sets.newHashSet(new UidPrincipal(1001),
+              ImmutableSet.of(new UidPrincipal(1001),
                               new GidPrincipal(1000, false),
                               new GidPrincipal(1001, true),
                               new GidPrincipal(1002, false)));
@@ -172,10 +169,10 @@ public class AuthzDbPluginTest
     public void testUserNameWithLoginName()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new UserNamePrincipal("behrmann"),
+        check(ImmutableSet.of(new UserNamePrincipal("behrmann"),
                               new GroupNamePrincipal("atlas-prod", true),
                               new LoginNamePrincipal("behrmann")),
-              Sets.newHashSet(new UidPrincipal(1000),
+              ImmutableSet.of(new UidPrincipal(1000),
                               new GidPrincipal(1000, true),
                               new GidPrincipal(1002, false),
                               new UserNamePrincipal("behrmann")));
@@ -185,68 +182,68 @@ public class AuthzDbPluginTest
     public void testMultipleUserNames()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new UserNamePrincipal("atlas-user"),
+        check(ImmutableSet.of(new UserNamePrincipal("atlas-user"),
                               new UserNamePrincipal("atlas-prod")),
-              Sets.<Principal>newHashSet());
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testMultiplePrimaryGroupNames()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new GroupNamePrincipal("atlas-user", true),
+        check(ImmutableSet.of(new GroupNamePrincipal("atlas-user", true),
                               new GroupNamePrincipal("atlas-prod", true)),
-              Sets.<Principal>newHashSet());
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testMultipleLoginNames()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginNamePrincipal("atlas-user"),
+        check(ImmutableSet.of(new LoginNamePrincipal("atlas-user"),
                               new LoginNamePrincipal("atlas-prod")),
-              Sets.<Principal>newHashSet());
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testMultipleLoginUid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginUidPrincipal(1),
+        check(ImmutableSet.of(new LoginUidPrincipal(1),
                               new LoginUidPrincipal(2)),
-              Sets.<Principal>newHashSet());
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testMultipleLoginGid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginGidPrincipal(1),
+        check(ImmutableSet.of(new LoginGidPrincipal(1),
                               new LoginGidPrincipal(2)),
-              Sets.<Principal>newHashSet());
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testInvalidLoginName()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginNamePrincipal("behrmann")),
-              Sets.<Principal>newHashSet());
+        check(ImmutableSet.of(new LoginNamePrincipal("behrmann")),
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testInvalidLoginUid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginUidPrincipal(1000)),
-              Sets.<Principal>newHashSet());
+        check(ImmutableSet.of(new LoginUidPrincipal(1000)),
+              ImmutableSet.<Principal>of());
     }
 
     @Test(expected=AuthenticationException.class)
     public void testInvalidLoginGid()
         throws AuthenticationException
     {
-        check(Sets.newHashSet(new LoginGidPrincipal(1000)),
-              Sets.<Principal>newHashSet());
+        check(ImmutableSet.of(new LoginGidPrincipal(1000)),
+              ImmutableSet.<Principal>of());
     }
 }

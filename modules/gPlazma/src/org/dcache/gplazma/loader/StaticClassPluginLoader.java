@@ -12,7 +12,16 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 public class StaticClassPluginLoader extends AbstractPluginLoader {
     private final PluginRepositoryFactory _repositoryFactory;
 
-    public static PluginLoader newPluginLoader( Class<? extends GPlazmaPlugin>... plugins) {
+    @SuppressWarnings("unchecked")
+    public static PluginLoader newPluginLoader(Class<? extends GPlazmaPlugin> plugin)
+    {
+        Class[] plugins = new Class[] { plugin };
+        PluginLoader inner = new StaticClassPluginLoader(plugins);
+        PluginLoader outer = new SafePluginLoaderDecorator(inner);
+        return outer;
+    }
+
+    public static PluginLoader newPluginLoader(Class<? extends GPlazmaPlugin>... plugins) {
         PluginLoader inner = new StaticClassPluginLoader(plugins);
         PluginLoader outer = new SafePluginLoaderDecorator( inner);
         return outer;

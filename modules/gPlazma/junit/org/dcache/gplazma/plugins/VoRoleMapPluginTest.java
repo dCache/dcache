@@ -21,6 +21,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import static com.google.common.collect.Sets.newHashSet;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 
 public class VoRoleMapPluginTest
@@ -59,7 +60,7 @@ public class VoRoleMapPluginTest
         loadFixture(URL fixture)
         throws IOException
     {
-        return new SourceBackedPredicateMap(new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())), new VOMapLineParser());
+        return new SourceBackedPredicateMap<NameRolePair,String>(new MemoryLineSource(Resources.readLines(fixture, Charset.defaultCharset())), new VOMapLineParser());
     }
 
     public void check(URL fixture,
@@ -69,10 +70,11 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         VoRoleMapPlugin plugin = new VoRoleMapPlugin(loadFixture(fixture));
+        Set<Principal> sourcePrincipals = newHashSet(principals);
         Set<Principal> authorizedPrincipals = newHashSet();
-        plugin.map(null, (Set<Principal>) principals, authorizedPrincipals);
+        plugin.map(null, sourcePrincipals, authorizedPrincipals);
         assertEquals("Principals don't match",
-                     expectedPrincipals, principals);
+                     expectedPrincipals, sourcePrincipals);
         assertEquals("Authorized principals don't match",
                      expectedAuthorizedPrincipals, authorizedPrincipals);
     }
@@ -91,13 +93,13 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         check(TEST_FIXTURE_WITH_WILDCARDS,
-              newHashSet(new GlobusPrincipal(DN_TIGRAN),
-                         new FQANPrincipal(FQAN_DTEAM_SHORT, true)),
-              newHashSet(new GlobusPrincipal(DN_TIGRAN),
-                         new FQANPrincipal(FQAN_DTEAM_SHORT, true),
-                         new GroupNamePrincipal(USERNAME_TIGRAN, true)),
-              newHashSet(new GlobusPrincipal(DN_TIGRAN),
-                         new FQANPrincipal(FQAN_DTEAM_SHORT, true)));
+              ImmutableSet.of(new GlobusPrincipal(DN_TIGRAN),
+                              new FQANPrincipal(FQAN_DTEAM_SHORT, true)),
+              ImmutableSet.of(new GlobusPrincipal(DN_TIGRAN),
+                              new FQANPrincipal(FQAN_DTEAM_SHORT, true),
+                              new GroupNamePrincipal(USERNAME_TIGRAN, true)),
+              ImmutableSet.of(new GlobusPrincipal(DN_TIGRAN),
+                              new FQANPrincipal(FQAN_DTEAM_SHORT, true)));
     }
 
     @Test
@@ -105,19 +107,19 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         check(TEST_FIXTURE_WITH_WILDCARDS,
-              newHashSet(new UidPrincipal(UID),
-                         new GlobusPrincipal(DN_TIGRAN),
-                         new GlobusPrincipal(DN_KLAUS),
-                         new FQANPrincipal(FQAN_DTEAM_LONG, true)),
-              newHashSet(new UidPrincipal(UID),
-                         new GlobusPrincipal(DN_TIGRAN),
-                         new GlobusPrincipal(DN_KLAUS),
-                         new FQANPrincipal(FQAN_DTEAM_LONG, true),
-                         new GroupNamePrincipal(USERNAME_TIGRAN, true),
-                         new GroupNamePrincipal(USERNAME_DTEAM, true)),
-              newHashSet(new GlobusPrincipal(DN_TIGRAN),
-                         new GlobusPrincipal(DN_KLAUS),
-                         new FQANPrincipal(FQAN_DTEAM_LONG, true)));
+              ImmutableSet.of(new UidPrincipal(UID),
+                              new GlobusPrincipal(DN_TIGRAN),
+                              new GlobusPrincipal(DN_KLAUS),
+                              new FQANPrincipal(FQAN_DTEAM_LONG, true)),
+              ImmutableSet.of(new UidPrincipal(UID),
+                              new GlobusPrincipal(DN_TIGRAN),
+                              new GlobusPrincipal(DN_KLAUS),
+                              new FQANPrincipal(FQAN_DTEAM_LONG, true),
+                              new GroupNamePrincipal(USERNAME_TIGRAN, true),
+                              new GroupNamePrincipal(USERNAME_DTEAM, true)),
+              ImmutableSet.of(new GlobusPrincipal(DN_TIGRAN),
+                              new GlobusPrincipal(DN_KLAUS),
+                              new FQANPrincipal(FQAN_DTEAM_LONG, true)));
     }
 
     /**
@@ -133,8 +135,8 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         check(TEST_FIXTURE_WITHOUT_WILDCARDS,
-              unmodifiableSet(newHashSet(new FQANPrincipal(FQAN_DTEAM_LONG, true),
-                                         new FQANPrincipal(FQAN_CMS_LONG, true))),
+              ImmutableSet.of(new FQANPrincipal(FQAN_DTEAM_LONG, true),
+                              new FQANPrincipal(FQAN_CMS_LONG, true)),
               EMPTY_SET,
               EMPTY_SET);
     }
@@ -151,9 +153,9 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         check(TEST_FIXTURE_WITHOUT_WILDCARDS,
-              unmodifiableSet(newHashSet(new UidPrincipal(UID),
-                                         new GlobusPrincipal(DN_TIGRAN),
-                                         new FQANPrincipal(FQAN_INVALID, true))),
+              ImmutableSet.of(new UidPrincipal(UID),
+                              new GlobusPrincipal(DN_TIGRAN),
+                              new FQANPrincipal(FQAN_INVALID, true)),
               EMPTY_SET,
               EMPTY_SET);
     }
@@ -168,13 +170,13 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         check(TEST_FIXTURE_WITH_WILDCARDS,
-              newHashSet(new GlobusPrincipal(DN_FLAVIA),
-                         new FQANPrincipal(FQAN_INVALID, true)),
-              newHashSet(new GlobusPrincipal(DN_FLAVIA),
-                         new FQANPrincipal(FQAN_INVALID, true),
-                         new GroupNamePrincipal(USERNAME_HORST, true)),
-              newHashSet(new GlobusPrincipal(DN_FLAVIA),
-                         new FQANPrincipal(FQAN_INVALID, true)));
+              ImmutableSet.of(new GlobusPrincipal(DN_FLAVIA),
+                              new FQANPrincipal(FQAN_INVALID, true)),
+              ImmutableSet.of(new GlobusPrincipal(DN_FLAVIA),
+                              new FQANPrincipal(FQAN_INVALID, true),
+                              new GroupNamePrincipal(USERNAME_HORST, true)),
+              ImmutableSet.of(new GlobusPrincipal(DN_FLAVIA),
+                              new FQANPrincipal(FQAN_INVALID, true)));
     }
 
     /**
@@ -189,8 +191,8 @@ public class VoRoleMapPluginTest
         throws AuthenticationException, IOException
     {
         check(TEST_FIXTURE_WITH_WILDCARDS,
-              unmodifiableSet(newHashSet(new UidPrincipal(UID),
-                                         new FQANPrincipal("TotalNonsense!", true))),
+              ImmutableSet.of(new UidPrincipal(UID),
+                              new FQANPrincipal("TotalNonsense!", true)),
               EMPTY_SET,
               EMPTY_SET);
     }
