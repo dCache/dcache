@@ -2,7 +2,6 @@ package org.dcache.gplazma.strategies;
 
 import java.security.Principal;
 import java.util.Set;
-import java.util.HashSet;
 import org.dcache.gplazma.AuthenticationException;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
@@ -11,12 +10,14 @@ import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.FQANPrincipal;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
 
 /**
  *
@@ -29,67 +30,67 @@ public class MappingStrategyReverseMapTests {
     private StrategyFactory strategyFactory;
 
     private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> empltyList =
-            new ArrayList();
+            Lists.newArrayList();
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] oneDoNopthingPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> oneDoNothingPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] successRequiredPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successRequiredPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] successOptionalPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),OPTIONAL),
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),OPTIONAL)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successOptionalPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),OPTIONAL),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),OPTIONAL)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] successRequisitePluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),REQUISITE)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successRequisitePlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),REQUISITE),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),REQUISITE)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] successSufficientPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),SUFFICIENT),
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),SUFFICIENT)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successSufficientPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),SUFFICIENT),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),SUFFICIENT)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] failedPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> failedPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] testOptionalFailingPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),OPTIONAL)
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> testOptionalFailingPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),OPTIONAL)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] testRequesitePluginArray1 =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> testRequesitePlugins1 =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] testRequesitePluginArray2 =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> testRequesitePlugins2 =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaMappingPlugin>[] sufficientPluginFollowedByFailedArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysMapToCompleteSetStrategy(),SUFFICIENT),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> sufficientPluginFollowedByFailedArray =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),SUFFICIENT),
+            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED)
+    );
 
     @Before
     public void setUp() {
@@ -121,7 +122,7 @@ public class MappingStrategyReverseMapTests {
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -138,11 +139,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(oneDoNopthingPluginArray));
+        strategy.setPlugins(oneDoNothingPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -154,11 +155,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(failedPluginArray));
+        strategy.setPlugins(failedPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -170,11 +171,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successRequiredPluginArray));
+        strategy.setPlugins(successRequiredPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -186,11 +187,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successRequisitePluginArray));
+        strategy.setPlugins(successRequisitePlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -201,11 +202,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successOptionalPluginArray));
+        strategy.setPlugins(successOptionalPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -217,11 +218,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successSufficientPluginArray));
+        strategy.setPlugins(successSufficientPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -238,18 +239,18 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(sufficientPluginFollowedByFailedArray));
+        strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
     }
 
     /**
-     * Failing plugin is optional in testOptionalPluginArray
+     * Failing plugin is optional in testOptionalPlugins
      * So overall authenticate should succeed
      * @throws org.dcache.gplazma.AuthenticationException
      */
@@ -259,11 +260,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testOptionalFailingPluginArray));
+        strategy.setPlugins(testOptionalFailingPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -281,11 +282,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testRequesitePluginArray1));
+        strategy.setPlugins(testRequesitePlugins1);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -303,11 +304,11 @@ public class MappingStrategyReverseMapTests {
         MappingStrategy strategy =
                 strategyFactory.newMappingStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testRequesitePluginArray2));
+        strategy.setPlugins(testRequesitePlugins2);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
         Principal principal = new UidPrincipal(1L);
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.reverseMap(sessionId,
                 principal,
                 authorizedPrincipals);
@@ -416,6 +417,8 @@ public class MappingStrategyReverseMapTests {
     }
 
     private static final class TestAuthenticationException extends AuthenticationException {
+        static final long serialVersionUID = 5248624779760311620L;
+
         public TestAuthenticationException(String message) {
             super(message);
         }

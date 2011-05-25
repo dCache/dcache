@@ -2,7 +2,6 @@ package org.dcache.gplazma.strategies;
 
 import java.security.Principal;
 import java.util.Set;
-import java.util.HashSet;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
@@ -13,8 +12,10 @@ import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
 
 /**
  *
@@ -26,68 +27,68 @@ public class SessionStrategyTests {
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> empltyList =
-            new ArrayList();
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> emptyList =
+        Lists.newArrayList();
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] oneDoNopthingPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> oneDoNothingPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] successRequiredPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successRequiredPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] successOptionalPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),OPTIONAL),
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),OPTIONAL)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successOptionalPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),OPTIONAL),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),OPTIONAL)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] successRequisitePluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),REQUISITE)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successRequisitePlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),REQUISITE),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),REQUISITE)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] successSufficientPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),SUFFICIENT),
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),SUFFICIENT)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successSufficientPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),SUFFICIENT),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),SUFFICIENT)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] failedPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> failedPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] testOptionalFailingPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),OPTIONAL)
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testOptionalFailingPlugins =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),OPTIONAL)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] testRequesitePluginArray1 =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testRequesitePlugins1 =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] testRequesitePluginArray2 =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testRequesitePlugins2 =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED)
+    );
 
-    private GPlazmaPluginElement<GPlazmaSessionPlugin>[] sufficientPluginFollowedByFailedArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysAssignAttributesStrategy(),SUFFICIENT),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> sufficientPluginFollowedByFailedArray =
+        ImmutableList.of(
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),SUFFICIENT),
+            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED)
+    );
 
     @Before
     public void setUp() {
@@ -115,11 +116,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(empltyList);
+        strategy.setPlugins(emptyList);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -135,11 +136,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(oneDoNopthingPluginArray));
+        strategy.setPlugins(oneDoNothingPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -150,11 +151,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(failedPluginArray));
+        strategy.setPlugins(failedPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -165,11 +166,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successRequiredPluginArray));
+        strategy.setPlugins(successRequiredPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -180,11 +181,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successRequisitePluginArray));
+        strategy.setPlugins(successRequisitePlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -194,11 +195,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successOptionalPluginArray));
+        strategy.setPlugins(successOptionalPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -209,11 +210,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successSufficientPluginArray));
+        strategy.setPlugins(successSufficientPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -229,17 +230,17 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(sufficientPluginFollowedByFailedArray));
+        strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
 
     /**
-     * Failing plugin is optional in testOptionalPluginArray
+     * Failing plugin is optional in testOptionalPlugins
      * So overall authenticate should succeed
      * @throws org.dcache.gplazma.AuthenticationException
      */
@@ -249,11 +250,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testOptionalFailingPluginArray));
+        strategy.setPlugins(testOptionalFailingPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -270,11 +271,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testRequesitePluginArray1));
+        strategy.setPlugins(testRequesitePlugins1);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -291,11 +292,11 @@ public class SessionStrategyTests {
         SessionStrategy strategy =
                 strategyFactory.newSessionStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testRequesitePluginArray2));
+        strategy.setPlugins(testRequesitePlugins2);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
-        Set<Object> sessionAttributes = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
+        Set<Object> sessionAttributes = Sets.newHashSet();
         strategy.session(sessionId,
                 authorizedPrincipals, sessionAttributes);
     }
@@ -371,6 +372,8 @@ public class SessionStrategyTests {
     }
 
     private static final class TestAuthenticationException extends AuthenticationException {
+        static final long serialVersionUID = -3072227909975189097L;
+
         public TestAuthenticationException(String message) {
             super(message);
         }

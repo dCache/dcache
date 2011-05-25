@@ -45,21 +45,18 @@ public class GPlazmaPluginElement<T extends GPlazmaPlugin> {
 
     @Override
     public boolean equals(Object anObject) {
-        if(anObject == null) {
+        if (anObject == null) {
             return false;
         }
 
-        if( getClass()  != anObject.getClass() ) {
-			return false;
-        }
-
-		GPlazmaPluginElement<T> aPluginElement = (GPlazmaPluginElement<T>) anObject;
-        if( ! plugin.equals(aPluginElement.plugin) ||
-            ! control.equals(aPluginElement.control)) {
+        if (getClass().equals(anObject.getClass())) {
             return false;
         }
 
-        return true;
+        GPlazmaPluginElement<?> aPluginElement =
+            (GPlazmaPluginElement<?>) anObject;
+        return (plugin.equals(aPluginElement.plugin) &&
+                control.equals(aPluginElement.control));
     }
 
     @Override

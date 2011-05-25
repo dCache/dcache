@@ -54,7 +54,8 @@
 
         <mkdir dir="${gplazma.build.dir}" />
 
-        <javac destdir="${gplazma.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="gplazma.classpath" debug="${javac.debug}" verbose="${javac.verbose}">
+        <javac destdir="${gplazma.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="gplazma.classpath" debug="${javac.debug}" verbose="${javac.verbose}" includeAntRuntime="false">
+            <compilerarg value="-Xlint"/>
             <src path="${gplazma.src}" />
             <src path="${gplazma.junit.src}" />
             <filename name="**/*.java" />

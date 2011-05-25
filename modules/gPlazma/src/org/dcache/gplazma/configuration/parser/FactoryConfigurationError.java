@@ -1,15 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.dcache.gplazma.configuration.parser;
 
-/**
- *
- * @author timur
- */
-public class FactoryConfigurationError  extends Error{
+public class FactoryConfigurationError  extends Error
+{
+    static final long serialVersionUID = -465585959811498555L;
 
     public FactoryConfigurationError(String msg) {
         super(msg);
@@ -18,6 +11,4 @@ public class FactoryConfigurationError  extends Error{
     public FactoryConfigurationError(String msg, Throwable cause) {
         super(msg, cause);
     }
-
-
 }
