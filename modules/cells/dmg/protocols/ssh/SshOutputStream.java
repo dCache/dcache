@@ -1,46 +1,54 @@
 package dmg.protocols.ssh ;
 
-import java.net.* ;
 import java.io.* ;
-import java.util.* ;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SshOutputStream extends OutputStream {
 
+   private static final Logger _log = LoggerFactory.getLogger(SshOutputStream.class);
+
    private SshStreamEngine _core =  null ;
    private int             _mode ;
- 
+
    public SshOutputStream( SshStreamEngine core ){
        _core = core ;
        _mode = _core.getMode() ;
    }
+
+   @Override
    public void write( int out ) throws IOException {
-      _core.printout( "SshOutputStream : write( int "+out+" )" ) ;
+      _log.debug("write( int {} )", out);
       byte [] x = new byte[1] ;
       x[0] = (byte) out ;
       write( x , 0 , 1 ) ;
       return ;
    }
+   @Override
    public void write( byte [] a , int off , int len )
           throws IOException {
-          
+
       if( ! _core.isActive() )throw new IOException( "Stream not Active" ) ;
-      
+
       if( _mode == SshStreamEngine.SERVER_MODE ){
-          _core.printout( "SshOutputStream (s) : write( byte [] a , int off , int "+len+" )" ) ;
-         _core.sendStdout( a , off , len ) ;    
+         _log.debug("server-mode: write(byte [] a, int off, int {})", len);
+         _core.sendStdout( a , off , len ) ;
       }else{
-         _core.printout( "SshOutputStream (c) : write( byte [] a , int off , int "+len+" )" ) ;
-         _core.sendStdin( a , off , len ) ;   
-      } 
-          
+         _log.debug("client-mode: write(byte [] a, int off, int {})", len);
+         _core.sendStdin( a , off , len ) ;
+      }
+
    }
+   @Override
    public void write( byte [] a ) throws IOException {
-      _core.printout( "SshOutputStream : write( byte [] a )" ) ;
+      _log.debug("write( byte [] a )");
       write( a , 0 , a.length ) ;
    }
+   @Override
    public void close() throws IOException {
-      _core.printout( "SshOutputStream : close()" ) ;
+      _log.debug("close()");
       _core.close() ;
    }
- 
+
 }
