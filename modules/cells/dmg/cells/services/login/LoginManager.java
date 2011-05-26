@@ -762,7 +762,7 @@ public void cleanUp(){
                 synchronized( _childHash ){ _childCount ++; }
                _nucleus.newThread(
                    new RunEngineThread(socket) ,
-                   "ClinetThread-" + socket.getInetAddress() + ":" + socket.getPort()    ).start() ;
+                   "ClientThread-" + socket.getInetAddress() + ":" + socket.getPort()    ).start() ;
 
             }catch( InterruptedIOException ioe ){
                _log.warn("Listen thread interrupted") ;
