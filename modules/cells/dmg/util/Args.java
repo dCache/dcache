@@ -77,6 +77,32 @@ public class Args
         return getOption(name);
     }
 
+    public double getDoubleOption(String name)
+    {
+        String option = getOption(name);
+
+        if (option == null) {
+            throw new NoSuchElementException("Argument "
+                                             + name + " does not exist.");
+        }
+
+        return Double.parseDouble(name);
+    }
+
+    public double getDoubleOption(String name, double defaultValue)
+    {
+        String option = getOption(name);
+
+        if (option == null) {
+            return defaultValue;
+        } else if (option.isEmpty()) {
+            throw new IllegalArgumentException("Argument " + name +
+                                               " does not have a value.");
+        } else {
+            return Double.parseDouble(option);
+        }
+    }
+
     public int getIntOption(String name)
     {
         String option = getOption(name);

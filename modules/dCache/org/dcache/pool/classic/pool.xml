@@ -169,11 +169,13 @@
     <property name="pnfs" ref="pnfs"/>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
+    <property name="scrubberStateFile" value="${pooldir}/scrubber.state"/>
   </bean>
 
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
     <description>Checksum module</description>
     <constructor-arg ref="pnfs"/>
+    <property name="checksumScanner" ref="scanner"/>
   </bean>
 
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">

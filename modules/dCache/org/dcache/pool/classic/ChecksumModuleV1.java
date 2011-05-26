@@ -13,6 +13,7 @@ import org.dcache.namespace.FileAttribute;
 import dmg.util.Args;
 
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,7 +29,8 @@ public class ChecksumModuleV1
     private final static Logger _log =
         LoggerFactory.getLogger(ChecksumModuleV1.class);
 
-    private boolean _frequently = false;
+    public final static long BYTES_IN_MEBIBYTE = 1024 * 1024;
+
     private boolean _onRead     = false;
     private boolean _onWrite    = false;
     private boolean _onTransfer = false;
@@ -37,10 +39,12 @@ public class ChecksumModuleV1
     private boolean _enforceCRC = false;
     private boolean _updatepnfs = false;
 
-    private long    _delayFile    =  1000L;
-    private long    _scanEvery    =  24L;
+    private volatile boolean _scrub           = false;
+    private volatile double  _throughputLimit = Double.POSITIVE_INFINITY;
+    private volatile long    _scrubPeriod     = TimeUnit.HOURS.toMillis(24L);
 
     private ChecksumFactory _defaultChecksumFactory = null;
+    private ChecksumScanner _scanner = null;
 
     private final PnfsHandler _pnfs;
 
@@ -66,6 +70,11 @@ public class ChecksumModuleV1
             }
         }
         return null;
+    }
+
+    public void setChecksumScanner(ChecksumScanner scanner)
+    {
+        _scanner = scanner;
     }
 
     public void setMoverChecksums(PnfsId id,
@@ -117,12 +126,12 @@ public class ChecksumModuleV1
     public void printSetup(PrintWriter pw)
     {
         pw.println("csm set checksumtype "+_defaultChecksumFactory.getType());
-        if (_frequently) {
-            pw.print("csm set policy -frequently=on");
-            pw.print(" -filedelay="+_delayFile);
-            pw.println(" -every="+_scanEvery);
+        if (_scrub) {
+            pw.print("csm set policy -scrub=on");
+            pw.print(" -limit="+_throughputLimit / BYTES_IN_MEBIBYTE);
+            pw.println(" -period="+TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
         } else {
-            pw.println("csm set policy -frequently=off");
+            pw.println("csm set policy -scrub=off");
         }
         pw.print("csm set policy");
         pw.print(" -onread="); pw.print(_onRead?"on":"off");
@@ -133,6 +142,21 @@ public class ChecksumModuleV1
         pw.print(" -enforcecrc="); pw.print(_enforceCRC?"on":"off");
         pw.print(" -getcrcfromhsm="); pw.print(_updatepnfs?"on":"off");
         pw.println("");
+    }
+
+    public long getScrubPeriod()
+    {
+        return _scrubPeriod;
+    }
+
+    public double getThroughputLimit()
+    {
+        return _throughputLimit;
+    }
+
+    public boolean getScrub()
+    {
+        return _scrub;
     }
 
     public boolean checkOnRead()
@@ -184,11 +208,11 @@ public class ChecksumModuleV1
             pw.print("enforceCRC ");
         if (_updatepnfs)
             pw.print("getcrcfromhsm ");
-        if (_frequently) {
-            pw.print("frequently(");
-            pw.print(_delayFile);
+        if (_scrub) {
+            pw.print("scrub(");
+            pw.print(_throughputLimit / BYTES_IN_MEBIBYTE);
             pw.print(",");
-            pw.print(_scanEvery);
+            pw.print(TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
             pw.print(")");
         }
         pw.println("");
@@ -211,11 +235,11 @@ public class ChecksumModuleV1
             append("     on restore : ").append(_onRestore).append("\n").
             append("    on transfer : ").append(_onTransfer).append("\n").
             append("    enforce crc : ").append(_enforceCRC).append("\n").
-            append("     getcrcfromhsm : ").append(_updatepnfs).append("\n").
-            append("     frequently : ").append(_frequently).append("\n");
-        if (_frequently) {
-            sb.append("         file delay = ").append(_delayFile).append(" millis\n").
-                append("             every  = ").append(_scanEvery).append(" hours\n");
+            append("  getcrcfromhsm : ").append(_updatepnfs).append("\n").
+            append("          scrub : ").append(_scrub).append("\n");
+        if (_scrub) {
+            sb.append("             limit  = ").append(_throughputLimit / BYTES_IN_MEBIBYTE).append(" MiB/s\n").
+               append("             period = ").append(TimeUnit.MILLISECONDS.toHours(_scrubPeriod)).append(" hours\n");
         }
         return sb.toString();
     }
@@ -225,10 +249,10 @@ public class ChecksumModuleV1
         "  Syntax : csm set policy [-<option>=on[|off]] ...\n"+
         "\n"+
         "    OPTIONS :\n"+
-        "       -frequently      :  run a permanent scan (suboptions :)\n"+
+        "       -scrub:  scrub pool data regularly (suboptions :)\n"+
         "\n"+
-        "            -filedelay=<millisec's> :  time delay between file scan\n"+
-        "            -every=<hours>          :  run full scan every 'n' hours\n"+
+        "            -limit=<MiB/s>  :  checksum computation throughput limit\n"+
+        "            -period=<hours> :  run scrubber every 'n' hours\n"+
         "\n"+
         "       -onread          : run check before each open for reading\n"+
         "       -onwrite         : run check after receiving the file from client (on fs)\n"+
@@ -241,7 +265,7 @@ public class ChecksumModuleV1
 
     public String ac_csm_set_policy_$_0(Args args)
     {
-        _frequently = checkBoolean(args, "frequently" , _frequently);
+        _scrub      = checkBoolean(args, "scrub"      , _scrub);
         _onRead     = checkBoolean(args, "onread"     , _onRead);
         _onWrite    = checkBoolean(args, "onwrite"    , _onWrite);
         _onFlush    = checkBoolean(args, "onflush"    , _onFlush);
@@ -250,14 +274,28 @@ public class ChecksumModuleV1
         _enforceCRC = checkBoolean(args, "enforcecrc" , _enforceCRC);
         _updatepnfs = checkBoolean(args, "getcrcfromhsm" , _updatepnfs);
 
-        String value = args.getOpt("filedelay");
+        double limit =
+            args.getDoubleOption("limit",
+                                 _throughputLimit / BYTES_IN_MEBIBYTE)
+                                 * BYTES_IN_MEBIBYTE;
+        if (limit <= 0) {
+            throw new IllegalArgumentException("Throughput limit must be > 0");
+        }
+        _throughputLimit = limit;
+
+        String value = args.getOpt("period");
         if (value != null) {
-            _delayFile = Long.parseLong(value);
+            long period = TimeUnit.HOURS.toMillis(Integer.parseInt(value));
+            if (period <= 0) {
+                throw new IllegalArgumentException("Scrub interval must be > 0");
+            }
+            _scrubPeriod = period;
         }
 
-        value = args.getOpt("every");
-        if (value != null) {
-            _scanEvery = Integer.parseInt(value);
+        if (_scrub) {
+            _scanner.startScrubber();
+        } else {
+            _scanner.stopScrubber();
         }
 
         return (args.getOpt("v") == null) ? "" : getPolicies();
