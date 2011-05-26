@@ -38,6 +38,7 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import com.google.common.base.Objects;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
@@ -64,8 +65,8 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     private int uid;
     private List<GroupList> groupLists;
     private int priority = 0;
-    private String home = null;
-    private String root = null;
+    private String home = "/";
+    private String root = "/";
     private boolean readOnly = false;
     private int currentGIDindex=0;
     private String authn = null;
@@ -170,9 +171,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
 
         setGroupLists(groupLists);
 
-        setRoot("/");
-        setHome("/");
-
         for (LoginAttribute attribute: login.getLoginAttributes()) {
             if (attribute instanceof RootDirectory) {
                 setRoot(((RootDirectory) attribute).getRoot());
@@ -268,6 +266,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     public void setHome(String Home) {
+        checkNotNull(Home);
         this.home = Home;
     }
 
@@ -278,6 +277,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     public void setRoot(String Root) {
+        checkNotNull(Root);
         this.root = Root;
     }
 

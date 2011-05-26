@@ -2,6 +2,8 @@ package org.dcache.auth.attributes;
 
 import java.io.Serializable;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Encapsulation of a user's home. Used as session data of a
  * LoginReply.
@@ -14,6 +16,7 @@ public class HomeDirectory implements LoginAttribute, Serializable
 
     public HomeDirectory(String home)
     {
+        checkNotNull(home);
         _home = home;
     }
 
