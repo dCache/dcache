@@ -35,7 +35,7 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmStatusOfReserveSpaceRequest {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmStatusOfReserveSpaceRequest.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
@@ -44,14 +44,14 @@ public class SrmStatusOfReserveSpaceRequest {
     SRMUser             user;
     RequestCredential       credential;
     Configuration           configuration;
-    
+
     public SrmStatusOfReserveSpaceRequest(SRMUser user,
             RequestCredential credential,
             SrmStatusOfReserveSpaceRequestRequest request,
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -67,7 +67,7 @@ public class SrmStatusOfReserveSpaceRequest {
             throw new NullPointerException("configuration is null");
         }
     }
-    
+
     public SrmStatusOfReserveSpaceRequestResponse getResponse() {
         if(response != null ) return response;
         try {
@@ -79,19 +79,19 @@ public class SrmStatusOfReserveSpaceRequest {
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
-        }        
+        }
         return response;
     }
-    
+
     public static final SrmStatusOfReserveSpaceRequestResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmStatusOfReserveSpaceRequestResponse getFailedResponse(String text, TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;
         }
-        
+
         SrmStatusOfReserveSpaceRequestResponse response = new SrmStatusOfReserveSpaceRequestResponse();
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
@@ -102,9 +102,9 @@ public class SrmStatusOfReserveSpaceRequest {
     /**
      * implementation of srm getStatusOfReserveSpaceRequest
      */
-    
-    public SrmStatusOfReserveSpaceRequestResponse reserveSpaceStatus() 
-        throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+
+    public SrmStatusOfReserveSpaceRequestResponse reserveSpaceStatus()
+        throws SRMException, MalformedURIException {
         try {
             if(request==null) {
                 return getFailedResponse(
@@ -143,6 +143,6 @@ public class SrmStatusOfReserveSpaceRequest {
                    TStatusCode.SRM_INTERNAL_ERROR);
        }
    }
-    
-    
+
+
 }

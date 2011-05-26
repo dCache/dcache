@@ -58,7 +58,8 @@
     <!-- debian package with debian compliant file structure -->
     <target name="server-fhs.deb"
             depends="install-server-fhs,-server.deb-common"
-        description="Build a Debian FHS policy compliant dcache-server-xxx.deb">
+        description="Build a Debian FHS policy compliant dcache-xxx.deb">
+
         <tstamp>
             <format property="quilt-timestamp-orig" offset="-5" unit="second" pattern="yyyy-MM-dd HH:mm:ss" />
         </tstamp>
@@ -66,12 +67,11 @@
             <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
         </tstamp>
 
-        <!-- copy the copyright and compat from the server folder (same for
-              all types of packages) -->
         <copy todir="${server.debControlDir}" overwrite="true">
+            <!-- copy the copyright and compat from the server folder
+                 (same for all types of packages) -->
             <filelist dir="${server.debTemplateDir}"
-                      files="changelog.template,
-                             compat.template,
+                      files="compat.template,
                              copyright.template" />
             <fileset dir="${server.debFHSTemplateDir}">
                 <filename name="*.template" />
@@ -82,19 +82,21 @@
                 <filter token="MaintainerName" value="${server.debMaintainer}" />
                 <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
                 <filter token="Timestamp" value="${timestamp}" />
-                <filter token="PackageName" value="${server.packageName}" />
+                <filter token="PackageName" value="${server.fhsPackageName}" />
             </filterset>
         </copy>
 
         <chmod file="${server.debControlDir}/rules" perm="0755" />
 
+        <move file="${server.debDistDir}" tofile="${server.debFhsDistDir}"/>
+
         <exec executable="dpkg-buildpackage" failonerror="true"
-              dir="${server.debDistDir}">
+              dir="${server.debFhsDistDir}">
             <!--  don't produce any source packages  -->
             <arg line="-rfakeroot -uc -A" />
         </exec>
 
         <!--  delete temporary files -->
-        <delete dir="${server.debDistDir}" />
+        <delete dir="${server.debFhsDistDir}" />
     </target>
 </project>

@@ -3,8 +3,6 @@ package org.dcache.pool.repository;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
 
 import dmg.util.Args;
 import dmg.util.Formats;
@@ -15,6 +13,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +55,9 @@ public class RepositoryInterpreter
 
         long expire = -1;
         if (args.getOpt("l") != null) {
-            expire =
-                System.currentTimeMillis() + Long.parseLong(args.getOpt("l"));
+            long argValue = Long.parseLong(args.getOpt("l"));
+            checkArgument(argValue > 0, "the -l option must be a positive integer.");
+            expire = System.currentTimeMillis() + argValue;
         }
 
         if (state.equals("on")) {
@@ -143,6 +144,7 @@ public class RepositoryInterpreter
                     }
                 }
 
+                @Override
                 public void run()
                 {
                     try {

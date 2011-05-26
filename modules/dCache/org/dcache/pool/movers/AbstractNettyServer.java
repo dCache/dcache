@@ -19,11 +19,11 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 
 /**
- * Abstract base class for all netty servers running on the pool dispatching
- * movers. This class provides already most methods needed by a pool-side
- * netty mover. Minimally, extending classes need to provide their own
- * channel-pipelines, their port-range and the logic used for starting/stopping
- * the server.
+ * Abstract base class for all netty servers running on the pool
+ * dispatching movers. This class provides most methods needed by a
+ * pool-side netty mover. Minimally, extending classes need to provide
+ * their own channel-pipelines, their port-range and the logic used
+ * for starting/stopping the server.
  *
  * @author tzangerl
  *
@@ -54,7 +54,7 @@ public abstract class AbstractNettyServer<T>
     /**
      * Shared Netty server channel
      */
-    private static Channel _serverChannel;
+    private Channel _serverChannel;
 
     /**
      * Shared Netty channel factory.

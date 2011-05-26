@@ -73,13 +73,13 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
             final String root = stripQuotes(matcher.group(UM_ROOT_GROUP));
             final String fsroot = stripQuotes(matcher.group(UM_FS_ROOT_GROUP));
 
-            return new SimpleImmutableEntry(new StringPredicate(key), new UserAuthzInformation( key, access, Long.parseLong(uid), gids, home, root, fsroot ) );
+            return new SimpleImmutableEntry<StringPredicate,UserAuthzInformation>(new StringPredicate(key), new UserAuthzInformation(key, access, Long.parseLong(uid), gids, home, root, fsroot));
         }
         _log.warn("Ignored malformed line in AuthzDB-File: '{}'", line);
         return null;
     }
 
-    class StringPredicate implements MapPredicate<String> {
+    public static class StringPredicate implements MapPredicate<String> {
 
         private final String _string;
 
@@ -93,7 +93,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         }
     }
 
-    static class UserAuthzInformation
+    public static class UserAuthzInformation
     {
         private final String _username;
         private final String _access;

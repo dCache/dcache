@@ -1,10 +1,9 @@
 package org.dcache.gplazma.configuration.parser;
 
-/**
- *
- * @author timur
- */
-public class ParseException extends RuntimeException {
+public class ParseException extends RuntimeException
+{
+    static final long serialVersionUID = 8146460786081822785L;
+
     private int offset =-1;
 
     public ParseException(String message) {

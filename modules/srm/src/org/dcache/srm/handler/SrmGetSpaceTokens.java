@@ -22,7 +22,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
-import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +33,9 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmGetSpaceTokens {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmGetSpaceTokens.class);
-       
+
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
     SrmGetSpaceTokensRequest  request;
@@ -44,14 +43,14 @@ public class SrmGetSpaceTokens {
     SRMUser             user;
     RequestCredential       credential;
     Configuration           configuration;
-    
+
     public SrmGetSpaceTokens(SRMUser user,
             RequestCredential credential,
             SrmGetSpaceTokensRequest request,
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -67,7 +66,7 @@ public class SrmGetSpaceTokens {
             throw new NullPointerException("configuration is null");
         }
     }
-    
+
     public SrmGetSpaceTokensResponse getResponse() {
         if(response != null ) return response;
         try {
@@ -82,16 +81,16 @@ public class SrmGetSpaceTokens {
         }
         return response;
     }
-    
+
     public static final SrmGetSpaceTokensResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmGetSpaceTokensResponse getFailedResponse(String text, TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;
         }
-        
+
         SrmGetSpaceTokensResponse response = new SrmGetSpaceTokensResponse();
         TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
@@ -103,8 +102,8 @@ public class SrmGetSpaceTokens {
     /**
      * implementation of srm SrmGetSpaceMetaData
      */
-    
-    public SrmGetSpaceTokensResponse srmGetSpaceTokens() 
+
+    public SrmGetSpaceTokensResponse srmGetSpaceTokens()
         throws SRMException,MalformedURIException {
         if(request==null) {
             return getFailedResponse(
@@ -127,6 +126,6 @@ public class SrmGetSpaceTokens {
 
         return response;
    }
-    
-    
+
+
 }

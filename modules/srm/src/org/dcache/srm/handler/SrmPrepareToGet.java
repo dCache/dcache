@@ -114,7 +114,7 @@ public class SrmPrepareToGet {
      * implementation of srm ls
      */
     public SrmPrepareToGetResponse srmPrepareToGet()
-    throws SRMException,org.apache.axis.types.URI.MalformedURIException {
+    throws SRMException,MalformedURIException {
         String [] protocols = null;
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfTransferProtocols() != null ) {

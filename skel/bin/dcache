@@ -43,6 +43,7 @@ usage()
     echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
     echo "                   [--out=<file>] [--password=<password>]"
     echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
+    echo "   kpwd <command> [-debug] [<command argument>]..."
     echo "   pool create [--meta=file|db] [--size=<bytes>]"
     echo "               [--lfs=none|precious|volatile|transient]"
     echo "               <directory> <name> <domain>"
@@ -251,6 +252,32 @@ checkForNonMigratedDcache()
     fi
 }
 
+# Checks for the existing of OOM heap dump files and generates
+# a warning for each file.
+checkForHeapDumpFiles()
+{
+    local file
+    local domain
+    for domain in $(getProperty dcache.domains); do
+        file=$(getProperty dcache.java.oom.file "$domain")
+        if [ -e "$file" ]; then
+            printp "A heap dump file, $file, was found for domain
+                    $domain. The file was generated
+     $(if type stat > /dev/null 2>&1; then echo at $(stat -c '%x' "$file"); fi)
+                    as a result of an out of memory failure in the domain." \
+                    "The dump contains debugging information that may
+                    help a developer determine the cause of high memory
+                    usage. Please note that the dump may contain
+                    confidential information." \
+                    "As long as the file exists no other dumps
+                    will be generated on out of memory failures. Please
+                    move or delete $file. Consider increasing the
+                    dcache.java.memory.heap property. The current value
+                    is $(getProperty dcache.java.memory.heap "$domain")."
+            echo
+        fi
+    done
+}
 
 # Parse global options
 parseOptions "d" "$@" || shift $?
@@ -285,6 +312,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForHeapDumpFiles
         domains=$(printDomains "$@")
         for domain in $domains; do
             domainStart $domain || :
@@ -306,6 +334,8 @@ case "$1" in
         done
 
         rm -f "$(getProperty dcache.paths.lock.file)"
+
+        checkForHeapDumpFiles
         ;;
 
     restart)
@@ -314,6 +344,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForHeapDumpFiles
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -332,6 +363,7 @@ case "$1" in
         . ${DCACHE_LIB}/utils.sh
         . ${DCACHE_LIB}/services.sh
         checkForNonMigratedDcache
+        checkForHeapDumpFiles
         domains=$(printDomains "$@")
 
         reverse domains_backward $domains
@@ -363,6 +395,7 @@ case "$1" in
                 printf "${domain}\t${status}\t${pid}\t${user}\n"
             done
         ) | column
+        checkForHeapDumpFiles
         ;;
 
     services)
@@ -600,6 +633,28 @@ case "$1" in
                 usage
                 ;;
         esac
+        ;;
+
+    kpwd)
+        shift
+
+        loadConfig
+        . ${DCACHE_LIB}/utils.sh
+        checkForNonMigratedDcache
+
+        if [ $# -eq 0 ]; then
+            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile
+        else
+            command="$1"
+            shift
+
+            kpwdFile="$(getProperty kpwdFile)"
+            if [ ! -e "$kpwdFile" ]; then
+                touch "$kpwdFile"
+            fi
+
+            CLASSPATH="$(getProperty dcache.paths.classpath)" "$JAVA" org.dcache.auth.KAuthFile "$command" "$(getProperty kpwdFile)" "$@"
+        fi
         ;;
 
     database)

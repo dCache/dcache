@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
+
 /**
  *
  * @author timur
@@ -24,68 +28,48 @@ public class AccountStrategyTests {
             "org.dcache.gplazma.strategies.DefaultStrategyFactory";
     private StrategyFactory strategyFactory;
 
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> empltyList =
-            new ArrayList();
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> emptyList =
+            Lists.newArrayList();
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] oneDoNopthingPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> oneDoNothingPlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),REQUIRED));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] successRequiredPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successRequiredPlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUIRED));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] successOptionalPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),OPTIONAL),
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),OPTIONAL)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successOptionalPlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),OPTIONAL),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),OPTIONAL));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] successRequisitePluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),REQUISITE)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successRequisitePlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),REQUISITE),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUISITE));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] successSufficientPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new DoNotingStrategy(),SUFFICIENT),
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),SUFFICIENT)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> successSufficientPlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new DoNothingStrategy(),SUFFICIENT),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),SUFFICIENT));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] failedPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),REQUIRED)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> failedPlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUIRED));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] testOptionalFailingPluginArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),OPTIONAL)
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testOptionalFailingPlugins =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),OPTIONAL));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] testRequesitePluginArray1 =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testRequesitePlugins1 =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUISITE),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] testRequesitePluginArray2 =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
-            new GPlazmaPluginElement(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> testRequesitePlugins2 =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowTestAuthenticationExceptionStrategy(),REQUIRED),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowAuthenticationExceptionStrategy(),REQUISITE),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED));
 
-    private GPlazmaPluginElement<GPlazmaAccountPlugin>[] sufficientPluginFollowedByFailedArray =
-        new GPlazmaPluginElement[] {
-            new GPlazmaPluginElement(new AlwaysAccountStrategy(),SUFFICIENT),
-            new GPlazmaPluginElement(new ThrowRuntimeExceptionStrategy(),REQUIRED),
-    };
+    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>> sufficientPluginFollowedByFailedArray =
+        ImmutableList.of(new GPlazmaPluginElement<GPlazmaAccountPlugin>(new AlwaysAccountStrategy(),SUFFICIENT),
+                         new GPlazmaPluginElement<GPlazmaAccountPlugin>(new ThrowRuntimeExceptionStrategy(),REQUIRED));
 
     @Before
     public void setUp() {
@@ -112,10 +96,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(empltyList);
+        strategy.setPlugins(emptyList);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -126,10 +110,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(oneDoNopthingPluginArray));
+        strategy.setPlugins(oneDoNothingPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -140,10 +124,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(failedPluginArray));
+        strategy.setPlugins(failedPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -154,10 +138,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successRequiredPluginArray));
+        strategy.setPlugins(successRequiredPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -168,10 +152,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successRequisitePluginArray));
+        strategy.setPlugins(successRequisitePlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -181,10 +165,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successOptionalPluginArray));
+        strategy.setPlugins(successOptionalPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -195,10 +179,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(successSufficientPluginArray));
+        strategy.setPlugins(successSufficientPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -212,16 +196,16 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(sufficientPluginFollowedByFailedArray));
+        strategy.setPlugins(sufficientPluginFollowedByFailedArray);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
 
     /**
-     * Failing plugin is optional in testOptionalPluginArray
+     * Failing plugin is optional in testOptionalPlugins
      * So overall authenticate should succeed
      * @throws org.dcache.gplazma.AuthenticationException
      */
@@ -231,10 +215,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testOptionalFailingPluginArray));
+        strategy.setPlugins(testOptionalFailingPlugins);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -251,10 +235,10 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testRequesitePluginArray1));
+        strategy.setPlugins(testRequesitePlugins1);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
@@ -271,15 +255,15 @@ public class AccountStrategyTests {
         AccountStrategy strategy =
                 strategyFactory.newAccountStrategy();
         assertNotNull(strategy);
-        strategy.setPlugins(Arrays.asList(testRequesitePluginArray2));
+        strategy.setPlugins(testRequesitePlugins2);
         TestSessionId sessionId = new TestSessionId();
         sessionId.setSessionID(Integer.valueOf(0));
-        Set<Principal> authorizedPrincipals = new HashSet();
+        Set<Principal> authorizedPrincipals = Sets.newHashSet();
         strategy.account(sessionId,
                 authorizedPrincipals);
     }
 
-    private static final class DoNotingStrategy
+    private static final class DoNothingStrategy
             implements GPlazmaAccountPlugin {
 
         public void account(SessionID sID,

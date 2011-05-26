@@ -24,7 +24,6 @@ import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.sql.ReserveSpaceRequestStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.Scheduler;
-import org.apache.axis.types.URI;
 import org.dcache.srm.SRMProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,7 @@ import org.apache.axis.types.URI.MalformedURIException;
  */
 
 public class SrmReserveSpace {
-    private static Logger logger = 
+    private static Logger logger =
             LoggerFactory.getLogger(SrmReserveSpace.class);
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement  storage;
@@ -46,14 +45,14 @@ public class SrmReserveSpace {
     RequestCredential       credential;
     Configuration           configuration;
     private String client_host;
-    
+
     public SrmReserveSpace(SRMUser user,
             RequestCredential credential,
             SrmReserveSpaceRequest request,
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
-        
+
         if (request == null) {
             throw new NullPointerException("request is null");
         }
@@ -70,7 +69,7 @@ public class SrmReserveSpace {
         }
         this.client_host = client_host;
     }
-    
+
     public SrmReserveSpaceResponse getResponse() {
         if(response != null ) return response;
         try {
@@ -85,16 +84,16 @@ public class SrmReserveSpace {
         }
         return response;
     }
-    
+
     public static final SrmReserveSpaceResponse getFailedResponse(String text) {
         return getFailedResponse(text,null);
     }
-    
+
     public static final SrmReserveSpaceResponse getFailedResponse(String text, TStatusCode statusCode) {
         if(statusCode == null) {
             statusCode = TStatusCode.SRM_FAILURE;
         }
-        
+
         SrmReserveSpaceResponse response = new SrmReserveSpaceResponse();
         TReturnStatus returnStatus    = new TReturnStatus();
         TReturnStatus status = new TReturnStatus();
@@ -106,8 +105,8 @@ public class SrmReserveSpace {
     /**
      * implementation of srm reserve space
      */
-    
-    public SrmReserveSpaceResponse reserveSpace() 
+
+    public SrmReserveSpaceResponse reserveSpace()
         throws SRMException,MalformedURIException {
         if(request==null) {
             return getFailedResponse("srmReserveSpace: null request passed to SrmReserveSpace",
@@ -126,12 +125,12 @@ public class SrmReserveSpace {
             return getFailedResponse("srmReserveSpace: retentionPolicy == null",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        
+
         accessLatency = retentionPolicyInfo.getAccessLatency();
         String description = request.getUserSpaceTokenDescription();
         long lifetimeInSeconds;
-        if ( request.getDesiredLifetimeOfReservedSpace() != null ) { 
-             if ( request.getDesiredLifetimeOfReservedSpace().intValue() ==-1 || 
+        if ( request.getDesiredLifetimeOfReservedSpace() != null ) {
+             if ( request.getDesiredLifetimeOfReservedSpace().intValue() ==-1 ||
                  request.getDesiredLifetimeOfReservedSpace().intValue() >0 ) {
                 lifetimeInSeconds = request.getDesiredLifetimeOfReservedSpace().intValue();
              } else {
@@ -152,7 +151,7 @@ public class SrmReserveSpace {
             requestLifetime = lifetimeInSeconds;
         }
        try {
-           ReserveSpaceRequest reserveRequest  = 
+           ReserveSpaceRequest reserveRequest  =
                new ReserveSpaceRequest(
                 credential.getId(),
                 user,
@@ -164,7 +163,7 @@ public class SrmReserveSpace {
                 accessLatency,
                 description,
                client_host);
-           
+
             reserveRequest.schedule();
          return reserveRequest.getSrmReserveSpaceResponse();
        }
@@ -174,6 +173,6 @@ public class SrmReserveSpace {
                    TStatusCode.SRM_INTERNAL_ERROR);
        }
    }
-    
-    
+
+
 }

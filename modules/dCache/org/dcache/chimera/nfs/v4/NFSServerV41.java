@@ -77,7 +77,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                     new String(arg1.tag.value.value));
 
             MDC.put(NfsMdc.TAG, new String(arg1.tag.value.value) );
-            MDC.put(NfsMdc.CLIENT, call$.getTransport().getRemoteSocketAddress().getHostName());
+            MDC.put(NfsMdc.CLIENT, call$.getTransport().getRemoteSocketAddress().toString());
 
             List<nfs_resop4> v = new ArrayList<nfs_resop4>(arg1.argarray.length);
             if (arg1.minorversion.value > 1) {

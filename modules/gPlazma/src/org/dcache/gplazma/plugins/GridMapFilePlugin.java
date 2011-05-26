@@ -63,7 +63,7 @@ public class GridMapFilePlugin
                     } else {
                         continue;
                     }
-                    return new SimpleImmutableEntry(principal, name);
+                    return new SimpleImmutableEntry<Principal,String>(principal, name);
                 }
             }
         }

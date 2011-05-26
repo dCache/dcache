@@ -232,7 +232,7 @@ public final class GetFileRequest extends FileRequest {
     }
 
     public final String getSurlString() {
-        return getSurl().toString();
+        return getSurl().toASCIIString();
     }
 
     public String getTurlString()  {
@@ -272,7 +272,7 @@ public final class GetFileRequest extends FileRequest {
             }
 
             if(getTurl()!= null) {
-                return getTurl().toString();
+                return getTurl().toASCIIString();
             }
         } finally {
             wunlock();
