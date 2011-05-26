@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.SyncFailedException;
 import java.util.List;
 import java.util.Collections;
+import javax.security.auth.Subject;
 import org.dcache.pool.movers.IoMode;
 
 import org.slf4j.Logger;
@@ -74,6 +75,7 @@ public class PoolIOWriteTransfer
 
     public PoolIOWriteTransfer(PnfsId pnfsId,
                                ProtocolInfo protocolInfo,
+                               Subject subject,
                                StorageInfo storageInfo,
                                MoverProtocol mover,
                                Repository repository,
@@ -82,7 +84,7 @@ public class PoolIOWriteTransfer
                                List<StickyRecord> stickyRecords)
         throws FileInCacheException, IOException
     {
-        super(pnfsId, protocolInfo, storageInfo, mover);
+        super(pnfsId, protocolInfo, subject, storageInfo, mover);
 
         _checksumModule = checksumModule;
         _handle = repository.createEntry(pnfsId,

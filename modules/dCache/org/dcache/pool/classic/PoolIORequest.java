@@ -90,6 +90,8 @@ public class PoolIORequest implements IoProcessable {
         MoverInfoMessage info =
                 new MoverInfoMessage(_cellEndpoint.getCellInfo().getCellName() + "@" + _cellEndpoint.getCellInfo().getDomainName(),
                 getPnfsId());
+
+        info.setSubject(_transfer.getSubject());
         info.setInitiator(_initiator);
         info.setFileCreated(_transfer instanceof PoolIOWriteTransfer);
         info.setStorageInfo(getStorageInfo());

@@ -11,6 +11,7 @@ import org.dcache.pool.movers.MoverProtocol;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
+import javax.security.auth.Subject;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
@@ -26,12 +27,13 @@ public class PoolIOReadTransfer
 
     public PoolIOReadTransfer(PnfsId pnfsId,
                               ProtocolInfo protocolInfo,
+                              Subject subject,
                               StorageInfo storageInfo,
                               MoverProtocol mover,
                               Repository repository)
         throws CacheException, InterruptedException
     {
-        super(pnfsId, protocolInfo, storageInfo, mover);
+        super(pnfsId, protocolInfo, subject, storageInfo, mover);
         _handle = repository.openEntry(pnfsId);
         _size = _handle.getFile().length();
     }

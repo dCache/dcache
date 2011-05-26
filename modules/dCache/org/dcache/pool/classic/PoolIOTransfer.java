@@ -9,6 +9,7 @@ import org.dcache.pool.movers.MoverProtocol;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.io.IOException;
+import javax.security.auth.Subject;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
@@ -33,14 +34,17 @@ public abstract class PoolIOTransfer
     protected final PnfsId _pnfsId;
     protected final ProtocolInfo _protocolInfo;
     protected final StorageInfo _storageInfo;
+    protected final Subject _subject;
 
     public PoolIOTransfer(PnfsId pnfsId,
                           ProtocolInfo protocolInfo,
+                          Subject subject,
                           StorageInfo storageInfo,
                           MoverProtocol mover)
     {
         _pnfsId = pnfsId;
         _protocolInfo = protocolInfo;
+        _subject = subject;
         _storageInfo = storageInfo;
         _mover = mover;
     }
@@ -119,6 +123,10 @@ public abstract class PoolIOTransfer
         throws CacheException, InterruptedException,
                IOException, NoRouteToCellException;
 
+    public Subject getSubject()
+    {
+        return _subject;
+    }
     /**
      * Returns the size of the replica that was transferred. Must not
      * be called before <code>close</code>.

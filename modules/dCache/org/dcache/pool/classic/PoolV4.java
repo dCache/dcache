@@ -90,6 +90,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 import java.util.Arrays;
+import javax.security.auth.Subject;
 import org.dcache.util.IoPriority;
 
 public class PoolV4
@@ -668,6 +669,7 @@ public class PoolV4
         try {
             long id = message.getId();
             ProtocolInfo pi = message.getProtocolInfo();
+            Subject subject = message.getSubject();
             StorageInfo si = message.getStorageInfo();
             String initiator = message.getInitiator();
             String pool = message.getPoolName();
@@ -718,12 +720,12 @@ public class PoolV4
                 EntryState targetState =
                     _replicaStatePolicy.getTargetState(si);
                 transfer =
-                    new PoolIOWriteTransfer(pnfsId, pi, si, mover, _repository,
+                    new PoolIOWriteTransfer(pnfsId, pi, subject, si, mover, _repository,
                                             _checksumModule,
                                             targetState, stickyRecords);
             } else {
                 transfer =
-                    new PoolIOReadTransfer(pnfsId, pi, si, mover, _repository);
+                    new PoolIOReadTransfer(pnfsId, pi, subject, si, mover, _repository);
             }
             try {
                 source.revert();

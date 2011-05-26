@@ -1,7 +1,7 @@
 // $Id: MoverInfoMessage.java,v 1.5 2006-04-11 09:47:53 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
+import javax.security.auth.Subject;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
 
@@ -11,6 +11,8 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    private ProtocolInfo _protocolInfo = null ;
    private boolean      _fileCreated  = false ;
    private String _initiator = "<undefined>";
+    private String _client = "unknown";
+    private Subject _subject = new Subject();
    
    private static final long serialVersionUID = -7013160118909496211L;
    
@@ -34,10 +36,19 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    public String getInitiator() {
        return _initiator;
    }
+
    public long getDataTransferred(){ return _dataTransferred ; }
    public long getConnectionTime(){ return _connectionTime ; }
    public boolean isFileCreated(){ return _fileCreated ; }
    public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }
+    public Subject getSubject() {
+        return _subject;
+    }
+
+    public void setSubject(Subject subject) {
+        _subject = subject;
+    }
+
    public String toString(){
       return getInfoHeader()+" "+
              getFileInfo()+" "+
