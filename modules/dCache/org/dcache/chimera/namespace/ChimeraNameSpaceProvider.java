@@ -3,9 +3,7 @@
  */
 package org.dcache.chimera.namespace;
 
-import com.mchange.v2.c3p0.DataSources;
 import java.io.File;
-import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -43,7 +41,6 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.util.Args;
 import java.io.IOException;
 import javax.sql.DataSource;
 import org.dcache.namespace.FileAttribute;
@@ -69,66 +66,43 @@ import com.google.common.collect.Lists;
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
 {
-    private final JdbcFs       _fs;
-    private final Args         _args;
-    private final ChimeraStorageInfoExtractable _extractor;
+    private JdbcFs       _fs;
+    private ChimeraStorageInfoExtractable _extractor;
 
     private static final Logger _log =  LoggerFactory.getLogger(ChimeraNameSpaceProvider.class);
 
-    private final AccessLatency _defaultAccessLatency;
-    private final RetentionPolicy _defaultRetentionPolicy;
-
-    private final boolean _inheritFileOwnership;
-    private final boolean _verifyAllLookups;
-
+    private boolean _inheritFileOwnership;
+    private boolean _verifyAllLookups;
     private PermissionHandler _permissionHandler;
 
-    public ChimeraNameSpaceProvider(Args args) throws Exception {
+    @Required
+    public void setExtractor(ChimeraStorageInfoExtractable extractor)
+    {
+        _extractor = extractor;
+    }
 
-        // FIXME: the initialization have to go into spring xml file
-        Class.forName(args.getOpt("chimera.db.driver"));
+    @Required
+    public void setInheritFileOwnership(boolean inherit)
+    {
+        _inheritFileOwnership = inherit;
+    }
 
-        DataSource dataSource = DataSources.unpooledDataSource(args.getOpt("chimera.db.url"),
-                args.getOpt("chimera.db.user"), args.getOpt("chimera.db.password"));
-
-        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), args.getOpt("chimera.db.dialect"));
-        _args = args;
-
-        String accessLatensyOption = args.getOpt("DefaultAccessLatency");
-            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
-                /*
-                 * IllegalArgumentException thrown if option is invalid
-                 */
-                _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
-            }else{
-                _defaultAccessLatency = StorageInfo.DEFAULT_ACCESS_LATENCY;
-            }
-
-            String retentionPolicyOption = args.getOpt("DefaultRetentionPolicy");
-            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
-                /*
-                 * IllegalArgumentException thrown if option is invalid
-                 */
-                _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
-            }else{
-                _defaultRetentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
-            }
-
-            _inheritFileOwnership =
-                Boolean.valueOf(args.getOpt("inheritFileOwnership"));
-            _verifyAllLookups =
-                Boolean.valueOf(args.getOpt("verifyAllLookups"));
-
-        Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
-        Constructor<ChimeraStorageInfoExtractable>  extractorInit =
-            exClass.getConstructor(AccessLatency.class, RetentionPolicy.class);
-        _extractor =  extractorInit.newInstance(_defaultAccessLatency, _defaultRetentionPolicy);
+    @Required
+    public void setVerifyAllLookups(boolean verify)
+    {
+        _verifyAllLookups = verify;
     }
 
     @Required
     public void setPermissionHandler(PermissionHandler handler)
     {
         _permissionHandler = handler;
+    }
+
+    @Required
+    public void setFileSystem(JdbcFs fs)
+    {
+        _fs = fs;
     }
 
     private static Stat fileMetadata2Stat(FileMetaData metaData, boolean isDir) {

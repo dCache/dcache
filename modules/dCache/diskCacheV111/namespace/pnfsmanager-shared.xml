@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="permission-handler"
+        class="org.dcache.namespace.ChainedPermissionHandler">
+      <description>Permission handler</description>
+      <property name="chain">
+          <list>
+              <bean class="org.dcache.namespace.ACLPermissionHandler"/>
+              <bean class="org.dcache.namespace.PosixPermissionHandler"/>
+          </list>
+      </property>
+  </bean>
+
+  <bean id="acl-handler"
+        class="org.dcache.acl.handler.singleton.AclHandler"
+        factory-method="instance">
+      <description>ACL handler</description>
+      <property name="properties">
+          <props>
+              <prop key="aclEnabled">${aclEnabled}</prop>
+              <prop key="aclTable">${aclTable}</prop>
+              <prop key="aclConnDriver">${aclConnDriver}</prop>
+              <prop key="aclConnUrl">${aclConnUrl}</prop>
+              <prop key="aclConnUser">${aclConnUser}</prop>
+              <prop key="aclConnPswd">${aclConnPswd}</prop>
+          </props>
+      </property>
+  </bean>
+</beans>

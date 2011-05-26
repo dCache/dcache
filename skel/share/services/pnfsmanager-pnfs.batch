@@ -2,25 +2,17 @@
 #   The PnfsManager
 #
 
-# The following cryptic lines will do this logic:
-#
-#  if  cacheInfo=companion
-#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
-#
-#  else if    cacheInfo=<other> or missing
-#            ==>  cacheInfoProvider=diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
-#  -p.
-#
 onerror continue
-set env cacheInfoProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
-define context setcontext.exe endDefine
-  set env cacheInfoProvider diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
+
+define context enableCompanion.exe endDefine
+  set env companion "+companion"
   set env locationThreads ${pnfsNumberOfLocationThreads}
 endDefine
-eval "${cacheInfo}" companion ==
-exec context setcontext.exe -ifok
 
-set env -c namespaceProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
+eval "${cacheInfo}" companion ==
+exec context enableCompanion.exe -ifok
+ 
+set env -c companion ""
 set env -c locationThreads 0
 
 onerror shutdown
@@ -55,7 +47,7 @@ set env -c  pnfsDeleteRegistrationDbPass "${pnfsDbPassword}"
 onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-   "classpath:diskCacheV111/namespace/pnfsmanager.xml \
+   "classpath:diskCacheV111/namespace/pnfsmanager-pnfs${companion}.xml \
         ${pnfsInfoExtractor} \
         -export \
         -cmRelay=broadcast \
@@ -76,8 +68,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -aclConnPswd=${aclConnPswd} \
         -DefaultAccessLatency=${DefaultAccessLatency} \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
-        -namespace-provider=${namespaceProvider} \
-        -cachelocation-provider=${cacheInfoProvider} \
         -cachelocation-provider-dbURL=jdbc:postgresql://${companionDatabaseHost}/companion \
         -cachelocation-provider-jdbcDrv=org.postgresql.Driver \
         -cachelocation-provider-dbUser=${pnfsDbUser} \

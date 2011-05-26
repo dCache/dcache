@@ -26,6 +26,9 @@ import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
+import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
+import org.dcache.namespace.PosixPermissionHandler;
 
 import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -102,15 +105,18 @@ public class PnfsManagerTest
         properties.setProperty("aclConnUser", "postgres");
         AclHandler.setAclConfig(properties);
 
-        String args = "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor " +
-            "-chimera.db.user=sa " +
-            "-chimera.db.password= " +
-            "-chimera.db.url=jdbc:hsqldb:mem:chimeramem " +
-            "-chimera.db.driver=org.hsqldb.jdbcDriver " +
-            "-chimera.db.dialect=HsqlDB ";
 
-        NameSpaceProvider chimera =
-            new org.dcache.chimera.namespace.ChimeraNameSpaceProvider(new Args(args));
+        DataSource dataSource =
+            DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem", "sa", "");
+        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
+
+        ChimeraNameSpaceProvider chimera = new ChimeraNameSpaceProvider();
+        chimera.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY, StorageInfo.DEFAULT_RETENTION_POLICY));
+        chimera.setInheritFileOwnership(true);
+        chimera.setVerifyAllLookups(true);
+        chimera.setPermissionHandler(new PosixPermissionHandler());
+        chimera.setFileSystem(_fs);
+
 
         _pnfsManager = new PnfsManagerV3();
         _pnfsManager.setThreads(1);
@@ -127,10 +133,6 @@ public class PnfsManagerTest
         _pnfsManager.setDirectoryListLimit(100);
         _pnfsManager.init();
 
-        DataSource dataSource = DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem",
-                "sa", "");
-
-        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
 
         _fs.mkdir("/pnfs");
         FsInode baseInode = _fs.mkdir("/pnfs/testRoot");

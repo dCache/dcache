@@ -18,7 +18,7 @@ import javax.security.auth.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mchange.v2.c3p0.DataSources;
+import org.springframework.beans.factory.annotation.Required;
 
 import org.dcache.commons.util.SqlHelper;
 
@@ -26,13 +26,7 @@ public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
 {
     private static Logger _logNamespace = LoggerFactory.getLogger("logger.org.dcache.namespace.provider");
 
-    private String _url = "jdbc:mysql://localhost/Himera";
-    private String _driver = "org.gjt.mm.mysql.Driver";
-    private String _user = "root";
-    private String _pass = "";
-    private String _pwdfile = null;
     private String _tableName = "cacheinfo";
-
 
     private DataSource _dbConnectionsPool;
 
@@ -41,83 +35,26 @@ public class SQLNameSpaceProvider extends AbstractNameSpaceProvider
     private final String _clearCacheLocationSQL;
 
 
-    public SQLNameSpaceProvider(Args args)
+    public SQLNameSpaceProvider(String arguments)
         throws Exception
     {
-        String __cfURL = args.getOpt("cachelocation-provider-dbURL");
-        if( __cfURL != null) {
-            _url = __cfURL;
-        }
-
-        String __cfDriver = args.getOpt("cachelocation-provider-jdbcDrv");
-        if( __cfDriver != null ) {
-            _driver = __cfDriver;
-        }
-
-        String __cfUser = args.getOpt("cachelocation-provider-dbUser");
-        if( __cfUser != null ) {
-            _user = __cfUser;
-        }
-
-        String __cfPass = args.getOpt("cachelocation-provider-dbPass");
-        if( __cfPass != null ) {
-            _pass = __cfPass;
-        }
-
-        String __cfPwdfile = args.getOpt("cachelocation-provider-pgPass");
-        if( __cfPwdfile != null ) {
-            _pwdfile = __cfPwdfile;
-        }
+        Args args = new Args(arguments);
 
         String __cfTableName = args.getOpt("cachelocation-provider-tableName");
         if( __cfTableName != null ) {
             _tableName = __cfTableName;
         }
 
-
         _addCacheLocationSQL = "INSERT INTO " + _tableName + " VALUES(?,?,?)";
         _getCacheLocationSQL = "SELECT pool FROM " + _tableName + " WHERE pnfsid=? ORDER BY ctime DESC";
         _clearCacheLocationSQL = "DELETE  FROM " + _tableName + " WHERE pnfsid=? AND pool LIKE ?";
-
-
-        this.dbInit(_url, _driver, _user, _pass, _pwdfile);
-
     }
 
-
-    void dbInit(String jdbcUrl, String jdbcClass, String user, String pass, String pwdfile)  throws SQLException {
-
-        if( (jdbcUrl == null )  || (jdbcClass == null) ||
-        ( user == null) ||  (pass == null && pwdfile == null) ) {
-            throw new
-            IllegalArgumentException("Not enough arguments to Init SQL database");
-        }
-
-        if ( (pwdfile != null) && (pwdfile.length() != 0) ) {
-            Pgpass pgpass = new Pgpass(pwdfile);          //VP
-            String p = pgpass.getPgpass(jdbcUrl, user);   //VP
-            if (null != p) pass = p;
-        }
-
-        try {
-
-            // Add driver to JDBC
-            Class.forName(jdbcClass);
-
-           	DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
-        	_dbConnectionsPool =  DataSources.pooledDataSource( unpooled );
-
-        }
-        catch (SQLException sqe) {
-        	_logNamespace.error("Failed to connect to database: " + sqe);
-            throw sqe;
-        }
-        catch (Exception ex) {
-        	_logNamespace.error("Failed to connect to database: ", ex );
-            throw new SQLException(ex.toString());
-        }
+    @Required
+    public void setDataSource(DataSource dataSource)
+    {
+        _dbConnectionsPool = dataSource;
     }
-
 
     public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation) throws FileNotFoundCacheException {
 

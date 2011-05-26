@@ -60,6 +60,8 @@ import javax.security.auth.Subject;
 
 import org.dcache.auth.Subjects;
 
+import org.springframework.beans.factory.annotation.Required;
+
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -72,7 +74,7 @@ public class BasicNameSpaceProvider
     private final StorageInfoExtractable _extractor;
 
     private static final Logger _logNameSpace =  LoggerFactory.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
-    private final NameSpaceProvider _cacheLocationProvider;
+    private NameSpaceProvider _cacheLocationProvider;
 
     private final AccessLatency _defaultAccessLatency;
     private final RetentionPolicy _defaultRetentionPolicy;
@@ -91,7 +93,8 @@ public class BasicNameSpaceProvider
         EnumSet.of(SIMPLE_TYPE, SIZE, MODIFICATION_TIME);
 
     /** Creates a new instance of BasicNameSpaceProvider */
-    public BasicNameSpaceProvider(Args args) throws Exception {
+    public BasicNameSpaceProvider(String arguments) throws Exception {
+        Args args = new Args(arguments);
 
         String accessLatensyOption = args.getOpt("DefaultAccessLatency");
         if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
@@ -212,21 +215,12 @@ public class BasicNameSpaceProvider
         else {
             _logNameSpace.info("Empty trash is selected");
         }
+    }
 
-        /*
-         * private reference of cache info provider.
-         * The DcacheNameSpaceProviderFactorys will take care that we have only
-         * one instance of each type of provider.
-         */
-        String cacheLocation_provider = args.getOpt("cachelocation-provider");
-        if (cacheLocation_provider != null) {
-            _logNameSpace.debug("CacheLocation provider: {}", cacheLocation_provider);
-            Class factory = Class.forName(cacheLocation_provider);
-            Method factoryMethod = factory.getMethod("getProvider", Args.class);
-            _cacheLocationProvider = (NameSpaceProvider) factoryMethod.invoke(null, args);
-        }else{
-            _cacheLocationProvider = this;
-        }
+    @Required
+    public void setCacheLocationProvider(NameSpaceProvider provider)
+    {
+        _cacheLocationProvider = provider;
     }
 
     public void addCacheLocation(Subject subject, PnfsId pnfsId, String cacheLocation)

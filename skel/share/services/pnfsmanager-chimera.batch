@@ -2,6 +2,7 @@
 
 onerror shutdown
 
+check -strong hsmStorageInfoExtractor
 check -strong pnfsInheritFileOwnership
 check -strong DefaultRetentionPolicy
 check -strong DefaultAccessLatency
@@ -27,9 +28,9 @@ check -strong chimera.db.dialect
 check db.password
 
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-   "classpath:diskCacheV111/namespace/pnfsmanager.xml \
-        ${hsmStorageInfoExtractor} \
+   "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
         -export \
+        -extractor=${hsmStorageInfoExtractor} \
         -cmRelay=broadcast \
         -threads=${pnfsNumberOfThreads} \
         -threadGroups=${pnfsNumberOfThreadGroups} \

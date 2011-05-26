@@ -223,10 +223,10 @@ public class Comparator {
                                                  String pnfsArgs)
             throws Exception {
         NameSpaceProvider chimeraNamespace =
-                new ChimeraNameSpaceProvider(new Args(chimeraArgs));
+                new ChimeraNameSpaceProvider();
 
         NameSpaceProvider pnfsNamespace =
-                new BasicNameSpaceProvider(new Args(pnfsArgs));
+                new BasicNameSpaceProvider(pnfsArgs);
 
         PnfsIdValidator checkFileMetaData =
                 new FileMetaDataComparator( System.err, chimeraNamespace,
