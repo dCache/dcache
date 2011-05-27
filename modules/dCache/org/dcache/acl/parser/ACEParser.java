@@ -5,12 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.acl.ACE;
-import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Who;
-import org.dcache.acl.handler.PrincipalHandler;
 
 public class ACEParser {
 
@@ -19,8 +17,6 @@ public class ACEParser {
     private static final String SPACE_SEPARATOR = " ";
 
     private static final String SEPARATOR = ":";
-
-    private static final int ACE_NFS4_TAGNUM = 4;
 
     private static final int ACES_MIN = 1;
 
@@ -39,108 +35,6 @@ public class ACEParser {
 
     public static ACEParser instance() {
         return _SINGLETON;
-    }
-
-    private static PrincipalHandler _principalHandler;
-
-    private static final PrincipalHandler getPrincipalHandler() throws ACLException {
-        if ( _principalHandler == null )
-            _principalHandler = new PrincipalHandler();
-        return _principalHandler;
-    }
-
-    /**
-     * ace_spec format:
-     * 	type:[flags]:who_id:access_msk
-     *
-     * ace_spec examples:
-     * 	A:fd:mdavid:rx
-     * 	D::mdavid:w
-     *
-     * @param order
-     *            ACE's order in list
-     * @param ace_spec
-     *            String representation of ACE
-     * @return Access Control Entry object
-     */
-    public static ACE parseNFSv4ACE(String ace_spec) throws IllegalArgumentException, ACLException {
-
-        if ( ace_spec == null || ace_spec.length() == 0 )
-            throw new IllegalArgumentException("ace_spec is " + (ace_spec == null ? "NULL" : "Empty"));
-
-        if ( ace_spec.endsWith(SEPARATOR) )
-            throw new IllegalArgumentException("ace_spec ends with \"" + SEPARATOR + "\"");
-
-        String[] split = ace_spec.split(SEPARATOR);
-        if ( split == null )
-            throw new IllegalArgumentException("ace_spec can't be splitted.");
-
-        int len = split.length;
-        if ( len != ACE_NFS4_TAGNUM )
-            throw new IllegalArgumentException("Count tags invalid.");
-
-        int index = 0;
-        AceType type = AceType.fromAbbreviation(split[index++]);
-
-        int flags = 0;
-        try {
-            flags = AceFlags.parseInt(split[index++]);
-        } catch (IllegalArgumentException Ignore) {
-        }
-
-        String sWho = split[index++];
-        int whoID = -1;
-        Who who = Who.fromAbbreviation(sWho);
-        if ( who == null ) {
-            if ( AceFlags.IDENTIFIER_GROUP.matches(flags) ) {
-                who = Who.GROUP;
-                whoID = getPrincipalHandler().getGroupID(sWho);
-            } else {
-                who = Who.USER;
-                whoID = getPrincipalHandler().getUserID(sWho);
-            }
-            if ( whoID == -1 )
-                throw new IllegalArgumentException("whoID is -1, sWho: " + sWho);
-        }
-
-        String sAccessMsk = split[index++];
-        int accessMsk = AccessMask.parseInt(sAccessMsk);
-        if ( accessMsk == 0 )
-            throw new IllegalArgumentException("Invalid accessMask: " + sAccessMsk);
-
-        return new ACE(type, flags, accessMsk, who, whoID, ACE.DEFAULT_ADDRESS_MSK);
-    }
-
-    /**
-     * aces_spec format:
-     * 	type:[flags]:who_id:access_msk
-     * 	type:[flags]:who_id:access_msk ...
-     *
-     * aces_spec example:
-     * 	A:fd:mdavid:rx
-     * 	D::mdavid:w
-     *
-     * @param aces_spec
-     *            String representation of ACEs NFSv4
-     * @return List of ACEs
-     */
-    public static List<ACE> parseNFSv4(String aces_spec) throws IllegalArgumentException, ACLException {
-        if ( aces_spec == null || aces_spec.length() == 0 )
-            throw new IllegalArgumentException("aces_spec is " + (aces_spec == null ? "NULL" : "Empty"));
-
-        String[] split = aces_spec.split(LINE_SEPARATOR);
-        if ( split == null )
-            throw new IllegalArgumentException("aces_spec can't be splitted.");
-
-        int len = split.length;
-        if ( len < ACES_MIN )
-            throw new IllegalArgumentException("Count ACEs invalid.");
-
-        List<ACE> aces = new ArrayList<ACE>(len);
-        for (String ace: split)
-            aces.add(ACEParser.parseNFSv4ACE(ace));
-
-        return aces;
     }
 
     /**

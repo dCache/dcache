@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
-import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.RsType;
 
 public class ACLParser {
@@ -72,27 +71,6 @@ public class ACLParser {
             aces.add(ACEParser.parse(split[index]));
 
         return new ACL(rsID, rsType, aces);
-    }
-
-    /**
-     * aces_spec format:
-     * 	type:[flags]:who_id:access_msk
-     * 	type:[flags]:who_id:access_msk
-     *
-     * aces_spec examples:
-     * 	A:fd:mdavid:rx
-     * 	D::mdavid:w
-     *
-     * @param rsID
-     *            resource ID
-    * @param rsType
-     *            resource type
-     * @param aces_spec
-     *            String representation of ACEs
-     * @return Access Control Entry object
-     */
-    public static ACL parseNFSv4(String rsID, RsType rsType, String aces_spec) throws IllegalArgumentException, ACLException {
-        return new ACL(rsID, rsType, ACEParser.parseNFSv4(aces_spec));
     }
 
     /**
