@@ -52,7 +52,7 @@ import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
 import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.auth.Password;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.KauthFileLoginStrategy;
 import org.ietf.jgss.*;
@@ -115,8 +115,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     public void ac_pass(String arg)
     {
         Subject subject = new Subject();
-        subject.getPrincipals().add(new LoginNamePrincipal(_user));
-        subject.getPrivateCredentials().add(new Password(arg));
+        subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
         try {
             login(subject);
         } catch (PermissionDeniedCacheException e) {
