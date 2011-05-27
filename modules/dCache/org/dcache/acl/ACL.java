@@ -1,7 +1,7 @@
 package org.dcache.acl;
 
+import com.google.common.collect.ImmutableList;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.acl.enums.RsType;
@@ -25,32 +25,17 @@ public class ACL implements Serializable
     /**
      * ACL Identifier
      */
-    private String _rsId;
+    private final String _rsId;
 
     /**
      * The resource type identifies to resource type to which this ACE applies.
      */
-    private RsType _rsType;
+    private final RsType _rsType;
 
     /**
      * List of ACEs
      */
-    private List<ACE> _list;
-
-    public ACL() {
-        super();
-    }
-
-    /**
-     * @param rsId
-     *            Resource Identifier
-     * @param rsType
-     *            Resource Type
-     */
-    public ACL(String rsId, RsType rsType) {
-        _rsId = rsId;
-        _rsType = rsType;
-    }
+    private final List<ACE> _list;
 
     /**
      * @param rsId
@@ -61,22 +46,9 @@ public class ACL implements Serializable
      *            List of ACEs
      */
     public ACL(String rsId, RsType rsType, List<ACE> list) {
-        this(rsId, rsType);
-        _list = list;
-    }
-
-    /**
-     * @param rsId
-     *            Resource Identifier
-     * @param rsType
-     *            Resource Type
-     * @param ace
-     *            only one ACE in ACEs list
-     */
-    public ACL(String rsId, RsType rsType, ACE ace) {
-        this(rsId, rsType);
-        _list = new ArrayList<ACE>(1);
-        _list.add(ace);
+        _rsId = rsId;
+        _rsType = rsType;
+        _list = ImmutableList.copyOf(list);
     }
 
     /**
@@ -87,33 +59,10 @@ public class ACL implements Serializable
     }
 
     /**
-     * Sets list of ACEs to ACL
-     *
-     * @param list
-     *            List of ACEs
-     */
-    public void setList(List<ACE> list) {
-        _list = list;
-    }
-
-    /**
      * @return Returns ACL resource identifier
      */
     public String getRsId() {
         return _rsId;
-    }
-
-    /**
-     * Sets ACL resource identifier
-     *
-     * @param rsId
-     *            ACL resource identifier
-     */
-    public void setRsId(String rsId) throws IllegalArgumentException {
-        if (rsId == null || rsId.length() == 0)
-            throw new IllegalArgumentException("rsId is " + (rsId == null ? "NULL" : "Empty"));
-
-        _rsId = rsId;
     }
 
     /**
@@ -124,30 +73,10 @@ public class ACL implements Serializable
     }
 
     /**
-     * Sets ACL resource type
-     *
-     * @param rsType
-     *            ACL resource type
-     */
-    public void setRsType(RsType rsType) throws IllegalArgumentException {
-        if (rsType == null)
-            throw new IllegalArgumentException("Invalid rsType.");
-
-        _rsType = rsType;
-    }
-
-    /**
-     * @return Returns the number of ACEs in ACL
-     */
-    public int getSize() {
-        return _list.size();
-    }
-
-    /**
      * @return <code>true</code> if ACEs list is empty, otherwise <code>false</code>
      */
     public boolean isEmpty() {
-        return _list.size() == 0;
+        return _list.isEmpty();
     }
 
     public String toNFSv4String() {
