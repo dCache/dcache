@@ -7,10 +7,13 @@ import org.globus.gsi.jaas.GlobusPrincipal;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.LoginReply;
 import diskCacheV111.util.CacheException;
 
 import dmg.util.Args;
+import java.lang.reflect.Constructor;
+import java.security.Principal;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.UidPrincipal;
 
 public class LoginCLI
     implements CellCommandListener
@@ -46,4 +49,52 @@ public class LoginCLI
 
         return _loginStrategy.login(subject).toString();
     }
+
+    public final String fh_get_identity = "get identity <principal> <type>"
+            + "\n"
+            + "Get identity for provided principal."
+            + "\nExample:"
+            + "   get identity atlas01 UserNamePrincipal";
+    public final String hh_get_identity = "<principal> <type>";
+    public String ac_get_identity_$_2(Args args) throws Exception {
+        String name = args.argv(0);
+        String type = args.argv(1);
+
+        return _loginStrategy.map( principalOf(type, name) ).getName();
+    }
+
+    public final String fh_get_ridentity = "get ridentity -group <pringipal>\n"+
+            "\n"+
+            "Get reverse identity mapping for provided id." +
+            "  -group  provided id represents a group id." +
+            "\nExample:"+
+            "  get ridentity -group 100";
+    public final String hh_get_ridentity = "<principal>";
+    public String ac_get_ridentity_$_1(Args args)
+            throws CacheException {
+        String id = args.argv(0);
+        boolean isGroup = args.getOpt("group") != null;
+
+        Principal principal;
+        if(isGroup) {
+            principal = new GidPrincipal(id, false);
+        }else{
+            principal = new UidPrincipal(id);
+        }
+        return _loginStrategy.reverseMap(principal).toString();
+    }
+
+    private final static String PREFIX = "org.dcache.auth.";
+    private Principal principalOf(String type, String name) throws Exception {
+        Class c;
+        try {
+            c = Class.forName(type);
+        }catch(ClassNotFoundException e) {
+            c = Class.forName(PREFIX + type);
+        }
+
+        Constructor constructor = c.getConstructor(String.class);
+        return (Principal)constructor.newInstance(name);
+    }
+
 }

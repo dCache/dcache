@@ -26,4 +26,9 @@ public class DefaultStrategyFactory extends StrategyFactory {
         return new DefaultSessionStrategy();
     }
 
+    @Override
+    public IdentityStrategy newIdentityStrategy() {
+        return new DefaultIdentityStrategy();
+    }
+
 }
