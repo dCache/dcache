@@ -53,7 +53,6 @@ import org.dcache.util.Glob;
 import org.dcache.util.Interval;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.acl.ACLException;
-import org.dcache.acl.handler.singleton.AclHandler;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.auth.Subjects;
 import static org.dcache.acl.enums.AccessType.*;
@@ -62,6 +61,9 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.dcache.acl.ACE;
+import org.dcache.acl.ACL;
+import org.dcache.acl.enums.RsType;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider
@@ -73,6 +75,7 @@ public class ChimeraNameSpaceProvider
 
     private boolean _inheritFileOwnership;
     private boolean _verifyAllLookups;
+    private boolean _aclEnabled;
     private PermissionHandler _permissionHandler;
 
     @Required
@@ -103,6 +106,12 @@ public class ChimeraNameSpaceProvider
     public void setFileSystem(JdbcFs fs)
     {
         _fs = fs;
+    }
+
+    @Required
+    public void setAclEnabled(boolean isEnabled)
+    {
+        _aclEnabled = isEnabled;
     }
 
     private static Stat fileMetadata2Stat(FileMetaData metaData, boolean isDir) {
@@ -627,6 +636,7 @@ public class ChimeraNameSpaceProvider
        StringBuilder sb = new StringBuilder();
 
        sb.append("$Id: ChimeraNameSpaceProvider.java,v 1.7 2007-10-01 12:28:03 tigran Exp $ \n");
+       sb.append("Acl Enabled: ").append(_aclEnabled).append("\n");
        sb.append(_fs.getInfo() );
         return sb.toString();
 
@@ -672,8 +682,10 @@ public class ChimeraNameSpaceProvider
         for (FileAttribute attribute: attr) {
             switch (attribute) {
             case ACL:
-                if (AclHandler.getAclConfig().isAclEnabled()) {
-                    attributes.setAcl(AclHandler.getACL(inode.toString()));
+                if(_aclEnabled) {
+                    RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
+                    List<ACE> acl = _fs.getACL(inode);
+                    attributes.setAcl( new ACL(inode.toString(), rsType, acl));
                 } else {
                     attributes.setAcl(null);
                 }
@@ -937,6 +949,12 @@ public class ChimeraNameSpaceProvider
                             cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
                         }
                         cacheInfo.writeCacheInfo(level2);
+                        break;
+                    case ACL:
+                        if(_aclEnabled) {
+                            ACL acl = attr.getAcl();
+                            _fs.setACL(inode, acl.getList());
+                        }
                         break;
                     default:
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");

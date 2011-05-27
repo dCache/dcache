@@ -16,7 +16,6 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import dmg.util.Args;
-import org.dcache.acl.handler.ACLHandler;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellInfoProvider;
@@ -43,7 +42,6 @@ public class AclCell  extends AbstractCellComponent
     implements CellCommandListener, CellInfoProvider {
 
     private PnfsHandler _pnfs;
-    private ACLHandler _aclHandler;
 
     public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
@@ -53,10 +51,6 @@ public class AclCell  extends AbstractCellComponent
     public static final String OPTION_HELP = "h";
 
     private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization.adminACL." + AclCell.class);
-
-    public void setAclHandler(ACLHandler aclHandler) {
-        _aclHandler = aclHandler;
-    }
 
     public void setPnfsHandler(PnfsHandler pnfs) {
         _pnfs = pnfs;
@@ -93,27 +87,21 @@ public class AclCell  extends AbstractCellComponent
         if ( args.argc() < 1 )
             throw new IllegalArgumentException("Usage : getfacl <pnfsId>|<globalPath> ");
 
-        PnfsId pnfsId;
-        ACL acl;
-
+        FileAttributes attr;
         try {
-
-            pnfsId = new PnfsId(args.argv(0));
-
+            PnfsId pnfsId = new PnfsId(args.argv(0));
+            attr = _pnfs.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.ACL));
         } catch (IllegalArgumentException ee) {
-            pnfsId = _pnfs.getPnfsIdByPath(args.argv(0));
+            // path provided
+            attr = _pnfs.getFileAttributes(args.argv(0), EnumSet.of(FileAttribute.ACL));
         }
 
-        // now we know pnfsId. 'convert' it to rsId (attribute rs_id in t_acl table)
-        // and get corresponding ACL
-        String rsId = pnfsId.toString();
-        acl = _aclHandler.getACL(rsId);
-
+       ACL acl = attr.getAcl();
         if ( acl != null ) {
             _logger.info("getfacl Response: {}", acl);
             return acl.toExtraFormat();
         } else
-            return "ACL for the object rsId = " + rsId + "  does not exist.";
+            return "ACL for the object rsId = " + args.argv(0) + "  does not exist.";
     }
 
     /**
@@ -235,12 +223,11 @@ public class AclCell  extends AbstractCellComponent
         FileMetaData fileMetaData;
         ACE ace;
 
-        try {
-
+        if( PnfsId.isValid(args.argv(0))) {
             pnfsId = new PnfsId(args.argv(0));
             fileMetaData =
                 new FileMetaData(_pnfs.getFileAttributes(pnfsId, FileMetaData.getKnownFileAttributes()));
-        } catch (IllegalArgumentException ee) {
+        } else {
             String path = args.argv(0);
             EnumSet<FileAttribute> request = EnumSet.of(FileAttribute.PNFSID);
             request.addAll(FileMetaData.getKnownFileAttributes());
@@ -268,31 +255,16 @@ public class AclCell  extends AbstractCellComponent
 
             ace = ACEParser.parseAdmACE(ace_spec_format2);
             if ( ace == null )
-                throw new RuntimeException("Set ACE failure.");
+                throw new IllegalArgumentException("Can't parse provided ACE: " + ace_spec_format2);
             aces.add(ace);
         }
 
         ACL newACL = new ACL(rsId, rsType, aces);
         _logger.debug("New ACL: {}", newACL);
 
-        // get old ACL
-        ACL oldACL = _aclHandler.getACL(rsId);
-
-        if ( oldACL != null ) {
-
-            _aclHandler.removeACL(rsId);
-            try {
-                _aclHandler.setACL(newACL);
-
-            } catch (Exception e) {
-                boolean ret = _aclHandler.setACL(oldACL);
-                _logger.info("Set new ACL failed. Rollback old ACL ..." + (ret ? "OK" : "FAILED"));
-                throw e;
-            }
-
-        } else {
-            _aclHandler.setACL(newACL);
-        }
+        FileAttributes attributes = new FileAttributes();
+        attributes.setAcl(newACL);
+        _pnfs.setFileAttributes(pnfsId, attributes);
         return "Done";
     }
 }

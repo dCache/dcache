@@ -19,24 +19,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="acl-config" class="org.dcache.acl.config.AclConfig">
-        <constructor-arg>
-            <props>
-                <prop key="aclConnDriver">${aclConnDriver}</prop>
-                <prop key="aclConnUrl">${aclConnUrl}</prop>
-                <prop key="aclConnUser">${aclConnUser}</prop>
-                <prop key="aclConnPswd">${aclConnPswd}</prop>
-                <prop key="aclTable">${aclTable}</prop>
-            </props>
-        </constructor-arg>
-    </bean>
-
-    <bean id="acl-handler" class="org.dcache.acl.handler.DefaultACLHandler">
-        <constructor-arg ref="acl-config"/>
-    </bean>
-
     <bean id="acl-cell" class="org.dcache.acl.AclCell">
         <property name="pnfsHandler" ref="pnfs"/>
-        <property name="aclHandler" ref="acl-handler"/>
     </bean>
 </beans>

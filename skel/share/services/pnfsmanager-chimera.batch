@@ -16,11 +16,6 @@ check -strong pnfsQueueMaxSize
 check -strong defaultPnfsServer
 check -strong cell.name
 check -strong aclEnabled
-check -strong aclTable
-check -strong aclConnDriver
-check -strong aclConnUrl
-check -strong aclConnUser
-check aclConnPswd
 check -strong db.user
 check -strong db.url
 check -strong db.driver
@@ -43,11 +38,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -DefaultAccessLatency=${DefaultAccessLatency} \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
         -aclEnabled=${aclEnabled} \
-        -aclTable=${aclTable} \
-        -aclConnDriver=${aclConnDriver} \
-        -aclConnUrl=${aclConnUrl} \
-        -aclConnUser=${aclConnUser} \
-        -aclConnPswd=${aclConnPswd} \
         -cachelocation-threads=0 \
         -folding=${pnfsFolding} \
         -chimera.db.user=${db.user} \

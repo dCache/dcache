@@ -16,7 +16,6 @@ import org.dcache.util.MathUtils;
 import org.dcache.util.PrefixMap;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksum;
-import org.dcache.acl.handler.singleton.AclHandler;
 
 import java.io.* ;
 import java.util.*;
@@ -30,7 +29,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;

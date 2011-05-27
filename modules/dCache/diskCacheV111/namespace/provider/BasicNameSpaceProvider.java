@@ -53,8 +53,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.acl.ACLException;
-import org.dcache.acl.handler.singleton.AclHandler;
 
 import javax.security.auth.Subject;
 
@@ -1035,11 +1033,7 @@ public class BasicNameSpaceProvider
             for (FileAttribute attribute: attr) {
                 switch (attribute) {
                 case ACL:
-                    if (AclHandler.getAclConfig().isAclEnabled()) {
-                        attributes.setAcl(AclHandler.getACL(pnfsId.toString()));
-                    } else {
-                        attributes.setAcl(null);
-                    }
+                    attributes.setAcl(null);
                     break;
                 case ACCESS_LATENCY:
                     cacheInfo = getCacheInfo(pf, cacheInfo);
@@ -1111,9 +1105,6 @@ public class BasicNameSpaceProvider
                                attributes);
             }
             return attributes;
-        } catch (ACLException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -1201,6 +1192,15 @@ public class BasicNameSpaceProvider
                 case OWNER:
                 case OWNER_GROUP:
                     /* These are updated below.
+                     */
+                    break;
+                case ACL:
+                    /*
+                     * Not supported.
+                     * Nevertheless we do not reject the requests to still allow other components not
+                     * depend on namespace backend.
+                     *
+                     * REVISIT: some workloads may require request to fail.
                      */
                     break;
                 default:

@@ -58,6 +58,7 @@
       <property name="verifyAllLookups" value="${verifyAllLookups}"/>
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
+      <property name="aclEnabled" value="${aclEnabled}"/>
   </bean>
 
 </beans>

@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.EnumSet;
-import java.util.Properties;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -58,7 +57,6 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.PnfsSetFileAttributes;
-import org.dcache.acl.handler.singleton.AclHandler;
 
 public class PnfsManagerTest
 {
@@ -96,16 +94,6 @@ public class PnfsManagerTest
             SqlHelper.tryToClose(st);
         }
 
-        Properties properties = new Properties();
-        properties.setProperty("aclEnabled", "false");
-        properties.setProperty("aclTable", "t_acl");
-        properties.setProperty("aclConnDriver", "org.hsqldb.jdbcDriver");
-        properties.setProperty("aclConnUrl", "jdbc:hsqldb:mem:chimeramem");
-        properties.setProperty("aclConnPswd", "");
-        properties.setProperty("aclConnUser", "postgres");
-        AclHandler.setAclConfig(properties);
-
-
         DataSource dataSource =
             DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem", "sa", "");
         _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
@@ -115,6 +103,7 @@ public class PnfsManagerTest
         chimera.setInheritFileOwnership(true);
         chimera.setVerifyAllLookups(true);
         chimera.setPermissionHandler(new PosixPermissionHandler());
+        chimera.setAclEnabled(false);
         chimera.setFileSystem(_fs);
 
 

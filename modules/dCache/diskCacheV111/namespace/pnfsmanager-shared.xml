@@ -15,19 +15,4 @@
       </property>
   </bean>
 
-  <bean id="acl-handler"
-        class="org.dcache.acl.handler.singleton.AclHandler"
-        factory-method="instance">
-      <description>ACL handler</description>
-      <property name="properties">
-          <props>
-              <prop key="aclEnabled">${aclEnabled}</prop>
-              <prop key="aclTable">${aclTable}</prop>
-              <prop key="aclConnDriver">${aclConnDriver}</prop>
-              <prop key="aclConnUrl">${aclConnUrl}</prop>
-              <prop key="aclConnUser">${aclConnUser}</prop>
-              <prop key="aclConnPswd">${aclConnPswd}</prop>
-          </props>
-      </property>
-  </bean>
 </beans>
