@@ -44,6 +44,7 @@ set env -c myPoolManager ${poolmanager}
 onerror shutdown
 
 exec file:${dcache.paths.share}/cells/stage.fragment doors
+exec file:${dcache.paths.share}/cells/embedded-gPlazma.fragment
 
 create dmg.cells.services.login.LoginManager ${cell.name} \
             "${port} \
@@ -65,6 +66,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
              -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
              -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
              -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
+             -use-login-service=${useLoginService} \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
              -stageConfigurationFilePath=${stageConfigurationFilePath} \

@@ -1,9 +1,3 @@
-/*
- * GssFtpDoorV1.java
- *
- * Created on Sep 24, 2003, 9:53 AM
- */
-
 package diskCacheV111.doors;
 
 //cells
@@ -14,8 +8,6 @@ import dmg.util.Args;
 
 //dcache
 import diskCacheV111.util.Base64;
-import org.dcache.auth.*;
-import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.cells.CellStub;
 
 //java
@@ -35,10 +27,7 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
-/**
- *
- * @author  timur
- */
+
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
@@ -64,14 +53,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     {
         super.init();
         _gssFlavor = "unknown";
-
-        if (_useLoginService) {
-            _loginStrategy =
-                new RemoteLoginStrategy(new CellStub(this, new CellPath("gPlazma"), 30000));
-        } else {
-            _loginStrategy =
-                new KauthFileLoginStrategy(new File(_kpwdFilePath));
-        }
     }
 
     protected void secure_reply(String answer, String code) {

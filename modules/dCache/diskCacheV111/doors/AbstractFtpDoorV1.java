@@ -104,6 +104,8 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import com.google.common.base.Strings;
+
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -141,10 +143,12 @@ import org.dcache.namespace.FileType;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.KauthFileLoginStrategy;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 import org.dcache.cells.CellStub;
@@ -442,6 +446,13 @@ public abstract class AbstractFtpDoorV1
     )
     protected boolean _useLoginService;
 
+    @Option(
+        name = "kpwd-file",
+        description = "Path to kpwd file",
+        defaultValue = ""
+    )
+    protected String _kpwdFilePath;
+
      /**
      * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
      * (i.e. allowed to copy file from dCache in case file is stored on tape but not on disk).
@@ -570,9 +581,6 @@ public abstract class AbstractFtpDoorV1
     protected CheckStagePermission _checkStagePermission;
 
     protected LoginStrategy _loginStrategy;
-
-    /** Generalized kpwd file path used by all flavors. */
-    protected String _kpwdFilePath;
 
     /** Can be "mic", "conf", "enc", "clear". */
     protected String _gReplyType = "clear";
@@ -1134,17 +1142,24 @@ public abstract class AbstractFtpDoorV1
         if (_local_host == null)
             _local_host = _engine.getLocalAddress().getHostAddress();
 
-        /* Use kpwd file if login service is not enabled.
-         */
-        if (!_useLoginService) {
-            _kpwdFilePath = args.getOpt("kpwd-file");
-            if ((_kpwdFilePath == null) ||
-                (_kpwdFilePath.length() == 0) ||
-                (!new File(_kpwdFilePath).exists())) {
+        if (_useLoginService) {
+            _loginStrategy =
+                new RemoteLoginStrategy(new CellStub(this, new CellPath("gPlazma"), 30000));
+        } else {
+            /* Use kpwd file if login service is not enabled.
+             */
+            if (Strings.isNullOrEmpty(_kpwdFilePath)) {
                 String s = "-kpwd-file file argument wasn't specified";
                 _logger.error(s);
                 throw new IllegalArgumentException(s);
             }
+            File file = new File(_kpwdFilePath);
+            if (!file.exists()) {
+                String s = "File not found: " + file;
+                _logger.error(s);
+                throw new IllegalArgumentException(s);
+            }
+            _loginStrategy = new KauthFileLoginStrategy(file);
         }
 
         /* Data channel port range used when client issues PASV

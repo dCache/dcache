@@ -54,7 +54,6 @@ import java.lang.reflect.*;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.KauthFileLoginStrategy;
 import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;
@@ -81,8 +80,6 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     {
         super.init();
         ftpDoorName = "Weak FTP";
-        _loginStrategy =
-            new KauthFileLoginStrategy(new File(_kpwdFilePath));
     }
 
     protected void secure_reply(String answer, String code) {
