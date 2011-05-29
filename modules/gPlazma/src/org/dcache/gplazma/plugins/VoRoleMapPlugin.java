@@ -1,12 +1,13 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.collect.Iterables.filter;
 import gplazma.authz.util.NameRolePair;
 
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.FQAN;
@@ -15,14 +16,10 @@ import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 import org.globus.gsi.jaas.GlobusPrincipal;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
 import com.google.common.collect.Lists;
-import static com.google.common.collect.Iterables.*;
-import static com.google.common.base.Predicates.*;
 
 /**
  * Plugin that uses a vorolemap file for mapping FQANPrincipal and
@@ -42,14 +39,11 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
 
     private final SourceBackedPredicateMap<NameRolePair,String> _map;
 
-    public VoRoleMapPlugin(String[] args) throws IOException
+    public VoRoleMapPlugin(Properties properties) throws IOException
     {
-        Map<String,String> kvmap =
-            ArgumentMapFactory.createFromKeyValuePairs(args);
-        String path =
-            ArgumentMapFactory.getValue(kvmap, VOROLEMAP, VOROLEMAP_DEFAULT);
-        _map =
-            new SourceBackedPredicateMap<NameRolePair,String>(new FileLineSource(path, REFRESH_PERIOD), new VOMapLineParser());
+        String path = properties.getProperty(VOROLEMAP, VOROLEMAP_DEFAULT);
+
+        _map = new SourceBackedPredicateMap<NameRolePair,String>(new FileLineSource(path, REFRESH_PERIOD), new VOMapLineParser());
     }
 
     /**

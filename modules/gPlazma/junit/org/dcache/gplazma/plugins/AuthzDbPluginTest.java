@@ -1,33 +1,27 @@
 package org.dcache.gplazma.plugins;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
-import java.nio.charset.Charset;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.security.Principal;
+import java.util.Set;
 
-import junit.framework.AssertionFailedError;
-
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.GroupNamePrincipal;
-import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginUidPrincipal;
-import org.dcache.auth.LoginGidPrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
-import org.globus.gsi.jaas.GlobusPrincipal;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 
 public class AuthzDbPluginTest

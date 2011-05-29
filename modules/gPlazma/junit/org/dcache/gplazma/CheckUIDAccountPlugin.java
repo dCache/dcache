@@ -1,10 +1,14 @@
 package org.dcache.gplazma;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
+
+import org.dcache.auth.UidPrincipal;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.dcache.auth.UidPrincipal;
 
 /**
  * This account plugin succeeds if the specified uid principal is present
@@ -12,31 +16,28 @@ import org.dcache.auth.UidPrincipal;
  * @author timur
  */
 public class CheckUIDAccountPlugin implements GPlazmaAccountPlugin {
-    public static final Logger LOGGER =
-            LoggerFactory.getLogger(CheckUIDAccountPlugin.class);
-    private static boolean called = false;
+    public static final Logger LOGGER = LoggerFactory.getLogger(CheckUIDAccountPlugin.class);
 
-    private final UidPrincipal uid;
+    private static boolean _called = false;
+
+    private final UidPrincipal _uid;
 
 
-    public CheckUIDAccountPlugin(String[] args) {
-        if(args==null || args.length != 1) {
-            throw new IllegalArgumentException("I need 1 argument: uid");
-        }
-        uid = new UidPrincipal(args[0]);
+    public CheckUIDAccountPlugin(Properties properties) {
+        checkArgument(properties.getProperty("uid")!=null, "UID must be set.");
 
+        _uid = new UidPrincipal(properties.getProperty("uid"));
     }
 
     @Override
     public void account(SessionID sID, Set<Principal> authorizedPrincipals) throws AuthenticationException {
         LOGGER.debug("account is called");
-        for(Principal principal:authorizedPrincipals ) {
-            if(principal.equals(uid)) {
-                called = true;
-                return;
-            }
+
+        if (authorizedPrincipals.contains(_uid)) {
+            _called = true;
+        } else {
+            throw new AuthenticationException("uid "+_uid+" was not present in authorizedPrincipals");
         }
-        throw new AuthenticationException("uid "+uid+" was not present in authorizedPrincipals");
     }
 
     /**
@@ -45,14 +46,14 @@ public class CheckUIDAccountPlugin implements GPlazmaAccountPlugin {
      * @return the called
      */
     public static boolean isCalled() {
-        return called;
+        return _called;
     }
 
     /**
      * resets the value of called to false
      */
     public static void reset() {
-        called = false;
+        _called = false;
     }
 
 }

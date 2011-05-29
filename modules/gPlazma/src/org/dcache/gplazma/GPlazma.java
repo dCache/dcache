@@ -2,14 +2,13 @@ package org.dcache.gplazma;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.security.auth.Subject;
 
-import org.dcache.commons.util.Strings;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
@@ -174,14 +173,11 @@ public class GPlazma {
                 configurationLoadingStrategy.
                         load().getConfigurationItemList()) {
             String pluginName = configItem.getPluginName();
-            String configString = configItem.getPluginConfiguration();
-            String[] pluginArguments = Strings.splitArgumentString(configString);
+            Properties properties = configItem.getPluginConfiguration();
             ConfigurationItemType type = configItem.getType();
             ConfigurationItemControl control = configItem.getControl();
-            GPlazmaPlugin plugin =
-                    pluginLoader.newPluginByName(pluginName, pluginArguments);
+            GPlazmaPlugin plugin = pluginLoader.newPluginByName(pluginName, properties);
             classifyPlugin(type, plugin, pluginName, control);
-
         }
     }
 

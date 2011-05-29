@@ -1,11 +1,11 @@
 package org.dcache.gplazma.loader;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Collections;
+import java.util.Properties;
 
-import javax.xml.parsers.ParserConfigurationException;
+import junit.framework.Assert;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
@@ -19,7 +19,7 @@ public class XmlResourcePluginLoaderTests {
     PluginXmlGenerator _pluginXml;
 
     @Before
-    public void setUp() throws ParserConfigurationException {
+    public void setUp() {
         _classLoader = new Utf8DataClassLoader(XmlResourcePluginRepositoryFactory.RESOURCE_PATH);
         Thread currentThread = Thread.currentThread();
         currentThread.setContextClassLoader( _classLoader);
@@ -36,7 +36,7 @@ public class XmlResourcePluginLoaderTests {
 
     @Test(expected=IllegalStateException.class)
     public void testGetWithArgsWithoutInitFails() {
-        _loader.newPluginByName( "foo", new String[]{"an argument"});
+        _loader.newPluginByName( "foo", new Properties());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -55,7 +55,7 @@ public class XmlResourcePluginLoaderTests {
         GPlazmaPlugin plugin = _loader.newPluginByName(PLUGIN_NAME);
         assertNotNull("plugin isn't null", plugin);
         ArgsAccessiblePlugin example = (ArgsAccessiblePlugin) plugin;
-        example.assertArgumentsEqual(new String[0]);
+        example.assertArgumentsEqual(new Properties());
     }
 
     @Test
@@ -64,14 +64,16 @@ public class XmlResourcePluginLoaderTests {
 
         _loader.init();
 
-        String[] args = {"argument 1", "argument 2"};
+        Properties properties = new Properties();
+        properties.put("key1","value1");
+        properties.put("key2","value2");
 
-        GPlazmaPlugin plugin = _loader.newPluginByName("example", args);
+        GPlazmaPlugin plugin = _loader.newPluginByName("example", properties);
 
         assertNotNull("plugin isn't null", plugin);
 
         ArgsAccessiblePlugin example = (ArgsAccessiblePlugin) plugin;
-        example.assertArgumentsEqual(args);
+        example.assertArgumentsEqual(properties);
     }
 
     private void addPluginXmlResource() {
@@ -84,14 +86,14 @@ public class XmlResourcePluginLoaderTests {
      * checking.
      */
     public static class ArgsAccessiblePlugin implements GPlazmaPlugin {
-        private String[] _args;
+        private final Properties _properties;
 
-        public ArgsAccessiblePlugin(String[] args) {
-            _args = args;
+        public ArgsAccessiblePlugin(Properties properties) {
+            _properties = properties;
         }
 
-        public void assertArgumentsEqual(String[] arguments) {
-            assertArrayEquals("checking plugin arguments", arguments, _args);
+        public void assertArgumentsEqual(Properties properties) {
+            Assert.assertEquals(_properties, properties);
         }
     }
 }

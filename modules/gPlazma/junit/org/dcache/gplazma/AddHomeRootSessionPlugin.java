@@ -1,12 +1,14 @@
 package org.dcache.gplazma;
 
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
-import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
 /**
  * This plugin adds a specified home, root and readOnly attribute to
@@ -16,20 +18,26 @@ import org.dcache.auth.attributes.ReadOnly;
  */
 public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
 
+    public static final String USER_KEY = "user";
+    public static final String HOME_KEY = "home";
+    public static final String ROOT_KEY = "root";
+    public static final String READONLY_KEY = "readonly";
+
+    public static final String USER_DEFAULT = "nobody";
+    public static final String HOME_DEFAULT = "/";
+    public static final String READONLY_DEFAULT = "true";
 
     private final UserNamePrincipal user;
     private final HomeDirectory home;
     private final RootDirectory root;
-    private final ReadOnly readOnly ;
+    private final ReadOnly readOnly;
 
-    public AddHomeRootSessionPlugin(String[] args) {
-        if(args == null || args.length !=4) {
-            throw new IllegalArgumentException("I need 4 arguments: \"<user> <home> <root> <readOnly>\"");
-        }
-        user = new UserNamePrincipal(args[0]);
-        home = new HomeDirectory(args[1]);
-        root = new RootDirectory(args[2]);
-        readOnly = new ReadOnly(args[3]);
+    public AddHomeRootSessionPlugin(Properties properties) {
+
+        root = new RootDirectory(com.google.common.base.Preconditions.checkNotNull(properties.getProperty(ROOT_KEY), "Root directory must be set."));
+        user = new UserNamePrincipal(properties.getProperty(USER_KEY, USER_DEFAULT));
+        home = new HomeDirectory(properties.getProperty(HOME_KEY, HOME_DEFAULT));
+        readOnly = new ReadOnly(properties.getProperty(READONLY_KEY, READONLY_DEFAULT));
     }
 
     @Override

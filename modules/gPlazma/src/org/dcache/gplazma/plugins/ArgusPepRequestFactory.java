@@ -1,5 +1,11 @@
 package org.dcache.gplazma.plugins;
 
+import static org.glite.authz.common.profile.AuthorizationProfileConstants.DATATYPE_STRING;
+import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_ACTION_ID;
+import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_PROFILE_ID;
+import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_RESOURCE_ID;
+import static org.glite.authz.common.profile.AuthorizationProfileConstants.ID_ATTRIBUTE_SUBJECT_ID;
+
 import org.glite.authz.common.model.Action;
 import org.glite.authz.common.model.Attribute;
 import org.glite.authz.common.model.Environment;
@@ -22,8 +28,8 @@ public class ArgusPepRequestFactory {
         Action action = new Action();
 
         Attribute actionAttrib = new Attribute();
-        actionAttrib.setId(AuthorizationProfile.ID_ATTRIBUTE_ACTION_ID);
-        actionAttrib.setDataType(AuthorizationProfile.DATATYPE_STRING);
+        actionAttrib.setId(ID_ATTRIBUTE_ACTION_ID);
+        actionAttrib.setDataType(DATATYPE_STRING);
         actionAttrib.setIssuer(null);
         actionAttrib.getValues().add(actionId);
         action.getAttributes().add(actionAttrib);
@@ -31,16 +37,16 @@ public class ArgusPepRequestFactory {
         Resource resource = new Resource();
 
         Attribute resourceAttrib = new Attribute();
-        resourceAttrib.setId(AuthorizationProfile.ID_ATTRIBUTE_RESOURCE_ID);
-        resourceAttrib.setDataType(AuthorizationProfile.DATATYPE_STRING);
+        resourceAttrib.setId(ID_ATTRIBUTE_RESOURCE_ID);
+        resourceAttrib.setDataType(DATATYPE_STRING);
         resourceAttrib.setIssuer(null);
         resourceAttrib.getValues().add(resourceId);
         resource.getAttributes().add(resourceAttrib);
 
         Environment environment = new Environment();
         Attribute environmentAttrib = new Attribute();
-        environmentAttrib.setId(AuthorizationProfile.ID_ATTRIBUTE_PROFILE_ID);
-        environmentAttrib.setDataType(AuthorizationProfile.DATATYPE_STRING);
+        environmentAttrib.setId(ID_ATTRIBUTE_PROFILE_ID);
+        environmentAttrib.setDataType(DATATYPE_STRING);
         environmentAttrib.setIssuer(null);
         environmentAttrib.getValues().add(profile.getProfileId());
         environment.getAttributes().add(environmentAttrib);
@@ -49,7 +55,7 @@ public class ArgusPepRequestFactory {
         subject.setCategory(null);
 
         Attribute subjectAttribute = new Attribute();
-        subjectAttribute.setId(AuthorizationProfile.ID_ATTRIBUTE_SUBJECT_ID);
+        subjectAttribute.setId(ID_ATTRIBUTE_SUBJECT_ID);
         subjectAttribute.setDataType("urn:oasis:names:tc:xacml:1.0:data-type:x500Name");
         subjectAttribute.setIssuer(null);
         subjectAttribute.getValues().add(dn);

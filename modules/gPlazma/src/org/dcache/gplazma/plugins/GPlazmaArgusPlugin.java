@@ -1,9 +1,12 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Predicates.instanceOf;
+
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
@@ -58,8 +61,6 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String RESOURCE_ID = "ResourceID";
     private static final String PEP_ENDPOINT = "PEPEndpoint";
 
-    // private static final Set<String> KEYNAMES = new HashSet<String>(Arrays.asList( new String[] { PEP_ENDPOINT, RESOURCE_ID, ACTION_ID, TRUST_MATERIAL, HOST_CERT, HOST_KEY, KEY_PASS } ));
-
     private static final String DEFAULT_KEY_PASS = "";
     private static final String DEFAULT_HOST_KEY = "/etc/grid-security/hostkey.pem";
     private static final String DEFAULT_HOST_CERT = "/etc/grid-security/hostcert.pem";
@@ -75,14 +76,14 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
     /**
      * Constructor
-     * @param args a set of key value pairs containing the plugins configuration.
+     * @param properties a set of key value pairs containing the plugins configuration.
      */
-    public GPlazmaArgusPlugin(String[] args) {
+    public GPlazmaArgusPlugin(Properties properties) {
 
-        _log.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, args);
+        _log.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, properties);
 
         try {
-            PEPClientConfiguration pepConfiguration = initPepConfiguration(args);
+            PEPClientConfiguration pepConfiguration = initPepConfiguration(properties);
             _pepClient = new PEPClient(pepConfiguration);
         } catch (PEPClientException e) {
             _log.error(COULD_NOT_CREATE_PEP_CLIENT_exception, e);
@@ -101,24 +102,23 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     /**
      * This method initialises the instance's configuration, by parsing
      * the parameters given in args. Required key/value is PEPEndpoint.
-     * @param args array of key value pairs containing the plugins configuration ( key1, value1, key2, value2, ...)
+     * @param properties array of key value pairs containing the plugins configuration ( key1, value1, key2, value2, ...)
      * @throws PEPClientConfigurationException
      */
-    private PEPClientConfiguration initPepConfiguration(String args[]) throws PEPClientConfigurationException {
-        if (args==null) throw new IllegalArgumentException(G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
+    private PEPClientConfiguration initPepConfiguration(Properties properties) throws PEPClientConfigurationException {
+        checkNotNull(properties, G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
 
         PEPClientConfiguration pepConfig = new PEPClientConfiguration();
 
         _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
-        Map<String, String> kvmap = ArgumentMapFactory.createFromKeyValuePairs(args);
-        pepConfig.addPEPDaemonEndpoint(ArgumentMapFactory.getValue(kvmap, PEP_ENDPOINT, DEFAULT_PEP_ENDPOINT));
-        _resourceId = ArgumentMapFactory.getValue(kvmap, RESOURCE_ID, DEFAULT_RESOURCE_ID);
-        _actionId = ArgumentMapFactory.getValue(kvmap, ACTION_ID, DEFAULT_ACTION_ID);
-        String trustMaterial = ArgumentMapFactory.getValue(kvmap, TRUST_MATERIAL, DEFAULT_TRUST_MATERIAL);
-        String hostCert = ArgumentMapFactory.getValue(kvmap, HOST_CERT, DEFAULT_HOST_CERT);
-        String hostKey = ArgumentMapFactory.getValue(kvmap, HOST_KEY, DEFAULT_HOST_KEY);
-        String keyPass = ArgumentMapFactory.getValue(kvmap, KEY_PASS, DEFAULT_KEY_PASS);
+        pepConfig.addPEPDaemonEndpoint(properties.getProperty(PEP_ENDPOINT, DEFAULT_PEP_ENDPOINT));
+        _resourceId = properties.getProperty(RESOURCE_ID, DEFAULT_RESOURCE_ID);
+        _actionId = properties.getProperty(ACTION_ID, DEFAULT_ACTION_ID);
+        String trustMaterial = properties.getProperty(TRUST_MATERIAL, DEFAULT_TRUST_MATERIAL);
+        String hostCert = properties.getProperty(HOST_CERT, DEFAULT_HOST_CERT);
+        String hostKey = properties.getProperty(HOST_KEY, DEFAULT_HOST_KEY);
+        String keyPass = properties.getProperty(KEY_PASS, DEFAULT_KEY_PASS);
 
         pepConfig.setTrustMaterial(trustMaterial);
         pepConfig.setKeyMaterial(hostCert, hostKey, keyPass);
@@ -138,7 +138,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         try {
             Collection<Principal> globusPrincipals = Collections.emptySet();
             if (authorizedPrincipals != null)
-                globusPrincipals = Collections2.filter(authorizedPrincipals, new ClassTypePredicate<Principal>(GlobusPrincipal.class));
+                globusPrincipals = Collections2.filter(authorizedPrincipals, instanceOf(GlobusPrincipal.class));
 
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();

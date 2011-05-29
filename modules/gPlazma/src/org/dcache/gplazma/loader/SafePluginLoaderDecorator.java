@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader;
 
+import java.util.Properties;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
@@ -11,7 +13,7 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  */
 public class SafePluginLoaderDecorator implements PluginLoader {
     private boolean _haveInitialised;
-    private PluginLoader _inner;
+    private final PluginLoader _inner;
 
     public SafePluginLoaderDecorator( PluginLoader inner) {
         _inner = inner;
@@ -37,9 +39,9 @@ public class SafePluginLoaderDecorator implements PluginLoader {
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName(String name, String[] arguments) {
+    public GPlazmaPlugin newPluginByName(String name, Properties properties) {
         notInitialisedGuard();
-        return _inner.newPluginByName(name, arguments);
+        return _inner.newPluginByName(name, properties);
     }
 
     private void notInitialisedGuard() {

@@ -1,7 +1,9 @@
 package org.dcache.gplazma.plugins;
 
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
+
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -28,7 +30,7 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     public UsernamePasswordAuthenticationPlugin() {
     }
 
-    public UsernamePasswordAuthenticationPlugin(String[] arguments) {
+    public UsernamePasswordAuthenticationPlugin(Properties properties) {
     }
 
     /*
@@ -66,7 +68,8 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
      * metadata
      */
     @Override
-    public void session(SessionID sID, Set<Principal> authorizedPrincipals,
+    public void session(SessionID sID,
+            Set<Principal> authorizedPrincipals,
             Set<Object> attrib) throws AuthenticationException {
         session(getUserName(authorizedPrincipals).getName(), attrib);
     }
