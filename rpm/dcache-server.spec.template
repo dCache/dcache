@@ -114,7 +114,6 @@ fi
 %defattr(-,root,root)
 %docdir /opt/d-cache/share/doc
 %docdir /opt/d-cache/share/man
-/etc/bash_completion.d
 /opt/d-cache/billing
 /opt/d-cache/classes
 /opt/d-cache/share
