@@ -2,28 +2,26 @@ package org.dcache.gplazma.loader;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
-/**
- * This class creates GPlazmaPlugin objects by calling their constructor that
- * takes a single argument: an array of Strings. When creating a plugin with
- * no arguments an empty array is passed.
- */
-public class StringArrayPluginFactory implements PluginFactory {
+public class PropertiesPluginFactory implements PluginFactory {
 
-    private static final String[] EMPTY_ARGUMENTS = new String[0];
+    private static final Properties EMPTY_ARGUMENTS = new Properties();
 
     @Override
     public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass) {
-        return newPlugin( pluginClass, EMPTY_ARGUMENTS);
+        return newPlugin( pluginClass, EMPTY_ARGUMENTS );
     }
 
     @Override
     public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass,
-                                                 String[] arguments) {
+            Properties properties) {
         Constructor<T> constructor = tryToGetConstructor( pluginClass);
-        T plugin = tryToCreatePlugin( constructor, arguments);
+
+        T plugin = tryToCreatePlugin( constructor, properties);
         return plugin;
     }
 
@@ -31,10 +29,10 @@ public class StringArrayPluginFactory implements PluginFactory {
         Constructor<T> constructor;
 
         try {
-            constructor = pluginClass.getConstructor( String[].class);
+            constructor = pluginClass.getConstructor( Properties.class);
         } catch (SecurityException e) {
             throw new IllegalArgumentException("Not authorised to create plugin " +
-                                               pluginClass.getName(), e);
+                    pluginClass.getName(), e);
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException("Cannot create plugin as it does not accept arguments");
         }
@@ -43,29 +41,36 @@ public class StringArrayPluginFactory implements PluginFactory {
     }
 
     private <T extends GPlazmaPlugin> T tryToCreatePlugin(Constructor<T> constructor,
-                                                          String[] arguments) {
+            Properties properties) {
         T plugin;
 
-        Object[] constructorArgs = new Object[] { arguments };
+        Properties constructorProperties = new Properties();
+
+        if (properties!=null)
+            for (Entry<Object, Object> kv : properties.entrySet()) {
+                constructorProperties.put(kv.getKey(), kv.getValue());
+            }
 
         try {
-            plugin = constructor.newInstance( constructorArgs);
+            plugin = constructor.newInstance( properties );
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Internal error creating plugin " +
-                                               constructor.getName(), e);
+                    constructor.getName(), e);
         } catch (InstantiationException e) {
             throw new IllegalArgumentException("Plugin is of a type that cannot be instantiated " +
-                                               constructor.getName(), e);
+                    constructor.getName(), e);
         } catch (IllegalAccessException e) {
             throw new IllegalArgumentException("Failed to create plugin " +
-                                                constructor.getName(), e);
+                    constructor.getName(), e);
         } catch (InvocationTargetException e) {
             throw new IllegalArgumentException("Plugin constructor " +
-                                               constructor.getName() +
-                                               " threw exception " +
-                                               e.getCause(), e.getCause());
+                    constructor.getName() +
+                    " threw exception " +
+                    e.getCause(), e.getCause());
         }
 
         return plugin;
     }
+
+
 }
