@@ -332,7 +332,7 @@ public class ChecksumScanner
         @Override
         public synchronized void start()
         {
-            if (_csm.getScrub() && !isActive()) {
+            if (_csm.isScrubbingEnabled() && !isActive()) {
                 super.start();
             }
         }
@@ -341,7 +341,7 @@ public class ChecksumScanner
         public void runIt() throws InterruptedException
         {
             initializeFromSavedState();
-            boolean isFinished = isFirstStart() || isResuming() ? false : true;
+            boolean isFinished = !isFirstStart() && !isResuming();
 
             try {
                 while (true) {
@@ -350,6 +350,11 @@ public class ChecksumScanner
                              new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").
                                  format(new Date(_lastStart +
                                                  _csm.getScrubPeriod())));
+                        if (System.currentTimeMillis() - _lastStart > _csm.getScrubPeriod()) {
+                            _log.warn("The last scrub took longer time to finish ({} s.) than the configured period ({} s.) - consider increasing the scrubbing period",
+                                      System.currentTimeMillis() - _lastStart,
+                                      _csm.getScrubPeriod());
+                        }
                         waitUntil(_lastStart + _csm.getScrubPeriod());
                         _lastStart = System.currentTimeMillis();
                         isFinished = false;
@@ -361,8 +366,10 @@ public class ChecksumScanner
                         _badCount = 0;
                         _totalCount = 0;
                         scanFiles(toScan);
-                        _log.debug("Finished scrubbing. Found {} bad files of {}",
-                                   _badCount, _numFiles);
+                        if (_badCount > 0) {
+                            _log.warn("Finished scrubbing. Found {} bad files of {}",
+                                       _badCount, _numFiles);
+                        }
                         isFinished = true;
                     } catch (IllegalStateException e) {
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);

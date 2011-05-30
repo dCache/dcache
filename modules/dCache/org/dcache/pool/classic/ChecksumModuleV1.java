@@ -128,7 +128,9 @@ public class ChecksumModuleV1
         pw.println("csm set checksumtype "+_defaultChecksumFactory.getType());
         if (_scrub) {
             pw.print("csm set policy -scrub=on");
-            pw.print(" -limit="+_throughputLimit / BYTES_IN_MEBIBYTE);
+            pw.print(" -limit="+
+                     (Double.isInfinite(_throughputLimit) ? "off"
+                                                          : _throughputLimit / BYTES_IN_MEBIBYTE));
             pw.println(" -period="+TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
         } else {
             pw.println("csm set policy -scrub=off");
@@ -154,7 +156,7 @@ public class ChecksumModuleV1
         return _throughputLimit;
     }
 
-    public boolean getScrub()
+    public boolean isScrubbingEnabled()
     {
         return _scrub;
     }
@@ -210,9 +212,9 @@ public class ChecksumModuleV1
             pw.print("getcrcfromhsm ");
         if (_scrub) {
             pw.print("scrub(");
-            pw.print(_throughputLimit / BYTES_IN_MEBIBYTE);
+            pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
             pw.print(",");
-            pw.print(TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
+            pw.print("period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
             pw.print(")");
         }
         pw.println("");
@@ -238,8 +240,12 @@ public class ChecksumModuleV1
             append("  getcrcfromhsm : ").append(_updatepnfs).append("\n").
             append("          scrub : ").append(_scrub).append("\n");
         if (_scrub) {
-            sb.append("             limit  = ").append(_throughputLimit / BYTES_IN_MEBIBYTE).append(" MiB/s\n").
-               append("             period = ").append(TimeUnit.MILLISECONDS.toHours(_scrubPeriod)).append(" hours\n");
+            if (Double.isInfinite(_throughputLimit)) {
+                sb.append("             limit  = off\n");
+            } else {
+                sb.append("             limit  = ").append(_throughputLimit / BYTES_IN_MEBIBYTE).append(" MiB/s\n");
+            }
+            sb.append("             period = ").append(TimeUnit.MILLISECONDS.toHours(_scrubPeriod)).append(" hours\n");
         }
         return sb.toString();
     }
@@ -249,10 +255,10 @@ public class ChecksumModuleV1
         "  Syntax : csm set policy [-<option>=on[|off]] ...\n"+
         "\n"+
         "    OPTIONS :\n"+
-        "       -scrub:  scrub pool data regularly (suboptions :)\n"+
+        "       -scrub:  periodically verify pool data against checksums (suboptions :)\n"+
         "\n"+
-        "            -limit=<MiB/s>  :  checksum computation throughput limit\n"+
-        "            -period=<hours> :  run scrubber every 'n' hours\n"+
+        "            -limit=<MiB/s>|off : checksum computation throughput limit\n"+
+        "            -period=<hours>    : run scrubber every <hours> hours\n"+
         "\n"+
         "       -onread          : run check before each open for reading\n"+
         "       -onwrite         : run check after receiving the file from client (on fs)\n"+
@@ -274,18 +280,25 @@ public class ChecksumModuleV1
         _enforceCRC = checkBoolean(args, "enforcecrc" , _enforceCRC);
         _updatepnfs = checkBoolean(args, "getcrcfromhsm" , _updatepnfs);
 
-        double limit =
-            args.getDoubleOption("limit",
-                                 _throughputLimit / BYTES_IN_MEBIBYTE)
-                                 * BYTES_IN_MEBIBYTE;
-        if (limit <= 0) {
-            throw new IllegalArgumentException("Throughput limit must be > 0");
+        String limitOption = args.getOpt("limit");
+        if (limitOption != null) {
+            if (limitOption.equals("off")) {
+                _throughputLimit = Double.POSITIVE_INFINITY;
+            } else {
+                double limit =
+                    args.getDoubleOption("limit",
+                                         _throughputLimit / BYTES_IN_MEBIBYTE)
+                                         * BYTES_IN_MEBIBYTE;
+                if (limit <= 0) {
+                    throw new IllegalArgumentException("Throughput limit must be > 0");
+                }
+                _throughputLimit = limit;
+            }
         }
-        _throughputLimit = limit;
 
-        String value = args.getOpt("period");
-        if (value != null) {
-            long period = TimeUnit.HOURS.toMillis(Integer.parseInt(value));
+        String periodOption = args.getOpt("period");
+        if (periodOption != null) {
+            long period = TimeUnit.HOURS.toMillis(Integer.parseInt(periodOption));
             if (period <= 0) {
                 throw new IllegalArgumentException("Scrub interval must be > 0");
             }

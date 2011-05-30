@@ -67,6 +67,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
         LoggerFactory.getLogger(GenericIdChecksumFactory.class);
 
     private final static long BYTES_IN_MEBIBYTE = 1024 * 1024;
+    private final static long MILLISECONDS_IN_SECOND = 1000;
 
     private ChecksumType _type;
 
@@ -146,13 +147,15 @@ class GenericIdChecksumFactory extends ChecksumFactory
     private long throughputAdjustment(double throughputLimit, long numBytes,
                                       long elapsedTime)
     {
-        assert throughputLimit > 0;
+        assert throughputLimit > 0 && numBytes >= 0 && elapsedTime >= 0;
         /**
-         * Adjust is -elapsedTime when throughputLimit is ∞. Adjust is 0 when
-         * numBytes is 0.
+         * Adjust is < 0 when numBytes/elapsedTime < throughputLimit
+         * (-elapsedTime when throughputLimit is ∞). Adjust is 0 when numBytes
+         * is 0.
          */
-        long adjust = (long) Math.ceil(1000 * (numBytes / throughputLimit)
-                                       - elapsedTime);
+        long desiredDuration = (long) Math.ceil(MILLISECONDS_IN_SECOND *
+                                                (numBytes / throughputLimit));
+        long adjust = desiredDuration - elapsedTime;
         return Math.max(0, adjust);
     }
 
@@ -162,19 +165,18 @@ class GenericIdChecksumFactory extends ChecksumFactory
      * @param numBytes  no. of bytes read/written for <code>millis</code>
      *                  milliseconds.
      * @param millis    elapsed time (milliseconds) when <code>numBytes</code>
-     *                  bytes were read/written.
-     * @return          throughput (MiB/s) as the string representation of a
-     *                  floating point number or the string "Infinity".
+     *                  bytes were read/written. If 0 increment by 1 to avoid
+     *                  printing Infinity or NaN.
+     * @return          throughput in (MiB/s) as the string representation of a
+     *                  floating point number. Neither NaN or Infinity will be
+     *                  printed due to the incrementing of <code>millis</code>
+     *                  to 1 if it has a value of 0.
      */
     private String throughputAsString(long numBytes, long millis)
     {
-        if (millis <= 0) {
-            return "Infinity";
-        } else {
-            return String.valueOf((numBytes / BYTES_IN_MEBIBYTE) /
-                                  (millis / 1000.0));
-        }
-     }
+        return Double.toString(((double) numBytes / BYTES_IN_MEBIBYTE) /
+                               (( millis == 0 ? 1 : millis ) / (double) MILLISECONDS_IN_SECOND));
+    }
 
     @Override
     public Checksum computeChecksum(File file, double throughputLimit)
@@ -205,15 +207,21 @@ class GenericIdChecksumFactory extends ChecksumFactory
             in.close();
         }
         Checksum checksum = create(digest.digest());
-        _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms, throughput {} MiB/s (limit {} MiB/s)",
+
+        _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms{}",
                    new Object[] {
                        file,
                        sum,
                        checksum,
                        System.currentTimeMillis() - start,
-                       throughputAsString(sum,
-                                          System.currentTimeMillis() - start),
-                       throughputLimit / BYTES_IN_MEBIBYTE });
+                       sum == 0 ? ""
+                                : ", throughput " +
+                                  throughputAsString(sum, System.currentTimeMillis() - start) +
+                                  " MiB/s" +
+                                  (Double.isInfinite(throughputLimit) ? ""
+                                                                      : " (limit " +
+                                                                        throughputLimit / BYTES_IN_MEBIBYTE +
+                                                                        " MiB/s)")});
         return checksum;
     }
 }
