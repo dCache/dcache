@@ -174,31 +174,7 @@ public class GPlazmaTests {
             ACCOUNT_CONFIG_ITEM,
             SESSION_CONFIG_ITEM);
 
-
-        assertFalse(CheckUIDAccountPlugin.isCalled());
-
-        // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
-
-        // check the results
-        assertTrue(CheckUIDAccountPlugin.isCalled());
-
-        Set<Principal> expectedPrincipals = new HashSet<Principal>();
-        expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
-        expectedPrincipals.add(new UidPrincipal(ROOT_UID));
-        expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
-
-        Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
-        assertEquals(resultPrincipals, expectedPrincipals);
-
-        Set<Object> expectedAttributes = new HashSet<Object>();
-        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
-        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
-        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
-
-        Set<Object> resultAttributes = result.getSessionAttributes();
-
-        assertEquals(expectedAttributes, resultAttributes);
+        runLoginAssertions(config);
    }
 
     /**
@@ -219,27 +195,7 @@ public class GPlazmaTests {
             SESSION_CONFIG_ITEM,
             FAIL_OPTIONAL_SESSION_CONFIG_ITEM);
 
-        assertFalse(CheckUIDAccountPlugin.isCalled());
-
-        // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
-
-        // check the results
-        assertTrue(CheckUIDAccountPlugin.isCalled());
-
-        Set<Principal> expectedPrincipals = new HashSet<Principal>();
-        expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
-        expectedPrincipals.add(new UidPrincipal(ROOT_UID));
-        expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
-        Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
-        assertEquals(expectedPrincipals, resultPrincipals);
-
-        Set<Object> expectedAttributes = new HashSet<Object>();
-        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
-        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
-        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
-        Set<Object> resultAttributes = result.getSessionAttributes();
-        assertEquals(expectedAttributes, resultAttributes);
+        runLoginAssertions(config);
    }
 
     /**
@@ -419,4 +375,30 @@ public class GPlazmaTests {
         return new StaticContentConfigurationLoadingStrategy(configuration);
     }
 
+    private void runLoginAssertions(Configuration config) throws AuthenticationException {
+        assertFalse(CheckUIDAccountPlugin.isCalled());
+
+        // do the work here
+        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+
+        // check the results
+        assertTrue(CheckUIDAccountPlugin.isCalled());
+
+        Set<Principal> expectedPrincipals = new HashSet<Principal>();
+        expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
+        expectedPrincipals.add(new UidPrincipal(ROOT_UID));
+        expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
+
+        Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
+        assertEquals(resultPrincipals, expectedPrincipals);
+
+        Set<Object> expectedAttributes = new HashSet<Object>();
+        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
+        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
+        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
+
+        Set<Object> resultAttributes = result.getSessionAttributes();
+
+        assertEquals(expectedAttributes, resultAttributes);
+    }
 }
