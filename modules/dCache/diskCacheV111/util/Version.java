@@ -1,5 +1,14 @@
-// $Id$
 package diskCacheV111.util ;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.util.jar.Attributes;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
+import java.net.URL;
 
 /**
   *
@@ -10,38 +19,38 @@ package diskCacheV111.util ;
 
 
 public class Version {
-    private static String __specVersion = "0.0.0" ;
-    private static String __specTitle   = "Unknown" ;
-    private static String __specVendor  = "Unknown" ;
+
+    private static String __specVersion = "undefined" ;
+    private static String __buildTime = "undefined" ;
+
     static {
        try{
-           Class c = diskCacheV111.util.Version.class ;
-           Package p = Package.getPackage("diskCacheV111.util");
-           if( p != null ){
-               String tmp = null ;
-               p.getSpecificationTitle() ;
-               if( ( tmp =  p.getSpecificationTitle() ) != null   )__specTitle   = tmp ;
-               if( ( tmp =  p.getSpecificationVersion() ) != null )__specVersion = tmp ;
-               if( ( tmp =  p.getSpecificationVendor() ) != null  )__specVendor  = tmp ;
-           }
-       }catch(Exception ee){}
+            ProtectionDomain pd = Version.class.getProtectionDomain();
+            CodeSource cs = pd.getCodeSource();
+            URL u = cs.getLocation();
+
+            InputStream is = u.openStream();
+            JarInputStream jis = new JarInputStream(is);
+            Manifest m = jis.getManifest();
+
+            if (m != null) {
+                Attributes as = m.getMainAttributes();
+                String buildTime = as.getValue("Build-Time");
+                if( buildTime != null ) {
+                    __buildTime = buildTime;
+                }
+                String packageVersion = as.getValue("Package-Version");
+                if( packageVersion != null ) {
+                    __specVersion = packageVersion;
+                }
+            }
+
+       }catch(IOException ee){}
     
     }
-    public static String getVersion(){ return __specVersion ; }
+    public static String getVersion() { return __specVersion ; }
+    public static String getBuildTime() { return __buildTime; }
     public static void main( String [] args ){
-       try{
-           Class c = Class.forName( "dmg.util.Args" ) ;
-       }catch(Exception iee){
-           System.err.println("Load Error : Cells not found") ;
-           System.exit(4);
-       }
-       if( args.length > 0 ){
-                  System.out.println("SpecificationTitle:   "+__specTitle);
-                  System.out.println("SpecificationVersion: "+__specVersion);
-                  System.out.println("SpecificationVendor:  "+__specVendor);
-       }else{
-          System.out.println(__specVersion) ;
-       }
-       System.exit(0);
+       System.out.println(__specVersion) ;
     }
 }

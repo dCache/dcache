@@ -34,18 +34,11 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.EXCHANGE_ID4res;
 import org.dcache.chimera.nfs.v4.xdr.EXCHANGE_ID4resok;
 import org.dcache.chimera.nfs.ChimeraNFSException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.net.URL;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.jar.Attributes;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import diskCacheV111.util.Version;
 
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_DOMAIN;
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_ID;
@@ -67,38 +60,6 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             | nfs4_prot.EXCHGID4_FLAG_BIND_PRINC_STATEID
             | nfs4_prot.EXCHGID4_FLAG_UPD_CONFIRMED_REC_A
             | nfs4_prot.EXCHGID4_FLAG_CONFIRMED_R);
-
-    /**
-     * compile time
-     */
-    private static String COMPILTE_TIME = "<UNKNOWN>";
-
-    static {
-        /*
-         * get 'Build-Time' attribute from jar file manifest ( if available )
-         */
-        try {
-
-            ProtectionDomain pd = OperationEXCHANGE_ID.class.getProtectionDomain();
-            CodeSource cs = pd.getCodeSource();
-            URL u = cs.getLocation();
-
-            InputStream is = u.openStream();
-            JarInputStream jis = new JarInputStream(is);
-            Manifest m = jis.getManifest();
-
-            if (m != null) {
-                Attributes as = m.getMainAttributes();
-                String buildTime = as.getValue("Build-Time");
-                if( buildTime != null ) {
-                    COMPILTE_TIME = buildTime;
-                }
-            }
-
-        }catch(IOException ioe) {
-            // bad luck
-        }
-    }
 
     public OperationEXCHANGE_ID(nfs_argop4 args, int flag) {
         super(args, nfs_opnum4.OP_EXCHANGE_ID);
@@ -253,7 +214,10 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
             res.eir_resok4.eir_server_impl_id = new nfs_impl_id4[1];
             res.eir_resok4.eir_server_impl_id[0] = new nfs_impl_id4();
             res.eir_resok4.eir_server_impl_id[0].nii_domain = string2utf8str_cis( NFS4_IMPLEMENTATION_DOMAIN );
-            res.eir_resok4.eir_server_impl_id[0].nii_name = string2utf8str_cs( NFS4_IMPLEMENTATION_ID + " build-time " + COMPILTE_TIME );
+            res.eir_resok4.eir_server_impl_id[0].nii_name = string2utf8str_cs(
+                NFS4_IMPLEMENTATION_ID
+                + " Version: " + Version.getVersion()
+                + " build-time: " + Version.getBuildTime() );
             nfstime4 releaseDate = new nfstime4();
             releaseDate.nseconds = new uint32_t(0);
             releaseDate.seconds = new int64_t (System.currentTimeMillis() / 1000 );

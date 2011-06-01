@@ -39,7 +39,7 @@ public interface NFSv4Defaults {
     /**
      * NFSv4.1 implementation ID
      */
-    public final static String NFS4_IMPLEMENTATION_ID = "Chimera NFSv4.1";
+    public final static String NFS4_IMPLEMENTATION_ID = "dCache NFSv4.1";
 
     /**
      * NFSv4.1 implementation domain
