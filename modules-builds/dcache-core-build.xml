@@ -235,6 +235,7 @@
                 <attribute name="Package-Title" value="dmg.util" />
                 <attribute name="Package-Version" value="${release.name}" />
                 <attribute name="Package-Vendor" value="${vendor}" />
+                <attribute name="Build-Time" value="${jar.timestamp}" />
             </manifest>
         </jar>
 
