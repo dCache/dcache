@@ -59,6 +59,7 @@ import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v4.Layout;
 import org.dcache.chimera.nfs.v4.MDSOperationFactory;
+import org.dcache.chimera.nfs.v4.NfsIdMapping;
 import org.dcache.chimera.nfs.v4.OperationFactoryMXBeanImpl;
 import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.chimera.nfs.v4.SimpleIdMap;
@@ -137,10 +138,16 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private  OncRpcSvc _rpcService;
 
+    private NfsIdMapping _idMapper;
+
     private final static TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
 
+    public void setIdMapper(NfsIdMapping idMapper)
+    {
+        _idMapper = idMapper;
+    }
     public void setPoolManagerStub(CellStub stub)
     {
         _poolManagerStub = stub;
@@ -174,7 +181,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         _rpcService = new OncRpcSvc(DEFAULT_PORT, IpProtocolType.TCP, true, "NFSv41 door embedded server");
 
         _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
-                _dm, _aclHandler, _fileFileSystemProvider, new SimpleIdMap(), _exportFile);
+                _dm, _aclHandler, _fileFileSystemProvider, _idMapper, _exportFile);
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
         _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
