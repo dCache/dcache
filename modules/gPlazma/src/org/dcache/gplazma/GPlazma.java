@@ -1,9 +1,12 @@
 package org.dcache.gplazma;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -33,19 +36,16 @@ import org.dcache.gplazma.validation.ValidationStrategy;
 import org.dcache.gplazma.validation.ValidationStrategyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-/**
- *
- * @author timur
- */
+
 public class GPlazma {
 
     private static final Logger LOGGER =
         LoggerFactory.getLogger( GPlazma.class);
 
-
+    private Properties _globalProperties;
+    private boolean _globalPropertiesHaveUpdated = false;
 
     private PluginLoader pluginLoader;
-
 
     private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>
             authenticationPluginElements;
@@ -58,35 +58,46 @@ public class GPlazma {
     private List<GPlazmaPluginElement<GPlazmaIdentityPlugin>>
             identityPluginElements;
 
-   private final ConfigurationLoadingStrategy configurationLoadingStrategy;
-   private AuthenticationStrategy authenticationStrategy;
-   private MappingStrategy mappingStrategy;
-   private AccountStrategy accountStrategy;
-   private SessionStrategy sessionStrategy;
-   private ValidationStrategy validationStrategy;
-   private IdentityStrategy identityStrategy;
+    private final ConfigurationLoadingStrategy configurationLoadingStrategy;
+    private AuthenticationStrategy authenticationStrategy;
+    private MappingStrategy mappingStrategy;
+    private AccountStrategy accountStrategy;
+    private SessionStrategy sessionStrategy;
+    private ValidationStrategy validationStrategy;
+    private IdentityStrategy identityStrategy;
 
-   public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy) {
+    /**
+     * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
+     * @param environment Map holding environment variables with their values. Must not be null.
+     */
+    public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy, Map<String, Object> environment) {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
+        _globalProperties = environmentToProperties(environment);
         loadPlugins();
         initStrategies();
     }
 
-    public LoginReply login(Subject subject) throws AuthenticationException {
-        if(subject == null) {
-            throw new NullPointerException("subject is null");
+    /**
+     * @param environment Map holding environment variables with their values. Must not be null.
+     */
+    public void updateGlobalProperties(Map<String, Object> environment) {
+        synchronized (configurationLoadingStrategy) {
+            _globalProperties = environmentToProperties(environment);
+            _globalPropertiesHaveUpdated = true;
         }
+    }
+
+    public LoginReply login(Subject subject) throws AuthenticationException {
+        checkNotNull(subject, "subject is null");
+
         AuthenticationStrategy currentAuthenticationStrategy;
         MappingStrategy currentMappingStrategy;
         AccountStrategy currentAccountStrategy;
         SessionStrategy currentSessionStrategy;
 
         synchronized (configurationLoadingStrategy) {
-            if(configurationLoadingStrategy.hasUpdated()) {
-                LOGGER.debug("configuration has been updated, reloading plugins");
-                loadPlugins();
-                initStrategies();
-            }
+            updatePluginConfig();
+
             currentAuthenticationStrategy = this.authenticationStrategy;
             currentMappingStrategy = this.mappingStrategy;
             currentAccountStrategy = this.accountStrategy;
@@ -129,31 +140,19 @@ public class GPlazma {
     }
 
     public Principal map(Principal principal) throws AuthenticationException {
-        IdentityStrategy currentIdentityStrategy;
-
-        synchronized (configurationLoadingStrategy) {
-            if (configurationLoadingStrategy.hasUpdated()) {
-                LOGGER.debug("configuration has been updated, reloading plugins");
-                loadPlugins();
-                initStrategies();
-            }
-            currentIdentityStrategy = this.identityStrategy;
-        }
-        return currentIdentityStrategy.map(principal);
+        return getIdentityStrategy().map(principal);
     }
 
     public Set<Principal> reverseMap(Principal principal) throws AuthenticationException {
-        IdentityStrategy currentIdentityStrategy;
+        return getIdentityStrategy().reverseMap(principal);
+    }
 
+    private IdentityStrategy getIdentityStrategy() {
         synchronized (configurationLoadingStrategy) {
-            if (configurationLoadingStrategy.hasUpdated()) {
-                LOGGER.debug("configuration has been updated, reloading plugins");
-                loadPlugins();
-                initStrategies();
-            }
-            currentIdentityStrategy = this.identityStrategy;
+            updatePluginConfig();
+
+            return this.identityStrategy;
         }
-        return currentIdentityStrategy.reverseMap(principal);
     }
 
     private void loadPlugins() {
@@ -161,7 +160,6 @@ public class GPlazma {
         pluginLoader = new CachingPluginLoaderDecorator(
                 XmlResourcePluginLoader.newPluginLoader());
         pluginLoader.init();
-
 
         authenticationPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>();
         mappingPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaMappingPlugin>>();
@@ -173,17 +171,20 @@ public class GPlazma {
                 configurationLoadingStrategy.
                         load().getConfigurationItemList()) {
             String pluginName = configItem.getPluginName();
-            Properties properties = configItem.getPluginConfiguration();
+
+            Properties pluginProperties = configItem.getPluginConfiguration();
+            Properties combinedProperties = new Properties(_globalProperties);
+            combinedProperties.putAll(pluginProperties);
+
             ConfigurationItemType type = configItem.getType();
             ConfigurationItemControl control = configItem.getControl();
-            GPlazmaPlugin plugin = pluginLoader.newPluginByName(pluginName, properties);
+            GPlazmaPlugin plugin = pluginLoader.newPluginByName(pluginName, combinedProperties);
             classifyPlugin(type, plugin, pluginName, control);
         }
     }
 
     private void initStrategies() {
-        StrategyFactory factory =
-                StrategyFactory.getInstance();
+        StrategyFactory factory = StrategyFactory.getInstance();
         authenticationStrategy = factory.newAuthenticationStrategy();
         authenticationStrategy.setPlugins(authenticationPluginElements);
         mappingStrategy = factory.newMappingStrategy();
@@ -198,6 +199,15 @@ public class GPlazma {
         ValidationStrategyFactory validationFactory =
                 ValidationStrategyFactory.getInstance();
         validationStrategy = validationFactory.newValidationStrategy();
+    }
+
+    private void updatePluginConfig() {
+        if (_globalPropertiesHaveUpdated || configurationLoadingStrategy.hasUpdated()) {
+            LOGGER.debug("configuration has been updated, reloading plugins");
+            loadPlugins();
+            initStrategies();
+            _globalPropertiesHaveUpdated = false;
+        }
     }
 
     private void classifyPlugin(
@@ -256,4 +266,13 @@ public class GPlazma {
         pluginElements.add(pluginElement);
     }
 
+    private Properties environmentToProperties(Map<String, Object> environment) {
+
+        Properties properties = new Properties();
+        for (Map.Entry<String, Object> entry : environment.entrySet()) {
+            properties.put(entry.getKey(), entry.getValue().toString());
+        }
+
+        return properties;
+    }
 }

@@ -66,8 +66,7 @@ public class Gplazma2LoginStrategy
     public void init()
     {
         _gplazma =
-            new GPlazma(new FromFileConfigurationLoadingStrategy(_configurationFile));
-        // TODO: set environment
+            new GPlazma(new FromFileConfigurationLoadingStrategy(_configurationFile), _environment);
     }
 
     private LoginReply

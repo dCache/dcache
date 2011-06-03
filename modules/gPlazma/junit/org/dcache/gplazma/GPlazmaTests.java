@@ -15,6 +15,7 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -36,6 +37,7 @@ import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 /**
  *
  * @author timur
@@ -55,6 +57,7 @@ public class GPlazmaTests {
     private static final String ROOT_GID = "0";
 
     public static final Properties EMPTY_PROPERTIES = new Properties();
+    public static final Map<String, Object> EMPTY_ENVIRONMENT = Collections.emptyMap();
 
     private static final ConfigurationItem AUTH_CONFIG_ITEM =
             new ConfigurationItem(AUTHENTICATION, REQUIRED, AUTH_NAME, EMPTY_PROPERTIES);
@@ -137,7 +140,7 @@ public class GPlazmaTests {
                 Collections.emptySet(),
                 Collections.emptySet());
 
-        GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG));
+        GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG),EMPTY_ENVIRONMENT);
         LoginReply result = instance.login(subject);
 
         Assert.assertNotNull(result);
@@ -216,7 +219,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -239,7 +242,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -261,7 +264,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -283,7 +286,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -304,7 +307,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -325,7 +328,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -345,7 +348,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -379,7 +382,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         // check the results
         assertTrue(CheckUIDAccountPlugin.isCalled());
