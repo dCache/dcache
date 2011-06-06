@@ -1,7 +1,5 @@
 package org.dcache.gplazma.validation;
 
-import org.dcache.gplazma.strategies.*;
-
 /**
  * Package private and not exposed through API
  * Subject to change without notice
