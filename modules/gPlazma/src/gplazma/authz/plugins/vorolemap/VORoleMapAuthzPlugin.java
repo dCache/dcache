@@ -87,8 +87,6 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
 
         String user_name=null;
 
-        String identity = (role!=null) ? subjectDN.concat(role) : subjectDN;
-
         VORoleMapHandler voRoleMapHandler;
 
         try {
@@ -99,9 +97,16 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             throw new AuthorizationException(ase.toString());
         }
 
-        if (desiredUserName == null) logger.debug("Desired Username not requested. Will attempt a mapping.");
+        String identity = (role!=null) ? subjectDN.concat(role) : subjectDN;
+
         // Do even if username is requested, in order to check blacklist
         try {
+            /* Check whether the DN by itself is blacklisted.
+             */
+            if ("-".equals(mapUsername(voRoleMapHandler, subjectDN))) {
+                throw new AuthorizationException(REVOCATION_MESSAGE + ": for DN " + subjectDN);
+            }
+
             logger.info("Requesting mapping for User with DN and role: " + identity);
             user_name = mapUsername(voRoleMapHandler, identity);
             // Check for wildcard DN
