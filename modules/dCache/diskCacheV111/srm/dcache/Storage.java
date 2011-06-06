@@ -290,6 +290,8 @@ public final class Storage
     private LoginBrokerHandler _loginBrokerHandler;
     private DirectoryListSource _listSource;
 
+    private boolean _isOnlinePinningEnabled = true;
+
     // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
             long timeout)
@@ -420,6 +422,11 @@ public final class Storage
     public void setConfiguration(Configuration config)
     {
         this.config = config;
+    }
+
+    public void setPinOnlineFiles(boolean value)
+    {
+        _isOnlinePinningEnabled = value;
     }
 
     public void setLoginBrokerUpdatePeriod(long period)
@@ -1055,7 +1062,10 @@ public final class Storage
                                  callbacks,
                                  pinLifetime,
                                  requestId,
+                                 _isOnlinePinningEnabled,
+                                 _poolMonitor,
                                  _pnfsStub,
+                                 _poolManagerStub,
                                  _pinManagerStub);
         } catch (SRMInvalidPathException e) {
             callbacks.FileNotFound(e.getMessage());
@@ -1066,6 +1076,10 @@ public final class Storage
                           UnpinCallbacks callbacks,
                           String pinId)
     {
+        if (PinCompanion.isFakePinId(pinId)) {
+            return;
+        }
+
         UnpinCompanion.unpinFile(Subjects.getSubject((AuthorizationRecord) user),
                                  new PnfsId(fileId), Long.parseLong(pinId), callbacks,_pinManagerStub);
     }
@@ -2772,18 +2786,13 @@ public final class Storage
                                     final DcacheFileMetaData fmd)
             throws InterruptedException
         {
-            try {
-                FileLocality locality =
-                    _poolMonitor.getFileLocality(attributes, config.getSrmHost());
-                fmd.locality = locality.toTFileLocality();
-                switch (locality) {
-                case ONLINE:
-                case ONLINE_AND_NEARLINE:
-                    fmd.isCached = true;
-                }
-            } catch (CacheException e) {
-                _log.error("Locality lookup failed: {} [{}]",
-                           e.getMessage(), e.getRc());
+            FileLocality locality =
+                _poolMonitor.getFileLocality(attributes, config.getSrmHost());
+            fmd.locality = locality.toTFileLocality();
+            switch (locality) {
+            case ONLINE:
+            case ONLINE_AND_NEARLINE:
+                fmd.isCached = true;
             }
         }
 
@@ -3181,6 +3190,10 @@ public final class Storage
         throws SRMException
     {
         try {
+            if (PinCompanion.isFakePinId(pinId)) {
+                return newPinLifetime;
+            }
+
             PnfsId pnfsId = new PnfsId(fileId);
             FileAttributes attributes = new FileAttributes();
             attributes.setPnfsId(pnfsId);

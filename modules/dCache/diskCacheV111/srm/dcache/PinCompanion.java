@@ -71,7 +71,12 @@ import javax.security.auth.Subject;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.poolManager.PoolMonitorV5;
 
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.vehicles.FileAttributes;
@@ -87,12 +92,17 @@ import org.dcache.cells.ThreadManagerMessageCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Objects;
+
 import static diskCacheV111.util.CacheException.*;
 
 public class PinCompanion
 {
     private final static Logger _log =
         LoggerFactory.getLogger(PinCompanion.class);
+
+    public final static String DISK_PIN_ID =
+        "disk";
 
     private final Subject _subject;
     private final FsPath _path;
@@ -101,10 +111,20 @@ public class PinCompanion
     private final long _pinLifetime;
     private final long _requestId;
     private final CellStub _pnfsStub;
+    private final CellStub _poolManagerStub;
     private final CellStub _pinManagerStub;
+    private final PoolMonitorV5 _poolMonitor;
+    private final boolean _isOnlinePinningEnabled;
 
     private Object _state;
     private FileAttributes _attributes;
+
+    private PoolMgrSelectReadPoolMsg.Context _selectPoolContext;
+
+    public static boolean isFakePinId(String pinId)
+    {
+        return Objects.equal(pinId, DISK_PIN_ID);
+    }
 
     private abstract class CallbackState<T>
         extends AbstractMessageCallback<T>
@@ -116,6 +136,11 @@ public class PinCompanion
         }
     }
 
+    private ProtocolInfo getProtocolInfo()
+    {
+        return new DCapProtocolInfo("DCap", 3, 0, _clientHost, 0);
+    }
+
     private class LookupState extends CallbackState<PnfsGetFileAttributes>
     {
         public LookupState() {
@@ -123,6 +148,10 @@ public class PinCompanion
                 EnumSet.noneOf(FileAttribute.class);
             attributes.addAll(DcacheFileMetaData.getKnownAttributes());
             attributes.addAll(PinManagerPinMessage.getRequiredAttributes());
+            attributes.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
+            attributes.add(FileAttribute.SIZE);
+            attributes.add(FileAttribute.TYPE);
+            attributes.add(FileAttribute.ACCESS_LATENCY);
             PnfsGetFileAttributes msg =
                 new PnfsGetFileAttributes(_path.toString(), attributes);
             msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
@@ -131,16 +160,84 @@ public class PinCompanion
                            new ThreadManagerMessageCallback(this));
         }
 
+        private boolean isDirectory(FileAttributes attributes)
+        {
+            return _attributes.getFileType() == FileType.DIR;
+        }
+
+        private boolean isDiskFile(FileAttributes attributes)
+        {
+            return _attributes.getAccessLatency() == AccessLatency.ONLINE;
+        }
+
+        private boolean isOnline(FileAttributes attributes)
+        {
+            FileLocality locality =
+                _poolMonitor.getFileLocality(_attributes, _clientHost);
+            return locality == FileLocality.ONLINE;
+        }
+
         @Override
         public void success(PnfsGetFileAttributes message)
         {
             _attributes = message.getFileAttributes();
 
-            if (_attributes.getFileType() == FileType.DIR) {
+            if (isDirectory(_attributes)) {
                 _callbacks.FileNotFound("Path is a directory");
                 _state = new FailedState();
-            } else {
+            } else if (!isDiskFile(_attributes) || _isOnlinePinningEnabled) {
                 _state = new PinningState();
+            } else {
+                FileLocality locality =
+                    _poolMonitor.getFileLocality(_attributes, _clientHost);
+                switch (locality) {
+                case ONLINE:
+                case ONLINE_AND_NEARLINE:
+                    succeed(DISK_PIN_ID);
+                    break;
+                case UNAVAILABLE:
+                    fail(FILE_NOT_IN_REPOSITORY,
+                         "File is currently unavailable");
+                    break;
+                case NEARLINE:
+                default:
+                    _state = new BringOnlineState();
+                    break;
+                }
+            }
+        }
+    }
+
+    private class BringOnlineState
+        extends CallbackState<PoolMgrSelectReadPoolMsg>
+    {
+        public BringOnlineState() {
+            PoolMgrSelectReadPoolMsg msg =
+                new PoolMgrSelectReadPoolMsg(_attributes,
+                                             getProtocolInfo(),
+                                             _attributes.getSize(),
+                                             _selectPoolContext);
+            msg.setSkipCostUpdate(true);
+            msg.setSubject(_subject);
+
+            _poolManagerStub.send(msg, PoolMgrSelectReadPoolMsg.class,
+                                  new ThreadManagerMessageCallback(this));
+        }
+
+        @Override
+        public void success(PoolMgrSelectReadPoolMsg message)
+        {
+            succeed(DISK_PIN_ID);
+        }
+
+        @Override
+        public void failure(int rc, Object error)
+        {
+            if (rc == OUT_OF_DATE) {
+                _selectPoolContext = getReply().getContext();
+                _state = new LookupState();
+            } else {
+                super.failure(rc, error);
             }
         }
     }
@@ -148,10 +245,8 @@ public class PinCompanion
     private class PinningState extends CallbackState<PinManagerPinMessage>
     {
         public PinningState() {
-            DCapProtocolInfo protocolInfo =
-                new DCapProtocolInfo("DCap", 3, 0, _clientHost, 0);
             PinManagerPinMessage msg =
-                new PinManagerPinMessage(_attributes, protocolInfo,
+                new PinManagerPinMessage(_attributes, getProtocolInfo(),
                                          String.valueOf(_requestId),
                                          _pinLifetime);
             msg.setSubject(_subject);
@@ -162,9 +257,7 @@ public class PinCompanion
         @Override
         public void success(PinManagerPinMessage message)
         {
-            _callbacks.Pinned(new DcacheFileMetaData(_attributes),
-                              String.valueOf(message.getPinId()));
-            _state = new PinnedState();
+            succeed(String.valueOf(message.getPinId()));
         }
     }
 
@@ -182,7 +275,10 @@ public class PinCompanion
                          PinCallbacks callbacks,
                          long pinLifetime,
                          long requestId,
+                         boolean isOnlinePinningEnabled,
+                         PoolMonitorV5 poolMonitor,
                          CellStub pnfsStub,
+                         CellStub poolManagerStub,
                          CellStub pinManagerStub)
     {
         _subject = subject;
@@ -191,9 +287,18 @@ public class PinCompanion
         _callbacks = callbacks;
         _pinLifetime = pinLifetime;
         _requestId = requestId;
+        _isOnlinePinningEnabled = isOnlinePinningEnabled;
+        _poolMonitor = poolMonitor;
         _pnfsStub = pnfsStub;
+        _poolManagerStub = poolManagerStub;
         _pinManagerStub = pinManagerStub;
         _state = new LookupState();
+    }
+
+    private void succeed(String pinId)
+    {
+        _callbacks.Pinned(new DcacheFileMetaData(_attributes), pinId);
+        _state = new PinnedState();
     }
 
     private void fail(int rc, Object error)
@@ -241,12 +346,16 @@ public class PinCompanion
                                        PinCallbacks callbacks,
                                        long pinLifetime,
                                        long requestId,
+                                       boolean isOnlinePinningEnabled,
+                                       PoolMonitorV5 poolMonitor,
                                        CellStub pnfsStub,
+                                       CellStub poolManagerStub,
                                        CellStub pinManagerStub)
     {
         return new PinCompanion(subject, path, clientHost, callbacks,
-                                pinLifetime, requestId,
-                                pnfsStub, pinManagerStub);
+                                pinLifetime, requestId, isOnlinePinningEnabled,
+                                poolMonitor,
+                                pnfsStub, poolManagerStub, pinManagerStub);
     }
 }
 

@@ -680,7 +680,6 @@ public class PoolMonitorV5
 
     public FileLocality
         getFileLocality(FileAttributes attributes, String hostName)
-        throws CacheException
     {
         if (attributes.getFileType() == FileType.DIR ||
             attributes.getSize() == 0) {

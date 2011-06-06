@@ -113,6 +113,8 @@ check -strong kpwdFile
 check -strong overwriteEnabled
 check -strong srmOverwriteByDefault
 
+check -strong srmPinOnlineFiles
+
 check -strong srmSizeOfSingleRemoveBatch
 
 check -strong srmUserCredentialsDirectory
@@ -316,6 +318,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -trustAnchorRefreshPeriod=${trustAnchorRefreshPeriod}\
         -srmClientTransport=${srmClientTransport} \
         -srmGracefulShutdown=\"${srmGracefulShutdown}\" \
+        -srmPinOnlineFiles=\"${srmPinOnlineFiles}\" \
         -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
         -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
         -gplazmaPolicy=\"${gplazmaPolicy}\" \

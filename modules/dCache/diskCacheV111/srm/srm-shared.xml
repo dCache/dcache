@@ -122,6 +122,7 @@
     <property name="httpRootPath" value="${httpRootPath}"/>
     <property name="xrootdRootPath"  value="${xrootdRootPath}"/>
     <property name="configuration" ref="config"/>
+    <property name="pinOnlineFiles" value="${srmPinOnlineFiles}"/>
   </bean>
 
   <bean id="config" class="org.dcache.srm.util.Configuration">
