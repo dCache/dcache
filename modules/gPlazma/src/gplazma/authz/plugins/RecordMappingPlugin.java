@@ -42,7 +42,7 @@ public abstract class RecordMappingPlugin extends CachingPlugin {
 
         if (authRecord == null) {
             getLogger().error("A null record was received from the storage authorization service.");
-            return null;
+            throw new AuthorizationException(DENIED_MESSAGE + ": No authorization record found for DN " + subjectDN + " and role " + role);
         }
 
         if(authRecord instanceof DynamicAuthorizationRecord) {
