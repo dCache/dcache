@@ -101,6 +101,12 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
 		Map<String,String> wellKnownCells = new HashMap<String,String>();		
 		buildWellKnownCells( wellKnownCells, domainName, localExports, domainHash);
 		
+		if( wellKnownCells.isEmpty() && localExports.isEmpty() &&
+		        domainHash.isEmpty()) {
+		    _log.debug("Message from domain {} with no well-known cells", domainName);
+		    return;
+		}
+
 		// Build our new metrics
 		
 		StatePath routingPath = DOMAINS_PATH.newChild( domainName).newChild( "routing");
