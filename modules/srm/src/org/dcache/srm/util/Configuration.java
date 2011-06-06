@@ -99,6 +99,7 @@ import java.util.HashSet;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import java.sql.SQLException;
 
 import com.google.common.base.Strings;
@@ -261,7 +262,7 @@ public class Configuration {
     private String nextRequestIdStorageTable = "srmnextrequestid";
     private boolean reserve_space_implicitely;
     private boolean space_reservation_strict;
-    private long storage_info_update_period=5*60*1000;
+    private long storage_info_update_period = SECONDS.toMillis(30);
     private String qosPluginClass = null;
     private String qosConfigFile = null;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";

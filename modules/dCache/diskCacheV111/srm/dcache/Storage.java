@@ -93,6 +93,7 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.poolManager.CostModule;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.services.login.RemoteLoginStrategy;
@@ -120,7 +121,6 @@ import diskCacheV111.vehicles.CopyManagerMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
-import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import org.globus.util.GlobusURL;
 import java.net.InetAddress;
@@ -1812,50 +1812,6 @@ public final class Storage
         throw new java.lang.UnsupportedOperationException("NotImplementedException");
     }
 
-    private final Map<String,StorageElementInfo> poolInfos =
-        new HashMap<String,StorageElementInfo>();
-    private final Map<String,Long> poolInfosTimestamps =
-        new HashMap<String,Long>();
-
-    public StorageElementInfo getPoolInfo(String pool)
-        throws SRMException, InterruptedException
-    {
-        synchronized (poolInfosTimestamps) {
-            Long timestamp = poolInfosTimestamps.get(pool);
-            if (timestamp != null &&
-                (System.currentTimeMillis() - timestamp) < 3 * 1000 * 60) {
-                return poolInfos.get(pool);
-            }
-        }
-
-        try {
-            PoolCellInfo poolCellInfo =
-                _poolStub.sendAndWait(new CellPath(pool),
-                                      "xgetcellinfo", PoolCellInfo.class);
-
-            PoolCostInfo.PoolSpaceInfo info = poolCellInfo.getPoolCostInfo().getSpaceInfo() ;
-            long total     = info.getTotalSpace() ;
-            long freespace = info.getFreeSpace() ;
-            long precious  = info.getPreciousSpace() ;
-            long removable = info.getRemovableSpace() ;
-            StorageElementInfo poolInfo = new StorageElementInfo();
-            poolInfo.totalSpace = total;
-            poolInfo.availableSpace = freespace+removable;
-            poolInfo.usedSpace = precious+removable;
-
-            synchronized (poolInfosTimestamps) {
-                poolInfos.put(pool, poolInfo);
-                poolInfosTimestamps.put(pool, System.currentTimeMillis());
-            }
-            return poolInfo;
-        } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("Pool is unavailable: " + e.getMessage(), e);
-        } catch (CacheException e) {
-            _log.error("Pool returned [" + e + "] for xgetcellinfo");
-            throw new SRMException(e.getMessage(), e);
-        }
-    }
-
     @Override
     public void advisoryDelete(final SRMUser user, final URI surl,
                                final AdvisoryDeleteCallbacks callback)
@@ -2499,44 +2455,36 @@ public final class Storage
         return storageElementInfo;
     }
 
-    private List<String> pools = Collections.emptyList();
-
     private void updateStorageElementInfo()
-        throws SRMException, InterruptedException
+        throws CacheException, InterruptedException
     {
-        try {
-            _poolMonitor =
-                _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
+        _poolMonitor =
+            _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
 
-            String[] newPools =
-                _poolMonitor.getPoolSelectionUnit().getActivePools();
-            if (newPools.length != 0) {
-                pools = Arrays.asList(newPools);
-            } else {
-                _log.info("received an empty pool list from the pool manager," +
-                          "using the previous list");
-            }
-        } catch (TimeoutCacheException e) {
-            _log.error("poolManager timeout, using previously saved pool list");
-        } catch (CacheException e) {
-            _log.error("poolManager returned [" + e + "]" +
-                       ", using previously saved pool list");
+        String[] pools =
+            _poolMonitor.getPoolSelectionUnit().getActivePools();
+        if (pools.length == 0) {
+            _log.debug("Pool manager provided empty list of pools; assuming pool manager was restarted");
+            return;
         }
 
+        CostModule cm = _poolMonitor.getCostModule();
         StorageElementInfo info = new StorageElementInfo();
         for (String pool: pools) {
-            try {
-                StorageElementInfo poolInfo = getPoolInfo(pool);
-                info.availableSpace += poolInfo.availableSpace;
-                info.totalSpace += poolInfo.totalSpace;
-                info.usedSpace += poolInfo.usedSpace;
-            } catch (SRMException e) {
-                _log.error("Cannot get info from pool [" + pool +
-                           "], continuing with the rest of the pools: " +
-                           e.getMessage());
-            } catch (RuntimeException e) {
-                _log.error("Cannot get info from pool [" + pool +
-                           "], continuing with the rest of the pools", e);
+            PoolCostInfo.PoolSpaceInfo poolInfo =
+                cm.getPoolCostInfo(pool).getSpaceInfo();
+
+            if (poolInfo != null) {
+                /* FIXME: Removable space is added to both used and
+                 * available. The logic is copied from the old code.
+                 * It also seems like we don't account for CACHED +
+                 * STICKY files.
+                 */
+                info.availableSpace += poolInfo.getFreeSpace();
+                info.availableSpace += poolInfo.getRemovableSpace();
+                info.totalSpace += poolInfo.getTotalSpace();
+                info.usedSpace += poolInfo.getPreciousSpace();
+                info.usedSpace += poolInfo.getRemovableSpace();
             }
         }
 
@@ -2552,8 +2500,9 @@ public final class Storage
             while (true) {
                 try {
                     updateStorageElementInfo();
-                } catch(SRMException e){
-                    _log.warn(e.toString());
+                } catch (CacheException e) {
+                    _log.error("Pool monitor update failed: {} [{}]",
+                               e.getMessage(), e.getRc());
                 }
                 Thread.sleep(config.getStorage_info_update_period());
             }
