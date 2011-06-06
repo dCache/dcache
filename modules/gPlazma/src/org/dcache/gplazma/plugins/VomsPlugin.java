@@ -7,6 +7,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Map;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -17,6 +18,7 @@ import org.glite.voms.VOMSValidator;
 import org.glite.voms.ac.ACValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate
@@ -37,6 +39,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
 
     private final String _caDir;
     private final String _vomsDir;
+    private final Map _mdcContext;
 
     private PKIVerifier _pkiVerifier;
 
@@ -44,15 +47,27 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     {
         _caDir = properties.getProperty(CADIR, DEFAULT_CADIR);
         _vomsDir = properties.getProperty(VOMSDIR, DEFAULT_VOMSDIR);
+        _mdcContext = MDC.getCopyOfContextMap();
     }
 
     protected synchronized PKIVerifier getPkiVerifier()
         throws IOException, CertificateException, CRLException
     {
         if (_pkiVerifier == null) {
-            _pkiVerifier =
-                new PKIVerifier(new PKIStore(_vomsDir, PKIStore.TYPE_VOMSDIR),
-                                new PKIStore(_caDir, PKIStore.TYPE_CADIR));
+            /* Since PKIStore instantiates internal threads to
+             * periodically reload the store, we reset the MDC to
+             * avoid that messages logged by the refresh thread have
+             * the wrong context.
+             */
+            Map map = MDC.getCopyOfContextMap();
+            try {
+                MDC.setContextMap(_mdcContext);
+                _pkiVerifier =
+                    new PKIVerifier(new PKIStore(_vomsDir, PKIStore.TYPE_VOMSDIR),
+                                    new PKIStore(_caDir, PKIStore.TYPE_CADIR));
+            } finally {
+                MDC.setContextMap(map);
+            }
         }
         return _pkiVerifier;
     }
