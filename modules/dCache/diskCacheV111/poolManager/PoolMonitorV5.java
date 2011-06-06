@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.EnumSet;
 import java.util.NoSuchElementException;
 import java.io.Serializable;
 
@@ -23,13 +24,18 @@ import org.slf4j.LoggerFactory;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.pools.PoolCostInfo;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.namespace.FileType;
+import org.dcache.namespace.FileAttribute;
+import static org.dcache.namespace.FileAttribute.*;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -50,14 +56,29 @@ public class PoolMonitorV5
     {
     }
 
+    public PoolSelectionUnit getPoolSelectionUnit()
+    {
+        return _selectionUnit;
+    }
+
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
     {
         _selectionUnit = selectionUnit;
     }
 
+    public CostModule getCostModule()
+    {
+        return _costModule;
+    }
+
     public void setCostModule(CostModule costModule)
     {
         _costModule = costModule;
+    }
+
+    public PartitionManager getPartitionManager()
+    {
+        return _partitionManager;
     }
 
     public void setPartitionManager(PartitionManager partitionManager)
@@ -652,4 +673,58 @@ public class PoolMonitorV5
         return _costModule.getPoolsPercentilePerformanceCost( fraction);
     }
 
+    public static Set<FileAttribute> getRequiredAttributesForFileLocality()
+    {
+        return EnumSet.of(STORAGEINFO, SIZE, LOCATIONS);
+    }
+
+    public FileLocality
+        getFileLocality(FileAttributes attributes, String hostName)
+        throws CacheException
+    {
+        if (attributes.getFileType() == FileType.DIR ||
+            attributes.getSize() == 0) {
+            return FileLocality.NONE;
+        }
+
+        StorageInfo storageInfo = attributes.getStorageInfo();
+        PoolPreferenceLevel[] levels =
+            _selectionUnit.match(DirectionType.READ,
+                                 hostName,
+                                 "*/*",
+                                 storageInfo,
+                                 null);
+
+        Collection<String> locations = attributes.getLocations();
+        for (PoolPreferenceLevel level: levels) {
+            if (!Collections.disjoint(level.getPoolList(), locations)) {
+                return (storageInfo.isStored()
+                        ? FileLocality.ONLINE_AND_NEARLINE
+                        : FileLocality.ONLINE);
+            }
+        }
+
+        if (storageInfo.isStored()) {
+            return FileLocality.NEARLINE;
+        }
+
+        for (String name: locations) {
+            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
+            if (pool == null || !pool.canReadForP2P()) {
+                continue;
+            }
+
+            PoolCostInfo cost = _costModule.getPoolCostInfo(name);
+            if (cost == null) {
+                continue;
+            }
+
+            // REVISIT: This check should be integrated into
+            // SelectionPool.canReadForP2P
+            if (cost.getP2pQueue().getMaxActive() > 0){
+                return FileLocality.NEARLINE;
+            }
+        }
+        return FileLocality.UNAVAILABLE;
+    }
 }

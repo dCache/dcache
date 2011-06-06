@@ -89,9 +89,10 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.Version;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.PoolManagerGetFileLocalityMessage;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.poolManager.PoolMonitorV5;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.services.login.RemoteLoginStrategy;
@@ -151,6 +152,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.Semaphore;
+import static java.util.concurrent.TimeUnit.*;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
@@ -252,6 +254,14 @@ public final class Storage
 
     private final static String SFN_STRING = "SFN=";
 
+    /**
+     * The delay we use after transient failures that should be
+     * retried immediately. The small delay prevents tight retry
+     * loops.
+     */
+    private final static long TRANSIENT_FAILURE_DELAY =
+        MILLISECONDS.toMillis(10);
+
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
     private CellStub _poolStub;
@@ -265,6 +275,8 @@ public final class Storage
     private final PermissionHandler permissionHandler =
             new ChainedPermissionHandler(new ACLPermissionHandler(),
                                          new PosixPermissionHandler());
+
+    private PoolMonitorV5 _poolMonitor;
 
     private SRM srm;
     private Configuration config;
@@ -464,9 +476,20 @@ public final class Storage
             config.setWebservice_protocol("http");
         }
 
-        srm = SRM.getSRM(config, getCellName());
+        while (_poolMonitor == null) {
+            try {
+                _poolMonitor =
+                    _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
+            } catch (CacheException e) {
+                _log.error(e.toString());
+                Thread.sleep(TRANSIENT_FAILURE_DELAY);
+            }
+        }
+
         storageInfoUpdateThread = new Thread(this);
         storageInfoUpdateThread.start();
+
+        srm = SRM.getSRM(config, getCellName());
     }
 
     public void stop()
@@ -1647,7 +1670,7 @@ public final class Storage
             Set<FileAttribute> requestedAttributes =
                 EnumSet.of(TYPE, LOCATIONS);
             requestedAttributes.addAll(DcacheFileMetaData.getKnownAttributes());
-            requestedAttributes.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
+            requestedAttributes.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
 
             Set<AccessMask> accessMask =
                 read
@@ -1663,11 +1686,9 @@ public final class Storage
             /* Determine file locality.
              */
             if (attributes.getFileType() != FileType.DIR) {
-                PoolManagerGetFileLocalityMessage message =
-                    new PoolManagerGetFileLocalityMessage(attributes,
-                                                          config.getSrmHost());
                 FileLocality locality =
-                    _poolManagerStub.sendAndWait(message).getFileLocality();
+                    _poolMonitor.getFileLocality(attributes,
+                                                 config.getSrmHost());
                 fmd.locality = locality.toTFileLocality();
                 switch (locality) {
                 case ONLINE:
@@ -1782,7 +1803,8 @@ public final class Storage
     private final Map<String,Long> poolInfosTimestamps =
         new HashMap<String,Long>();
 
-    public StorageElementInfo getPoolInfo(String pool) throws SRMException
+    public StorageElementInfo getPoolInfo(String pool)
+        throws SRMException, InterruptedException
     {
         synchronized (poolInfosTimestamps) {
             Long timestamp = poolInfosTimestamps.get(pool);
@@ -1817,8 +1839,6 @@ public final class Storage
         } catch (CacheException e) {
             _log.error("Pool returned [" + e + "] for xgetcellinfo");
             throw new SRMException(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            throw new SRMException("Request to pool was interrupted", e);
         }
     }
 
@@ -2467,16 +2487,19 @@ public final class Storage
 
     private List<String> pools = Collections.emptyList();
 
-    private void updateStorageElementInfo() throws SRMException
+    private void updateStorageElementInfo()
+        throws SRMException, InterruptedException
     {
         try {
-            PoolManagerGetPoolListMessage getPoolsQuery =
-                _poolManagerStub.sendAndWait(new PoolManagerGetPoolListMessage());
-            List<String> newPools = getPoolsQuery.getPoolList();
-            if (!newPools.isEmpty()) {
-                pools = newPools;
+            _poolMonitor =
+                _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
+
+            String[] newPools =
+                _poolMonitor.getPoolSelectionUnit().getActivePools();
+            if (newPools.length != 0) {
+                pools = Arrays.asList(newPools);
             } else {
-                _log.info("receieved an empty pool list from the pool manager," +
+                _log.info("received an empty pool list from the pool manager," +
                           "using the previous list");
             }
         } catch (TimeoutCacheException e) {
@@ -2484,10 +2507,6 @@ public final class Storage
         } catch (CacheException e) {
             _log.error("poolManager returned [" + e + "]" +
                        ", using previously saved pool list");
-        } catch (InterruptedException e) {
-            _log.error("Request to PoolManager got interrupted");
-            Thread.currentThread().interrupt();
-            return;
         }
 
         StorageElementInfo info = new StorageElementInfo();
@@ -2510,23 +2529,22 @@ public final class Storage
         storageElementInfo = info;
     }
 
-
-
     /**
      * we use run method to update the storage info structure periodically
      */
-    public void run() {
-        while(true) {
-            try {
-                updateStorageElementInfo();
-            } catch(SRMException srme){
-                _log.warn(srme.toString());
-            }
-            try {
+    public void run()
+    {
+        try {
+            while (true) {
+                try {
+                    updateStorageElementInfo();
+                } catch(SRMException e){
+                    _log.warn(e.toString());
+                }
                 Thread.sleep(config.getStorage_info_update_period());
-            } catch(InterruptedException ie) {
-                return;
             }
+        } catch (InterruptedException e) {
+            _log.debug("Storage info update thread shut down");
         }
     }
 
@@ -2718,7 +2736,7 @@ public final class Storage
         public VerboseListPrinter()
         {
             _required = DcacheFileMetaData.getKnownAttributes();
-            _required.addAll(PoolManagerGetFileLocalityMessage.getRequiredAttributes());
+            _required.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
         }
 
         @Override
@@ -2754,35 +2772,19 @@ public final class Storage
                                     final DcacheFileMetaData fmd)
             throws InterruptedException
         {
-            PnfsId pnfsId = attributes.getPnfsId();
-            PoolManagerGetFileLocalityMessage message =
-                new PoolManagerGetFileLocalityMessage(attributes, config.getSrmHost());
-
-            _available.acquire();
-            _poolManagerStub.send(
-                 message,
-                 PoolManagerGetFileLocalityMessage.class,
-                 new AbstractMessageCallback<PoolManagerGetFileLocalityMessage>() {
-                      @Override
-                      public void success(PoolManagerGetFileLocalityMessage message)
-                      {
-                           _available.release();
-                           FileLocality locality = message.getFileLocality();
-                           fmd.locality = locality.toTFileLocality();
-                           switch (locality) {
-                           case ONLINE:
-                           case ONLINE_AND_NEARLINE:
-                                fmd.isCached = true;
-                           }
-                      }
-
-                      @Override
-                      public void failure(int rc, Object error)
-                      {
-                           _available.release();
-                           _log.error("Locality lookup failed: {} [{}]", error, rc);
-                      }
-                 });
+            try {
+                FileLocality locality =
+                    _poolMonitor.getFileLocality(attributes, config.getSrmHost());
+                fmd.locality = locality.toTFileLocality();
+                switch (locality) {
+                case ONLINE:
+                case ONLINE_AND_NEARLINE:
+                    fmd.isCached = true;
+                }
+            } catch (CacheException e) {
+                _log.error("Locality lookup failed: {} [{}]",
+                           e.getMessage(), e.getRc());
+            }
         }
 
         private void lookupTokens(FileAttributes attributes,

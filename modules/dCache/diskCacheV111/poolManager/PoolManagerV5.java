@@ -43,7 +43,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import diskCacheV111.vehicles.PoolManagerGetFileLocalityMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -528,66 +527,6 @@ public class PoolManagerV5
                                 null)));
         msg.setSucceeded();
         return msg;
-    }
-
-    private FileLocality
-        getFileLocality(PoolManagerGetFileLocalityMessage message)
-        throws CacheException
-    {
-        FileAttributes attributes = message.getFileAttributes();
-
-        if (attributes.getFileType() == FileType.DIR ||
-            attributes.getSize() == 0) {
-            return FileLocality.NONE;
-        }
-
-        StorageInfo storageInfo = attributes.getStorageInfo();
-        PoolPreferenceLevel[] levels =
-            _selectionUnit.match(DirectionType.READ,
-                                 message.getClient(),
-                                 "*/*",
-                                 storageInfo,
-                                 null);
-
-        Collection<String> locations = attributes.getLocations();
-        for (PoolPreferenceLevel level: levels) {
-            if (!Collections.disjoint(level.getPoolList(), locations)) {
-                return (storageInfo.isStored()
-                        ? FileLocality.ONLINE_AND_NEARLINE
-                        : FileLocality.ONLINE);
-            }
-        }
-
-        if (storageInfo.isStored()) {
-            return FileLocality.NEARLINE;
-        }
-
-        for (String name: locations) {
-            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
-            if (pool == null || !pool.canReadForP2P()) {
-                continue;
-            }
-
-            PoolCostInfo cost = _costModule.getPoolCostInfo(name);
-            if (cost == null) {
-                continue;
-            }
-
-            // REVISIT: This check should be integrated into
-            // SelectionPool.canReadForP2P
-            if (cost.getP2pQueue().getMaxActive() > 0){
-                return FileLocality.NEARLINE;
-            }
-        }
-        return FileLocality.UNAVAILABLE;
-    }
-
-    public PoolManagerGetFileLocalityMessage
-        messageArrived(PoolManagerGetFileLocalityMessage message)
-        throws CacheException
-    {
-        message.setFileLocality(getFileLocality(message));
-        return message;
     }
 
     private static class XProtocolInfo implements IpProtocolInfo {
