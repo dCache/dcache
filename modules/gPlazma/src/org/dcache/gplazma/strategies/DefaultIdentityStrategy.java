@@ -4,18 +4,15 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class DefaultIdentityStrategy implements IdentityStrategy {
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(DefaultIdentityStrategy.class);
     private List<GPlazmaPluginElement<GPlazmaIdentityPlugin>> ideStyleStrategies;
 
     @Override
@@ -35,7 +32,7 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
             if( p != null && !p.isEmpty())
                 return p;
         }
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
