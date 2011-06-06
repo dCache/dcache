@@ -44,9 +44,9 @@ public abstract class RecordMappingPlugin extends CachingPlugin {
         gPlazmaAuthorizationRecord authRecord = storageRecordsServ.getStorageUserRecord(username);
 
         if (authRecord == null) {
-            logger.error("No record found in "+storageAuthzPath+
-                    " for username=\""+  username+"\"");
-            return null;
+            logger.error("No record found in {} for username {} mapped from DN {} and role {}",
+                         new Object[] { storageAuthzPath, username, subjectDN, role });
+            throw new AuthorizationException(DENIED_MESSAGE + ": No authorization record found for DN " + subjectDN + " and role " + role);
         }
 
         if(authRecord instanceof DynamicAuthorizationRecord) {
