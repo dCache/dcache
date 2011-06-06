@@ -1,20 +1,22 @@
 package org.dcache.pool.classic;
 
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.util.concurrent.Future;
+import java.io.IOException;
 import org.dcache.pool.FaultListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static org.dcache.pool.classic.IoRequestState.*;
+
 /**
  * PoolIORequest encapsulates queuing, execution and notification
  * of a file transfer.
@@ -56,7 +58,6 @@ public class PoolIORequest implements IoProcessable {
 
     /** transfer status error message */
     private volatile String _errorMessage = "";
-    private final CDC _cdcContext;
 
     /**
      * @param transfer the read or write transfer to execute
@@ -83,7 +84,6 @@ public class PoolIORequest implements IoProcessable {
         _cellEndpoint = cellEndpoint;
         _billingCell = billingCell;
         _faultListener = faultListener;
-        _cdcContext = new CDC();
     }
 
     void sendBillingMessage() {
@@ -182,24 +182,30 @@ public class PoolIORequest implements IoProcessable {
     }
 
     void close()
-            throws Exception {
+        throws CacheException, InterruptedException,
+               IOException, NoRouteToCellException
+    {
         try {
             _transfer.close();
+        } catch (CacheException e) {
+            _log.warn("Transfer failed in post-processing: {}", e.toString());
+            throw e;
+        } catch (InterruptedException e) {
+            _log.warn("Transfer failed in post-processing: {}", e.toString());
+            throw e;
+        } catch (IOException e) {
+            _log.warn("Transfer failed in post-processing: {}", e.toString());
+            throw e;
+        } catch (NoRouteToCellException e) {
+            _log.warn("Transfer failed in post-processing: {}", e.toString());
+            throw e;
         } catch (RuntimeException e) {
             _log.error("Transfer failed in post-processing due to unexpected exception", e);
-            throw e;
-        } catch (Exception e) {
-            _log.warn("Transfer failed in post-processing: " + e);
             throw e;
         }
     }
 
     public PoolIOTransfer getTransfer() {
-        /*
-         * assuming, that get transter called by a thread
-         * which going to execute the transfer.
-         */
-        _cdcContext.restore();
         return _transfer;
     }
 
