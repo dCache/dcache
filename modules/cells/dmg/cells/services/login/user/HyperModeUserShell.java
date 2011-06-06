@@ -417,7 +417,11 @@ public class    HyperModeUserShell
              checkPermission( "cell."+remoteName+".execute" ) ;
           }catch( AclException acle2 ){
              if( prefix == null )throw acle2 ;
+             try{
              checkPermission( "cell."+prefix+"-pools.execute" ) ;
+             }catch( AclException acle3 ){
+                  throw new AclException( getUser() , remoteName ) ;
+             }
           }
        }
     }

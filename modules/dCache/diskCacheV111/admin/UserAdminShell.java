@@ -1124,8 +1124,8 @@ public class      UserAdminShell
        }
 
        if( newPosition.remoteName != null ) {
-           checkCdPermission( newPosition.remoteName ) ;
            checkCellExists( newPosition.remote);
+           checkCdPermission( newPosition.remoteName ) ;
        }
 
        synchronized( this ){
@@ -1146,7 +1146,11 @@ public class      UserAdminShell
              checkPermission( "cell."+remoteName+".execute" ) ;
           }catch( AclException acle2 ){
              if( prefix == null )throw acle2 ;
-             checkPermission( "cell."+prefix+"-pools.execute" ) ;
+              try {
+                  checkPermission("cell." + prefix + "-pools.execute");
+              } catch (AclException acle3) {
+                  throw new AclException(getUser(), remoteName);
+              }
           }
        }
     }
