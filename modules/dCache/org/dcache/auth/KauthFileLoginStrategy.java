@@ -27,7 +27,7 @@ import org.dcache.auth.attributes.ReadOnly;
  *
  *   - KeberosPrincipal and optional LoginNamePrincipal
  *   - GlobusPrincipal and optional LoginNamePrincipal
- *   - LoginNamePrincipal and Password as a private credential.
+ *   - PasswordCredential
  */
 public class KauthFileLoginStrategy implements LoginStrategy
 {
@@ -54,7 +54,7 @@ public class KauthFileLoginStrategy implements LoginStrategy
             return loginByUserNameAndId(user, principal.getName());
         }
 
-        return loginByUserName(subject);
+        return loginWithPassword(subject);
     }
 
     private KAuthFile loadKauthFile()
@@ -93,31 +93,31 @@ public class KauthFileLoginStrategy implements LoginStrategy
         return new LoginReply(subject, toLoginAttributes(record));
     }
 
-    private LoginReply loginByUserName(Subject subject)
+    private LoginReply loginWithPassword(Subject subject)
         throws CacheException
     {
-        String user = Subjects.getLoginName(subject);
-        if (user == null) {
-            throw new IllegalArgumentException("Subject is not supported by KAuthFileLoginStrategy");
-        }
-
         KAuthFile kauth = loadKauthFile();
 
-        UserPwdRecord record = kauth.getUserPwdRecord(user);
-        if (record == null || record.isDisabled()) {
-            throw new PermissionDeniedCacheException("Access denied");
-        }
+        for (PasswordCredential password: subject.getPrivateCredentials(PasswordCredential.class)) {
+            UserPwdRecord record =
+                kauth.getUserPwdRecord(password.getUsername());
+            if (record == null || record.isDisabled()) {
+                throw new PermissionDeniedCacheException("Access denied");
+            }
 
-        if (!record.isAnonymous() && !isPasswordCorrect(subject, record)) {
-            throw new PermissionDeniedCacheException("Access denied");
-        }
+            if (!record.isAnonymous() &&
+                !record.passwordIsValid(password.getPassword())) {
+                throw new PermissionDeniedCacheException("Access denied");
+            }
 
-        if (record.isAnonymous()) {
-            subject = Subjects.NOBODY;
-        } else {
-            subject = Subjects.getSubject(record, true);
+            if (record.isAnonymous()) {
+                subject = Subjects.NOBODY;
+            } else {
+                subject = Subjects.getSubject(record, true);
+            }
+            return new LoginReply(subject, toLoginAttributes(record));
         }
-        return new LoginReply(subject, toLoginAttributes(record));
+        throw new IllegalArgumentException("Subject is not supported by KAuthFileLoginStrategy");
     }
 
     private Set<LoginAttribute> toLoginAttributes(UserAuthBase record)
@@ -127,16 +127,6 @@ public class KauthFileLoginStrategy implements LoginStrategy
         attributes.add(new RootDirectory(record.Root));
         attributes.add(new ReadOnly(record.ReadOnly));
         return attributes;
-    }
-
-    private boolean isPasswordCorrect(Subject subject, UserPwdRecord record)
-    {
-        for (Password password: subject.getPrivateCredentials(Password.class)) {
-            if (record.passwordIsValid(password.getPassword())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

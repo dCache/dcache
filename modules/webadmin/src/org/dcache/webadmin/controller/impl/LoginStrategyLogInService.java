@@ -5,10 +5,9 @@ import java.security.cert.X509Certificate;
 import org.dcache.auth.Subjects;
 import javax.security.auth.Subject;
 import org.apache.wicket.authorization.strategies.role.Roles;
-import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.Password;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.exceptions.LogInServiceException;
 import org.dcache.webadmin.view.beans.UserBean;
@@ -29,10 +28,9 @@ public class LoginStrategyLogInService implements LogInService {
     @Override
     public UserBean authenticate(String username, char[] password) throws LogInServiceException {
         Subject subject = new Subject();
-        Password pass = new Password(String.valueOf(password));
+        PasswordCredential pass =
+            new PasswordCredential(username, String.valueOf(password));
         subject.getPrivateCredentials().add(pass);
-        LoginNamePrincipal userPrincipal = new LoginNamePrincipal(username);
-        subject.getPrincipals().add(userPrincipal);
         return authenticate(subject);
     }
 
