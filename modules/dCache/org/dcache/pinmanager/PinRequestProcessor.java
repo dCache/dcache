@@ -391,6 +391,7 @@ public class PinRequestProcessor
                                          task.getReadPoolSelectionContext(),
                                          checkStaging(task));
         msg.setSubject(task.getSubject());
+        msg.setSkipCostUpdate(true);
         _poolManagerStub.send(msg,
                               PoolMgrSelectReadPoolMsg.class,
                               new AbstractMessageCallback<PoolMgrSelectReadPoolMsg>()
