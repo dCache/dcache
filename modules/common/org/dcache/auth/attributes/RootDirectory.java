@@ -2,6 +2,8 @@ package org.dcache.auth.attributes;
 
 import java.io.Serializable;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Immutable encapsulation of a user's root directory. Used as session
  * data of a LoginReply.
@@ -14,6 +16,7 @@ public class RootDirectory implements LoginAttribute, Serializable
 
     public RootDirectory(String root)
     {
+        checkNotNull(root);
         _root = root;
     }
 
