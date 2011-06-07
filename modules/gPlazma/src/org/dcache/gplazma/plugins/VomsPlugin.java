@@ -20,6 +20,7 @@ import org.glite.voms.PKIStore;
 import org.glite.voms.PKIVerifier;
 import org.glite.voms.VOMSValidator;
 import org.glite.voms.ac.ACValidator;
+import org.slf4j.MDC;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate
@@ -40,6 +41,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
 
     private final String _caDir;
     private final String _vomsDir;
+    private final Map _mdcContext;
 
     private PKIVerifier _pkiVerifier;
 
@@ -49,15 +51,27 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
             ArgumentMapFactory.createFromKeyValuePairs(args);
         _caDir = ArgumentMapFactory.getValue(kvmap, CADIR, DEFAULT_CADIR);
         _vomsDir = ArgumentMapFactory.getValue(kvmap, VOMSDIR, DEFAULT_VOMSDIR);
+        _mdcContext = MDC.getCopyOfContextMap();
     }
 
     protected synchronized PKIVerifier getPkiVerifier()
         throws IOException, CertificateException, CRLException
     {
         if (_pkiVerifier == null) {
-            _pkiVerifier =
-                new PKIVerifier(new PKIStore(_vomsDir, PKIStore.TYPE_VOMSDIR),
-                                new PKIStore(_caDir, PKIStore.TYPE_CADIR));
+            /* Since PKIStore instantiates internal threads to
+             * periodically reload the store, we reset the MDC to
+             * avoid that messages logged by the refresh thread have
+             * the wrong context.
+             */
+            Map map = MDC.getCopyOfContextMap();
+            try {
+                MDC.setContextMap(_mdcContext);
+                _pkiVerifier =
+                    new PKIVerifier(new PKIStore(_vomsDir, PKIStore.TYPE_VOMSDIR),
+                                    new PKIStore(_caDir, PKIStore.TYPE_CADIR));
+            } finally {
+                MDC.setContextMap(map);
+            }
         }
         return _pkiVerifier;
     }
