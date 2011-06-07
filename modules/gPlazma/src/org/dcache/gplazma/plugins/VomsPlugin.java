@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * Validates and extracts FQANs from any X509Certificate certificate
  * chain in the public credentials.
@@ -29,13 +31,10 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     private static final Logger _log =
         LoggerFactory.getLogger(VomsPlugin.class);
 
-    private static final String DEFAULT_CADIR =
-        "/etc/grid-security/certificates";
-    private static final String DEFAULT_VOMSDIR =
-        "/etc/grid-security/vomsdir";
-
-    private static final String CADIR = "cadir";
-    private static final String VOMSDIR = "vomsdir";
+    private static final String CADIR =
+        "gplazma.vomsdir.ca";
+    private static final String VOMSDIR =
+        "gplazma.vomsdir.dir";
 
     private final String _caDir;
     private final String _vomsDir;
@@ -45,8 +44,12 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
 
     public VomsPlugin(Properties properties)
     {
-        _caDir = properties.getProperty(CADIR, DEFAULT_CADIR);
-        _vomsDir = properties.getProperty(VOMSDIR, DEFAULT_VOMSDIR);
+        _caDir = properties.getProperty(CADIR);
+        _vomsDir = properties.getProperty(VOMSDIR);
+
+        checkArgument(_vomsDir != null, "Undefined property: " + VOMSDIR);
+        checkArgument(_caDir != null, "Undefined property: " + CADIR);
+
         _mdcContext = MDC.getCopyOfContextMap();
     }
 

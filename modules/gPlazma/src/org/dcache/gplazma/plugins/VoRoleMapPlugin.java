@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
 import gplazma.authz.util.NameRolePair;
 
@@ -33,15 +34,16 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
     private static final long REFRESH_PERIOD =
         TimeUnit.SECONDS.toMillis(10);
 
-    private static final String VOROLEMAP_DEFAULT =
-        "/etc/grid-security/grid-vorolemap";
-    private static final String VOROLEMAP = "vorolemap";
+    private static final String VOROLEMAP =
+        "gplazma.vorolemap.file";
 
     private final SourceBackedPredicateMap<NameRolePair,String> _map;
 
     public VoRoleMapPlugin(Properties properties) throws IOException
     {
-        String path = properties.getProperty(VOROLEMAP, VOROLEMAP_DEFAULT);
+        String path = properties.getProperty(VOROLEMAP);
+
+        checkArgument(path != null, "Undefined property: " + VOROLEMAP);
 
         _map = new SourceBackedPredicateMap<NameRolePair,String>(new FileLineSource(path, REFRESH_PERIOD), new VOMapLineParser());
     }

@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
@@ -33,13 +34,12 @@ public class GridMapFilePlugin
 {
     private final GridMapFile _gridMapFile;
 
-    private static final String DEFAULT_GRIDMAP =
-        "/etc/grid-security/grid-mapfile";
-    private static final String GRIDMAP = "gridmap";
+    private static final String GRIDMAP = "gplazma.gridmap.file";
 
     public GridMapFilePlugin(Properties properties)
     {
-        String path = properties.getProperty(GRIDMAP, DEFAULT_GRIDMAP);
+        String path = properties.getProperty(GRIDMAP);
+        checkArgument(path != null, "Undefined property: " + GRIDMAP);
         _gridMapFile = new GridMapFile(path);
     }
 

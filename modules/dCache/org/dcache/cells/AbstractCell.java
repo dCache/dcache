@@ -224,7 +224,6 @@ public class AbstractCell extends CellAdapter
     }
 
     public AbstractCell(String cellName, String arguments)
-        throws InterruptedException, ExecutionException
     {
         this(cellName, new Args(arguments));
     }

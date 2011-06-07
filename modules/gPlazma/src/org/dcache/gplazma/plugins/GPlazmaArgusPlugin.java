@@ -1,6 +1,7 @@
 package org.dcache.gplazma.plugins;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 
 import java.security.Principal;
@@ -53,21 +54,20 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN = "Blacklist check for user '{}' failed due to exception in plugin.";
     private static final String DECISION_CODE_code = "Decision code: ";
 
-    private static final String KEY_PASS = "KeyPass";
-    private static final String HOST_KEY = "HostKey";
-    private static final String HOST_CERT = "HostCert";
-    private static final String TRUST_MATERIAL = "TrustMaterial";
-    private static final String ACTION_ID = "ActionID";
-    private static final String RESOURCE_ID = "ResourceID";
-    private static final String PEP_ENDPOINT = "PEPEndpoint";
-
-    private static final String DEFAULT_KEY_PASS = "";
-    private static final String DEFAULT_HOST_KEY = "/etc/grid-security/hostkey.pem";
-    private static final String DEFAULT_HOST_CERT = "/etc/grid-security/hostcert.pem";
-    private static final String DEFAULT_TRUST_MATERIAL = "/etc/grid-security/certificates";
-    private static final String DEFAULT_ACTION_ID = "access";
-    private static final String DEFAULT_RESOURCE_ID = "dcache";
-    private static final String DEFAULT_PEP_ENDPOINT = "https://localhost:8154/authz";
+    private static final String KEY_PASS =
+        "gplazma.argus.hostkey.password";
+    private static final String HOST_KEY =
+        "gplazma.argus.hostkey";
+    private static final String HOST_CERT =
+        "gplazma.argus.hostcert";
+    private static final String TRUST_MATERIAL =
+        "gplazma.argus.ca";
+    private static final String ACTION_ID =
+        "gplazma.argus.action";
+    private static final String RESOURCE_ID =
+        "gplazma.argus.resource";
+    private static final String PEP_ENDPOINT =
+        "gplazma.argus.endpoint";
 
     private final PEPClient _pepClient;
 
@@ -112,13 +112,13 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
         _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
-        pepConfig.addPEPDaemonEndpoint(properties.getProperty(PEP_ENDPOINT, DEFAULT_PEP_ENDPOINT));
-        _resourceId = properties.getProperty(RESOURCE_ID, DEFAULT_RESOURCE_ID);
-        _actionId = properties.getProperty(ACTION_ID, DEFAULT_ACTION_ID);
-        String trustMaterial = properties.getProperty(TRUST_MATERIAL, DEFAULT_TRUST_MATERIAL);
-        String hostCert = properties.getProperty(HOST_CERT, DEFAULT_HOST_CERT);
-        String hostKey = properties.getProperty(HOST_KEY, DEFAULT_HOST_KEY);
-        String keyPass = properties.getProperty(KEY_PASS, DEFAULT_KEY_PASS);
+        pepConfig.addPEPDaemonEndpoint(getProperty(properties, PEP_ENDPOINT));
+        _resourceId = getProperty(properties, RESOURCE_ID);
+        _actionId = getProperty(properties, ACTION_ID);
+        String trustMaterial = getProperty(properties, TRUST_MATERIAL);
+        String hostCert = getProperty(properties, HOST_CERT);
+        String hostKey = getProperty(properties, HOST_KEY);
+        String keyPass = getProperty(properties, KEY_PASS);
 
         pepConfig.setTrustMaterial(trustMaterial);
         pepConfig.setKeyMaterial(hostCert, hostKey, keyPass);
@@ -126,6 +126,13 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         _log.debug(CONFIGURATION_resourceid_actionid, _resourceId, _actionId);
 
         return pepConfig;
+    }
+
+    private String getProperty(Properties properties, String key)
+    {
+        String value = properties.getProperty(key);
+        checkArgument(value != null, "Undefined property: " + key);
+        return value;
     }
 
     @Override

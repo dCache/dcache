@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Iterables.get;
@@ -29,6 +30,7 @@ import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
+import com.google.common.base.Splitter;
 
 /**
  * Plugin uses AuthzDB for mapping group names and user names to UID,
@@ -50,19 +52,14 @@ public class AuthzDbPlugin
     private static final long REFRESH_PERIOD =
         TimeUnit.SECONDS.toMillis(10);
 
-    private static final String AUTHZDB_DEFAULT =
-        "/etc/grid-security/storage-authzdb";
-    private static final String AUTHZDB = "authzdb";
+    private static final String AUTHZDB =
+        "gplazma.authzdb.file";
+    private static final String UID =
+        "gplazma.authzdb.uid";
+    private static final String GID =
+        "gplazma.authzdb.gid";
 
-    public static final String UID_DEFAULT =
-        "uid,login,user,group";
-    private static final String UID = "uid";
-
-    public static final String GID_DEFAULT =
-        "gid,login,group,user";
-    private static final String GID = "gid";
-
-    private enum PrincipalType { UID, GID, LOGIN, USER, GROUP };
+    enum PrincipalType { UID, GID, LOGIN, USER, GROUP };
 
     private final ImmutableList<PrincipalType> _uidOrder;
     private final ImmutableList<PrincipalType> _gidOrder;
@@ -71,10 +68,17 @@ public class AuthzDbPlugin
 
     public AuthzDbPlugin(Properties properties) throws IOException
     {
-        String path = properties.getProperty(AUTHZDB, AUTHZDB_DEFAULT);
+        String path = properties.getProperty(AUTHZDB);
+        String uid = properties.getProperty(UID);
+        String gid = properties.getProperty(GID);
+
+        checkArgument(path != null, "Undefined property: " + AUTHZDB);
+        checkArgument(uid != null, "Undefined property: " + UID);
+        checkArgument(gid != null, "Undefined property: " + GID);
+
         _map = new SourceBackedPredicateMap<String,UserAuthzInformation>(new FileLineSource(path, REFRESH_PERIOD), new AuthzMapLineParser());
-        _uidOrder = parseOrder(properties.getProperty(UID, UID_DEFAULT));
-        _gidOrder = parseOrder(properties.getProperty(GID, GID_DEFAULT));
+        _uidOrder = parseOrder(uid);
+        _gidOrder = parseOrder(gid);
     }
 
     /**
@@ -82,17 +86,18 @@ public class AuthzDbPlugin
      * @param authzMapCache map of usernames to user information (e.q. uid/gid)
      */
     AuthzDbPlugin(SourceBackedPredicateMap<String,UserAuthzInformation> map,
-                  String uidOrder, String gidOrder)
+                  ImmutableList<PrincipalType> uidOrder,
+                  ImmutableList<PrincipalType> gidOrder)
     {
         _map = map;
-        _uidOrder = parseOrder(uidOrder);
-        _gidOrder = parseOrder(gidOrder);
+        _uidOrder = uidOrder;
+        _gidOrder = gidOrder;
     }
 
-    private static ImmutableList<PrincipalType> parseOrder(String s)
+    static ImmutableList<PrincipalType> parseOrder(String s)
     {
         ImmutableList.Builder<PrincipalType> order = ImmutableList.builder();
-        for (String e: s.split(",")) {
+        for (String e: Splitter.on(',').omitEmptyStrings().split(s)) {
             order.add(PrincipalType.valueOf(e.toUpperCase()));
         }
         return order.build();

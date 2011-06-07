@@ -21,8 +21,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
+
+import org.dcache.gplazma.plugins.AuthzDbPlugin.PrincipalType;
+import static org.dcache.gplazma.plugins.AuthzDbPlugin.PrincipalType.*;
 
 public class AuthzDbPluginTest
 {
@@ -45,14 +49,35 @@ public class AuthzDbPluginTest
     {
         AuthzDbPlugin plugin =
             new AuthzDbPlugin(testFixture,
-                              AuthzDbPlugin.UID_DEFAULT,
-                              AuthzDbPlugin.GID_DEFAULT);
+                              ImmutableList.of(UID,LOGIN,USER,GROUP),
+                              ImmutableList.of(GID,LOGIN,GROUP,USER));
         Set<Principal> sourcePrincipals = Sets.newHashSet(principals);
         Set<Principal> expectedPrincipals = Sets.newHashSet(principals);
         Set<Principal> authorizedPrincipals = Sets.newHashSet();
         plugin.map(null, sourcePrincipals, authorizedPrincipals);
         assertEquals(expectedPrincipals, sourcePrincipals);
         assertEquals(expectedAuthorizedPrincipals, authorizedPrincipals);
+    }
+
+    @Test
+    public void testParseOrder()
+    {
+        assertEquals(ImmutableList.<PrincipalType>of(),
+                     AuthzDbPlugin.parseOrder(""));
+        assertEquals(ImmutableList.of(UID),
+                     AuthzDbPlugin.parseOrder("uid"));
+        assertEquals(ImmutableList.of(GID),
+                     AuthzDbPlugin.parseOrder("gid"));
+        assertEquals(ImmutableList.of(LOGIN),
+                     AuthzDbPlugin.parseOrder("login"));
+        assertEquals(ImmutableList.of(USER),
+                     AuthzDbPlugin.parseOrder("user"));
+        assertEquals(ImmutableList.of(GROUP),
+                     AuthzDbPlugin.parseOrder("group"));
+        assertEquals(ImmutableList.of(UID,GID,LOGIN,USER,GROUP),
+                     AuthzDbPlugin.parseOrder("uid,gid,login,user,group"));
+        assertEquals(ImmutableList.of(USER,GROUP,LOGIN,UID,GID),
+                     AuthzDbPlugin.parseOrder("user,group,login,uid,gid"));
     }
 
     @Test
