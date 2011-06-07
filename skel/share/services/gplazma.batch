@@ -5,13 +5,13 @@ define env startLogin.exe enddefine
   check -strong cell.name
   check -strong gplazma.version
   check -strong gplazmaPolicy
-  check -strong gPlazmaNumberOfSimutaneousRequests
+  check -strong gPlazmaNumberOfSimultaneousRequests
   check -strong gplazma.configuration.file
 
   create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     "classpath:org/dcache/services/login/gplazma-${gplazma.version}.xml \
      -export -monitor \
-     -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
+     -num-simultaneous-requests=${gPlazmaNumberOfSimultaneousRequests} \
      -gplazmaPolicy=${gplazmaPolicy} \
      -gplazmaConfig=${gplazma.configuration.file} \
      -messageExecutor=message-thread-pool \
