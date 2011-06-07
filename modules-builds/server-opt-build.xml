@@ -1,4 +1,4 @@
-<project name="Core" basedir=".">
+<project name="server-opt" basedir=".">
 
     <target name="-dcache-copy-skel-opt">
         <!-- rpm directory structure with some defaults scripts -->

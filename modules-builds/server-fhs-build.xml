@@ -1,4 +1,4 @@
-<project name="Core" basedir=".">
+<project name="server-fhs" basedir=".">
 
     <target name="-dcache-copy-skel-fhs">
         <!-- Create targer directories -->
