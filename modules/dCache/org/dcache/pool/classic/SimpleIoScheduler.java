@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -23,6 +24,7 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.LifoPriorityComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import dmg.cells.nucleus.CDC;
 
 /**
  *
@@ -48,10 +50,12 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
      */
     private final BlockingQueue<PrioritizedRequest> _queue;
 
-    private final Map<Integer, PrioritizedRequest> _jobs = new ConcurrentHashMap<Integer, PrioritizedRequest>();
+    private final Map<Integer, PrioritizedRequest> _jobs =
+        new ConcurrentHashMap<Integer, PrioritizedRequest>();
 
     /**
-     * ID of the current queue. Used to identify queue in {@link IoQueueManager}.
+     * ID of the current queue. Used to identify queue in {@link
+     * IoQueueManager}.
      */
     private final int _queueId;
 
@@ -69,28 +73,32 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private final MoverExecutorServices _executorServices;
 
-    public SimpleIoScheduler(String name, MoverExecutorServices executorServices, int queueId) {
-        this(Executors.defaultThreadFactory(), name, executorServices, queueId);
+    public SimpleIoScheduler(String name,
+                             MoverExecutorServices executorServices,
+                             int queueId)
+    {
+        this(name, executorServices, queueId, true);
     }
 
-    public SimpleIoScheduler(String name, MoverExecutorServices executorServices, int queueId, boolean fifo) {
-        this(Executors.defaultThreadFactory(), name, executorServices, queueId, fifo);
-    }
-
-    public SimpleIoScheduler(ThreadFactory factory, String name, MoverExecutorServices executorServices, int queueId) {
-        this(factory, name, executorServices, queueId, true);
-    }
-
-    public SimpleIoScheduler(ThreadFactory factory, String name, MoverExecutorServices executorServices, int queueId, boolean fifo)
+    public SimpleIoScheduler(String name,
+                             MoverExecutorServices executorServices,
+                             int queueId,
+                             boolean fifo)
     {
         _name = name;
         _executorServices = executorServices;
         _queueId = queueId;
-        _queue = new PriorityBlockingQueue<PrioritizedRequest>(16, fifo? new FifoPriorityComparator() :
-            new LifoPriorityComparator());
+
+        Comparator<IoPrioritizable> comparator =
+            fifo
+            ? new FifoPriorityComparator()
+            : new LifoPriorityComparator();
+
+        _queue = new PriorityBlockingQueue<PrioritizedRequest>(16, comparator);
 
         _semaphore.setMaxPermits(2);
-        _worker = factory.newThread(this);
+
+        _worker = new Thread(this);
         _worker.setName(_name);
         _worker.start();
     }
@@ -211,22 +219,25 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
                 try {
                     final PrioritizedRequest wrapp = _queue.take();
+                    wrapp.getCdc().restore();
                     _semaphore.acquire();
 
                     final PoolIORequest request = wrapp.getRequest();
-                    final String protocolName = request.getProtocolInfo().getProtocol() + "-"
+                    final String protocolName =
+                        request.getProtocolInfo().getProtocol() + "-"
                         + request.getProtocolInfo().getMajorVersion();
-                        request.transfer(_executorServices.getExecutorService(protocolName),
+                    request.transfer(_executorServices.getExecutorService(protocolName),
                         new CompletionHandler() {
 
                         @Override
-                        public void completed(Object result, Object attachment) {
+                        public void completed(Object result, Object attachment)
+                        {
                             postProcess();
                         }
 
                         @Override
-                        public void failed(Throwable e, Object attachment) {
-
+                        public void failed(Throwable e, Object attachment)
+                        {
                             int rc;
                             String msg;
                             if (e instanceof InterruptedException) {
@@ -250,12 +261,13 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                             _semaphore.release();
                             _jobs.remove(wrapp.getId());
                             request.setState(IoRequestState.DONE);
-                            request.sendBillingMessage();
                             _executorServices.getPostExecutorService(protocolName).execute(request);
                         }
                     });
-                }catch(InterruptedException e) {
+                } catch(InterruptedException e) {
                     _shutdown = true;
+                } finally {
+                    CDC.clear();
                 }
             }
     }
@@ -269,16 +281,22 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         private final IoPriority _priority;
         private final long _ctime;
         private final int _id;
+        private final CDC _cdc;
 
         PrioritizedRequest(int id, PoolIORequest o, IoPriority p) {
             _id = id;
             _request = o;
             _priority = p;
             _ctime = System.nanoTime();
+            _cdc = new CDC();
         }
 
         public PoolIORequest getRequest() {
             return _request;
+        }
+
+        public CDC getCdc() {
+            return _cdc;
         }
 
         public int getId() {
