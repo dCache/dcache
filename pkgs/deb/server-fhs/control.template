@@ -11,7 +11,7 @@ Conflicts: dcache-server
 Recommends: libxml2-utils
 Architecture: all
 Suggests: ruby
-Description: A distributed mass storage system.
+Description: distributed mass storage system
  dCache is an efficient, modular and configurable mass storage
  management system. It provides a system for storing and retrieving
  huge amounts of data, distributed among a large number of heterogenous server
