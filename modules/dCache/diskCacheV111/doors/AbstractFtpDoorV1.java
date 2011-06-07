@@ -252,12 +252,31 @@ public abstract class AbstractFtpDoorV1
      */
     protected enum Fact
     {
-        SIZE, MODIFY, TYPE, UNIQUE, PERM;
+        SIZE("size"),
+        MODIFY("modify"),
+        TYPE("type"),
+        UNIQUE("unique"),
+        PERM("perm"),
+        OWNER("UNIX.owner"),
+        GROUP("UNIX.group"),
+        MODE("UNIX.mode");
+
+        private final String _name;
+
+        Fact(String name)
+        {
+            _name = name;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
 
         public static Fact find(String s)
         {
             for (Fact fact: values()) {
-                if (s.equalsIgnoreCase(fact.name())) {
+                if (s.equalsIgnoreCase(fact.getName())) {
                     return fact;
                 }
             }
@@ -602,7 +621,8 @@ public abstract class AbstractFtpDoorV1
     /** List of selected RFC 3659 facts. */
     protected Set<Fact> _currentFacts =
         new HashSet(Arrays.asList(new Fact[] {
-                    Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE }));
+                    Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE,
+                    Fact.OWNER, Fact.GROUP, Fact.MODE }));
 
     /**
      * Encapsulation of an FTP transfer.
@@ -1639,7 +1659,7 @@ public abstract class AbstractFtpDoorV1
          */
         builder.append(" MLST ");
         for (Fact fact: Fact.values()) {
-            builder.append(fact);
+            builder.append(fact.getName());
             if (_currentFacts.contains(fact)) {
                 builder.append('*');
             }
@@ -1728,7 +1748,7 @@ public abstract class AbstractFtpDoorV1
         } else {
             StringBuilder s = new StringBuilder("200 MLST ");
             for (Fact fact: _currentFacts) {
-                s.append(fact).append(';');
+                s.append(fact.getName()).append(';');
             }
             reply(s.toString());
         }
@@ -3686,6 +3706,8 @@ public abstract class AbstractFtpDoorV1
      */
     private abstract class FactPrinter implements DirectoryListPrinter
     {
+        private final static int MODE_MASK = 07777;
+
         protected final PrintWriter _out;
 
         private final org.dcache.namespace.PermissionHandler _pdp =
@@ -3724,6 +3746,15 @@ public abstract class AbstractFtpDoorV1
                     break;
                 case UNIQUE:
                     attributes.add(PNFSID);
+                    break;
+                case OWNER:
+                    attributes.add(OWNER);
+                    break;
+                case GROUP:
+                    attributes.add(OWNER_GROUP);
+                    break;
+                case MODE:
+                    attributes.add(MODE);
                     break;
                 }
             }
@@ -3764,6 +3795,15 @@ public abstract class AbstractFtpDoorV1
                     case PERM:
                         printPermFact(dirAttr, attr);
                         break;
+                    case OWNER:
+                        printOwnerFact(attr);
+                        break;
+                    case GROUP:
+                        printGroupFact(attr);
+                        break;
+                    case MODE:
+                        printModeFact(attr);
+                        break;
                     }
                 }
             }
@@ -3775,7 +3815,7 @@ public abstract class AbstractFtpDoorV1
         /** Writes an RFC 3659 fact to a writer. */
         private void printFact(Fact fact, Object value)
         {
-            _out.print(fact);
+            _out.print(fact.getName());
             _out.print('=');
             _out.print(value);
             _out.print(';');
@@ -3794,6 +3834,24 @@ public abstract class AbstractFtpDoorV1
             printFact(Fact.SIZE, attr.getSize());
         }
 
+        /** Writes a RFC 3659 size fact to a writer. */
+        private void printOwnerFact(FileAttributes attr)
+        {
+            printFact(Fact.OWNER, attr.getOwner());
+        }
+
+        /** Writes a RFC 3659 size fact to a writer. */
+        private void printGroupFact(FileAttributes attr)
+        {
+            printFact(Fact.GROUP, attr.getGroup());
+        }
+
+        /** Writes a RFC 3659 size fact to a writer. */
+        private void printModeFact(FileAttributes attr)
+        {
+            printFact(Fact.MODE, attr.getMode() & MODE_MASK);
+        }
+
         /** Writes a RFC 3659 type fact to a writer. */
         private void printTypeFact(FileAttributes attr)
         {
@@ -3803,6 +3861,9 @@ public abstract class AbstractFtpDoorV1
                 break;
             case REGULAR:
                 printFact(Fact.TYPE, "file");
+                break;
+            case LINK:
+                printFact(Fact.TYPE, "OS.UNIX=slink");
                 break;
             }
         }
