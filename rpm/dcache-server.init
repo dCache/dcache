@@ -23,6 +23,9 @@ case "$1" in
     force-reload)
         /usr/bin/dcache condrestart
         ;;
+    status)
+        /usr/bin/dcache status
+        ;;
     *)
         /usr/bin/dcache "$1"
         ;;

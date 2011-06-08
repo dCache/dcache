@@ -47,6 +47,12 @@
     <target name="server-fhs.rpm" depends="install-server-fhs"
             description="Build the dcache-server-xxx.rpm">
 
+        <!--  timestamp for the changelog -->
+        <tstamp>
+            <format property="timestamp" pattern="EEE MMM dd yyyy"
+                    locale="en,UK"/>
+        </tstamp>
+
         <!-- Create config files for RPM from Templates -->
 
         <copy todir="${server.rpmTopDir}" overwrite="true">
@@ -58,6 +64,8 @@
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
             <filterset>
+                <filter token="Timestamp" value="${timestamp}" />
+
                 <filter token="rpmMacrosFile" value="${server.rpmMacrosFile}" />
                 <!-- This is only used in the rpmrc file -->
 
