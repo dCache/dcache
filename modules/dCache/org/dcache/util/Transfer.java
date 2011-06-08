@@ -783,6 +783,7 @@ public class Transfer implements Comparable<Transfer>
             message.setIoQueueName(queue);
             message.setInitiator(getTransaction());
             message.setId(_sessionId);
+            message.setSubject(_subject);
 
             /* As always, PoolIoFileMessage has to be sent via the
              * PoolManager (which could be the SpaceManager).
