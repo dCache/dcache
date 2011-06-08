@@ -45,10 +45,9 @@ public class SshOutputStream extends OutputStream {
       _log.debug("write( byte [] a )");
       write( a , 0 , a.length ) ;
    }
+
    @Override
    public void close() throws IOException {
-      _log.debug("close()");
-      _core.close() ;
+       _core.close();
    }
-
 }

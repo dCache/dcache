@@ -136,6 +136,7 @@ public class      SshStreamEngine
         // wait for the version string and check consistence
         //
         String version = readVersionString() ;
+        _log.debug("Client has version: {}", version);
         //
         // generate and send the public key message
         //
@@ -172,9 +173,9 @@ public class      SshStreamEngine
       if( _mode == SERVER_MODE ){
           synchronized( _closeLock ){
              if( ( ! _closing ) && ( ! _closed ) ){
-                writePacket( new SshSmsgExitStatus(val) ) ;
-                _closing = true ;
-                _isActive = false ;
+                 _closing = true ;
+                 _isActive = false ;
+                 shutdown(val);
              }
           }
       }else{
@@ -183,7 +184,53 @@ public class      SshStreamEngine
                  throw new IOException("Client not allowed to close connection first" ) ;
           }
       }
+   }
 
+   private void shutdown(int value) throws IOException {
+       writePacket(new SshSmsgExitStatus(value));
+       _socket.shutdownOutput();
+       waitForClientConfirmation();
+       waitForClientClose();
+       confirmed();
+   }
+
+   private void waitForClientConfirmation() throws IOException {
+       SshPacket packet = readPacket();
+
+       /* It can happen that a client closes their end of the connection just
+        * as they ran the logoff command.  This triggers a race between them
+        * sending us the EOF packet and our closing the session.  We silently
+        * ignore such EOF messages since we're closing the connection anyway.
+        */
+       if(packet.getType() == SshPacket.SSH_CMSG_EOF) {
+           packet = readPacket();
+       }
+
+       if(packet != null &&
+               packet.getType() != SshPacket.SSH_CMSG_EXIT_CONFORMATION) {
+           _log.warn("received unexpected message (type={}) after server " +
+                     "send exit message; discarding any subsequent data.",
+                     packet.getType());
+           do {
+               packet = readPacket();
+           } while(packet != null &&
+                   packet.getType() != SshPacket.SSH_CMSG_EXIT_CONFORMATION);
+       }
+   }
+
+   private void waitForClientClose() throws IOException {
+       SshPacket packet = readPacket();
+
+       if( packet != null) {
+           _log.warn("unexpected client packet (type={}) after server " +
+                     "finished the session; discarding incoming data until " +
+                     "client closes.",
+                     packet.getType());
+
+           do {
+               packet = readPacket();
+           } while(packet != null);
+       }
    }
 
    public boolean isActive() {
@@ -198,7 +245,7 @@ public class      SshStreamEngine
       _log.debug("confirmed(closing={}; closed={})", _closing, _closed);
       if( _mode == SERVER_MODE ){
          synchronized( _closeLock ){
-            if( _closing ){
+            if( !_closed && _closing ){
                _closed  = true ;
                _closing = false ;
                _socket.close() ;
@@ -212,7 +259,6 @@ public class      SshStreamEngine
             }
          }
       }
-
    }
    private static final int ST_ERROR        = -1 ;
    private static final int ST_INIT         = 0 ;
