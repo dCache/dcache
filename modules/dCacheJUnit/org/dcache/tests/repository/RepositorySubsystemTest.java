@@ -27,6 +27,7 @@ import org.dcache.tests.cells.Message;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.IllegalTransitionException;
 
 import org.dcache.pool.classic.FairQueueAllocation;
@@ -290,7 +291,8 @@ public class RepositorySubsystemTest
     private void assertCanOpen(PnfsId id, long size, EntryState state)
     {
         try {
-            ReplicaDescriptor handle = repository.openEntry(id);
+            ReplicaDescriptor handle =
+                repository.openEntry(id, EnumSet.noneOf(OpenFlags.class));
             try {
                 assertEquals(new File(dataDir, id.toString()), handle.getFile());
                 assertCacheEntry(handle.getEntry(), id, size, state);
@@ -341,7 +343,7 @@ public class RepositorySubsystemTest
     @Test(expected=IllegalStateException.class)
     public void testOpenEntryFailsBeforeInit() throws Exception
     {
-        repository.openEntry(id1);
+        repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
     }
 
     @Test(expected=IllegalStateException.class)
@@ -424,7 +426,7 @@ public class RepositorySubsystemTest
             protected void run()
                 throws CacheException, InterruptedException
             {
-                repository.openEntry(id4);
+                repository.openEntry(id4, EnumSet.noneOf(OpenFlags.class));
             }
         };
     }
@@ -526,7 +528,8 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        ReplicaDescriptor handle = repository.openEntry(id1);
+        ReplicaDescriptor handle =
+            repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
         handle.close();
     }
@@ -539,7 +542,8 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        ReplicaDescriptor handle = repository.openEntry(id1);
+        ReplicaDescriptor handle =
+            repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
         handle.getFile();
     }
@@ -552,7 +556,8 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        ReplicaDescriptor handle = repository.openEntry(id1);
+        ReplicaDescriptor handle =
+            repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
         handle.getEntry();
     }
@@ -629,7 +634,8 @@ public class RepositorySubsystemTest
                 throws CacheException, InterruptedException,
                        IllegalTransitionException
             {
-                ReplicaDescriptor handle1 = repository.openEntry(id1);
+                ReplicaDescriptor handle1 =
+                    repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertNoStateChangeEvent();
@@ -665,11 +671,13 @@ public class RepositorySubsystemTest
                 throws CacheException, InterruptedException,
                        IllegalTransitionException
             {
-                ReplicaDescriptor h1 = repository.openEntry(id1);
+                ReplicaDescriptor h1 =
+                    repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertStep("Cache location should have been cleared", 1);
-                ReplicaDescriptor h2 = repository.openEntry(id1);
+                ReplicaDescriptor h2 =
+                    repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
                 h1.close();
                 assertNoStateChangeEvent();
                 h2.close();

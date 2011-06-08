@@ -35,6 +35,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 import org.slf4j.Logger;
@@ -129,10 +130,12 @@ public class ChecksumScanner
 
                 for (PnfsId id: _repository) {
                     try {
-                        ReplicaDescriptor handle = _repository.openEntry(id);
+                        ReplicaDescriptor handle =
+                            _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
                         try {
-                            Checksum replica = checkFile(handle.getFile(),
-                                                      Double.POSITIVE_INFINITY);
+                            Checksum replica =
+                                checkFile(handle.getFile(),
+                                          Double.POSITIVE_INFINITY);
                             Checksum file = readChecksum(handle.getEntry());
                             _totalCount++;
 
@@ -184,7 +187,8 @@ public class ChecksumScanner
             try {
                 _fileCRC = null;
                 _infoCRC = null;
-                ReplicaDescriptor handle = _repository.openEntry(_pnfsId);
+                ReplicaDescriptor handle =
+                    _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
                 try {
                     _fileCRC = checkFile(handle.getFile(), Double.POSITIVE_INFINITY);
                     _infoCRC = readChecksum(handle.getEntry());
@@ -421,7 +425,8 @@ public class ChecksumScanner
         private boolean isChecksumOk(PnfsId id)
             throws InterruptedException, CacheException
         {
-            ReplicaDescriptor handle = _repository.openEntry(id);
+            ReplicaDescriptor handle =
+                _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
             try {
                 Checksum storedChecksum = readChecksum(handle.getEntry());
                 if (storedChecksum == null) {

@@ -12,8 +12,11 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import javax.security.auth.Subject;
+import java.util.Set;
+import java.util.Collections;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository.OpenFlags;
 
 /**
  * Encapsulates a read transfer, that is, sending a file. It acts as a
@@ -34,7 +37,8 @@ public class PoolIOReadTransfer
         throws CacheException, InterruptedException
     {
         super(pnfsId, protocolInfo, subject, storageInfo, mover);
-        _handle = repository.openEntry(pnfsId);
+        Set<OpenFlags> flags = Collections.emptySet();
+        _handle = repository.openEntry(pnfsId, flags);
         _size = _handle.getFile().length();
     }
 
