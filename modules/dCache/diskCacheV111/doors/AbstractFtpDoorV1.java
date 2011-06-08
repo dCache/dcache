@@ -268,7 +268,8 @@ public abstract class AbstractFtpDoorV1
     private static final String[] FEATURES = {
         "EOF", "PARALLEL", "MODE-E-PERF", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT", "MDTM",
-        "CKSUM " + buildChecksumList(),  "MODEX"
+        "CKSUM " + buildChecksumList(),  "MODEX",
+        "TVFS"
         /*
          * do not publish DCAU as supported feature. This will force
          * some clients to always encrypt data channel
@@ -2888,7 +2889,7 @@ public abstract class AbstractFtpDoorV1
             PrintWriter pw = new PrintWriter(sw);
             pw.print("250- Listing " + arg + "\r\n");
             pw.print(' ');
-            _listSource.printFile(null, new FactPrinter(pw), path);
+            _listSource.printFile(null, new MlstFactPrinter(pw), path);
             pw.print("250 End");
             reply(sw.toString());
         } catch (InterruptedException e) {
@@ -2938,7 +2939,7 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "UTF-8"));
 
-                total = _listSource.printDirectory(null, new FactPrinter(writer),
+                total = _listSource.printDirectory(null, new MlsdFactPrinter(writer),
                                                    path, null, null);
                 writer.close();
             } finally {
@@ -3668,9 +3669,10 @@ public abstract class AbstractFtpDoorV1
     /**
      * ListPrinter using the RFC 3659 fact line format.
      */
-    private class FactPrinter implements DirectoryListPrinter
+    private abstract class FactPrinter implements DirectoryListPrinter
     {
-        private final PrintWriter _out;
+        protected final PrintWriter _out;
+
         private final org.dcache.namespace.PermissionHandler _pdp =
             new org.dcache.namespace.ChainedPermissionHandler
             (
@@ -3751,7 +3753,7 @@ public abstract class AbstractFtpDoorV1
                 }
             }
             _out.print(' ');
-            _out.print(entry.getName());
+            printName(dir, entry);
             _out.print("\r\n");
         }
 
@@ -3830,6 +3832,34 @@ public abstract class AbstractFtpDoorV1
                 }
             }
             printFact(Fact.PERM, s);
+        }
+
+        protected abstract void printName(FsPath dir, DirectoryEntry entry);
+    }
+
+    private class MlsdFactPrinter extends FactPrinter
+    {
+        public MlsdFactPrinter(PrintWriter writer)
+        {
+            super(writer);
+        }
+
+        protected void printName(FsPath dir, DirectoryEntry entry)
+        {
+            _out.print(entry.getName());
+        }
+    }
+
+    private class MlstFactPrinter extends FactPrinter
+    {
+        public MlstFactPrinter(PrintWriter writer)
+        {
+            super(writer);
+        }
+
+        protected void printName(FsPath dir, DirectoryEntry entry)
+        {
+            _out.print(_pathRoot.relativize(new FsPath(dir, entry.getName())));
         }
     }
 }
