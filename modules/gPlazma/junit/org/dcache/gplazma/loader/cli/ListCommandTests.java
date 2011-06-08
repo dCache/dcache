@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader.cli;
 
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -12,14 +14,12 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
-
+import com.google.common.collect.ImmutableList;
 
 public class ListCommandTests {
-    @SuppressWarnings("unchecked")
     private static final PluginRepositoryFactory FACTORY =
-            new StaticClassPluginRepositoryFactory( DummyPlugin.class,
-                                                    AnotherDummyPlugin.class);
+            new StaticClassPluginRepositoryFactory( ImmutableList.of( DummyPlugin.class,
+                                                    AnotherDummyPlugin.class ));
 
     ListCommand _command;
     AnyOrderLineAsserter _asserter;
@@ -80,8 +80,8 @@ public class ListCommandTests {
      * appear.
      */
     public final class AnyOrderLineAsserter {
-        private List<String> _expectedLines = new ArrayList<String>();
-        private OutputStream _out;
+        private final List<String> _expectedLines = new ArrayList<String>();
+        private final OutputStream _out;
 
         public AnyOrderLineAsserter( OutputStream out) {
             _out = out;

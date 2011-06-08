@@ -1,6 +1,10 @@
 package org.dcache.gplazma.loader;
 
+import java.util.Collection;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * This class provides a mechanism for loading GPlazma plugins from a static
@@ -12,22 +16,23 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 public class StaticClassPluginLoader extends AbstractPluginLoader {
     private final PluginRepositoryFactory _repositoryFactory;
 
-    @SuppressWarnings("unchecked")
     public static PluginLoader newPluginLoader(Class<? extends GPlazmaPlugin> plugin)
     {
-        Class[] plugins = new Class[] { plugin };
+        ImmutableList.Builder<Class<? extends GPlazmaPlugin>> b = ImmutableList.builder();
+        b.add(plugin);
+        Collection<Class<? extends GPlazmaPlugin>> plugins = b.build();
         PluginLoader inner = new StaticClassPluginLoader(plugins);
         PluginLoader outer = new SafePluginLoaderDecorator(inner);
         return outer;
     }
 
-    public static PluginLoader newPluginLoader(Class<? extends GPlazmaPlugin>... plugins) {
+    public static PluginLoader newPluginLoader(Collection<Class<? extends GPlazmaPlugin>> plugins) {
         PluginLoader inner = new StaticClassPluginLoader(plugins);
-        PluginLoader outer = new SafePluginLoaderDecorator( inner);
+        PluginLoader outer = new SafePluginLoaderDecorator(inner);
         return outer;
     }
 
-    private StaticClassPluginLoader(Class<? extends GPlazmaPlugin>... plugins) {
+    private StaticClassPluginLoader(Collection<Class<? extends GPlazmaPlugin>> plugins) {
         _repositoryFactory = new StaticClassPluginRepositoryFactory(plugins);
     }
 

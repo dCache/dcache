@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader;
 
+import java.util.Collection;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
@@ -15,11 +17,10 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 public class StaticClassPluginRepositoryFactory implements
         PluginRepositoryFactory {
 
-    private Class<? extends GPlazmaPlugin> _pluginClasses[];
+    private final Collection<Class<? extends GPlazmaPlugin>> _pluginClasses;
 
-    public StaticClassPluginRepositoryFactory(Class<? extends GPlazmaPlugin>... pluginClasses) {
-        _pluginClasses = pluginClasses;
-
+    public StaticClassPluginRepositoryFactory(Collection<Class<? extends GPlazmaPlugin>> plugins) {
+        _pluginClasses = plugins;
     }
 
     @Override

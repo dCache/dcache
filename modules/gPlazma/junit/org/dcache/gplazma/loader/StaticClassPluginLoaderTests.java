@@ -36,12 +36,12 @@ public class StaticClassPluginLoaderTests {
         _loader.init();
     }
 
-    @SuppressWarnings("unchecked") // a known issue with Generics and varargs
     public PluginLoader newLoader() {
-        return StaticClassPluginLoader.newPluginLoader( ValidPlugin.class,
-                                            InvalidPlugin.class,
-                                            ExceptionThrowingPlugin.class);
-
+        return StaticClassPluginLoader.newPluginLoader(
+                com.google.common.collect.ImmutableList.of(
+                        ValidPlugin.class,
+                        InvalidPlugin.class,
+                        ExceptionThrowingPlugin.class));
     }
 
     @Test(expected=IllegalStateException.class)
