@@ -31,10 +31,16 @@ public class ProtocolConnectionPool extends Thread {
      * @param challengeReader
      * @throws IOException
      */
-    ProtocolConnectionPool(int listenPort, ChallengeReader challengeReader) throws IOException {
+    ProtocolConnectionPool(int listenPort, int receiveBufferSize,
+                           ChallengeReader challengeReader)
+        throws IOException
+    {
         super("ProtocolConnectionPool");
         _challengeReader = challengeReader;
         _serverSocketChannel = ServerSocketChannel.open();
+        if (receiveBufferSize > 0) {
+            _serverSocketChannel.socket().setReceiveBufferSize(receiveBufferSize);
+        }
 
         PortRange portRange;
         if (listenPort != 0) {

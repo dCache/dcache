@@ -100,18 +100,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     private void initialiseDataSocket(SocketChannel socketChannel, MoverIoBuffer bufferSize)
             throws SocketException {
-        Socket dataSocket = socketChannel.socket();
-        if (_logSocketIO.isDebugEnabled()) {
-            _logSocketIO.debug("Socket OPEN remote = " +
-                    dataSocket.getInetAddress() + ":" + dataSocket.getPort()
-                    + " local = " + dataSocket.getLocalAddress() + ":" +
-                    dataSocket.getLocalPort());
-        }
-        dataSocket.setReceiveBufferSize(bufferSize.getRecvBufferSize());
-        dataSocket.setSendBufferSize(bufferSize.getSendBufferSize());
-        _log.info("Using : Buffer Sizes (send/recv/io) : " +
-                dataSocket.getSendBufferSize() + "/" +
-                dataSocket.getReceiveBufferSize() + "/" + _bigBuffer.capacity());
     }
 
     private MoverIoBuffer prepareBufferSize(StorageInfo storage) {
@@ -364,24 +352,49 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 try{
                     host = hosts[i];
 
-                    socketChannel = SocketChannel.open(
-                        new InetSocketAddress(InetAddress.getByName(host),
-                        port));
+                    socketChannel = SocketChannel.open();
                     socketChannel.configureBlocking(true);
 
+                    Socket socket = socketChannel.socket();
+                    socket.setKeepAlive(true);
+                    if (bufferSize.getRecvBufferSize() > 0) {
+                        socket.setReceiveBufferSize(bufferSize.getRecvBufferSize());
+                    }
+                    if (bufferSize.getSendBufferSize() > 0) {
+                        socket.setSendBufferSize(bufferSize.getSendBufferSize());
+                    }
+
+                    socketChannel.connect(
+                        new InetSocketAddress(InetAddress.getByName(host),
+                                              port));
+                    break;
                 }catch(Exception ee){
                     _log.error("Can't connect to "+host);
                     bufferedException = ee;
-                    continue;
+                    socketChannel = null;
                 }
-                break;
             }
             if(socketChannel == null)
                 throw bufferedException;
-            // sets buffersizes of the Socket and some logging
-            initialiseDataSocket(socketChannel, bufferSize);
 
-            _log.info("Connected to "+host+"("+port+")");
+            Socket socket = socketChannel.socket();
+            if (_logSocketIO.isDebugEnabled()) {
+                _logSocketIO.debug("Socket OPEN remote = {}:{} local = {}:{}",
+                                   new Object[] {
+                                       socket.getInetAddress(),
+                                       socket.getPort(),
+                                       socket.getLocalAddress(),
+                                       socket.getLocalPort()
+                                   });
+            }
+            _log.info("Using : Buffer Sizes (send/recv/io) : {}/{}/{}",
+                      new Object[] {
+                          socket.getSendBufferSize(),
+                          socket.getReceiveBufferSize(),
+                          _bigBuffer.capacity()
+                      });
+            _log.info("Connected to {}:{}", host, port);
+
             //
             // send the sessionId and our (for now) 0 byte security challenge.
             //
@@ -390,8 +403,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             _bigBuffer.limit(_bigBuffer.position()).position(0);
             socketChannel.write(_bigBuffer);
         }else{ // passive connection
-
-            ProtocolConnectionPool pcp = protocolConnectionPoolFactory.getConnectionPool();
+            ProtocolConnectionPool pcp =
+                protocolConnectionPoolFactory.getConnectionPool(bufferSize.getRecvBufferSize());
 
             InetAddress localAddress = NetworkUtils.getLocalAddressForClient(dcapProtocolInfo.getHosts());
             InetSocketAddress socketAddress =
@@ -402,16 +415,19 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage("pool",
                     socketAddress, challenge);
             msg.setId(dcapProtocolInfo.getSessionId());
-            _log.info("waiting for client to connect ("+
-                 localAddress  +
-                 pcp.getLocalPort() +
-                 ")");
+            _log.info("waiting for client to connect ({}:{})",
+                      localAddress, pcp.getLocalPort());
 
             CellPath cellpath = dcapProtocolInfo.door();
             _cell.sendMessage (new CellMessage(cellpath, msg));
             DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId, challenge);
             socketChannel = pcp.getSocket(dcapChallenge);
 
+            Socket socket = socketChannel.socket();
+            socket.setKeepAlive(true);
+            if (bufferSize.getSendBufferSize() > 0) {
+                socket.setSendBufferSize(bufferSize.getSendBufferSize());
+            }
         }
 
         //
@@ -439,10 +455,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     requestBlock.read(socketChannel);
 
-                    _log.debug("Request Block : "+requestBlock);
+                    _log.debug("Request Block : {}", requestBlock);
 
                 }catch(EOFException eofe){
-                    _log.error("Dataconnection closed by peer : "+eofe);
+                    _log.error("Dataconnection closed by peer : {}", eofe.toString());
                     throw eofe;
 
                 }catch(BufferUnderflowException bue){
@@ -511,7 +527,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     long blockSize = requestBlock.nextLong();
 
-                    _log.debug("READ byte="+blockSize);
+                    _log.debug("READ byte={}", blockSize);
 
                     if(_io_ok){
 
@@ -676,7 +692,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                     try{
                         long size     = diskFile.getFilePointer();
                         long location = diskFile.length();
-                        _log.debug("LOCATE : size="+size+";position="+location);
+                        _log.debug("LOCATE : size={};position={}",
+                                   size, location);
                         cntOut.writeACK(location, size);
                         socketChannel.write(cntOut.buffer());
                     }catch(Exception e){
