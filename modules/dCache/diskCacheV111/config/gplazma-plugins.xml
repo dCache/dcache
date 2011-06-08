@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>kpwd</name>
+        <class>org.dcache.auth.gplazma.KpwdPlugin</class>
+    </plugin>
+</plugins>

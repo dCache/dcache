@@ -1,0 +1,19 @@
+version 2.1
+mapping "/O=Grid/O=NorduGrid/OU=ndgf.org/CN=Gerd Behrmann" behrmann
+mapping "behrmann@ndgf.org" behrmann2
+
+login behrmann read-write 1000 1000 /foo /bar /
+  /O=Grid/O=NorduGrid/OU=ndgf.org/CN=Gerd Behrmann
+  behrmann@ndgf.org
+
+login behrmann2 read-only 1001 1001 / / /
+  /O=Grid/O=NorduGrid/OU=ndgf.org/CN=Gerd Behrmann
+  behrmann@ndgf.org
+
+login behrmann3 read-only 1002 1002 / / /
+
+passwd behrmann aec59a36 read-write 1000 1000 / /
+
+passwd anonymous - read-only 2000 2000 / /
+
+passwd banned # read-only 3000 3000 / /

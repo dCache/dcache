@@ -21,6 +21,7 @@
         <pathelement location="${webappBuildDir}/webadmin.jar" />
         <fileset dir="${libDir}/wicket/" includes="*.jar" />
         <pathelement location="${libDir}/jing/jing-20091111.jar" />
+        <pathelement location="${unittest.src}"/>
         <path refid="dependency.classpath" />
     </path>
 
@@ -34,7 +35,6 @@
         <javac classpathref="junit.classpath" destdir="${unittest.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}" encoding="${javac.encoding}" deprecation="on">
             <src path="${unittest.src}:${gplazma.unittest.src}" />
         </javac>
-
     </target>
 
 
