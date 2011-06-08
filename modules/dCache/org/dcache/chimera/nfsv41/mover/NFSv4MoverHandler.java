@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
 import org.dcache.chimera.nfs.v4.NFSv4OperationFactory;
 import org.dcache.chimera.nfs.v4.OperationCOMMIT;
@@ -58,7 +57,7 @@ public class NFSv4MoverHandler {
     public NFSv4MoverHandler(PortRange portRange)
             throws IOException , OncRpcException {
 
-        _embededDS = new NFSServerV41(_operationFactory, new DeviceManager(), null, _fs, new SimpleIdMap(), null);
+        _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null);
         _rpcService = new OncRpcSvc(
                 new com.sun.grizzly.PortRange((int)portRange.getLower(), (int)portRange.getUpper()),
                 IpProtocolType.TCP, false, "Embedded NFSv4.1 DS");

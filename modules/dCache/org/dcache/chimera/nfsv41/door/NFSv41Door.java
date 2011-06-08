@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.ExportFile;
-import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.nfs.v4.NFSServerV41;
@@ -63,20 +62,27 @@ import org.dcache.chimera.nfs.v4.NfsIdMapping;
 import org.dcache.chimera.nfs.v4.OperationFactoryMXBeanImpl;
 import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.chimera.nfs.v4.SimpleIdMap;
+import org.dcache.chimera.nfs.v4.StripingPattern;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfs.v4.xdr.layout4;
+import org.dcache.chimera.nfs.v4.xdr.layouttype4;
+import org.dcache.chimera.nfs.v4.xdr.multipath_list4;
+import org.dcache.chimera.nfs.v4.xdr.netaddr4;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
+import org.dcache.chimera.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.utils.Bytes;
+import org.dcache.utils.net.InetSocketAddresses;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrDecodingStream;
+import org.dcache.xdr.XdrEncodingStream;
 import org.dcache.xdr.portmap.OncRpcEmbeddedPortmap;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -293,7 +299,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public device_addr4 getDeviceInfo(NFS4Client client, deviceid4 deviceId) {
         /* in case of MDS access we return the same interface which client already connected to */
         if (deviceId.equals(MDS_ID)) {
-            return DeviceManager.deviceAddrOf( new RoundRobinStripingPattern<InetSocketAddress>(),
+            return deviceAddrOf( new RoundRobinStripingPattern<InetSocketAddress>(),
                     client.getLocalAddress());
         }
 
@@ -489,8 +495,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         public PoolDS(deviceid4 deviceId, InetSocketAddress ip) {
             _deviceId = deviceId;
             _socketAddress = ip;
-            _deviceAddr = DeviceManager
-                    .deviceAddrOf(new RoundRobinStripingPattern<InetSocketAddress>(), ip);
+            _deviceAddr = deviceAddrOf(new RoundRobinStripingPattern<InetSocketAddress>(), ip);
         }
 
         public deviceid4 getDeviceId() {
@@ -567,5 +572,57 @@ public class NFSv41Door extends AbstractCellComponent implements
         doorInfo.setProcess("");
         doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
         return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
+    }
+
+    /**
+     * Create a multipath based NFSv4.1 file layout address.
+     *
+     * @param stripingPattern of the device
+     * @param deviceAddress
+     * @return device address
+     */
+    public static device_addr4 deviceAddrOf(StripingPattern<InetSocketAddress> stripingPattern,
+            InetSocketAddress... deviceAddress) {
+
+        nfsv4_1_file_layout_ds_addr4 file_type = new nfsv4_1_file_layout_ds_addr4();
+
+        file_type.nflda_multipath_ds_list = new multipath_list4[deviceAddress.length];
+
+        for (int i = 0; i < deviceAddress.length; i++) {
+
+            file_type.nflda_multipath_ds_list[i] = new multipath_list4();
+            file_type.nflda_multipath_ds_list[i].value = new netaddr4[1];
+
+            file_type.nflda_multipath_ds_list[i].value[0] = new netaddr4();
+            file_type.nflda_multipath_ds_list[i].value[0].na_r_addr =
+                    InetSocketAddresses.uaddrOf(deviceAddress[i]);
+            file_type.nflda_multipath_ds_list[i].value[0].na_r_netid = "tcp";
+        }
+
+        file_type.nflda_stripe_indices = stripingPattern.getPattern(deviceAddress);
+
+        XdrEncodingStream xdr = new XdrBuffer(128);
+        try {
+            xdr.beginEncoding();
+            file_type.xdrEncode(xdr);
+            xdr.endEncoding();
+        } catch (OncRpcException e) {
+            /* forced by interface, should never happen. */
+            throw new RuntimeException("Unexpected OncRpcException:", e);
+        } catch (IOException e) {
+            /* forced by interface, should never happen. */
+            throw new RuntimeException("Unexpected IOException:", e);
+        }
+
+        ByteBuffer body = xdr.body();
+        byte[] retBytes = new byte[body.limit()];
+        body.get(retBytes);
+
+        device_addr4 addr = new device_addr4();
+        addr.da_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES;
+        addr.da_addr_body = retBytes;
+
+        return addr;
+
     }
 }
