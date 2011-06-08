@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.EnumSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,6 +58,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.CacheEntry;
@@ -933,7 +935,8 @@ public class HsmStorageHandler2
                 }
 
                 StorageInfo storageInfo;
-                ReplicaDescriptor handle = _repository.openEntry(pnfsId);
+                Set<OpenFlags> flags = Collections.emptySet();
+                ReplicaDescriptor handle = _repository.openEntry(pnfsId, flags);
                 try {
                     doChecksum(handle);
 
