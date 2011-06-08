@@ -12,7 +12,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.attributes.LoginAttribute;
 
 import javax.security.auth.Subject;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.Collections;
@@ -94,12 +93,20 @@ public class Gplazma2LoginStrategy
     @Override
     public Principal map(Principal principal) throws CacheException
     {
-        return null;
+        try {
+            return _gplazma.map(principal);
+        } catch (AuthenticationException e) {
+            throw new PermissionDeniedCacheException("map failed: " + e.getMessage());
+        }
     }
 
     @Override
     public Set<Principal> reverseMap(Principal principal) throws CacheException
     {
-        return Collections.emptySet();
+        try {
+            return _gplazma.reverseMap(principal);
+        } catch (AuthenticationException e) {
+            throw new PermissionDeniedCacheException("reverseMap failed: " + e.getMessage());
+        }
     }
 }

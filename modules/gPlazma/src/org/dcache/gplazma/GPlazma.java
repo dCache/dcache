@@ -2,6 +2,7 @@ package org.dcache.gplazma;
 
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,12 +19,14 @@ import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.XmlResourcePluginLoader;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.dcache.gplazma.strategies.AccountStrategy;
 import org.dcache.gplazma.strategies.AuthenticationStrategy;
 import org.dcache.gplazma.strategies.GPlazmaPluginElement;
+import org.dcache.gplazma.strategies.IdentityStrategy;
 import org.dcache.gplazma.strategies.MappingStrategy;
 import org.dcache.gplazma.strategies.SessionStrategy;
 import org.dcache.gplazma.strategies.StrategyFactory;
@@ -53,6 +56,8 @@ public class GPlazma {
             accountPluginElements;
     private List<GPlazmaPluginElement<GPlazmaSessionPlugin>>
             sessionPluginElements;
+    private List<GPlazmaPluginElement<GPlazmaIdentityPlugin>>
+            identityPluginElements;
 
    private final ConfigurationLoadingStrategy configurationLoadingStrategy;
    private AuthenticationStrategy authenticationStrategy;
@@ -60,6 +65,7 @@ public class GPlazma {
    private AccountStrategy accountStrategy;
    private SessionStrategy sessionStrategy;
    private ValidationStrategy validationStrategy;
+   private IdentityStrategy identityStrategy;
 
    public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy) {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
@@ -123,6 +129,34 @@ public class GPlazma {
          return reply;
     }
 
+    public Principal map(Principal principal) throws AuthenticationException {
+        IdentityStrategy currentIdentityStrategy;
+
+        synchronized (configurationLoadingStrategy) {
+            if (configurationLoadingStrategy.hasUpdated()) {
+                LOGGER.debug("configuration has been updated, reloading plugins");
+                loadPlugins();
+                initStrategies();
+            }
+            currentIdentityStrategy = this.identityStrategy;
+        }
+        return currentIdentityStrategy.map(principal);
+    }
+
+    public Set<Principal> reverseMap(Principal principal) throws AuthenticationException {
+        IdentityStrategy currentIdentityStrategy;
+
+        synchronized (configurationLoadingStrategy) {
+            if (configurationLoadingStrategy.hasUpdated()) {
+                LOGGER.debug("configuration has been updated, reloading plugins");
+                loadPlugins();
+                initStrategies();
+            }
+            currentIdentityStrategy = this.identityStrategy;
+        }
+        return currentIdentityStrategy.reverseMap(principal);
+    }
+
     private void loadPlugins() {
 
         pluginLoader = new CachingPluginLoaderDecorator(
@@ -134,6 +168,7 @@ public class GPlazma {
         mappingPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaMappingPlugin>>();
         accountPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaAccountPlugin>>();
         sessionPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaSessionPlugin>>();
+        identityPluginElements = new ArrayList<GPlazmaPluginElement<GPlazmaIdentityPlugin>>();
 
         for(ConfigurationItem configItem:
                 configurationLoadingStrategy.
@@ -161,6 +196,8 @@ public class GPlazma {
         accountStrategy.setPlugins(accountPluginElements);
         sessionStrategy = factory.newSessionStrategy();
         sessionStrategy.setPlugins(sessionPluginElements);
+        identityStrategy = factory.newIdentityStrategy();
+        identityStrategy.setPlugins(identityPluginElements);
 
         ValidationStrategyFactory validationFactory =
                 ValidationStrategyFactory.getInstance();
@@ -197,6 +234,10 @@ public class GPlazma {
             case SESSION:
             {
                 storePluginElement(plugin, control, sessionPluginElements);
+                break;
+            }
+            case IDENTITY: {
+                storePluginElement(plugin, control, identityPluginElements);
                 break;
             }
             default:
