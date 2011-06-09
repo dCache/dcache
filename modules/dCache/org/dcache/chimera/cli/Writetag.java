@@ -19,47 +19,46 @@ package org.dcache.chimera.cli;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
+import static com.google.common.io.ByteStreams.toByteArray;
 
+/**
+ * Simple program for creating a tag or updating a tag's
+ * contents.
+ */
 public class Writetag {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception
+    {
+        int programArgc = args.length - FsFactory.ARGC;
 
-        if (args.length != FsFactory.ARGC + 2) {
+        if (programArgc < 2 || programArgc > 3) {
             System.err.println(
                     "Usage : " + Readtag.class.getName() + " " + FsFactory.USAGE
-                    + " <chimera path> <tag>");
+                    + " <chimera path> <tag> [<data>]");
             System.exit(4);
         }
 
         FileSystemProvider fs = FsFactory.createFileSystem(args);
 
         FsInode inode = fs.path2inode(args[FsFactory.ARGC]);
+        String tag = args [FsFactory.ARGC+1];
 
         try {
-
-            fs.statTag(inode, args[FsFactory.ARGC + 1]);
-
+            fs.statTag(inode, tag);
         } catch (FileNotFoundHimeraFsException fnf) {
-            fs.createTag(inode, args[FsFactory.ARGC + 1]);
+            fs.createTag(inode, tag);
         }
 
+        byte[] data = programArgc == 2 ? toByteArray(System.in) :
+            newLineTerminated(args [FsFactory.ARGC + 2]).getBytes();
 
-        byte[] data = new byte[4096];
-
-        int len = 0;
-
-        while (len < data.length) {
-
-            int n = System.in.read(data, len, data.length - len);
-            if (n <= 0) {
-                break;
-            }
-            len += n;
-
+        if (data.length > 0) {
+            fs.setTag(inode, tag, data, 0, data.length);
         }
-        if (len > 0) {
-            fs.setTag(inode, args[FsFactory.ARGC + 1], data, 0, len);
-        }
+    }
 
+    private static String newLineTerminated(String unknown)
+    {
+        return unknown.endsWith("\n") ? unknown : unknown + "\n";
     }
 }
