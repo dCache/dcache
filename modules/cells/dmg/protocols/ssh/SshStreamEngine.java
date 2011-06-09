@@ -173,9 +173,9 @@ public class      SshStreamEngine
       if( _mode == SERVER_MODE ){
           synchronized( _closeLock ){
              if( ( ! _closing ) && ( ! _closed ) ){
-                writePacket( new SshSmsgExitStatus(val) ) ;
-                _closing = true ;
-                _isActive = false ;
+                 _closing = true ;
+                 _isActive = false ;
+                 shutdown(val);
              }
           }
       }else{
@@ -184,7 +184,45 @@ public class      SshStreamEngine
                  throw new IOException("Client not allowed to close connection first" ) ;
           }
       }
+   }
 
+   private void shutdown(int value) throws IOException {
+       writePacket(new SshSmsgExitStatus(value));
+       _socket.shutdownOutput();
+       waitForClientConfirmation();
+       waitForClientClose();
+       confirmed();
+   }
+
+   private void waitForClientConfirmation() throws IOException {
+       SshPacket packet = readPacket();
+
+       /* It can happen that a client closes their end of the connection just
+        * as they ran the logoff command.  This triggers a race between them
+        * sending us the EOF packet and our closing the session.  We silently
+        * ignore such EOF messages since we're closing the connection anyway.
+        */
+       if(packet.getType() == SshPacket.SSH_CMSG_EOF) {
+           packet = readPacket();
+       }
+
+       if(packet != null &&
+               packet.getType() != SshPacket.SSH_CMSG_EXIT_CONFORMATION) {
+           do {
+               packet = readPacket();
+           } while(packet != null &&
+                   packet.getType() != SshPacket.SSH_CMSG_EXIT_CONFORMATION);
+       }
+   }
+
+   private void waitForClientClose() throws IOException {
+       SshPacket packet = readPacket();
+
+       if( packet != null) {
+           do {
+               packet = readPacket();
+           } while(packet != null);
+       }
    }
 
    public boolean isActive() {
@@ -199,7 +237,7 @@ public class      SshStreamEngine
       printout( "SshStreamEngine : confirmed( closing="+_closing+";closed="+_closed+")" ) ;
       if( _mode == SERVER_MODE ){
          synchronized( _closeLock ){
-            if( _closing ){
+            if( !_closed && _closing ){
                _closed  = true ;
                _closing = false ;
                _socket.close() ;
@@ -213,7 +251,6 @@ public class      SshStreamEngine
             }
          }
       }
-
    }
    private static final int ST_ERROR        = -1 ;
    private static final int ST_INIT         = 0 ;
