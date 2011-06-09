@@ -7,7 +7,7 @@ import java.util.List ;
 public class IoDoorInfo extends DoorInfo {
 
     private static final long serialVersionUID = 33390606479807121L;
-    
+
    public IoDoorInfo( String cellName , String cellDomainName ){
       super( cellName , cellDomainName ) ;
    }
@@ -16,13 +16,13 @@ public class IoDoorInfo extends DoorInfo {
       System.arraycopy( entries , 0 , e , 0 , entries.length ) ;
       super.setDetail( entries ) ;
    }
-   public List getIoDoorEntries(){
+   public List<IoDoorEntry> getIoDoorEntries(){
       return Arrays.asList((IoDoorEntry [])getDetail()) ;
    }
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
       sb.append(super.toString()) ;
-      
+
       IoDoorEntry [] e = (IoDoorEntry [])getDetail() ;
       if( e.length > 0 )sb.append("\n");
       for( int i = 0 ; i < e.length ; i++ )
