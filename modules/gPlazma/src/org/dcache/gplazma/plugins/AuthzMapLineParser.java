@@ -1,18 +1,15 @@
 package org.dcache.gplazma.plugins;
 
-import java.util.Map;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.AbstractMap.SimpleImmutableEntry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Splitter;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 
 /**
  * @author karsten

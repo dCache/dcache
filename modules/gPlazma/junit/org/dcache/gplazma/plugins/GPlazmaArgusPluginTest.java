@@ -3,6 +3,7 @@ package org.dcache.gplazma.plugins;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Properties;
 
 import org.dcache.gplazma.AuthenticationException;
 import org.glite.authz.common.model.Request;
@@ -70,9 +71,9 @@ public class GPlazmaArgusPluginTest {
     private static final HashSet<Principal> MixedPrincipals = new HashSet<Principal>(Arrays.asList(new GlobusPrincipal(VALID_DN), new GlobusPrincipal(BANNED_DN)));
     private static final HashSet<Principal> GlobusPrincipals = new HashSet<Principal>(Arrays.asList(new GlobusPrincipal(GLOBUS_DN)));
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testGPlazmaArgusPluginWithArgsNull() {
-        new GPlazmaArgusPlugin((String[])null);
+        new GPlazmaArgusPlugin((Properties)null);
     }
 
     /**
@@ -83,17 +84,16 @@ public class GPlazmaArgusPluginTest {
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithValidArgs()
             throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+VALID_ENDPOINT,
-                RESOURCE_ID+"="+VALID_RESOURCE,
-                ACTION_ID+"="+VALID_ACTION,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
+        Properties properties = new Properties();
+        properties.put(PEP_ENDPOINT, VALID_ENDPOINT);
+        properties.put(RESOURCE_ID, VALID_RESOURCE);
+        properties.put(ACTION_ID, VALID_ACTION);
+        properties.put(TRUST_MATERIAL, VALID_CERT_PATH);
+        properties.put(HOST_CERT, VALID_HOSTCERT);
+        properties.put(HOST_KEY, VALID_HOSTKEY);
+        properties.put(KEY_PASS, "");
 
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
+        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(properties);
         plugin.account(null, ValidPrincipals);
     }
 
@@ -104,18 +104,18 @@ public class GPlazmaArgusPluginTest {
     @Test
     @Ignore("Fails because ArgumentMap currently cannot handle multiple entries with the same key.")
     public void testGPlazmaArgusPluginWithValidArgsAndMultipleEndpoints() throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+INVALID_ENDPOINT,
-                PEP_ENDPOINT+"="+VALID_ENDPOINT,
-                RESOURCE_ID+"="+VALID_RESOURCE,
-                ACTION_ID+"="+VALID_ACTION,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
 
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
+        Properties properties = new Properties();
+        properties.put(PEP_ENDPOINT, INVALID_ENDPOINT);
+        properties.put(PEP_ENDPOINT, VALID_ENDPOINT);
+        properties.put(RESOURCE_ID, VALID_RESOURCE);
+        properties.put(ACTION_ID, VALID_ACTION);
+        properties.put(TRUST_MATERIAL, VALID_CERT_PATH);
+        properties.put(HOST_CERT, VALID_HOSTCERT);
+        properties.put(HOST_KEY, VALID_HOSTKEY);
+        properties.put(KEY_PASS, "");
+
+        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(properties);
 
         plugin.account(null, ValidPrincipals);
     }
@@ -128,17 +128,16 @@ public class GPlazmaArgusPluginTest {
     @Test
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithUnknownDN() throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+VALID_ENDPOINT,
-                RESOURCE_ID+"="+VALID_RESOURCE,
-                ACTION_ID+"="+VALID_ACTION,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
+        Properties properties = new Properties();
+        properties.put(PEP_ENDPOINT, VALID_ENDPOINT);
+        properties.put(RESOURCE_ID, VALID_RESOURCE);
+        properties.put(ACTION_ID, VALID_ACTION);
+        properties.put(TRUST_MATERIAL, VALID_CERT_PATH);
+        properties.put(HOST_CERT, VALID_HOSTCERT);
+        properties.put(HOST_KEY, VALID_HOSTKEY);
+        properties.put(KEY_PASS, "");
 
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
+        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(properties);
 
         plugin.account(null, GlobusPrincipals);
     }
@@ -150,17 +149,16 @@ public class GPlazmaArgusPluginTest {
     @Test(expected=AuthenticationException.class)
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithValidArgsBannedUser() throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+VALID_ENDPOINT,
-                RESOURCE_ID+"="+VALID_RESOURCE,
-                ACTION_ID+"="+VALID_ACTION,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
+        Properties properties = new Properties();
+        properties.put(PEP_ENDPOINT, VALID_ENDPOINT);
+        properties.put(RESOURCE_ID, VALID_RESOURCE);
+        properties.put(ACTION_ID, VALID_ACTION);
+        properties.put(TRUST_MATERIAL, VALID_CERT_PATH);
+        properties.put(HOST_CERT, VALID_HOSTCERT);
+        properties.put(HOST_KEY, VALID_HOSTKEY);
+        properties.put(KEY_PASS, "");
 
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
+        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(properties);
 
         plugin.account(null, BannedPrincipals);
     }
@@ -172,17 +170,16 @@ public class GPlazmaArgusPluginTest {
     @Test(expected=AuthenticationException.class)
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithValidArgsMixedUser() throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+VALID_ENDPOINT,
-                RESOURCE_ID+"="+VALID_RESOURCE,
-                ACTION_ID+"="+VALID_ACTION,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
+        Properties properties = new Properties();
+        properties.put(PEP_ENDPOINT, VALID_ENDPOINT);
+        properties.put(RESOURCE_ID, VALID_RESOURCE);
+        properties.put(ACTION_ID, VALID_ACTION);
+        properties.put(TRUST_MATERIAL, VALID_CERT_PATH);
+        properties.put(HOST_CERT, VALID_HOSTCERT);
+        properties.put(HOST_KEY, VALID_HOSTKEY);
+        properties.put(KEY_PASS, "");
 
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
+        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(properties);
 
         plugin.account(null, MixedPrincipals);
     }
@@ -194,17 +191,16 @@ public class GPlazmaArgusPluginTest {
     @Test(expected=AuthenticationException.class)
     @Ignore("Depends on running, preconfigured Argus System.")
     public void testGPlazmaArgusPluginWithNonExistendPEPEndpoint() throws AuthenticationException {
-        String[] args = {
-                PEP_ENDPOINT+"="+INVALID_ENDPOINT,
-                RESOURCE_ID+"="+VALID_RESOURCE,
-                ACTION_ID+"="+VALID_ACTION,
-                TRUST_MATERIAL+"="+VALID_CERT_PATH,
-                HOST_CERT+"="+VALID_HOSTCERT,
-                HOST_KEY+"="+VALID_HOSTKEY,
-                KEY_PASS+"="+""
-        };
+        Properties properties = new Properties();
+        properties.put(PEP_ENDPOINT, INVALID_ENDPOINT);
+        properties.put(RESOURCE_ID, VALID_RESOURCE);
+        properties.put(ACTION_ID, VALID_ACTION);
+        properties.put(TRUST_MATERIAL, VALID_CERT_PATH);
+        properties.put(HOST_CERT, VALID_HOSTCERT);
+        properties.put(HOST_KEY, VALID_HOSTKEY);
+        properties.put(KEY_PASS, "");
 
-        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(args);
+        GPlazmaArgusPlugin plugin = new GPlazmaArgusPlugin(properties);
 
         plugin.account(null, BannedPrincipals);
     }

@@ -1,10 +1,12 @@
 package org.dcache.gplazma.plugins;
 
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
-import org.dcache.gplazma.AuthenticationException;
+
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 
 /**
@@ -19,6 +21,7 @@ import org.dcache.gplazma.SessionID;
 public class SwitchableReplyUsernamePasswordAuthenticationPluginHelper
         extends UsernamePasswordAuthenticationPlugin {
 
+    public static final String AUTH_STATE_KEY = "result";
     public static final String EXAMPLE_HOMEDIRECTORY = "home";
     public static final String EXAMPLE_ROOTDIRECTORY = "root";
     private AuthState _authState;
@@ -27,9 +30,9 @@ public class SwitchableReplyUsernamePasswordAuthenticationPluginHelper
         super();
     }
 
-    public SwitchableReplyUsernamePasswordAuthenticationPluginHelper(String[] arguments) {
-        super(arguments);
-        if (arguments[0].equals("EXCEPTION")) {
+    public SwitchableReplyUsernamePasswordAuthenticationPluginHelper(Properties properties) {
+        super(properties);
+        if (properties.getProperty(AUTH_STATE_KEY).equals("EXCEPTION")) {
             _authState = AuthState.EXCEPTION;
         } else {
             _authState = AuthState.SUCCESS;

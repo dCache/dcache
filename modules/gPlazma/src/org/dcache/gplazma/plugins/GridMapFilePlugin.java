@@ -1,23 +1,26 @@
 package org.dcache.gplazma.plugins;
 
-import java.security.Principal;
-import java.util.Set;
-import java.util.Map;
-import java.util.Collection;
-import java.util.AbstractMap.SimpleImmutableEntry;
-
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
-
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.collect.Iterables.any;
+import static com.google.common.collect.Iterables.find;
+import static com.google.common.collect.Iterables.get;
 import gplazma.authz.plugins.gridmapfile.GridMapFile;
 
-import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.LoginNamePrincipal;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import java.security.Principal;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
-import static com.google.common.collect.Iterables.*;
-import static com.google.common.base.Predicates.*;
+import javax.security.auth.kerberos.KerberosPrincipal;
+
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.SessionID;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
  * Maps GlobusPrincipal and KerberosPrincipal to UserNamePrincipal
@@ -31,21 +34,16 @@ public class GridMapFilePlugin
 {
     private final GridMapFile _gridMapFile;
 
-    private static final String DEFAULT_GRIDMAP =
-        "/etc/grid-security/grid-mapfile";
-    private static final String GRIDMAP = "gridmap";
+    private static final String GRIDMAP = "gplazma.gridmap.file";
 
-    public GridMapFilePlugin(String[] args)
+    public GridMapFilePlugin(Properties properties)
     {
-        Map<String,String> kvmap =
-            ArgumentMapFactory.createFromKeyValuePairs(args);
-        String path =
-            ArgumentMapFactory.getValue(kvmap, GRIDMAP, DEFAULT_GRIDMAP);
+        String path = properties.getProperty(GRIDMAP);
+        checkArgument(path != null, "Undefined property: " + GRIDMAP);
         _gridMapFile = new GridMapFile(path);
     }
 
-    private Map.Entry<Principal,String>
-        getMappingFor(Set<Principal> principals)
+    private Map.Entry<Principal,String> getMappingFor(Set<Principal> principals)
     {
         Principal loginName =
             find(principals, instanceOf(LoginNamePrincipal.class), null);
@@ -91,6 +89,7 @@ public class GridMapFilePlugin
         authorizedPrincipals.add(entry.getKey());
     }
 
+    @Override
     public void reverseMap(SessionID sID,
                            Principal sourcePrincipal,
                            Set<Principal> principals)

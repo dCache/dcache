@@ -1,21 +1,27 @@
 package org.dcache.gplazma.plugins;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.security.Principal;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
+
 import org.dcache.auth.PasswordCredential;
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.SessionID;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.StaticClassPluginLoader;
 import org.dcache.gplazma.plugins.SwitchableReplyUsernamePasswordAuthenticationPluginHelper.AuthState;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import com.google.common.collect.Iterables;
 
 /**
  *
@@ -33,10 +39,11 @@ public class UsernamePasswordAuthenticationPluginTest {
         _loader = StaticClassPluginLoader.newPluginLoader(
                 SwitchableReplyUsernamePasswordAuthenticationPluginHelper.class);
         _loader.init();
-        String[] arguments = {"SUCCESS"};
+        Properties properties = new Properties();
+        properties.put(SwitchableReplyUsernamePasswordAuthenticationPluginHelper.AUTH_STATE_KEY, "SUCCESS");
         _authPlugin = (SwitchableReplyUsernamePasswordAuthenticationPluginHelper) _loader.newPluginByName(
                 SwitchableReplyUsernamePasswordAuthenticationPluginHelper.class.getSimpleName(),
-                arguments);
+                properties);
         _authPlugin.setAuthState(AuthState.SUCCESS);
     }
 
@@ -45,13 +52,8 @@ public class UsernamePasswordAuthenticationPluginTest {
         InputWrapper inputs = getProperInputs();
         Set<Principal> identifiedPrincipals = inputs.getPrincipals();
         doAuthentication(inputs, identifiedPrincipals);
-        UserNamePrincipal user = null;
-        for (Principal principal: identifiedPrincipals) {
-            if (principal instanceof UserNamePrincipal) {
-                user = (UserNamePrincipal) principal;
-            }
-        }
-        assertEquals(USERNAME, user.getName());
+
+        assertTrue(Iterables.contains(identifiedPrincipals, new UserNamePrincipal(USERNAME)));
     }
 
     @Test
@@ -156,10 +158,6 @@ public class UsernamePasswordAuthenticationPluginTest {
 
         public SessionID getSessionId() {
             return _sessionId;
-        }
-
-        public void setSessionId(SessionID sessionId) {
-            _sessionId = sessionId;
         }
 
         public Set<Principal> getPrincipals() {

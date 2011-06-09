@@ -1,9 +1,11 @@
 package org.dcache.gplazma;
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
+
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
-import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
+import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
 /**
@@ -23,8 +25,8 @@ public class AlwaysFailPlugin implements
      * Plugin ignores arguments.
      * @param args
      */
-    public AlwaysFailPlugin(String[] args) {
-
+    public AlwaysFailPlugin(Properties properties) {
+        //
     }
 
     @Override

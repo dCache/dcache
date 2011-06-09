@@ -1,6 +1,8 @@
 package org.dcache.gplazma;
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
+
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,8 @@ public class FindPrincipalsInCredentialsPlugin implements GPlazmaAuthenticationP
     public static final Logger LOGGER =
             LoggerFactory.getLogger(FindPrincipalsInCredentialsPlugin.class);
 
-    public FindPrincipalsInCredentialsPlugin(String[] args) {
+    public FindPrincipalsInCredentialsPlugin(Properties properties) {
+        //
     }
 
     @Override

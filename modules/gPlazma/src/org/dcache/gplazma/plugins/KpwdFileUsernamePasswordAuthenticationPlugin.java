@@ -1,9 +1,13 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
+
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.KAuthFile;
 import org.dcache.auth.UidPrincipal;
@@ -13,8 +17,6 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of UsernamePasswordAuthenticationPlugin using a Kpwdfile as
@@ -24,21 +26,21 @@ import org.slf4j.LoggerFactory;
 public class KpwdFileUsernamePasswordAuthenticationPlugin
         extends UsernamePasswordAuthenticationPlugin {
 
-    private final File _file;
-    private static final Logger _log = LoggerFactory.getLogger(
-            KpwdFileUsernamePasswordAuthenticationPlugin.class);
+    private static final String KPWD_FILE = "kpwdfile";
 
-    public KpwdFileUsernamePasswordAuthenticationPlugin(String[] arguments) {
-        super(arguments);
-        if (arguments.length == 0) {
-            throw new IllegalArgumentException("No Arguments delivered," +
-                    " need at least kpwdfile-path ");
-        }
-        String kpwdFilePath = parseFilepath(arguments);
+    private final File _file;
+
+    public KpwdFileUsernamePasswordAuthenticationPlugin(Properties properties) {
+        super(properties);
+
+        String kpwdFilePath = checkNotNull(properties.getProperty(KPWD_FILE), "Error: No KAuthFile specified.");
+
         File file = new File(kpwdFilePath);
+
         if (!file.canRead()) {
-            throw new IllegalArgumentException("File not found: " + file);
+            throw new IllegalArgumentException(String.format("Error reading KAuthFile '%s'.", file));
         }
+
         _file = file;
     }
 
@@ -46,7 +48,7 @@ public class KpwdFileUsernamePasswordAuthenticationPlugin
         try {
             return new KAuthFile(_file.getPath());
         } catch (IOException e) {
-            throw new AuthenticationException("Password file not found");
+            throw new AuthenticationException(String.format("Error loading KAuthFile '%s'.", _file));
         }
     }
 
@@ -56,7 +58,7 @@ public class KpwdFileUsernamePasswordAuthenticationPlugin
         KAuthFile kauthFile = loadKauthFile();
         UserPwdRecord userEntry = kauthFile.getUserPwdRecord(username);
         if ((userEntry == null) || !(userEntry.passwordIsValid(String.valueOf(password)))) {
-            throw new AuthenticationException("Couldn't authenticate user");
+            throw new AuthenticationException("Unknown username/password combination.");
         }
     }
 
@@ -83,17 +85,6 @@ public class KpwdFileUsernamePasswordAuthenticationPlugin
         attrib.add(new HomeDirectory(userEntry.Home));
         attrib.add(new RootDirectory(userEntry.Root));
         attrib.add(new ReadOnly(userEntry.ReadOnly));
-    }
-
-    private String parseFilepath(String[] arguments) {
-        String kpwdFilePath = arguments[0];
-        if ((kpwdFilePath == null) ||
-                (kpwdFilePath.length() == 0) ||
-                (!new File(kpwdFilePath).exists())) {
-            throw new IllegalArgumentException(
-                    "kpwdfile argument wasn't specified correctly");
-        }
-        return kpwdFilePath;
     }
 
     @Override
