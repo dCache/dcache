@@ -2,8 +2,7 @@ package org.dcache.gplazma.plugins;
 
 import java.security.Principal;
 import java.util.Set;
-import org.dcache.auth.Password;
-import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
@@ -42,9 +41,9 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     public void authenticate(SessionID sID, Set<Object> publicCredentials,
             Set<Object> privateCredentials, Set<Principal> identifiedPrincipals)
             throws AuthenticationException {
-        String user = getLoginName(identifiedPrincipals).getName();
-        authenticate(user,
-                getPassword(privateCredentials).getPassword().toCharArray());
+        PasswordCredential password = getPassword(privateCredentials);
+        String user = password.getUsername();
+        authenticate(user, password.getPassword().toCharArray());
         identifiedPrincipals.add(new UserNamePrincipal(user));
     }
 
@@ -90,17 +89,6 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
     protected abstract void session(String username, Set<Object> attrib)
             throws AuthenticationException;
 
-    private LoginNamePrincipal getLoginName(Set<Principal> principals)
-        throws AuthenticationException
-    {
-        for (Principal principal: principals) {
-            if (principal instanceof LoginNamePrincipal) {
-                return (LoginNamePrincipal) principal;
-            }
-        }
-        throw new AuthenticationException("no username provided");
-    }
-
     private UserNamePrincipal getUserName(Set<Principal> principals)
         throws AuthenticationException
     {
@@ -112,12 +100,12 @@ public abstract class UsernamePasswordAuthenticationPlugin implements
         throw new AuthenticationException("no username provided");
     }
 
-    private Password getPassword(Set<Object> privateCredentials)
+    private PasswordCredential getPassword(Set<Object> privateCredentials)
         throws AuthenticationException
     {
         for (Object privateCredential: privateCredentials) {
-            if (privateCredential instanceof Password) {
-                return (Password) privateCredential;
+            if (privateCredential instanceof PasswordCredential) {
+                return (PasswordCredential) privateCredential;
             }
         }
         throw new AuthenticationException("no password provided");

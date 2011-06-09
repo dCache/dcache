@@ -48,7 +48,10 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.Args;
@@ -355,6 +358,7 @@ public class XrootdDoor
             throw e;
         } finally {
             if (address == null) {
+                transfer.killMover(0);
                 _transfers.remove(handle);
             }
         }
@@ -712,6 +716,30 @@ public class XrootdDoor
             }
         }
         return null;
+    }
+
+    /**
+     * Requests to start movers are processed synchronously by the
+     * Transfer class. This message handler will only ever receive
+     * replies for those requests for which the Transfer class timed
+     * out or interrupted.
+     *
+     * To avoid that orphaned movers fill a transfer slot on the pool,
+     * we kill it right away.
+     */
+    public void messageArrived(PoolIoFileMessage message)
+    {
+        String pool = message.getPoolName();
+        int moverId = message.getMoverId();
+        try {
+            PoolMoverKillMessage killMessage =
+                new PoolMoverKillMessage(pool, moverId);
+            killMessage.setReplyRequired(false);
+            _poolStub.send(new CellPath(pool), killMessage);
+        } catch (NoRouteToCellException e) {
+            _log.error("Failed to kill mover {}/{}: {}",
+                       new Object[] { pool, moverId, e.getMessage() });
+        }
     }
 
     public void messageArrived(XrootdDoorAdressInfoMessage msg)

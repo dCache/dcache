@@ -3,6 +3,7 @@ package org.dcache.pool.migration;
 import java.util.Map;
 import java.util.List;
 import java.util.UUID;
+import java.util.EnumSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +26,7 @@ import org.dcache.cells.CellMessageReceiver;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
@@ -284,7 +286,8 @@ public class MigrationModuleServer
         {
             try {
                 if (_computeChecksumOnUpdate) {
-                    ReplicaDescriptor handle = _repository.openEntry(_pnfsId);
+                    ReplicaDescriptor handle =
+                        _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
                     try {
                         File file = handle.getFile();
                         ChecksumFactory factory =

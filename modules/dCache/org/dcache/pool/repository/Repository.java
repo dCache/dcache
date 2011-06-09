@@ -13,10 +13,19 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public interface Repository
     extends Iterable<PnfsId>
 {
+    enum OpenFlags
+    {
+        /* Do not update the file last access time when the file is
+         * read.
+         */
+        NOATIME
+    }
+
     /**
      * Loads the repository from the on disk state. Must be done
      * exactly once before any other operation can be
@@ -82,13 +91,14 @@ public interface Repository
      * the case for broken or incomplet files.
      *
      * @param id the PNFS ID of the entry to open
+     * @param flags options that influence how the file is opened
      * @return IO descriptor
      * @throws InterruptedException if thread was interrupted
      * @throws FileNotInCacheException if file not found or in a state
      * in which it cannot be opened
      * @throws CacheException in case of other errors
      */
-    ReplicaDescriptor openEntry(PnfsId id)
+    ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
         throws CacheException,
                InterruptedException;
 

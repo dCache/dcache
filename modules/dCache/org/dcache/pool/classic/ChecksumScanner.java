@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import dmg.util.Args;
 
 import diskCacheV111.util.PnfsId;
@@ -19,6 +18,7 @@ import org.dcache.util.ChecksumType;
 import org.dcache.namespace.FileAttribute;
 
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 import org.slf4j.Logger;
@@ -80,7 +80,7 @@ public class ChecksumScanner
 
             for (PnfsId id: _repository) {
                 try {
-                    ReplicaDescriptor handle = _repository.openEntry(id);
+                    ReplicaDescriptor handle = _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
                     try {
                         Checksum file, replica;
 
@@ -140,7 +140,7 @@ public class ChecksumScanner
         {
             _fileCRC = null;
             _infoCRC = null;
-            ReplicaDescriptor handle = _repository.openEntry(_pnfsId);
+            ReplicaDescriptor handle = _repository.openEntry(_pnfsId, EnumSet.of(OpenFlags.NOATIME));
             try {
                 _fileCRC = checkFile(handle.getFile());
                 StorageInfo info = handle.getEntry().getStorageInfo();

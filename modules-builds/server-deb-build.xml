@@ -11,25 +11,16 @@
             <format property="timestamp" pattern="EEE, dd MMM yyyy HH:mm:ss Z"
                     locale="en,UK"/>
         </tstamp>
-
-        <!--  copy the package contents -->
-        <copy todir="${server.debDistDir}"
-              overwrite="true">
-            <fileset dir="${server.root.dir}" includes="**/*" />
-        </copy>
-
-        <!--  give the package files the right permissions -->
-        <chmod perm="0755">
-            <filelist dir="${server.debFilesDir}"
-                      files="${server.debExecutableFiles}" />
-        </chmod>
     </target>
 
     <target name="server.deb" depends="install-server,-server.deb-common"
         description="Build the dcache-server-xxx.deb">
 
+        <!--  move the package contents -->
+        <move file="${server.root.dir}" tofile="${server.debDistDir}"/>
+
         <!--  copy the package control files, replace variables -->
-        <copy todir="${server.debControlDir}" overwrite="true">
+        <copy todir="${server.debDistDir}/debian" overwrite="true">
             <fileset dir="${server.debTemplateDir}">
                 <filename name="*.template" />
             </fileset>
@@ -43,7 +34,7 @@
             </filterset>
         </copy>
 
-        <chmod file="${server.debControlDir}/rules" perm="0755" />
+        <chmod file="${server.debDistDir}/debian/rules" perm="0755" />
 
         <exec executable="dpkg-buildpackage" failonerror="true"
               dir="${server.debDistDir}">
@@ -67,7 +58,10 @@
             <format property="quilt-timestamp" pattern="yyyy-MM-dd HH:mm:ss" />
         </tstamp>
 
-        <copy todir="${server.debControlDir}" overwrite="true">
+        <!--  move the package contents -->
+        <move file="${server.root.dir}" tofile="${server.debFhsDistDir}"/>
+
+        <copy todir="${server.debFhsDistDir}/debian" overwrite="true">
             <!-- copy the copyright and compat from the server folder
                  (same for all types of packages) -->
             <filelist dir="${server.debTemplateDir}"
@@ -86,9 +80,7 @@
             </filterset>
         </copy>
 
-        <chmod file="${server.debControlDir}/rules" perm="0755" />
-
-        <move file="${server.debDistDir}" tofile="${server.debFhsDistDir}"/>
+        <chmod file="${server.debFhsDistDir}/debian/rules" perm="0755" />
 
         <exec executable="dpkg-buildpackage" failonerror="true"
               dir="${server.debFhsDistDir}">

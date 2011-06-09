@@ -1149,7 +1149,9 @@ public class RequestContainerV5
                 try {
                     m.revertDirection();
                     sendMessage(m);
-                    _poolMonitor.messageToCostModule(m);
+                    if( !rpm.getSkipCostUpdate() ) {
+                        _poolMonitor.messageToCostModule(m);
+                    }
                 } catch (NoRouteToCellException e) {
                     _log.warn("Exception answering request: {}", e.toString());
                 }

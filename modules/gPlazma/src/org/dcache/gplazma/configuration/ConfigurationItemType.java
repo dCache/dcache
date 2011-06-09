@@ -4,6 +4,7 @@ import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
+import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
@@ -14,7 +15,8 @@ public enum  ConfigurationItemType {
     AUTHENTICATION("auth",GPlazmaAuthenticationPlugin.class),
     MAPPING("map",GPlazmaMappingPlugin.class),
     ACCOUNT("account",GPlazmaAccountPlugin.class),
-    SESSION("session",GPlazmaSessionPlugin.class);
+    SESSION("session",GPlazmaSessionPlugin.class),
+    IDENTITY("identity",GPlazmaIdentityPlugin.class);
 
     private final String name;
     private final Class <? extends GPlazmaPlugin> type;

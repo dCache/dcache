@@ -1019,7 +1019,7 @@ public final class CopyFileRequest extends FileRequest {
 	protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
 		State state = getState();
 		if(State.isFinalState(state)) {
-			if( getTransferId() != null)           {
+                        if (getTransferId() != null && state != State.DONE) {
 				getStorage().killRemoteTransfer(getTransferId());
 			}
                         SRMUser user ;

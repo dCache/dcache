@@ -58,4 +58,6 @@ public abstract class StrategyFactory {
 
     public abstract SessionStrategy newSessionStrategy();
 
+    public abstract IdentityStrategy newIdentityStrategy();
+
 }

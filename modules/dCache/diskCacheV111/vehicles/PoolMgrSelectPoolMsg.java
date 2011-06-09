@@ -17,6 +17,8 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private String       _linkGroup = null;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
+    private boolean _skipCostUpdate = false;
+
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo,
                                 long fileSize)
@@ -33,6 +35,16 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         _protocolInfo = protocolInfo;
         _fileSize     = fileSize;
         _allowedStates = allowedStates;
+    }
+
+    public void setSkipCostUpdate(boolean value)
+    {
+        _skipCostUpdate = value;
+    }
+
+    public boolean getSkipCostUpdate()
+    {
+        return _skipCostUpdate;
     }
 
     public void setFileSize(long fileSize)

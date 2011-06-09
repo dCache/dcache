@@ -161,12 +161,6 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
             gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(localId, X509Subject, fqan);
 
-            if(gauthrec==null) {
-                String denied = DENIED_MESSAGE + ": No authorization record found for username " + localId.getUserName() + " mapped from " + X509Subject + " and role " + fqan;
-                logger.warn(denied);
-                throw new AuthorizationException(denied);
-            }
-
             if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, resourceX509ID, desiredUserName));
             return gauthrec;
         }
@@ -192,12 +186,6 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         username = localId.getUID() + ":" + localId.getGID();
         gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(username, subjectDN, role);
-
-        if(gauthrec==null) {
-            String denied = DENIED_MESSAGE + ": No authorization record found for username " + username + " mapped from DN " + subjectDN + " and role " + role;
-            logger.warn(denied);
-            throw new AuthorizationException(denied);
-        }
 
         int uid, gid;
         try {

@@ -65,6 +65,12 @@ public class CommandInterpreter implements Interpretable {
       void setMethod( int methodType , Object commandListener ,
                       Method m , int mn , int mx                    ){
 
+         if(hasCommand()) {
+             clearFullHelp();
+             clearHelpHint();
+             clearACLS();
+         }
+
          _method[methodType]   = m ;
          _minArgs[methodType]  = mn ;
          _maxArgs[methodType]  = mx ;
@@ -74,6 +80,29 @@ public class CommandInterpreter implements Interpretable {
       Object getListener( int type ){ return _listener[type] ; }
       int getMinArgs( int type ){ return _minArgs[type] ; }
       int getMaxArgs( int type ){ return _maxArgs[type] ; }
+
+      boolean hasCommand(int type) {
+          return _method[type] != null;
+      }
+
+      boolean hasCommand() {
+          return hasCommand(CommandInterpreter.ASCII) || hasCommand(CommandInterpreter.BINARY);
+      }
+
+      void clearFullHelp() {
+          _listener[CommandInterpreter.FULL_HELP] = null;
+          _fullHelp = null;
+      }
+
+      void clearHelpHint() {
+          _listener[CommandInterpreter.HELP_HINT] = null;
+          _helpHint = null;
+      }
+
+      void clearACLS() {
+          _listener[CommandInterpreter.ACLS] = null;
+          _acls = null;
+      }
 
       void setFullHelp( Object commandListener , Field f ){
          _fullHelp = f ;

@@ -1,4 +1,4 @@
-<project name="Core" basedir=".">
+<project name="server-fhs" basedir=".">
 
     <target name="-dcache-copy-skel-fhs">
         <!-- Create targer directories -->
@@ -86,7 +86,8 @@
 
         <chmod dir="${server.root.dir}/usr/bin" includes="*" perm="ugo+rx"/>
         <chmod dir="${server.root.dir}/usr/sbin" includes="*" perm="ugo+rx"/>
-        <chmod dir="${server.root.dir}/usr/share/dcache/lib" includes="**/*.sh" perm="ugo+rx"/>
+        <chmod dir="${server.root.dir}/usr/share/dcache/lib"
+               includes="encp.sh,hsmcp.sh,hsmcpV4.sh,migrate-from-1.9.5.sh,migration-check.sh,nsp-performance.sh,preparePnfs.sh,upgrade_space_manager_schema.sh,wait-for-cells.sh,daemon" perm="ugo+rx"/>
         <chmod dir="${server.root.dir}/usr/share/dcache/lib" includes="**/*.rb" perm="ugo+rx"/>
     </target>
 </project>

@@ -107,7 +107,10 @@ public class InfoProvider extends AbstractCell {
      */
     public InfoProvider( String cellName, String args) throws InterruptedException, ExecutionException {
         super( cellName, args);
-        _sum = new StateMaintainer( _state, getNucleus());
+
+        StateMaintainer maintainer =  new StateMaintainer( _state, getNucleus());
+        maintainer.setCellEndpoint(this);
+        _sum = maintainer;
 
         doInit();
     }

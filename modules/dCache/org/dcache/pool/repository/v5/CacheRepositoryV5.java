@@ -482,7 +482,7 @@ public class CacheRepositoryV5
     }
 
     @Override
-    public ReplicaDescriptor openEntry(PnfsId id)
+    public ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
         throws CacheException, InterruptedException
     {
         /* TODO: Refine the exceptions. Throwing FileNotInCacheException
@@ -516,14 +516,16 @@ public class CacheRepositoryV5
                 handle = new ReadHandleImpl(this, entry);
             }
 
-            synchronized (this) {
-                /* Don't notify listeners until we are done loading;
-                 * at the end of the load method listeners are
-                 * informed about all entries.
-                 */
-                entry.touch();
-                if (_state == State.OPEN) {
-                    accessTimeChanged(entry);
+            if (!flags.contains(OpenFlags.NOATIME)) {
+                synchronized (this) {
+                    /* Don't notify listeners until we are done
+                     * loading; at the end of the load method
+                     * listeners are informed about all entries.
+                     */
+                    entry.touch();
+                    if (_state == State.OPEN) {
+                        accessTimeChanged(entry);
+                    }
                 }
             }
 
