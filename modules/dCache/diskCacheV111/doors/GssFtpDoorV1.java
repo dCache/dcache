@@ -14,6 +14,7 @@ import org.dcache.cells.CellStub;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -32,6 +33,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
         ":globus-mapping:";
+
+    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     protected GSSName _gssIdentity;
     // GSS general
@@ -57,7 +60,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     protected void secure_reply(String answer, String code) {
         answer = answer+"\r\n";
-        byte[] data = answer.getBytes();
+        byte[] data = answer.getBytes(UTF8);
         MessageProp prop = new MessageProp(0, false);
         try{
             data = _serviceContext.wrap(data, 0, data.length, prop);
@@ -172,7 +175,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         for(i = data.length;i > 0 && data[i-1] == 0 ;i--) {
             //do nothing, just decrement i
         }
-        String msg = new String(data, 0, i);
+        String msg = new String(data, 0, i, UTF8);
         msg = msg.trim();
 
         if ( msg.equalsIgnoreCase("CCC") ) {
