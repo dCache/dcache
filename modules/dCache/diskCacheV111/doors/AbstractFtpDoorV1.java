@@ -621,7 +621,7 @@ public abstract class AbstractFtpDoorV1
     /** List of selected RFC 3659 facts. */
     protected Set<Fact> _currentFacts =
         new HashSet(Arrays.asList(new Fact[] {
-                    Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE,
+                    Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE, Fact.PERM,
                     Fact.OWNER, Fact.GROUP, Fact.MODE }));
 
     /**
