@@ -29,6 +29,12 @@
 
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
+        <property name="domainContextHolder">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="LoginCellStub"/>
+                <property name="propertyPath" value="domainContextHolder"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">

@@ -16,6 +16,7 @@ import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.impl.AlwaysFailLoginService;
 import org.dcache.webadmin.controller.impl.GuestLogInDecorator;
 import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
+import org.dcache.webadmin.model.dataaccess.communication.impl.CellDomainContextHolder;
 
 /**
  * Cell-Stub in Webadmin which is responsible for Cell-Communication
@@ -37,6 +38,7 @@ public class ServletContextCellStub extends CellStub {
     private String _dcacheName = "";
     private File _kpwdFile;
     private LogInService _logInService = LOGINSERVICE_DUMMY_FOR_NONAUTH_MODE;
+    private CellDomainContextHolder _domainContextHolder;
 
     public ServletContextCellStub(String destination) throws NamingException {
         InitialContext lookupContext = new InitialContext();
@@ -58,14 +60,14 @@ public class ServletContextCellStub extends CellStub {
         }
         setCellEndpoint((CellEndpoint) jettyCell);
         setDestination(destination);
+        _domainContextHolder = new CellDomainContextHolder(jettyCell.getNucleus());
     }
 
     private void initLoginService() {
         UnionLoginStrategy loginStrategy = new UnionLoginStrategy();
         loginStrategy.setAnonymousAccess(UnionLoginStrategy.AccessLevel.NONE);
         loginStrategy.setLoginStrategies(createStrategies());
-        LoginStrategyLogInService loginService =
-                new LoginStrategyLogInService();
+        LoginStrategyLogInService loginService = new LoginStrategyLogInService();
         loginService.setLoginStrategy(loginStrategy);
         loginService.setAdminGid(_adminGid);
         _logInService = new GuestLogInDecorator(loginService);
@@ -117,5 +119,9 @@ public class ServletContextCellStub extends CellStub {
 
     public LogInService getLogInService() {
         return _logInService;
+    }
+
+    public CellDomainContextHolder getDomainContextHolder() {
+        return _domainContextHolder;
     }
 }
