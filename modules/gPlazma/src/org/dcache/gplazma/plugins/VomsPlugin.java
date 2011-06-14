@@ -2,25 +2,25 @@ package org.dcache.gplazma.plugins;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CRLException;
-import java.util.Collection;
-import java.util.Set;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.glite.voms.PKIStore;
 import org.glite.voms.PKIVerifier;
 import org.glite.voms.VOMSValidator;
 import org.glite.voms.ac.ACValidator;
 import org.slf4j.MDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate
@@ -31,13 +31,10 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
     private static final Logger _log =
         LoggerFactory.getLogger(VomsPlugin.class);
 
-    private static final String DEFAULT_CADIR =
-        "/etc/grid-security/certificates";
-    private static final String DEFAULT_VOMSDIR =
-        "/etc/grid-security/vomsdir";
-
-    private static final String CADIR = "cadir";
-    private static final String VOMSDIR = "vomsdir";
+    private static final String CADIR =
+        "gplazma.vomsdir.ca";
+    private static final String VOMSDIR =
+        "gplazma.vomsdir.dir";
 
     private final String _caDir;
     private final String _vomsDir;
@@ -45,12 +42,14 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
 
     private PKIVerifier _pkiVerifier;
 
-    public VomsPlugin(String[] args)
+    public VomsPlugin(Properties properties)
     {
-        Map<String,String> kvmap =
-            ArgumentMapFactory.createFromKeyValuePairs(args);
-        _caDir = ArgumentMapFactory.getValue(kvmap, CADIR, DEFAULT_CADIR);
-        _vomsDir = ArgumentMapFactory.getValue(kvmap, VOMSDIR, DEFAULT_VOMSDIR);
+        _caDir = properties.getProperty(CADIR);
+        _vomsDir = properties.getProperty(VOMSDIR);
+
+        checkArgument(_vomsDir != null, "Undefined property: " + VOMSDIR);
+        checkArgument(_caDir != null, "Undefined property: " + CADIR);
+
         _mdcContext = MDC.getCopyOfContextMap();
     }
 

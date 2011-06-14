@@ -3,9 +3,6 @@ package org.dcache.gplazma.configuration;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.dcache.gplazma.configuration.parser.ConfigurationParser;
 import org.dcache.gplazma.configuration.parser.ConfigurationParserFactory;
 
@@ -20,9 +17,6 @@ public class FromFileConfigurationLoadingStrategy
 
     private static final long CONFIGURATION_UPDATE_FREQUENCY_MILLIS =
             TimeUnit.SECONDS.toMillis(1);
-
-    private static final Logger LOGGER =
-        LoggerFactory.getLogger( FromFileConfigurationLoadingStrategy.class);
 
     private final File configurationFile;
     private long configurationFileLastModified;

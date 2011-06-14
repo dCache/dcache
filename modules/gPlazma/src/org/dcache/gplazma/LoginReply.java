@@ -1,14 +1,13 @@
 package org.dcache.gplazma;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.security.auth.Subject;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 public class LoginReply
 {

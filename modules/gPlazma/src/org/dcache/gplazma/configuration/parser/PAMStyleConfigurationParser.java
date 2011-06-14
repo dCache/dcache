@@ -1,13 +1,20 @@
 package org.dcache.gplazma.configuration.parser;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.io.Files.newReader;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
+import org.dcache.commons.util.Strings;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
@@ -43,14 +50,11 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @throws org.dcache.gplazma.configuration.parser.ParseException
      */
     @Override
-    public Configuration parse(String configuration)
-    throws ParseException {
-        if(configuration == null) {
-            throw new NullPointerException( "configuration string is null");
-        }
-        BufferedReader reader = new BufferedReader(
-                new StringReader(configuration));
-        return parse ( reader );
+    public Configuration parse(String configuration) throws ParseException {
+
+        checkNotNull(configuration, "Configuration must not be NULL");
+
+        return parse(new BufferedReader(new StringReader(configuration)));
     }
 
     /**
@@ -60,19 +64,15 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
      * @throws org.dcache.gplazma.configuration.parser.ParseException
      */
     @Override
-    public Configuration parse(File configurationFile)
-    throws ParseException {
-        if(configurationFile == null) {
-            throw new NullPointerException( "configurationFile is null");
-        }
-        BufferedReader reader;
+    public Configuration parse(File configurationFile) throws ParseException {
+
+        checkNotNull(configurationFile, "ConfigurationFile must not be NULL.");
+
         try {
-            reader = new BufferedReader(
-                    new java.io.FileReader(configurationFile));
-        } catch(FileNotFoundException fnfe) {
-            throw new  ParseException("GPlazma Configuration parsing failed",fnfe);
+            return parse(newReader(configurationFile, Charset.defaultCharset()));
+        } catch(FileNotFoundException e) {
+            throw new ParseException("GPlazma Configuration parsing failed",e);
         }
-        return parse ( reader );
     }
 
    /**
@@ -133,7 +133,7 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
         }
 
         if(splitLine.length < MIN_SPLIT_RESULTS) {
-            throw new ParseException(" Syntax violation for line \""+line+'"');
+            throw new ParseException("Syntax violation for line \""+line+'"');
         }
 
         try {
@@ -145,16 +145,23 @@ public class PAMStyleConfigurationParser implements ConfigurationParser {
                 ConfigurationItemControl.getConfigurationItemControl(splitLine[1]);
             String name = splitLine[2];
 
-            String arguments = splitLine.length>MIN_SPLIT_RESULTS? splitLine[3]:null;
+            Properties properties = new Properties();
+            if (splitLine.length>MIN_SPLIT_RESULTS) {
+                String[] args = Strings.splitArgumentString(splitLine[3]);
+                for (String arg : args) {
+                    String[] kv = arg.split("=", 2);
+                    if (kv.length==2) properties.put(kv[0].trim(), kv[1].trim());
+                }
+            }
+
             return new ConfigurationItem(type,
                     control,
                     name,
-                    arguments);
+                    properties);
 
         } catch (IllegalArgumentException iae) {
-            throw new ParseException(" Syntax violation for line \""+line+'"', iae);
+            throw new ParseException("Syntax violation for line \""+line+'"', iae);
         }
-
 
     }
 

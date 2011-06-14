@@ -1,8 +1,11 @@
 package org.dcache.gplazma.loader;
 
-import static org.junit.Assert.assertArrayEquals;
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+
+import java.util.Properties;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
@@ -17,13 +20,17 @@ public class StaticClassPluginLoaderTests {
     /** Name of some non-existent plugin */
     private static final String PLUGIN_NAME_MISSING_PLUGIN = "NoSuchPlugin";
 
-    private static final String[] ARGUMENTS = new String[]{"arg-1", "arg-2"};
+    private static Properties _properties;
 
     PluginLoader _loaderNotInit;
     PluginLoader _loader;
 
     @Before
     public void setUp() {
+        _properties = new Properties();
+        _properties.put("arg-1", "value1");
+        _properties.put("arg-2", "value 2");
+
         _loaderNotInit = newLoader();
         _loader = newLoader();
         _loader.init();
@@ -75,9 +82,12 @@ public class StaticClassPluginLoaderTests {
 
     @Test
     public void testNewPluginWithArgs() {
-        GPlazmaPlugin genericPlugin = _loader.newPluginByName(PLUGIN_NAME_VALID_PLUGIN, ARGUMENTS);
+        GPlazmaPlugin genericPlugin = _loader.newPluginByName(PLUGIN_NAME_VALID_PLUGIN, _properties);
         ValidPlugin plugin = (ValidPlugin) genericPlugin;
-        assertArrayEquals("plugin has same array", ARGUMENTS, plugin.getArgs());
+        Properties expected = new Properties();
+        expected.put("arg-1", "value1");
+        expected.put("arg-2", "value 2");
+        assertEquals("plugin has same array", expected, plugin.getProperties());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -88,54 +98,44 @@ public class StaticClassPluginLoaderTests {
 
     @Test(expected=IllegalArgumentException.class)
     public void testNewPluginByNameExceptionWrongArgs() {
-        String[] args = new String[]{"arg-1"};
-        _loader.newPluginByName(PLUGIN_NAME_EXCEPTION_PLUGIN, args);
+        Properties properties = new Properties();
+        properties.put("key1", "value1");
+        _loader.newPluginByName(PLUGIN_NAME_EXCEPTION_PLUGIN, properties);
     }
 
     @Test
     public void testNewPluginByNameExceptionCorrectArgs() {
-        String[] args = new String[]{ExceptionThrowingPlugin.REQUIRED_ARGUMENT};
-        _loader.newPluginByName(PLUGIN_NAME_EXCEPTION_PLUGIN, args);
+        Properties properties = new Properties();
+        properties.put("key1", "value1");
+        properties.put(ExceptionThrowingPlugin.REQUIRED_KEY, "some value");
+        _loader.newPluginByName(PLUGIN_NAME_EXCEPTION_PLUGIN, properties);
     }
 
 
-    // An invalid plugin: it's missing the String[] args constructor
+    // An invalid plugin: it's missing the Properties constructor
     public static class InvalidPlugin implements GPlazmaPlugin {
+        // Invalid plugin has no correct constructor
     }
 
     // An valid plugin that throws an exception is a required argument isn't specified
     public static class ExceptionThrowingPlugin implements GPlazmaPlugin {
-        public static final String REQUIRED_ARGUMENT = "foo";
+        public static final String REQUIRED_KEY = "required_key";
 
-        public ExceptionThrowingPlugin( String arguments[]) {
-            if( !haveValidArguments(arguments)) {
-                throw new IllegalArgumentException( "Required argument not present");
-            }
-        }
-
-        private boolean haveValidArguments( String args[]) {
-            boolean requiredArgFound = false;
-
-            for( String arg : args) {
-                if( arg.equals( REQUIRED_ARGUMENT)) {
-                    requiredArgFound = true;
-                }
-            }
-
-            return requiredArgFound;
+        public ExceptionThrowingPlugin( Properties properties) {
+            checkArgument(properties.getProperty(REQUIRED_KEY)!=null, "Required property not present.");
         }
     }
 
     // A simple plugin that allows inspection of supplied arguments
     public static class ValidPlugin implements GPlazmaPlugin {
-        private String _args[];
+        private final Properties _properties;
 
-        public ValidPlugin( String args[]) {
-            _args = args;
+        public ValidPlugin( Properties properties ) {
+            _properties = properties;
         }
 
-        public String[] getArgs() {
-            return _args;
+        public Properties getProperties() {
+            return _properties;
         }
     }
 }

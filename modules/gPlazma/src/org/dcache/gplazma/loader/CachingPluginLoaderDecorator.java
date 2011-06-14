@@ -2,6 +2,7 @@ package org.dcache.gplazma.loader;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
@@ -42,19 +43,16 @@ public class CachingPluginLoaderDecorator implements PluginLoader {
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName(String name, String[] arguments) {
-        StringBuilder keyBuilder = new StringBuilder(name);
-        for (String pluginArgument:arguments) {
-            keyBuilder.append(" '").append(pluginArgument).append("' ");
-        }
-        String key = keyBuilder.toString();
+    public GPlazmaPlugin newPluginByName(String name, Properties properties) {
+
+        String key = name;
 
         GPlazmaPlugin plugin = foundPlugins.get(key);
         if(plugin != null) {
             return plugin;
         }
 
-        plugin = pluginLoader.newPluginByName(name, arguments);
+        plugin = pluginLoader.newPluginByName(name, properties);
         if(plugin == null) {
             throw new IllegalArgumentException("plugin "+name+" can not be loaded");
         }

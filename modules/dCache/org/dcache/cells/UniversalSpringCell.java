@@ -128,16 +128,27 @@ public class UniversalSpringCell
     private File _setupFile;
 
     public UniversalSpringCell(String cellName, String arguments)
-        throws InterruptedException, ExecutionException
     {
         super(cellName, arguments);
-        doInit();
     }
 
     @Override
     public void setEnvironment(Map<String,Object> environment)
     {
         _environment = environment;
+
+        try {
+            /* FIXME: The following is a bad hack to workaround a
+             * cells problem: There are no explicit lifecycle calls in
+             * cells and thus no other way to start the cell outside
+             * the constructor.
+             */
+            doInit();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Cell initialization failed: " + e.getMessage(), e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Cell initialization failed: " + e.getMessage(), e);
+        }
     }
 
     @Override

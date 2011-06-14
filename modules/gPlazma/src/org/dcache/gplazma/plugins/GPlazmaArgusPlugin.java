@@ -1,9 +1,13 @@
 package org.dcache.gplazma.plugins;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Predicates.instanceOf;
+
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
@@ -50,23 +54,20 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     private static final String BLACKLIST_CHECK_FOR_USER_dn_FAILED_DUE_TO_EXCEPTION_IN_PLUGIN = "Blacklist check for user '%s' failed due to exception in plugin.";
     private static final String DECISION_CODE_code = "Decision code: ";
 
-    private static final String KEY_PASS = "KeyPass";
-    private static final String HOST_KEY = "HostKey";
-    private static final String HOST_CERT = "HostCert";
-    private static final String TRUST_MATERIAL = "TrustMaterial";
-    private static final String ACTION_ID = "ActionID";
-    private static final String RESOURCE_ID = "ResourceID";
-    private static final String PEP_ENDPOINT = "PEPEndpoint";
-
-    // private static final Set<String> KEYNAMES = new HashSet<String>(Arrays.asList( new String[] { PEP_ENDPOINT, RESOURCE_ID, ACTION_ID, TRUST_MATERIAL, HOST_CERT, HOST_KEY, KEY_PASS } ));
-
-    private static final String DEFAULT_KEY_PASS = "";
-    private static final String DEFAULT_HOST_KEY = "/etc/grid-security/hostkey.pem";
-    private static final String DEFAULT_HOST_CERT = "/etc/grid-security/hostcert.pem";
-    private static final String DEFAULT_TRUST_MATERIAL = "/etc/grid-security/certificates";
-    private static final String DEFAULT_ACTION_ID = "access";
-    private static final String DEFAULT_RESOURCE_ID = "dcache";
-    private static final String DEFAULT_PEP_ENDPOINT = "https://localhost:8154/authz";
+    private static final String KEY_PASS =
+        "gplazma.argus.hostkey.password";
+    private static final String HOST_KEY =
+        "gplazma.argus.hostkey";
+    private static final String HOST_CERT =
+        "gplazma.argus.hostcert";
+    private static final String TRUST_MATERIAL =
+        "gplazma.argus.ca";
+    private static final String ACTION_ID =
+        "gplazma.argus.action";
+    private static final String RESOURCE_ID =
+        "gplazma.argus.resource";
+    private static final String PEP_ENDPOINT =
+        "gplazma.argus.endpoint";
 
     private final PEPClient _pepClient;
 
@@ -75,14 +76,14 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
 
     /**
      * Constructor
-     * @param args a set of key value pairs containing the plugins configuration.
+     * @param properties a set of key value pairs containing the plugins configuration.
      */
-    public GPlazmaArgusPlugin(String[] args) {
+    public GPlazmaArgusPlugin(Properties properties) {
 
-        _log.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, args);
+        _log.debug(CREATING_ARGUS_PLUGIN_WITH_PARAMETERS_params, properties);
 
         try {
-            PEPClientConfiguration pepConfiguration = initPepConfiguration(args);
+            PEPClientConfiguration pepConfiguration = initPepConfiguration(properties);
             _pepClient = new PEPClient(pepConfiguration);
         } catch (PEPClientException e) {
             _log.error(COULD_NOT_CREATE_PEP_CLIENT_exception, e);
@@ -101,24 +102,23 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
     /**
      * This method initialises the instance's configuration, by parsing
      * the parameters given in args. Required key/value is PEPEndpoint.
-     * @param args array of key value pairs containing the plugins configuration ( key1, value1, key2, value2, ...)
+     * @param properties array of key value pairs containing the plugins configuration ( key1, value1, key2, value2, ...)
      * @throws PEPClientConfigurationException
      */
-    private PEPClientConfiguration initPepConfiguration(String args[]) throws PEPClientConfigurationException {
-        if (args==null) throw new IllegalArgumentException(G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
+    private PEPClientConfiguration initPepConfiguration(Properties properties) throws PEPClientConfigurationException {
+        checkNotNull(properties, G_PLAZMA_ARGUS_PLUGIN_ARGS_MUST_NOT_BE_NULL);
 
         PEPClientConfiguration pepConfig = new PEPClientConfiguration();
 
         _log.debug(INITIALISING_PEP_CLIENT_CONFIGURATION);
 
-        Map<String, String> kvmap = ArgumentMapFactory.createFromKeyValuePairs(args);
-        pepConfig.addPEPDaemonEndpoint(ArgumentMapFactory.getValue(kvmap, PEP_ENDPOINT, DEFAULT_PEP_ENDPOINT));
-        _resourceId = ArgumentMapFactory.getValue(kvmap, RESOURCE_ID, DEFAULT_RESOURCE_ID);
-        _actionId = ArgumentMapFactory.getValue(kvmap, ACTION_ID, DEFAULT_ACTION_ID);
-        String trustMaterial = ArgumentMapFactory.getValue(kvmap, TRUST_MATERIAL, DEFAULT_TRUST_MATERIAL);
-        String hostCert = ArgumentMapFactory.getValue(kvmap, HOST_CERT, DEFAULT_HOST_CERT);
-        String hostKey = ArgumentMapFactory.getValue(kvmap, HOST_KEY, DEFAULT_HOST_KEY);
-        String keyPass = ArgumentMapFactory.getValue(kvmap, KEY_PASS, DEFAULT_KEY_PASS);
+        pepConfig.addPEPDaemonEndpoint(getProperty(properties, PEP_ENDPOINT));
+        _resourceId = getProperty(properties, RESOURCE_ID);
+        _actionId = getProperty(properties, ACTION_ID);
+        String trustMaterial = getProperty(properties, TRUST_MATERIAL);
+        String hostCert = getProperty(properties, HOST_CERT);
+        String hostKey = getProperty(properties, HOST_KEY);
+        String keyPass = getProperty(properties, KEY_PASS);
 
         pepConfig.setTrustMaterial(trustMaterial);
         pepConfig.setKeyMaterial(hostCert, hostKey, keyPass);
@@ -126,6 +126,13 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         _log.debug(CONFIGURATION_resourceid_actionid, _resourceId, _actionId);
 
         return pepConfig;
+    }
+
+    private String getProperty(Properties properties, String key)
+    {
+        String value = properties.getProperty(key);
+        checkArgument(value != null, "Undefined property: " + key);
+        return value;
     }
 
     @Override
@@ -138,7 +145,7 @@ public class GPlazmaArgusPlugin implements GPlazmaAccountPlugin {
         try {
             Collection<Principal> globusPrincipals = Collections.emptySet();
             if (authorizedPrincipals != null)
-                globusPrincipals = Collections2.filter(authorizedPrincipals, new ClassTypePredicate<Principal>(GlobusPrincipal.class));
+                globusPrincipals = Collections2.filter(authorizedPrincipals, instanceOf(GlobusPrincipal.class));
 
             for (Principal principal : globusPrincipals) {
                 dn = principal.getName();

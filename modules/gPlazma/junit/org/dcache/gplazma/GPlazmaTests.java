@@ -15,6 +15,8 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.security.auth.Subject;
@@ -22,8 +24,8 @@ import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
@@ -35,6 +37,7 @@ import org.dcache.gplazma.loader.XmlResourcePluginRepositoryFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 /**
  *
  * @author timur
@@ -44,7 +47,7 @@ public class GPlazmaTests {
     private static final String AUTH_NAME = "findPrincipals";
     private static final String MAPPING_NAME="identityMap";
     private static final String ACCOUNT_NAME="uidAccount";
-    private static final String SESSION_NAME="homeRootSesson";
+    private static final String SESSION_NAME="homeRootSession";
     private static final String FAIL_NAME = "fail_all";
     private static final String USER_NAME = "root";
     private static final String HOME_PATH_ARG_VALUE = "/root";
@@ -53,31 +56,31 @@ public class GPlazmaTests {
     private static final String ROOT_UID = "0";
     private static final String ROOT_GID = "0";
 
+    public static final Properties EMPTY_PROPERTIES = new Properties();
+    public static final Map<String, Object> EMPTY_ENVIRONMENT = Collections.emptyMap();
+
     private static final ConfigurationItem AUTH_CONFIG_ITEM =
-            new ConfigurationItem(AUTHENTICATION, REQUIRED, AUTH_NAME, null);
+            new ConfigurationItem(AUTHENTICATION, REQUIRED, AUTH_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem MAPPING_CONFIG_ITEM =
-            new ConfigurationItem(MAPPING, REQUIRED, MAPPING_NAME, null);
-    private static final ConfigurationItem ACCOUNT_CONFIG_ITEM =
-            new ConfigurationItem(ACCOUNT, REQUISITE, ACCOUNT_NAME, ROOT_UID);
-    private static final ConfigurationItem SESSION_CONFIG_ITEM =
-            new ConfigurationItem(SESSION, REQUIRED, SESSION_NAME,
-            USER_NAME + " " + HOME_PATH_ARG_VALUE + " " + ROOT_PATH_ARG_VALUE+" "+READ_ONLY_ARG_VALUE);
+            new ConfigurationItem(MAPPING, REQUIRED, MAPPING_NAME, EMPTY_PROPERTIES);
+    private static ConfigurationItem ACCOUNT_CONFIG_ITEM = null;
+    private static ConfigurationItem SESSION_CONFIG_ITEM = null;
     private static final ConfigurationItem FAIL_AUTH_CONFIG_ITEM =
-            new ConfigurationItem(AUTHENTICATION, REQUIRED, FAIL_NAME, null);
+            new ConfigurationItem(AUTHENTICATION, REQUIRED, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_MAPPING_CONFIG_ITEM =
-            new ConfigurationItem(MAPPING, REQUIRED, FAIL_NAME, null);
+            new ConfigurationItem(MAPPING, REQUIRED, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_ACCOUNT_CONFIG_ITEM =
-            new ConfigurationItem(ACCOUNT, REQUIRED, FAIL_NAME, null);
+            new ConfigurationItem(ACCOUNT, REQUIRED, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_SESSION_CONFIG_ITEM =
-            new ConfigurationItem(SESSION, REQUIRED, FAIL_NAME, null);
+            new ConfigurationItem(SESSION, REQUIRED, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_OPTIONAL_AUTH_CONFIG_ITEM =
-            new ConfigurationItem(AUTHENTICATION, OPTIONAL, FAIL_NAME, null);
+            new ConfigurationItem(AUTHENTICATION, OPTIONAL, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_OPTIONAL_MAPPING_CONFIG_ITEM =
-            new ConfigurationItem(MAPPING, OPTIONAL, FAIL_NAME, null);
+            new ConfigurationItem(MAPPING, OPTIONAL, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_OPTIONAL_ACCOUNT_CONFIG_ITEM =
-            new ConfigurationItem(ACCOUNT, OPTIONAL, FAIL_NAME, null);
+            new ConfigurationItem(ACCOUNT, OPTIONAL, FAIL_NAME, EMPTY_PROPERTIES);
     private static final ConfigurationItem FAIL_OPTIONAL_SESSION_CONFIG_ITEM =
-            new ConfigurationItem(SESSION, OPTIONAL, FAIL_NAME, null);
+            new ConfigurationItem(SESSION, OPTIONAL, FAIL_NAME, EMPTY_PROPERTIES);
 
     private Utf8DataClassLoader _classLoader;
     private PluginXmlGenerator _pluginXml;
@@ -89,22 +92,22 @@ public class GPlazmaTests {
     private static final Configuration EMPTY_CONFIG =
             new Configuration(Arrays.asList(EMPTY_CONFIG_ARRAY));
 
-
-    //AddNameUidGidMappingPlugin.class
-
-//    private static final String PLUGIN2_NAME="mapping1";
-
-//    private static final ConfigurationItem[] CONFIG2_ARRAY =
-//            new ConfigurationItem[] {
-//      new ConfigurationItem(  MAPPING, REQUIRED,    PLUGIN2_NAME,null) };
-//    private static final Configuration CONFIG2 =
-//            new Configuration(Arrays.asList(CONFIG2_ARRAY));
-
     @Before
     public void setUp() {
         _classLoader = new Utf8DataClassLoader(XmlResourcePluginRepositoryFactory.RESOURCE_PATH);
         Thread currentThread = Thread.currentThread();
         currentThread.setContextClassLoader( _classLoader);
+
+        Properties accountProperties = new Properties();
+        accountProperties.put("uid", ROOT_UID);
+        ACCOUNT_CONFIG_ITEM = new ConfigurationItem(ACCOUNT, REQUISITE, ACCOUNT_NAME, accountProperties);
+
+        Properties sessionProperties = new Properties();
+        sessionProperties.put(AddHomeRootSessionPlugin.USER_KEY, USER_NAME);
+        sessionProperties.put(AddHomeRootSessionPlugin.HOME_KEY, HOME_PATH_ARG_VALUE);
+        sessionProperties.put(AddHomeRootSessionPlugin.ROOT_KEY, ROOT_PATH_ARG_VALUE);
+        sessionProperties.put(AddHomeRootSessionPlugin.READONLY_KEY, READ_ONLY_ARG_VALUE);
+        SESSION_CONFIG_ITEM = new ConfigurationItem(SESSION, REQUIRED, SESSION_NAME, sessionProperties);
 
         _pluginXml = new PluginXmlGenerator();
         _pluginXml.clear();
@@ -137,7 +140,7 @@ public class GPlazmaTests {
                 Collections.emptySet(),
                 Collections.emptySet());
 
-        GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG));
+        GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG),EMPTY_ENVIRONMENT);
         LoginReply result = instance.login(subject);
 
         Assert.assertNotNull(result);
@@ -174,31 +177,7 @@ public class GPlazmaTests {
             ACCOUNT_CONFIG_ITEM,
             SESSION_CONFIG_ITEM);
 
-
-        assertFalse(CheckUIDAccountPlugin.isCalled());
-
-        // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
-
-        // check the results
-        assertTrue(CheckUIDAccountPlugin.isCalled());
-
-        Set<Principal> expectedPrincipals = new HashSet<Principal>();
-        expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
-        expectedPrincipals.add(new UidPrincipal(ROOT_UID));
-        expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
-
-        Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
-        assertEquals(resultPrincipals, expectedPrincipals);
-
-        Set<Object> expectedAttributes = new HashSet<Object>();
-        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
-        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
-        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
-
-        Set<Object> resultAttributes = result.getSessionAttributes();
-
-        assertEquals(resultAttributes, expectedAttributes);
+        runLoginAssertions(config);
    }
 
     /**
@@ -219,27 +198,7 @@ public class GPlazmaTests {
             SESSION_CONFIG_ITEM,
             FAIL_OPTIONAL_SESSION_CONFIG_ITEM);
 
-        assertFalse(CheckUIDAccountPlugin.isCalled());
-
-        // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
-
-        // check the results
-        assertTrue(CheckUIDAccountPlugin.isCalled());
-
-        Set<Principal> expectedPrincipals = new HashSet<Principal>();
-        expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
-        expectedPrincipals.add(new UidPrincipal(ROOT_UID));
-        expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
-        Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
-        assertEquals(resultPrincipals, expectedPrincipals);
-
-        Set<Object> expectedAttributes = new HashSet<Object>();
-        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
-        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
-        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
-        Set<Object> resultAttributes = result.getSessionAttributes();
-        assertEquals(resultAttributes, expectedAttributes);
+        runLoginAssertions(config);
    }
 
     /**
@@ -260,7 +219,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -283,7 +242,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -305,7 +264,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -327,7 +286,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -348,7 +307,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -369,7 +328,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -389,7 +348,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config)).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -419,4 +378,30 @@ public class GPlazmaTests {
         return new StaticContentConfigurationLoadingStrategy(configuration);
     }
 
+    private void runLoginAssertions(Configuration config) throws AuthenticationException {
+        assertFalse(CheckUIDAccountPlugin.isCalled());
+
+        // do the work here
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+
+        // check the results
+        assertTrue(CheckUIDAccountPlugin.isCalled());
+
+        Set<Principal> expectedPrincipals = new HashSet<Principal>();
+        expectedPrincipals.add(new UserNamePrincipal(USER_NAME));
+        expectedPrincipals.add(new UidPrincipal(ROOT_UID));
+        expectedPrincipals.add(new GidPrincipal(ROOT_GID,true));
+
+        Set<Principal> resultPrincipals = result.getSubject().getPrincipals();
+        assertEquals(resultPrincipals, expectedPrincipals);
+
+        Set<Object> expectedAttributes = new HashSet<Object>();
+        expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
+        expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
+        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
+
+        Set<Object> resultAttributes = result.getSessionAttributes();
+
+        assertEquals(expectedAttributes, resultAttributes);
+    }
 }

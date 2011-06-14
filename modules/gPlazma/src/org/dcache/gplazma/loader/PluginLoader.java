@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader;
 
+import java.util.Properties;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
@@ -60,11 +62,11 @@ public interface PluginLoader {
      * different objects.
      *
      * @param name the name of the plugin to create
-     * @param arguments an array of Strings to adjust the plugin's behaviour
+     * @param properties an array of Strings to adjust the plugin's behaviour
      * @return an instance of the plugin
      * @throws IllegalStateException if {@link #init} has not been called.
      * @throws IllegalArgumentException if the name is unknown or the
      *             corresponding plugin cannot be created.
      */
-    public GPlazmaPlugin newPluginByName( String name, String[] arguments);
+    public GPlazmaPlugin newPluginByName( String name, Properties properties);
 }

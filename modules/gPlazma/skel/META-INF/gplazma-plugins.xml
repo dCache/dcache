@@ -1,9 +1,4 @@
-
 <plugins>
-    <plugin>
-        <name>kpwd</name>
-        <class>org.dcache.gplazma.plugins.KpwdFileUsernamePasswordAuthenticationPlugin</class>
-    </plugin>
     <plugin>
         <name>vorolemap</name>
         <class>org.dcache.gplazma.plugins.VoRoleMapPlugin</class>

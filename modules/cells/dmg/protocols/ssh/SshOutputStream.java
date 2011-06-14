@@ -38,9 +38,9 @@ public class SshOutputStream extends OutputStream {
       _core.printout( "SshOutputStream : write( byte [] a )" ) ;
       write( a , 0 , a.length ) ;
    }
+
+   @Override
    public void close() throws IOException {
-      _core.printout( "SshOutputStream : close()" ) ;
       _core.close() ;
    }
- 
 }

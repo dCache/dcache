@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +15,7 @@ public class XmlResourcePluginRepositoryFactoryTests {
     PluginXmlGenerator _pluginXml;
 
     @Before
-    public void setUp() throws ParserConfigurationException {
+    public void setUp() {
         ResourceBlockingClassLoader blockingLoader = new ResourceBlockingClassLoader();
         blockingLoader.setIsBlocking( true);
 

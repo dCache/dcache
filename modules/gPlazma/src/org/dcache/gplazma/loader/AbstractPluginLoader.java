@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader;
 
+import java.util.Properties;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
@@ -14,7 +16,7 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
  * PluginRepository.
  */
 public abstract class AbstractPluginLoader implements PluginLoader {
-    private final PluginFactory _factory = new StringArrayPluginFactory();
+    private final PluginFactory _factory = new PropertiesPluginFactory();
     private PluginRepository _repository;
 
     @Override
@@ -32,8 +34,8 @@ public abstract class AbstractPluginLoader implements PluginLoader {
     }
 
     @Override
-    public GPlazmaPlugin newPluginByName( String name, String[] arguments) {
+    public GPlazmaPlugin newPluginByName( String name, Properties properties) {
         PluginMetadata plugin = _repository.getPlugin( name);
-        return _factory.newPlugin( plugin.getPluginClass(), arguments);
+        return _factory.newPlugin( plugin.getPluginClass(), properties);
     }
 }

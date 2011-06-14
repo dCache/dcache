@@ -99,6 +99,9 @@ public class SshInputStream extends InputStream {
                _core.confirmed() ;
             return false ;
             
+            case SshPacket.SSH_CMSG_EOF:
+                return false;
+
             case SshPacket.SSH_MSG_DEBUG :
                 SshMsgDebug debug = new SshMsgDebug( packet ) ;
                 _core.printout( "SshInputStream : SSH_MSG_DEBUG : "+debug.getMessage() ) ;
@@ -112,9 +115,11 @@ public class SshInputStream extends InputStream {
       }
      
    }
-   public void close() throws IOException {  
-      _core.printout( "SshInputStream : close()" ) ;
-      _core.close() ;   
+
+   @Override
+   public void close() throws IOException {
+      _core.close();
+      _exitConfirmed = true;
    }
    void printout( String str ){ _core.printout( str ) ; }
 }

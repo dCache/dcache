@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
@@ -305,12 +304,7 @@ public class StreamObjectCell
 
                 runAsciiMode(console);
 
-                /* To cleanly shut down the connection, we first
-                 * shutdown the output and then wait for an EOF on the
-                 * input stream.
-                 */
                 console.flushConsole();
-                _engine.getInputStream().close();
             } finally {
                 /* ConsoleReader doesn't close the history file itself.
                  */
@@ -326,7 +320,7 @@ public class StreamObjectCell
         } catch (IOException e) {
             _log.warn("I/O Failure: " + e);
         } finally {
-            _log.info("StreamObjectCell (worker) done.");
+            _log.debug("worker done, killing off cell");
             kill();
         }
     }
@@ -435,8 +429,11 @@ public class StreamObjectCell
         while (!done) {
             String str = console.readLine(getPrompt());
             if (str == null) {
+                _log.debug( "\"null\" input (e.g., Ctrl-D) received.");
                 break;
             }
+
+            _log.debug( "received line: {}", str);
 
             if (str.equals("$BINARY$")) {
                 _log.info("Opening Object Streams");
@@ -452,7 +449,10 @@ public class StreamObjectCell
                 result = com.invoke(_commandObject, str);
             } catch (InvocationTargetException ite) {
                 result = ite.getTargetException();
-                done = (result instanceof CommandExitException);
+                if(result instanceof CommandExitException) {
+                    _log.debug( "User requested to logout.");
+                    done = true;
+                }
             }
             if (result != null) {
                 String s;
@@ -484,6 +484,7 @@ public class StreamObjectCell
     public void cleanUp()
     {
         try {
+            _log.debug("Shutting down the SSH connection");
             _engine.getInputStream().close();
         } catch (IOException e) {
             _log.error("Failed to close socket: " + e);

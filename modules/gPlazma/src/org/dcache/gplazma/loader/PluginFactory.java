@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader;
 
+import java.util.Properties;
+
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 /**
@@ -21,9 +23,9 @@ public interface PluginFactory {
     /**
      * Create a new plugin of the given type.
      * @param pluginClass the Class of plugin to create
-     * @param arguments an array of Strings as arguments for the plugin
+     * @param properties an array of Strings as arguments for the plugin
      * @return the new plugin object
      * @throws IllegalArgumentException if creation was impossible
      */
-    public <T extends GPlazmaPlugin> T newPlugin( Class<T> pluginClass, String[] arguments);
+    public <T extends GPlazmaPlugin> T newPlugin( Class<T> pluginClass, Properties properties);
 }

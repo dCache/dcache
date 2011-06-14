@@ -1,16 +1,24 @@
 package org.dcache.gplazma.configuration.parser;
 
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.ACCOUNT;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.AUTHENTICATION;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.MAPPING;
+import static org.dcache.gplazma.configuration.ConfigurationItemType.SESSION;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.dcache.gplazma.configuration.ConfigurationItemType.*;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
+
+import java.util.List;
+import java.util.Properties;
 
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.junit.Before;
 import org.junit.Test;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,12 +55,12 @@ public class ConfigurationParserTests {
     private static final String TEST_CONFIG =
             "# this is our well formed test configuration\n" +
             "auth    required    plugin1\n"+
-            "auth    sufficient plugin2 arg1\n"+
-            "auth    requisite  plugin3 arg1 arg2\n"+
-            "auth    optional   plugin4 arg1 arg2 arg3\n"+
+            "auth    sufficient plugin2 key1=value1\n"+
+            "auth    requisite  plugin3 key1=value1 \"key2=Some other=xxx\"\n"+
+            "auth    optional   plugin4 key1=value1 \"key2=Some other=xxx\" 'key3 = val3'\n"+
 
             "    # this is comment line \n"+
-            "map     required    plugin1 a crasy &$@#* argument\n"+
+            "map     required    plugin1 '!@#=a crazy &$@#* argument'\n"+
             "map     sufficient plugin2\n"+
             "map     requisite  plugin3\n"+
             "map     optional   plugin4\n"+
@@ -67,34 +75,41 @@ public class ConfigurationParserTests {
             "session requisite  plugin11\n"+
             "session optional   plugin12\n"+
             "# THE END, ENDE, KONETS, UNDANGEN, SLUTET, SLUTTEN, LA FIN, AL FINAL";
+
+    private static final Properties EMPTY_PROPERTIES = new Properties();
+
+    private static final Properties ONEARGPROPERTIES = new Properties();
+    private static final Properties TWOARGPROPERTIES = new Properties();
+    private static final Properties THREEARGPROPERTIES = new Properties();
+    private static final Properties WEIRDARGPROPERTIES = new Properties();
+
     private static final ConfigurationItem[] TEST_CONFIG_ARRAY =
             new ConfigurationItem[] {
-      new ConfigurationItem(  AUTHENTICATION, REQUIRED,    "plugin1",null),
-      new ConfigurationItem(  AUTHENTICATION, SUFFICIENT, "plugin2","arg1"),
-      new ConfigurationItem(  AUTHENTICATION, REQUISITE,  "plugin3","arg1 arg2"),
-      new ConfigurationItem(  AUTHENTICATION, OPTIONAL,   "plugin4","arg1 arg2 arg3"),
+      new ConfigurationItem(  AUTHENTICATION, REQUIRED,   "plugin1", EMPTY_PROPERTIES),
+      new ConfigurationItem(  AUTHENTICATION, SUFFICIENT, "plugin2", ONEARGPROPERTIES),
+      new ConfigurationItem(  AUTHENTICATION, REQUISITE,  "plugin3", TWOARGPROPERTIES),
+      new ConfigurationItem(  AUTHENTICATION, OPTIONAL,   "plugin4", THREEARGPROPERTIES),
 
-      new ConfigurationItem(  MAPPING,        REQUIRED,    "plugin1","a crasy &$@#* argument"),
-      new ConfigurationItem(  MAPPING,        SUFFICIENT, "plugin2",null),
-      new ConfigurationItem(  MAPPING,        REQUISITE,  "plugin3",null),
-      new ConfigurationItem(  MAPPING,        OPTIONAL,   "plugin4",null),
+      new ConfigurationItem(  MAPPING,        REQUIRED,   "plugin1", WEIRDARGPROPERTIES),
+      new ConfigurationItem(  MAPPING,        SUFFICIENT, "plugin2", EMPTY_PROPERTIES),
+      new ConfigurationItem(  MAPPING,        REQUISITE,  "plugin3", EMPTY_PROPERTIES),
+      new ConfigurationItem(  MAPPING,        OPTIONAL,   "plugin4", EMPTY_PROPERTIES),
 
-      new ConfigurationItem(  ACCOUNT,        REQUIRED,    "plugin5",null),
-      new ConfigurationItem(  ACCOUNT,        SUFFICIENT, "plugin6",null),
-      new ConfigurationItem(  ACCOUNT,        REQUISITE,  "plugin7",null),
-      new ConfigurationItem(  ACCOUNT,        OPTIONAL,   "plugin8",null),
+      new ConfigurationItem(  ACCOUNT,        REQUIRED,   "plugin5", EMPTY_PROPERTIES),
+      new ConfigurationItem(  ACCOUNT,        SUFFICIENT, "plugin6", EMPTY_PROPERTIES),
+      new ConfigurationItem(  ACCOUNT,        REQUISITE,  "plugin7", EMPTY_PROPERTIES),
+      new ConfigurationItem(  ACCOUNT,        OPTIONAL,   "plugin8", EMPTY_PROPERTIES),
 
-      new ConfigurationItem(  SESSION,        REQUIRED,    "plugin9",null),
-      new ConfigurationItem(  SESSION,        SUFFICIENT, "plugin10",null),
-      new ConfigurationItem(  SESSION,        REQUISITE,  "plugin11",null),
-      new ConfigurationItem(  SESSION,        OPTIONAL,   "plugin12",null),
+      new ConfigurationItem(  SESSION,        REQUIRED,   "plugin9", EMPTY_PROPERTIES),
+      new ConfigurationItem(  SESSION,        SUFFICIENT, "plugin10",EMPTY_PROPERTIES),
+      new ConfigurationItem(  SESSION,        REQUISITE,  "plugin11",EMPTY_PROPERTIES),
+      new ConfigurationItem(  SESSION,        OPTIONAL,   "plugin12",EMPTY_PROPERTIES),
 };
 
     // TODO
     // Implement tests for classic configuration
     // Once classic configuration reader is implemented
-    private static final String TEST_CLASSIC_CONFIG =
-            "";
+    // private static final String TEST_CLASSIC_CONFIG = "";
 
     private ConfigurationParserFactory pamConfigParserFactory;
 
@@ -102,6 +117,17 @@ public class ConfigurationParserTests {
     public void setUp() {
         pamConfigParserFactory = ConfigurationParserFactory.getInstance(
                 PAMConfigParserFactory);
+
+        ONEARGPROPERTIES.put("key1", "value1");
+
+        TWOARGPROPERTIES.put("key1", "value1");
+        TWOARGPROPERTIES.put("key2", "Some other=xxx");
+
+        THREEARGPROPERTIES.put("key1", "value1");
+        THREEARGPROPERTIES.put("key2", "Some other=xxx");
+        THREEARGPROPERTIES.put("key3", "val3");
+
+        WEIRDARGPROPERTIES.put("!@#", "a crazy &$@#* argument");
     }
 
     @Test
@@ -167,7 +193,8 @@ public class ConfigurationParserTests {
         ConfigurationItem[] configItemArray =
                 configItemList.toArray(new ConfigurationItem[0]);
         logger.debug("Parsed TEST_CONFIG is \n"+configuration);
-        assertArrayEquals(configItemArray,TEST_CONFIG_ARRAY);
+
+        assertArrayEquals(TEST_CONFIG_ARRAY, configItemArray);
     }
 
 

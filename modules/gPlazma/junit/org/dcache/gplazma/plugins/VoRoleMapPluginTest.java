@@ -1,26 +1,23 @@
 package org.dcache.gplazma.plugins;
 
-import java.io.IOException;
-import java.security.Principal;
-import static java.util.Collections.unmodifiableSet;
+import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Collections.emptySet;
-import java.util.Set;
+import static org.junit.Assert.assertEquals;
+import gplazma.authz.util.NameRolePair;
+
+import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-
-import junit.framework.AssertionFailedError;
+import java.security.Principal;
+import java.util.Set;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.jaas.GlobusPrincipal;
-import gplazma.authz.util.NameRolePair;
-
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import static com.google.common.collect.Sets.newHashSet;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 
