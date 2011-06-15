@@ -152,6 +152,9 @@ extern void dc_setOnError(int);
 extern void dc_noBuffering(int);
 extern void dc_setBufferSize(int, size_t);
 
+/* LCB (local cache block) */
+extern void dc_lcb_flush(int fh);
+
 /* write blocks conformation */
 extern void dc_unsafeWrite(int);
 
