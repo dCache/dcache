@@ -288,7 +288,8 @@ ssize_t dc_lcb_read( struct vsp_node * node, char *buf, ssize_t len)
 	ensure_data_in_currentcb(request);
 	bytes_copied = copy_data_from_currentcb(request);
 
-	if( bytes_copied < 0) {
+	// Consider zero bytes read as reaching EOF
+	if( bytes_copied <= 0) {
 	    break;
 	}
 
@@ -416,6 +417,9 @@ void update_currentcb_to_existing_cb(struct read_request *request,
 	emit_debug( "switching to buffer %lld nused %ld",
 		    new_current->bnum, new_current->nused );
     }
+
+    /* REVISIT: if re-reading a block created from a partial read,
+       we should attempt to re-read the block. */
 }
 
 void update_currentcb_by_reading(struct read_request *request,
@@ -605,18 +609,18 @@ ssize_t read_currentcb( struct read_request *request)
     cbindex_t *current = lb->currentcb;
     off64_t start_of_current = current->bnum * lb->buflen;
 
-    emit_debug( "reading %lld buffer %ld bytes",
-		current->bnum, lb->buflen);
+    emit_debug( "reading %ld bytes for block %lld at %lld ",
+		lb->buflen, current->bnum, start_of_current);
 
-    dc_real_lseek( node, start_of_current, SEEK_SET);
+    dc_real_lseek(node, start_of_current, SEEK_SET);
 
     current->blen = dc_real_read(node, current->bpo, lb->buflen);
 
     dc_real_lseek(node, request->fpos, SEEK_SET);
 
     if( current->blen < lb->buflen && request->remaining > current->blen) {
-	emit_debug( "short-read detected; requested %ld bytes at %ld "
-		    "but got %ld\n", lb->buflen, start_of_current,
+	emit_debug( "short-read detected; requested %ld bytes at %lld "
+		    "but got %ld", lb->buflen, start_of_current,
 		    current->blen);
     }
 
@@ -637,7 +641,7 @@ ssize_t copy_data_from_currentcb( struct read_request *request)
     available = current->blen - request->bpos;
 
     if( available <= 0) {
-	return -1;
+        return available == 0 ? 0 : -1;
     }
 
     copy_len = (request->remaining<available) ? request->remaining : available;
