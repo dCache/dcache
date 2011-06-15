@@ -39,6 +39,7 @@
 #include "dcap_lseek.h"
 #include "debug_level.h"
 #include "dcap_debug.h"
+#include "node_plays.h"
 
 #define MEMORY_PER_FILE_DEFAULT (1024*1024)
 #define MEMORY_PER_FILE_MINIMUM 1024
@@ -60,6 +61,7 @@ struct read_request {
 
 static void ensure_data_in_currentcb(struct read_request *request);
 static void establish_buffer_size( local_cache_buffer_t *lb);
+static void flush_cache( struct vsp_node *node);
 static void read_first_buffer(struct read_request *request);
 static ssize_t copy_data_from_currentcb(struct read_request *request);
 static void build_request( struct read_request *request, struct vsp_node *node,
@@ -101,6 +103,37 @@ static unsigned long global_stats_total_block_reads;
 static unsigned long global_stats_blocks_allocated;
 
 static int current_fd;
+
+
+/**
+ *  Flush any cached blocks.
+ */
+void dc_lcb_flush(int fd)
+{
+	struct vsp_node *node;
+
+	current_fd = fd;
+
+	emit_debug( "flushing LCB");
+
+#ifdef DC_CALL_TRACE
+	showTraceBack();
+#endif
+
+	/* nothing wrong ... yet */
+	dc_errno = DEOK;
+
+	node = get_vsp_node(fd);
+	if (node != NULL) {
+		if( node->lcb ) {
+			flush_cache(node);
+		}
+		m_unlock(&node->mux);
+	}
+}
+
+
+
 
 long dc_lcb_init( struct vsp_node *node ) {
 
@@ -195,16 +228,12 @@ long get_envvar( const char *envvar_name, long default_value,
 void dc_lcb_clean(struct vsp_node *node)
 {
     local_cache_buffer_t *lb = node->lcb;
-    cbindex_t *cb;
 
     current_fd = node->dataFd;
 
-    for( cb = lb->cbi; cb; cb = cb->next) {
-	free(cb->bpo);
-	update_global_stats_from_retired_cb(cb);
-    }
+    flush_cache(node);
 
-    emit_debug( "statistics: reads=%lu,  blocks=%lu,  hit ratio=%f \n",
+    emit_debug( "statistics: reads=%lu,  blocks=%lu,  hit ratio=%f",
 		global_stats_total_block_reads,
 		global_stats_blocks_allocated,
 		(double) global_stats_total_block_reads /
@@ -219,6 +248,25 @@ void update_global_stats_from_retired_cb(cbindex_t *cb)
 {
     global_stats_blocks_allocated++;
     global_stats_total_block_reads += cb->nused;
+}
+
+
+void flush_cache( struct vsp_node *node)
+{
+    local_cache_buffer_t *lb = node->lcb;
+    cbindex_t *cb, *next;
+
+    for( cb = lb->cbi; cb; cb = next) {
+	free(cb->bpo);
+	cb->bpo = NULL;
+	next = cb->next;
+	cb->prev = NULL;
+	cb->next = NULL;
+	cb->bnum = 0;
+	update_global_stats_from_retired_cb(cb);
+    }
+
+    lb->nbcache = 0;
 }
 
 
