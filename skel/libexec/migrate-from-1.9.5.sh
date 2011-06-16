@@ -590,12 +590,17 @@ filterOutDataCopiedFromTemplate()
 
 doTail()
 {
+    local count
+
+    count="$1"
+    shift
+
     case "$(uname -s)" in
         SunOS)
-            tail $1
+            tail $count "$@"
             ;;
         *)
-            tail -n$1
+            tail -n$count "$@"
             ;;
     esac
 }
