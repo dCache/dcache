@@ -220,6 +220,17 @@ public class XmlEntityLayoutPrinterTests {
     }
 
 
+    @Test
+    public void testScopedPropertiesIgnored() throws IOException {
+        String key = "scope/key";
+        String value = "some simple value";
+        globalProperties.setProperty(key, value);
+
+        String mappedKey = "scope_key";
+
+        assertEntityNotDefined(mappedKey);
+    }
+
     /*
      * Support methods and classes
      */
