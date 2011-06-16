@@ -176,6 +176,20 @@ int main(int argc, char *argv[])
 		is_feedback_enabled = 1;
 	}
 
+	/* FIXME removing the DC_LOCAL_CACHE_BUFFER environment
+	 * variable vetos dcap's use of the lcb (the local cache).
+	 * This is an ugly work-around needed because the current lcb
+	 * code gives terrible performance when the client streams
+	 * data in large chunks.  Rather than rewrite LCB, we
+	 * introduce this as a "temporary" work-around.
+	 *
+	 * Although clients should tune their software for their
+	 * access patterns, this is "impossible" (or at least
+	 * unlikely); therefore LCB should be rewritten to provide
+	 * better performance in this case.
+	 */
+	unsetenv("DC_LOCAL_CACHE_BUFFER");
+
 	while( (c = getopt(argc, argv, "Ad:o:h:iX:Pt:l:aB:b:up:T:r:s:w:cC:H")) != EOF) {
 
 		switch(c) {
