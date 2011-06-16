@@ -33,4 +33,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -poolManagerTimeout=\"${poolManagerTimeout}\" \
        -poolTimeout=\"${poolTimeout}\" \
        -nfsIoQueue=\"${nfsIoQueue}\" \
+       -nfs.port=\"${nfs.port}\" \
+       -nfs.v3=\"${nfs.v3}\" \
        "

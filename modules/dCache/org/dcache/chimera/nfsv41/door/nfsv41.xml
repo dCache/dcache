@@ -90,6 +90,8 @@
         <property name="ioQueue" value="${nfsIoQueue}" />
         <property name="exportFile" ref="export" />
         <property name="idMapper" ref="id-mapper" />
+        <property name="portNumber" value="${nfs.port}" />
+        <property name="enableV3" value="${nfs.v3}" />
     </bean>
 
     <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
@@ -102,7 +104,7 @@
         <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
         <property name="protocolVersion" value="4.1"/>
         <property name="protocolFamily" value="nfs"/>
-        <property name="port" value="2049"/>
+        <property name="port" value="${nfs.port}"/>
         <property name="loginBroker">
             <bean class="dmg.cells.nucleus.CellPath">
                 <constructor-arg value="${loginBroker}"/>

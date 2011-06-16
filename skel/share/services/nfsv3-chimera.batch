@@ -17,4 +17,5 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
          -chimera.db.url=\"${db.url}\" \
          -chimera.db.dialect=\"${chimera.db.dialect}\" \
          -chimera.db.driver=\"${db.driver}\" \
+         -nfs.port=\"${nfs.port}\" \
         "
