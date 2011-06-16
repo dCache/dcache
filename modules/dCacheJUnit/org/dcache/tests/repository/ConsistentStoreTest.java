@@ -275,6 +275,10 @@ public class ConsistentStoreTest {
 
     }
 
-
+    @Test(expected=RuntimeException.class)
+    public void testRemoveMissing() throws Exception {
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        _repositoryEntryHealer.remove(pnfsId);
+    }
 
 }
