@@ -73,6 +73,10 @@ public class XmlEntityLayoutPrinter implements LayoutPrinter {
 
     private boolean isToBePrinted(String key)
     {
+        if(ConfigurationProperties.isScoped(key)) {
+            return false;
+        }
+
         boolean printEntity = _prefixes.length == 0;
 
         for(String prefix : _prefixes) {
