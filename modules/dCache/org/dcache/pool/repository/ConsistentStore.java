@@ -348,7 +348,11 @@ public class ConsistentStore
     @Override
     public void remove(PnfsId id)
     {
-        _fileStore.get(id).delete();
+        if(!_fileStore.get(id).delete()) {
+            String msg = "Failed to delete file " + id + " on pool";
+            _log.error(msg);
+            throw new RuntimeException(msg);
+        }
         _metaDataStore.remove(id);
     }
 
