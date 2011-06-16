@@ -56,7 +56,9 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.nfs.v3.MountServer;
+import org.dcache.chimera.nfs.v3.NfsServerV3;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
+import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
 import org.dcache.chimera.nfs.v4.Layout;
 import org.dcache.chimera.nfs.v4.MDSOperationFactory;
 import org.dcache.chimera.nfs.v4.OperationFactoryMXBeanImpl;
@@ -82,8 +84,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         CellMessageReceiver, CellInfoProvider {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
-
-    static final int DEFAULT_PORT = 2049;
 
     /** dCache-friendly NFS device id to pool name mapping */
     private Map<String, PoolDS> _poolNameToIpMap = new HashMap<String, PoolDS>();
@@ -121,6 +121,17 @@ public class NFSv41Door extends AbstractCellComponent implements
     private PnfsHandler _pnfsHandler;
 
     private String _ioQueue;
+
+    /**
+     * TCP port number to bind.
+     */
+    private int _port;
+
+    /**
+     * Should we run nfs v3 server.
+     */
+    boolean _enableV3;
+
     /*
      * FIXME: The acl handler have to be initialize in spring xml file
      */
@@ -163,6 +174,14 @@ public class NFSv41Door extends AbstractCellComponent implements
         _ioQueue = ioQueue;
     }
 
+    public void setPortNumber(int port) {
+        _port = port;
+    }
+
+    public void setEnableV3(boolean enable) {
+        _enableV3 = enable;
+    }
+
     public void init() throws Exception {
 
 
@@ -170,13 +189,19 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         final NFSv41DeviceManager _dm = this;
 
-        _rpcService = new OncRpcSvc(DEFAULT_PORT, IpProtocolType.TCP, true, "NFSv41 door embedded server");
+        _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true, "NFSv41 door embedded server");
 
         _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
                 _dm, _aclHandler, _fileFileSystemProvider, _exportFile);
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
+        if(_enableV3) {
+            NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _fileFileSystemProvider);
+            _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+        }
+
         _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+        _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
         _rpcService.start();
 
