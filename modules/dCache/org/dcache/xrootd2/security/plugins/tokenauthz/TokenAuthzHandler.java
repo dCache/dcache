@@ -211,4 +211,19 @@ public class TokenAuthzHandler implements AuthorizationHandler
     {
         return env == null ? null : env.getCreator();
     }
+
+    public static void main(String[] args)
+        throws Exception
+    {
+        TokenAuthorizationFactory factory = new TokenAuthorizationFactory();
+        factory.setKeystore(args[0]);
+        factory.init();
+
+        String token = args[1];
+
+        TokenAuthzHandler handler =
+            (TokenAuthzHandler)factory.getAuthzHandler();
+
+        System.out.println(handler.decodeEnvelope(token, handler.getKeys(null)));
+    }
 }

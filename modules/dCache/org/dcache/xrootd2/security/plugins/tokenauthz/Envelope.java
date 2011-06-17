@@ -123,6 +123,13 @@ public class Envelope {
         public String getUserInfo() {
             return turl.getUserInfo();
         }
+
+        @Override
+        public String toString()
+        {
+            return String.format("GridFile[%s,%d,%s]",
+                                 lfn, access, turlString);
+        }
     }
 
     //  the creator of the envelope
@@ -159,12 +166,12 @@ public class Envelope {
         }
     }
 
+
     //  time frame to determine whether creatin time is still valid
     private static final long TIME_OFFSET = 60;
 
     //  the stack used for parsing the structured content of the envelope
     Stack stack = new Stack();
-
 
     /**
      * Parses the envelope and verifies its validity.
@@ -466,5 +473,12 @@ public class Envelope {
      */
     public Iterator getFiles() {
         return files.iterator();
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("Envelope[%s,%d,%d,%s,%s]",
+                             creator, created, expires, files, filePermissions);
     }
 }
