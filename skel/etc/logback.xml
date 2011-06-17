@@ -75,14 +75,14 @@
   </appender>
 
   <appender name="events" class="ch.qos.logback.core.FileAppender">
-    <file>/tmp/events.out</file>
+    <file>/tmp/events-${domain.name}.out</file>
     <encoder>
       <pattern>ts=%d{yyyy-mm-dd}T%d{HH:mm:ss.SSS} %m%n</pattern>
     </encoder>
   </appender>
 
   <appender name="traceFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>/tmp/trace.out</file>
+    <file>/tmp/trace-${domain.name}.out</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
       <fileNamePattern>trace.out.%i</fileNamePattern>
       <minIndex>1</minIndex>
