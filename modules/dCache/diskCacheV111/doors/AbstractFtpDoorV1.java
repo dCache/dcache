@@ -692,6 +692,11 @@ public abstract class AbstractFtpDoorV1
             setTransfer(this);
         }
 
+        public int getVersion()
+        {
+            return _version;
+        }
+
         /**
          * Create an adapter, if needed.
          *
@@ -1249,16 +1254,18 @@ public abstract class AbstractFtpDoorV1
             IoDoorInfo doorInfo = new IoDoorInfo(getCellName(),
                                                  getCellDomainName());
             long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
-            doorInfo.setProtocol("GFtp","1");
             doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
             doorInfo.setProcess("0");
-            Transfer transfer = _transfer;
+            FtpTransfer transfer = _transfer;
             if (transfer != null) {
                 IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
                 doorInfo.setIoDoorEntries(entries);
+                doorInfo.setProtocol("GFtp",
+                                     String.valueOf(transfer.getVersion()));
             } else {
                 IoDoorEntry[] entries = {};
                 doorInfo.setIoDoorEntries(entries);
+                doorInfo.setProtocol("GFtp", "1");
             }
 
             if (args.getOpt("binary") != null)
