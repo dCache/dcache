@@ -113,27 +113,44 @@ public class Domain
         }
     }
 
+    private URI getLogConfigurationUri()
+        throws URISyntaxException
+    {
+        String property = _properties.getValue(PROPERTY_LOG_CONFIG);
+        if (property == null) {
+            return null;
+        }
+
+        URI uri = new URI(property);
+        String path = uri.getPath();
+        if (path == null) {
+            throw new URISyntaxException(property, "Path is missing");
+        }
+
+        if (uri.getScheme() == null || uri.getScheme().equals(SCHEME_FILE)) {
+            File f = new File(path);
+            uri = f.toURI();
+        }
+        return uri;
+    }
+
     private void initializeLogging()
         throws URISyntaxException, IOException
     {
         try {
-            String property = _properties.getValue(PROPERTY_LOG_CONFIG);
-            if (property == null) return;
-
-            URI uri = new URI(property);
-            String path = uri.getPath();
-            if (path == null) {
-                throw new URISyntaxException(property, "Path is missing");
-            }
-
-            if (uri.getScheme() == null || uri.getScheme().equals(SCHEME_FILE)) {
-                File f = new File(path);
-                uri = f.toURI();
-            }
+            URI uri = getLogConfigurationUri();
+            if (uri == null) return;
 
             LoggerContext loggerContext =
                 (LoggerContext) LoggerFactory.getILoggerFactory();
             loggerContext.reset();
+
+            for (String key: _properties.stringPropertyNames()) {
+                if (!ScopedConfigurationProperties.isScoped(key)) {
+                    loggerContext.putProperty(key, _properties.getProperty(key));
+                }
+            }
+
             try {
                 JoranConfigurator configurator = new JoranConfigurator();
                 configurator.setContext(loggerContext);
