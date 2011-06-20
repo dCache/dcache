@@ -48,6 +48,27 @@ sanityCheck()
 }
 
 
+#  Build a temporary XML file containing entity definitions for
+#  dCache's current configuration.  These entities are provided for
+#  the XML data via an XML catalogue file that this function also
+#  builds.
+buildConfigurationEntities() # in $1 entity file, $2 catalogue file.
+{
+    bootLoader -q compile -xml > "$1"
+
+    cat > "$2" <<EOF
+<?xml version="1.0"?>
+<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN"
+                         "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <public publicId="-//dCache//ENTITIES dCache Properties//EN"
+            uri="file://$1"/>
+</catalog>
+EOF
+}
+
+
+
 # Initialize environment. /etc/default/ is the normal place for this
 # on several Linux variants. For other systems we provide
 # /etc/dcache.env. Those files will typically declare JAVA_HOME and
@@ -96,12 +117,17 @@ uri="http://${host}:${port}/info"
 
 sanityCheck
 
+entities=$(mktemp)
+catalog=$(mktemp)
+buildConfigurationEntities "$entities" "$catalog"
+
 #  Generate LDIF
 case $xsltProcessor in
   xsltproc)
-	xsltproc --xinclude --stringparam xml-src-uri "$uri" \
-	    "$xylophoneXSLTFile" "$xylophoneXMLFile"
-	;;
+        export XML_CATALOG_FILES="$catalog"
+        xsltproc --xinclude --stringparam xml-src-uri "$uri" \
+            "$xylophoneXSLTFile" "$xylophoneXMLFile"
+        ;;
 
   saxon)
         #  Unfortunately, xerces (the XML parser in Java) doesn't support xpointer() scheme
@@ -111,8 +137,19 @@ case $xsltProcessor in
         #  the XML file using xmllint to process the xinclude statements and store the
         #  results in a temporary file.
         #
+        #  The call to xmllint "pulls in" the dCache configuration
+        #  entity definitions so the resulting file contains the
+        #  XInclude material and the dCache configuration entities.
+        #
+        #  After the dCache configuration entities have been included,
+        #  the "dCache-config" entity (which is the contents of the
+        #  file containing the dCache configuration) is no longer
+        #  needed.  Rather than adding support for catalogues, we
+        #  simply filter out this entity definition line.
+        #
         t=$(mktemp)
-        xmllint --xinclude $xylophoneXMLFile > $t
+        export XML_CATALOG_FILES="$catalog"
+        xmllint --xinclude $xylophoneXMLFile | grep -v dCache-config > $t
 	"${JAVA}" -classpath "${saxonDir}/saxon.jar" \
             com.icl.saxon.StyleSheet $t  \
 	    "$xylophoneXSLTFile" xml-src-uri="$uri"
@@ -125,3 +162,5 @@ case $xsltProcessor in
 	exit 1
 	;;
 esac
+
+rm -f $entities $catalog
