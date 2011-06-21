@@ -37,6 +37,7 @@
         <description>Chimera Namespace export</description>
         <property name="fileSystemProvider" ref="fileSystem"/>
         <property name="exportFile" ref="export" />
+        <property name="portNumber" value="${nfs.port}" />
     </bean>
 
 </beans>
