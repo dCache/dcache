@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!DOCTYPE xylophone [
+<!ENTITY % dCache-config PUBLIC "-//dCache//ENTITIES dCache Properties//EN" "/unused/path" >
+%dCache-config;
+]>
+
 <!--+
     |   This file defines how an XML file is converted into LDAP,
     |   specifically, how the XML file that describes dCache's current state
@@ -98,19 +103,19 @@
         <object rdn="GLUE2ServiceID"
                 classes="GLUE2StorageService GLUE2Service">
 
-          <attr name="GLUE2ServiceID">glue:<constant id="SE-UNIQUE-ID"/>/data</attr>
+          <attr name="GLUE2ServiceID">glue:&info-provider.se-unique-id;/data</attr>
 
           <attr name="GLUE2EntityName"
-                not-empty="1"><constant id="SE-NAME"/></attr>
+                not-empty="1">&info-provider.se-name;</attr>
 
           <attr name="GLUE2ServiceType">org.dcache.storage</attr>
-          <attr name="GLUE2ServiceQualityLevel"><constant id="DCACHE-QUALITY-LEVEL"/></attr>
+          <attr name="GLUE2ServiceQualityLevel">&info-provider.dcache-quality-level;</attr>
           <attr name="GLUE2ServiceCapability">data.access.flatfiles</attr>
           <attr name="GLUE2ServiceCapability">data.management.storage</attr>
           <attr name="GLUE2ServiceCapability">data.management.transfer</attr>
           <attr name="GLUE2ServiceCapability">data.transfer</attr>
           <attr name="GLUE2ServiceCapability">security.delegation</attr>
-          <attr name="GLUE2ServiceAdminDomainForeignKey"><constant id="SITE-UNIQUE-ID"/></attr>
+          <attr name="GLUE2ServiceAdminDomainForeignKey">&info-provider.site-unique-id;</attr>
 
 
           <!--+
@@ -128,14 +133,14 @@
           <object rdn="GLUE2ManagerID"
                   classes="GLUE2StorageManager GLUE2Manager">
 
-            <attr name="GLUE2ManagerID">glue:<constant id="SE-UNIQUE-ID"/>/data/m/dCache</attr>
+            <attr name="GLUE2ManagerID">glue:&info-provider.se-unique-id;/data/m/dCache</attr>
 
             <attr name="GLUE2StorageManagerStorageServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
 
             <attr not-empty="1"
-                  name="GLUE2EntityName"><constant id="SE-NAME"/></attr>
+                  name="GLUE2EntityName">&info-provider.se-name;</attr>
 
             <attr name="GLUE2ManagerProductName">dCache</attr>
             <attr name="GLUE2ManagerProductVersion">
@@ -172,8 +177,7 @@
             <object rdn="GLUE2ResourceID"
                     classes="GLUE2DataStore Resource">
 
-              <attr name="GLUE2ResourceID">glue:<constant
-                        id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
+              <attr name="GLUE2ResourceID">glue:&info-provider.se-unique-id;/data/ds/dCache/disk</attr>
 
               <attr name="GLUE2ResourceManagerForeignKey">
                 <parent-rdn rdn="GLUE2ManagerID" use="value"/>
@@ -244,8 +248,7 @@
           <object rdn="GLUE2StorageServiceCapacityID"
                   classes="GLUE2StorageServiceCapacity">
 
-            <attr name="GLUE2StorageServiceCapacityID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ssc/disk</attr>
+            <attr name="GLUE2StorageServiceCapacityID">glue:&info-provider.se-unique-id;/data/ssc/disk</attr>
 
             <attr name="GLUE2StorageServiceCapacityStorageServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
@@ -331,8 +334,7 @@
             <object rdn="GLUE2StorageServiceCapacityID"
                     classes="GLUE2StorageServiceCapacity">
 
-              <attr name="GLUE2StorageServiceCapacityID">glue:<constant
-                      id="SE-UNIQUE-ID"/>/data/ssc/tape</attr>
+              <attr name="GLUE2StorageServiceCapacityID">glue:&info-provider.se-unique-id;/data/ssc/tape</attr>
 
               <attr name="GLUE2StorageServiceCapacityStorageServiceForeignKey">
                 <parent-rdn rdn="GLUE2ServiceID" use="value"/>
@@ -383,8 +385,7 @@
               <lookup path="d:protocol/d:metric[@name='version']"/>
             </unique>
 
-            <attr name="GLUE2StorageAccessProtocolID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ap/<lookup
+            <attr name="GLUE2StorageAccessProtocolID">glue:&info-provider.se-unique-id;/data/ap/<lookup
                       path="d:protocol/d:metric[@name='family']"/>/<lookup
                       path="d:protocol/d:metric[@name='version']"/></attr>
 
@@ -420,8 +421,7 @@
                   select="/d:dCache/d:doors/d:door"
                   classes="GLUE2StorageEndpoint GLUE2Endpoint">
 
-            <attr name="GLUE2EndpointID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ep/<lookup
+            <attr name="GLUE2EndpointID">glue:&info-provider.se-unique-id;/data/ep/<lookup
                     path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>/<lookup
                     path="d:protocol/d:metric[@name='family']"/>/<lookup
                     path="d:protocol/d:metric[@name='version']"/>
@@ -452,7 +452,7 @@
                 <attr name="GLUE2EndpointInterfaceVersion">2.2</attr>
                 <attr name="GLUE2EndpointCapability">data.management.storage</attr>
                 <attr name="GLUE2EndpointCapability">data.management.transfer</attr>
-                <attr name="GLUE2EndpointURL">httpg://<constant id="SE-UNIQUE-ID"/>:<lookup
+                <attr name="GLUE2EndpointURL">httpg://&info-provider.se-unique-id;:<lookup
                         path="d:metric[@name='port']"/>/srm/managerv2</attr>
               </optionally>
 
@@ -473,9 +473,7 @@
               </otherwise>
             </choose>
 
-            <attr name="GLUE2EndpointQualityLevel">
-              <constant id="DCACHE-QUALITY-LEVEL"/>
-            </attr>
+            <attr name="GLUE2EndpointQualityLevel">&info-provider.dcache-quality-level;</attr>
 
             <attr name="GLUE2EndpointHealthState">ok</attr>
             <attr name="GLUE2EndpointServingState">production</attr>
@@ -499,8 +497,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2AccessPolicy GLUE2Policy">
 
-              <attr name="GLUE2PolicyID">glue:<constant
-                      id="SE-UNIQUE-ID"/>/data/ep/ap/basic</attr>
+              <attr name="GLUE2PolicyID">glue:&info-provider.se-unique-id;/data/ep/ap/basic</attr>
 
               <attr name="GLUE2AccessPolicyEndpointForeignKey">
                 <parent-rdn rdn="GLUE2EndpointID" use="value"/>
@@ -556,15 +553,13 @@
                   select="/d:dCache/d:nas/d:nas/d:units/d:store/d:write/d:unitref"
                   classes="GLUE2StorageShare GLUE2Share">
 
-            <attr name="GLUE2ShareID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ss/nas/<map
+            <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/nas/<map
                     name="GlueSALocalID-BDII-workaround">
                 <lookup path="../../../../@id"/>-write-<lookup path="@name"/>
 	          </map>
             </attr>
 
-	        <attr name="GLUE2StorageShareDataStoreForeignKey">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
+	        <attr name="GLUE2StorageShareDataStoreForeignKey">glue:&info-provider.se-unique-id;/data/ds/dCache/disk</attr>
 
             <attr name="GLUE2StorageShareStorageServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
@@ -741,8 +736,7 @@
 		          select="/d:dCache/d:nas/d:nas[count(d:units/d:store/d:read/d:unitref) > 0 or count(d:units/d:store/d:stage/d:unitref) > 0]"
 		          classes="GLUE2StorageShare GLUE2Share">
 
-            <attr name="GLUE2ShareID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ss/nas/<map
+            <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/nas/<map
                     name="GlueSALocalID-BDII-workaround">
                 <lookup path="@id"/>
               </map>
@@ -754,8 +748,7 @@
 
             <attr name="GLUE2StorageShareSharingID">nas:<lookup path="@id"/></attr>
 
-            <attr name="GLUE2StorageShareDataStoreForeignKey">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
+            <attr name="GLUE2StorageShareDataStoreForeignKey">glue:&info-provider.se-unique-id;/data/ds/dCache/disk</attr>
 
             <attr name="GLUE2StorageShareServingState">production</attr>
 
@@ -900,8 +893,7 @@
                   select="/tape-info/collection"
                   classes="GLUE2StorageShare GLUE2Share">
 
-            <attr name="GLUE2ShareID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ss/tape/<lookup xml-src="tape-info" path="@id"/>
+            <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/tape/<lookup xml-src="tape-info" path="@id"/>
             </attr>
 
             <attr name="GLUE2StorageShareStorageServiceForeignKey">
@@ -1029,8 +1021,7 @@
               </map>
             </suppress>
 
-            <attr name="GLUE2ShareID">glue:<constant
-                  id="SE-UNIQUE-ID"/>/data/ss/offline/<item/>
+            <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/offline/<item/>
             </attr>
 
             <attr name="GLUE2StorageShareStorageServiceForeignKey">
@@ -1126,8 +1117,7 @@
                   select="/d:dCache/d:summary/d:reservations/d:by-VO/d:VO/d:by-description/d:reservation-group"
                   classes="GLUE2StorageShare GLUE2Share">
 
-            <attr name="GLUE2ShareID">glue:<constant
-                    id="SE-UNIQUE-ID"/>/data/ss/space/<lookup path="../../@name"/>/<lookup path="@description"/>
+            <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/space/<lookup path="../../@name"/>/<lookup path="@description"/>
             </attr>
 
             <attr name="GLUE2StorageShareStorageServiceForeignKey">

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!DOCTYPE xylophone [
+<!ENTITY % dCache-config PUBLIC "-//dCache//ENTITIES dCache Properties//EN" "/unused/path" >
+%dCache-config;
+]>
+
 <!--+
     |   This file defines how an XML file is converted into LDAP,
     |   specifically, how the XML file that describes dCache's current state
@@ -36,10 +41,7 @@
       <attr name="o">grid</attr>
 
       <object rdn="mds-vo-name" hidden="1">
-        <attr name="mds-vo-name">
-          <constant id="DIT-PARENT"/>
-        </attr>
-
+        <attr name="mds-vo-name">&info-provider.dit-parent;</attr>
 
         <!-- Publish the Top-level GlueSE object -->
 
@@ -943,14 +945,11 @@
                FQDN of the interface.  Currently, the SE-UNIQUE-ID
                MUST be the SRM's FQDN.  We use this here to support
                aliases  -->
-          <attr name="GlueServiceUniqueID">httpg://<constant
-              id="SE-UNIQUE-ID"/>:<lookup
+          <attr name="GlueServiceUniqueID">httpg://&info-provider.se-unique-id;:<lookup
               path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- GlueServiceName is a human-readable string -->
-          <attr name="GlueServiceName">SRM endpoint for <constant
-              id="SITE-UNIQUE-ID"/>
-          </attr>
+          <attr name="GlueServiceName">SRM endpoint for &info-provider.se-unique-id;</attr>
 
           <!-- Some hard-coded values -->
           <attr name="GlueServiceType">SRM</attr>
@@ -958,8 +957,7 @@
 
           <!-- as above, we use the fact that the SRM FQDN must be
                the SRM FQDN to support DNS aliases -->
-          <attr name="GlueServiceEndpoint">httpg://<constant
-            id="SE-UNIQUE-ID"/>:<lookup
+          <attr name="GlueServiceEndpoint">httpg://&info-provider.se-unique-id;:<lookup
             path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- When should we publish something other than "OK" ? -->
@@ -983,7 +981,6 @@
           <attr name="GlueServiceAccessControlBaseRule"
                 list="SRM-supported-VOs">VO:<item/></attr>
 
-
           <!-- FTS ignores GlueServiceAccessControlBaseRule attributes.
                This bug is described here:
 
@@ -998,9 +995,7 @@
                 list="SRM-supported-VOs"><item/></attr>
 
           <attr name="GlueForeignKey">
-            <other-rdn rdn="GlueSiteUniqueID">
-              <constant id="SITE-UNIQUE-ID"/>
-            </other-rdn>
+            <other-rdn rdn="GlueSiteUniqueID">&info-provider.site-unique-id;</other-rdn>
           </attr>
         </object>
 
@@ -1030,14 +1025,12 @@
     <!-- The GlueSE object: we move much of the attributes here to
          avoid cluttering the DIT hierarchy -->
     <class name="GlueSE">
-      <attr name="GlueSEStatus"><constant id="DCACHE-STATUS"/></attr>
-      <attr name="GlueSEUniqueID"><constant id="SE-UNIQUE-ID"/></attr>
-      <attr not-empty="1" name="GlueSEName"><constant id="SE-NAME"/></attr>
+      <attr name="GlueSEStatus">&info-provider.dcache-status;</attr>
+      <attr name="GlueSEUniqueID">&info-provider.se-unique-id;</attr>
+      <attr not-empty="1" name="GlueSEName">&info-provider.se-name;</attr>
       <attr name="GlueSEImplementationName">dCache</attr>
 
-      <attr name="GlueSEArchitecture">
-        <constant id="DCACHE-ARCHITECTURE"/>
-      </attr>
+      <attr name="GlueSEArchitecture">&info-provider.dcache-architecture;</attr>
 
       <attr name="GlueSEImplementationVersion" not-empty="1">
         <map name="cell-version-to-dcache-version">
@@ -1124,9 +1117,7 @@
       </attr>
 
       <attr name="GlueForeignKey">
-        <other-rdn rdn="GlueSiteUniqueID">
-          <constant id="SITE-UNIQUE-ID"/>
-        </other-rdn>
+        <other-rdn rdn="GlueSiteUniqueID">&info-provider.site-unique-id;</other-rdn>
       </attr>
     </class>
 
@@ -1199,7 +1190,7 @@
            FQDN of the interface.  Currently, the SE-UNIQUE-ID
            MUST be the SRM's FQDN.  We use this here to support
            aliases  -->
-      <attr name="GlueSEControlProtocolEndpoint">httpg://<constant id="SE-UNIQUE-ID"/>:<lookup
+      <attr name="GlueSEControlProtocolEndpoint">httpg://&info-provider.se-unique-id;:<lookup
           path="d:metric[@name='port']"/>/srm/managerv2</attr>
 
       <!-- For now we hard-code this, which is wrong -->
