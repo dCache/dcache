@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!DOCTYPE xylophone [
+<!ENTITY % dCache-config PUBLIC "-//dCache//ENTITIES dCache Properties//EN" "/unused/path" >
+%dCache-config;
+]>
+
 <!--+
     |   This file defines how an XML file is converted into LDAP,
     |   specifically, how the XML file that describes dCache's current state
@@ -27,7 +32,7 @@
 <xylophone xmlns:xi="http://www.w3.org/2001/XInclude">
 
   <!-- Pull in site configuration -->
-  <xi:include href="../../etc/info-provider.xml"
+  <xi:include href="&dcache.paths.etc;/info-provider.xml"
 	      xpointer="xpointer(/xylophone/*)"/>
 
   <!-- Pull in common definitions -->
