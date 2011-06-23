@@ -20,6 +20,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginReply;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.Origin;
@@ -74,6 +75,7 @@ public class SecurityFilter implements Filter
 
             addX509ChainToSubject(servletRequest, subject);
             addOriginToSubject(servletRequest, subject);
+            addPasswordCredentialToSubject(request, subject);
 
             LoginReply login = _loginStrategy.login(subject);
             subject = login.getSubject();
@@ -136,6 +138,16 @@ public class SecurityFilter implements Filter
             subject.getPrincipals().add(origin);
         } catch (UnknownHostException e) {
             _log.warn("Failed to resolve " + address + ": " + e.getMessage());
+        }
+    }
+
+    private void addPasswordCredentialToSubject(Request request, Subject subject)
+    {
+        Auth auth = request.getAuthorization();
+        if (auth != null && auth.getScheme().equals(Auth.Scheme.BASIC)) {
+            PasswordCredential credential =
+                new PasswordCredential(auth.getUser(), auth.getPassword());
+            subject.getPrivateCredentials().add(credential);
         }
     }
 

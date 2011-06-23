@@ -78,7 +78,8 @@
 
   <bean id="authentication-service"
         class="com.bradmcevoy.http.AuthenticationService">
-    <description>Milton authentication service</description>
+      <description>Milton authentication service</description>
+      <property name="disableDigest" value="true"/>
   </bean>
 
   <bean id="response-handler"
