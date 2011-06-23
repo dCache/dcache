@@ -51,35 +51,6 @@
       </list>
     </property>
 
-    <property name="handler">
-        <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
-            <property name="handlers">
-                <list>
-                    <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                        <property name="contextPath" value="${webdav.static-content.location}"/>
-                        <property name="handler">
-                            <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
-                                <property name="directoriesListed" value="true"/>
-                                <property name="resourceBase" value="${webdav.static-content.dir.local}"/>
-                            </bean>
-                        </property>
-                    </bean>
-                    <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                        <property name="contextPath" value="${webdav.static-content.location}"/>
-                        <property name="handler">
-                            <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
-                                <property name="directoriesListed" value="true"/>
-                                <property name="resourceBase" value="${webdav.static-content.dir.default}"/>
-                            </bean>
-                        </property>
-                    </bean>
-                    <bean class="org.dcache.webdav.MiltonHandler">
-                        <property name="httpManager" ref="milton"/>
-                    </bean>
-                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-                </list>
-            </property>
-        </bean>
-    </property>
+    <property name="handler" ref="handlers"/>
   </bean>
 </beans>
