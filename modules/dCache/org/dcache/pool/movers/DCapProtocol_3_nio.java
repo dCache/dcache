@@ -357,6 +357,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     Socket socket = socketChannel.socket();
                     socket.setKeepAlive(true);
+                    socket.setTcpNoDelay(true);
                     if (bufferSize.getRecvBufferSize() > 0) {
                         socket.setReceiveBufferSize(bufferSize.getRecvBufferSize());
                     }
@@ -425,6 +426,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
             Socket socket = socketChannel.socket();
             socket.setKeepAlive(true);
+            socket.setTcpNoDelay(true);
             if (bufferSize.getSendBufferSize() > 0) {
                 socket.setSendBufferSize(bufferSize.getSendBufferSize());
             }
