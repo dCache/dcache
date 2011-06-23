@@ -1,10 +1,13 @@
 package org.dcache.auth;
 
 import dmg.cells.nucleus.EnvironmentAware;
+import dmg.util.Formats;
+import dmg.util.Replaceable;
 
 import org.dcache.gplazma.GPlazma;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.FromFileConfigurationLoadingStrategy;
+import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -14,6 +17,7 @@ import org.dcache.auth.attributes.LoginAttribute;
 import javax.security.auth.Subject;
 import java.util.Set;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Collections;
 import java.io.File;
 import java.security.Principal;
@@ -63,10 +67,33 @@ public class Gplazma2LoginStrategy
         return _environment;
     }
 
+    public Properties getEnvironmentAsProperties()
+    {
+        Replaceable replaceable = new Replaceable() {
+                @Override
+                public String getReplacement(String name)
+                {
+                    Object value =  _environment.get(name);
+                    return (value == null) ? null : value.toString();
+                }
+            };
+
+        Properties properties = new Properties();
+        for (Map.Entry<String,Object> e: _environment.entrySet()) {
+            String key = e.getKey();
+            String value = String.valueOf(e.getValue());
+            properties.put(key, Formats.replaceKeywords(value, replaceable));
+        }
+
+        return properties;
+    }
+
     public void init()
     {
+        ConfigurationLoadingStrategy configuration =
+            new FromFileConfigurationLoadingStrategy(_configurationFile);
         _gplazma =
-            new GPlazma(new FromFileConfigurationLoadingStrategy(_configurationFile), _environment);
+            new GPlazma(configuration, getEnvironmentAsProperties());
     }
 
     private LoginReply

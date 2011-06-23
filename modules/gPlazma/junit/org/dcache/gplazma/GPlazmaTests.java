@@ -57,7 +57,6 @@ public class GPlazmaTests {
     private static final String ROOT_GID = "0";
 
     public static final Properties EMPTY_PROPERTIES = new Properties();
-    public static final Map<String, Object> EMPTY_ENVIRONMENT = Collections.emptyMap();
 
     private static final ConfigurationItem AUTH_CONFIG_ITEM =
             new ConfigurationItem(AUTHENTICATION, REQUIRED, AUTH_NAME, EMPTY_PROPERTIES);
@@ -140,7 +139,7 @@ public class GPlazmaTests {
                 Collections.emptySet(),
                 Collections.emptySet());
 
-        GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG),EMPTY_ENVIRONMENT);
+        GPlazma instance = new GPlazma(newLoadStrategy(EMPTY_CONFIG),EMPTY_PROPERTIES);
         LoginReply result = instance.login(subject);
 
         Assert.assertNotNull(result);
@@ -219,7 +218,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -242,7 +241,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -264,7 +263,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -286,7 +285,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -307,7 +306,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -328,7 +327,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -348,7 +347,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         Assert.assertNotNull(result);
    }
@@ -382,7 +381,7 @@ public class GPlazmaTests {
         assertFalse(CheckUIDAccountPlugin.isCalled());
 
         // do the work here
-        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_ENVIRONMENT).login(_inputSubject);
+        LoginReply result = new GPlazma(newLoadStrategy(config), EMPTY_PROPERTIES).login(_inputSubject);
 
         // check the results
         assertTrue(CheckUIDAccountPlugin.isCalled());

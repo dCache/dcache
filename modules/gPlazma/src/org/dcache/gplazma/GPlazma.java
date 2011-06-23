@@ -6,7 +6,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -70,21 +69,13 @@ public class GPlazma {
      * @param configurationLoadingStrategy The strategy for loading the plugin configuration.
      * @param environment Map holding environment variables with their values. Must not be null.
      */
-    public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy, Map<String, Object> environment) {
+    public GPlazma(ConfigurationLoadingStrategy configurationLoadingStrategy,
+                   Properties properties)
+    {
         this.configurationLoadingStrategy = configurationLoadingStrategy;
-        _globalProperties = environmentToProperties(environment);
+        _globalProperties = properties;
         loadPlugins();
         initStrategies();
-    }
-
-    /**
-     * @param environment Map holding environment variables with their values. Must not be null.
-     */
-    public void updateGlobalProperties(Map<String, Object> environment) {
-        synchronized (configurationLoadingStrategy) {
-            _globalProperties = environmentToProperties(environment);
-            _globalPropertiesHaveUpdated = true;
-        }
     }
 
     public LoginReply login(Subject subject) throws AuthenticationException {
@@ -264,15 +255,5 @@ public class GPlazma {
         T authPlugin = (T) plugin;
         GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<T>(authPlugin, control);
         pluginElements.add(pluginElement);
-    }
-
-    private Properties environmentToProperties(Map<String, Object> environment) {
-
-        Properties properties = new Properties();
-        for (Map.Entry<String, Object> entry : environment.entrySet()) {
-            properties.put(entry.getKey(), entry.getValue().toString());
-        }
-
-        return properties;
     }
 }
