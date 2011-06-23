@@ -10,6 +10,7 @@ set context -c pnfsManagerTimeout 28000
 
 create org.dcache.cells.UniversalSpringCell acladmin \
         "classpath:org/dcache/acl/acl.xml \
+        -export \
         -pnfsManager=\"${pnfsmanager}\" \
         -pnfsManagerTimeout=\"${pnfsManagerTimeout}\" \
         "
