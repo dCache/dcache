@@ -74,3 +74,5 @@ s/^nostrongauthorization *=.*//
 s/^java *=.*//
 s/^waitForRepositoryReady *=.*//
 s/^xylophoneConfigurationFile *=.*//
+s/^httpdEnablePoolCollector *=.*//
+s/^removeUnexistingEntriesOnFlush *=.*//
