@@ -24,6 +24,7 @@ import com.bradmcevoy.http.LockTimeout;
 import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
@@ -73,7 +74,7 @@ public class DcacheDirectoryResource
         } catch (FileNotFoundCacheException e) {
             return Collections.emptyList();
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new UnauthorizedException(e.getMessage(), e, this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
@@ -84,15 +85,16 @@ public class DcacheDirectoryResource
     @Override
     public Resource createNew(String newName, InputStream inputStream,
                               Long length, String contentType)
-        throws IOException
+        throws IOException, ConflictException, NotAuthorizedException,
+               BadRequestException
     {
         try {
             FsPath path = new FsPath(_path, newName);
             return _factory.createFile(path, inputStream, length);
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new NotAuthorizedException(this);
         } catch (FileExistsCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new ConflictException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
@@ -108,7 +110,7 @@ public class DcacheDirectoryResource
         try {
             _factory.list(_path, out);
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new NotAuthorizedException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
@@ -136,11 +138,12 @@ public class DcacheDirectoryResource
 
     @Override
     public void delete()
+        throws NotAuthorizedException, ConflictException, BadRequestException
     {
         try {
             _factory.deleteDirectory(_attributes.getPnfsId(), _path);
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new NotAuthorizedException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
@@ -154,7 +157,7 @@ public class DcacheDirectoryResource
             return _factory.makeDirectory(_attributes,
                                           new FsPath(_path, newName));
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new NotAuthorizedException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
