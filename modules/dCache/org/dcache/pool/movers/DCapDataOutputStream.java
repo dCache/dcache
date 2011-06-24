@@ -7,8 +7,8 @@ import  dmg.cells.nucleus.*;
 import  java.io.*;
 import  java.net.*;
 
-public class DCapDataOutputStream extends DataOutputStream 
-{   
+public class DCapDataOutputStream extends DataOutputStream
+{
     public DCapDataOutputStream(OutputStream out){
         super(out);
     }
@@ -43,8 +43,8 @@ public class DCapDataOutputStream extends DataOutputStream
         writeLong(size);
         flush();
     }
-    public void writeCmdSeekAndRead(long offset, 
-                                     int  whence, 
+    public void writeCmdSeekAndRead(long offset,
+                                     int  whence,
                                      long size) throws IOException {
         writeInt(24);
         writeInt(DCapConstants.IOCMD_SEEK_AND_READ);
@@ -62,65 +62,65 @@ public class DCapDataOutputStream extends DataOutputStream
         writeInt(12);
         writeInt(DCapConstants.IOCMD_ACK);
         writeInt(command);
-        writeInt(0); 
+        writeInt(0);
         flush();
     }
-    public void writeACK(int command, int returnCode, String message) 
+    public void writeACK(int command, int returnCode, String message)
         throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeUTF(message);
         dos.flush();
         dos.close();
-        byte [] msgBytes = baos.toByteArray();           
+        byte [] msgBytes = baos.toByteArray();
         int len = 4 + 4 + 4 + msgBytes.length;
         //         len = ((len-1) / 8 + 1) * 8;
         writeInt(len);
         writeInt(DCapConstants.IOCMD_ACK);
         writeInt(command);
         writeInt(returnCode);
-        write(msgBytes,0,msgBytes.length); 
+        write(msgBytes,0,msgBytes.length);
         flush();
     }
     public void writeACK(long location, long size) throws IOException {
         writeInt(4+4+4+8+8);
         writeInt(DCapConstants.IOCMD_ACK);
         writeInt(DCapConstants.IOCMD_LOCATE);
-        writeInt(0); 
-        writeLong(location); 
-        writeLong(size); 
+        writeInt(0);
+        writeLong(location);
+        writeLong(size);
         flush();
     }
     public void writeACK(long location) throws IOException {
         writeInt(4+4+4+8);
         writeInt(DCapConstants.IOCMD_ACK);
         writeInt(DCapConstants.IOCMD_SEEK);
-        writeInt(0); 
-        writeLong(location); 
+        writeInt(0);
+        writeLong(location);
         flush();
     }
     public void writeFIN(int command) throws IOException {
         writeInt(12);
         writeInt(DCapConstants.IOCMD_FIN);
         writeInt(command);
-        writeInt(0); 
+        writeInt(0);
         flush();
     }
-    public void writeFIN(int command, int returnCode, String message) 
+    public void writeFIN(int command, int returnCode, String message)
         throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeUTF(message);
         dos.flush();
         dos.close();
-        byte [] msgBytes = baos.toByteArray();           
+        byte [] msgBytes = baos.toByteArray();
         int len = 4 + 4 + 4 + msgBytes.length;
         //         len = ((len-1) / 8 + 1) * 8;
         writeInt(len);
         writeInt(DCapConstants.IOCMD_FIN);
         writeInt(command);
         writeInt(returnCode);
-        write(msgBytes,0,msgBytes.length); 
+        write(msgBytes,0,msgBytes.length);
         flush();
     }
     public void writeDATA_HEADER() throws IOException {
@@ -134,10 +134,10 @@ public class DCapDataOutputStream extends DataOutputStream
     }
     public void writeDATA_BLOCK(byte [] data, int offset, int size)
         throws IOException{
-             
+
         writeInt(size);
         write(data, offset, size);
-        flush();  
+        flush();
     }
 }
- 
+

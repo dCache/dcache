@@ -17,9 +17,9 @@ public class PoolStatusChangedMessage extends PoolMessage {
    private PoolV2Mode _poolMode      = null ;
    private String     _detailMessage = null ;
    private int        _detailCode    = 0 ;
-   
+
    private static final long serialVersionUID = 7246217707829001604L;
-   
+
    public PoolStatusChangedMessage( String poolName , int poolStatus ){
       super(poolName);
       if( ( poolStatus < 1 )  || ( poolStatus > 3 ) )

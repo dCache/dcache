@@ -5,12 +5,12 @@ package diskCacheV111.vehicles;
 import  diskCacheV111.util.PnfsId ;
 
 public class PoolModifyPersistencyMessage extends PoolMessage {
-    
+
     public PnfsId  _pnfsId    = null ;
     public boolean _precious  = true ;
-    
+
     private static final long serialVersionUID = 2876195986537751420L;
-    
+
     public PoolModifyPersistencyMessage(String poolName , PnfsId pnfsId , boolean precious ){
 	super(poolName);
         setReplyRequired(true);

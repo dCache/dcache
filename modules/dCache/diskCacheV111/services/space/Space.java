@@ -32,10 +32,10 @@ public class Space implements java.io.Serializable {
     private String description;
     private SpaceState state;
     /** Creates a new instance of Space */
-    
+
     public Space() {
     }
-    
+
     public Space(
             long id,
             String voGroup,
@@ -66,7 +66,7 @@ public class Space implements java.io.Serializable {
         this.setAllocatedSpaceInBytes(allocated);
     }
 
-	// for backward compatibility 
+	// for backward compatibility
 
     public Space(
             long id,
@@ -95,60 +95,60 @@ public class Space implements java.io.Serializable {
         this.setUsedSizeInBytes(0L);
         this.setAllocatedSpaceInBytes(0L);
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     public void setId(long id) {
         this.id = id;
     }
-    
-    
+
+
     public long getLinkGroupId() {
         return linkGroupId;
     }
-    
+
     public void setLinkGroupId(long linkGroupId) {
         this.linkGroupId = linkGroupId;
     }
-    
+
     public long getSizeInBytes() {
         return sizeInBytes;
     }
-    
+
     public void setSizeInBytes(long sizeInBytes) {
         this.sizeInBytes = sizeInBytes;
     }
-    
+
     public long getCreationTime() {
         return creationTime;
     }
-    
+
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
     }
-    
+
     public long getLifetime() {
         return lifetime;
     }
-    
+
     public void setLifetime(long lifetime) {
         this.lifetime = lifetime;
     }
-    
+
     public String getDescription() {
         return description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     public SpaceState getState() {
         return state;
     }
-    
+
     public void setState(SpaceState state) {
         this.state = state;
     }
@@ -157,7 +157,7 @@ public class Space implements java.io.Serializable {
         toStringBuffer(sb);
         return sb.toString();
     }
-    
+
     public void toStringBuffer(StringBuffer sb) {
                 sb.append(id).append(' ');
                 sb.append("voGroup:").append(voGroup).append(' ');
@@ -219,14 +219,14 @@ public class Space implements java.io.Serializable {
     public long getAllocatedSpaceInBytes() {
         return allocatedSpaceInBytes;
     }
-	
-	public long getAvailableSpaceInBytes() { 
+
+	public long getAvailableSpaceInBytes() {
 		return sizeInBytes-usedSizeInBytes-allocatedSpaceInBytes;
 	}
 
 	public void setAllocatedSpaceInBytes(long allocated) {
 		this.allocatedSpaceInBytes = allocated;
-						 
+
     }
-    
+
 }

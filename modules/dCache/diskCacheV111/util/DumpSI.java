@@ -15,13 +15,13 @@ public class DumpSI {
     public static void main(String[] args) {
 
         int rc = 1;
-        
+
         if( args.length != 1) {
             System.err.println("Usage: DumpSI <SI file>");
             System.exit(rc);
         }
-        
-        String siFile = args[0];        
+
+        String siFile = args[0];
 
         try {
             FileInputStream fis = new FileInputStream(siFile);
@@ -29,10 +29,10 @@ public class DumpSI {
 
             StorageInfo si = (StorageInfo) ois.readObject();
             ois.close();
-            
+
             System.out.println();
             System.out.println(si.toString());
-            
+
             rc = 0;
         } catch (FileNotFoundException fe) {
             System.err.println("File not found : " + fe.getMessage() );
@@ -43,7 +43,7 @@ public class DumpSI {
         }
 
         System.exit(rc);
-        
+
     }
 
 }

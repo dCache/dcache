@@ -15,10 +15,10 @@ public class RestoreHandlerInfo implements Serializable {
    private String _status ;
    private int    _errorCode ;
    private String _errorMessage ;
-   
+
    private static final long serialVersionUID = 5001829329121454794L;
-   
-   public RestoreHandlerInfo( 
+
+   public RestoreHandlerInfo(
                String name ,
                int clientCount ,
                int retryCount ,
@@ -34,7 +34,7 @@ public class RestoreHandlerInfo implements Serializable {
       _pool         = pool ;
       _status       = status ;
       _errorCode    = errorCode ;
-      _errorMessage = errorMessage ;          
+      _errorMessage = errorMessage ;
    }
    public String getName(){ return _name ; }
    public int getClientCount(){ return _clientCount ; }

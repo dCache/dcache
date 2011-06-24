@@ -9,7 +9,7 @@ import java.util.Vector;
 import javax.sql.DataSource;
 
 
-public class TableList 
+public class TableList
 {
     private Vector<TableElem> tables;
     private String name;
@@ -53,31 +53,31 @@ public class TableList
 
         return buf.toString();
     }
-    
-    private void log(String s) 
+
+    private void log(String s)
     {
         System.out.println(new Date().toString()+": "+s);
     }
-    
-    public void execute(DataSource dataSource, String text) 
+
+    public void execute(DataSource dataSource, String text)
     {
-        Vector<TableElem> tables = this.getTables(); 
+        Vector<TableElem> tables = this.getTables();
 
         log("table list execute: "+text);
         log("table list="+this);
         log("table list size="+tables.size());
-        
-        // Open the database.      
-        
+
+        // Open the database.
+
         Connection conn = null;
-        
+
         try {
             synchronized (dataSource) {
                 conn = dataSource.getConnection();
             }
             Statement stmt = conn.createStatement();
             log("Connected to DB");
-            
+
             for (int i = 0; i < tables.size(); i++) {
                 TableElem table = tables.get(i);
                 String tablename = table.getId();
@@ -103,8 +103,8 @@ public class TableList
             }
 
         }
-        catch (SQLException ex) { 
-            log("Unable to update DB: "+ex.getMessage()); 
+        catch (SQLException ex) {
+            log("Unable to update DB: "+ex.getMessage());
         }
         finally {
             try {

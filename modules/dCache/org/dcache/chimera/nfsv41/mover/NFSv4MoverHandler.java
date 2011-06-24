@@ -70,7 +70,7 @@ public class NFSv4MoverHandler {
 
     /**
      * Add specified mover into list of allowed transfers.
-     * 
+     *
      * @param moverBridge
      */
     public void addHandler(MoverBridge moverBridge) {
@@ -80,7 +80,7 @@ public class NFSv4MoverHandler {
 
     /**
      * Removes specified mover into list of allowed transfers.
-     * 
+     *
      * @param moverBridge
      */
     public void removeHandler(MoverBridge moverBridge) {

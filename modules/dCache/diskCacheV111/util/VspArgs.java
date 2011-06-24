@@ -21,26 +21,26 @@ public class VspArgs extends Args {
    private int _subSessionId = 0 ;
    private String _name      = null ;
    private String _command   = null ;
-   
+
    private static final long serialVersionUID = -5380147193575791784L;
-   
+
    public VspArgs( String line ){
        super( line ) ;
-       
+
        if( argc() < 4 )
-         throw new 
+         throw new
          IllegalArgumentException("Not enough arguments") ;
-         
-       
+
+
        try{
           _sessionId    = Integer.parseInt( argv(0) ) ;
           _subSessionId = Integer.parseInt( argv(1) ) ;
        }catch( NumberFormatException inf ){
           throw new
-          IllegalArgumentException( 
+          IllegalArgumentException(
             "SessionId or SubSessionId not an int" ) ;
        }
-   
+
        _name     = argv(2) ;
        _command  = argv(3) ;
        shift() ;

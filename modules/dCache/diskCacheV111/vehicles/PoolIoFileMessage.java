@@ -14,7 +14,7 @@ public class PoolIoFileMessage extends PoolMessage {
 
     private static final long serialVersionUID = -6549886547049510754L;
 
-    public PoolIoFileMessage( String pool , 
+    public PoolIoFileMessage( String pool ,
                               PnfsId pnfsId ,
                               ProtocolInfo protocolInfo ,
                               StorageInfo  storageInfo   ){
@@ -24,7 +24,7 @@ public class PoolIoFileMessage extends PoolMessage {
        _pnfsId       = pnfsId ;
     }
 
-    public PoolIoFileMessage( String pool , 
+    public PoolIoFileMessage( String pool ,
                               PnfsId pnfsId ,
                               ProtocolInfo protocolInfo  ){
        super( pool ) ;

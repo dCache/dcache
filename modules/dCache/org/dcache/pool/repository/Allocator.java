@@ -15,8 +15,8 @@ public interface Allocator
      * than 0.
      */
     void allocate(long size)
-        throws IllegalStateException, 
-               IllegalArgumentException, 
+        throws IllegalStateException,
+               IllegalArgumentException,
                InterruptedException;
 
     /**
@@ -28,6 +28,6 @@ public interface Allocator
      * @throws IllegalStateException if operation is not allowed at
      * this point
      */
-    void free(long size) 
+    void free(long size)
         throws IllegalStateException, IllegalArgumentException;
 }

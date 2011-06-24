@@ -2,7 +2,7 @@
 
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
-import java.util.*; 
+import java.util.*;
 
 
 public interface PoolFileCheckable extends PoolCheckable  {
@@ -10,7 +10,7 @@ public interface PoolFileCheckable extends PoolCheckable  {
     public void setPnfsId(PnfsId pnfsId);
     public PnfsId getPnfsId();
     public boolean getHave();
-    public void setHave(boolean have);   
+    public void setHave(boolean have);
     public boolean getWaiting();
     public void setWaiting(boolean waiting);
 

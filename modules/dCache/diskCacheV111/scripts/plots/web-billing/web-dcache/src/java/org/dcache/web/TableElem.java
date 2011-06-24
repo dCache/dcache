@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.dcache.web;
 
@@ -7,7 +7,7 @@ package org.dcache.web;
  * @author podstvkv
  *
  */
-public class TableElem 
+public class TableElem
 {
     private QueryElem createQuery;
     private QueryElem updateQuery;

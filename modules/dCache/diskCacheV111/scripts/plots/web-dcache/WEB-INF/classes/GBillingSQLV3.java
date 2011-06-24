@@ -54,9 +54,9 @@ import gov.fnal.isd.*;
        select date(datestamp),
          count(datestamp),
 	 sum(fullsize) as fullSize,
-	 sum(transfersize) as transferSize 
+	 sum(transfersize) as transferSize
 	 into dc_rd_daily
-	 from billinginfo 
+	 from billinginfo
 	 where isnew='f' group by date(datestamp);
 
   2. Delete the record for the current date:
@@ -67,31 +67,31 @@ import gov.fnal.isd.*;
          select date(datestamp),
 	 count(datestamp),
 	 sum(fullsize) as fullSize,
-	 sum(transfersize) as transferSize 
-	 from billinginfo 
+	 sum(transfersize) as transferSize
+	 from billinginfo
 	 where date(datestamp)=current_date and isnew='f' group by date(datestamp);
 
   4. Create new daily table for enstore:
        select date(datestamp),
 	 count(datestamp),
-         sum(fullsize) as fullSize 
-	 into en_rd_daily 
-	 from storageinfo 
+         sum(fullsize) as fullSize
+	 into en_rd_daily
+	 from storageinfo
 	 where action='restore' group by date(datestamp);
 
   4. Generage hourly table:
        select date_trunc('hour',datestamp),
          count(datestamp),
 	 sum(fullsize) as fullSize,
-	 sum(transfersize) as transferSize 
+	 sum(transfersize) as transferSize
 	 into dc_rd_hourly
-	 from billinginfo 
+	 from billinginfo
 	 where datestamp > current_date and isnew='f' group by date_trunc('hour',datestamp);
  */
 
 public class GBillingSQLV3 extends HttpServlet implements Runnable
-{      
-   
+{
+
     interface Command
     {
 	public void execute()
@@ -112,8 +112,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			con = dataSource.getConnection();
 		    }
 		}
-		catch (SQLException x) { 
-		    log("Unable to open connection", x); 
+		catch (SQLException x) {
+		    log("Unable to open connection", x);
 		    return;
 		}
 	    } else {
@@ -123,12 +123,12 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    try	{
 		// Prepare and execute query
 		Statement stmt = con.createStatement();
-				
+
 		log("SELECT * FROM "+tableName+" WHERE "+where);
 		rset = stmt.executeQuery("SELECT * FROM "+tableName+" WHERE "+where);
 		int resultSize = rset.getFetchSize();
 		log(tableName+" fetchsize="+resultSize);
-				
+
 		dates = new Timestamp[resultSize];
 		vals1 = new double[resultSize];
 		vals2 = new double[resultSize];
@@ -140,7 +140,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    vals2[i] = rset.getDouble(3);
 		}
 	    }
-	    catch (SQLException ex) { 
+	    catch (SQLException ex) {
 		System.out.println("exception happened - here's what I know: ");
 		ex.printStackTrace();
 	    }
@@ -192,7 +192,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    vals3[i] = rset.getDouble(4);
 		}
 	    }
-	    catch (SQLException ex) { 
+	    catch (SQLException ex) {
 		System.out.println("exception happened - here's what I know: ");
 		ex.printStackTrace();
 	    }
@@ -222,14 +222,14 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
         catch (NamingException ex) {
 	    throw new ServletException("Cannot retrieve java:comp/env/jdbc/postgres",ex);
         }
-	
+
 	super.init(config);
 	try {
 	    imageDir = getServletContext().getInitParameter("image.home");
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-	
+
 	realPath = getServletContext().getRealPath("/");
 
 	try {
@@ -248,30 +248,30 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	catch (IOException x) {
 	    throw new ServletException("Could not build plots");
 	}
-	
+
 	// Create a background thread that will rebuild the plots
 	// from the database every half an hour
-	
+
 	updateThread = new Thread(this);
 	updateThread.start();
     }
-    
+
     public void doPost(final HttpServletRequest req, final HttpServletResponse res)
-	throws ServletException, IOException 
+	throws ServletException, IOException
     {
 	doGet(req, res);
     }
 
     public void doGet(final HttpServletRequest req, final HttpServletResponse res)
-	throws ServletException, IOException 
+	throws ServletException, IOException
     {
 
 	res.setHeader("pragma", "no-cache");
 	res.setHeader("Cache-Control", "no-cache") ;
-	res.setDateHeader("Expires", 0);  
+	res.setDateHeader("Expires", 0);
 	Command c = new Command() {
 		private String filename = req.getParameter("filename");
-		
+
 		private String[] items;
 		private Date sDate = null;
 		private Date eDate = null;
@@ -316,10 +316,10 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    eDate = new Date(nyy, nmm, nday+1);
 
 		    log("sDate="+sDate+" eDate="+eDate+" # items="+items.length);
-		    // 					for (int i = 0; i < items.length; i++) 
+		    // 					for (int i = 0; i < items.length; i++)
 		    // 						log("'"+items[i]+"'");
 		    log("ratio="+ratio);
-		    if (ratio == null || ratio.startsWith("0")) 
+		    if (ratio == null || ratio.startsWith("0"))
 			buildDailyPlot(htype, sDate, eDate);
 		    else {
 			if (htype.startsWith("brd")) {
@@ -335,16 +335,16 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		private void buildDailyPlot(String htype, Date sdate, Date edate)
 		    throws ServletException, IOException
 		{
-		    // Open the database.      
-      
+		    // Open the database.
+
 		    Connection con = null;
 		    try	{
 			synchronized (dataSource) {
 			    con = dataSource.getConnection();
 			}
-	      
+
 			Calendar rightNow = Calendar.getInstance();
-	      
+
 			String fnam = "/tmp/img-"+rightNow.getTimeInMillis();
 
 			DataSet3 dcData = null;
@@ -355,40 +355,40 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			if (htype.startsWith("brd")) {
 			    dcData = new DataSet3(con, "dc_rd_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 			    enData = new DataSet2(con, "en_rd_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Bytes Read";	    ylabel = "Bytes"; title1 = "dCache"; title2 = "Enstore"; 
+			    gtitle = "Bytes Read";	    ylabel = "Bytes"; title1 = "dCache"; title2 = "Enstore";
 			    createPlot(fnam, dcData.getDates(), dcData.getVals3(), enData.getDates(), enData.getVals2(), sdate, edate);
 			} else if (htype.startsWith("bwr")) {
 			    dcData = new DataSet3(con, "dc_wr_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 			    enData = new DataSet2(con, "en_wr_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Bytes Written";	ylabel = "Bytes"; title1 = "dCache"; title2 = "Enstore"; 
+			    gtitle = "Bytes Written";	ylabel = "Bytes"; title1 = "dCache"; title2 = "Enstore";
 			    createPlot(fnam, dcData.getDates(), dcData.getVals2(), enData.getDates(), enData.getVals2(), sdate, edate);
 			} else if (htype.startsWith("trd")) {
 			    dcData = new DataSet3(con, "dc_rd_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 			    enData = new DataSet2(con, "en_rd_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Read Transfers";	ylabel = "Transfers"; title1 = "dCache"; title2 = "Enstore"; 
+			    gtitle = "Read Transfers";	ylabel = "Transfers"; title1 = "dCache"; title2 = "Enstore";
 			    createPlot(fnam, dcData.getDates(), dcData.getVals1(), enData.getDates(), enData.getVals1(), sdate, edate);
 			} else if (htype.startsWith("twr")) {
 			    dcData = new DataSet3(con, "dc_wr_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 			    enData = new DataSet2(con, "en_wr_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Write Transfers";	ylabel = "Transfers"; title1 = "dCache"; title2 = "Enstore"; 
+			    gtitle = "Write Transfers";	ylabel = "Transfers"; title1 = "dCache"; title2 = "Enstore";
 			    createPlot(fnam, dcData.getDates(), dcData.getVals1(), enData.getDates(), enData.getVals1(), sdate, edate);
 			} else if (htype.startsWith("hit")) {
 			    dcData = new DataSet3(con, "hits_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Cache Hits";	ylabel = "# Hits"; title1 = "Cached"; title2 = "Not Cached"; 
+			    gtitle = "Cache Hits";	ylabel = "# Hits"; title1 = "Cached"; title2 = "Not Cached";
 			    createPlot(fnam, dcData.getDates(), dcData.getVals3(), dcData.getDates(), dcData.getVals2(), sdate, edate);
 			} else if (htype.startsWith("cst")) {
 			    dcData = new DataSet3(con, "cost_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Transfer Cost";	ylabel = "Cost"; title1 = "Cost"; title2 = null; 
+			    gtitle = "Transfer Cost";	ylabel = "Cost"; title1 = "Cost"; title2 = null;
 			    createPlot(fnam, dcData.getDates(), dcData.getVals2(), (Timestamp[])null, dcData.getVals3(), sdate, edate);
 			} else if (htype.startsWith("tim")) {
 			    dcData = new DataSet3(con, "dc_tm_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-			    gtitle = "Connection Time";	ylabel = "Seconds"; title1 = "Time"; title2 = null; 
+			    gtitle = "Connection Time";	ylabel = "Seconds"; title1 = "Time"; title2 = null;
 			    createPlot(fnam, dcData.getDates(), dcData.getVals1(), dcData.getVals2(), dcData.getVals3(), sdate, edate);
 			}
 			log("Save "+fnam+".eps");
 		    }
-		    catch (SQLException x) { 
-			log("Unable to get data from DB", x); 
+		    catch (SQLException x) {
+			log("Unable to get data from DB", x);
 		    }
 		    finally {
 			try	{
@@ -399,20 +399,20 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		}
 
 		/**
-		 * 
+		 *
 		 *
 		 */
 		private void buildRatioPlot(Date sdate, Date edate)
 		    throws ServletException, IOException
 		{
-		    // Open the database.      
-      
+		    // Open the database.
+
 		    Connection con = null;
 		    try	{
 			synchronized (dataSource) {
 			    con = dataSource.getConnection();
 			}
-	      
+
 			Calendar rightNow = Calendar.getInstance();
 			String fnam = "/tmp/img-"+rightNow.getTimeInMillis();
 
@@ -426,7 +426,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 
 			ResultSet rset = pstmt.executeQuery();
 			int resultSize = rset.getFetchSize();   log("transfer_ratio fetchsize="+resultSize);
-			    
+
 			float[] rr = new float[resultSize];
 			int[] cc = new int[resultSize];
 
@@ -437,8 +437,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			createRPlot(fnam, rr, cc, sdate, edate);
 			log("Save "+fnam+".eps");
 		    }
-		    catch (SQLException x) { 
-			log("Unable to get data from DB", x); 
+		    catch (SQLException x) {
+			log("Unable to get data from DB", x);
 		    }
 		    finally	{
 			try	{
@@ -449,20 +449,20 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		}
 
 		/**
-		 * 
+		 *
 		 *
 		 */
 		private void buildCostPlot(Date sdate, Date edate)
 		    throws ServletException, IOException
 		{
-		    // Open the database.      
-      
+		    // Open the database.
+
 		    Connection con = null;
 		    try	{
 			synchronized (dataSource) {
 			    con = dataSource.getConnection();
 			}
-	      
+
 			Calendar rightNow = Calendar.getInstance();
 			String fnam = "/tmp/img-"+rightNow.getTimeInMillis();
 
@@ -476,7 +476,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 
 			ResultSet rset = pstmt.executeQuery();
 			int resultSize = rset.getFetchSize();   log("cost_hist fetchsize="+resultSize);
-			    
+
 			float[] rr = new float[resultSize];
 			int[] cc = new int[resultSize];
 
@@ -487,8 +487,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			createHPlot(fnam, rr, cc, sdate, edate);
 			log("Save "+fnam+".eps");
 		    }
-		    catch (SQLException x) { 
-			log("Unable to get data from DB", x); 
+		    catch (SQLException x) {
+			log("Unable to get data from DB", x);
 		    }
 		    finally	{
 			try	{
@@ -534,7 +534,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    }
 		}
 
-		private void createPlot(final String filename, 
+		private void createPlot(final String filename,
 					final Timestamp[] x1, final double[] y1,
 					final Timestamp[] x2, final double[] y2,
 					final Date sDate, final Date eDate)
@@ -542,9 +542,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		{
 		    try {
 			Process p = Runtime.getRuntime().exec("./gnuplot -");
-						
+
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			
+
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
 			PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
@@ -586,9 +586,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 //                         stdOutput.println("set key right top Right samplen 1 title 'Total: "+totl+"\nNumber of entries: "+nEnt+"'");
 			stdOutput.println("set ylabel '"+ylabel+"'");
 
-						
+
 			Timestamp ix; double iy, ie; long nEnt = 0; double totl = 0.0;
-						
+
 			if (x2 != null) {
 			    if (pltFmt.startsWith("log")) {
 				stdOutput.println("plot '-' using 1:2 t '"+title1+"' with histeps lw 3 1, '-' using 1:2 t '"+title2+"' with histeps lw 3 3");
@@ -604,7 +604,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			    }
 			    stdOutput.println("e");
 			    log("e");
-							
+
 			    for (int ib = 0; ib < x2.length; ib++) {
 				ix = x2[ib];    iy = y2[ib];
 				nEnt++;    totl += iy;
@@ -645,7 +645,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			catch (InterruptedException x) {}
 
 			log("File "+filename+".png is ready");
-			
+
 			sendFile(filename+".png");
 			// Close used files
 			stdInput.close(); stdInput=null;
@@ -659,17 +659,17 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    }
 		}
 
-		private void createPlot(final String filename, 
-					final Timestamp[] x1, 
+		private void createPlot(final String filename,
+					final Timestamp[] x1,
                                         final double[] y1, final double[] y2, final double[] y3,
 					final Date sDate, final Date eDate)
 		    throws ServletException, IOException
 		{
 		    try {
 			Process p = Runtime.getRuntime().exec("./gnuplot -");
-						
+
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			
+
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
 			PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
@@ -694,9 +694,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			stdOutput.println("set title '"+gtitle+"(Plotted: "+now.getTime()+")'");
 			stdOutput.println("set ylabel '"+ylabel+"'");
 
-						
+
 			Timestamp ix; double iy, il, ih; long nEnt = 0;
-						
+
 //                         stdOutput.println("plot '-' using 1:2:3:4:(-1) t '"+title1+"' with boxerrorbars lw 4 1 ");
                         stdOutput.println("plot '-' using 1:2 t '"+title1+"' with linespoints lw 2 1, " +
                                           "'-' using 1:2 t 'Min' with linespoints lw 2 2, " +
@@ -751,7 +751,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			catch (InterruptedException x) {}
 
 			log("File "+filename+".png is ready");
-			
+
 			sendFile(filename+".png");
 			// Close used files
 			stdInput.close(); stdInput=null;
@@ -765,14 +765,14 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    }
 		}
 
-		private void createRPlot(final String filename, 
+		private void createRPlot(final String filename,
 					 final float[] xValues, final int[] yValues,
 					 final Date sDate, final Date eDate)
 		    throws ServletException, IOException
 		{
 		    try {
 			Process p = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 			PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
@@ -794,7 +794,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			stdOutput.println("set ylabel '"+ylabel+"'");
 
 			stdOutput.println("plot '-' using 1:2 t 'Transfer size/Full size' with imp lw 10 1");
-			
+
 			float ix; int iy; long nEnt = 0; double totl = 0.0;
 
 			for (int ib = 0; ib < xValues.length; ib++) {
@@ -824,7 +824,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			catch (InterruptedException x) {}
 
 			log("File "+filename+".png is ready");
-			
+
 			sendFile(filename+".png");
 			// Close used files
 			stdInput.close(); stdInput=null;
@@ -838,14 +838,14 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		    }
 		}
 
-		private void createHPlot(final String filename, 
+		private void createHPlot(final String filename,
 					 final float[] xValues, final int[] yValues,
 					 final Date sDate, final Date eDate)
 		    throws ServletException, IOException
 		{
 		    try {
 			Process p = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 			PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
@@ -869,7 +869,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			stdOutput.println("plot '-' using 1:2 t 'Transfer cost' with imp lw 16 1");
 			// stdOutput.println("plot '-' using 1:2 t 'Transfer cost' with boxes lw 4 1");
 			// stdOutput.println("plot '-' using 1:2 t 'Transfer cost' with step lw 4 1");
-			
+
 			float ix; int iy; long nEnt = 0; double totl = 0.0;
 
 			for (int ib = 0; ib < xValues.length; ib++) {
@@ -899,7 +899,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			catch (InterruptedException x) {}
 
 			log("File "+filename+".png is ready");
-			
+
 			sendFile(filename+".png");
 			// Close used files
 			stdInput.close(); stdInput=null;
@@ -944,7 +944,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	updateThread = null;
 	super.destroy();
     }
-   
+
     class PlotLog {
 	//
 	public PlotLog(String nm, long tm) {
@@ -955,7 +955,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	public long lastModified() {
 	    return modified;
 	}
-	
+
 	public String getFileName() {
 	    return filename;
 	}
@@ -989,15 +989,15 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
     private synchronized void updateDB()
 	throws ServletException, IOException
     {
-	// Open the database.      
-      
+	// Open the database.
+
 	Connection con = null;
-      
+
 	try	{
 	    synchronized (dataSource) {
 		con = dataSource.getConnection();
 	    }
-			
+
 	    Statement stmt = con.createStatement();
 	    log("Connected to DB");
 	    try {
@@ -1011,7 +1011,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where isnew='f' and errorcode=0 group by date(datestamp)");
 		log("Create dc_rd_daily");
 	    }
-			
+
 	    try {
 		stmt.executeQuery("select date from dc_wr_daily where date=(current_date - interval '1 day')");
 	    }
@@ -1021,7 +1021,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where isnew='t' and errorcode=0 group by date(datestamp)");
 		log("Create dc_wr_daily");
 	    }
-			
+
 	    try {
 		stmt.executeQuery("select date from en_rd_daily where date=(current_date-interval '1 day')");
 	    }
@@ -1031,7 +1031,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where action='restore' and errorcode=0 group by date(datestamp)");
 		log("Create en_rd_daily");
 	    }
-			
+
 	    try {
 		stmt.executeQuery("select date from en_wr_daily where date=(current_date-interval '1 day')");
 	    }
@@ -1041,7 +1041,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where action='store' and errorcode=0 group by date(datestamp)");
 		log("Create en_wr_daily");
 	    }
-			
+
 	    // New tables: cache hits and cost
 	    try {
 		stmt.executeQuery("select date from hits_daily where date=(current_date-interval '1 day')");
@@ -1054,7 +1054,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where errorcode=0 group by date(datestamp)");
 		log("Create hits_daily");
 	    }
-			
+
 	    try {
 		stmt.executeQuery("select date from cost_daily where date=(current_date-interval '1 day')");
 	    }
@@ -1064,7 +1064,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where errorcode=0 group by date(datestamp)");
 		log("Create cost_daily");
 	    }
-			
+
 	    // New table: connection time
 	    try {
 		stmt.executeQuery("select date from dc_tm_daily where date=(current_date-interval '1 day')");
@@ -1075,11 +1075,11 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 				   "where errorcode=0 group by date(datestamp)");
 		log("Create dc_tm_daily");
 	    }
-			
+
 	    // At this point we have all tables, so we can safely update the records for the current date
 	    Calendar cal = Calendar.getInstance(); cal.add(Calendar.DATE, -7);
 	    Date weekAgo = new Date(cal.getTimeInMillis());
-			
+
 	    stmt.executeUpdate("delete from dc_rd_daily where date>='"+weekAgo+"'");
 	    log("delete from dc_rd_daily where date>='"+weekAgo+"'");
 	    stmt.executeUpdate("insert into dc_rd_daily " +
@@ -1087,7 +1087,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			       "from billinginfo " +
 			       "where datestamp>='"+weekAgo+"' and isnew='f'  and errorcode=0 group by date(datestamp)");
 	    log("Update dc_rd_daily");
-			
+
 	    stmt.executeUpdate("delete from dc_wr_daily where date>='"+weekAgo+"'");
 	    log("delete from dc_wr_daily where date>='"+weekAgo+"'");
 	    stmt.executeUpdate("insert into dc_wr_daily " +
@@ -1095,7 +1095,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 			       "from billinginfo " +
 			       "where datestamp>='"+weekAgo+"' and isnew='t'  and errorcode=0 group by date(datestamp)");
 	    log("Update dc_wr_daily");
-			
+
 	    stmt.executeUpdate("delete from en_rd_daily where date>='"+weekAgo+"'");
 	    log("delete from en_rd_daily where date>='"+weekAgo+"'");
 	    stmt.executeUpdate("insert into en_rd_daily " +
@@ -1139,8 +1139,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
                                "from billinginfo " +
 			       "where datestamp>='"+weekAgo+"' and errorcode=0 group by date(datestamp)");
 	}
-	catch (SQLException x) { 
-	    log("Unable to update DB", x); 
+	catch (SQLException x) {
+	    log("Unable to update DB", x);
 	}
 	finally	{
 	    try	{
@@ -1153,26 +1153,26 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
     private synchronized void buildYearPlots()
 	throws ServletException, IOException
     {
-	// Open the database.      
-      
+	// Open the database.
+
 	Connection con = null;
 
 	Calendar rightNow = Calendar.getInstance();
-      
+
 	rightNow.add(Calendar.DATE, 1);                // Add one day to have the current day statistics in the histogram
 	int eyyyy = rightNow.get(Calendar.YEAR);
 	int eyy = eyyyy-1900;
 	int emm = rightNow.get(Calendar.MONTH);
 	int edd = rightNow.get(Calendar.DATE);
 	Date eDate = new Date(eyy, emm, edd);
-      
+
 	rightNow.add(Calendar.YEAR, -1);             // Subtract one year
 	int syyyy = rightNow.get(Calendar.YEAR);
 	int syy = syyyy-1900;
 	int smm = rightNow.get(Calendar.MONTH);
 	int sdd = rightNow.get(Calendar.DATE);
 	Date sDate = new Date(syy, smm, sdd);
-      
+
 	log("sDate="+sDate+" eDate="+eDate);
 
 	try	{
@@ -1180,25 +1180,25 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		con = dataSource.getConnection();
 	    }
 	    log("Connected to DB");
-	      
+
 	    String fname = realPath+imageDir + "/billing";
 
 	    // Process reads from dCache
 	    log("Process dc_rd_daily");
 	    DataSet3 dc_rd = new DataSet3(con, "dc_rd_daily", "date > '"+sDate+"'");
-	      
+
 	    // Process reads from enstore
 	    log("Process en_rd_daily");
 	    DataSet2 en_rd = new DataSet2(con, "en_rd_daily", "date > '"+sDate+"'");
 
 	    savePlots(fname+".brd",
-		      new String[] {"Bytes Read","Date","Bytes","dCache","Enstore","nolog"}, 
+		      new String[] {"Bytes Read","Date","Bytes","dCache","Enstore","nolog"},
 		      //                transfersize                        fullsize
 		      dc_rd.getDates(), dc_rd.getVals3(), en_rd.getDates(), en_rd.getVals2(), sDate, eDate);
 	    log("Save "+fname+".brd.eps");
 
-	    savePlots(fname+".trd", 
-		      new String[] {"Read Transfers","Date","Transfers","dCache","Enstore","nolog"}, 
+	    savePlots(fname+".trd",
+		      new String[] {"Read Transfers","Date","Transfers","dCache","Enstore","nolog"},
 		      //                counts                              counts
 		      dc_rd.getDates(), dc_rd.getVals1(), en_rd.getDates(), en_rd.getVals1(), sDate, eDate);
 	    log("Save "+fname+".trd.eps");
@@ -1213,13 +1213,13 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    DataSet2 en_wr = new DataSet2(con, "en_wr_daily", "date > '"+sDate+"'");
 
 	    savePlots(fname+".bwr",
-		      new String[] {"Bytes Written","Date","Bytes","dCache","Enstore","nolog"}, 
+		      new String[] {"Bytes Written","Date","Bytes","dCache","Enstore","nolog"},
 		      //                transfersize                        fullsize
 		      dc_wr.getDates(), dc_wr.getVals2(), en_wr.getDates(), en_wr.getVals2(), sDate, eDate);
 	    log("Save "+fname+".bwr.eps");
 
-	    savePlots(fname+".twr", 
-		      new String[] {"Write Transfers","Date","Transfers","dCache","Enstore","nolog"}, 
+	    savePlots(fname+".twr",
+		      new String[] {"Write Transfers","Date","Transfers","dCache","Enstore","nolog"},
 		      //                counts                              counts
 		      dc_wr.getDates(), dc_wr.getVals1(), en_wr.getDates(), en_wr.getVals1(), sDate, eDate);
 	    log("Save "+fname+".twr.eps");
@@ -1229,8 +1229,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("Process hits_daily");
 	    DataSet3 hitsDaily = new DataSet3(con, "hits_daily", "date > '"+sDate+"'");
 	    savePlots(fname+".hit",
-		      new String[] {"Cache Hits","Date","# Hits","Cached","Not Cached","log"}, 
-		      //                    not cached                                  cached  
+		      new String[] {"Cache Hits","Date","# Hits","Cached","Not Cached","log"},
+		      //                    not cached                                  cached
 		      hitsDaily.getDates(), hitsDaily.getVals3(), hitsDaily.getDates(), hitsDaily.getVals2(), sDate, eDate);
 	    log("Save "+fname+".hit.eps");
 
@@ -1239,7 +1239,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("Process cost_daily");
 	    DataSet3 costDaily = new DataSet3(con, "cost_daily", "date > '"+sDate+"'");
 	    savePlots(fname+".cst",
-		      new String[] {"Transaction Cost","Date","Cost","Cost"," ","nolog"}, 
+		      new String[] {"Transaction Cost","Date","Cost","Cost"," ","nolog"},
 		      //                    cost                                        standard deviation
 		      costDaily.getDates(), costDaily.getVals2(), (Timestamp[])null, costDaily.getVals3(), sDate, eDate);
 	    log("Save "+fname+".cst.eps");
@@ -1249,14 +1249,14 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("Process dc_tm_daily");
 	    DataSet3 timeDaily = new DataSet3(con, "dc_tm_daily", "date > '"+sDate+"'");
 	    savePlots(fname+".tim",
-		      new String[] {"Connection Time","Date","Sec","Time"," ","nolog"}, 
-		      //                    average               min                   max               
+		      new String[] {"Connection Time","Date","Sec","Time"," ","nolog"},
+		      //                    average               min                   max
 		      timeDaily.getDates(), timeDaily.getVals1(), timeDaily.getVals2(), timeDaily.getVals3(), sDate, eDate);
 	    log("Save "+fname+".tim.eps");
 
 	}
-	catch (SQLException x) { 
-	    log("Unable to update plot data", x); 
+	catch (SQLException x) {
+	    log("Unable to update plot data", x);
 	}
 	finally	{
 	    try	{
@@ -1269,26 +1269,26 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
     private synchronized void buildWeekPlots()
 	throws ServletException, IOException
     {
-	// Open the database.      
-      
+	// Open the database.
+
 	Connection con = null;
 
 	Calendar rightNow = Calendar.getInstance();
-      
+
 	rightNow.add(Calendar.DATE, 1);                // Add one day to have the current day statistics in the histogram
 	int eyyyy = rightNow.get(Calendar.YEAR);
 	int eyy = eyyyy-1900;
 	int emm = rightNow.get(Calendar.MONTH);
 	int edd = rightNow.get(Calendar.DATE);
 	Date eDate = new Date(eyy, emm, edd);
-      
+
 	rightNow.add(Calendar.DATE, -7);             // Subtract one week
 	int syyyy = rightNow.get(Calendar.YEAR);
 	int syy = syyyy-1900;
 	int smm = rightNow.get(Calendar.MONTH);
 	int sdd = rightNow.get(Calendar.DATE);
 	Date sDate = new Date(syy, smm, sdd);
-      
+
 	log("sDate="+sDate+" eDate="+eDate);
 
 	try	{
@@ -1296,25 +1296,25 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		con = dataSource.getConnection();
 	    }
 	    log("Connected to DB");
-	      
+
 	    String fname = realPath+imageDir + "/billing.week";
 
 	    // Process reads from dCache
 	    log("Process dc_rd_hourly");
 	    DataSet3 dc_rd = new DataSet3(con, "dc_rd_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
-	      
+
 	    // Process reads from enstore
 	    log("Process en_rd_hourly");
 	    DataSet2 en_rd = new DataSet2(con, "en_rd_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 
 	    saveHourlyPlots(fname+".brd",
-			    new String[] {"Bytes Read","Date","Bytes","dCache","Enstore","nolog"}, 
+			    new String[] {"Bytes Read","Date","Bytes","dCache","Enstore","nolog"},
 			    //                transfersize                        fullsize
 			    dc_rd.getDates(), dc_rd.getVals3(), en_rd.getDates(), en_rd.getVals2(), sDate, eDate);
 	    log("Save "+fname+".brd.eps");
 
-	    saveHourlyPlots(fname+".trd", 
-			    new String[] {"Read Transfers","Date","Transfers","dCache","Enstore","nolog"}, 
+	    saveHourlyPlots(fname+".trd",
+			    new String[] {"Read Transfers","Date","Transfers","dCache","Enstore","nolog"},
 			    //                counts                              counts
 			    dc_rd.getDates(), dc_rd.getVals1(), en_rd.getDates(), en_rd.getVals1(), sDate, eDate);
 	    log("Save "+fname+".trd.eps");
@@ -1329,13 +1329,13 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    DataSet2 en_wr = new DataSet2(con, "en_wr_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 
 	    saveHourlyPlots(fname+".bwr",
-			    new String[] {"Bytes Written","Date","Bytes","dCache","Enstore","nolog"}, 
+			    new String[] {"Bytes Written","Date","Bytes","dCache","Enstore","nolog"},
 			    //                transfersize                        fullsize
 			    dc_wr.getDates(), dc_wr.getVals2(), en_wr.getDates(), en_wr.getVals2(), sDate, eDate);
 	    log("Save "+fname+".bwr.eps");
 
-	    saveHourlyPlots(fname+".twr", 
-			    new String[] {"Write Transfers","Date","Transfers","dCache","Enstore","nolog"}, 
+	    saveHourlyPlots(fname+".twr",
+			    new String[] {"Write Transfers","Date","Transfers","dCache","Enstore","nolog"},
 			    //                counts                              counts
 			    dc_wr.getDates(), dc_wr.getVals1(), en_wr.getDates(), en_wr.getVals1(), sDate, eDate);
 	    log("Save "+fname+".twr.eps");
@@ -1345,8 +1345,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("Process hits_hourly");
 	    DataSet3 hitsDaily = new DataSet3(con, "hits_hourly", "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 	    saveHourlyPlots(fname+".hit",
-			    new String[] {"Cache Hits","Date","# Hits","Cached","Not Cached","log"}, 
-			    //                    not cached                                  cached  
+			    new String[] {"Cache Hits","Date","# Hits","Cached","Not Cached","log"},
+			    //                    not cached                                  cached
 			    hitsDaily.getDates(), hitsDaily.getVals3(), hitsDaily.getDates(), hitsDaily.getVals2(), sDate, eDate);
 	    log("Save "+fname+".hit.eps");
 
@@ -1355,7 +1355,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("Process cost_hourly");
 	    DataSet3 costDaily = new DataSet3(con, "cost_hourly",  "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 	    saveHourlyPlots(fname+".cst",
-			    new String[] {"Transaction Cost","Date","Cost","Cost"," ","nolog"}, 
+			    new String[] {"Transaction Cost","Date","Cost","Cost"," ","nolog"},
 			    //                    cost                                        standard deviation
 			    costDaily.getDates(), costDaily.getVals2(), (Timestamp[])null, costDaily.getVals3(), sDate, eDate);
 	    log("Save "+fname+".cst.eps");
@@ -1364,14 +1364,14 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("Process dc_tm_hourly");
 	    DataSet3 timeDaily = new DataSet3(con, "dc_tm_hourly",  "datestamp >= '"+sDate+"' and datestamp < '"+eDate+"'");
 	    saveHourlyPlots(fname+".tim",
-                            new String[] {"Connection Time","Date","Sec","Time"," ","nolog"}, 
-                            //                    average               min                   max               
+                            new String[] {"Connection Time","Date","Sec","Time"," ","nolog"},
+                            //                    average               min                   max
                             timeDaily.getDates(), timeDaily.getVals1(), timeDaily.getVals2(), timeDaily.getVals3(), sDate, eDate);
 	    log("Save "+fname+".tim.eps");
 
 	}
-	catch (SQLException x) { 
-	    log("Unable to update plot data", x); 
+	catch (SQLException x) {
+	    log("Unable to update plot data", x);
 	}
 	finally	{
 	    try	{
@@ -1384,8 +1384,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
     private synchronized void buildMonthlyPlots()
 	throws ServletException, IOException
     {
-	// Open the database.      
-      
+	// Open the database.
+
 	Connection con = null;
 	String fname;
 
@@ -1394,62 +1394,62 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		con = dataSource.getConnection();
 	    }
 	    log("Connected to DB");
-			
+
 	    Calendar sCal = Calendar.getInstance(); sCal.set(Calendar.DATE, 1);
 	    Calendar eCal = Calendar.getInstance(); eCal.set(Calendar.DATE, 1); eCal.add(Calendar.MONTH, 1);
 	    Date sDate, eDate;
-			
+
 	    for (int ii = 0; ii < 12; ii++) {
 		sDate =  new Date(sCal.getTimeInMillis());
 		eDate =  new Date(eCal.getTimeInMillis());
 		log("sDate="+sDate+" eDate="+eDate);
-				
+
 		int yyyy = sCal.get(Calendar.YEAR);
 		int mm   = sCal.get(Calendar.MONTH)+1;
 		fname = realPath+imageDir + "/billing-"+yyyy+".";
-		if (mm < 10) fname += "0"; 
+		if (mm < 10) fname += "0";
 		fname += mm;
-				
+
 		File brdFile = new File(fname+".daily.brd.eps");
 		File trdFile = new File(fname+".daily.trd.eps");
 		if (ii == 0 || !brdFile.exists() || !trdFile.exists()) {
 		    // Process reads from dCache
 		    DataSet3 dc_rd = new DataSet3(con, "dc_rd_daily", sDate, eDate);
-					
+
 		    // Process reads from enstore
 		    DataSet2 en_rd = new DataSet2(con, "en_rd_daily", sDate, eDate);
-					
-		    savePlots(fname+".daily.brd", new String[] {"Bytes Read","Date","Bytes","dCache","Enstore","nolog"}, 
+
+		    savePlots(fname+".daily.brd", new String[] {"Bytes Read","Date","Bytes","dCache","Enstore","nolog"},
 			      dc_rd.getDates(), dc_rd.getVals3(), en_rd.getDates(), en_rd.getVals2(), sDate, eDate);      log("Save "+fname+".brd.eps");
-					
-		    savePlots(fname+".daily.trd", new String[] {"Read Transfers","Date","Transfers","dCache","Enstore","nolog"}, 
+
+		    savePlots(fname+".daily.trd", new String[] {"Read Transfers","Date","Transfers","dCache","Enstore","nolog"},
 			      dc_rd.getDates(), dc_rd.getVals1(), en_rd.getDates(), en_rd.getVals1(), sDate, eDate);      log("Save "+fname+".trd.eps");
-					
+
 		}
-				
+
 		File bwrFile = new File(fname+".daily.bwr.eps");
 		File twrFile = new File(fname+".daily.twr.eps");
 		if (ii == 0 || !bwrFile.exists() || !twrFile.exists()) {
 		    // Process writes to dCache
 		    DataSet3 dc_wr = new DataSet3(con, "dc_wr_daily", sDate, eDate);
-					
+
 		    // Process writes to enstore
 		    DataSet2 en_wr = new DataSet2(con, "en_wr_daily", sDate, eDate);
-					
-		    savePlots(fname+".daily.bwr", new String[] {"Bytes Written","Date","Bytes","dCache","Enstore","nolog"}, 
+
+		    savePlots(fname+".daily.bwr", new String[] {"Bytes Written","Date","Bytes","dCache","Enstore","nolog"},
 			      dc_wr.getDates(), dc_wr.getVals2(), en_wr.getDates(), en_wr.getVals2(), sDate, eDate);      log("Save "+fname+".bwr.eps");
-					
-		    savePlots(fname+".daily.twr", new String[] {"Write Transfers","Date","Transfers","dCache","Enstore","nolog"}, 
+
+		    savePlots(fname+".daily.twr", new String[] {"Write Transfers","Date","Transfers","dCache","Enstore","nolog"},
 			      dc_wr.getDates(), dc_wr.getVals1(), en_wr.getDates(), en_wr.getVals1(), sDate, eDate);      log("Save "+fname+".twr.eps");
-					
+
 		}
-				
+
 		File hitFile = new File(fname+".daily.hit.eps");
 		if (ii == 0 || !hitFile.exists()) {
 		    // Process cache hits
 		    DataSet3 hitsDaily = new DataSet3(con, "hits_daily", sDate, eDate);
-					
-		    savePlots(fname+".daily.hit", new String[] {"Cache Hits","Date","# Hits","Cached","Not Cached","log"}, 
+
+		    savePlots(fname+".daily.hit", new String[] {"Cache Hits","Date","# Hits","Cached","Not Cached","log"},
 			      hitsDaily.getDates(), hitsDaily.getVals3(), hitsDaily.getDates(), hitsDaily.getVals2(), sDate, eDate); log("Save "+fname+".hit.eps");
 		}
 
@@ -1457,17 +1457,17 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		if (ii == 0 || !cstFile.exists()) {
 		    // Process transaction cost
 		    DataSet3 costDaily = new DataSet3(con, "cost_daily", sDate, eDate);
-					
-		    savePlots(fname+".daily.cst", new String[] {"Transaction Cost","Date","Cost","Cost"," ","nolog"}, 
+
+		    savePlots(fname+".daily.cst", new String[] {"Transaction Cost","Date","Cost","Cost"," ","nolog"},
 			      costDaily.getDates(), costDaily.getVals2(), (Timestamp[])null, costDaily.getVals3(), sDate, eDate); log("Save "+fname+".cst.eps");
 		}
 
 		File timFile = new File(fname+".daily.tim.eps");
 		if (ii == 0 || !timFile.exists()) {
-		    // Process connection time 
+		    // Process connection time
 		    DataSet3 timeDaily = new DataSet3(con, "dc_tm_daily", sDate, eDate);
-					
-		    savePlots(fname+".daily.tim", new String[] {"Connection Time","Date","Sec","Time"," ","nolog"}, 
+
+		    savePlots(fname+".daily.tim", new String[] {"Connection Time","Date","Sec","Time"," ","nolog"},
 			      timeDaily.getDates(), timeDaily.getVals1(), timeDaily.getVals2(), timeDaily.getVals3(), sDate, eDate); log("Save "+fname+".tim.eps");
 		}
 
@@ -1475,8 +1475,8 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		eCal.add(Calendar.MONTH, -1);
 	    }
 	}
-	catch (SQLException x) { 
-	    log("Unable to update plot data", x); 
+	catch (SQLException x) {
+	    log("Unable to update plot data", x);
 	}
 	finally	{
 	    try	{
@@ -1485,9 +1485,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    catch (SQLException x) {}
 	}
     }
-   
-    private synchronized void savePlots(final String filename, 
-					final String[] titles, 
+
+    private synchronized void savePlots(final String filename,
+					final String[] titles,
 					final Timestamp[] x1, final double[] y1,
 					final Timestamp[] x2, final double[] y2,
 					final Date sDate, final Date eDate)
@@ -1535,16 +1535,16 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	String title1 = titles[3];
 	String title2 = titles[4];
 	String pltFmt = titles[5];
-		
+
 	try {
 	    Process pGnuplot = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 	    BufferedReader stdInput = new BufferedReader(new InputStreamReader(pGnuplot.getInputStream()));
-			
+
 	    BufferedReader stdError = new BufferedReader(new InputStreamReader(pGnuplot.getErrorStream()));
-			
+
 	    PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(pGnuplot.getOutputStream())));
-			
+
 	    // Initial settings for gnuplot
 	    log("start gnuplot for "+filename);
 	    //stdOutput.println("set size 2,2");
@@ -1565,18 +1565,18 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		stdOutput.println("set yrange [ : ]");
 	    }
 	    stdOutput.println("set format x '%m/%d'");
-			
+
 	    stdOutput.println("set output '"+filename+".eps'");
-			
+
 	    Calendar now = Calendar.getInstance();
 	    stdOutput.println("set title '"+gtitle+" (Plotted: "+now.getTime()+")'");
 	    //// stdOutput.println("set key right top Right samplen 1 title 'Total Bytes : 4.33e+13\nMean Xfer Size : 3.80e+08\n Number of Xfers : 114174L'");
 	    stdOutput.println("set ylabel '"+ylabel+"'");
-			
+
 	    int lw = ((eDate.getTime()-sDate.getTime())/1000/3600/24 > 32) ? 5 : 50;
-			
+
 	    Timestamp ix; double iy, ie; long nEnt = 0; double totl = 0.0;
-			
+
 	    if (x2 != null) {
 		if (pltFmt.startsWith("log")) {
 		    stdOutput.println("plot '-' using 1:2 t '"+title1+"' with histeps lw 3 1, '-' using 1:2 t '"+title2+"' with histeps lw 3 3");
@@ -1592,7 +1592,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		}
 		stdOutput.println("e");
 		log("e");
-			
+
 		for (int ib = 0; ib < x2.length; ib++) {
 		    ix = x2[ib];    iy = y2[ib];
 		    nEnt++;    totl += iy;
@@ -1613,9 +1613,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    stdOutput.println("e");
 	    log("e");
 	    stdOutput.println("quit");
-			
+
 	    log("# Entries="+nEnt+" Total="+totl);
-			
+
 	    stdOutput.flush();
 	    stdOutput.flush();
 	    stdOutput.close(); stdOutput=null;
@@ -1626,7 +1626,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("File "+filename+".eps is ready");
 	    Process pc1 = Runtime.getRuntime().exec("convert -geometry 720x720 -modulate 95,95 "+filename+".eps "+filename+".png");
 	    Process pc2 = Runtime.getRuntime().exec("convert -geometry 120x120 -modulate 90,50 "+filename+".eps png:"+filename+".pre");
-			
+
 	    log("File "+filename+".{png,pre} are ready");
 	    // Close used files
 	    stdInput.close(); stdInput=null;
@@ -1639,10 +1639,10 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    throw new ServletException("Exception in gnuplot execution");
 	}
     }
-   
-    private synchronized void savePlots(final String filename, 
-					final String[] titles, 
-					final Timestamp[] x1, 
+
+    private synchronized void savePlots(final String filename,
+					final String[] titles,
+					final Timestamp[] x1,
                                         final double[] y1,final double[] y2, final double[] y3,
 					final Date sDate, final Date eDate)
 	throws ServletException, IOException
@@ -1653,16 +1653,16 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	String title1 = titles[3];
 	String title2 = titles[4];
 	String pltFmt = titles[5];
-		
+
 	try {
 	    Process pGnuplot = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 	    BufferedReader stdInput = new BufferedReader(new InputStreamReader(pGnuplot.getInputStream()));
-			
+
 	    BufferedReader stdError = new BufferedReader(new InputStreamReader(pGnuplot.getErrorStream()));
-			
+
 	    PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(pGnuplot.getOutputStream())));
-			
+
 	    // Initial settings for gnuplot
 	    log("start gnuplot for "+filename);
 	    stdOutput.println("set size 1.5,1.5");
@@ -1678,18 +1678,18 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
             stdOutput.println("set yrange [1: ]");
 
 	    stdOutput.println("set format x '%m/%d'");
-			
+
 	    stdOutput.println("set output '"+filename+".eps'");
-			
+
 	    Calendar now = Calendar.getInstance();
 	    stdOutput.println("set title '"+gtitle+" (Plotted: "+now.getTime()+")'");
 	    //// stdOutput.println("set key right top Right samplen 1 title 'Total Bytes : 4.33e+13\nMean Xfer Size : 3.80e+08\n Number of Xfers : 114174L'");
 	    stdOutput.println("set ylabel '"+ylabel+"'");
-			
+
 	    int lw = ((eDate.getTime()-sDate.getTime())/1000/3600/24 > 32) ? 5 : 50;
-			
+
 	    Timestamp ix; double iy, il, ih; long nEnt = 0;
-			
+
 //             stdOutput.println("plot '-' using 1:2:3:4:(-1) t '"+title1+"' with boxerrorbars lw 2 1");
             stdOutput.println("plot '-' using 1:2 t '"+title1+"' with linespoints lw 2 1, " +
                               "'-' using 1:2 t 'Min' with linespoints lw 2 2, " +
@@ -1723,9 +1723,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("e");
 
 	    stdOutput.println("quit");
-			
+
 	    log("# Entries="+nEnt);
-			
+
 	    stdOutput.flush();
 	    stdOutput.flush();
 	    stdOutput.close(); stdOutput=null;
@@ -1736,7 +1736,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("File "+filename+".eps is ready");
 	    Process pc1 = Runtime.getRuntime().exec("convert -geometry 720x720 -modulate 95,95 "+filename+".eps "+filename+".png");
 	    Process pc2 = Runtime.getRuntime().exec("convert -geometry 120x120 -modulate 90,50 "+filename+".eps png:"+filename+".pre");
-			
+
 	    log("File "+filename+".{png,pre} are ready");
 	    // Close used files
 	    stdInput.close(); stdInput=null;
@@ -1748,9 +1748,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    throw new ServletException("Exception in gnuplot execution");
 	}
     }
-   
-    private synchronized void saveHourlyPlots(final String filename, 
-					      final String[] titles, 
+
+    private synchronized void saveHourlyPlots(final String filename,
+					      final String[] titles,
 					      final Timestamp[] x1, final double[] y1,
 					      final Timestamp[] x2, final double[] y2,
 					      final Date sDate, final Date eDate)
@@ -1762,16 +1762,16 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	String title1 = titles[3];
 	String title2 = titles[4];
 	String pltFmt = titles[5];
-		
+
 	try {
 	    Process pGnuplot = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 	    BufferedReader stdInput = new BufferedReader(new InputStreamReader(pGnuplot.getInputStream()));
-			
+
 	    BufferedReader stdError = new BufferedReader(new InputStreamReader(pGnuplot.getErrorStream()));
-			
+
 	    PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(pGnuplot.getOutputStream())));
-			
+
 	    // Initial settings for gnuplot
 	    log("start gnuplot for "+filename);
 	    //stdOutput.println("set size 2,2");
@@ -1795,18 +1795,18 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    }
 	    //stdOutput.println("set format x '%m/%d %R'");
 	    stdOutput.println("set format x '%m/%d'");
-			
+
 	    stdOutput.println("set output '"+filename+".eps'");
-			
+
 	    Calendar now = Calendar.getInstance();
 	    stdOutput.println("set title '"+gtitle+" (Plotted: "+now.getTime()+")'");
 	    //// stdOutput.println("set key right top Right samplen 1 title 'Total Bytes : 4.33e+13\nMean Xfer Size : 3.80e+08\n Number of Xfers : 114174L'");
 	    stdOutput.println("set ylabel '"+ylabel+"'");
-			
+
 	    int lw = ((eDate.getTime()-sDate.getTime())/1000/3600/24 > 32) ? 5 : 9;
-			
+
 	    Timestamp ix; double iy, ie; long nEnt = 0; double totl = 0.0;
-			
+
 	    if (x2 != null) {
 		if (pltFmt.startsWith("log")) {
 		    stdOutput.println("plot '-' using 1:2 t '"+title1+"' with histeps lw 3 1, '-' using 1:2 t '"+title2+"' with histeps lw 3 3");
@@ -1821,7 +1821,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 		}
 		stdOutput.println("e");
 		log("e");
-			
+
 		for (int ib = 0; ib < x2.length; ib++) {
 		    ix = x2[ib];    iy = y2[ib];
 		    nEnt++;    totl += iy;
@@ -1842,9 +1842,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    stdOutput.println("e");
 	    log("e");
 	    stdOutput.println("quit");
-			
+
 	    log("# Entries="+nEnt+" Total="+totl);
-			
+
 	    stdOutput.flush();
 	    stdOutput.flush();
 	    stdOutput.close(); stdOutput=null;
@@ -1855,7 +1855,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("File "+filename+".eps is ready");
 	    Process pc1 = Runtime.getRuntime().exec("convert -geometry 720x720 -modulate 95,95 "+filename+".eps "+filename+".png");
 	    Process pc2 = Runtime.getRuntime().exec("convert -geometry 120x120 -modulate 90,50 "+filename+".eps png:"+filename+".pre");
-			
+
 	    log("File "+filename+".{png,pre} are ready");
 	    // Close used files
 	    stdInput.close(); stdInput=null;
@@ -1869,9 +1869,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	}
     }
 
-    private synchronized void saveHourlyPlots(final String filename, 
-					      final String[] titles, 
-					      final Timestamp[] x1, 
+    private synchronized void saveHourlyPlots(final String filename,
+					      final String[] titles,
+					      final Timestamp[] x1,
                                               final double[] y1,final double[] y2, final double[] y3,
 					      final Date sDate, final Date eDate)
 	throws ServletException, IOException
@@ -1882,16 +1882,16 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	String title1 = titles[3];
 	String title2 = titles[4];
 	String pltFmt = titles[5];
-		
+
 	try {
 	    Process pGnuplot = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 	    BufferedReader stdInput = new BufferedReader(new InputStreamReader(pGnuplot.getInputStream()));
-			
+
 	    BufferedReader stdError = new BufferedReader(new InputStreamReader(pGnuplot.getErrorStream()));
-			
+
 	    PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(pGnuplot.getOutputStream())));
-			
+
 	    // Initial settings for gnuplot
 	    log("start gnuplot for "+filename);
 	    //stdOutput.println("set size 2,2");
@@ -1912,21 +1912,21 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 
 	    //stdOutput.println("set format x '%m/%d %R'");
 	    stdOutput.println("set format x '%m/%d'");
-			
+
 	    stdOutput.println("set output '"+filename+".eps'");
-			
+
 	    Calendar now = Calendar.getInstance();
 	    stdOutput.println("set title '"+gtitle+" (Plotted: "+now.getTime()+")'");
 	    //// stdOutput.println("set key right top Right samplen 1 title 'Total Bytes : 4.33e+13\nMean Xfer Size : 3.80e+08\n Number of Xfers : 114174L'");
 	    stdOutput.println("set ylabel '"+ylabel+"'");
-			
+
 	    int lw = ((eDate.getTime()-sDate.getTime())/1000/3600/24 > 32) ? 5 : 9;
-			
+
 	    Timestamp ix; double iy, il, ih; long nEnt = 0;
-			
+
 //             stdOutput.println("plot '-' using 1:2:3:4:(-1) t '"+title1+"' with boxerrorbars lw 2 1");
 //             for (int ib = 0; ib < x1.length; ib++) {
-//                 ix = x1[ib];    
+//                 ix = x1[ib];
 //                 iy = y1[ib];    il = y2[ib];   ih = y3[ib];
 //                 nEnt++;    totl += iy;
 //                 stdOutput.println((ix.getYear()+1900)+"-"+(ix.getMonth()+1)+"-"+ix.getDate()+"-"+ix.getHours()+" "+iy+" "+il+" "+ih);
@@ -1967,9 +1967,9 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("e");
 
 	    stdOutput.println("quit");
-			
+
 	    log("# Entries="+nEnt);
-			
+
 	    stdOutput.flush();
 	    stdOutput.flush();
 	    stdOutput.close(); stdOutput=null;
@@ -1980,7 +1980,7 @@ public class GBillingSQLV3 extends HttpServlet implements Runnable
 	    log("File "+filename+".eps is ready");
 	    Process pc1 = Runtime.getRuntime().exec("convert -geometry 720x720 -modulate 95,95 "+filename+".eps "+filename+".png");
 	    Process pc2 = Runtime.getRuntime().exec("convert -geometry 120x120 -modulate 90,50 "+filename+".eps png:"+filename+".pre");
-			
+
 	    log("File "+filename+".{png,pre} are ready");
 	    // Close used files
 	    stdInput.close(); stdInput=null;

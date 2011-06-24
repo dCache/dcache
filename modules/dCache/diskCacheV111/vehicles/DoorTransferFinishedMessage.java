@@ -10,24 +10,24 @@ public class DoorTransferFinishedMessage extends Message {
    private String       _poolName    = null ;
    private String       _ioQueueName = null ;
    private static final long serialVersionUID = -7563456962335030196L;
-   
-   public DoorTransferFinishedMessage( long id , 
+
+   public DoorTransferFinishedMessage( long id ,
                                        PnfsId pnfsId ,
                                        ProtocolInfo protocol ,
                                        StorageInfo  info          ){
-                          
-        setId( id ) ;             
+
+        setId( id ) ;
         _protocol = protocol ;
         _info     = info ;
         _pnfsId   = pnfsId ;
    }
-   public DoorTransferFinishedMessage( long id , 
+   public DoorTransferFinishedMessage( long id ,
                                        PnfsId pnfsId ,
                                        ProtocolInfo protocol ,
                                        StorageInfo  info      ,
                                        String       poolName    ){
-                          
-        setId( id ) ;             
+
+        setId( id ) ;
         _protocol = protocol ;
         _info     = info ;
         _pnfsId   = pnfsId ;
@@ -58,4 +58,4 @@ public class DoorTransferFinishedMessage extends Message {
    public String       getPoolName(){ return _poolName ; }
 }
 
- 
+

@@ -17,20 +17,20 @@ import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.vehicles.Message;
 
 public class SrmSpaceDetailsMsgHandler implements MessageHandler {
-	
+
 	private static Logger _log = LoggerFactory.getLogger( SrmSpaceDetailsMsgHandler.class);
 	private static final StatePath SPACES_PATH = StatePath.parsePath("reservations");
 	private static final StatePath LINKGROUPS = new StatePath("linkgroups");
 	private static final String SRM_ROLE_WILDCARD = "*";
 
 	final private StateUpdateManager _sum;
-	
+
 	public SrmSpaceDetailsMsgHandler( StateUpdateManager sum) {
 		_sum = sum;
 	}
 
 	public boolean handleMessage(Message messagePayload, long metricLifetime) {
-		
+
 		if( !(messagePayload instanceof GetSpaceTokensMessage))
 			return false;
 
@@ -45,7 +45,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 			_log.info( "received GetSpaceTokensMessage with no spaces listed");
 			return true;
 		}
-		
+
 		StateUpdate update = new StateUpdate();
 
 		for( Space space : spaces) {
@@ -56,30 +56,30 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 
 			update.appendUpdate( thisSpacePath.newChild("access-latency"), new StringStateValue( space.getAccessLatency().toString(), metricLifetime));
 			update.appendUpdate( thisSpacePath.newChild("retention-policy"), new StringStateValue( space.getRetentionPolicy().toString(), metricLifetime));
-			
+
 			StatePath spacePath = thisSpacePath.newChild( "space");
 			update.appendUpdate( spacePath.newChild( "free"), new IntegerStateValue( space.getAvailableSpaceInBytes(), metricLifetime));
 			update.appendUpdate( spacePath.newChild( "used"), new IntegerStateValue( space.getUsedSizeInBytes(), metricLifetime));
 			update.appendUpdate( spacePath.newChild( "allocated"), new IntegerStateValue( space.getAllocatedSpaceInBytes(), metricLifetime));
 			update.appendUpdate( spacePath.newChild( "total"), new IntegerStateValue( space.getSizeInBytes(), metricLifetime));
-			
+
 			Date creationDate = new Date(space.getCreationTime());
 			CellMessageHandlerSkel.addTimeMetrics( update, thisSpacePath.newChild("created"), creationDate, metricLifetime);
-			
-			update.appendUpdate( thisSpacePath.newChild( "id"), new StringStateValue( String.valueOf( space.getId()), metricLifetime));			
+
+			update.appendUpdate( thisSpacePath.newChild( "id"), new StringStateValue( String.valueOf( space.getId()), metricLifetime));
 			update.appendUpdate( thisSpacePath.newChild( "state"), new StringStateValue( space.getState().toString(), metricLifetime));
-			
+
 			long spaceLifetime = space.getLifetime();
 			if( spaceLifetime > 0)
 				update.appendUpdate( thisSpacePath.newChild( "lifetime"), new IntegerStateValue( spaceLifetime, metricLifetime));
-				
+
 			addLinkgroup( update, thisSpacePath, String.valueOf( space.getLinkGroupId()), String.valueOf(space.getId()), metricLifetime);
-			
+
 			addVoInfo( update, thisSpacePath.newChild( "authorisation"), space.getVoGroup(), space.getVoRole(), metricLifetime);
 		}
-			
+
 		_sum.enqueueUpdate( update);
-		
+
 		return true;
 	}
 
@@ -91,7 +91,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	 * @param role the String representation of the role.
 	 * @param metricLifetime how long, in seconds, these metrics should exist for.
 	 */
-	private void addVoInfo( StateUpdate update, StatePath parentPath, String group, String role, long metricLifetime) {		
+	private void addVoInfo( StateUpdate update, StatePath parentPath, String group, String role, long metricLifetime) {
 		if( role != null)
 			update.appendUpdate( parentPath.newChild( "role"), new StringStateValue( role, metricLifetime));
 
@@ -99,9 +99,9 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 			update.appendUpdate( parentPath.newChild( "group"), new StringStateValue( group, metricLifetime));
 
 			StringBuilder fqan = new StringBuilder();
-		
+
 			fqan.append( group);
-			
+
 			if( role != null && !role.equals( SRM_ROLE_WILDCARD)) {
 				fqan.append( "/Role=");
 				fqan.append( role);
@@ -113,7 +113,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 
 
 	/**
-	 * Add references between space reservations and corresponding linkgroup 
+	 * Add references between space reservations and corresponding linkgroup
 	 * @param update the StateUpdate to append metric-updates to
 	 * @param parentPath the path to the space under consideration
 	 * @param lgid the linkgroup ID
@@ -121,12 +121,12 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	 * @param metricLifetime how long, in seconds, a metric should last.
 	 */
 	private void addLinkgroup( StateUpdate update, StatePath parentPath, String lgid, String spaceId, long metricLifetime) {
-		
+
 		// Add the reference to the linkgroup within the space.
 		update.appendUpdate( parentPath.newChild( "linkgroupref"), new StringStateValue( lgid, metricLifetime));
-		
+
 		// Add the reference to this space reservation within the corresponding linkgroup
-		update.appendUpdate( LINKGROUPS.newChild( lgid).newChild("reservations").newChild( spaceId), new StateComposite( metricLifetime));		
+		update.appendUpdate( LINKGROUPS.newChild( lgid).newChild("reservations").newChild( spaceId), new StateComposite( metricLifetime));
 	}
 
 }

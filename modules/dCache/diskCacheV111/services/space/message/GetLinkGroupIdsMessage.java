@@ -14,19 +14,19 @@ import diskCacheV111.vehicles.Message;
 public class GetLinkGroupIdsMessage extends Message {
 
 	static final long serialVersionUID = 1794764314342568402L;
-      
+
 	private long linkGroupIds[]=null;
-	
-	public GetLinkGroupIdsMessage() { 
+
+	public GetLinkGroupIdsMessage() {
 		setReplyRequired(true);
 	}
 
-	public long[] getLinkGroupIds() { 
+	public long[] getLinkGroupIds() {
 		return linkGroupIds;
 	}
-	
+
 	public void setLinkGroupIds(long ids[]){
 		this.linkGroupIds=ids;
 	}
 
-}  
+}

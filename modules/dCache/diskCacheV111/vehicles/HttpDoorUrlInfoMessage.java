@@ -1,12 +1,12 @@
 package diskCacheV111.vehicles;
 
-public class HttpDoorUrlInfoMessage extends Message 
+public class HttpDoorUrlInfoMessage extends Message
 {
   private String pnfsId;
   private String url;
 
   private static final long serialVersionUID = 8385138814596693435L;
-  
+
   public HttpDoorUrlInfoMessage(String pnfsId, String url)
   {
     this.pnfsId = pnfsId;

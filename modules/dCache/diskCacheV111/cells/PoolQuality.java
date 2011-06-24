@@ -25,23 +25,23 @@ public class PoolQuality {
 	private double _spaceCost;
 	private boolean _hasFile;
 	private PoolTopology _poolTopology;
-	
-	public PoolQuality( String poolName, int preference, double spaceCost, 
+
+	public PoolQuality( String poolName, int preference, double spaceCost,
 					boolean hasFile, PoolTopology poolTopology) {
 		_poolName = poolName;
 		_preference = preference;
 		_spaceCost = spaceCost;
 		_poolTopology = poolTopology;
 	};
-	
+
 	public String getName() {
 		return _poolName;
 	};
-	
+
 	public int getPreference() {
 		return _preference;
 	};
-	
+
 	public double getSpaceCost() {
 		return _spaceCost;
 	};
@@ -49,7 +49,7 @@ public class PoolQuality {
 	public boolean hasFile() {
 		return _hasFile;
 	};
-	
+
 	public PoolTopology getTopology() {
 		return _poolTopology;
 	};

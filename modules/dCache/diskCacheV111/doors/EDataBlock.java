@@ -1,5 +1,5 @@
 /*
-COPYRIGHT STATUS: 
+COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
   software are sponsored by the U.S. Department of Energy under Contract No.
   DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -81,7 +81,7 @@ public class	EDataBlock {
     public static final int EOD_DESCRIPTOR = 8;
     public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
     public static final int HEADER_LENGTH=17;
-    
+
     public EDataBlock(String name)
     {	_myName = name;	}
 
@@ -92,33 +92,33 @@ public class	EDataBlock {
         return header;
     }
 
-    public byte getDescriptors() 
+    public byte getDescriptors()
     {
         return header[0];
     }
-    
+
     public boolean isDescriptorSet(int descriptor)
     {
         return (header[0] & descriptor) != 0;
     }
-    
+
     public void setDCCountTo1()
     {
         for ( int i = 9; i < 17; i++ )
             header[i] = 0;
         header[16]= 1;
     }
-    
+
     public void setDescriptor(int descriptor)
     {
         header[0] = (byte)(header[0] | descriptor);
     }
-    
+
     public void unsetDescriptor(int descriptor)
     {
         header[0] = (byte)(header[0] & ~descriptor);
     }
-    
+
     public byte[] getData() {
         return data;
     }
@@ -158,14 +158,14 @@ public class	EDataBlock {
         header = new byte[HEADER_LENGTH];
         int 	len = 0;
 
-        while( len < HEADER_LENGTH ) 
+        while( len < HEADER_LENGTH )
         {
             int n;
-            try 
+            try
             {
                 n = str.read(header, len, HEADER_LENGTH - len);
-            } 
-            catch( Exception e ) 
+            }
+            catch( Exception e )
             {
                 break;
             }
@@ -183,25 +183,25 @@ public class	EDataBlock {
         for ( int i = 1; i < 9; i++ )
             size = (size << 8) | ((int)header[i] & 0xFF);
 
-        
+
         try
-        {	
-            data = new byte[(int)size];	
+        {
+            data = new byte[(int)size];
         }
         catch( OutOfMemoryError e )
-        {	
+        {
             //System.out.println("EDataBlock(" + _myName + ").read(): exception: " + e);
             throw e;
         }
 
-        
+
         int n = 0;
         while( n < size ) {
             int nr;
             try {
                 nr = str.read(data, n, (int)(size) - n);
-            } 
-            catch( Exception e ) 
+            }
+            catch( Exception e )
             {
                 break;
             }
@@ -214,7 +214,7 @@ public class	EDataBlock {
 	//System.out.println("EDataBlock(" + _myName + ").read(): returning " + n);
         return n;
     }
-    
+
     public String toString()
     {
         return "EDataBlock("+_myName+"), size="+getSize()+" , offset="+getOffset();

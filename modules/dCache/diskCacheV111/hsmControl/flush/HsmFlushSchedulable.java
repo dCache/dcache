@@ -57,13 +57,13 @@ public interface HsmFlushSchedulable {
      /**
        * Is called whenever the properties (resp. parameters) of the driver is
        * supposed to change or it may be used to query the current status of
-       * properties. The property map will only contain key-value pairs 
+       * properties. The property map will only contain key-value pairs
        * where the value should be updated. On return the driver should put
        * all currenly available property key value pairs into the property map.
        * I should make sure that initial map entries are removed which do not
        * represent a valid property of this driver. Furthermore the returned
        * values should reflect the already modified values of this request.
-       * If the arriving property map is empty this call is equivalent to a 
+       * If the arriving property map is empty this call is equivalent to a
        * properties query.
        */
      public void propertiesUpdated( Map properties ) ;
@@ -72,7 +72,7 @@ public interface HsmFlushSchedulable {
        */
      public void timer() ;
      /**
-       * Is called the driver should reset its status as if it would have been 
+       * Is called the driver should reset its status as if it would have been
        * newly loaded.
        */
      public void reset() ;
@@ -89,7 +89,7 @@ public interface HsmFlushSchedulable {
        */
      public void configuredPoolRemoved( String poolName ) ;
      /**
-       * Called whenever the I/O mode of a pool might have changed. (From readOnly to readWrite or 
+       * Called whenever the I/O mode of a pool might have changed. (From readOnly to readWrite or
        * vise versa). It might happen that the method is called although the
        * mode didn't change.
        *
@@ -97,5 +97,5 @@ public interface HsmFlushSchedulable {
        * @param pool Detailed information on the pool.
        */
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ) ;
-     
+
 }

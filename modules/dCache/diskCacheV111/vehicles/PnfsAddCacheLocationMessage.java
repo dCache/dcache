@@ -4,9 +4,9 @@ package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
 
 public class PnfsAddCacheLocationMessage extends PnfsModifyCacheLocationMessage {
-   
+
     private static final long serialVersionUID = 4683846056284598394L;
-    
+
     public PnfsAddCacheLocationMessage(PnfsId pnfsId, String poolName){
 	super(pnfsId,poolName);
     }

@@ -4,12 +4,12 @@ import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
 
 public class PoolCostInfoMessage extends PnfsFileInfoMessage {
-    
+
     private ProtocolInfo _protocolInfo = null ;
     private double       _cost  = 0.0 ;
-    
+
     private static final long serialVersionUID = 850395703347910511L;
-    
+
     public PoolCostInfoMessage(String cellName, PnfsId pnfsId)
     {
 		super("cost", "pool", cellName, pnfsId);
@@ -20,18 +20,18 @@ public class PoolCostInfoMessage extends PnfsFileInfoMessage {
 		_protocolInfo = protocolInfo;
     }
 
-    public void setCost(double cost) 
-    { 
+    public void setCost(double cost)
+    {
 		_cost = cost;
     }
 
-    public ProtocolInfo getProtocolInfo() 
-    { 
+    public ProtocolInfo getProtocolInfo()
+    {
 		return _protocolInfo;
     }
 
-    public double getCost() 
-    { 
+    public double getCost()
+    {
 		return _cost;
     }
 

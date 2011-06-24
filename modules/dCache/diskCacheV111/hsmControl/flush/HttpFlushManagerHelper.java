@@ -15,26 +15,26 @@ class HttpFlushManagerHelper {
      *  Helpers and their comparators
      */
    static class PoolEntry {
-   
+
       String  _poolName     = null ;
       long    _total        = 0 ;
       long    _precious     = 0 ;
       int     _flushing     = 0 ;
       boolean _isReadOnly   = false ;
       String  _storageClass = null ;
-   
+
    }
    static abstract private class EntryComparator implements Comparator {
        boolean _topHigh    = false ;
        int     _sortColumn = 0 ;
-       void setColumn( int column ){ 
-       
+       void setColumn( int column ){
+
           if( _sortColumn == column ){
               _topHigh = ! _topHigh ;
           }else{
               _sortColumn = column ;
               _topHigh    = false ;
-          } 
+          }
        }
        abstract public int compare( Object a , Object b ) ;
        int compareBoolean( boolean a , boolean b ){
@@ -51,13 +51,13 @@ class HttpFlushManagerHelper {
        }
    }
    static class PoolEntryComparator extends EntryComparator {
-   
+
        public int compare( Object a , Object b ){
           PoolEntry [] info1 = { (PoolEntry)a , (PoolEntry)b  } ;
           PoolEntry [] info2 = { (PoolEntry)b , (PoolEntry)a  } ;
 	  PoolEntry [] info  = _topHigh ? info1 : info2 ;
 	  int t = 0 ;
-	  switch(_sortColumn){ 
+	  switch(_sortColumn){
 	     case 0 :
 	        return info[0]._poolName.compareTo( info[1]._poolName ) ;
 	     case 1 :
@@ -73,22 +73,22 @@ class HttpFlushManagerHelper {
 	        t = compareLong( info[0]._precious , info[1]._precious)  ;
  	        return  t == 0 ? info[0]._poolName.compareTo( info[1]._poolName ) : t ;
 	     case 5 :
-	        return compareDouble( 
+	        return compareDouble(
                             (double)info[0]._precious / (double)info[0]._total  ,
                             (double)info[1]._precious / (double)info[1]._total     ) ;
 	     default : return 0 ;
 	  }
-	  
+
        }
    }
    static class FlushEntryComparator extends EntryComparator {
-   
+
        public int compare( Object a , Object b ){
           FlushEntry [] info1 = { (FlushEntry)a , (FlushEntry)b  } ;
           FlushEntry [] info2 = { (FlushEntry)b , (FlushEntry)a  } ;
 	  FlushEntry [] info  = _topHigh ? info1 : info2 ;
 	  int t = 0 ;
-	  switch(_sortColumn){ 
+	  switch(_sortColumn){
 	     case 0 :
 	        t = info[0]._poolName.compareTo( info[1]._poolName ) ;
                 return t == 0 ? info[0]._storageClass.compareTo( info[1]._storageClass ) : t ;
@@ -120,16 +120,16 @@ class HttpFlushManagerHelper {
  	        t = t == 0 ? info[0]._poolName.compareTo( info[1]._poolName ) : t ;
 	        return  t == 0 ? info[0]._storageClass.compareTo( info[1]._storageClass ) : t ;
  	     case 8 :
-	        return compareDouble( 
+	        return compareDouble(
                             (double)info[0]._precious / (double)info[0]._total  ,
                             (double)info[1]._precious / (double)info[1]._total     ) ;
 	     default : return 0 ;
 	  }
-	  
+
        }
    }
    static class FlushEntry {
-   
+
       String  _poolName     = null ;
       boolean _isFlushing   = false ;
       String  _storageClass = null ;
@@ -138,6 +138,6 @@ class HttpFlushManagerHelper {
       int     _active       = 0 ;
       int     _pending      = 0 ;
       int     _failed       = 0 ;
-   
+
    }
 }

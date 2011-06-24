@@ -12,9 +12,9 @@ import java.io.IOException;
  *
  * @author  timur
  */
-public interface DataBlocksRecipient 
+public interface DataBlocksRecipient
 {
     public void receiveEBlock(byte[] array, int offset, int length,
-                              long offsetOfArrayInFile) 
+                              long offsetOfArrayInFile)
         throws IOException;
 }

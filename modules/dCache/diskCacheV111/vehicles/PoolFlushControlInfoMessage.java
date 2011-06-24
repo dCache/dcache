@@ -8,12 +8,12 @@ import  diskCacheV111.pools.StorageClassFlushInfo;
 //
 
 public class PoolFlushControlInfoMessage extends PoolFlushControlMessage {
-    
+
     private static final long serialVersionUID = 2092239799456859611L;
-    
+
     private PoolCellInfo _info      = null ;
     private StorageClassFlushInfo [] _flushInfo = null ;
-    
+
     public PoolFlushControlInfoMessage(String poolName){
          super(poolName);
          setReplyRequired(true);

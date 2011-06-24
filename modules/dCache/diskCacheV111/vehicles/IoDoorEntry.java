@@ -11,9 +11,9 @@ public class IoDoorEntry implements java.io.Serializable {
    private String _status = null ;
    private long   _waitingSince = 0L ;
    private String _replyHost = null ;
-   
+
    private static final long serialVersionUID = 7283617314269359997L;
-   
+
    public IoDoorEntry( long serialId , PnfsId pnfsId ,
                        String pool , String status ,
                        long waitingSince , String replyHost ){

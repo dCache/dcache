@@ -4,10 +4,10 @@ package diskCacheV111.vehicles;
 
 import java.util.* ;
 
-public interface PoolCheckable  { 
+public interface PoolCheckable  {
 
     public String getPoolName() ;
-    
+
     public void setTagMap( Map<String, String> map ) ;
     public Map<String, String>  getTagMap() ;
 }

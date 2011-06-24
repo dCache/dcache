@@ -4,15 +4,15 @@ import java.net.URI;
 
 
 /**
- * 
+ *
  * factory to parce storage location URI and return corresponding extractor
- * 
+ *
  *  <strong>[scheme:][//authority][path][?query][#fragment]</strong>
  *  where:
  * 	scheme    : hsm type
  * 	authority : instance id
  * 	path+query: opaque to dCache HSM specific data
- *  
+ *
  *  example:
  * 	osm://desy-main/?store=h1&bfid=1234
  *	osm://desy-copy/?store=h1_d&bfid=5678

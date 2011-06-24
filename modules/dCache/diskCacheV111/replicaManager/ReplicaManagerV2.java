@@ -119,7 +119,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
         return _resPoolsList;
     }
   }
- 
+
   private void initResilientPools() {
     while (true) { // try forever to connect Pool Manager
       try {

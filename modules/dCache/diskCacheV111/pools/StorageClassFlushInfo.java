@@ -6,12 +6,12 @@ package diskCacheV111.pools;
 
 
 public class StorageClassFlushInfo implements java.io.Serializable {
-    
+
     private static final long serialVersionUID = 2092293652873859605L;
     private String _hsmName = null ;
     private String _storageClass = null ;
     //
-    //  package private 
+    //  package private
     //
     long      _time            = 0 ;  // creation time of oldest file or 0L.
     int       _requestCount    = 0 ;
@@ -26,13 +26,13 @@ public class StorageClassFlushInfo implements java.io.Serializable {
     int       _errorCounter    = 0 ;
     long      _lastSubmittedAt = 0L ;
     long      _recentFlushId   = 0L ;
-    
+
     public StorageClassFlushInfo( String hsmName , String storageClass ){
 	_hsmName      = hsmName ;
         _storageClass = storageClass ;
     }
 
-    public String getHsm(){ return _hsmName ; }    
+    public String getHsm(){ return _hsmName ; }
     public String getStorageClass(){ return _storageClass ; }
 
     public void setOldestFileTimestamp(long time)
@@ -52,7 +52,7 @@ public class StorageClassFlushInfo implements java.io.Serializable {
 
     public int  getRequestCount()
     {
-        return _requestCount; 
+        return _requestCount;
     }
 
     public void setFailedRequestCount(int count)
@@ -72,7 +72,7 @@ public class StorageClassFlushInfo implements java.io.Serializable {
 
     public long getExpirationTime()
     {
-        return _expiration; 
+        return _expiration;
     }
 
     public void setMaximumPendingFileCount(int count)
@@ -92,7 +92,7 @@ public class StorageClassFlushInfo implements java.io.Serializable {
 
     public long getTotalPendingFileSize()
     {
-        return _totalSize; 
+        return _totalSize;
     }
 
     public void setMaximumAllowedPendingFileSize(long size)
@@ -134,7 +134,7 @@ public class StorageClassFlushInfo implements java.io.Serializable {
     {
         return _recentFlushId;
     }
-    
+
     public void setLastSubmittedTime(long time)
     {
         _lastSubmittedAt = time;
@@ -142,7 +142,7 @@ public class StorageClassFlushInfo implements java.io.Serializable {
 
     public long getLastSubmittedTime()
     {
-        return _lastSubmittedAt; 
+        return _lastSubmittedAt;
     }
 
     public String toString()

@@ -5,19 +5,19 @@ import  diskCacheV111.util.PnfsId ;
 
 
 public class Pool2PoolTransferMsg extends PoolMessage {
-    
+
     public final static int   UNDETERMINED = 0 ;
     public final static int   PRECIOUS     = 1 ;
     public final static int   CACHED       = 2 ;
-    
+
     private PnfsId      _pnfsId                = null ;
-    private StorageInfo _storageInfo           = null ; 
-    private String      _destinationPoolName   = null ;    
+    private StorageInfo _storageInfo           = null ;
+    private String      _destinationPoolName   = null ;
     private int         _destinationFileStatus = UNDETERMINED ;
-    
+
     private static final long serialVersionUID = -4227857007512530410L;
-    
-    public Pool2PoolTransferMsg( String sourcePoolName , 
+
+    public Pool2PoolTransferMsg( String sourcePoolName ,
                                  String destinationPoolName ,
                                  PnfsId pnfsId ,
                                  StorageInfo storageInfo ){
@@ -27,14 +27,14 @@ public class Pool2PoolTransferMsg extends PoolMessage {
        _destinationPoolName = destinationPoolName ;
        setReplyRequired(true);
     }
-    
+
     public PnfsId getPnfsId(){
 	return _pnfsId ;
     }
     public StorageInfo getStorageInfo(){ return _storageInfo ; }
     public String getSourcePoolName(){ return getPoolName() ; }
     public String getDestinationPoolName(){ return _destinationPoolName ; }
-    
+
     public void setDestinationFileStatus( int status ){
        _destinationFileStatus = status ;
     }

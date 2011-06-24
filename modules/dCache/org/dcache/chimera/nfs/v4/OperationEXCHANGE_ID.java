@@ -94,7 +94,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
                 throw new ChimeraNFSException( nfsstat4.NFS4ERR_INVAL, "invalid state protection");
             }
 
-          
+
             if (_args.opexchange_id.eia_flags.value != 0 && (_args.opexchange_id.eia_flags.value | EXCHGID4_FLAG_MASK) != EXCHGID4_FLAG_MASK) {
                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_INVAL, "invalid flag");
             }

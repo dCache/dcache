@@ -67,28 +67,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -101,10 +101,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -114,10 +114,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -144,7 +144,7 @@ public final class RetentionPolicy implements java.io.Serializable {
     public static final RetentionPolicy REPLICA        = new RetentionPolicy("REPLICA",    2);
     public static final RetentionPolicy OUTPUT     = new RetentionPolicy("OUTPUT", 1);
     public static final RetentionPolicy CUSTODIAL     = new RetentionPolicy("CUSTODIAL", 0);
-    
+
     /**
      * Creates a new instance of FileState
      */
@@ -152,7 +152,7 @@ public final class RetentionPolicy implements java.io.Serializable {
         _name = name;
         _id = id;
     }
-    
+
     public static RetentionPolicy[] getAllPoliciess() {
 	    return getAllPolicies();
     }
@@ -166,7 +166,7 @@ public final class RetentionPolicy implements java.io.Serializable {
     public String toString() {
         return _name;
     }
-    
+
     public int getId() {
         return _id;
     }
@@ -178,11 +178,11 @@ public final class RetentionPolicy implements java.io.Serializable {
         if(policy == null || policy.equalsIgnoreCase("null")) {
             throw new NullPointerException(" null state ");
         }
-        
+
         if(REPLICA._name.equalsIgnoreCase(policy)) return REPLICA;
-        
+
         if(OUTPUT._name.equalsIgnoreCase(policy)) return OUTPUT;
-        
+
         if(CUSTODIAL._name.equalsIgnoreCase(policy)) return CUSTODIAL;
         try{
             int id = Integer.parseInt(policy);
@@ -192,22 +192,22 @@ public final class RetentionPolicy implements java.io.Serializable {
             throw new IllegalArgumentException("Unknown Policy");
         }
     }
-    
+
     public static RetentionPolicy getRetentionPolicy(int id) throws IllegalArgumentException {
-        
+
         if(REPLICA._id == id) return REPLICA;
-        
+
         if(OUTPUT._id == id) return OUTPUT;
-        
+
         if(CUSTODIAL._id == id) return CUSTODIAL;
 
         throw new IllegalArgumentException("Unknown policy Id");
     }
-        
+
     public boolean equals(Object obj) {
         return ( obj instanceof RetentionPolicy) && ( ((RetentionPolicy)obj).getId() == this.getId() );
-    }   
-    
+    }
+
     public int hashCode() {
         return _name.hashCode();
     }
@@ -215,6 +215,6 @@ public final class RetentionPolicy implements java.io.Serializable {
     public Object readResolve() throws java.io.ObjectStreamException {
        return RetentionPolicy.getRetentionPolicy(getId());
     }
-    
-    
+
+
 }

@@ -15,11 +15,11 @@ import diskCacheV111.util.PnfsId ;
  * @author  patrick
  */
 public class HsmControlGetBfDetailsMsg extends Message  {
-    
+
     private StorageInfo _storageInfo = null ;
     private PnfsId      _pnfsId  = null ;
     private String      _detail  = null ;
-    /** Creates a new instance of HsmControlGetBfDetailsMsg 
+    /** Creates a new instance of HsmControlGetBfDetailsMsg
      *
      */
     public HsmControlGetBfDetailsMsg( PnfsId pnfsId , StorageInfo storageInfo , String detail ) {
@@ -30,6 +30,6 @@ public class HsmControlGetBfDetailsMsg extends Message  {
     public PnfsId getPnfsId(){ return _pnfsId ; }
     public StorageInfo getStorageInfo(){ return _storageInfo ; }
     public String getDetails(){ return _detail ; }
-    
-    
+
+
 }

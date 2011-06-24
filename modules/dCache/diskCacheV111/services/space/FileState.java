@@ -10,28 +10,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -44,10 +44,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -57,10 +57,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -80,15 +80,15 @@ package diskCacheV111.services.space;
  * @author  timur
  */
 public final class FileState implements java.io.Serializable {
-    
+
     private final String name;
     private final int stateId;
-    
+
     public static final FileState RESERVED       = new FileState("Reserved",    0);
     public static final FileState TRANSFERRING    = new FileState("Transferring", 1);
     public static final FileState STORED         = new FileState("Stored",      2);
     public static final FileState FLUSHED        = new FileState("Flushed",     3);
-    
+
     /**
      * Creates a new instance of FileState
      */
@@ -96,7 +96,7 @@ public final class FileState implements java.io.Serializable {
         this.name = name;
         this.stateId = stateId;
     }
-    
+
     public static FileState[] getAllStates() {
         return new FileState[] {
          RESERVED,
@@ -108,7 +108,7 @@ public final class FileState implements java.io.Serializable {
     public String toString() {
         return name;
     }
-    
+
     public int getStateId() {
         return stateId;
     }
@@ -120,11 +120,11 @@ public final class FileState implements java.io.Serializable {
         if(state == null || state.equalsIgnoreCase("null")) {
             throw new NullPointerException(" null state ");
         }
-        
+
         if(RESERVED.name.equals(state)) return RESERVED;
-        
+
         if(TRANSFERRING.name.equals(state)) return TRANSFERRING;
-        
+
         if(STORED.name.equals(state)) return STORED;
 
         if(FLUSHED.name.equals(state)) return FLUSHED;
@@ -136,31 +136,31 @@ public final class FileState implements java.io.Serializable {
             throw new IllegalArgumentException("Unknown State");
         }
     }
-    
+
     public static FileState getState(int stateId) throws IllegalArgumentException {
-        
+
         if(RESERVED.stateId == stateId) return RESERVED;
-        
+
         if(TRANSFERRING.stateId == stateId) return TRANSFERRING;
-        
+
         if(STORED.stateId == stateId) return STORED;
 
         if(FLUSHED.stateId == stateId) return FLUSHED;
 
         throw new IllegalArgumentException("Unknown State Id");
     }
-    
+
     public static boolean isFinalState(FileState state) {
         return state == FLUSHED;
     }
-    
-    // this is what we need to correctly implement 
+
+    // this is what we need to correctly implement
     // serialization of the singleton
     public Object readResolve()
     		throws java.io.ObjectStreamException {
         return getState(stateId);
     }
-    
+
     public int hashCode() {
         return name.hashCode();
     }

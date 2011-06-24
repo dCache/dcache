@@ -4,14 +4,14 @@ package diskCacheV111.vehicles;
 
 /**
   *  Basic class to handle pool modes in the poolManager framework
-  *  
+  *
   * @Author: patrick
   * @Version: 1.2
   */
 public class PoolManagerPoolModeMessage extends PoolManagerMessage {
-    
+
     private static final long serialVersionUID = 2092233339703855551L;
-    
+
     public static final int READ   = 0x10 ;
     public static final int WRITE  = 0x20 ;
     public static final int UNDEFINED = 0 ;

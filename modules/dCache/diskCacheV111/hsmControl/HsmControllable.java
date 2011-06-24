@@ -12,7 +12,7 @@ import diskCacheV111.vehicles.StorageInfo;
  * @author  patrick
  */
 public interface HsmControllable {
-    
+
     public void getBfDetails( StorageInfo storageInfo ) throws Exception ;
-    
+
 }

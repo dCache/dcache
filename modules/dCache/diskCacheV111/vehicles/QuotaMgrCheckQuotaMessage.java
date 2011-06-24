@@ -6,18 +6,18 @@ package diskCacheV111.vehicles;
 
 
 public class QuotaMgrCheckQuotaMessage extends Message {
-    
+
     private String _storageClass = null ;
     private long   _hardQuota    = 0L ;
     private long   _softQuota    = 0L ;
     private long   _spaceUsed    = 0L ;
 
     private static final long serialVersionUID = 2092295899703859605L;
-    
+
     public QuotaMgrCheckQuotaMessage(String storageClass){
 	_storageClass = storageClass;
     }
-    public String getStorageClass(){ return _storageClass ; } 
+    public String getStorageClass(){ return _storageClass ; }
     public void setQuotas( long softQuota , long hardQuota , long spaceUsed ){
        _softQuota = softQuota ;
        _hardQuota = hardQuota ;
@@ -26,8 +26,8 @@ public class QuotaMgrCheckQuotaMessage extends Message {
     public long getSoftQuota(){ return _softQuota ; }
     public long getHardQuota(){ return _hardQuota ; }
     public long getSpaceUsed(){ return _spaceUsed ; }
-    public boolean isSoftQuotaExceeded(){ return _spaceUsed > _softQuota ; } 
-    public boolean isHardQuotaExceeded(){ return _spaceUsed > _hardQuota ; } 
+    public boolean isSoftQuotaExceeded(){ return _spaceUsed > _softQuota ; }
+    public boolean isHardQuotaExceeded(){ return _spaceUsed > _hardQuota ; }
     public String toString(){
         int i = getReturnCode() ;
         if( i != 0 ){
@@ -39,4 +39,4 @@ public class QuotaMgrCheckQuotaMessage extends Message {
 }
 
 
-    
+

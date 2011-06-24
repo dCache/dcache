@@ -11,7 +11,7 @@ import dmg.cells.nucleus.UOID;
 
 /**
  * Process incoming Object array (*shudder*) and update state.
- *  
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
@@ -28,11 +28,11 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "unexpected received non-array payload");
-			return;			
+			return;
 		}
-		
+
 		Object array[] = (Object []) msgPayload;
-		
+
 		if( array.length != 3) {
 			_log.error( "Unexpected array size: "+array.length);
 			return;
@@ -43,17 +43,17 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 		 * array[1] = type
 		 * array[2] = list of unitgroups.
 		 */
-		
+
 		String unitName = array[0].toString();
 		String unitType = array[1].toString();
-		
+
 		StatePath thisUnitPath = UNITS_PATH.newChild( unitName);
 
 		StateUpdate update = new StateUpdate();
-		
+
 		update.appendUpdate( thisUnitPath.newChild("type"),
 					new StringStateValue( unitType, metricLifetime));
-		
+
 		addItems( update, thisUnitPath.newChild("unitgroups"), (Object []) array [2], metricLifetime);
 
 		applyUpdates( update);

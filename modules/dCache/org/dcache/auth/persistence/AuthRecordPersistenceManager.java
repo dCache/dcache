@@ -33,8 +33,8 @@ import java.util.HashMap;
  * @author timur
  */
 public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
-    
-    private Map<Long,AuthorizationRecord> authRecCache  = 
+
+    private Map<Long,AuthorizationRecord> authRecCache  =
         new HashMap<Long,AuthorizationRecord>();
     private static final Logger _logJpa =
             LoggerFactory.getLogger( AuthRecordPersistenceManager.class);
@@ -45,7 +45,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit",p );
         em = emf.createEntityManager();
     }
-    
+
     public AuthRecordPersistenceManager(String jdbcUrl,
     String jdbcDriver,
     String user,
@@ -61,8 +61,8 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         p.put("javax.jdo.option.ConnectionURL",jdbcUrl);
         p.put("javax.jdo.option.ConnectionUserName",user);
         p.put("javax.jdo.option.ConnectionPassword",pass);
-        
-        // GlassFish a.k.a. TopLink style 
+
+        // GlassFish a.k.a. TopLink style
         p.put("toplink.jdbc.driver",jdbcDriver);
         p.put("toplink.jdbc.url",jdbcUrl);
         p.put("toplink.jdbc.user",user);
@@ -71,14 +71,14 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit",p );
         em = emf.createEntityManager();
     }
-    
+
     public SRMUser persist(SRMUser user) {
         if(user instanceof AuthorizationRecord ) {
             return persist((AuthorizationRecord) user);
         }
         throw new IllegalArgumentException("illegal user type: "+user.getClass());
     }
-    
+
     public synchronized AuthorizationRecord persist(AuthorizationRecord rec) {
         if(authRecCache.containsKey(rec.getId())) {
             return authRecCache.get(rec.getId());
@@ -86,9 +86,9 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         EntityTransaction t = em.getTransaction();
         try{
             t.begin();
-            // We assume that gPlazma guaranties that the records with the 
-            // same id will be always the same and unchanged, so 
-            // if rec is contained in the given entity manager, 
+            // We assume that gPlazma guaranties that the records with the
+            // same id will be always the same and unchanged, so
+            // if rec is contained in the given entity manager,
             // no merge is needed
             if(!em.contains(rec)) {
                 _logJpa.debug("em.contains() returned false");
@@ -114,11 +114,11 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             return authRecCache.get(rec.getId());
         } else {
             authRecCache.put(rec.getId(),rec);
-            return rec;   
+            return rec;
         }
-            
+
     }
-    
+
     public synchronized AuthorizationRecord find(long id) {
         if(authRecCache.containsKey(id)) {
             return authRecCache.get(id);
@@ -130,7 +130,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             _logJpa.debug(" searching for AuthorizationRecord with id="+id);
             ar = em.find(AuthorizationRecord.class, id);
             _logJpa.debug("found AuthorizationRecord="+ar);
-            
+
             t.commit();
         }finally
         {
@@ -146,12 +146,12 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             return authRecCache.get(id);
         } else {
             authRecCache.put(id,ar);
-            return ar;   
+            return ar;
         }
     }
-    
-    
-    
+
+
+
     public static void main(String[] args) throws Exception{
         if(args == null || args.length == 0) {
             persistTest();
@@ -159,14 +159,14 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             findTest(Long.parseLong(args[0]));
         }
     }
-    
+
     public static void persistTest() throws Exception{
-        AuthRecordPersistenceManager pm = 
+        AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");
         java.util.HashSet<String> principals = new java.util.HashSet<String>();
         principals.add("timur@FNAL.GOV");
-        AuthorizationRecord ar =    
+        AuthorizationRecord ar =
             new AuthorizationRecord();
         ar.setId(System.currentTimeMillis());
         ar.setHome("/");
@@ -176,7 +176,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         ar.setReadOnly(false);
         ar.setPriority(10);
         ar.setRoot("/pnfs/fnal.gov/usr");
-        
+
         GroupList gl1 = new GroupList();
         gl1.setAuthRecord(ar);
         Group group11 = new Group();
@@ -195,10 +195,10 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         l1.add(group11);
         l1.add(group12);
         l1.add(group13);
-        
+
         gl1.setAttribute(null);
         gl1.setGroups(l1);
-        
+
         GroupList gl2 = new GroupList();
         gl2.setAuthRecord(ar);
         Group group21 = new Group();
@@ -223,19 +223,19 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         System.out.println("persisted successfully ");
         System.out.println("id="+ar.getId());
     }
-    
+
     public static void findTest(long id)  throws Exception {
-        AuthRecordPersistenceManager pm = 
+        AuthRecordPersistenceManager pm =
             new AuthRecordPersistenceManager("jdbc:postgresql://localhost/testjpa",
             "org.postgresql.Driver","srmdcache","");
-      // AuthRecordPersistenceManager pm = 
+      // AuthRecordPersistenceManager pm =
       //      new AuthRecordPersistenceManager("/tmp/pm.properties");
         AuthorizationRecord ar = pm.find(id);
         if(ar == null) {
             System.out.println("AuthorizationRecord with id="+id +" not found ");
         }
         System.out.println(" found "+ar);
-        
+
     }
-    
+
 }

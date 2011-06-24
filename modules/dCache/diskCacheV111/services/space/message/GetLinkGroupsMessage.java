@@ -1,8 +1,8 @@
 //______________________________________________________________________________
 //
-// Intended usage: specify requested linkgroup id and get a set with one 
-//                 element back 
-//                 do not specify requested linkgroup id and get the set 
+// Intended usage: specify requested linkgroup id and get a set with one
+//                 element back
+//                 do not specify requested linkgroup id and get the set
 //                 containing all linkgroups
 //
 //  $Id$
@@ -21,29 +21,29 @@ public class GetLinkGroupsMessage extends Message {
 
 	private Set<LinkGroup> list;
 
-	public void setLinkGroupidI(long id) { 
+	public void setLinkGroupidI(long id) {
 		linkGroupId = new Long(id);
 	}
 
-	public void setLinkGroupId(Long id) { 
+	public void setLinkGroupId(Long id) {
 		linkGroupId = id;
 	}
 
-	public Long getLinkgroupidId() { 
+	public Long getLinkgroupidId() {
 		return linkGroupId;
 	}
 
 
-	public GetLinkGroupsMessage() { 
+	public GetLinkGroupsMessage() {
 		setReplyRequired(true);
 	}
 
 	public Set<LinkGroup> getLinkGroupSet() {
 		return list;
 	}
-	
-	public void setLinkGroupSet(Set<LinkGroup> lglist) { 
+
+	public void setLinkGroupSet(Set<LinkGroup> lglist) {
 		this.list=lglist;
 	}
 
-}  
+}

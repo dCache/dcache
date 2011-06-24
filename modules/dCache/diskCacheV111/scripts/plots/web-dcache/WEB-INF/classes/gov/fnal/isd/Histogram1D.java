@@ -51,7 +51,7 @@ public class Histogram1D
     */
     public void fill(Timestamp x) {
 	//System.out.println("fill: x="+x);
-	if (x == null) 
+	if (x == null)
 	    return;
 	int nb = ((int)((x.getTime()-hStart)/binWidth))+1;
 	if (nb < 0) nb = 0;
@@ -64,7 +64,7 @@ public class Histogram1D
 
     public void fill(Timestamp x, double w) {
 	//System.out.println("fill: x="+x+" w="+w);
-	if (x == null) 
+	if (x == null)
 	    return;
 	int nb = ((int)((x.getTime()-hStart)/binWidth))+1;
 	if (nb < 0) nb = 0;

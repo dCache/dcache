@@ -4,7 +4,7 @@ package diskCacheV111.vehicles ;
 import java.util.Hashtable ;
 /**
   * Implementation of the StorageInfo for Enstore. Adds 'fileFamily',
-  * 'storageGroup', 'bfid, 'volume, and 'location' to the general 
+  * 'storageGroup', 'bfid, 'volume, and 'location' to the general
   * attributes.
   */
 public class EnstoreStorageInfo extends GenericStorageInfo {
@@ -13,9 +13,9 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
    private String _volume   = "<unknown>" ;
    private String _location = "<unknown>" ;
    private String _path     = null ;
-   
+
    private static final long serialVersionUID = 8640934581729492133L;
-   
+
    public EnstoreStorageInfo( String storageGroup , String fileFamily ){
       setHsm("enstore");
       _family = fileFamily ;
@@ -23,8 +23,8 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
       setIsNew( true ) ;
 
    }
-   public EnstoreStorageInfo( String storageGroup , 
-                              String fileFamily , 
+   public EnstoreStorageInfo( String storageGroup ,
+                              String fileFamily ,
                               String bfid ){
       setHsm("enstore");
       _family = fileFamily ;
@@ -40,7 +40,7 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
              (_family==null?"None":_family) ;
    }
    public String toString(){
-      return 
+      return
              super.toString()+
              ";path="+(_path==null?"<Unknown>":_path)+
              ";group="+(_group==null?"<Unknown>":_group)+
@@ -53,10 +53,10 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
    public String getFileFamily(){ return _family ; }
    public void setVolume( String volume ){ _volume = volume ; }
    public void setLocation(String location ){ _location = location ; }
-   
+
    public String getVolume(){ return _volume ; }
    public String getLocation(){ return _location ; }
-   
+
    public static void main (String[] args) throws Exception {
        java.io.ObjectInputStream io = new java.io.ObjectInputStream (
           new java.io.FileInputStream(args[0]));
@@ -70,4 +70,4 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
        return;
    }
 }
- 
+

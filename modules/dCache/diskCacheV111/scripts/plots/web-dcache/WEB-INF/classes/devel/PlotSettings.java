@@ -3,9 +3,9 @@ import java.sql.*;
 import java.text.*;
 
 /**
- * Class PlotSettings builds the list of the settings for the plot. 
+ * Class PlotSettings builds the list of the settings for the plot.
  */
-public class PlotSettings 
+public class PlotSettings
 {
     /**
      * Class constructor. Executes simple query for the given table and fills the setting list

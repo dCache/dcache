@@ -5,17 +5,17 @@ import javax.servlet.http.*;
 
 public class ReqInfoServlet extends HttpServlet {
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
 	throws ServletException, IOException {
-	
+
 	response.setContentType("text/html");
 	PrintWriter out = response.getWriter();
-	
+
 	// Print the HTML header
 	out.println("<HTML><HEAD><TITLE>");
 	out.println("Request info");
 	out.println("</TITLE></HEAD>");
-	
+
 	// Print the HTML body
 	out.println("<BODY><H1>Request info</H1><PRE>");
 	out.println("getCharacterEncoding: " + request.getCharacterEncoding());
@@ -51,7 +51,7 @@ public class ReqInfoServlet extends HttpServlet {
 	    out.println("getPath: " + file.getPath());                   //          Converts this abstract pathname into a pathname string.
 	}
 
- 
+
 	out.println();
 	out.println("Parameters:");
 	Enumeration paramNames = request.getParameterNames();
@@ -63,7 +63,7 @@ public class ReqInfoServlet extends HttpServlet {
 		out.println("      " + values[i]);
 	    }
 	}
-	
+
 	out.println();
 	out.println("Request headers:");
 	Enumeration headerNames = request.getHeaderNames();
@@ -72,7 +72,7 @@ public class ReqInfoServlet extends HttpServlet {
 	    String value = request.getHeader(name);
 	    out.println("  " + name + " : " + value);
 	}
-	
+
 	out.println();
 	out.println("Cookies:");
 	Cookie[] cookies = request.getCookies();
@@ -81,13 +81,13 @@ public class ReqInfoServlet extends HttpServlet {
 	    String value = cookies[i].getValue();
 	    out.println("  " + name + " : " + value);
 	}
-	
+
 	// Print the HTML footer
 	out.println("</PRE></BODY></HTML>");
 	out.close();
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
 	throws ServletException, IOException {
 	doGet(request, response);
     }

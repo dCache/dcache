@@ -8,5 +8,5 @@ public class FTPException extends Exception
 
     public FTPException(String s) {
 	super(s);
-    }   
+    }
 }

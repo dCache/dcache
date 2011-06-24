@@ -18,7 +18,7 @@ public interface StateObservatory {
 
     /**
      * Add a watcher to the group of StateWatchers.
-     * 
+     *
      * @param watcher
      *            the StateWatcher to add.
      */
@@ -26,7 +26,7 @@ public interface StateObservatory {
 
     /**
      * Remove a specific StateWatcher from the group.
-     * 
+     *
      * @param watcher
      *            the StateWatcher to remove.
      */
@@ -35,14 +35,14 @@ public interface StateObservatory {
     /**
      * Provide an array of Strings that describe the current group
      * membership.
-     * 
+     *
      * @return
      */
     public String[] listStateWatcher();
 
     /**
      * Enable all StateWatchers that match the given name
-     * 
+     *
      * @param name
      *            name of StateWatcher(s) that are to be enabled.
      * @return number of StateWatchers that matched name.
@@ -51,7 +51,7 @@ public interface StateObservatory {
 
     /**
      * Disable all StateWatchers that match the given name.
-     * 
+     *
      * @param name
      *            name of StateWatcher(s) that are to be disabled.
      * @return number of StateWatchers that matched name.
@@ -63,7 +63,7 @@ public interface StateObservatory {
      * expressed an interest in a metric that is to change. A StateUpdate is
      * generated for all derived metric values that have changed as a result
      * of this transition.
-     * 
+     *
      * @param transition
      *            the StateTransition describing the pending changes.
      * @return a StateUpdate with all changes to derived metrics, or null if

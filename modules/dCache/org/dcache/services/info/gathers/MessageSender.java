@@ -18,7 +18,7 @@ public interface MessageSender {
      * Send an instance of Message to the Cell identified by the provided
      * CellPath. The time-to-live (in seconds) for any resulting metrics is
      * recorded.
-     * 
+     *
      * @param ttl
      *            how long, in seconds, resulting metrics should last
      * @param path
@@ -33,11 +33,11 @@ public interface MessageSender {
      * target Cell). The time-to-live (in seconds) for any resulting metrics
      * is recorded.
      * <p>
-     * 
+     *
      * The reply message (if any) will be handled by the object implementing
      * CellMessageAnswerable. If the handler is null then we assume this is a
      * one-shot message.
-     * 
+     *
      * @param ttl
      *            how long, in seconds, resulting metrics should last
      * @param handler
@@ -53,11 +53,11 @@ public interface MessageSender {
      * provided CellPath. The time-to-live (in seconds) for any resulting
      * metrics is recorded.
      * <p>
-     * 
+     *
      * This method uses the cell's shell to obtain information. Although not
      * yet deprecated, new code shouldn't use this method but, instead, build
      * a vehicle to send to the cell.
-     * 
+     *
      * @param ttl
      *            how long, in seconds, resulting metrics should last
      * @param handler

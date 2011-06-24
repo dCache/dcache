@@ -4,19 +4,19 @@ import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
 
 public class PoolHitInfoMessage extends PnfsFileInfoMessage {
-    
+
     private ProtocolInfo _protocolInfo = null ;
     private boolean      _fileCached  = false ;
-    
+
     private static final long serialVersionUID = -1487408937648228544L;
-    
+
     public PoolHitInfoMessage(String cellName, PnfsId pnfsId)
     {
 		super("hit", "pool", cellName, pnfsId);
     }
 
-    public void setFileCached(boolean cached) 
-    { 
+    public void setFileCached(boolean cached)
+    {
 		_fileCached = cached;
     }
 
@@ -25,13 +25,13 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
 		_protocolInfo = protocolInfo;
     }
 
-    public boolean getFileCached() 
-    { 
+    public boolean getFileCached()
+    {
 		return _fileCached;
     }
 
-    public ProtocolInfo getProtocolInfo() 
-    { 
+    public ProtocolInfo getProtocolInfo()
+    {
 		return _protocolInfo;
     }
 

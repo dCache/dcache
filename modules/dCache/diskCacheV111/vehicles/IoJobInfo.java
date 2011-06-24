@@ -9,14 +9,14 @@ public class IoJobInfo extends JobInfo  {
    private long _transferTime     = 0 ;
    private long _lastTransferred  = 0 ;
    private PnfsId _pnfsId         = null ;
-   
+
    private static final long serialVersionUID = -7987228538353684951L;
-   
+
    public IoJobInfo( JobScheduler.Job job ){
       super( job ) ;
    }
    public void setIoInfo( PnfsId pnfsId ,
-                   long bytesTransferred , 
+                   long bytesTransferred ,
                    long transferTime ,
                    long lastTransferred ){
       _pnfsId           = pnfsId ;
@@ -35,4 +35,4 @@ public class IoJobInfo extends JobInfo  {
              ";T="+_transferTime+
              ";L="+((System.currentTimeMillis()-_lastTransferred)/1000)+";";
    }
-} 
+}

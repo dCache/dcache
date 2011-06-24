@@ -8,19 +8,19 @@ public class PnfsFileInfoMessage extends InfoMessage {
    private String _path     = "Unknown";
    private long   _fileSize = 0 ;
    private StorageInfo  _storageInfo  = null ;
-   
+
    private static final long serialVersionUID = -7761016173336078097L;
-   
+
    public PnfsFileInfoMessage( String messageType ,
                                String cellType ,
                                String cellName ,
                                PnfsId pnfsId ){
       super( messageType , cellType , cellName ) ;
-      _pnfsId = pnfsId ;                           
+      _pnfsId = pnfsId ;
    }
-   public String getFileInfo(){ 
+   public String getFileInfo(){
        return "["+_pnfsId+","+_fileSize+"]"+" "+ "[" + _path + "] " +
-             ( _storageInfo == null ? 
+             ( _storageInfo == null ?
                "<unknown>" :
                (_storageInfo.getStorageClass()+"@"+_storageInfo.getHsm())) ;
    }
@@ -34,5 +34,5 @@ public class PnfsFileInfoMessage extends InfoMessage {
    public StorageInfo getStorageInfo(){ return _storageInfo ; }
    public String getPath() { return _path; }
    public void setPath(String path) { _path = path; }
-   
+
 }

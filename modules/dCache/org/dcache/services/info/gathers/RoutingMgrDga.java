@@ -16,11 +16,11 @@ import dmg.cells.nucleus.CellPath;
  * For each list item, it issues the "ls -x" command.  This requests that the
  * RoutingMgr replies with its current knowledge of routing as a three-item
  * array.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class RoutingMgrDga extends SkelListBasedActivity {
-	
+
 	private static final Logger _log = LoggerFactory.getLogger( RoutingMgrDga.class);
 
 	private final MessageSender _sender;
@@ -32,7 +32,7 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 	 */
 	private static int MIN_LIST_REFRESH_PERIOD = 300000;
 	private static int SUCC_MSG_DELAY = 5000;
-	
+
 	private final CellMessageAnswerable _handler;
 
 	public RoutingMgrDga( StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
@@ -42,7 +42,7 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 		_sender = sender;
 		_handler = handler;
 	}
-	
+
 	/**
 	 * Method called periodically when we should send out a message.
 	 */
@@ -51,7 +51,7 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 		super.trigger();
 
 		String domainName = getNextItem();
-		
+
 		// This can happen, indicating that there's nothing to do.
 		if( domainName == null)
 			return;
@@ -63,13 +63,13 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 		 */
 
 		CellPath routingMgrCellPath = new CellPath( "RoutingMgr", domainName);
-		
+
 		if( _log.isInfoEnabled())
 			_log.info( "sending message \"ls -x\" to RoutingMgr cell on domain " + domainName);
 
 		_sender.sendMessage( getMetricLifetime(), _handler, routingMgrCellPath, "ls -x");
 	}
-	
+
 	/**
 	 * We only expect to have a single instance of this class.
 	 */

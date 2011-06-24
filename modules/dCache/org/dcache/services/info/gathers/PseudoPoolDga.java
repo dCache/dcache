@@ -14,7 +14,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  * The PseudoPoolDga provides a stream of fake data about a fake pool.  It
  * is used to introduce load on the info state system and watchers.  This
  * DGA will also register itself as a member of the <code>default</code>
- * Poolgroup. 
+ * Poolgroup.
  * <p>
  * To use this class, add a line like:
  * <pre>
@@ -24,21 +24,21 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  * </pre>
  * to the <code>DataGatheringScheduler.addDefaultActivity()</code> method.
  * <p>
- * This class provides a very rough-and-ready simulation of data activity, 
- * with files being added and deleted at random intervals. 
- * 
+ * This class provides a very rough-and-ready simulation of data activity,
+ * with files being added and deleted at random intervals.
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class PseudoPoolDga implements Schedulable {
 
 	/** Max number standard deviation to allow in delay */
 	static final private int NUM_SD = 4;
-	/** The safety margin we should ensure for metrics, in seconds */  
+	/** The safety margin we should ensure for metrics, in seconds */
 	static final private int SAFETY_MARGIN = 2;
 	static final private long BYTES_IN_GIBIBYTE = 1024*1024*1024;
-	
+
 	static final private StatePath DEFAULT_POOLGROUP_MEMBERSHIP = StatePath.parsePath( "poolgroups.default.pools");
-		
+
 	static final double PRECIOUS_ADD_LIKELIHOOD = 0.5;
 	/** Fraction of total space to add, on average */
 	static final double PRECIOUS_ADD_DELTA = 0.01;
@@ -65,8 +65,8 @@ public class PseudoPoolDga implements Schedulable {
 	private final SpaceInfo _spaceInfo;
 	private final StatePath _ourSpacePath;
 	private StatePath _ourPgMembership;
-	/** Average time between successive calls, in milliseconds */	
-	private final int _delay; 
+	/** Average time between successive calls, in milliseconds */
+	private final int _delay;
 	/** Standard deviation for Normal spread of successive calls */
 	private final int _spread;
 	/** Lifetime of metrics, in seconds */
@@ -74,7 +74,7 @@ public class PseudoPoolDga implements Schedulable {
 	/** Maximum delay between successive queries, in milliseconds */
 	private final long _maxDelay;
 	private final Random _rnd = new Random();
-	
+
 	private final StateUpdateManager _sum;
 
 	/**
@@ -91,16 +91,16 @@ public class PseudoPoolDga implements Schedulable {
 
 		StatePath pools = new StatePath( "pools");
 		_ourSpacePath = pools.newChild(poolName).newChild("space");
-		
+
 		// Parameters for how often metrics are updated
 		_delay = updatePeriod;
 		_spread = (int) (0.05 * updatePeriod);
-		
-		_maxDelay = _delay + NUM_SD * _spread;		
+
+		_maxDelay = _delay + NUM_SD * _spread;
 		_metricLifetime = _maxDelay/1000 + SAFETY_MARGIN;
-		
+
 		_ourPgMembership = DEFAULT_POOLGROUP_MEMBERSHIP.newChild( poolName);
-		
+
 		// Initially, completely empty.
 		_spaceInfo = new SpaceInfo(capacity * BYTES_IN_GIBIBYTE);
 	}
@@ -108,37 +108,37 @@ public class PseudoPoolDga implements Schedulable {
 	// Roughly periodic: Normal with mean: _duration, SD: _spread
 	public Date shouldNextBeTriggered() {
 		long thisDelay = _delay + (long) (_rnd.nextGaussian() * _spread);
-		
+
 		if( thisDelay > _maxDelay)
 			thisDelay = _maxDelay;
-		
+
 		return new Date( System.currentTimeMillis() + thisDelay);
 	}
 
-	
+
 	/**
 	 *  When we've been triggered.
 	 */
 	public void trigger() {
-		
+
 		updateSpace();
-		
+
 		StateUpdate update = new StateUpdate();
-		
+
 		// Renew our membership of default poolgroup
 		update.appendUpdate( _ourPgMembership, new StateComposite( _metricLifetime));
-		
+
 		_spaceInfo.addMetrics(update, _ourSpacePath, _metricLifetime);
-		
+
 		_sum.enqueueUpdate( update);
 	}
-	
+
 	/**
 	 * Update our space information.  We try to provide a half-way reasonable model of how
 	 * a pool behaves.
 	 */
 	private void updateSpace() {
-		
+
 		// People add precious data with fixed likelihood that is mostly the same size.
 		if( _rnd.nextFloat() < PRECIOUS_ADD_LIKELIHOOD)
 			_spaceInfo.updatePrecious( (long) (_spaceInfo.getTotal() * PRECIOUS_ADD_DELTA * (1 + _rnd.nextGaussian() * PRECIOUS_ADD_SPREAD)));

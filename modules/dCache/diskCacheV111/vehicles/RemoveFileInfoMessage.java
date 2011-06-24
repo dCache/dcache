@@ -4,9 +4,9 @@ import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
 
 public class RemoveFileInfoMessage extends PnfsFileInfoMessage {
-    
+
     private static final long serialVersionUID = 705215552239829093L;
-    
+
    public RemoveFileInfoMessage( String cellName ,
                               PnfsId pnfsId    ){
       super( "remove" , "pool" , cellName , pnfsId ) ;

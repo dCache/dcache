@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.dcache.services.info.base;
 
@@ -19,17 +19,17 @@ public class StringStateValue extends StateValue {
 	public StringStateValue( String value) {
 		this( value, false);
 	}
-	
+
 	/**
 	 * Create a String StateValue that is either immortal or ephermal.
 	 * @param value the String value to store
-	 * @param isImmortal true if the value is immortal, false otherwise 
+	 * @param isImmortal true if the value is immortal, false otherwise
 	 */
 	public StringStateValue( String value, boolean isImmortal) {
 		super( isImmortal);
 		_storage = value;
 	}
-	
+
 	/**
 	 * Create an expiring String StateValue.
 	 * @param value the String to store.
@@ -39,26 +39,26 @@ public class StringStateValue extends StateValue {
 		super( duration);
 		_storage = value;
 	}
-	
+
 	@Override
 	public String toString() {
 		return _storage != null ? _storage : "(null)";
 	}
-	
+
 	@Override
 	public String getTypeName() {
 		return "string";
 	}
 
-	
+
 	/**
-	 * Needed for the Visitor pattern.  See StateVisitor interface for more details. 
+	 * Needed for the Visitor pattern.  See StateVisitor interface for more details.
 	 */
 	@Override
 	public void acceptVisitor( StatePath path, StateVisitor visitor) {
 		visitor.visitString( path, this);
 	}
-	
+
 	/**
 	 * Override the default hashCode to honour the hashCode() equals() contract.
 	 */
@@ -66,7 +66,7 @@ public class StringStateValue extends StateValue {
 	public int hashCode() {
 		return _storage == null ? NULL_HASH_CODE : _storage.hashCode();
 	}
-	
+
 	/**
 	 * Override the default equals.
 	 */
@@ -75,12 +75,12 @@ public class StringStateValue extends StateValue {
 
 		if( !(other instanceof StringStateValue))
 			return false;
-		
+
 		StringStateValue otherValue = (StringStateValue) other;
-		
+
 		if( _storage == null)
 			return otherValue._storage == null;
-		
+
 		return _storage.equals( otherValue._storage);
 	}
 }

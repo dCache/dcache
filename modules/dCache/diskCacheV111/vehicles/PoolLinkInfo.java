@@ -18,22 +18,22 @@ public class PoolLinkInfo implements java.io.Serializable {
     private long availableSpaceInBytes;
     private String[] storageGroups;
     private String hsmType="None";
-    
+
   // need to add once finalized
    // private static final long serialVersionUID = ;
     /** Creates a new instance of PoolLinkInfo */
     public PoolLinkInfo() {
     }
-    
+
     public PoolLinkInfo(String name, long availableSpaceInBytes, String[] storageGroups){
         this.name = name;
         this.availableSpaceInBytes = availableSpaceInBytes;
         this.storageGroups = storageGroups;
     }
-    
-    public PoolLinkInfo(String name, 
-            long availableSpaceInBytes, 
-            String[] storageGroups, 
+
+    public PoolLinkInfo(String name,
+            long availableSpaceInBytes,
+            String[] storageGroups,
             String hsmType){
         this.name = name;
         this.availableSpaceInBytes = availableSpaceInBytes;
@@ -83,5 +83,5 @@ public class PoolLinkInfo implements java.io.Serializable {
     public void setHsmType(String hsmType) {
         this.hsmType = hsmType;
     }
-    
+
 }

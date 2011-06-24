@@ -87,7 +87,7 @@ public class NFSv4Call {
     };
 
     /**
-     * 
+     *
      * @param opnum
      * @return string representation of NFSv4.1 operation defined by opnum
      */

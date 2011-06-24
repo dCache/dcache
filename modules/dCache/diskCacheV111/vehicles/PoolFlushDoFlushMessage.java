@@ -7,9 +7,9 @@ import java.util.StringTokenizer ;
 //
 
 public class PoolFlushDoFlushMessage extends PoolFlushControlInfoMessage {
-    
+
     private static final long serialVersionUID = 2092239799703855551L;
-    
+
     private String  _hsmName          = null ;
     private String  _storageClassName = null ;
     private int     _maxFlushCount = 0 ;
@@ -17,7 +17,7 @@ public class PoolFlushDoFlushMessage extends PoolFlushControlInfoMessage {
     private int     _totalFlushed  = 0 ;
     private int     _totalFailed   = 0 ;
     private boolean _finished      = false ;
-    
+
     public PoolFlushDoFlushMessage( String poolName , String composedStorageClass ){
         super(poolName);
         StringTokenizer st = new StringTokenizer( composedStorageClass , "@" ) ;

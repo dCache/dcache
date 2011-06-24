@@ -24,7 +24,7 @@ public class PoolSelectionRequest {
 	String _pnfsid;
 	private ProtocolInfo _protocolInfo;
 	private StorageInfo _storageInfo;
-	
+
 	PoolSelectionRequest(long size, String pnfsid, StorageInfo storageInfo, ProtocolInfo protocolInfo){
 		_size = size;
 		_pnfsid = pnfsid;
@@ -39,15 +39,15 @@ public class PoolSelectionRequest {
 	public long getSize() {
 		return _size;
 	};
-	
+
 	public StorageInfo getStorageInfo(){
 		return _storageInfo;
 	};
-	
+
 	public ProtocolInfo getProtocolInfo(){
 		return _protocolInfo;
 	};
-	
+
 
 
 }

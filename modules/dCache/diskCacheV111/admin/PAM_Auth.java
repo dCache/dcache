@@ -4,7 +4,7 @@ public class PAM_Auth {
 
    private        String  _service;
    private static boolean _libLoaded = false ;
-   
+
    private native int checkUser(String service,String user, String pass);
 
    //
@@ -29,7 +29,7 @@ public class PAM_Auth {
        if( ! _libLoaded )
           throw new
           IllegalArgumentException("pam4java not loaded") ;
-          
+
        return checkUser( _service, user, pass ) == 1 ;
    }
 
@@ -43,7 +43,7 @@ public class PAM_Auth {
       try{
          PAM_Auth pam = new PAM_Auth( args.length > 2 ? args[2] : "login" );
          boolean rc = pam.authenticate( args[0] , args[1] );
-         System.out.println( "Authentication returned : "+rc ) ;		
+         System.out.println( "Authentication returned : "+rc ) ;
       }catch ( Exception e) {
          e.printStackTrace();
       }

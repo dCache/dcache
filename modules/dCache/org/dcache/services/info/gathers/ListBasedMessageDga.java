@@ -10,7 +10,7 @@ import dmg.cells.nucleus.CellPath;
 /**
  * This class sends a series of messages based on the current state tree.
  *   It uses a visitor to
- * extract all entries below a certain point in the state tree and constructs a message for 
+ * extract all entries below a certain point in the state tree and constructs a message for
  * each entry; for example, if the path is "dCache.pools" and the state contains entries for
  * "dCache.pools.fandango_1" and "dCache.pools.fandango_2" then two CellMessages are sent.
  * <p>
@@ -27,8 +27,8 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	/* The following two are only needed for toString() */
 	private final String _cellName;
 	private final String _parentPath;
-	
-	
+
+
 	/**
 	 * Create a new list-based data-gathering activity
 	 * @param parent the StatePath that points to the list's parent item
@@ -44,7 +44,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		_parentPath = parent.toString();
 		_messagePrefix = message;
 		_handler = handler;
-		
+
 		_cellPath = new CellPath( cellName);
 		_sender = sender;
 	}
@@ -54,15 +54,15 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	 */
 	@Override
     public void trigger() {
-		
+
 		super.trigger();
-		
+
 		String item = getNextItem();
 
 		// Only null if there's nothing under _parentPath in dCache.
 		if( item == null)
 			return;
-			
+
 		StringBuilder sb = new StringBuilder();
 		sb.append(_messagePrefix);
 		sb.append( " ");
@@ -74,7 +74,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	@Override
     public String toString() {
 		StringBuilder sb = new StringBuilder();
-		
+
 		sb.append(this.getClass().getSimpleName());
 		sb.append("[");
 		sb.append( _cellName);
@@ -83,7 +83,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		sb.append( ", ");
 		sb.append( _messagePrefix);
 		sb.append( "]");
-		
+
 		return sb.toString();
 	}
 }

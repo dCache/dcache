@@ -1,7 +1,7 @@
 // $Id: PoolCheckCostMessage.java,v 1.8 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles;
 
-import java.util.*; 
+import java.util.*;
 
 
 /**
@@ -9,16 +9,16 @@ import java.util.*;
   *   for Decision Unit.
   */
 
-public class PoolCheckCostMessage 
-       extends PoolCheckMessage 
+public class PoolCheckCostMessage
+       extends PoolCheckMessage
        implements PoolCostCheckable {
 
     private double _spaceCost      = 0.0  ;
     private double _performanceCost= 0.0  ;
     private long   _filesize       = 0 ;
-	
+
     private static final long serialVersionUID = 4310317407646107895L;
-    
+
     public PoolCheckCostMessage( String poolName , long filesize ){
 	super(poolName);
         _filesize = filesize ;

@@ -8,14 +8,14 @@ public class NetHandler {
    private HashMap [] _netList     = new HashMap[33] ;
    private String  [] _maskStrings = new String[33] ;
    private long    [] _masks       = new long[33] ;
-   
+
    static public class Unit {
        private int         _hostBits = 0 ;
        private InetAddress _address  = null ;
        public Unit( String address )throws UnknownHostException {
           int pos = address.indexOf( "/" ) ;
-          if( pos < 0 ){ 
-             setUnit( InetAddress.getByName(address) , 32 ) ; 
+          if( pos < 0 ){
+             setUnit( InetAddress.getByName(address) , 32 ) ;
              return ;
           }
           int netBits = Integer.parseInt( address.substring(pos+1) ) ;
@@ -87,7 +87,7 @@ public class NetHandler {
       long addr = inetAddressToLong( net.getHostAddress() ) ;
 
       Object value = _netList[bit].remove( Long.valueOf( addr ) ) ;
-      if( _netList.length == 0 )_netList[bit] = null ; 
+      if( _netList.length == 0 )_netList[bit] = null ;
       return value ;
    }
    public Object find( Unit net ){
@@ -131,5 +131,5 @@ public class NetHandler {
       nh.put( new NetHandler.Unit( "131.169.1.222/0" ) ,  "world" ) ;
       String result = (String)nh.match( args[0] ) ;
       System.out.println(result) ;
-   }   
+   }
 }

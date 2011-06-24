@@ -17,18 +17,18 @@ public final class TextParser {
 		parseText();
 	}
 
-	public String[] getTokens() { 
+	public String[] getTokens() {
 		String result[] = new String[set.size()];
 		Iterator i=set.iterator();
 		int j=0;
-		while(i.hasNext()) { 
+		while(i.hasNext()) {
 			result[j]=(String)i.next();
 			j++;
 		}
 		return result;
 	}
 
-	public void parseText() { 
+	public void parseText() {
 		set              = new LinkedList();
 		boolean returnTokens     = true;
 		String currentDelimeters = WHITESPACE_AND_QUOTES;
@@ -57,7 +57,7 @@ public final class TextParser {
 	}
 
 	private void addToken(String token, Collection result ){
-		if (!emptyText(token)) { 
+		if (!emptyText(token)) {
 			result.add(token.trim());
 		}
 	}
@@ -76,4 +76,4 @@ public final class TextParser {
 		}
 		return result;
 	}
-} 
+}

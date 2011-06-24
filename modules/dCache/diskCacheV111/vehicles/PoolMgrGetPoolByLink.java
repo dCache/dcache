@@ -6,17 +6,17 @@ import  diskCacheV111.util.* ;
 public class PoolMgrGetPoolByLink extends Message {
 
     //private static final long serialVersionUID = ;
-    
+
     private String linkName;
     private long   fileSize = 0L ;
     private String poolName;
-    public PoolMgrGetPoolByLink(            
+    public PoolMgrGetPoolByLink(
                               String linkName){
         this.linkName = linkName;
 	setReplyRequired(true);
     }
-    
-    
+
+
     public String toString(){
        if( getReturnCode() == 0 )
          return "LinkName="+

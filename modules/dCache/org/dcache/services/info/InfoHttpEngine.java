@@ -41,7 +41,7 @@ import dmg.util.HttpResponseEngine;
  * <p>
  * Future versions may include additional functionality, such as server-side transformation of
  * the XML data into another format.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class InfoHttpEngine implements HttpResponseEngine {
@@ -49,20 +49,20 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	private static Logger _log = LoggerFactory.getLogger( HttpResponseEngine.class);
 
 	private static final String INFO_CELL_NAME = "info";
-	
+
 	/** The maximum age of our cache, in milliseconds */
 	private static final long MAX_CACHE_AGE = 1000;
-	
+
 	/** How long we should wait for the info cell to reply before timing out, in milliseconds */
 	private static final long INFO_CELL_TIMEOUT = 4000;
-	
+
 	private final CellPath _infoCellPath = new CellPath( INFO_CELL_NAME);
 	private final CellNucleus _nucleus;
 
 	/** Our local cache of the complete XML data */
 	private byte _cache[];
 	private Date _whenReceived;
-	
+
 
 	/**
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
@@ -92,13 +92,13 @@ public class InfoHttpEngine implements HttpResponseEngine {
 
 		List<String> pathElements = null;
 		byte recv[];
-		
+
 		String[]    urlItems = request.getRequestTokens();
         OutputStream out     = request.getOutputStream();
 
         if( _log.isInfoEnabled()) {
         	StringBuilder sb = new StringBuilder();
-        	
+
         	for( String urlItem : urlItems) {
         		if( sb.length() > 0)
         			sb.append( "/");
@@ -109,11 +109,11 @@ public class InfoHttpEngine implements HttpResponseEngine {
 
         if( urlItems.length > 1) {
         	pathElements = new ArrayList<String>( urlItems.length-1);
-        
+
         	for( int i = 1; i < urlItems.length; i++)
         		pathElements.add(i-1, urlItems[i]);
         }
-        
+
         /**
          * Maintain our cache of XML.  This prevents end-users from thrashing the info cell.
          */
@@ -126,17 +126,17 @@ public class InfoHttpEngine implements HttpResponseEngine {
        			recv = fetchXML( pathElements);
        		}
        	} catch( TimeoutException e) {
-               throw new HttpException( 503 , "The info cell took too long to reply, suspect trouble.");        		
+               throw new HttpException( 503 , "The info cell took too long to reply, suspect trouble.");
        	} catch( NotSerializableException e) {
                throw new HttpException( 500, "Internal error when requesting info from info cell.");
        	} catch( NoRouteToCellException e) {
-               throw new HttpException( 503 , "Unable to contact the info cell.  Please ensure the info cell is running.");        		
+               throw new HttpException( 503 , "Unable to contact the info cell.  Please ensure the info cell is running.");
        	} catch( NullPointerException e) {
        		throw new HttpException( 500, "Received no sensible reply from info cell.  See info cell for details.");
        	} catch( InterruptedException e) {
        		throw new HttpException( 503, "Received interrupt whilst processing data. Please try again later.");
        	}
-        
+
         request.setContentType( "application/xml");
 
         try {
@@ -146,8 +146,8 @@ public class InfoHttpEngine implements HttpResponseEngine {
         	_log.error("IOException caught whilst writing output : " + e.getMessage());
         }
 	}
-	
-	
+
+
 	/**
 	 * Send a message off to the info cell
 	 */
@@ -155,8 +155,8 @@ public class InfoHttpEngine implements HttpResponseEngine {
 		_cache = fetchXML( null);
 		_whenReceived = new Date();
 	}
-	
-	
+
+
 	/**
 	 * Attempt to gather XML data for given path, or complete tree if pathElements is null.
 	 * @param pathElements
@@ -165,34 +165,34 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	private byte[] fetchXML( List<String> pathElements) throws InterruptedException, NotSerializableException, NoRouteToCellException, TimeoutException {
 
 		String serialisedData = null;
-		
+
 		if( _log.isDebugEnabled())
         	_log.debug( "Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
 
-		InfoGetSerialisedDataMessage sendMsg = (pathElements == null) ? new InfoGetSerialisedDataMessage() : new InfoGetSerialisedDataMessage( pathElements);  
-		
+		InfoGetSerialisedDataMessage sendMsg = (pathElements == null) ? new InfoGetSerialisedDataMessage() : new InfoGetSerialisedDataMessage( pathElements);
+
 		CellMessage envelope = new CellMessage( _infoCellPath, sendMsg);
 
 		try {
 			CellMessage replyMsg = _nucleus.sendAndWait( envelope, INFO_CELL_TIMEOUT);
-			
+
 			if( replyMsg == null)
 				throw new TimeoutException();
-			
+
 			Object replyObj = replyMsg.getMessageObject();
 
 			// Bizarre!  We have to throw this ourselves.
 			if( replyObj instanceof NoRouteToCellException)
 				throw (NoRouteToCellException) replyObj;
-			
+
 			// A catch-all for when the reply isn't what we are expecting.
 			if( !(replyObj instanceof InfoGetSerialisedDataMessage))
 				throw new NotSerializableException();
-			
+
 			InfoGetSerialisedDataMessage reply = (InfoGetSerialisedDataMessage) replyObj;
-			
+
 			serialisedData = reply.getSerialisedData();
-			
+
 			if( serialisedData == null) {
 				/**
 				 *  TODO: replyStr == null should only come from a problem within the Info cell
@@ -201,14 +201,14 @@ public class InfoHttpEngine implements HttpResponseEngine {
 				 */
 				throw new NullPointerException();
 			}
-			
+
 		} catch( InterruptedException e) {
 			_cache = null;
 			_whenReceived = null;
 			throw e;
 		}
-		
+
 		return serialisedData.getBytes();
 	}
-	
+
 }

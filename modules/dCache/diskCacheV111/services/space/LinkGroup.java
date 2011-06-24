@@ -30,7 +30,7 @@ public class LinkGroup implements java.io.Serializable{
 
 	public LinkGroup(){
 	}
-	
+
 	public LinkGroup(
 		long id,
 		String name,
@@ -78,32 +78,32 @@ public class LinkGroup implements java.io.Serializable{
 		this.custodialAllowed = custodialAllowed;
 		this.reservedSpaceInBytes = 0L;
 	}
-	
+
 	public long getId() {
 		return id;
 	}
-	
+
 	public void setId(long id) {
 		this.id = id;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 	public long getFreeSpace() {
 		return freeSpace;
 	}
-	
+
 	public void setFreeSpace(long freeSpace) {
 		this.freeSpace = freeSpace;
 	}
-	
-	
+
+
 	public String toString(){
 		StringBuffer sb = new StringBuffer();
 		toStringBuffer(sb);
@@ -127,40 +127,40 @@ public class LinkGroup implements java.io.Serializable{
 		sb.append("outputAllowed:").append(outputAllowed).append(' ');
 		sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append("(").append(updateTime).append(")");
 	}
-	
-	
+
+
 	public VOInfo[] getVOs() {
 		return vos;
 	}
-	
+
 	public void setVOs(VOInfo[] vos) {
 		this.vos = vos;
 	}
-	
+
 	public long getUpdateTime() {
 		return updateTime;
 	}
-	
+
 	public void setUpdateTime(long updateTime) {
 		this.updateTime = updateTime;
 	}
-	
+
 	public boolean isOnlineAllowed() {
 		return onlineAllowed;
 	}
-	
+
 	public void setOnlineAllowed(boolean onlineAllowed) {
 		this.onlineAllowed = onlineAllowed;
 	}
-	
+
 	public boolean isNearlineAllowed() {
 		return nearlineAllowed;
 	}
-	
+
 	public void setNearlineAllowed(boolean nearlineAllowed) {
 		this.nearlineAllowed = nearlineAllowed;
 	}
-	
+
 	public boolean isReplicaAllowed() {
 		return replicaAllowed;
 	}
@@ -168,31 +168,31 @@ public class LinkGroup implements java.io.Serializable{
 	public void setReplicaAllowed(boolean replicaAllowed) {
 		this.replicaAllowed = replicaAllowed;
 	}
-	
+
 	public boolean isOutputAllowed() {
 		return outputAllowed;
 	}
-	
+
 	public void setOutputAllowed(boolean outputAllowed) {
 		this.outputAllowed = outputAllowed;
 	}
-	
+
 	public boolean isCustodialAllowed() {
 		return custodialAllowed;
 	}
-	
+
 	public void setCustodialAllowed(boolean custodialAllowed) {
 		this.custodialAllowed = custodialAllowed;
 	}
-	
+
 	public long getReservedSpaceInBytes() {
 		return reservedSpaceInBytes;
 	}
-	
-	public void setReservedSpaceInBytes(long reserved) { 
+
+	public void setReservedSpaceInBytes(long reserved) {
 		this.reservedSpaceInBytes = reserved;
 	}
-	public long getAvailableSpaceInBytes() { 
+	public long getAvailableSpaceInBytes() {
 		return freeSpace-reservedSpaceInBytes;
 	}
 

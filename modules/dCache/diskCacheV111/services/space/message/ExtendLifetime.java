@@ -24,7 +24,7 @@ public class ExtendLifetime extends Message{
     /** Creates a new instance of Reserve */
     public ExtendLifetime() {
     }
-    
+
     public ExtendLifetime(
             long spaceToken,
             long newLifetime){

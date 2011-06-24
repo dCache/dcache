@@ -4,11 +4,11 @@ package org.dcache.services.info.base;
 /**
  * Extends the abstract StateValue to allow storing Floating-point numbers
  * within the dCache state tree.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class FloatingPointStateValue extends StateValue {
-	
+
 	private final double _storage;
 
 	/**
@@ -19,8 +19,8 @@ public class FloatingPointStateValue extends StateValue {
 	public FloatingPointStateValue( double value) {
 		this( value, false);
 	}
-	
-	
+
+
 	/**
 	 * Create a new FloatingPoint StateValue that is either Immortal or Ephemeral.
 	 * @param value the floating-point number to store.
@@ -30,7 +30,7 @@ public class FloatingPointStateValue extends StateValue {
 		super( isImmortal);
 		_storage = value;
 	}
-	
+
 	/**
 	 * Create a new FloatingPointStateValue that will store
 	 * a floating-point number within the dCache state tree.
@@ -48,15 +48,15 @@ public class FloatingPointStateValue extends StateValue {
 	public String getTypeName() {
 		return "float";
 	}
-	
+
 	@Override
 	public String toString() {
 		return Double.toString( _storage);
 	}
-	
+
 	/**
 	 *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
-	 *  actual implementation and StateVisitor interface for more details. 
+	 *  actual implementation and StateVisitor interface for more details.
 	 */
 	@Override
 	public void acceptVisitor(StatePath path, StateVisitor visitor) {
@@ -72,21 +72,21 @@ public class FloatingPointStateValue extends StateValue {
 		Float floatVal = new Float( _storage);
 		return floatVal.hashCode();
 	}
-	
+
 
 	/**
-	 *  Override the default equals() method. 
+	 *  Override the default equals() method.
 	 */
 	@Override
 	public boolean equals( Object other) {
-		
+
 		if( !( other instanceof FloatingPointStateValue))
 			return false;
-		
+
 		FloatingPointStateValue otherValue = (FloatingPointStateValue) other;
-		
+
 		return _storage == otherValue._storage;
 	}
-	
+
 
 }

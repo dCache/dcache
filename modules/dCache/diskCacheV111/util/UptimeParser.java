@@ -6,27 +6,27 @@ package diskCacheV111.util;
 
 public class UptimeParser {
 
-    
+
     private UptimeParser() {
-        // no instance allowed 
+        // no instance allowed
     }
-    
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         System.out.println( "Uptime: " + UptimeParser.valueOf( 54564 ) );
     }
-    
-    
+
+
     /**
      * @param uptime time in seconds
      * @return formated String Object like, "1 day 15:24:31"
      */
-    
-    
-    public static String valueOf(long uptime) {                
-        
+
+
+    public static String valueOf(long uptime) {
+
         long days = 86400; // 24*60*60
         long rdays;
         long hour = 3600; // 60*60
@@ -35,14 +35,14 @@ public class UptimeParser {
         long rmin;
         long sec;
         long tmp = uptime;
-        
+
         StringBuffer sb = new StringBuffer();
-        
+
         rdays = tmp/days;
         tmp -= rdays*days;
-        
+
         rhour = tmp/hour;
-        tmp -= rhour*hour; 
+        tmp -= rhour*hour;
         rmin = tmp/min;
         tmp -= rmin*min;
         sec = tmp;
@@ -55,11 +55,11 @@ public class UptimeParser {
                 sb.append("day ");
             }
         }
-        
+
         if(rhour < 10) sb.append("0");
         sb.append(rhour).append(":");
         if(rmin < 10) sb.append("0");
-        sb.append(rmin).append(":");  
+        sb.append(rmin).append(":");
         if(sec < 10) sb.append("0");
         sb.append(sec);
 

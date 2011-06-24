@@ -10,7 +10,7 @@ import dmg.util.* ;
 import diskCacheV111.util.* ;
 
 public interface StorageClassInfoFlushable {
- 
+
     public void storageClassInfoFlushed( String hsm , String storageClass , long flushId , int requests , int failed ) ;
-    
+
 }

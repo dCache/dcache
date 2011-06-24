@@ -9,7 +9,7 @@ public class PoolManagerGetPoolListMessage extends PoolManagerMessage {
    private List _poolList = null ;
 
    private static final long serialVersionUID = 5654583135549534321L;
-   
+
    public PoolManagerGetPoolListMessage(){
       super(true);
    }

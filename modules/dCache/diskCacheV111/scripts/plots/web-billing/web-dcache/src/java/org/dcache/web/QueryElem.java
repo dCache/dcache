@@ -7,23 +7,23 @@ import java.util.List;
  *
  */
 public class QueryElem {
-    
+
     private List<String> commands;
-    
+
     public QueryElem() {
         commands = new ArrayList<String>() ;
     }
-    
+
     public QueryElem addQuery(String cmd) {
         commands.add(cmd);
         return this;
     }
-    
+
     public void setQuery(String cmd) {
         commands = new ArrayList<String>() ;
         commands.add(cmd);
     }
-    
+
     public int size() {
         return commands.size();
     }

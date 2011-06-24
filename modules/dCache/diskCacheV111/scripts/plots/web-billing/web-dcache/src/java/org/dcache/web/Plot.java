@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -82,15 +82,15 @@ import java.util.Hashtable;
 public class Plot implements PlotSpecifier {
 
     /*
-     * 
+     *
      * @param title
      * @param dataSet
      */
-/*    
-    public Plot(String title, DataSrc[] dataSet) 
+/*
+    public Plot(String title, DataSrc[] dataSet)
     throws SQLException, IOException
     {
-        this.plotTitle = title;                    // Store plot title 
+        this.plotTitle = title;                    // Store plot title
         this.dataset = dataSet;                    // Save dataset
         String fname = "/tmp/plot-"+System.currentTimeMillis();
 
@@ -99,18 +99,18 @@ public class Plot implements PlotSpecifier {
         }
     }
 */
-    
+
     /**
-     * Prepares the plot data for given sources 
+     * Prepares the plot data for given sources
      * @param conn
      * @param plotLabel
-     * @param plotTitle 
+     * @param plotTitle
      * @param dataSrc
      * @throws SQLException
      * @throws IOException
      */
-    public Plot(Connection conn, String plotLabel, String plotTitle, String[][] dataSrc) 
-    throws SQLException, IOException 
+    public Plot(Connection conn, String plotLabel, String plotTitle, String[][] dataSrc)
+    throws SQLException, IOException
     {
         this.plotTitle = plotTitle;
         this.plotLabel = plotLabel;
@@ -179,18 +179,18 @@ public class Plot implements PlotSpecifier {
 //        // TODO Auto-generated method stub
 //        return null;
 //    }
-    
+
     public final void register() {
         PlotStorage.register(this.plotLabel, this) ;
     }
-    
-    public void buildPlot(final String filename, PlotBuilder plotBuilder, Object hlp) 
+
+    public void buildPlot(final String filename, PlotBuilder plotBuilder, Object hlp)
     throws IOException
     {
         this.fileName = filename;
         plotBuilder.buildPlot(filename, this, hlp);
     }
-    
+
     /**
      * Sends the file to the browser
      * @param filename
@@ -229,7 +229,7 @@ public class Plot implements PlotSpecifier {
     }
 
     /**
-     * 
+     *
      * @return the number of datasets for the plot, not the number of datasources!
      */
     public int getDsLen() {
@@ -255,18 +255,18 @@ public class Plot implements PlotSpecifier {
     public void addDataSet(String name) {
         dataSrcRefs.add(name);
     }
-    
+
     public String getDataSetName(int i) {
         return dataSrcRefs.get(i);
     }
-    
+
 //    public String getPlotFormat() {
 //        return plotFmt;
 //    }
-    
-    private String plotTitle; 
-    private String plotLabel; 
-    private String fileName; 
+
+    private String plotTitle;
+    private String plotLabel;
+    private String fileName;
     private Hashtable<String,DataSrc> dataSources;
     private String plotFmt;
     private ArrayList<String> dataSrcRefs;

@@ -8,9 +8,9 @@ import java.util.*;
 public class ExecAuth implements Runnable {
 
    private BufferedReader  _input = null ;
-   private PrintWriter _output = null ; 
+   private PrintWriter _output = null ;
    private String _execPath = null ;
-   
+
    public ExecAuth( String execpath ){
       _execPath = execpath ;
       new Thread(this).start() ;
@@ -20,7 +20,7 @@ public class ExecAuth implements Runnable {
       private Destroy( InputStream in ){
          _error = in ;
          new Thread(this).start() ;
-      }  
+      }
       public void run(){
          try{ while( _error.read() > -1 ) ; }catch(Exception ee){}
          try{ _error.close() ; }catch(Exception eee ){}
@@ -36,23 +36,23 @@ public class ExecAuth implements Runnable {
           new Destroy(_process.getErrorStream());
           _input = new BufferedReader(
                      new InputStreamReader(_process.getInputStream())) ;
-                     
-          _output = new PrintWriter( 
+
+          _output = new PrintWriter(
                       new OutputStreamWriter(_process.getOutputStream())) ;
           _active = true ;
        }catch(Exception eee ){
-       
+
        }
        try{
            _process.waitFor() ;
        }catch(InterruptedException ee ){
-       
+
        }
        System.out.println("Done");
        _active = false ;
    }
    public String command( String command ) throws IOException {
-      if( command == null ){ 
+      if( command == null ){
          _process.destroy() ;
          throw new
          EOFException("Done");
@@ -63,14 +63,14 @@ public class ExecAuth implements Runnable {
    }
    public static void main( String [] args )throws Exception {
        ExecAuth exec = new ExecAuth(args[0]) ;
-       BufferedReader br = 
+       BufferedReader br =
                 new BufferedReader(
                    new InputStreamReader( System.in ) ) ;
-                   
+
        while(true){
           System.out.println(
              exec.command( br.readLine() ) ) ;
-       
+
        }
    }
 }

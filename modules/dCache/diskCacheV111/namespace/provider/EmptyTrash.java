@@ -26,5 +26,5 @@ public class EmptyTrash implements Trash
     public boolean isFound(String pnfsid) {
         return false;
     }
-    
+
 }

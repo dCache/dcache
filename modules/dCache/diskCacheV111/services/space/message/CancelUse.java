@@ -25,7 +25,7 @@ public class CancelUse extends Message{
     /** Creates a new instance of Reserve */
     public CancelUse() {
     }
-    
+
     public CancelUse(
             long spaceToken,
             String pnfsName,

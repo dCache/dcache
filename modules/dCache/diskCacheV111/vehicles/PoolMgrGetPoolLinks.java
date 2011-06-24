@@ -9,7 +9,7 @@ public class PoolMgrGetPoolLinks extends PoolManagerMessage {
 
   // need to add once finalized
    // private static final long serialVersionUID = ;
-    
+
     public PoolMgrGetPoolLinks( ){
 	setReplyRequired(true);
     }

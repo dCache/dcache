@@ -8,7 +8,7 @@ import java.net.URI;
  *
  * At this abstract leve we model the trash directories as a set of
  * URIs.
- */ 
+ */
 public interface Trash
 {
     /**

@@ -11,7 +11,7 @@ import diskCacheV111.movers.* ;
 public class vsp {
 
     public static void main( String [] argss ){
-    
+
          Args args = new Args(argss) ;
          if( args.argc() < 2 ){
              System.err.println("Usage : ... [options] <filename> <pnfsid>" ) ;
@@ -98,7 +98,7 @@ public class vsp {
                         int rc = is.read( dataBuffer , 0 , dataBuffer.length ) ;
                         if( runDebug )System.out.println( "Tranferring "+rc ) ;
                         if( rc < 0 )
-                            throw new 
+                            throw new
                             IOException( "negative value from read : "+rc ) ;
                         if( rc == 0 )break ;
                         sum += rc ;
@@ -130,7 +130,7 @@ public class vsp {
                         int rc = (int)c.read( dataBuffer , 0 , dataBuffer.length ) ;
                         if( runDebug )System.out.println( "Tranferring "+rc ) ;
                         if( rc < 0 )
-                            throw new 
+                            throw new
                             IOException( "negative value from read : "+rc ) ;
                         if( rc == 0 )break ;
                         sum += rc ;
@@ -143,12 +143,12 @@ public class vsp {
                     try{ c.close() ; }catch(Exception dee ){}
                     try{ os.close() ; }catch(Exception dee ){}
                  }
-                 
+
              }
          }catch(Exception ee ){
             ee.printStackTrace() ;
          }finally{
-         
+
              try{   vsp.close() ; }
              catch(Exception vspce ){
                 System.err.println( "VspClose reported : "+vspce ) ;

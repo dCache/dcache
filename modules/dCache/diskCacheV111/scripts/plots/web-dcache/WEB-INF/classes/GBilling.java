@@ -12,8 +12,8 @@ import java.util.Calendar;
 import gov.fnal.isd.*;
 
 public class GBilling extends HttpServlet implements Runnable
-{      
-   
+{
+
     interface Command
     {
 	public void execute()
@@ -28,33 +28,33 @@ public class GBilling extends HttpServlet implements Runnable
 	catch (ClassNotFoundException x) {
 	    throw new ServletException("Could not load database driver");
 	}
-	
+
 	super.init(config);
-	
+
 	try {
 	    DBurl = getServletContext().getInitParameter("DBurl");
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-	
+
 	try {
 	    DBusr = getServletContext().getInitParameter("DBusr");
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-	
+
 	try {
 	    DBpwd = getServletContext().getInitParameter("DBpwd");
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-	
+
 	try {
 	    imageDir = getServletContext().getInitParameter("image.home");
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
-	
+
 	realPath = getServletContext().getRealPath("/");
 
 	log("Call fillHistograms() from init");
@@ -64,30 +64,30 @@ public class GBilling extends HttpServlet implements Runnable
 	catch (IOException x) {
 	    throw new ServletException("Could not fill histograms");
 	}
-	
-	// Create a background thread that will refill the histograms 
+
+	// Create a background thread that will refill the histograms
 	// from the database each hour
-	
+
 	update_thread = new Thread(this);
 	update_thread.start();
     }
-    
+
     public void doPost(final HttpServletRequest req, final HttpServletResponse res)
-	throws ServletException, IOException 
+	throws ServletException, IOException
     {
 	doGet(req, res);
     }
 
     public void doGet(final HttpServletRequest req, final HttpServletResponse res)
-	throws ServletException, IOException 
+	throws ServletException, IOException
     {
 
 	res.setHeader("pragma", "no-cache");
 	res.setHeader("Cache-Control", "no-cache") ;
-	res.setDateHeader("Expires", 0);  
+	res.setDateHeader("Expires", 0);
 	Command c = new Command() {
 		private String filename = req.getParameter("filename");
-		
+
 		private String[] items;
 		private Date start = null;
 		private Date end = null;
@@ -129,7 +129,7 @@ public class GBilling extends HttpServlet implements Runnable
 
 		    log("Start="+start+" End="+end+" # items="+items.length);
 
-		    for (int i = 0; i < items.length; i++) 
+		    for (int i = 0; i < items.length; i++)
 			log("'"+items[i]+"'");
 
 		    if (htype.startsWith("brd")) {
@@ -165,13 +165,13 @@ public class GBilling extends HttpServlet implements Runnable
 		private void fillHistogram(String htype, Date sdate, Date edate)
 		    throws ServletException, IOException
 		{
-		    // Open the database.      
-      
+		    // Open the database.
+
 		    Connection con = null;
 		    try
 			{
 			    con = DriverManager.getConnection(DBurl, DBusr, DBpwd);
-	      
+
 			    Statement stmt = con.createStatement();		    log("Connected to DB");
 			    // Create simple table for plot creation log
 			    try {
@@ -180,19 +180,19 @@ public class GBilling extends HttpServlet implements Runnable
 			    catch (Exception ex) {
 				stmt.executeUpdate("CREATE TABLE PlotLog (Year int, Month int, dateStamp TIMESTAMP, fileName VARCHAR(255))");
 			    }
-	      
+
 			    Calendar rightNow = Calendar.getInstance();
 			    int yyyy = rightNow.get(Calendar.YEAR);
 			    int yy = yyyy - 1900;
 			    int mm   = rightNow.get(Calendar.MONTH);
-	      
+
 			    PlotLog[] plotlog = new PlotLog[mm];
-	      
-			    ResultSet rset = stmt.executeQuery("SELECT dateStamp,action,transferSize,isNew FROM billingInfo" + 
+
+			    ResultSet rset = stmt.executeQuery("SELECT dateStamp,action,transferSize,isNew FROM billingInfo" +
 							       " WHERE errorcode=0 and dateStamp > '" + sdate + "' and datestamp < '" + edate + "' order by dateStamp");
 			    log("rset fetchsize="+rset.getFetchSize());
 
-		  
+
 			    Timestamp tsStart = new Timestamp(sdate.getTime());
 
 			    Timestamp tsEnd = new Timestamp(edate.getTime());
@@ -202,7 +202,7 @@ public class GBilling extends HttpServlet implements Runnable
 			    boolean isTrd = htype.startsWith("trd");
 			    boolean isTwr = htype.startsWith("twr");
 			    String dcTitle = "XX", enTitle = "YY";
-			    
+
 			    if (isBrd) {
 				dcTitle = "Bytes read from dCache";
 				enTitle = "Bytes read from enstore";
@@ -217,7 +217,7 @@ public class GBilling extends HttpServlet implements Runnable
 				enTitle = "Write transfers to enstore";
 			    }
 
-			    dcHist = new Histogram1D(dcTitle, tsStart, tsEnd); 
+			    dcHist = new Histogram1D(dcTitle, tsStart, tsEnd);
 			    enHist = new Histogram1D(enTitle, tsStart, tsEnd);
 			    log("Process query");
 
@@ -239,24 +239,24 @@ public class GBilling extends HttpServlet implements Runnable
 				if (isBrd) {
 				    if (action.startsWith("transfer") && !isNew) {
 					dcHist.fill(date, transferSize);  // Select reads from dCache
-				    } 
+				    }
 				} else if (isTrd) {
 				    if (action.startsWith("transfer") && !isNew) {
 					dcHist.fill(date);                // Select reads from dCache
-				    } 
+				    }
 				} else if (isBwr) {
 				    if (action.startsWith("transfer") && isNew) {
 					dcHist.fill(date, transferSize);  // Select writes to dCache
-				    } 
+				    }
 				} else if (isTwr) {
 				    if (action.startsWith("transfer") && isNew) {
 					dcHist.fill(date);                // Select writes to dCache
-				    } 
+				    }
 				}
 			    }
 			    rset.close();
 
-			    rset = stmt.executeQuery("SELECT dateStamp,action,fullSize FROM storageInfo" + 
+			    rset = stmt.executeQuery("SELECT dateStamp,action,fullSize FROM storageInfo" +
 						     " WHERE errorcode=0 and dateStamp > '" + sdate + "' and datestamp < '" + edate + "' order by dateStamp");
 			    log("rset fetchsize="+rset.getFetchSize());
 
@@ -282,11 +282,11 @@ public class GBilling extends HttpServlet implements Runnable
 				} else if (isBwr) {
 				    if (action.startsWith("store")) {
 					enHist.fill(date, transferSize);  // Select writes to enstore
-				    } 
+				    }
 				} else if (isTwr) {
 				    if (action.startsWith("store")) {
 					enHist.fill(date);                // Select writes to enstore
-				    } 
+				    }
 				}
 			    }
 			    rset.close();
@@ -294,18 +294,18 @@ public class GBilling extends HttpServlet implements Runnable
 			    stmt.close();
 			    log("dcHist.entries="+dcHist.getEntries());
 			    log("enHist.entries="+enHist.getEntries());
-			    
+
 			    log("dcHist.NumberOfBins="+dc_bwr.getNumberOfBins());
 			    log("dcHist.NumberOfBins="+dc_twr.getNumberOfBins());
 			    /*
 			      for (int ibin = 1; ibin <= dcHist.getNumberOfBins(); ibin++) {
 			      log("dcHist["+ibin+"]="+dcHist.getY(ibin));
 			      }
-			      
+
 			      double[] ddd = dcHist.getBins();
-			      
+
 			      log("dcHist.getBins().length="+ddd.length);
-			      
+
 			      for (int ibin = 0; ibin < ddd.length; ibin++) {
 			      log("dcHist["+ibin+"]="+ddd[ibin]);
 			      }
@@ -314,12 +314,12 @@ public class GBilling extends HttpServlet implements Runnable
 			    String fnam = "/tmp/img-"+rightNow.getTimeInMillis();
 			    log("Save "+fnam+".eps");
 			    createPlot(fnam,
-				       new String[] {"XXXXXXXXXXXXXXXXX","Date","Bytes"}, 
+				       new String[] {"XXXXXXXXXXXXXXXXX","Date","Bytes"},
 				       new Histogram1D[] {dcHist, enHist}, sdate, edate);
 			}
-		    catch (SQLException x) 
-			{ 
-			    log("Unable to get data from DB", x); 
+		    catch (SQLException x)
+			{
+			    log("Unable to get data from DB", x);
 			}
 		    finally
 			{
@@ -361,8 +361,8 @@ public class GBilling extends HttpServlet implements Runnable
 		    }
 		}
 
-		private void createPlot(final String filename, 
-					final String[] titles, 
+		private void createPlot(final String filename,
+					final String[] titles,
 					final Histogram1D[] hist,
 					final Date start,
 					final Date end)
@@ -370,9 +370,9 @@ public class GBilling extends HttpServlet implements Runnable
 		{
 		    try {
 			Process p = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			
+
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
 			PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
@@ -477,9 +477,9 @@ public class GBilling extends HttpServlet implements Runnable
 			catch (InterruptedException x) {}
 
 			log("File "+filename+".png is ready");
-			
+
 			//getServletContext().getRequestDispatcher("/servlet/gov.fnal.isd.Viewer0?filename="+filename+".png").include(req, res);
-			
+
 			sendFile(filename+".png");
 		    }
 		    catch (IOException ex) {
@@ -495,7 +495,7 @@ public class GBilling extends HttpServlet implements Runnable
 
 
    /**
-    * This is the method run by the update thread, it just calls fillHistograms 
+    * This is the method run by the update thread, it just calls fillHistograms
     * once an hour.
     */
     public void run()
@@ -519,7 +519,7 @@ public class GBilling extends HttpServlet implements Runnable
 	update_thread = null;
 	super.destroy();
     }
-   
+
     class PlotLog {
 	//
 	public PlotLog(String nm, long tm) {
@@ -530,7 +530,7 @@ public class GBilling extends HttpServlet implements Runnable
 	public long lastModified() {
 	    return modified;
 	}
-	
+
 	public String getFileName() {
 	    return filename;
 	}
@@ -541,18 +541,18 @@ public class GBilling extends HttpServlet implements Runnable
 
     /* This code is here just for references
        CREATE TABLE billingInfo (                      CREATE TABLE storageInfo (
-       dateStamp TIMESTAMP,			        dateStamp TIMESTAMP,     
-       cellName CHAR(64),			        cellName CHAR(64),       
-       action CHAR(40),				        action CHAR(40),         
-       transaction CHAR(64),			        transaction CHAR(64),    
-       pnfsID CHAR(24),				        pnfsID CHAR(24),         
-       fullSize numeric,			        fullSize numeric,        
-       transferSize numeric,			                                 
-       storageClass CHAR(40),			        storageClass CHAR(40),   
-       isNew BOOLEAN,				                                 
-       client CHAR(40),				                                 
-       connectionTime numeric,			        connectionTime numeric,  
-                            			        queuedTime numeric,      
+       dateStamp TIMESTAMP,			        dateStamp TIMESTAMP,
+       cellName CHAR(64),			        cellName CHAR(64),
+       action CHAR(40),				        action CHAR(40),
+       transaction CHAR(64),			        transaction CHAR(64),
+       pnfsID CHAR(24),				        pnfsID CHAR(24),
+       fullSize numeric,			        fullSize numeric,
+       transferSize numeric,
+       storageClass CHAR(40),			        storageClass CHAR(40),
+       isNew BOOLEAN,
+       client CHAR(40),
+       connectionTime numeric,			        connectionTime numeric,
+                            			        queuedTime numeric,
        errorCode numeric,    			        errorCode numeric,
        errorMessage CHAR(255)				errorMessage VARCHAR(255)
        );                                               );
@@ -561,13 +561,13 @@ public class GBilling extends HttpServlet implements Runnable
    private synchronized void fillHistograms()
        throws ServletException, IOException
    {
-      // Open the database.      
-      
+      // Open the database.
+
       Connection con = null;
       try
 	  {
 	      con = DriverManager.getConnection(DBurl, DBusr, DBpwd);
-	      
+
 	      Statement stmt = con.createStatement();
 	      log("Connected to DB");
 	      // Create simple table for plot creation log
@@ -577,16 +577,16 @@ public class GBilling extends HttpServlet implements Runnable
 	      catch (Exception ex) {
 		  stmt.executeUpdate("CREATE TABLE PlotLog (Year int, Month int, dateStamp TIMESTAMP, fileName VARCHAR(255))");
 	      }
-	      
+
 	      Calendar rightNow = Calendar.getInstance();
 	      int yyyy = rightNow.get(Calendar.YEAR);
 	      int yy = yyyy - 1900;
 	      int mm   = rightNow.get(Calendar.MONTH);
-	      
+
 	      PlotLog[] plotlog = new PlotLog[mm];
 
 	      // Process billingInfo
-	      ResultSet rset = stmt.executeQuery("SELECT dateStamp,action,transferSize,isNew FROM billingInfo" + 
+	      ResultSet rset = stmt.executeQuery("SELECT dateStamp,action,transferSize,isNew FROM billingInfo" +
 						 " WHERE errorcode=0 and dateStamp LIKE '" + yyyy + "-%' order by dateStamp");
 	      log("rset fetchsize="+rset.getFetchSize());
 
@@ -608,14 +608,14 @@ public class GBilling extends HttpServlet implements Runnable
 	      log("tsEnd="+tsEnd);
 
 	      dc_brd = new Histogram1D("Bytes read from dCache", tsStart, tsEnd); // Bytes read
-	      en_brd = new Histogram1D("Bytes read from enstore", tsStart, tsEnd); 
-	      
+	      en_brd = new Histogram1D("Bytes read from enstore", tsStart, tsEnd);
+
 	      dc_bwr = new Histogram1D("Bytes written to dCache", tsStart, tsEnd); // Bytes written
 	      en_bwr = new Histogram1D("Bytes written to enstore", tsStart, tsEnd);
-	      
+
 	      dc_trd = new Histogram1D("Read transfers from dCache", tsStart, tsEnd); // Read transfers
 	      en_trd = new Histogram1D("Read transfers from enstore", tsStart, tsEnd);
-	      
+
 	      dc_twr = new Histogram1D("Write transfers to dCache", tsStart, tsEnd); // Write transfers
 	      en_twr = new Histogram1D("Write transfers to enstore", tsStart, tsEnd);
 
@@ -632,7 +632,7 @@ public class GBilling extends HttpServlet implements Runnable
 		  //double transferSize = (double)rset.getInt("transferSize");
 		  double transferSize = rset.getDouble("transferSize");
 		  boolean isNew = rset.getBoolean("isNew");
-		      
+
 		  if (action.startsWith("transfer") && isNew) {
 		      dc_bwr.fill(date, transferSize);  // Select writes to dCache
 		      dc_twr.fill(date);
@@ -644,7 +644,7 @@ public class GBilling extends HttpServlet implements Runnable
 	      rset.close();
 
 	      // Now process storageInfo
-	      rset = stmt.executeQuery("SELECT dateStamp,action,fullSize FROM storageInfo" + 
+	      rset = stmt.executeQuery("SELECT dateStamp,action,fullSize FROM storageInfo" +
 				       " WHERE errorcode=0 and dateStamp LIKE '" + yyyy + "-%' order by dateStamp");
 	      log("rset fetchsize="+rset.getFetchSize());
 
@@ -658,7 +658,7 @@ public class GBilling extends HttpServlet implements Runnable
 		  String action = rset.getString("action");
 		  //double transferSize = (double)rset.getInt("fullSize");
 		  double transferSize = rset.getDouble("fullSize");
-		      
+
 		  if (action.startsWith("store")) {
 		      en_bwr.fill(date, transferSize);  // Select writes to enstore
 		      en_twr.fill(date);
@@ -705,33 +705,33 @@ public class GBilling extends HttpServlet implements Runnable
 	      */
 
 	      String fname = "billing-"+yyyy+".daily.eps";
-	      
+
 
 	      //	      Date Jan1 = new Date(yy, 0, 1);
 	      //	      Date now  = new Date();
 	      fname = realPath+imageDir + "/billing-"+yyyy;
 
 	      saveHistograms(fname+".bwr",
-			     new String[] {"Bytes Written","Date","Bytes"}, 
+			     new String[] {"Bytes Written","Date","Bytes"},
 			     new Histogram1D[] {dc_bwr, en_bwr}, tsStart, tsEnd);
 	      //			     new Histogram1D[] {dc_bwr, en_bwr}, Jan1, now);
 	      log("Save "+fname+".bwr.eps");
 
 	      saveHistograms(fname+".brd",
-			     new String[] {"Bytes Read","Date","Bytes"}, 
+			     new String[] {"Bytes Read","Date","Bytes"},
 			     new Histogram1D[] {dc_brd, en_brd}, tsStart, tsEnd);
 	      log("Save "+fname+".brd.eps");
 
-	      saveHistograms(fname+".twr", 
-			     new String[] {"Write Transfers","Date","Transfers"}, 
+	      saveHistograms(fname+".twr",
+			     new String[] {"Write Transfers","Date","Transfers"},
 			     new Histogram1D[] {dc_twr, en_twr}, tsStart, tsEnd);
 	      log("Save "+fname+".twr.eps");
 
-	      saveHistograms(fname+".trd", 
-			     new String[] {"Read Transfers","Date","Transfers"}, 
+	      saveHistograms(fname+".trd",
+			     new String[] {"Read Transfers","Date","Transfers"},
 			     new Histogram1D[] {dc_trd, en_trd}, tsStart, tsEnd);
 	      log("Save "+fname+".trd.eps");
-	      
+
 	      //
 	      // Here we have to save the histograms for the current month
 	      //
@@ -744,41 +744,41 @@ public class GBilling extends HttpServlet implements Runnable
 		  log("Start="+mmStart);
 		  log("End  ="+mmEnd);
 		  fname = realPath+imageDir + "/billing-"+yyyy+".";
-		  if (ii < 10) fname += "0"; 
+		  if (ii < 10) fname += "0";
 		  fname += ii + ".daily.bwr";
 		  file = new File(fname+".eps");
 		  if (ii > mm || !file.exists()) {
 		      // plotlog[ii-1] = new PlotLog(fname, file.lastModified());
-		      saveHistograms(fname, 
-				     new String[] {"Bytes Written","Date","Bytes"}, 
+		      saveHistograms(fname,
+				     new String[] {"Bytes Written","Date","Bytes"},
 				     new Histogram1D[] {dc_bwr, en_bwr}, mmStart, mmEnd);
-		  } 
+		  }
 		  fname = fname.replaceFirst("bwr","brd");
 		  file = new File(fname+".eps");
 		  if (ii > mm || !file.exists()) {
 		      saveHistograms(fname,
-				     new String[] {"Bytes Read","Date","Bytes"}, 
+				     new String[] {"Bytes Read","Date","Bytes"},
 				     new Histogram1D[] {dc_brd, en_brd}, mmStart, mmEnd);
-		  } 
+		  }
 		  fname = fname.replaceFirst("brd","twr");
 		  file = new File(fname+".eps");
 		  if (ii > mm || !file.exists()) {
 		      saveHistograms(fname,
-				     new String[] {"Write Transfers","Date","Transfers"}, 
+				     new String[] {"Write Transfers","Date","Transfers"},
 				     new Histogram1D[] {dc_twr, en_twr}, mmStart, mmEnd);
-		  } 
+		  }
 		  fname = fname.replaceFirst("twr","trd");
 		  file = new File(fname+".eps");
 		  if (ii > mm || !file.exists()) {
 		      saveHistograms(fname,
-				     new String[] {"Read Transfers","Date","Transfers"}, 
+				     new String[] {"Read Transfers","Date","Transfers"},
 				     new Histogram1D[] {dc_trd, en_trd}, mmStart, mmEnd);
-		  } 
+		  }
 	      }
 	  }
-      catch (SQLException x) 
-	  { 
-	      log("Unable to update histograms", x); 
+      catch (SQLException x)
+	  {
+	      log("Unable to update histograms", x);
 	  }
       finally
 	  {
@@ -790,18 +790,18 @@ public class GBilling extends HttpServlet implements Runnable
 	  }
    }
       /*
-	ResultSet rsetLog = stmt.executeQuery("SELECT * FROM PlotLog" + 
+	ResultSet rsetLog = stmt.executeQuery("SELECT * FROM PlotLog" +
 	" WHERE Year=" + yyyy +
 	" ORDER BY Month");
-	
+
 	while (rsetLog.next())
 	{
 	}
       */
 
-   
-    private synchronized void saveHistograms(final String filename, 
-					     final String[] titles, 
+
+    private synchronized void saveHistograms(final String filename,
+					     final String[] titles,
 					     final Histogram1D[] hist,
 					     final Date start,
 					     final Date end
@@ -853,9 +853,9 @@ plot 'billing-2002.11.daily' using 1:($10)  t 'reads from dCache'  with im lw 40
 		{
 		    try {
 			Process p = Runtime.getRuntime().exec("./gnuplot -");
-            
+
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			
+
 			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
 			PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
@@ -884,7 +884,7 @@ plot 'billing-2002.11.daily' using 1:($10)  t 'reads from dCache'  with im lw 40
 			int ih;
 			int ndays = (int)((end.getTime()-start.getTime())/1000/3600/24);
 			int lw;
-			if (ndays > 31) 
+			if (ndays > 31)
 			    lw = 8;
 			else
 			    lw = 40;
@@ -947,17 +947,17 @@ plot 'billing-2002.11.daily' using 1:($10)  t 'reads from dCache'  with im lw 40
     }
 
     private Histogram1D dc_brd; // Bytes read
-    private Histogram1D en_brd; 
-    
+    private Histogram1D en_brd;
+
     private Histogram1D dc_bwr; // Bytes written
     private Histogram1D en_bwr;
-    
+
     private Histogram1D dc_trd; // Read transfers
     private Histogram1D en_trd;
-    
+
     private Histogram1D dc_twr; // Write transfers
     private Histogram1D en_twr;
-    
+
     //
     private static Object m_driver;
     private Thread update_thread;
@@ -966,7 +966,7 @@ plot 'billing-2002.11.daily' using 1:($10)  t 'reads from dCache'  with im lw 40
     private long time1;
     private long time2;
     private long time3;
- 
+
     private String DBurl;
     private String DBusr;
     private String DBpwd;

@@ -7,27 +7,27 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
 
    private long    _dataTransferred = 0 ;
    private long    _connectionTime  = 0 ;
-   
+
    private ProtocolInfo _protocolInfo = null ;
    private boolean      _fileCreated  = false ;
    private String _initiator = "<undefined>";
     private String _client = "unknown";
     private Subject _subject = new Subject();
-   
+
    private static final long serialVersionUID = -7013160118909496211L;
-   
+
    public MoverInfoMessage( String cellName ,
                             PnfsId pnfsId     ){
-                            
+
       super( "transfer" , "pool" , cellName , pnfsId ) ;
    }
    public void setFileCreated( boolean created ){ _fileCreated = created ; }
-   public void setTransferAttributes( 
+   public void setTransferAttributes(
                    long dataTransferred ,
                    long connectionTime ,
                    ProtocolInfo protocolInfo  ){
       _dataTransferred = dataTransferred ;
-      _connectionTime  = connectionTime ; 
+      _connectionTime  = connectionTime ;
       _protocolInfo    = protocolInfo ;
    }
    public void setInitiator(String transaction) {

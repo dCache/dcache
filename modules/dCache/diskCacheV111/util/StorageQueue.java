@@ -18,7 +18,7 @@ public class StorageQueue {
     public static final int  DEFAULT_EXPIRATION  = -1 ;
     public static final long DEFAULT_PENDING     = -1 ;
     public static final int  DEFAULT_PREFERENCES = -1 ;
-    
+
     public class StorageRequestInfo {
        private String      _pnfsId ;
        private StorageInfo _info ;
@@ -34,7 +34,7 @@ public class StorageQueue {
        public long getTime(){ return _time ; }
        public String getPnfsId(){ return _pnfsId ; }
        public StorageInfo getStorageInfo(){ return _info ; }
-       public String toString(){ 
+       public String toString(){
            return "pnfsid="+_pnfsId+";info="+_info ;
        }
     }
@@ -54,7 +54,7 @@ public class StorageQueue {
           _hsmName = hsmName.toLowerCase() ;
        }
        public String getHsm(){ return _hsmName ; }
-       public String getName(){ return _name ; } 
+       public String getName(){ return _name ; }
        public Enumeration requests(){ return _requests.elements() ; }
        public String toString(){
          StringBuffer sb = new StringBuffer() ;
@@ -76,7 +76,7 @@ public class StorageQueue {
            return _requests.size() >= _pending ;
        }
        public boolean isTriggered(){
-           return hasExpired() || isFull() ; 
+           return hasExpired() || isFull() ;
        }
        public String getStorageClass(){ return _name ; }
        private void setTime( long time ){ _time = time ; }
@@ -130,7 +130,7 @@ public class StorageQueue {
     public int size(){ return _storageQueue.size() ; }
     public String toString(){
       StringBuffer sb = new StringBuffer() ;
-      
+
       Iterator e = _storageQueue.values().iterator() ;
       while( e.hasNext() ){
           StorageClassInfo classInfo = (StorageClassInfo)e.next() ;
@@ -140,28 +140,28 @@ public class StorageQueue {
              sb.append("   ").append( reqs.nextElement().toString() ).append("\n");
           }
       }
-      
+
       return sb.toString() ;
     }
     public  Iterator storageClassInfos(){ return _storageQueue.values().iterator() ; }
-    public void setDefaultExpiration( long secs ){ 
-       _defaultExpiration = secs*1000 ; 
+    public void setDefaultExpiration( long secs ){
+       _defaultExpiration = secs*1000 ;
     }
-    public void setDefaultPending( int pending ){ 
-       _defaultPending = pending ; 
+    public void setDefaultPending( int pending ){
+       _defaultPending = pending ;
     }
     public synchronized StorageClassInfo
                           defineStorageClass( String hsmName , String storageClass ){
         String composedName = storageClass+"@"+hsmName.toLowerCase() ;
-        StorageClassInfo info = 
+        StorageClassInfo info =
            (StorageClassInfo)_storageQueue.get( composedName ) ;
-           
+
         if( info == null )info = new StorageClassInfo( hsmName , storageClass ) ;
 
         info.setDefined(true) ;
-        _storageQueue.put( composedName , info ) ;          
+        _storageQueue.put( composedName , info ) ;
         return info ;
-                          
+
     }
     /*
     public synchronized StorageClassInfo
@@ -170,7 +170,7 @@ public class StorageQueue {
                                  int    expiration ,
                                  int    pending  ,
                                  int    preference    ){
-     
+
         StorageClassInfo info = defineStorageClass( storageClass ) ;
         if( expiration >= 0 )info.setExpiration( expiration ) ;
         if( pending >= 0 )info.setPending( pending ) ;
@@ -178,28 +178,28 @@ public class StorageQueue {
       return info ;
     }
     */
-    public synchronized 
+    public synchronized
         Enumeration getPnfsIdsOfClass( String storageClass ){
-        
+
         Vector v = new Vector() ;
         StorageClassInfo info = (StorageClassInfo)_storageQueue.get(storageClass) ;
         if( info == null )return v.elements() ;
-        
+
         Enumeration e = info.getRequests() ;
         while( e.hasMoreElements() ){
-           v.addElement( 
-              ((StorageRequestInfo)e.nextElement()).getPnfsId() 
+           v.addElement(
+              ((StorageRequestInfo)e.nextElement()).getPnfsId()
                        ) ;
         }
         return v.elements() ;
     }
-    public synchronized 
+    public synchronized
         Enumeration getRequestsOfClass( String storageClass ){
-        
+
         Vector v = new Vector() ;
         StorageClassInfo info = (StorageClassInfo)_storageQueue.get(storageClass) ;
         if( info == null )return v.elements() ;
-        
+
         return info.getRequests() ;
     }
     public synchronized List getPreferenceHash(){
@@ -210,14 +210,14 @@ public class StorageQueue {
         while( e.hasNext() ){
            info = (StorageClassInfo)e.next() ;
            if( info.isDefined() ){
-              attr = new PoolClassAttraction( 
+              attr = new PoolClassAttraction(
                              _poolName ,
                              info.getHsm() ,
                              info.getStorageClass()  ) ;
-              attr.setPreferences( 
+              attr.setPreferences(
                              info.getReadPreference() ,
                              info.getWritePreference()  ) ;
-                       
+
               list.add( attr) ;
            }
         }
@@ -239,27 +239,27 @@ public class StorageQueue {
         }
         return v.elements() ;
     }
-    public synchronized boolean add( StorageInfo info , 
+    public synchronized boolean add( StorageInfo info ,
                                      String pnfsId       ){
 
         return add( info , pnfsId , -1 ) ;
     }
-    public synchronized boolean add( StorageInfo info , 
+    public synchronized boolean add( StorageInfo info ,
                                      String pnfsId   ,
                                      long   time        ){
 
         String storageClass = info.getStorageClass() ;
         String hsmName      = info.getHsm().toLowerCase() ;
-        
+
         String composedName = storageClass+"@"+hsmName ;
-        
-	StorageClassInfo classInfo = 
+
+	StorageClassInfo classInfo =
                 (StorageClassInfo)_storageQueue.get(composedName);
 
         if( classInfo == null ){
            classInfo =  new StorageClassInfo(hsmName,storageClass) ;
            _storageQueue.put( composedName , classInfo ) ;
-        } 
+        }
 
 	classInfo.addRequest( new StorageRequestInfo( pnfsId , info , time ) );
 
@@ -268,38 +268,38 @@ public class StorageQueue {
     public synchronized void remove( String pnfsId ){
 
         Iterator walk = _storageQueue.values().iterator() ;
-        while( walk.hasNext() ){   
-           StorageClassInfo classInfo = (StorageClassInfo)walk.next() ;     
+        while( walk.hasNext() ){
+           StorageClassInfo classInfo = (StorageClassInfo)walk.next() ;
 	   classInfo.removeRequest( pnfsId );
-           if( ( classInfo.size() == 0 ) && 
+           if( ( classInfo.size() == 0 ) &&
                ! classInfo.isDefined()      )
-                  _storageQueue.remove( classInfo.getName()+"@"+classInfo.getHsm() ) ;  
+                  _storageQueue.remove( classInfo.getName()+"@"+classInfo.getHsm() ) ;
         }
     }
     public synchronized void remove( StorageInfo info , String pnfsId ){
 
         String storageClass = info.getStorageClass() ;
         String hsmName      = info.getHsm().toLowerCase() ;
-        
+
         String composedName = storageClass+"@"+hsmName ;
-        
-	StorageClassInfo classInfo = 
+
+	StorageClassInfo classInfo =
             (StorageClassInfo)_storageQueue.get(composedName);
 
         if( classInfo == null )return ;
-        
+
 	classInfo.removeRequest( pnfsId );
-        
+
 	if( ( classInfo.size() == 0 ) && ! classInfo.isDefined() ){
 	    _storageQueue.remove( composedName );
-	}     
+	}
     }
 
     private synchronized void reschedule(String storageClass , long time){
-        StorageClassInfo info = 
+        StorageClassInfo info =
             (StorageClassInfo)_storageQueue.get( storageClass ) ;
         if( info == null )return ;
-        
+
 	info.setTime( time ) ;
     }
  }

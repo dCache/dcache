@@ -2,13 +2,13 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.*; 
+import java.util.*;
 
 
 public class PoolUpdateCacheStatisticsMessage extends PoolMessage {
-    
+
     private static final long serialVersionUID = 2023627678070843155L;
-    
+
     // this is sent from the pnfs manager to the pools
     public PoolUpdateCacheStatisticsMessage(String poolName){
 	super(poolName);

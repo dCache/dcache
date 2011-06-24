@@ -2,15 +2,15 @@
 
 package diskCacheV111.vehicles;
 
-import java.util.*; 
+import java.util.*;
 
 
 public class PoolCheckFreeSpaceMessage extends PoolMessage {
-   
+
     private long _freeSpace = 0;
 
     private static final long serialVersionUID = 2269590062279181028L;
-    
+
     public PoolCheckFreeSpaceMessage(String poolName){
 	super(poolName);
 	setReplyRequired(true);

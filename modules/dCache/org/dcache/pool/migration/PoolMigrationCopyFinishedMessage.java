@@ -12,7 +12,7 @@ public class PoolMigrationCopyFinishedMessage extends PoolMigrationMessage
 {
     static final long serialVersionUID = 4888320379507599050L;
 
-    public PoolMigrationCopyFinishedMessage(UUID uuid, String pool, 
+    public PoolMigrationCopyFinishedMessage(UUID uuid, String pool,
                                             PnfsId pnfsId)
     {
         super(uuid, pool, pnfsId);

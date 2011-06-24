@@ -75,7 +75,7 @@ public class PlotTest
             }
         }
         rset.close(); // again, you must close the result when done
-        
+
         rset = dbmd.getCatalogs();
         if (rset != null)	{
             while (rset.next()) {
@@ -108,7 +108,7 @@ public class PlotTest
             try {
                 int type = metaData.getColumnType(column + 1);
                 switch (type) {
-					
+
                 case Types.NUMERIC:
                 case Types.REAL:
                 case Types.INTEGER:

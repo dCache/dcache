@@ -14,22 +14,22 @@ package diskCacheV111.services.space;
  * @author timur
  */
 public class SpaceExpiredException extends SpaceException{
-    
+
     /** Creates a new instance of SpaceException */
     public SpaceExpiredException() {
         super();
     }
-    
+
     public SpaceExpiredException(String message) {
         super(message);
     }
-    
+
     public SpaceExpiredException(String message,Throwable cause) {
         super(message,cause);
     }
-    
+
     public SpaceExpiredException(Throwable cause) {
         super(cause);
     }
-    
+
 }

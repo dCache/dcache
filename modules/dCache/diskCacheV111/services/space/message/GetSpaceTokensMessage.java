@@ -1,8 +1,8 @@
 //______________________________________________________________________________
 //
-// Intended usage: specify requested space token id and get a set with one 
-//                 element back 
-//                 do not specify requested space token id and get the set 
+// Intended usage: specify requested space token id and get a set with one
+//                 element back
+//                 do not specify requested space token id and get the set
 //                 containing all unexpired space tokens
 //
 //  $Id$
@@ -22,28 +22,28 @@ public class GetSpaceTokensMessage extends Message {
 
 	private Set<Space> list;
 
-	public void setSpaceTokenId(long id) { 
+	public void setSpaceTokenId(long id) {
 		spacetokenId = new Long(id);
 	}
 
-	public void setSpaceTokenId(Long id) { 
+	public void setSpaceTokenId(Long id) {
 		spacetokenId = id;
 	}
 
-	public Long getSpaceTokenId() { 
+	public Long getSpaceTokenId() {
 		return spacetokenId;
 	}
 
-	public GetSpaceTokensMessage() { 
+	public GetSpaceTokensMessage() {
 		setReplyRequired(true);
 	}
 
 	public Set<Space> getSpaceTokenSet() {
 		return list;
 	}
-	
-	public void setSpaceTokenSet(Set<Space> lglist) { 
+
+	public void setSpaceTokenSet(Set<Space> lglist) {
 		this.list=lglist;
 	}
 
-}  
+}

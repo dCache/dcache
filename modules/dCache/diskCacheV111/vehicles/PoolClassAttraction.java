@@ -12,14 +12,14 @@ public class PoolClassAttraction implements java.io.Serializable {
    private int     _readPreference  = -1 ;
    private String  _poolName ;
    private String  _id = null ;
-   
+
    public final static PoolClassComparator comparatorForWrite =
          new PoolClassComparator(true) ;
    public final static PoolClassComparator comparatorForRead =
          new PoolClassComparator(false) ;
-   
+
    private static final long serialVersionUID = 5471965365309761831L;
-   
+
    public static class PoolClassComparator implements Comparator {
       private boolean _forWrite = true ;
       private PoolClassComparator( boolean forWrite ){
@@ -33,7 +33,7 @@ public class PoolClassAttraction implements java.io.Serializable {
 
         PoolClassAttraction pca = (PoolClassAttraction)a ;
         PoolClassAttraction pcb = (PoolClassAttraction)b ;
-        
+
         int intA = 0 , intB = 0 ;
         if( _forWrite ){
            intA = pca.getWritePreference() ;
@@ -52,16 +52,16 @@ public class PoolClassAttraction implements java.io.Serializable {
        _poolName        = poolName ;
        _organization    = organization.toLowerCase()  ;
        _storageClass    = storageClass ;
-       
+
        if( _storageClass.startsWith("*") )createTemplate() ;
-       
-       makeId() ;       
+
+       makeId() ;
    }
    public boolean isTemplate(){ return _isTemplate ; }
    public  Iterator getSelection(){
      if( ( ! _isTemplate ) || ( _map == null ) )
        return ( new ArrayList() ).iterator() ;
-       
+
      return _map.entrySet().iterator() ;
    }
    private void createTemplate(){
@@ -75,7 +75,7 @@ public class PoolClassAttraction implements java.io.Serializable {
          try{
             _map.put( st2.nextToken() , st2.nextToken() ) ;
          }catch(NoSuchElementException nsee){}
-       } 
+       }
        if( _map.size() == 0 )_map = null ;
        return ;
    }
@@ -84,16 +84,16 @@ public class PoolClassAttraction implements java.io.Serializable {
    public int    getWritePreference(){ return _writePreference  ;}
    public int    getReadPreference(){ return _readPreference ; }
    public String getPool(){ return _poolName ; }
-   
+
    public static Comparator getComparator( boolean forWrite ){
      return forWrite ? PoolClassAttraction.comparatorForWrite :
                        PoolClassAttraction.comparatorForRead    ;
    }
    public void setPreferences( int readPreference , int writePreference ){
        _writePreference = writePreference ;
-       _readPreference  = readPreference ;  
+       _readPreference  = readPreference ;
    }
-   private void makeId(){ 
+   private void makeId(){
      _id = _poolName+":"+_storageClass+"@"+_organization ;
    }
    public void   setWritePreference( int writePreference ){
@@ -107,7 +107,7 @@ public class PoolClassAttraction implements java.io.Serializable {
       PoolClassAttraction o = (PoolClassAttraction)obj ;
       return ( o._id ).equals( _id ) ;
    }
-   public int hashCode(){ 
+   public int hashCode(){
       return _id.hashCode() ;
    }
    public String toString(){
@@ -144,15 +144,15 @@ public class PoolClassAttraction implements java.io.Serializable {
       PoolClassAttraction pca = null ;
       TreeSet r_read  = new TreeSet( PoolClassAttraction.comparatorForWrite ) ;
       TreeSet r_write = new TreeSet( PoolClassAttraction.comparatorForRead  ) ;
-      
+
       pca = new PoolClassAttraction( "pool-a" , "OSM" , "MAIN:raw" ) ;
-      pca.setPreferences( 1 , 4 ) ; 
+      pca.setPreferences( 1 , 4 ) ;
       r_read.add( pca ) ; r_write.add( pca ) ;
       pca = new PoolClassAttraction( "pool-a" , "OSM" , "MAIN:raw" ) ;
-      pca.setPreferences( 2 , 3 ) ; 
+      pca.setPreferences( 2 , 3 ) ;
       r_read.add( pca ) ; r_write.add( pca ) ;
       pca = new PoolClassAttraction( "pool-b" , "OSM" , "MAIN:raw" ) ;
-      pca.setPreferences( 2 , 3 ) ; 
+      pca.setPreferences( 2 , 3 ) ;
       r_read.add( pca ) ; r_write.add( pca ) ;
 
        Iterator i = null ;

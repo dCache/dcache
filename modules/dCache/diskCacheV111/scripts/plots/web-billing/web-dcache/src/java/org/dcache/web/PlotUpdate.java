@@ -16,28 +16,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -50,10 +50,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -63,10 +63,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -92,23 +92,23 @@ import org.apache.xmlbeans.XmlObject;
 
 
 public class PlotUpdate extends HttpServlet implements Runnable
-{      
+{
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -9094230422321694548L;
-    
+
     interface Command
     {
         public void execute()
         throws ServletException, IOException;
     }
-    
+
     /**
      * Work with a database table
      */
-    
+
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
@@ -121,19 +121,19 @@ public class PlotUpdate extends HttpServlet implements Runnable
         catch (NamingException ex) {
             throw new ServletException("Cannot retrieve java:comp/env/jdbc/postgres",ex);
         }
-        
+
         try {
             imageDir = getServletContext().getInitParameter("image.home");
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         try {
             scriptName = getServletContext().getInitParameter("script.name");
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         try {
             confName = getServletContext().getInitParameter("plot.conf");
         } catch (Exception e) {
@@ -147,31 +147,31 @@ public class PlotUpdate extends HttpServlet implements Runnable
         }
 
         realPath = getServletContext().getRealPath("/");
-        
+
         // Create a background thread that will rebuild the plots
         // from the database every half an hour
-        
+
         updateThread = new Thread(this);
         updateThread.start();
     }
-    
+
     public void doPost(final HttpServletRequest req, final HttpServletResponse res)
-    throws ServletException, IOException 
+    throws ServletException, IOException
     {
         doGet(req, res);
     }
-    
+
     /**
      * This methods is called to process the http request, here is the start point
      */
     public void doGet(final HttpServletRequest req, final HttpServletResponse res)
-    throws ServletException, IOException 
+    throws ServletException, IOException
     {
-        
+
         res.setHeader("pragma", "no-cache");
         res.setHeader("Cache-Control", "no-cache") ;
-        res.setDateHeader("Expires", 0); 
-        
+        res.setDateHeader("Expires", 0);
+
         res.setContentType("text/html");
         PrintWriter out = res.getWriter();
         out.println("<h3>PlotUpdate Info</h3>");
@@ -182,11 +182,11 @@ public class PlotUpdate extends HttpServlet implements Runnable
         out.close();
         return;
     }
-    
+
 
     /**
      * Creates plot for several datasets with individual Xs,Ys and puts it into the file
-     * This is the analog of savePlot (which works periodically only) but it works on demand only           
+     * This is the analog of savePlot (which works periodically only) but it works on demand only
      * @param filename
      * @param dataSet
      * @param gnuSetup
@@ -199,7 +199,7 @@ public class PlotUpdate extends HttpServlet implements Runnable
         try {
             Process p = Runtime.getRuntime().exec("gnuplot");
             PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
-            
+
             for (int i = 0; i < gnuSetup.size(); i++) {
                 stdOutput.println(gnuSetup.get(i));
             }
@@ -219,7 +219,7 @@ public class PlotUpdate extends HttpServlet implements Runnable
                 }
                 stdOutput.println("quit");
                 stdOutput.close(); stdOutput = null;
-            } 
+            }
             catch (SQLException ex) {
                 System.out.println("exception happened - here's what I know: ");
                 ex.printStackTrace();
@@ -229,18 +229,18 @@ public class PlotUpdate extends HttpServlet implements Runnable
                 p.waitFor();
             }
             catch (InterruptedException x) {}
-            
+
             log("File "+filename+".eps is ready");
-            
+
             Process pc1 = Runtime.getRuntime().exec("convert -depth 8 -density 100x100 -modulate 95,95 "+filename+".eps "+filename+".png");
-            
+
             try {
                 pc1.waitFor();
             }
             catch (InterruptedException x) {}
-            
+
             log("File "+filename+".png is ready");
-            
+
 //            sendFile(filename+".png");
             System.gc();
         }
@@ -250,10 +250,10 @@ public class PlotUpdate extends HttpServlet implements Runnable
             throw new ServletException("Exception in gnuplot execution");
         }
     }
-    
+
     /**
      * Creates plot for several datasets with individual Xs,Ys and puts it into the file
-     * This is the analog of savePlot (which works periodically only) but it works on demand only           
+     * This is the analog of savePlot (which works periodically only) but it works on demand only
      * @param filename
      * @param styles
      * @param gnuSetup
@@ -266,10 +266,10 @@ public class PlotUpdate extends HttpServlet implements Runnable
         try {
             Process p = Runtime.getRuntime().exec("gnuplot");
             PrintWriter stdOutput = new PrintWriter(new BufferedWriter(new OutputStreamWriter(p.getOutputStream())));
-            
+
             String s;
             for (int i = 0; i < gnuSetup.size(); i++) {
-                if ((s = gnuSetup.get(i)) != null) 
+                if ((s = gnuSetup.get(i)) != null)
                     stdOutput.println(s);
             }
             for (int i = 0; i < styles.length; i++) {
@@ -282,18 +282,18 @@ public class PlotUpdate extends HttpServlet implements Runnable
                 p.waitFor();
             }
             catch (InterruptedException x) {}
-            
+
             log("File "+filename+".eps is ready");
-            
+
             Process pc1 = Runtime.getRuntime().exec("convert -depth 8 -density 100x100 -modulate 95,95 "+filename+".eps "+filename+".png");
-            
+
             try {
                 pc1.waitFor();
             }
             catch (InterruptedException x) {}
-            
+
             log("File "+filename+".png is ready");
-            
+
 //            sendFile(filename+".png");
             System.gc();
         }
@@ -303,8 +303,8 @@ public class PlotUpdate extends HttpServlet implements Runnable
             throw new ServletException("Exception in gnuplot execution");
         }
     }
-    
-    
+
+
     /**
      * This is the method run by the update thread, it calls build*Plots methods once an hour.
      */
@@ -314,7 +314,7 @@ public class PlotUpdate extends HttpServlet implements Runnable
             DigestTableConfig tableConfig = new DigestTableConfig("tableRules.xml");
             tableConfig.digest("tableConfig.xml");
             for (;;) {
-                initPlotConf();  
+                initPlotConf();
                 tableConfig.execute(this.dataSource);  // Update DB
                 //
                 buildStdPlots();
@@ -343,7 +343,7 @@ public class PlotUpdate extends HttpServlet implements Runnable
             for (String n : flist) {
                 System.err.println("What initPlotConf has found around: "+n);
             }
-            
+
 //            URL scriptUrl = this.getClass().getClassLoader().getResource(scriptName);
 //            System.err.println("Url=" + scriptUrl);
 //            URL dotUrl = this.getClass().getClassLoader().getResource(".");
@@ -417,7 +417,7 @@ public class PlotUpdate extends HttpServlet implements Runnable
             for (String plotId : plotIds) {
                 System.out.println("Building plot '" + plotId + "'");
                 String fname = realPath+imageDir+"/"+plotId;
-                
+
                 // Get plot Title
                 String plotTitle = plotConfig.getPlotTitle(plotId);         //   System.out.println("Title: '" + plotTitle + "'");
                 // Get datasources
@@ -427,27 +427,27 @@ public class PlotUpdate extends HttpServlet implements Runnable
                 GnuSetup gnuSetup = new GnuSetup(cmd); gnuSetup.setTitle(plotTitle).setOutput(fname);
                 // Get dataseries
                 String[][] dataSeries = plotConfig.getGnuDataSet(plotId);   //   for (String ds : dataSeries) { System.out.println("Dataseries: '" + ds + "'"); }
-                for (String[] ds : dataSeries) { 
-                    gnuSetup.addDataSrcName(ds[0]);                             // Store data source name 
+                for (String[] ds : dataSeries) {
+                    gnuSetup.addDataSrcName(ds[0]);                             // Store data source name
                     gnuSetup.addDataSetTitle(ds[1]);                           // Store dataset title
                     gnuSetup.addDataStyle(ds[2]+" title '"+ds[1]+"'");      // Store dataset plot style string
                 }
-                
+
                 System.err.println("filename: "+fname);
 //                System.err.println("dds: "+dataSeries);
                 System.err.println("gnu: "+gnuSetup);
                 // Here we have everything for the plot - title, []datasource, gnusetup, []dataset
                 Plot plot = new Plot(conn, plotId, plotTitle, dataSrc);
                 plot.register();        // Put the plot into the registry
-                plot.buildPlot(fname, new EpsPlotBuilder(), gnuSetup); 
+                plot.buildPlot(fname, new EpsPlotBuilder(), gnuSetup);
                 log("Save "+fname);
             }
             for (Object k : PlotStorage.getStorageKeys()) {
                 System.err.println("Registered: "+k);
             }
         }
-        catch (SQLException x) { 
-            log("Unable to update plot data", x); 
+        catch (SQLException x) {
+            log("Unable to update plot data", x);
         }
         finally {
             try {

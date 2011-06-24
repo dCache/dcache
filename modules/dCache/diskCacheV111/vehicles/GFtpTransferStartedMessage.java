@@ -2,7 +2,7 @@ package diskCacheV111.vehicles;
 
 import java.net.InetSocketAddress;
 
-public class GFtpTransferStartedMessage extends Message 
+public class GFtpTransferStartedMessage extends Message
 {
     private String            _pnfsId;
     private boolean           _passive;
@@ -24,12 +24,12 @@ public class GFtpTransferStartedMessage extends Message
         _passive  = false;
         _address  = null;
     }
-    
+
     public String getPnfsId()
     {
         return _pnfsId;
     }
-    
+
     public boolean getPassive()
     {
         return _passive;

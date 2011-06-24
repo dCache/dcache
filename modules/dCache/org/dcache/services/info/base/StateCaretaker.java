@@ -23,7 +23,7 @@ public interface StateCaretaker {
      * Discover the earliest that a mortal metric is to be removed. Calling
      * {@link #removeExpiredMetrics()} prior to that Date will have no
      * effect. null is returned if there are no expiring metrics.
-     * 
+     *
      * @return the Date when the earliest metric that should be removed or
      *         null if there are none.
      */

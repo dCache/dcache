@@ -4,11 +4,11 @@ package diskCacheV111.vehicles;
 import  diskCacheV111.util.* ;
 
 public class PnfsClearCacheLocationMessage extends PnfsModifyCacheLocationMessage {
-   
+
     private boolean _removeIfLast = false ;
-    
+
     private static final long serialVersionUID = 3605282936760879338L;
-    
+
     public PnfsClearCacheLocationMessage(PnfsId pnfsId, String poolName){
 	super(pnfsId,poolName);
     }

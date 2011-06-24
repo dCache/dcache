@@ -39,15 +39,15 @@ public class GroupList implements Serializable{
     private long id;
     private String attribute;
     private List<Group> groups;
-    
-    
+
+
     /**
-     * this is here to implement bydirectional 
-     * ManyToOne/OneToMany relationship 
+     * this is here to implement bydirectional
+     * ManyToOne/OneToMany relationship
      * with AuthorizationRecord
      */
      private AuthorizationRecord authRecord;
-    
+
     /**
      * Creates a new instance of GroupSet
      */
@@ -64,7 +64,7 @@ public class GroupList implements Serializable{
     public void setId(long id) {
         this.id = id;
     }
-    
+
     @Basic
     public String getAttribute() {
         return attribute;
@@ -73,9 +73,9 @@ public class GroupList implements Serializable{
     public void setAttribute(String attribute) {
         this.attribute = attribute;
     }
-    
+
     @OneToMany(mappedBy="groupList",
-        fetch=EAGER, 
+        fetch=EAGER,
         targetEntity=Group.class,
         cascade = {ALL})
     @OrderBy //PK is assumed
@@ -99,15 +99,15 @@ public class GroupList implements Serializable{
     public void setAuthRecord(AuthorizationRecord authRecord) {
         this.authRecord = authRecord;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         toStringBuilder(sb);
-        return sb.toString();       
+        return sb.toString();
     }
-    
+
     public void toStringBuilder(StringBuilder sb) {
-        
+
         sb.append("GL:");
         sb.append(attribute).append(' ');
         if(groups != null)
@@ -124,7 +124,7 @@ public class GroupList implements Serializable{
         }
         /*
          * this was and may be again needed for debug of JPA
-        
+
         sb.append(Integer.toHexString(hashCode())).append(' ');
         sb.append(" ar=");
         if(authRecord == null) {
@@ -133,7 +133,7 @@ public class GroupList implements Serializable{
             sb.append(authRecord.hashCodeString());
         }
          */
-       
+
     }
 
     public String toShortString() {
@@ -152,11 +152,11 @@ public class GroupList implements Serializable{
 
         return sb.toString();
     }
-    
+
     public String hashCodeString() {
          return Integer.toHexString(hashCode());
     }
-    
+
     @Transient
     public Group getPrimaryGroup() {
         if(groups != null && ! groups.isEmpty()  ) {

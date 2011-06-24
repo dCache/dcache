@@ -10,13 +10,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 public class Transaction {
-    
+
     static private AtomicLong id = new  AtomicLong(0);
-    
+
     /** Creates a new instance of Transaction */
-    
+
     static public long newID() {
         return id.incrementAndGet();
     }
-    
+
 }

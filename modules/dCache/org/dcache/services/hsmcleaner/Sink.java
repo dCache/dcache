@@ -6,7 +6,7 @@ package org.dcache.services.hsmcleaner;
  *
  * Often used as a call back mechanism.
  */
-public interface Sink<T> 
+public interface Sink<T>
 {
     void push(T value);
 }

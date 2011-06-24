@@ -7,9 +7,9 @@ class MoverIoBuffer {
    private int _sendBufferSize = 0 ;
    private int _recvBufferSize = 0 ;
    private int _ioBufferSize   = 0 ;
-   
+
    MoverIoBuffer( MoverIoBuffer buffer ){
-   
+
        _sendBufferSize = buffer._sendBufferSize ;
        _recvBufferSize = buffer._recvBufferSize ;
        _ioBufferSize   = buffer._ioBufferSize ;
@@ -17,7 +17,7 @@ class MoverIoBuffer {
    MoverIoBuffer(int sendBufferSize ,
                  int recvBufferSize ,
                  int ioBufferSize     ){
-   
+
        _sendBufferSize = sendBufferSize ;
        _recvBufferSize = recvBufferSize ;
        _ioBufferSize   = ioBufferSize ;
@@ -25,7 +25,7 @@ class MoverIoBuffer {
    void setBufferSize(int sendBufferSize ,
                       int recvBufferSize ,
                       int ioBufferSize     ){
-   
+
        _sendBufferSize = sendBufferSize ;
        _recvBufferSize = recvBufferSize ;
        _ioBufferSize   = ioBufferSize ;
@@ -33,7 +33,7 @@ class MoverIoBuffer {
    int getSendBufferSize(){ return _sendBufferSize ; }
    int getRecvBufferSize(){ return _recvBufferSize ; }
    int getIoBufferSize(){   return _ioBufferSize ; }
-   
+
    void setSendBufferSize( int sendBufferSize ){
        _sendBufferSize = sendBufferSize ;
    }

@@ -18,7 +18,7 @@ public class JDCap extends JFrame {
    private Random     _random        = new Random() ;
    private ArrayList  _buttonList    = new ArrayList() ;
    private JPanel     _currentActive = null ;
-   
+
    private class WindowShutdown extends WindowAdapter {
       public void windowClosing( WindowEvent event ){
           System.exit(0);
@@ -43,7 +43,7 @@ public class JDCap extends JFrame {
          private JLabel  _progress = new JLabel("",JLabel.CENTER) ;
          private JProgressBar  _speed    = new JProgressBar() ;
          private JProgressBar _bar = new JProgressBar() ;
-         public InfoBar( String title ){ 
+         public InfoBar( String title ){
             setLayout( new GridLayout(1,0,4,4));
             _button = new JButton( title ) ;
             _button.addActionListener( new ButtonAction(InfoPanel.this) ) ;
@@ -58,19 +58,19 @@ public class JDCap extends JFrame {
       private InfoBar _infoBar = null ;
       private Thread  _thread  = null ;
       private JTextField _message = new JTextField();
-      
+
       private InfoPanel( String title ){
         setLayout( new BorderLayout() ) ;
         _infoBar = new InfoBar(_title=title) ;
-        
+
         add( new JLabel(_title,JLabel.CENTER) , "North" ) ;
         add( _message , "South" ) ;
       }
-      public JPanel getInfoBar(){ 
-        return _infoBar ; 
+      public JPanel getInfoBar(){
+        return _infoBar ;
       }
       public void interrupt(){ if( _thread != null )_thread.interrupt() ; }
-      public void go(){ 
+      public void go(){
          System.out.println( "Starting : "+_title ) ;
          _thread = new Thread(this) ;
          _thread.setPriority(_thread.getPriority()-2);
@@ -80,16 +80,16 @@ public class JDCap extends JFrame {
          System.out.println( "Starting : "+_title ) ;
          _infoBar._button.setBackground(Color.white) ;
          try{
-            PnfsFile pnfsFile = 
+            PnfsFile pnfsFile =
                  new PnfsFile( _setupPanel.getFile().getCanonicalPath() ) ;
-                 
+
             _infoBar._speed.setMaximum(_setupPanel.getTransferSpeed());
             _infoBar._speed.setValue(0);
-            
-            
+
+
             _infoBar._bar.setMaximum((int)pnfsFile.length());
             _infoBar._bar.setValue(0);
-            
+
             _infoBar._button.setBackground(Color.yellow);
             VspDevice vsp = new VspDevice( _setupPanel.getHostname() ,
                                            _setupPanel.getPort() ,
@@ -146,14 +146,14 @@ public class JDCap extends JFrame {
    }
    private class SetupPanel extends JPanel implements ActionListener {
        private JPanel _basicPanel = null ;
-       
+
        private JTextField _filename   = null ;
        private JTextField _serverHost = null ;
        private JTextField _serverPort = null ;
        private JTextField _replyHost  = null ;
        private JTextField _transferSpeed  = null ;
        private JTextField _waitCycles  = null ;
-       
+
        private File       _file     = null ;
        private int        _active   = 0 ;
        private JButton    _goButton = new JButton("Go") ;
@@ -165,17 +165,17 @@ public class JDCap extends JFrame {
        }
        public String getHostname(){ return _serverHost.getText() ; }
        public String getReplyHost(){ return _replyHost.getText() ; }
-       public int    getPort(){ 
+       public int    getPort(){
          try{
             return Integer.parseInt( _serverPort.getText() ) ;
          }catch( Exception e){ return 0 ; }
        }
-       public int    getTransferSpeed(){ 
+       public int    getTransferSpeed(){
          try{
             return Integer.parseInt( _transferSpeed.getText() ) ;
          }catch( Exception e){ return 200 ; }
        }
-       public int    getWaitCycles(){ 
+       public int    getWaitCycles(){
          try{
             return Integer.parseInt( _waitCycles.getText() ) ;
          }catch( Exception e){ return 200 ; }
@@ -195,7 +195,7 @@ public class JDCap extends JFrame {
           add( _basicPanel = new JPanel( new BorderLayout(10,10) ) ) ;
 
           _basicPanel.add( new JLabel( "JDCap Setup" , JLabel.CENTER ) , "North" ) ;
-          
+
           _basicPanel.setBorder( new MyLineBorder( Color.red , 2 ) ) ;
 
           _goButton.addActionListener( this ) ;
@@ -212,7 +212,7 @@ public class JDCap extends JFrame {
           _filename = new JTextField(30) ;
           if( args.length > 4 )_filename.setText(args[4]);
           _filename.addActionListener( this ) ;
-          
+
           _transferSpeed = new JTextField("500");
           _waitCycles    = new JTextField("1000");
 
@@ -235,7 +235,7 @@ public class JDCap extends JFrame {
           buttom.add( _message ) ;
 
           _basicPanel.add( buttom , "South" ) ;
-                      
+
        }
        public synchronized void substractOne(){
           _active -- ;
@@ -251,7 +251,7 @@ public class JDCap extends JFrame {
        public void actionPerformed( ActionEvent event ){
           if( event.getSource() == _exitButton )System.exit(0);
           _file = new File(_filename.getText()) ;
-          if( ! _file.exists() ){                  
+          if( ! _file.exists() ){
              _message.setText( "File not found : "+_file ) ;
              return ;
           }
@@ -297,43 +297,43 @@ public class JDCap extends JFrame {
    private JScrollPane  _scroll  = null ;
    private JTabbedPane  _tab     = new JTabbedPane() ;
    private JPanel       _private = new JPanel( new BorderLayout() ) ;
-   
+
    public JDCap( String title , String [] args ){
       super(title);
-      
+
       addWindowListener( new WindowShutdown() ) ;
       Container c = getContentPane() ;
 
       _buttons    = new JPanel( new GridLayout( 0,1 ) ) ;
       _scroll     = new JScrollPane( _buttons ) ;
       _setupPanel = new SetupPanel( args ) ;
-      
+
       _tab.addTab(" Setup "      , _setupPanel) ;
       _tab.addTab(" WorkCanvas " , _scroll ) ;
       _tab.addTab(" Private "    , _private ) ;
-      
+
       _tab.setSelectedIndex(0);
-      
+
       c.add( _tab ) ;
       int count = 20 ;
       if( args.length > 0 )count = Integer.parseInt( args[0] ) ;
       for( int i = 0 ; i < count ; i++ ){
          InfoPanel info = new InfoPanel( "Link "+i ) ;
          _buttonList.add(info) ;
-         _buttons.add( info.getInfoBar() ) ; 
-         System.out.println("Done "+i);  
+         _buttons.add( info.getInfoBar() ) ;
+         System.out.println("Done "+i);
       }
 
-      
-     
+
+
    }
    public static void main( String [] args ){
        JDCap f = new JDCap("dCap [Version II]" , args );
- 
+
        f.pack();
        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
        f.setLocation(100,100);
        f.setSize(1000,400);
-       f.setVisible(true);                                                                                 
+       f.setVisible(true);
    }
 }

@@ -5,7 +5,7 @@ package org.dcache.pool.movers;
 /**
  * DCAP data channel IO constants
  */
-public interface DCapConstants 
+public interface DCapConstants
 {
     public static final int IOCMD_WRITE     = 1;
     public static final int IOCMD_READ      = 2;

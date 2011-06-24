@@ -3,7 +3,7 @@ import java.sql.*;
 import java.text.*;
 
 /**
- * Class PlotDataSource builds the list of the datasources for the plot. 
+ * Class PlotDataSource builds the list of the datasources for the plot.
  */
 public class PlotDataSource
 {

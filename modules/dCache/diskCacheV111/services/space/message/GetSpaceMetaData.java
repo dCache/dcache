@@ -27,7 +27,7 @@ public class GetSpaceMetaData extends Message{
         this.spaceTokens = spaceTokens;
         setReplyRequired(true);
     }
-    
+
     public long[] getSpaceTokens() {
         return spaceTokens;
     }
@@ -44,5 +44,5 @@ public class GetSpaceMetaData extends Message{
         this.spaces = spaces;
     }
 
-    
+
 }

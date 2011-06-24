@@ -7,10 +7,10 @@ public class PnfsSetStorageInfoMessage extends PnfsMessage {
 
     private StorageInfo  _storageInfo = null ;
     private int          _accessMode  = 0 ;
-    
+
     private static final long serialVersionUID = -5030106015250844867L;
-    
-    public PnfsSetStorageInfoMessage(){ 
+
+    public PnfsSetStorageInfoMessage(){
        super() ;
        setReplyRequired(true);
     }
@@ -18,9 +18,9 @@ public class PnfsSetStorageInfoMessage extends PnfsMessage {
         super( pnfsId ) ;
 	setReplyRequired(true);
     }
-    public PnfsSetStorageInfoMessage( 
-                 PnfsId pnfsId , 
-                 StorageInfo storageInfo , 
+    public PnfsSetStorageInfoMessage(
+                 PnfsId pnfsId ,
+                 StorageInfo storageInfo ,
                  int accessMode               ){
         this( pnfsId ) ;
 	_accessMode  = accessMode ;

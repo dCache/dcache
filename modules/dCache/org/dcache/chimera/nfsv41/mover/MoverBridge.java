@@ -51,7 +51,7 @@ class MoverBridge {
     }
 
     /**
-     * 
+     *
      * @return NFSv4 stateid associatd with the transfer
      */
     public stateid4 getStateid() {

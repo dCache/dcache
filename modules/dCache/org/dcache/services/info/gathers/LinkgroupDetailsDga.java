@@ -24,13 +24,13 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
 
 	/** Assume that a message might be lost and allow for 50% jitter */
 	private static final double SAFETY_FACTOR = 2.5;
-	
+
 	private CellPath _cp = new CellPath( SRM_CELL_NAME);
 	private final MessageSender _sender;
 
 	/** The period between successive requests for data, in seconds */
 	final long _metricLifetime;
-	
+
 	/**
 	 * Create new DGA for maintaining a list of LinkGroups.
 	 * @param interval how often the list of linkgroups should be updated, in seconds.
@@ -47,19 +47,19 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
 	@Override
 	public void trigger() {
 		super.trigger();
-		
+
 		if( _log.isInfoEnabled())
 			_log.info( "Sending linkgroup details request message");
 
 		_sender.sendMessage( _metricLifetime, _cp, new GetLinkGroupsMessage());
 	}
 
-	
+
 	@Override
     public String toString()
 	{
 		return this.getClass().getSimpleName();
-	}	
+	}
 
 
 }

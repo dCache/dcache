@@ -6,7 +6,7 @@ import java.util.Date;
  * The generic interface that allows schedulable activity.  The activity should
  * be characterised by short bursts of activity with gaps in between.  The
  * activity may be periodic, but this is not a requirement.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 interface Schedulable {
@@ -27,11 +27,11 @@ interface Schedulable {
 	 *   wait for the reply message.
 	 */
 	void trigger();
-	
+
 	/**
 	 * Provide the time when an object who's class implements this interface should
 	 * next be triggered.
 	 * @return requested next trigger.
 	 */
-	Date shouldNextBeTriggered();	
+	Date shouldNextBeTriggered();
 }

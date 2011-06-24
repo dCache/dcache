@@ -296,7 +296,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             FileAttributes fileAttributes = new FileAttributes();
             if(_initialState == EntryState.FROM_CLIENT) {
                 fileAttributes.setAccessLatency(info.getAccessLatency());
-                fileAttributes.setRetentionPolicy(info.getRetentionPolicy());                
+                fileAttributes.setRetentionPolicy(info.getRetentionPolicy());
                 fileAttributes.setSize(length);
             }
 

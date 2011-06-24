@@ -22,14 +22,14 @@ import dmg.cells.nucleus.UOID;
 
 
 /**
- * A MessageHandlerChain allows multiple MessageHandler subclass instances to attempt to 
+ * A MessageHandlerChain allows multiple MessageHandler subclass instances to attempt to
  * process an incoming Message.  This allows easy addition of extra monitoring by receiving
  * additional messages.
- * 
+ *
  * Zero or more MessageHandler subclass instances are registered with the MessageHandlerChain.
  * When passed an incoming Message, the MessageHandlerChain instance will pass the Message to
  * each MessageHandler subclass instance in turn until one succeeds in processing the Message.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class MessageHandlerChain implements MessageMetadataRepository<UOID>, MessageSender, CellMessageAnswerable {
@@ -71,14 +71,14 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 	public String[] listMessageHandlers() {
 		int i=0;
 		String[] msgHandlers = new String[_messageHandler.size()];
-		
+
 		for( MessageHandler mh : _messageHandler)
 			msgHandlers [i++] =  mh.getClass().getSimpleName(); // We're assuming only one instance per Class
-		
+
 		return msgHandlers;
 	}
-	
-	
+
+
 	/**
 	 * Common method to send a CellMessage and register a handler for the return message.
 	 * This is deprecated against using Vehicles and registering MessageHandlers.
@@ -93,12 +93,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 			_log.error( "ignoring attempt to send string-based message without call-back");
 			return;
 		}
-		
+
 		CellMessage envelope = new CellMessage( path, requestString);
 		sendMessage( ttl, handler, envelope);
 	}
-	
-	
+
+
 	/**
 	 * The preferred way of sending requests for information.
      * @param ttl lifetime of resulting metric, in seconds.
@@ -109,8 +109,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>, Mes
 		CellMessage envelope = new CellMessage( path, message);
 		sendMessage( ttl, null, envelope);
 	}
-	
-	
+
+
 	/**
 	 * Send a message envelope and record metadata against it.
      * @param ttl the metadata for the message

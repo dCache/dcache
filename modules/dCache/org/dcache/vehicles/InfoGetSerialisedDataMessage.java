@@ -6,19 +6,19 @@ import diskCacheV111.vehicles.Message;
 
 /**
  * Query the info provider for a serialised representation of dCache's internal state.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class InfoGetSerialisedDataMessage  extends Message {
-	
+
 	private final List<String> _pathElements;
 
 	/**
 	 * Auto-generated number.
 	 */
 	private static final long serialVersionUID = -2650923676987449094L;
-	
-	
+
+
 	/** Our serialised representation of dCache's state */
 	private String _data;
 
@@ -30,15 +30,15 @@ public class InfoGetSerialisedDataMessage  extends Message {
 		super( true);
 		_pathElements = null;
 	}
-	
+
 	/**
-	 * Request an XML dump of dCache's state, expanding only from 
+	 * Request an XML dump of dCache's state, expanding only from
 	 * @param pathElements a list of elements, excluding the initial "dCache".
 	 */
 	public InfoGetSerialisedDataMessage( List <String> pathElements) {
-		_pathElements = pathElements;		
+		_pathElements = pathElements;
 	}
-	
+
 	/**
 	 * Provide the serialised representation of dCache's state.
 	 * @return
@@ -46,7 +46,7 @@ public class InfoGetSerialisedDataMessage  extends Message {
 	public String getSerialisedData() {
 		return _data;
 	}
-	
+
 	/**
 	 * Set the serialised Data.
 	 * @param serialisedData  The XML data.
@@ -54,7 +54,7 @@ public class InfoGetSerialisedDataMessage  extends Message {
 	public void setData( String serialisedData) {
 		_data = serialisedData;
 	}
-	
+
 	/**
 	 * Obtain the a List of path elements.
 	 * @return
@@ -62,7 +62,7 @@ public class InfoGetSerialisedDataMessage  extends Message {
 	public List<String> getPathElements() {
 		return _pathElements;
 	}
-	
+
 	/**
 	 * Is true when we require a complete dump, false otherwise.
 	 * @return

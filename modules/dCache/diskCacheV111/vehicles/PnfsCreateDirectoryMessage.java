@@ -7,9 +7,9 @@ import java.util.Set;
 
 
 public class PnfsCreateDirectoryMessage extends PnfsCreateEntryMessage {
-    
+
     private static final long serialVersionUID = 2081981117629353921L;
-    
+
     public PnfsCreateDirectoryMessage(String path){
         super(path);
     }

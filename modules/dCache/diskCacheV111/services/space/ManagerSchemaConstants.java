@@ -11,38 +11,38 @@ public class ManagerSchemaConstants {
 	public static final String selectSpaceManagerSchemaVersion=
 		"select version from "+SpaceManagerSchemaVersionTableName;
 
-	public static final String POPULATE_USED_SPACE_IN_SRMSPACE_TABLE = 
+	public static final String POPULATE_USED_SPACE_IN_SRMSPACE_TABLE =
 		" update srmspace set usedspaceinbytes=( "+
-		" select coalesce(sum(sf.sizeinbytes),0) "+	    
+		" select coalesce(sum(sf.sizeinbytes),0) "+
 		" from srmspace s left outer join srmspacefile sf on "+
 		" s.id=sf.spacereservationid and sf.state=2 and s.id=srmspace.id),"+
                 " allocatedspaceinbytes= ("+
-		" select coalesce(sum(sf.sizeinbytes),0) "+	    
+		" select coalesce(sum(sf.sizeinbytes),0) "+
 		" from srmspace s left outer join srmspacefile sf on "+
 		" s.id=sf.spacereservationid and sf.state<2 and s.id=srmspace.id)";
 
-	public static final String POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID = 
+	public static final String POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID =
 		" update srmspace set usedspaceinbytes=( "+
-		" select coalesce(sum(sf.sizeinbytes),0) "+	    
+		" select coalesce(sum(sf.sizeinbytes),0) "+
 		" from srmspace s left outer join srmspacefile sf on "+
 		" s.id=sf.spacereservationid and sf.state=2 and s.id=?),"+
                 " allocatedspaceinbytes= ("+
-		" select coalesce(sum(sf.sizeinbytes),0) "+	    
+		" select coalesce(sum(sf.sizeinbytes),0) "+
 		" from srmspace s left outer join srmspacefile sf on "+
 		" s.id=sf.spacereservationid and sf.state<2 and s.id=?) where srmspace.id=?";
-	
-	public static final String POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE = 
+
+	public static final String POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE =
 		" update srmlinkgroup set reservedspaceinbytes=( "+
 		" select coalesce(sum(s.sizeinbytes-s.usedspaceinbytes),0) "+
 		" from srmlinkgroup lg left outer join srmspace s on "+
 		" s.linkGroupId=lg.id and lg.id=srmlinkgroup.id and s.state=0) ";
 
-	public static final String POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID = 
+	public static final String POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID =
 		" update srmlinkgroup set reservedspaceinbytes=( "+
 		" select coalesce(sum(s.sizeinbytes-s.usedspaceinbytes),0) "+
 		" from srmlinkgroup lg left outer join srmspace s on "+
 		" s.linkGroupId=lg.id and lg.id=? and s.state=0) where  srmlinkgroup.id=?";
-	
+
 	public static final String SpaceManagerNextIdTableName =
 		"srmspacemanagernextid";
 	public static final String LinkGroupTableName =
@@ -68,7 +68,7 @@ public class ManagerSchemaConstants {
 	public static final String CreateSpaceManagerNextIdTable =
 		"CREATE TABLE "+SpaceManagerNextIdTableName+
 		" ( NextToken "+ longType + " )";
-	
+
 	public static final String CreateLinkGroupTable =
 		"CREATE TABLE "+ LinkGroupTableName+" ( "+
 		" id "+longType+" NOT NULL PRIMARY KEY "+
@@ -82,7 +82,7 @@ public class ManagerSchemaConstants {
 		", custodialAllowed"+booleanType+" "+
                 ", reservedspaceinbytes "+longType+" "+
             ")";
-	
+
 	public static final String CreateLinkGroupVOsTable =
 		"CREATE TABLE "+ LinkGroupVOsTableName+" ( "+
 		" VOGroup "+stringType+" NOT NULL "+
@@ -94,17 +94,17 @@ public class ManagerSchemaConstants {
 		LinkGroupTableName +" (id) "+
 		" ON DELETE RESTRICT"+
 		")";
-    
+
 	public static final String CreateRetentionPolicyTable =
 		"CREATE TABLE "+ RetentionPolicyTableName+" ( "+
 		" id "+intType+" NOT NULL PRIMARY KEY "+
 		", name "+stringType+" )";
-	
+
 	public static final String CreateAccessLatencyTable =
 		"CREATE TABLE "+ AccessLatencyTableName+" ( "+
 		" id "+intType+" NOT NULL PRIMARY KEY "+
 		", name "+stringType+" )";
-	
+
 	public static final String CreateSpaceTable =
 		"CREATE TABLE "+ SpaceTableName+" ( "+
 		" id "+longType+" NOT NULL PRIMARY KEY "+
@@ -131,7 +131,7 @@ public class ManagerSchemaConstants {
 		RetentionPolicyTableName +" (id) "+
 		" ON DELETE RESTRICT"+
             ")";
-	
+
     public static final String CreateSpaceFileTable =
             "CREATE TABLE "+ SpaceFileTableName+" ( "+
             " id "+longType+" NOT NULL PRIMARY KEY "+

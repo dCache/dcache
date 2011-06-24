@@ -4,11 +4,11 @@ package org.dcache.services.info.base;
 /**
  * Extends the abstract StateValue to allow the storage of 64-bit signed numbers
  * within dCache state.
- * 
+ *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class IntegerStateValue extends StateValue {
-	
+
 	private final long _storage;
 
 	/**
@@ -21,7 +21,7 @@ public class IntegerStateValue extends StateValue {
 		super( duration);
 		_storage = value;
 	}
-	
+
 	/**
 	 * Create an Ephemeral Integer StateValue.
 	 * @param value the Integer to store.
@@ -30,18 +30,18 @@ public class IntegerStateValue extends StateValue {
 		this( value, false);
 	}
 
-	
+
 	/**
 	 * Create a Integer StateValue that is either immortal or ephemeral.
 	 * @param value the numerical value to store
 	 * @param isImmortal whether this metric is immortal. If false, then an ephemeral value is
-	 * created, equivalent to IntegerStateValue( value).  
+	 * created, equivalent to IntegerStateValue( value).
 	 */
 	public IntegerStateValue( long value, boolean isImmortal) {
 		super( isImmortal);
 		_storage = value;
 	}
-	
+
 	/**
 	 * Return a string representation.
 	 */
@@ -54,7 +54,7 @@ public class IntegerStateValue extends StateValue {
 	public String getTypeName() {
 		return "integer";
 	}
-	
+
 	/**
 	 * Return the value stored within this IntegerStateValue
 	 * @return
@@ -65,13 +65,13 @@ public class IntegerStateValue extends StateValue {
 
 	/**
 	 *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
-	 *  actual implementation and StateVisitor interface for more details. 
+	 *  actual implementation and StateVisitor interface for more details.
 	 */
 	@Override
 	public void acceptVisitor( StatePath path, StateVisitor visitor) {
 		visitor.visitInteger( path, this);
 	}
-	
+
 	/**
 	 *  Override the default hashCode() method, to honour the hashCode() / equals() contract.
 	 */
@@ -79,21 +79,21 @@ public class IntegerStateValue extends StateValue {
 	public int hashCode() {
 		return (int)_storage;
 	}
-	
+
 
 	/**
-	 *  Override the default equals() method. 
+	 *  Override the default equals() method.
 	 */
 	@Override
 	public boolean equals( Object other) {
-		
+
 		if( !( other instanceof IntegerStateValue))
 			return false;
-		
+
 		IntegerStateValue otherValue = (IntegerStateValue) other;
-		
+
 		return _storage == otherValue._storage;
 	}
-	
+
 
 }

@@ -15,13 +15,13 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     private String fileRequestToken;
     private String spaceToken;
     private long storedSize;
-    
+
     private static final long serialVersionUID = -7108292877799941735L;
-    
+
     public SrmPutIntoReservedSpaceComplete(
     String poolName,
-    String requestToken, 
-    String fileRequestToken, 
+    String requestToken,
+    String fileRequestToken,
     String spaceToken,
     long storedSize) {
         this.poolName = poolName;
@@ -30,8 +30,8 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
         this.spaceToken = spaceToken;
         this.storedSize = storedSize;
     }
-    
-    public String toString(){ 
+
+    public String toString(){
         return "SrmPutIntoReservedSpaceComplete, [ "+
         "requestToken="+requestToken+", "+
         "fileRequestToken="+fileRequestToken+", "+
@@ -39,7 +39,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
         "storedSize="+storedSize+
         " ]";
     }
-    
+
     /** Getter for property requestToken.
      * @return Value of property requestToken.
      *
@@ -47,7 +47,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public java.lang.String getRequestToken() {
         return requestToken;
     }
-    
+
     /** Setter for property requestToken.
      * @param requestToken New value of property requestToken.
      *
@@ -55,7 +55,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public void setRequestToken(java.lang.String requestToken) {
         this.requestToken = requestToken;
     }
-    
+
     /** Getter for property fileRequestToken.
      * @return Value of property fileRequestToken.
      *
@@ -63,7 +63,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public java.lang.String getFileRequestToken() {
         return fileRequestToken;
     }
-    
+
     /** Setter for property fileRequestToken.
      * @param fileRequestToken New value of property fileRequestToken.
      *
@@ -71,7 +71,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public void setFileRequestToken(java.lang.String fileRequestToken) {
         this.fileRequestToken = fileRequestToken;
     }
-    
+
     /** Getter for property spaceToken.
      * @return Value of property spaceToken.
      *
@@ -79,7 +79,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public java.lang.String getSpaceToken() {
         return spaceToken;
     }
-    
+
     /** Setter for property spaceToken.
      * @param spaceToken New value of property spaceToken.
      *
@@ -87,7 +87,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public void setSpaceToken(java.lang.String spaceToken) {
         this.spaceToken = spaceToken;
     }
-    
+
     /** Getter for property storedSize.
      * @return Value of property storedSize.
      *
@@ -95,7 +95,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public long getStoredSize() {
         return storedSize;
     }
-    
+
     /** Setter for property storedSize.
      * @param storedSize New value of property storedSize.
      *
@@ -103,7 +103,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public void setStoredSize(long storedSize) {
         this.storedSize = storedSize;
     }
-    
+
     /** Getter for property poolName.
      * @return Value of property poolName.
      *
@@ -111,7 +111,7 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public java.lang.String getPoolName() {
         return poolName;
     }
-    
+
     /** Setter for property poolName.
      * @param poolName New value of property poolName.
      *
@@ -119,5 +119,5 @@ public class SrmPutIntoReservedSpaceComplete extends SrmMessage {
     public void setPoolName(java.lang.String poolName) {
         this.poolName = poolName;
     }
-    
+
 }

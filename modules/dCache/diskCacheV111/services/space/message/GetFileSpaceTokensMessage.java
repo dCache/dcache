@@ -38,7 +38,7 @@ public class GetFileSpaceTokensMessage extends Message{
         this.pnfsId = pnfsId;
         setReplyRequired(true);
     }
-    
+
     public long[] getSpaceTokens() {
         return spaceTokens;
     }

@@ -17,7 +17,7 @@ public class PatternFilenameFilter implements FilenameFilter
         _pattern = Pattern.compile(regex);
     }
 
-    public boolean accept(File dir, String name) 
+    public boolean accept(File dir, String name)
     {
         return _pattern.matcher(name).matches();
     }

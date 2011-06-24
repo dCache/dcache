@@ -24,10 +24,10 @@ public class File implements Serializable {
 	private PnfsId pnfsId;
 	private FileState state;
 	private int deleted;
-	
+
 	public File() {
 	}
-    
+
 	public File(
 		long id,
 		String voGroup,
@@ -38,7 +38,7 @@ public class File implements Serializable {
 		long lifetime,
 		String pnfsPath,
 		PnfsId pnfsId,
-		FileState state, 
+		FileState state,
 		int isDeleted
 		) {
 		this.id = id;
@@ -80,69 +80,69 @@ public class File implements Serializable {
 		this.deleted=0;
 	}
 
-	
-    
+
+
 	public FileState getState() {
 		return state;
 	}
-	
+
 	public void setState(FileState state) {
 		this.state = state;
 	}
-	
+
 	public long getId() {
 		return id;
 	}
-	
+
 	public void setId(long id) {
 		this.id = id;
 	}
-	
-	
+
+
 	public long getSpaceId() {
 		return spaceId;
 	}
-	
+
 	public void setSpaceId(long spaceId) {
 		this.spaceId = spaceId;
 	}
-	
+
 	public long getSizeInBytes() {
 		return sizeInBytes;
 	}
-	
+
 	public void setSizeInBytes(long sizeInBytes) {
 		this.sizeInBytes = sizeInBytes;
 	}
-	
+
 	public long getCreationTime() {
 		return creationTime;
 	}
-	
+
 	public void setCreationTime(long creationTime) {
 		this.creationTime = creationTime;
 	}
-	
+
 	public long getLifetime() {
 		return lifetime;
 	}
-	
+
 	public void setLifetime(long lifetime) {
 		this.lifetime = lifetime;
 	}
-	
+
 	public String getPnfsPath() {
 		return pnfsPath;
 	}
-	
+
 	public void setPnfsPath(String pnfsPath) {
 		this.pnfsPath = pnfsPath;
 	}
-	
+
 	public PnfsId getPnfsId() {
 		return pnfsId;
 	}
-	
+
 	public void setPnfsId(PnfsId pnfsId) {
 		this.pnfsId = pnfsId;
 	}
@@ -158,30 +158,30 @@ public class File implements Serializable {
 			pnfsId+" "+
 			state+" "+
 			deleted+" ";
-                
+
 	}
-	
+
 	public String getVoGroup() {
 		return voGroup;
 	}
-	
+
 	public void setVoGroup(String voGroup) {
 		this.voGroup = voGroup;
 	}
-	
+
 	public String getVoRole() {
 		return voRole;
 	}
-	
+
 	public void setVoRole(String voRole) {
 		this.voRole = voRole;
 	}
 
-	public void setDeleted(int yes) { 
+	public void setDeleted(int yes) {
 		this.deleted=yes;
 	}
 
-	public int isDeleted() { 
+	public int isDeleted() {
 		return this.deleted;
 	}
 }

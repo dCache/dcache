@@ -8,11 +8,11 @@ import javax.imageio.*;
  */
 
 public class ImageMap extends HttpServlet {
-    public void doGet(HttpServletRequest request, HttpServletResponse response)    
-	throws ServletException, IOException 
+    public void doGet(HttpServletRequest request, HttpServletResponse response)
+	throws ServletException, IOException
     {
 	String filename = request.getParameter("filename");
-	
+
 	if (filename == null) {
 	    throw new ServletException("Parameter 'filename' must be supplied");
 	}
@@ -26,14 +26,14 @@ public class ImageMap extends HttpServlet {
 		image = ImageIO.read(file);
 		width = image.getWidth(null);
 		height = image.getHeight(null);
-  		
+
 	    } catch (IOException e) {
 		throw new ServletException("Can't read "+file.getAbsolutePath());
 	    }
 	} else {
 	    throw new FileNotFoundException(file.getAbsolutePath());
 	}
-	
+
  	response.setContentType("text/html");
 	PrintWriter out = response.getWriter();
 
@@ -41,19 +41,19 @@ public class ImageMap extends HttpServlet {
 
  	out.println("<map name=\"sample\">\n" +
 		    "<area shape=\"rect\" alt=\"Y Log/Linear\" title=\"Y Log/Linear\" coords=\"" +
-		           0 +","+ 0 +","+ width/10 +","+ height + 
+		           0 +","+ 0 +","+ width/10 +","+ height +
 		    "\" href=\"hotspot1.html\">\n" +
 
  		    "<area shape=\"rect\" alt=\"Pan Left\" title=\"Pan Left\" coords=\"" +
-		    width/10 +","+ (height/10)*9 +","+ (width/10)*4 +","+ height + 
+		    width/10 +","+ (height/10)*9 +","+ (width/10)*4 +","+ height +
 		    "\"   href=\"hotspot2.html\">\n" +
 
 		    "<area shape=\"rect\" alt=\"Zoom\" title=\"Zoom\" coords=\"" +
-		    (width/10)*4 +","+ (height/10)*9 +","+ (width/10)*7 +","+ height + 
+		    (width/10)*4 +","+ (height/10)*9 +","+ (width/10)*7 +","+ height +
 		    "\"   href=\"hotspot3.html\">\n" +
 
 		    "<area shape=\"rect\" alt=\"Pan Right\" title=\"Pan Right\" coords=\"" +
-		    (width/10)*7 +","+ (height/10)*9 +","+ width +","+ height + 
+		    (width/10)*7 +","+ (height/10)*9 +","+ width +","+ height +
 		    "\"   href=\"hotspot4.html\">\n" +
 		    "<area shape=\"default\" nohref>\n" +
 		    "</map>");

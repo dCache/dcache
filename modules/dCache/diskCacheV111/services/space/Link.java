@@ -22,7 +22,7 @@ public class Link implements java.io.Serializable{
     /** Creates a new instance of Link */
     public Link(){
     }
-    
+
     public Link(
             long id,
             String name,
@@ -60,7 +60,7 @@ public class Link implements java.io.Serializable{
         this.freeSpace = freeSpace;
     }
 
-    
+
     public String toString(){
         StringBuffer sb = new StringBuffer();
         sb.append("Link(").append(id);
@@ -88,5 +88,5 @@ public class Link implements java.io.Serializable{
     public void setHsmType(String hsmType) {
         this.hsmType = hsmType;
     }
-    
+
 }

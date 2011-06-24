@@ -16,7 +16,7 @@ package org.dcache.services.info.base;
  * The StateUpdateManager object is also responsible for expunging those
  * metrics that have expired. The StateCaretaker is queried to discover when
  * it is likely that metrics will need to be removed.
- * 
+ *
  * @see StateCaretaker
  */
 public interface StateUpdateManager {
@@ -28,7 +28,7 @@ public interface StateUpdateManager {
      * <p>
      * It is only valid to call this method once per StateUpdateManager
      * object.
-     * 
+     *
      * @throws InterruptedException
      *             if calling Thread was interrupted while waiting for
      *             StateUpdateManager to finish processing outstanding work.
@@ -40,7 +40,7 @@ public interface StateUpdateManager {
     /**
      * Accept a StateUpdate object for processing. The StateUpdate object is
      * enqueued so this method may return quickly.
-     * 
+     *
      * @param pendingUpdate
      *            the StateUpdate that should be processed.
      */
@@ -49,7 +49,7 @@ public interface StateUpdateManager {
     /**
      * Count the number of pending StateUpdate objects that are currently
      * queued.
-     * 
+     *
      * @return the number of pending updates.
      */
     public int countPendingUpdates();

@@ -14,7 +14,7 @@ public class PoolSetStickyMessage extends PoolMessage {
     private static final long serialVersionUID = -7816096827797365873L;
 
     /**
-     * 
+     *
      * @param poolName
      * @param pnfsId
 	 * @param sticky

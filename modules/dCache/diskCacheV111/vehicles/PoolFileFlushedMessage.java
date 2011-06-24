@@ -8,7 +8,7 @@ import diskCacheV111.util.PnfsId;
  * @Immutable
  */
 public class PoolFileFlushedMessage extends PnfsMessage {
-	
+
     private final StorageInfo _storageInfo;
     private final String _poolName;
 
@@ -24,7 +24,7 @@ public class PoolFileFlushedMessage extends PnfsMessage {
     public StorageInfo getStorageInfo() {
         return _storageInfo;
     }
-    
+
     public String getPoolName() {
     	return _poolName;
     }

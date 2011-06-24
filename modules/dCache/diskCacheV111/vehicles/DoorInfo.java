@@ -11,30 +11,30 @@ public class DoorInfo implements java.io.Serializable {
    private String _owner           = "<unknown>" ;
    private String _process         = "<unknown>" ;
    private Object _detail          = null ;
-   
+
    private static final long serialVersionUID = 8147992359534291288L;
-   
+
    public DoorInfo( String cellName , String cellDomainName ){
       _cellName       = cellName ;
       _cellDomainName = cellDomainName ;
    }
    public void setProtocol( String protocolFamily ,
                             String protocolVersion  ){
-   
+
       _protocolFamily = protocolFamily ;
-      _protocolVersion = protocolVersion ;                         
+      _protocolVersion = protocolVersion ;
    }
 
    public String getCellName(){ return _cellName ; }
    public String getDomainName(){ return _cellDomainName ; }
    public void setOwner( String owner ){ _owner = owner ; }
    public void setProcess( String process ){ _process = process ; }
-   
+
    public String getProtocolFamily(){ return _protocolFamily ; }
    public String getProtocolVersion(){ return _protocolVersion ; }
    public String getOwner(){ return _owner ; }
    public String getProcess(){ return _process ; }
-   
+
    public void setDetail( Object detail ){ _detail = detail ; }
    public Object getDetail(){ return _detail ; }
    public String toString(){

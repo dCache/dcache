@@ -14,14 +14,14 @@ import java.util.Map;
  * <p>
  * Providing information like this, the Visitor pattern can be applied, iterating over
  * proposed changes, with the StateTransition object working in collaboration with the
- * existing dCache state tree. 
+ * existing dCache state tree.
  * @see StateUpdate
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class StateTransition {
-	
+
 	final Map<StatePath, StateChangeSet> _allChanges = new HashMap<StatePath, StateChangeSet>();
-	
+
 	/**
 	 * Obtain the StateChangeSet for this path.  If one doesn't exist, null
 	 * is returned.
@@ -31,11 +31,11 @@ public class StateTransition {
 	protected StateChangeSet getStateChangeSet( StatePath path) {
 		return _allChanges.get( path);
 	}
-	
-	
+
+
 	/**
 	 * Obtain the StateChangeSet for this path.  If one doesn't exist, an
-	 * empty one is created and returned. 
+	 * empty one is created and returned.
 	 * @param path  The StatePath for the composite.
 	 * @return this StatePath's change-set
 	 */
@@ -43,7 +43,7 @@ public class StateTransition {
 		StateChangeSet changeSet;
 
 		changeSet = _allChanges.get(path);
-		
+
 		if( changeSet == null) {
 			changeSet = new StateChangeSet();
 			_allChanges.put(path, changeSet);
@@ -51,9 +51,9 @@ public class StateTransition {
 
 		return changeSet;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Dump our contents to a (quite verbose) String.
 	 * @return
@@ -76,8 +76,8 @@ public class StateTransition {
 
 			sb.append( changeSet.dumpContents());
 		}
-		
+
 		return sb.toString();
 	}
-		
+
 }

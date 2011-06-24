@@ -1,5 +1,5 @@
 /*
- COPYRIGHT STATUS: 
+ COPYRIGHT STATUS:
  Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
  software are sponsored by the U.S. Department of Energy under Contract No.
  DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -150,7 +150,7 @@ public class EDataBlockNio {
         }
         int len = 0;
         header.clear();
-        header.position(0);        
+        header.position(0);
 
         while (len < HEADER_LENGTH) {
             int n;
@@ -172,7 +172,7 @@ public class EDataBlockNio {
 
         return len;
     }
-    
+
     public long readData(SocketChannel socketChannel, long size) {
         try {
             if (data == null || data.capacity() < (int) size) {
@@ -183,12 +183,12 @@ public class EDataBlockNio {
             // exception: " + e);
             throw e;
         }
-        
+
         data.clear();
         data.position(0);
         data.limit((int) size);
-        
-        int n = 0;        
+
+        int n = 0;
         while (n < size) {
             int nr;
             try {

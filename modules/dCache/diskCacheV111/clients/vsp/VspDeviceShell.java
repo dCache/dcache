@@ -13,7 +13,7 @@ public class VspDeviceShell {
                    byte [] buffer , int offset , int size ){
            _sum += size ;
       }
-      public void dataRequested( VspConnection v ,  
+      public void dataRequested( VspConnection v ,
                                  byte [] b , int o , int s ){}
 
    }
@@ -21,7 +21,7 @@ public class VspDeviceShell {
    public static void main( String [] arg ) throws Exception {
       new VspDeviceShell( arg ) ;
    }
-   public VspDeviceShell( String [] arg )throws Exception {    
+   public VspDeviceShell( String [] arg )throws Exception {
       if( arg.length < 3 ){
          System.err.println("Usage : ... <host> <port> <replyHost>" ) ;
          System.exit(4);
@@ -29,12 +29,12 @@ public class VspDeviceShell {
       String host = arg[0] ;
       int    port = Integer.parseInt( arg[1] ) ;
       String replyHost = arg[2] ;
-      
+
       VspDevice vsp = new VspDevice( host , port , replyHost ) ;
-      
+
 
       BufferedReader br = new BufferedReader(
-                          new InputStreamReader( System.in) ) ;      
+                          new InputStreamReader( System.in) ) ;
 
       String line = null ;
       int session = 0 ;
@@ -51,8 +51,8 @@ public class VspDeviceShell {
              String command = args.argv(0) ;
              args.shift() ;
              if( command.equals("cd") ){
-                if( args.argc() < 1 ){ 
-                    System.err.println("cd <session>") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("cd <session>") ;
                     continue ;
                 }
                 try{
@@ -70,8 +70,8 @@ public class VspDeviceShell {
                    _currentConnection = c ;
                    session = s ;
                 }catch(Exception e){
-                   System.err.println("E > "+e) ; 
-                   continue ;                    
+                   System.err.println("E > "+e) ;
+                   continue ;
                 }
 
              }else if( command.equals( "ls" ) ){
@@ -146,8 +146,8 @@ public class VspDeviceShell {
                 boolean sync = args.argv(0).equals( "on" ) ;
                 _currentConnection.setSynchronous(sync) ;
              }else if( command.equals( "write" ) ){
-                if( args.argc() < 1 ){ 
-                    System.err.println("write <bytes>") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("write <bytes>") ;
                     continue ;
                 }
                 final int     l = Integer.parseInt(args.argv(0)) ;
@@ -172,8 +172,8 @@ public class VspDeviceShell {
                    }
                 }
              }else if( command.equals( "read" ) ){
-                if( args.argc() < 1 ){ 
-                    System.err.println("read <bytes>") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("read <bytes>") ;
                     continue ;
                 }
                 int l = Integer.parseInt(args.argv(0)) ;
@@ -198,8 +198,8 @@ public class VspDeviceShell {
                    }
                 }
              }else if( command.equals( "loopread" ) ){
-                if( args.argc() < 1 ){ 
-                    System.err.println("loopread <count> [<blocksize>/kbytes]") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("loopread <count> [<blocksize>/kbytes]") ;
                     continue ;
                 }
                 final int count = Integer.parseInt(args.argv(0)) ;
@@ -213,12 +213,12 @@ public class VspDeviceShell {
                 Enumeration n = _hash.elements() ;
                 while( n.hasMoreElements() )
                    ((VspConnection)n.nextElement()).setSynchronous(true) ;
-                
+
                 n = _hash.elements() ;
                 for( int ix = 0 ; n.hasMoreElements() ; ix++ ){
                   final VspConnection c = (VspConnection)n.nextElement() ;
-                  final int countPosition = ix ; 
-                  new Thread( 
+                  final int countPosition = ix ;
+                  new Thread(
                      new Runnable(){
                         public void run(){
                            System.out.println( "Starting "+countPosition ) ;
@@ -228,13 +228,13 @@ public class VspDeviceShell {
                            try{
                               for( int i = 0 ; i < count ; i++ ){
                                  int r = 0 ;
-                                 while( true ){                       
+                                 while( true ){
                                    r = (int)c.read(d,0,d.length) ;
                                    sum += r ;
                                    if( r < d.length )break ;
-                                 } 
+                                 }
                                  c.seek(0,0);
-                              }                         
+                              }
                            }catch(Exception e ){
                               System.err.println( "E > "+e ) ;
                               e.printStackTrace();
@@ -255,8 +255,8 @@ public class VspDeviceShell {
                    System.err.println("Not an active connection") ;
                    continue ;
                 }
-                if( args.argc() < 1 ){ 
-                    System.err.println("sread <bytes>") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("sread <bytes>") ;
                     continue ;
                 }
                 try{
@@ -272,14 +272,14 @@ public class VspDeviceShell {
                    System.err.println("Not an active connection") ;
                    continue ;
                 }
-                if( args.argc() < 1 ){ 
-                    System.err.println("fullread <bytes>") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("fullread <bytes>") ;
                     continue ;
                 }
                 try{
                     int l = Integer.parseInt(args.argv(0)) ;
                     DataEater de = new DataEater() ;
-                    
+
                    long start = System.currentTimeMillis() ;
                    _currentConnection.read(l, de ) ;
                    _currentConnection.sync() ;
@@ -300,8 +300,8 @@ public class VspDeviceShell {
                    System.err.println("Not an active connection") ;
                    continue ;
                 }
-                if( args.argc() < 1 ){ 
-                    System.err.println("seek <offset> [<whence>]") ; 
+                if( args.argc() < 1 ){
+                    System.err.println("seek <offset> [<whence>]") ;
                     continue ;
                 }
                 try{
@@ -318,8 +318,8 @@ public class VspDeviceShell {
                    System.err.println("Not an active connection") ;
                    continue ;
                 }
-                if( args.argc() < 2 ){ 
-                    System.err.println("seekandread <size> <offset> [<whence>]") ; 
+                if( args.argc() < 2 ){
+                    System.err.println("seekandread <size> <offset> [<whence>]") ;
                     continue ;
                 }
                 try{
@@ -340,8 +340,8 @@ public class VspDeviceShell {
                 vsp.setDebugOutput(false) ;
                 debug=false;
              }else if( command.equals( "open" ) ){
-                if( args.argc() < 2 ){ 
-                    System.err.println("open <pnfsId> <mode> [-count=<count>]") ; 
+                if( args.argc() < 2 ){
+                    System.err.println("open <pnfsId> <mode> [-count=<count>]") ;
                     continue ;
                 }
                 String count = args.getOpt("count" ) ;
@@ -404,8 +404,8 @@ public class VspDeviceShell {
 
          }
       }
-   
-   
+
+
    }
 
 }

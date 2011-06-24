@@ -9,19 +9,19 @@ public class StorageInfoViewer {
 
 
    public static void main( String [] args ) throws Exception {
-   
+
        if( args.length < 1 ){
           System.err.println("Usage ... <objFile> ... " ) ;
           System.exit(4);
-          
+
        }
        for( int i = 0 ; i < args.length ; i++ ){
           String filename = args[i] ;
           try{
-             ObjectInputStream ois = 
-                  new ObjectInputStream( 
+             ObjectInputStream ois =
+                  new ObjectInputStream(
                          new FileInputStream( new File( filename ) ) ) ;
-                         
+
              try{
 
                 Object o = null ;
@@ -52,9 +52,9 @@ public class StorageInfoViewer {
                     }else{
                        System.out.println( o.toString() ) ;
                     }
-          
+
                 }
-             
+
              }catch(EOFException eofe ){
              }finally{
                 try{ ois.close() ; }catch(Exception ee ){}
@@ -64,10 +64,10 @@ public class StorageInfoViewer {
              System.out.println("Problem with file : "+filename+" : "+ee.getMessage());
           }
 
-       }       
+       }
        System.exit(0);
-   
-   
+
+
    }
 
 }

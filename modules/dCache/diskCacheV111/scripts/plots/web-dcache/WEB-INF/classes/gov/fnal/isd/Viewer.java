@@ -1,4 +1,4 @@
-/* 
+/*
  * Viewer.java
  */
 package gov.fnal.isd;
@@ -9,7 +9,7 @@ import java.io.File;
 
 public class Viewer extends Frame {
     private Image image;
-    
+
     public Viewer(String fileName) {
 	/*
 	ExampleFileFilter filter = new ExampleFileFilter(new String[] {"gif", "jpg", "pre"}, "JPEG & GIF Images");
@@ -47,11 +47,11 @@ public class Viewer extends Frame {
 	setTitle(fileName);
 	show();
     }
-    
+
     public void paint(Graphics graphics) {
 	graphics.drawImage(image, 0, 0, null);
     }
-    
+
     public static void main(String[] args) {
 	new Viewer(args[0]);
     }

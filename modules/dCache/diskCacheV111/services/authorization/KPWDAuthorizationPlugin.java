@@ -3,7 +3,7 @@
 
 /*
  * KPWDAuthorizationPlugin.java
- * 
+ *
  * Created on January 29, 2005
  */
 
@@ -97,7 +97,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             logger.error("Exception in KAuthFile instantiation: " +e);
             throw new AuthorizationException(e.toString());
 		}
-		
+
 		if (desiredUserName != null) {
             logger.debug("Desired Username requested as: " + desiredUserName);
 			user_name = desiredUserName;
@@ -110,7 +110,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
 				String denied = DENIED_MESSAGE + ": Cannot determine Username for DN " + subjectDN;
                 logger.warn(denied);
                 throw new AuthorizationException(denied);
-			}	
+			}
 		}
 
 		UserAuthRecord authRecord = authF.getUserRecord(user_name);
@@ -119,7 +119,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             logger.error("dcache.kpwd Authorization Service plugin: Authorization denied for user: " + user_name + " with subject DN: " + subjectDN);
             throw new AuthorizationException("User " +user_name+ " is not found in authorization records");
     }
-		
+
 		if (!authRecord.hasSecureIdentity(subjectDN)) {
             logger.error("dcache.kpwd Authorization Service plugin: Authorization denied for user: "+user_name + " with subject DN: " +subjectDN);
             throw new AuthorizationException("dcache.kpwd Authorization Plugin: Authorization denied for user " +user_name+ " with Subject DN " +subjectDN);
@@ -130,7 +130,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
         gPlazmaAuthorizationRecord gauthrec = getgPlazmaAuthorizationRecord(authRecord);
         return gauthrec;
 
-	}	
+	}
 
 
     /** Extract values from UserAuthRecord and write in getgPlazmaAuthorizationRecord
@@ -148,7 +148,7 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
                 authrec.Home,
                 authrec.Root,
                 authrec.FsRoot);
-	}	
+	}
 
 
 } //end of class KPWDAuthorizationPlugin

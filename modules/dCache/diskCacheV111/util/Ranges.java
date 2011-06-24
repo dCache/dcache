@@ -16,28 +16,28 @@ import java.util.* ;
 public class Ranges {
     private TreeSet list=null;
 
-    public Ranges() { 
+    public Ranges() {
 	list = new TreeSet();
     }
 
-    public void clear() { 
+    public void clear() {
 	list.clear();
     }
 
-    public boolean isContiguous() { 
+    public boolean isContiguous() {
 	return (list.size()==1);
     }
 
-    public void addRange(Range newRange) { 
-	if (list.size()==0) { 
+    public void addRange(Range newRange) {
+	if (list.size()==0) {
 	    list.add(newRange);
 	}
 	else {
 	    Iterator i=list.iterator();
 	    boolean  isMerged=false;
-	    while(i.hasNext()) { 
+	    while(i.hasNext()) {
 		Range r = (Range)i.next();
-		if (r.merge(newRange)) { 
+		if (r.merge(newRange)) {
 		    if(i.hasNext()) {
 			Range nextRange = (Range)i.next();
 			if(r.merge(nextRange)) {
@@ -48,28 +48,28 @@ public class Ranges {
 		    break;
 		}
 	    }
-	    if (isMerged==false) { 
+	    if (isMerged==false) {
 		list.add(newRange);
 	    }
 	}
     }
-    
-    public TreeSet getRanges() { 
+
+    public TreeSet getRanges() {
 	return list;
     }
-    
-    public String toString(){	
+
+    public String toString(){
 	Iterator i=list.iterator();
 	StringBuffer sb = new StringBuffer();
-	while(i.hasNext()) { 
+	while(i.hasNext()) {
 		sb.append((Range)i.next());
 	}
 	sb.append("\n");
 	return sb.toString();
     }
-		     
-    
-    public static void main(String argv[]) { 
+
+
+    public static void main(String argv[]) {
 	Ranges ranges = new Ranges();
 	ranges.addRange(new Range(20,30));
 	ranges.addRange(new Range(0,10));

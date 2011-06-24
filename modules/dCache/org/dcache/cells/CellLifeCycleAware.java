@@ -7,7 +7,7 @@ package org.dcache.cells;
 public interface CellLifeCycleAware
 {
     /**
-     * Called just after the cell has been started. 
+     * Called just after the cell has been started.
      */
     void afterStart();
 

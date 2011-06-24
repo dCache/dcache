@@ -11,7 +11,7 @@ package diskCacheV111.util;
  * @author  timur
  */
 public class Ecrc2Adler32 {
-    
+
     private static int BASE = 65521 ;
     public static long convert(long ecrc,long filesize)
     {
@@ -36,7 +36,7 @@ public class Ecrc2Adler32 {
         long filesize = Long.parseLong(args[1]);
         long adler32 = convert(ecrc,filesize);
         System.out.println("adler32 is "+adler32+" hex value "+Long.toHexString(adler32));
-        
+
     }
-    
+
 }

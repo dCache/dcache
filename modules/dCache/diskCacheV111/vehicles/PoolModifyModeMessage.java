@@ -6,13 +6,13 @@ import  diskCacheV111.util.PnfsId ;
 import  diskCacheV111.pools.PoolV2Mode ;
 
 public class PoolModifyModeMessage extends PoolMessage {
-    
+
     private PoolV2Mode _newMode       = null ;
     private int        _statusCode    = 0 ;
     private String     _statusMessage = null ;
 
     private static final long serialVersionUID = 4844505620628270397L;
-    
+
     public PoolModifyModeMessage(String poolName , PoolV2Mode mode ){
 	super(poolName);
         setReplyRequired(true);

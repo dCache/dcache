@@ -9,22 +9,22 @@ import  java.util.*;
 public class PoolInfoDb {
 
     private Hashtable _allPools = new Hashtable() ;
-    
+
     private class PoolDescriptor {
-    
+
         private String    _poolName = null ;
 	private List      _poolPreferences ;
 	private CellPath  _poolPath ;
-        
-	private PoolDescriptor( 
+
+	private PoolDescriptor(
 	          String    poolName ,
 		  List      poolPreferences ,
                   CellPath  poolPath ){
-		  
+
            _poolName         = poolName ;
            _poolPreferences  = poolPreferences ;
            _poolPath         = poolPath ;
-           
+
         }
         private List      getPreferences(){ return _poolPreferences ; }
         private String    getName(){ return _poolName ; }
@@ -46,14 +46,14 @@ public class PoolInfoDb {
        return _allPools.containsKey(poolName) ;
     }
     /**
-      *  Basic function for the PoolManager to get a list of 
+      *  Basic function for the PoolManager to get a list of
       *  pool candidates, sorted by read resp. write preference.
       */
-    public synchronized 
+    public synchronized
        List  getSortedListByClass( String hsm , String className , boolean forWrite ){
 
        hsm = hsm.toLowerCase() ;
-       
+
        TreeSet result = new TreeSet(PoolClassAttraction.getComparator(forWrite) ) ;
 
        Enumeration e = _allPools.elements() ;
@@ -67,7 +67,7 @@ public class PoolInfoDb {
                PoolClassAttraction classAttr = (PoolClassAttraction)f.next() ;
                if( hsm.equals( classAttr.getOrganization() )       &&
                    className.equals( classAttr.getStorageClass() ) &&
-                   ( (   forWrite ? 
+                   ( (   forWrite ?
                             classAttr.getWritePreference() :
                             classAttr.getReadPreference()   ) > 0 )   )
 
@@ -77,11 +77,11 @@ public class PoolInfoDb {
        return new ArrayList( result ) ;
 
     }
-    public synchronized 
+    public synchronized
        List  getListByClass( String hsm , String className , boolean forWrite ){
 
        hsm = hsm.toLowerCase() ;
-       
+
        ArrayList result = new ArrayList() ;
 
        Enumeration e = _allPools.elements() ;
@@ -95,7 +95,7 @@ public class PoolInfoDb {
                PoolClassAttraction classAttr = (PoolClassAttraction)f.next() ;
                if( hsm.equals( classAttr.getOrganization() )       &&
                    className.equals( classAttr.getStorageClass() ) &&
-                   ( (   forWrite ? 
+                   ( (   forWrite ?
                             classAttr.getWritePreference() :
                             classAttr.getReadPreference()   ) > 0 )   )
 
@@ -105,29 +105,29 @@ public class PoolInfoDb {
        return new ArrayList( result ) ;
 
     }
-    public synchronized 
+    public synchronized
        List  getListByStorageInfo( StorageInfo info , boolean forWrite ){
 
-      
+
        String      hsm       = info.getHsm().toLowerCase() ;
-       String      className = info.getStorageClass() ;       
+       String      className = info.getStorageClass() ;
        ArrayList   result    = new ArrayList() ;
        Enumeration e         = _allPools.elements() ;
-       
+
        while( e.hasMoreElements() ){
 
            PoolDescriptor desc = (PoolDescriptor)e.nextElement() ;
            List        classes = desc.getPreferences() ;
            Iterator          f = classes.iterator() ;
-           
+
            while( f.hasNext() ){
                PoolClassAttraction classAttr = (PoolClassAttraction)f.next() ;
                int preference = forWrite ? classAttr.getWritePreference() :
                                            classAttr.getReadPreference()  ;
-                
+
                //
                // the hsm must fit and the preference must be > 0
-               //                           
+               //
                if( hsm.equals( classAttr.getOrganization() ) &&
                    ( preference > 0                        )    ){
                   //
@@ -141,16 +141,16 @@ public class PoolInfoDb {
                       while( i.hasNext() ){
                          Map.Entry pair  = (Map.Entry)i.next() ;
                          String    value = info.getKey(pair.getKey().toString());
-                         if( ( value == null ) || 
+                         if( ( value == null ) ||
                              ! value.equals(pair.getValue()) ){ found = false ; break ; }
 
                       }
                       if( found )result.add( classAttr ) ;
-                      
+
                   }else if( className.equals( classAttr.getStorageClass() ) ){
 
                       result.add( classAttr ) ;
-                      
+
                   }
                }
            }
@@ -160,12 +160,12 @@ public class PoolInfoDb {
     }
     public synchronized CellPath getPoolPath( String poolName )
             throws Exception {
-            
+
         Object pool = _allPools.get( poolName ) ;
         if( pool == null )
            throw new
            Exception( "Pool "+poolName+" not in list" ) ;
-        return ((PoolDescriptor)pool).getPath()  ;       
+        return ((PoolDescriptor)pool).getPath()  ;
     }
     public synchronized String [] getActivePools(){
        String [] result = new String[_allPools.size()] ;
@@ -206,9 +206,9 @@ public class PoolInfoDb {
     }
     public StringBuffer getPoolInfo( StringBuffer sb , boolean extended , boolean addClasses ){
       return sb ;
-    
+
     }
-    public StringBuffer getPoolInfo( StringBuffer sb , 
+    public StringBuffer getPoolInfo( StringBuffer sb ,
                                       String poolName ,
                                       boolean extended , boolean addClasses ){
 

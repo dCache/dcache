@@ -3,13 +3,13 @@
 package diskCacheV111.vehicles;
 
 public class PoolManagerGetWritePoolMessage extends PoolManagerMessage {
-   
+
     private String _storageClass = null;
     private String _pnfsId = null;
     private String _poolName;
 
     private static final long serialVersionUID = 1261369926481827276L;
-    
+
     public PoolManagerGetWritePoolMessage(String storageClass,
 					  String pnfsId){
 	_storageClass = storageClass;

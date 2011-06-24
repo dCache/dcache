@@ -22,21 +22,21 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        *  Returns the name of this pool.
        *
        * @return Name of this pool.
-       *  
+       *
        */
      public String getName(){ return _name ; }
      /**
        *  Provides the PoolCellInfo of this pool.
        *
        * @return PoolCellInfo of the pool.
-       *  
+       *
        */
      public PoolCellInfo getCellInfo(){ return _cellInfo ; }
      /**
        *  Returns whether or not this pool is flushing one or more storage classes.
        *
        * @return True if pool is in the process of flushing one or more storage classes.
-       *  
+       *
        */
      public boolean isActive() { return _isActive ; }
      /**
@@ -44,7 +44,7 @@ public class HsmFlushControllerPoolDetails implements HsmFlushControlCore.PoolDe
        *  or in process of being flushed.
        *
        * @return List of flush infos on this pool.
-       *  
+       *
        */
      public List getFlushInfos(){ return _flushInfos ; }
      /**

@@ -11,7 +11,7 @@ import org.dcache.services.info.base.StateUpdateManager;
 import dmg.cells.nucleus.UOID;
 
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
-	
+
 	private static Logger _log = LoggerFactory.getLogger( PoolInfoMsgHandler.class);
 
 	private static final StatePath POOLS_PATH = new StatePath( "pools");
@@ -24,14 +24,14 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
     public void process(Object msgPayload, long metricLifetime) {
 
 		StateUpdate update = new StateUpdate();
-			
+
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "received a message that isn't an array");
 			return;
 		}
-			
+
 		Object[] array = (Object []) msgPayload;
-		
+
 		if( array.length != 6) {
 			_log.error( "unexpected array size: "+array.length);
 			return;
@@ -40,13 +40,13 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 		Boolean isEnabled = (Boolean) array[3];
 		Long heartBeat = (Long) array[4];
 		Boolean isReadOnly = (Boolean) array [5];
-		
+
 		String poolName = array[0].toString();
 
 		StatePath thisPoolPath = POOLS_PATH.newChild( poolName);
-			
-		addItems( update, thisPoolPath.newChild("poolgroups"), (Object []) array [1], metricLifetime); 
-		addItems( update, thisPoolPath.newChild("links"), (Object []) array [2], metricLifetime); 
+
+		addItems( update, thisPoolPath.newChild("poolgroups"), (Object []) array [1], metricLifetime);
+		addItems( update, thisPoolPath.newChild("links"), (Object []) array [2], metricLifetime);
 
 		update.appendUpdate( thisPoolPath.newChild("read-only"),
 				new BooleanStateValue( isReadOnly.booleanValue(), metricLifetime));

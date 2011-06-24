@@ -6,7 +6,7 @@ import org.dcache.pool.repository.Allocator;
 
 import java.io.RandomAccessFile;
 
-public interface MoverProtocol 
+public interface MoverProtocol
 {
 
     /**

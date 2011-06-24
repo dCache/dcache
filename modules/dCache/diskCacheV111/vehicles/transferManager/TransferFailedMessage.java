@@ -11,11 +11,11 @@ package diskCacheV111.vehicles.transferManager;
  * @author  timur
  */
 public class TransferFailedMessage extends TransferManagerMessage{
-    
+
     /** Creates a new instance of TransferFailedMessage */
     public TransferFailedMessage(TransferManagerMessage original,int errorCode,Object errorObject) {
         super(original);
         setFailed(errorCode, errorObject);
     }
-    
+
 }

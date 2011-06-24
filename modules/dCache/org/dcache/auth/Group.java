@@ -35,8 +35,8 @@ public class Group implements Serializable{
     private String name;
     private int gid;
     /**
-     * this is here to implement bydirectional 
-     * ManyToOne/OneToMany relationship 
+     * this is here to implement bydirectional
+     * ManyToOne/OneToMany relationship
      * with GroupList
      */
     private GroupList groupList;
@@ -54,7 +54,7 @@ public class Group implements Serializable{
     public void setId(long id) {
         this.id = id;
     }
-    
+
     @Basic
     @Column( name="gid")
     public int getGid() {
@@ -64,13 +64,13 @@ public class Group implements Serializable{
     public void setGid(int gid) {
         this.gid = gid;
     }
-    
+
     @Basic
     @Column( name="name")
     public String getName() {
         return name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
@@ -87,13 +87,13 @@ public class Group implements Serializable{
     public void setGroupList(GroupList groupList) {
         this.groupList = groupList;
     }
-    
+
     public String toString() {
         StringBuilder sb = new java.lang.StringBuilder();
         toStringBuilder(sb);
         return  sb.toString();
     }
-    
+
    public void toStringBuilder (StringBuilder sb) {
         if(name != null) {
             sb.append(name).append(' ');
@@ -110,7 +110,7 @@ public class Group implements Serializable{
         }
          */
     }
-    
+
     public String hashCodeSting() {
         return Integer.toHexString(hashCode());
     }

@@ -46,7 +46,7 @@ public class Version {
             }
 
        }catch(IOException ee){}
-    
+
     }
     public static String getVersion() { return __specVersion ; }
     public static String getBuildTime() { return __buildTime; }

@@ -11,10 +11,10 @@ package diskCacheV111.vehicles.transferManager;
  * @author  timur
  */
 public class TransferCompleteMessage extends TransferManagerMessage{
-    
+
     /** Creates a new instance of TransferFailedMessage */
     public TransferCompleteMessage(TransferManagerMessage original) {
         super(original);
     }
-    
+
 }

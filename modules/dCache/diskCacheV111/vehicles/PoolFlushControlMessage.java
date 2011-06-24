@@ -6,9 +6,9 @@ package diskCacheV111.vehicles;
 //
 
 public class PoolFlushControlMessage extends PoolMessage {
-    
+
     private static final long serialVersionUID = 2092239799703859611L;
-    
+
     public PoolFlushControlMessage(String poolName){
          super(poolName);
     }

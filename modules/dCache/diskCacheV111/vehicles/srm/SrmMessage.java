@@ -6,16 +6,16 @@ import diskCacheV111.vehicles.Message;
 
 
 public class SrmMessage extends Message {
-    
+
     private static final long serialVersionUID = 1535252798675086597L;
-    
+
     public SrmMessage(){
     }
-    
-    public String toString(){ 
+
+    public String toString(){
         return "SrmMessage";
     }
 }
 
 
-    
+

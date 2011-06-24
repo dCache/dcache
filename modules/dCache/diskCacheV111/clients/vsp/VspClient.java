@@ -1,4 +1,4 @@
-// $Id: VspClient.java,v 1.6 2007-05-24 13:51:05 tigran Exp $ 
+// $Id: VspClient.java,v 1.6 2007-05-24 13:51:05 tigran Exp $
 //
 package diskCacheV111.clients.vsp ;
 
@@ -9,9 +9,9 @@ import java.util.* ;
 import diskCacheV111.util.* ;
 
 
-public class      VspClient 
+public class      VspClient
        implements Runnable {
-       
+
    private Hashtable _requestHash = new Hashtable() ;
    private ServerSocket _listen =  null ;
    private Socket       _door   = null ;
@@ -25,36 +25,36 @@ public class      VspClient
    private int            _sessionId = 1 ;
    private boolean        _online    = false ;
    private synchronized int nextSessionId(){ return _sessionId++ ; }
-   
+
    public VspClient( String host , int port )
           throws CacheException {
-   
+
       try{
           _door = new Socket( host , port ) ;
-          _in   = new BufferedReader( 
-                     new InputStreamReader( 
+          _in   = new BufferedReader(
+                     new InputStreamReader(
                             _door.getInputStream() ) );
-          _out  = new PrintWriter( 
+          _out  = new PrintWriter(
                      new OutputStreamWriter(
                             _door.getOutputStream() ) ) ;
-          
-           prepareService() ;   
+
+           prepareService() ;
           _serviceThread = new Thread( this ) ;
-          _serviceThread.start() ;           
+          _serviceThread.start() ;
           _commandThread = new Thread( this ) ;
-          _commandThread.start() ;           
+          _commandThread.start() ;
       }catch( CacheException ce ){
           throw ce ;
       }catch( Exception e ){
           throw new CacheException( 1 , e.toString() ) ;
       }
-      
+
    }
    private void prepareService() throws Exception {
        _listen = new ServerSocket(0) ;
        _host   = _listen.getInetAddress().getHostAddress() ;
        _port   = _listen.getLocalPort() ;
-   
+
    }
    public void run(){
       if( Thread.currentThread() == _commandThread ){
@@ -63,16 +63,16 @@ public class      VspClient
             _out.flush() ;
             commandRun() ;
          }catch( Exception e ){
-         
-         }   
-      
+
+         }
+
       }else if( Thread.currentThread() == _serviceThread ){
          serviceRun() ;
       }
    }
    private void serviceRun(){
       try{
-      
+
          Socket s = null ;
          int sessionId = 0 ;
          DataInputStream data = null ;
@@ -80,15 +80,15 @@ public class      VspClient
             try{
                 data = new DataInputStream( s.getInputStream() ) ;
                 sessionId = data.readInt() ;
-                VspBaseRequest request = 
+                VspBaseRequest request =
                       (VspBaseRequest)_requestHash.get(
                              Integer.valueOf( sessionId ) ) ;
-                             
+
                 if( request == null ){
                    System.err.println(
                       "Unexpected data connection for "+sessionId ) ;
                    try{ s.close() ; }catch(Exception xx){}
-                   
+
                 }
                 if(_debug)System.err.println( "DataConnection for : "+sessionId);
                 request.dataConnectionArrived(s) ;
@@ -97,11 +97,11 @@ public class      VspClient
                     "Exception for data : "+sessionId+
                     " : "+ie ) ;
                 try{ s.close() ; }catch(Exception xx){}
-            } 
-         
+            }
+
          }
       }catch(Exception e ){
-      
+
       }
    }
    private void commandRun() throws Exception {
@@ -120,12 +120,12 @@ public class      VspClient
             //
             masterSession( args ) ;
          }else{
-            request = 
+            request =
                 (VspBaseRequest)
                     _requestHash.get(
                        Integer.valueOf(sessionId));
             if( request == null ){
-               System.err.println( 
+               System.err.println(
                   "Unexpected session id : "+sessionId) ;
                continue ;
             }
@@ -175,7 +175,7 @@ public class      VspClient
              throws Exception {
          //
          // skip 0 byte
-         // 
+         //
          controlOut.writeLong(0) ;
          //
          // tell them we need it all
@@ -206,7 +206,7 @@ public class      VspClient
              }
          }
       }
-      
+
    }
    private class VspBaseRequest implements VspRequest,Runnable {
       private int    _rc  = VspRequest.IN_PROCESS ;
@@ -215,7 +215,7 @@ public class      VspClient
       protected File   _file   = null ;
       protected DataOutputStream _dataOut = null ;
       protected DataInputStream  _dataIn  = null ;
-      private Socket             _socket  = null ; 
+      private Socket             _socket  = null ;
       private boolean _ioFinished  = false ;
       private boolean _infoArrived = false ;
       private int     _sessionId ;
@@ -262,7 +262,7 @@ public class      VspClient
       }
       public void runIo( DataInputStream in , DataOutputStream out )
              throws Exception {
-      
+
       }
       private void infoArrived( VspArgs args ) throws CacheException {
          int    rc  = 3 ;
@@ -312,14 +312,14 @@ public class      VspClient
    }
    public VspRequest putPnfs( String pnfsId , File localFile )
           throws CacheException {
-        
+
        waitForOnline() ;
-          
+
        if( ! localFile.exists() )
           throw new
-          CacheException( 6 , "Local File doesn't exists : "+localFile ) ; 
+          CacheException( 6 , "Local File doesn't exists : "+localFile ) ;
         /*
-        FileOutputStream s = null ; 
+        FileOutputStream s = null ;
         try{
            s = new FileOutputStream( localFile ) ;
         }catch(Exception ie ){
@@ -327,7 +327,7 @@ public class      VspClient
            CacheException(5,"Can't create localfile : "+localFile ) ;
         }finally{
            try{ s.close() ; }catch(Exception ee){}
-        } 
+        }
         */
         VspBaseRequest vsp = null ;
         synchronized( _requestHash ){
@@ -335,18 +335,18 @@ public class      VspClient
            _requestHash.put( Integer.valueOf(vsp.getSessionId()) , vsp ) ;
            _requestHash.notifyAll() ;
         }
-        return vsp ;  
+        return vsp ;
    }
    public VspRequest getPnfs( String pnfsId , File localFile )
           throws CacheException {
-        
+
        waitForOnline() ;
-          
+
 //       if( localFile.exists() )
 //          throw new
-//          CacheException( 6 , "Local File already exists : "+localFile ) ; 
-        
-        FileOutputStream s = null ; 
+//          CacheException( 6 , "Local File already exists : "+localFile ) ;
+
+        FileOutputStream s = null ;
         try{
            s = new FileOutputStream( localFile ) ;
         }catch(Exception ie ){
@@ -354,15 +354,15 @@ public class      VspClient
            CacheException(5,"Can't create localfile : "+localFile ) ;
         }finally{
            try{ s.close() ; }catch(Exception ee){}
-        } 
-        
+        }
+
         VspBaseRequest vsp = null ;
         synchronized( _requestHash ){
            vsp = new VspGetRequest( pnfsId , localFile ) ;
            _requestHash.put( Integer.valueOf(vsp.getSessionId()) , vsp ) ;
            _requestHash.notifyAll() ;
         }
-        return vsp ;  
+        return vsp ;
    }
    public void waitForAll(){
        try{
@@ -379,14 +379,14 @@ public class      VspClient
              }catch(InterruptedException ie){
                 break ;
              }
-          
+
           }
        }
    }
    public static void main( String [] args ){
-   
+
        if( ( args.length < 3 ) ||
-           ! ( args[0].equals("put") || 
+           ! ( args[0].equals("put") ||
                args[0].equals("get") ||
                args[0].equals("none")     ) ){
           System.err.println( "Usage : ... put|get <pnfsId> <fileName>" ) ;
@@ -394,7 +394,7 @@ public class      VspClient
        }
      try{
        VspClient vsp = new VspClient( "localhost" , 22125 ) ;
-       
+
        VspRequest request = null ;
        int m = args.length;
        int count = 0 ;
@@ -412,14 +412,14 @@ public class      VspClient
              }catch(Exception e ){
                 System.err.println("Problem for "+args[n+1]+" "+e )  ;
              }
-             n+= 3 ; 
+             n+= 3 ;
           }else if( args[n].equals("get") ){
              if( ( m - n ) < 3 ){
                 System.err.println( "Not enough arguments for 'get' " ) ;
                 break ;
              }
              try{
-                v.addElement( vsp.getPnfs( args[n+1] , new File( args[n+2] ) ) ); 
+                v.addElement( vsp.getPnfs( args[n+1] , new File( args[n+2] ) ) );
              }catch(Exception e ){
                 System.err.println("Problem for "+args[n+1]+" "+e )  ;
              }
@@ -432,7 +432,7 @@ public class      VspClient
           }
           if( n >= m )break ;
        }
-               
+
        vsp.waitForAll() ;
        Enumeration e = v.elements() ;
        for( ; e.hasMoreElements() ; )
@@ -443,6 +443,6 @@ public class      VspClient
      }catch(Exception e ){
         e.printStackTrace()  ;
         System.exit(4);
-     }  
+     }
    }
 }

@@ -7,6 +7,6 @@ import dmg.cells.nucleus.CellMessage ;
 public interface MessageTimerEvent {
 
     public void event( MessageEventTimer timer ,
-                       Object eventObject , 
+                       Object eventObject ,
 		       int eventType ) ;
 }

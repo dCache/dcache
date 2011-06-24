@@ -8,22 +8,22 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolFileCheckable;
 
-public class PoolCheckAdapter 
-       implements PoolCostCheckable, 
+public class PoolCheckAdapter
+       implements PoolCostCheckable,
                   PoolFileCheckable,
                   java.io.Serializable {
 
     private double  _spaceCost       = 0.0 ;
     private double  _performanceCost = 0.0 ;
     private long    _filesize        = 0L ;
-    private String  _poolName        = null ;    
-    private boolean _have            = false , 
-                    _waiting         = false ;    
-    private Map<String,String>     _tagMap          = null ;   
+    private String  _poolName        = null ;
+    private boolean _have            = false ,
+                    _waiting         = false ;
+    private Map<String,String>     _tagMap          = null ;
     private PnfsId  _pnfsId          = null ;
-        
+
     private static final long serialVersionUID = 5035648886552838987L;
-    
+
     public PoolCheckAdapter( PoolCostCheckable costCheck ){
        _poolName        = costCheck.getPoolName() ;
        _tagMap          = costCheck.getTagMap() ;
@@ -37,8 +37,8 @@ public class PoolCheckAdapter
     }
     public double getSpaceCost(){ return _spaceCost ; }
     public void   setSpaceCost(double spaceCost){_spaceCost = spaceCost ; }
-    
-    
+
+
     public double getPerformanceCost(){ return _performanceCost ; }
     public void setPerformanceCost(double performanceCost){
        _performanceCost = performanceCost ;

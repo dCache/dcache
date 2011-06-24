@@ -27,10 +27,10 @@ public class TransferManagerHandlerBackup {
 	private long lifeTime;
 	private Long credentialId;
 
-	private TransferManagerHandlerBackup() { 
+	private TransferManagerHandlerBackup() {
 	}
 	public TransferManagerHandlerBackup(TransferManagerHandler handler) {
-		
+
 		creationTime = handler.getCreationTime();
 		lifeTime     = handler.getLifeTime();
 		id           = handler.getId();

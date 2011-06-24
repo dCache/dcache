@@ -23,14 +23,14 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
     public void process(Object msgPayload, long metricLifetime) {
 
 		_log.info( "processing new poolgroup information");
-		
+
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "received a message that isn't an array");
 			return;
 		}
-		
+
 		Object array[] = (Object []) msgPayload;
-		
+
 		if( array.length != 3) {
 			_log.error( "Unexpected array size: "+array.length);
 			return;
@@ -40,7 +40,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		String poolgroupName = (String) array[0];
 		Object poolNames[] = (Object []) array[1];
 		Object linkNames[] = (Object []) array[2];
-		
+
 		StateUpdate update = new StateUpdate();
 
 		StatePath thisPoolGroupPath = POOLGROUPS_PATH.newChild( poolgroupName);
@@ -48,7 +48,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		if( poolNames.length + linkNames.length == 0) {
 			// Add an entry, even though this poolgroup is empty.
 			update.appendUpdate( thisPoolGroupPath, new StateComposite( metricLifetime));
-		} else {		
+		} else {
 			addItems( update, thisPoolGroupPath.newChild("pools"), poolNames, metricLifetime);
 			addItems( update, thisPoolGroupPath.newChild("links"), linkNames, metricLifetime);
 		}

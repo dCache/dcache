@@ -7,28 +7,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -41,10 +41,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -54,10 +54,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -72,13 +72,13 @@ import java.util.ArrayList;
  *
  */
 public class GnuSetup {
-    
+
     private ArrayList<String> commands;
     private ArrayList<String> datasources;
     private ArrayList<String> styles;
     private ArrayList<String> titles;
     private String output;
-    
+
     public GnuSetup() {
         commands = new ArrayList<String>() ;
         datasources  = new ArrayList<String>();
@@ -90,7 +90,7 @@ public class GnuSetup {
         commands.add("set timestamp");
         commands.add("set boxwidth 3000 absolute");
         commands.add("set style fill solid 0.5");
-        //      
+        //
         commands.add("set title 'Plot'");
         commands.add("set ylabel 'Y'");
         commands.add("set xlabel 'X'");
@@ -100,7 +100,7 @@ public class GnuSetup {
 //        commands.add("set xrange ['00:00':'23:59']");
 //        commands.add("set format x '%H:%M'");
     }
-    
+
     public GnuSetup(String[] adds) {
         this();
         for (int i = 0; i < adds.length; i++) {
@@ -112,38 +112,38 @@ public class GnuSetup {
         commands.add("set title '"+title+"'");
         return this;
     }
-    
+
     public GnuSetup setYlabel(String label) {
         commands.add("set ylabel '"+label+"'");
         return this;
     }
-    
+
     public GnuSetup setXlabel(String label) {
         commands.add("set xlabel '"+label+"'");
         return this;
     }
-    
+
     public GnuSetup setXrange(String start, String stop) {
         commands.add("set xrange ['"+start+"':'"+stop+"']");
         return this;
     }
-    
+
     public GnuSetup setXrange(Date start, Date stop) {
         commands.add("set xrange ['"+start+"':'"+stop+"']");
         return this;
     }
-    
+
     public GnuSetup setYrange(String start, String stop) {
         commands.add("set yrange ['"+start+"':'"+stop+"']");
         return this;
     }
-    
+
     public GnuSetup setYrange(Date start, Date stop) {
         commands.add("set yrange ['"+start+"':'"+stop+"']");
         return this;
     }
-    
-/*    
+
+/*
     public void setXdata(String fmt) {
         commands.add("set xdata "+fmt);
         if (fmt.startsWith("time")) {
@@ -177,11 +177,11 @@ public class GnuSetup {
         commands.add(value);
         return this;
     }
-    
+
     public void addDataSrcName(String src) {
         boolean add = datasources.add(src);
     }
-    
+
     public String getDataSrcName(int n) {
         return datasources.get(n);
     }
@@ -189,7 +189,7 @@ public class GnuSetup {
     public void addDataStyle(String style) {
         boolean add = styles.add(style);
     }
-    
+
     public String getDataStyle(int n) {
         return styles.get(n);
     }
@@ -197,7 +197,7 @@ public class GnuSetup {
     public void addDataSetTitle(String title) {
         boolean add = titles.add(title);
     }
-    
+
     public String getDataSetTitle(int n) {
         return titles.get(n);
     }

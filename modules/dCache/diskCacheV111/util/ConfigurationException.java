@@ -3,7 +3,7 @@ package diskCacheV111.util;
 /**
  * Thrown when a configuration error is found.
  */
-public class ConfigurationException extends Exception 
+public class ConfigurationException extends Exception
 {
     public ConfigurationException(String msg)
     {

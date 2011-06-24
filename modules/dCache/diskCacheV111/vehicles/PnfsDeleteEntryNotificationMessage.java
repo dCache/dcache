@@ -5,17 +5,17 @@ import diskCacheV111.util.PnfsId;
 
 public class PnfsDeleteEntryNotificationMessage extends PnfsMessage {
     static final long serialVersionUID = -835476659990130630L;
-    
+
     private String _path = null;
-    
-    
+
+
     public PnfsDeleteEntryNotificationMessage(PnfsId pnfsId, String path){
 	super(pnfsId);
 	this._path = path;
 	setReplyRequired(false);
     }
 
-    
+
     public String getPath(){
 	return _path;
     }

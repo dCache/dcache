@@ -8,17 +8,17 @@ public class MultiIo implements Runnable {
       _size        = size ;
       _threadCount = threadCount ;
       _count       = count ;
-      
+
       for( int i = 0 ; i < _threadCount ; i++ ){
-      
+
           new Thread(this).start() ;
       }
-   
+
    }
    public void run(){
       try{
          byte [] data = new byte[_size] ;
-         OutputStream out = 
+         OutputStream out =
          new FileOutputStream(  "/dev/null" ) ;
          long start = System.currentTimeMillis() ;
          for( int i = 0 ; i < _count ; i++ ){
@@ -33,9 +33,9 @@ public class MultiIo implements Runnable {
          System.err.println("Error : "+xx ) ;
       }
    }
-   
+
    public static void main( String [] args ) throws Exception {
-   
+
       if( args.length < 3 ){
          System.out.println( "Usage : ... <size> <count> <threads>" ) ;
          System.exit(4);
@@ -44,7 +44,7 @@ public class MultiIo implements Runnable {
       int count   = Integer.parseInt( args[1] ) ;
       int threads = Integer.parseInt( args[2] ) ;
       new MultiIo( size , count , threads ) ;
-   
+
    }
 
 

@@ -14,7 +14,7 @@ public class VspCheck1 {
                    byte [] buffer , int offset , int size ){
            _sum += size ;
       }
-      public void dataRequested( VspConnection v ,  
+      public void dataRequested( VspConnection v ,
                                  byte [] b , int o , int s ){}
 
       public String toString(){
@@ -35,20 +35,20 @@ public class VspCheck1 {
    private String _host = "localhost" ;
    private int    _port = 22125 ;
    private String [] _pnfsid ;
-   
+
    private class WorkerThread extends Thread {
       private int _id = 0 ;
       private VspDevice _vsp = null ;
       private Object    _ourLock = new Object() ;
       private int       _counter = 0 ;
-      public WorkerThread( int id ) throws Exception { 
+      public WorkerThread( int id ) throws Exception {
          _vsp = new VspDevice( _host , _port , null ) ;
-         _id = id ; 
+         _id = id ;
          _vsp.setDebugOutput(true);
       }
       public void run(){
          say( "Starting" ) ;
-         
+
          for( int i = 0 ; i < _pnfsid.length ; i++ ){
             final String pnfsid = _pnfsid[i] ;
             synchronized( _ourLock ){ _counter ++ ; }
@@ -94,33 +94,33 @@ public class VspCheck1 {
             say("Exception : "+ee ) ;
          }
          say( "Finished" ) ;
-         
+
       }
       private void say(String s){ System.out.println( "["+_id+"] "+s ) ; }
    }
-   public VspCheck1( String [] arg )throws Exception {    
+   public VspCheck1( String [] arg )throws Exception {
       Args args = new Args( arg ) ;
       if( args.argc() < 1 ){
          System.err.println("Usage : ...[options] <pnfsId1> [pnfsids ...]" ) ;
          System.err.println("      Options : [-host=<host>] [-port=<port>] [-parallel=<count>]" ) ;
          System.exit(4);
       }
-      
+
       String tmp  = args.getOpt("host") ;
-      
+
       _host = tmp == null ? "localhost" : tmp ;
-      
+
       tmp = args.getOpt("port") ;
       tmp = tmp == null ? "22125" : tmp ;
       _port = Integer.parseInt( tmp ) ;
-      
+
       tmp = args.getOpt("parallel") ;
       tmp = tmp == null ? "1" : tmp ;
       _count = Integer.parseInt( tmp ) ;
-      
+
       _pnfsid = new String[args.argc()] ;
       for( int i = 0 ; i < args.argc() ; i++ )_pnfsid[i] = args.argv(i) ;
-      
+
       for( int i= 0 ; i < _count ; i++ ){
           new WorkerThread(i).start() ;
       }

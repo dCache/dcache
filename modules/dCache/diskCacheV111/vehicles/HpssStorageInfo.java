@@ -4,7 +4,7 @@ package diskCacheV111.vehicles ;
 import java.util.Hashtable ;
 
 public class HpssStorageInfo extends GenericStorageInfo {
- 
+
    static final long serialVersionUID = 4260226401319935542L;
 
    private String _store    = null ;
@@ -32,7 +32,7 @@ public class HpssStorageInfo extends GenericStorageInfo {
    public String getStore(){ return _store ; }
    public String getStorageGroup(){ return _group ; }
    public String getKey( String key ){
-      if( key.equals("store") )return _store ; 
+      if( key.equals("store") )return _store ;
       else if( key.equals("group") )return _group ;
       else return super.getKey(key) ;
    }
@@ -42,7 +42,7 @@ public class HpssStorageInfo extends GenericStorageInfo {
              ";group="+(_group==null?"<Unknown>":_group)+
              ";bfid="+getBitfileId()+
              ";" ;
-             
+
    }
 }
- 
+

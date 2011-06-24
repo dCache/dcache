@@ -25,10 +25,10 @@ public class DigestTableConfig {
         try {
             URL url = this.getClass().getClassLoader().getResource(this.rules);
             System.err.println("Url="+url);  // Debug
-            
+
             // Create Digester using rules defined in provided file
             Digester digester = DigesterLoader.createDigester(url);
-            
+
             // Parse the provided configuration file using digester
             tlist = (TableList)digester.parse(this.getClass().getClassLoader().getResourceAsStream(config));
 
@@ -36,13 +36,13 @@ public class DigestTableConfig {
             e.printStackTrace();
         }
     }
-    
+
     public void execute(DataSource ds)
     {
 //      tlist.execute(ds, new Date(System.currentTimeMillis()).toString());
         tlist.execute(ds, new Date().toString());
     }
-    
+
     private String rules;
     private TableList tlist;
 }

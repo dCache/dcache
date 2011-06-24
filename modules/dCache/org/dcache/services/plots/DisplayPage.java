@@ -26,7 +26,7 @@ public class DisplayPage extends PlotPage {
     protected final static String MONTH = "month";
     protected final static String WEEK = "week";
     protected final static String DAY = "day";
-    
+
     /**
      * this map dictates how often plots are updated
      */

@@ -13,7 +13,7 @@ public class RepositoryException extends CacheException {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -3613396690222652485L;
 

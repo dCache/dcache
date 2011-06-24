@@ -22,7 +22,7 @@ public interface CellSetupProvider
     void printSetup(PrintWriter pw);
 
     /**
-     * Invoked before the setup file is executed. 
+     * Invoked before the setup file is executed.
      */
     void beforeSetup();
 

@@ -23,7 +23,7 @@ public class VspListener implements Runnable {
    private Thread _acceptThread = null ;
    private int    _counter      = 1 ;
    private Hashtable _hash      = new Hashtable() ;
-   
+
    private String [] _commands = {
       "Unkown" ,
       "IOCMD_WRITE" ,
@@ -34,7 +34,7 @@ public class VspListener implements Runnable {
       "IOCMD_ACK" ,
       "IOCMD_FIN" ,
       "IOCMD_DATA" ,
-      "IOCMD_LOCATE" 
+      "IOCMD_LOCATE"
    } ;
    private String iocmdToString(int iocmd ){
       if( ( iocmd <= 0 ) || ( iocmd > 9 ) )return "Unkown" ;
@@ -92,19 +92,19 @@ public class VspListener implements Runnable {
                       }
                       say( "Reading block of "+datalen ) ;
                       if( datalen == 0 )continue ;
-                      _dataIn.skipBytes(datalen) ;                   
+                      _dataIn.skipBytes(datalen) ;
                    }
                    say( "{commandmode}" ) ;
-                break ; 
+                break ;
                 case IOCMD_ACK :   // ACK
                 case IOCMD_FIN :   // FIN
                    if( len < 12 )
                       throw new Exception("Protocol violation (len2)" ) ;
                    say( "" ) ;
-                   
+
                    iocmd = _dataIn.readInt() ;
                    rc    = _dataIn.readInt() ;
-                   
+
                    StringBuffer sb = new StringBuffer() ;
                    sb.append( "{REQUEST_")
                      .append(command==IOCMD_ACK?"ACK":"FIN")
@@ -129,14 +129,14 @@ public class VspListener implements Runnable {
                       String str = _dataIn.readUTF() ;
                       len -= ( str.length() + 2 ) ;
                       sb.append(";ErrorMessage='"+str+"'") ;
-                   }     
-//                   System.out.println( "Skipping : "+len ) ; 
+                   }
+//                   System.out.println( "Skipping : "+len ) ;
                    say( sb.toString() ) ;
                    _dataIn.skipBytes(len) ;
                 break ;
-                default : 
+                default :
                    say( "Unknown command : "+command ) ;
-             
+
              }
           }
         }catch(Exception e ){
@@ -156,7 +156,7 @@ public class VspListener implements Runnable {
           _dataOut.writeLong( offset ) ;
           _dataOut.writeInt(whence) ;
           _dataOut.flush() ;
-       
+
        }
        public void close() throws Exception {
           _dataOut.writeInt(4) ;
@@ -203,64 +203,64 @@ public class VspListener implements Runnable {
       _acceptThread.start() ;
    }
    public void seek( int session , long offset , int whence ) throws Exception {
-   
+
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
       if( io == null )
         throw new
         Exception( "Session not found : "+session ) ;
-      
-      io.seek( offset , whence ) ;      
-   
+
+      io.seek( offset , whence ) ;
+
    }
    public void close( int session ) throws Exception {
-   
+
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
       if( io == null )
         throw new
         Exception( "Session not found : "+session ) ;
-      
-      io.close() ;      
-   
+
+      io.close() ;
+
    }
    public void locate( int session ) throws Exception {
-   
+
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
       if( io == null )
         throw new
         Exception( "Session not found : "+session ) ;
-      
-      io.locate() ;      
-   
+
+      io.locate() ;
+
    }
    public void write( int session ) throws Exception {
-   
+
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
       if( io == null )
         throw new
         Exception( "Session not found : "+session ) ;
-      
-      io.write() ;      
-   
+
+      io.write() ;
+
    }
    public void read( int session , long size ) throws Exception {
-   
+
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
       if( io == null )
         throw new
         Exception( "Session not found : "+session ) ;
-      
-      io.read( size ) ;      
-   
+
+      io.read( size ) ;
+
    }
    public void data( int session , int size ) throws Exception {
-   
+
       IoChannel io = (IoChannel)_hash.get( Integer.valueOf(session) ) ;
       if( io == null )
         throw new
         Exception( "Session not found : "+session ) ;
-      
-      io.data( size ) ;      
-   
+
+      io.data( size ) ;
+
    }
    public Enumeration elements(){ return _hash.elements() ; }
    public void run(){
@@ -272,9 +272,9 @@ public class VspListener implements Runnable {
                _counter ++ ;
                System.out.println( "[m] Connection accepted : ["+_counter+"]" ) ;
                try{
-                  _hash.put( 
-                     Integer.valueOf(_counter) , 
-                     new IoChannel( socket , _counter ) 
+                  _hash.put(
+                     Integer.valueOf(_counter) ,
+                     new IoChannel( socket , _counter )
                            ) ;
                }catch(Exception iii ){}
            }
@@ -291,10 +291,10 @@ public class VspListener implements Runnable {
       try{
          VspListener vsp = new VspListener() ;
          System.out.println( "Listen Port : "+vsp.getListenPort() ) ;
-   
+
          BufferedReader br = new BufferedReader(
-                              new InputStreamReader( System.in) ) ;      
-         
+                              new InputStreamReader( System.in) ) ;
+
          String line = null ;
          int session = 2 ;
          while( true ){
@@ -306,15 +306,15 @@ public class VspListener implements Runnable {
                  String command = args.argv(0) ;
                  args.shift() ;
                  if( command.equals("cd") ){
-                    if( args.argc() < 1 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 1 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
                        session = Integer.parseInt(args.argv(0)) ;
                     }catch(Exception e){
-                       System.err.println("Syntax Error") ; 
-                       continue ;                    
+                       System.err.println("Syntax Error") ;
+                       continue ;
                     }
                  }else if( command.equals( "ls" ) ){
                     Enumeration e = vsp.elements() ;
@@ -322,65 +322,65 @@ public class VspListener implements Runnable {
                        System.out.println( e.nextElement().toString() ) ;
                     }
                  }else if( command.equals( "read" ) ){
-                    if( args.argc() < 1 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 1 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
                        long offset = Long.parseLong( args.argv(0) ) ;
                        vsp.read(session,offset) ;
                     }catch(Exception ee ){
-                       System.err.println("Error "+ee) ; 
-                       continue ;                    
+                       System.err.println("Error "+ee) ;
+                       continue ;
                     }
                  }else if( command.equals( "data" ) ){
-                    if( args.argc() < 1 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 1 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
                        int offset = Integer.parseInt( args.argv(0) ) ;
                        vsp.data(session,offset) ;
                     }catch(Exception ee ){
-                       System.err.println("Error "+ee) ; 
-                       continue ;                    
+                       System.err.println("Error "+ee) ;
+                       continue ;
                     }
                  }else if( command.equals( "write" ) ){
-                    if( args.argc() < 0 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 0 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
                        vsp.write(session) ;
                     }catch(Exception ee ){
-                       System.err.println("Error "+ee) ; 
-                       continue ;                    
+                       System.err.println("Error "+ee) ;
+                       continue ;
                     }
                  }else if( command.equals( "locate" ) ){
-                    if( args.argc() < 0 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 0 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
                        vsp.locate(session) ;
                     }catch(Exception ee ){
-                       System.err.println("Error "+ee) ; 
-                       continue ;                    
+                       System.err.println("Error "+ee) ;
+                       continue ;
                     }
                  }else if( command.equals( "close" ) ){
-                    if( args.argc() < 0 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 0 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
                        vsp.close(session) ;
                     }catch(Exception ee ){
-                       System.err.println("Error "+ee) ; 
-                       continue ;                    
+                       System.err.println("Error "+ee) ;
+                       continue ;
                     }
                  }else if( command.equals( "seek" ) ){
-                    if( args.argc() < 2 ){ 
-                        System.err.println("Syntax Error") ; 
+                    if( args.argc() < 2 ){
+                        System.err.println("Syntax Error") ;
                         continue ;
                     }
                     try{
@@ -388,8 +388,8 @@ public class VspListener implements Runnable {
                        int  whence = Integer.parseInt(args.argv(1) ) ;
                        vsp.seek(session,offset,whence) ;
                     }catch(Exception ee ){
-                       System.err.println("Error "+ee) ; 
-                       continue ;                    
+                       System.err.println("Error "+ee) ;
+                       continue ;
                     }
                  }else if( command.equals( "help" ) ){
                     System.out.println( "[0] > ls" ) ;
@@ -412,7 +412,7 @@ public class VspListener implements Runnable {
          ee.printStackTrace() ;
       }
       System.exit(0);
-   
+
    }
 
 }
