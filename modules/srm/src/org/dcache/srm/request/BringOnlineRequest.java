@@ -75,8 +75,11 @@ package org.dcache.srm.request;
 
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
+
 import java.util.HashSet;
 import java.util.Date;
+import java.util.List;
+
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -95,6 +98,8 @@ import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 /*
  * @author  timur
  */
@@ -125,25 +130,21 @@ public final class BringOnlineRequest extends ContainerRequest {
         logger.debug("constructor");
         logger.debug("user = "+user);
         logger.debug("requestCredetialId="+requestCredentialId);
-        int len;
         if(protocols != null) {
-            len = protocols.length;
+            int len = protocols.length;
             this.protocols = new String[len];
             System.arraycopy(protocols,0,this.protocols,0,len);
         } else {
             this.protocols = null;
         }
         this.desiredOnlineLifetimeInSeconds = desiredOnlineLifetimeInSeconds;
-        len = surls.length;
-        fileRequests = new FileRequest[len];
-        for(int i = 0; i<len; ++i) {
-            fileRequests[i] =
-                new BringOnlineFileRequest(getId(),
-                                           requestCredentialId,
-                                           surls[i],
-                                           lifetime,
-                                           max_number_of_retries);
+        List<FileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
+        for(URI surl : surls) {
+            FileRequest request = new BringOnlineFileRequest(getId(),
+                    requestCredentialId, surl, lifetime, max_number_of_retries);
+            requests.add(request);
         }
+        setFileRequests(requests);
         updateMemoryCache();
     }
 
@@ -198,13 +199,14 @@ public final class BringOnlineRequest extends ContainerRequest {
 
     }
 
+    @Override
     public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
-        for(int i =0; i<fileRequests.length;++i) {
-            if(((BringOnlineFileRequest)fileRequests[i]).getSurl().equals(surl)) {
-                return fileRequests[i];
+        for(FileRequest request : getFileRequests()) {
+            if(((BringOnlineFileRequest)request).getSurl().equals(surl)) {
+                return request;
             }
         }
         throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
@@ -219,9 +221,8 @@ public final class BringOnlineRequest extends ContainerRequest {
         // scheduled, and the saved state needs to be consistent
         saveJob(true);
 
-        for(int i = 0; i < fileRequests.length ;++ i) {
-            BringOnlineFileRequest fileRequest = (BringOnlineFileRequest) fileRequests[i];
-            fileRequest.schedule();
+        for(FileRequest request : getFileRequests()) {
+            request.schedule();
         }
     }
 
@@ -230,11 +231,9 @@ public final class BringOnlineRequest extends ContainerRequest {
      * for each file request in the request
      * call storage.PrepareToGet() which should do all the work
      */
+    @Override
     public int getNumOfFileRequest() {
-        if(fileRequests == null) {
-            return 0;
-        }
-        return fileRequests.length;
+        return getFileRequests().size();
     }
 
      public String[] getProtocols() {
@@ -255,6 +254,7 @@ public final class BringOnlineRequest extends ContainerRequest {
      * progress
      */
 
+    @Override
     public String getMethod() {
         return "BringOnline";
     }
@@ -268,15 +268,17 @@ public final class BringOnlineRequest extends ContainerRequest {
         return false;
     }
 
+    @Override
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
     }
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
 
             logger.debug("get request state changed to "+state);
-            for(FileRequest fr: fileRequests) {
+            for(FileRequest fr: getFileRequests()) {
                 try {
                     logger.debug("changing fr#"+fr.getId()+" to "+state);
                     fr.setState(state,"changing file state because request state has changed");
@@ -384,8 +386,9 @@ public final class BringOnlineRequest extends ContainerRequest {
          TBringOnlineRequestFileStatus[] getFileStatuses
             = new TBringOnlineRequestFileStatus[len];
         if(surls == null) {
+            List<FileRequest> requests = getFileRequests();
             for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
+                BringOnlineFileRequest fr =(BringOnlineFileRequest)requests.get(i);
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
         } else {
@@ -398,6 +401,7 @@ public final class BringOnlineRequest extends ContainerRequest {
         return getFileStatuses;
     }
 
+    @Override
     public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
@@ -410,8 +414,9 @@ public final class BringOnlineRequest extends ContainerRequest {
            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
         }
         if(surls == null) {
+            List<FileRequest> requests = getFileRequests();
             for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
+                BringOnlineFileRequest fr =(BringOnlineFileRequest)requests.get(i);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
         } else {
@@ -441,7 +446,8 @@ public final class BringOnlineRequest extends ContainerRequest {
         if(surls == null) {
             logger.debug("releaseFiles, surls is null, releasing all "+len+" files");
             for(int i = 0; i< len; ++i) {
-                BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
+                List<FileRequest> requests = getFileRequests();
+                BringOnlineFileRequest fr =(BringOnlineFileRequest)requests.get(i);
                 surlLReturnStatuses[i] = fr.releaseFile();
             }
         } else {
@@ -458,7 +464,7 @@ public final class BringOnlineRequest extends ContainerRequest {
                     fr =(BringOnlineFileRequest)getFileRequestBySurl(surls[i]);
                 } catch (SRMFileRequestNotFoundException sfrnfe ) {
                     try {
-                        SRMUser user =(SRMUser) getUser();
+                        SRMUser user =getUser();
                         long theId =getId();
                         BringOnlineFileRequest.unpinBySURLandRequestId(
                             getStorage(),user, theId, surls[i]);
@@ -544,6 +550,7 @@ public final class BringOnlineRequest extends ContainerRequest {
     }
 
 
+    @Override
     public TRequestType getRequestType() {
         return TRequestType.BRING_ONLINE;
     }

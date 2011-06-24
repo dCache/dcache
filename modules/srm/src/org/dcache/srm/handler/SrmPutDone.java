@@ -19,12 +19,12 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
-import org.dcache.srm.FileMetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
+import java.util.List;
 /**
  *
  * @author  timur
@@ -32,7 +32,6 @@ import java.sql.SQLException;
 public class SrmPutDone {
     private static Logger logger =
             LoggerFactory.getLogger(SrmPutDone.class);
-    private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPutDoneRequest srmPutDoneRequest;
     SrmPutDoneResponse response;
@@ -42,8 +41,6 @@ public class SrmPutDone {
     PutRequestStorage putStorage;
     PutFileRequestStorage putFileRequestStorage;
     Configuration configuration;
-    private int results_num;
-    private int max_results_num;
     int numOfLevels =0;
 
     public SrmPutDone(SRMUser user,
@@ -146,7 +143,7 @@ public class SrmPutDone {
         }
         PutRequest putRequest = (PutRequest) request;
         URI[] surls;
-        if(srmPutDoneRequest.getArrayOfSURLs() ==null) {
+        if(srmPutDoneRequest.getArrayOfSURLs() == null) {
             surls = null;
         } else {
             surls = toUris(srmPutDoneRequest.getArrayOfSURLs().getUrlArray());
@@ -155,84 +152,77 @@ public class SrmPutDone {
         SrmPutDoneResponse srmPutDoneResponse = new SrmPutDoneResponse();
 
 	synchronized(putRequest) {
-		FileRequest requests[] = putRequest.getFileRequests();
+		List<FileRequest> requests = putRequest.getFileRequests();
 		State state = putRequest.getState();
 		if(!State.isFinalState(state)) {
 			if( surls == null ){
 				int fail_counter=0;
 				int success_counter=0;
-				if ( requests != null ) {
-					for (int i=0;i<requests.length;i++) {
-						PutFileRequest fileRequest =  (PutFileRequest) requests[i];
-						synchronized(fileRequest) {
-							if ( !State.isFinalState(fileRequest.getState())) {
-								if ( fileRequest.getTurlString()==null) {
-									fileRequest.setStateAndStatusCode(State.FAILED,
-                                            "SrmPutDone called, TURL is not ready",
-                                            TStatusCode.SRM_INVALID_PATH);
-									fail_counter++;
-								}
-								else {
-                                    try {
-                                        if (storage.exists(user,fileRequest.getSurl())) {
-                                            fileRequest.setState(State.DONE,"SrmPutDone called");
-                                            success_counter++;
-									    }
-                                        else {
-                                            fail_counter++;
-                                            fileRequest.setStateAndStatusCode(
-                                                    State.FAILED,
-                                                    "SrmPutDone called : file does not exist",
-                                                    TStatusCode.SRM_INVALID_PATH);
-                                        }
-                                    }
-                                    catch (SRMException e) {
-                                        fail_counter++;
-                                        fileRequest.setStateAndStatusCode(
-                                                State.FAILED,
-                                                "SrmPutDone called : " + e.getMessage(),
-                                                TStatusCode.SRM_FAILURE);
-                                    }
-								}
-							}
-							else {
-								if (fileRequest.getState()==State.DONE) {
-									success_counter++;
-								}
-								if (fileRequest.getState()==State.FAILED) {
-									fail_counter++;
-								}
-								if (fileRequest.getState()==State.CANCELED) {
-									fail_counter++;
-								}
-							}
-						}
-					}
-					if (success_counter==requests.length) {
-						putRequest.setState(State.DONE,"SrmPutDone called");
-						status.setStatusCode(TStatusCode.SRM_SUCCESS);
-						status.setExplanation("success");
-					}
-					else if (success_counter<requests.length) {
-						putRequest.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-						status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
-						status.setExplanation("request in progress");
-					}
-					if (fail_counter>0&&fail_counter<requests.length) {
-						putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-						status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-						status.setExplanation("some file transfer(s) were not performed on all SURLs");
-					}
-					else if (fail_counter==requests.length) {
-						putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
-						putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
-						status.setStatusCode(TStatusCode.SRM_FAILURE);
-						status.setExplanation("no file transfer(s) were performed on SURL(s)");
-					}
+				for(FileRequest fileRequest : requests) {
+				    synchronized(fileRequest) {
+				        if ( !State.isFinalState(fileRequest.getState())) {
+				            if ( ((PutFileRequest)fileRequest).getTurlString()==null) {
+				                fileRequest.setStateAndStatusCode(State.FAILED,
+				                        "SrmPutDone called, TURL is not ready",
+				                        TStatusCode.SRM_INVALID_PATH);
+				                fail_counter++;
+				            }
+				            else {
+				                try {
+				                    if (storage.exists(user,((PutFileRequest)fileRequest).getSurl())) {
+				                        fileRequest.setState(State.DONE,"SrmPutDone called");
+				                        success_counter++;
+				                    }
+				                    else {
+				                        fail_counter++;
+				                        fileRequest.setStateAndStatusCode(
+				                                State.FAILED,
+				                                "SrmPutDone called : file does not exist",
+				                                TStatusCode.SRM_INVALID_PATH);
+				                    }
+				                }
+				                catch (SRMException e) {
+				                    fail_counter++;
+				                    fileRequest.setStateAndStatusCode(
+				                            State.FAILED,
+				                            "SrmPutDone called : " + e.getMessage(),
+				                            TStatusCode.SRM_FAILURE);
+				                }
+				            }
+				        }
+				        else {
+				            if (fileRequest.getState()==State.DONE) {
+				                success_counter++;
+				            }
+				            if (fileRequest.getState()==State.FAILED) {
+				                fail_counter++;
+				            }
+				            if (fileRequest.getState()==State.CANCELED) {
+				                fail_counter++;
+				            }
+				        }
+				    }
 				}
-				else {
-					return getFailedResponse("0 length file request array",
-								 TStatusCode.SRM_INVALID_REQUEST);
+				if (success_counter==requests.size()) {
+				    putRequest.setState(State.DONE,"SrmPutDone called");
+				    status.setStatusCode(TStatusCode.SRM_SUCCESS);
+				    status.setExplanation("success");
+				}
+				else if (success_counter<requests.size()) {
+				    putRequest.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+				    status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
+				    status.setExplanation("request in progress");
+				}
+				if (fail_counter>0&&fail_counter<requests.size()) {
+				    putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+				    status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+				    status.setExplanation("some file transfer(s) were not performed on all SURLs");
+				}
+				else if (fail_counter==requests.size()) {
+				    putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
+				    putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
+				    status.setStatusCode(TStatusCode.SRM_FAILURE);
+				    status.setExplanation("no file transfer(s) were performed on SURL(s)");
 				}
 			}
 			else {
@@ -294,23 +284,23 @@ public class SrmPutDone {
 									 TStatusCode.SRM_INVALID_REQUEST);
 					}
 				}
-				if (success_counter==requests.length) {
+				if (success_counter==requests.size()) {
 					putRequest.setState(State.DONE,"SrmPutDone called");
 					status.setStatusCode(TStatusCode.SRM_SUCCESS);
 					status.setExplanation("success");
 				}
-				else if (success_counter<requests.length) {
+				else if (success_counter<requests.size()) {
 					putRequest.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
 					status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
 					status.setExplanation("request in progress");
 				}
-				if (fail_counter>0&&fail_counter<requests.length) {
+				if (fail_counter>0&&fail_counter<requests.size()) {
 					putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 					status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 					status.setExplanation("some file transfer(s) were not performed on all SURLs");
 
 				}
-				else if (fail_counter==requests.length) {
+				else if (fail_counter==requests.size()) {
 					putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
 					putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
 					status.setStatusCode(TStatusCode.SRM_FAILURE);
@@ -322,18 +312,15 @@ public class SrmPutDone {
 			int fail_counter=0;
 			int success_counter=0;
 			if( surls == null ){
-				if ( requests != null ) {
-					for (int i=0;i<requests.length;i++) {
-						PutFileRequest fileRequest =  (PutFileRequest) requests[i];
-						synchronized(fileRequest) {
-							if (fileRequest.getState()==State.DONE) {
-								success_counter++;
-							} else {
-								fail_counter++;
-							}
-						}
-					}
-				}
+			    for (FileRequest fileRequest : requests) {
+			        synchronized(fileRequest) {
+			            if (fileRequest.getState()==State.DONE) {
+			                success_counter++;
+			            } else {
+			                fail_counter++;
+			            }
+			        }
+			    }
 			}
 			else {
 				for(int i = 0; i< surls.length; ++i) {
@@ -355,23 +342,23 @@ public class SrmPutDone {
 					}
 				}
 			}
-			if (success_counter==requests.length) {
+			if (success_counter==requests.size()) {
 				putRequest.setState(State.DONE,"SrmPutDone called");
 				status.setStatusCode(TStatusCode.SRM_SUCCESS);
 				status.setExplanation("success");
 			}
-			else if (success_counter<requests.length) {
+			else if (success_counter<requests.size()) {
 				putRequest.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
 				status.setStatusCode(TStatusCode.SRM_REQUEST_INPROGRESS);
 				status.setExplanation("request in progress");
 			}
-			if (fail_counter>0&&fail_counter<requests.length) {
+			if (fail_counter>0&&fail_counter<requests.size()) {
 				putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 				status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 				status.setExplanation("some file transfer(s) were not performed on all SURLs");
 
 			}
-			else if (fail_counter==requests.length) {
+			else if (fail_counter==requests.size()) {
 				putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
 				putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
 				status.setStatusCode(TStatusCode.SRM_FAILURE);

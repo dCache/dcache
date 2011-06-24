@@ -82,7 +82,13 @@ import org.dcache.srm.SRMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.commons.util.AtomicCounter;
+
+import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.net.URI;
 
 /**
@@ -105,7 +111,7 @@ public abstract class ContainerRequest extends Request {
     // therefore we need to synchronize the recept of dcap turls
     private String firstDcapTurl;
 
-    protected FileRequest[] fileRequests;
+    private final List<FileRequest> fileRequests;
 
     /**
      * Counter used for notification between file requests and the
@@ -142,7 +148,7 @@ public abstract class ContainerRequest extends Request {
          lifetime,
          description,
          client_host);
-
+         fileRequests = Lists.newArrayList();
     }
 
 
@@ -192,16 +198,13 @@ public abstract class ContainerRequest extends Request {
      description,
      client_host,
      statusCodeString);
-        this.fileRequests = fileRequests;
+        this.fileRequests = new ArrayList<FileRequest>(Arrays.asList(fileRequests));
     }
 
 
     public  FileRequest getFileRequest(int fileRequestId){
         rlock();
         try {
-            if(fileRequests == null) {
-                throw new NullPointerException("fileRequestId is null");
-            }
             for(FileRequest fileRequest: fileRequests) {
                 if(fileRequest.getId() == fileRequestId) {
                     return fileRequest;
@@ -224,6 +227,16 @@ public abstract class ContainerRequest extends Request {
             }
         }
         return null;
+    }
+
+    public void setFileRequests(List<FileRequest> requests) {
+        wlock();
+        try {
+            fileRequests.clear();
+            fileRequests.addAll(requests);
+        } finally {
+            wunlock();
+        }
     }
 
     /*
@@ -277,6 +290,7 @@ public abstract class ContainerRequest extends Request {
         }
     }
 
+    @Override
     public abstract String getMethod();
 
     /**
@@ -321,7 +335,7 @@ public abstract class ContainerRequest extends Request {
         boolean haveDoneRequests = false;
         String fr_error="";
         for(int i = 0; i< len; ++i) {
-            FileRequest fr =fileRequests[i];
+            FileRequest fr = fileRequests.get(i);
             fr.tryToReady();
             RequestFileStatus rfs = fr.getRequestFileStatus();
             if(rfs == null){
@@ -480,7 +494,7 @@ public abstract class ContainerRequest extends Request {
         int got_exception        = 0;
         boolean failure = false;
         for(int i = 0; i< len; ++i) {
-            FileRequest fr =fileRequests[i];
+            FileRequest fr = fileRequests.get(i);
             TReturnStatus fileReqRS = fr.getReturnStatus();
             TStatusCode fileReqSC   = fileReqRS.getStatusCode();
             logger.debug("getTReturnStatus() file["+i+"] statusCode : "+fileReqSC);
@@ -625,7 +639,7 @@ public abstract class ContainerRequest extends Request {
             FileRequest fr;
             rlock();
             try {
-                fr = fileRequests[i];
+                fr = fileRequests.get(i);
             } finally {
                 runlock();
             }
@@ -694,6 +708,7 @@ public abstract class ContainerRequest extends Request {
         return getId().hashCode();
     }
 
+    @Override
     public void toString(StringBuilder sb, boolean longformat) {
         try {
             sb.append(getMethod());
@@ -718,7 +733,7 @@ public abstract class ContainerRequest extends Request {
                     fr.toString(sb, longformat);
                 }
             } else {
-                sb.append(" number of files:").append(fileRequests.length);
+                sb.append(" number of files:").append(fileRequests.size());
             }
         }catch(Exception e) {
             logger.error(e.toString());
@@ -741,8 +756,8 @@ public abstract class ContainerRequest extends Request {
     public abstract FileRequest getFileRequestBySurl(URI surl)  throws java.sql.SQLException, SRMException ;
     public abstract TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException;
 
-    public FileRequest[] getFileRequests()  {
-	return fileRequests;
+    public List<FileRequest> getFileRequests()  {
+        return fileRequests;
     }
 
     /**
