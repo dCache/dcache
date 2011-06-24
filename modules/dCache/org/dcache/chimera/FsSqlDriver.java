@@ -731,7 +731,7 @@ class FsSqlDriver {
     void incNlink(Connection dbConnection, FsInode inode) throws SQLException {
         incNlink(dbConnection, inode, 1);
     }
-    private static final String sqlIncNlink = "UPDATE t_inodes SET inlink=inlink +?,imtime=? WHERE ipnfsid=?";
+    private static final String sqlIncNlink = "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=? WHERE ipnfsid=?";
 
     /**
      * increases the reference count of the inode by delta
@@ -750,7 +750,8 @@ class FsSqlDriver {
 
             stIncNlinkCount.setInt(1, delta);
             stIncNlinkCount.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            stIncNlinkCount.setString(3, inode.toString());
+            stIncNlinkCount.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stIncNlinkCount.setString(4, inode.toString());
 
             stIncNlinkCount.executeUpdate();
 
@@ -771,7 +772,7 @@ class FsSqlDriver {
     void decNlink(Connection dbConnection, FsInode inode) throws SQLException {
         decNlink(dbConnection, inode, 1);
     }
-    private static final String sqlDecNlink = "UPDATE t_inodes SET inlink=inlink -?,imtime=? WHERE ipnfsid=?";
+    private static final String sqlDecNlink = "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=? WHERE ipnfsid=?";
 
     /**
      * decreases inode reference count by delta
@@ -790,7 +791,8 @@ class FsSqlDriver {
             stDecNlinkCount = dbConnection.prepareStatement(sqlDecNlink);
             stDecNlinkCount.setInt(1, delta);
             stDecNlinkCount.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            stDecNlinkCount.setString(3, inode.toString());
+            stDecNlinkCount.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stDecNlinkCount.setString(4, inode.toString());
 
             stDecNlinkCount.executeUpdate();
 
