@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.AccessController;
+import java.util.List;
 import javax.security.auth.Subject;
 import org.antlr.stringtemplate.StringTemplate;
 import org.antlr.stringtemplate.StringTemplateGroup;
@@ -80,6 +81,18 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
 
             log.debug("file not found: " + this.getClass().getName());
             Status status = Response.Status.SC_NOT_FOUND;
+            String reason = generateErrorPage(request, response, status);
+            errorResponse(response, status, reason);
+        }
+
+        @Override
+        public void respondUnauthorised(Resource resource, Response response, Request request) {
+
+            log.debug("Unauthorised: " + this.getClass().getName() + " resource: " + resource.getClass().getName());
+            Status status = Response.Status.SC_UNAUTHORIZED;
+            response.setStatus(status);
+            List<String> challenges = super.getAuthenticationService().getChallenges(resource, request);
+            response.setAuthenticateHeader(challenges);
             String reason = generateErrorPage(request, response, status);
             errorResponse(response, status, reason);
         }
