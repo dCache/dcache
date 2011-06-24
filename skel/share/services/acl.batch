@@ -15,6 +15,7 @@ set context -c pnfsManagerTimeout 28000
 
 create org.dcache.cells.UniversalSpringCell acladmin \
         "classpath:org/dcache/acl/acl.xml \
+        -export \
         -aclTable=${aclTable} \
         -aclConnDriver=\"${db.driver}\" \
         -aclConnUrl=\"${db.url}\" \

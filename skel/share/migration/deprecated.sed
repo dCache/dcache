@@ -43,7 +43,7 @@ s/^httpAllowedPaths *=/httpAllowedPaths=/
 s/^kerberosRealm *=/kerberos.realm=/
 s/^kerberosKdcList *=/kerberos.key-distribution-center-list=/
 s/^authLoginConfig *=/kerberos.jaas.config=/
-s/^kerberosSvcPrincipal *=/kerberos.service-principle-name=/
+s/^kerberosScvPrincipal *=/kerberos.service-principle-name=/
 s/^httpPort *=/httpdPort=/
 s/^keyBase *=/dcache.paths.ssh-keys=/
 s/^srmNumberOfDaysInDatabaseHistory *=/srmKeepRequestHistoryPeriod=/
@@ -74,3 +74,5 @@ s/^nostrongauthorization *=.*//
 s/^java *=.*//
 s/^waitForRepositoryReady *=.*//
 s/^xylophoneConfigurationFile *=.*//
+s/^httpdEnablePoolCollector *=.*//
+s/^removeUnexistingEntriesOnFlush *=.*//

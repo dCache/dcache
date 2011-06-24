@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!DOCTYPE xylophone [
+<!ENTITY % dCache-config PUBLIC "-//dCache//ENTITIES dCache Properties//EN" "/unused/path" >
+%dCache-config;
+]>
+
 <!--+
     |   This file affects how dCache's info-provider, the component that is
     |   responsible for publishing GLUE information into BDII.  Some of the
@@ -384,7 +389,7 @@
       |  If you are a site without tape storage then do not alter the path.
       +-->
   <locations>
-    <location name="tape-info">/opt/d-cache/share/xml/tape-info-empty.xml</location>
+    <location name="tape-info">&dcache.paths.share;/xml/tape-info-empty.xml</location>
   </locations>
 
 </xylophone>

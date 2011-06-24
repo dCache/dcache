@@ -738,6 +738,7 @@ public void cleanUp(){
             try{
                socket = _serverSocket.accept() ;
                socket.setKeepAlive(true);
+               socket.setTcpNoDelay(true);
                 if (_logSocketIO.isDebugEnabled()) {
                     _logSocketIO.debug("Socket OPEN (ACCEPT) remote = " +
                             socket.getInetAddress() + ":" + socket.getPort() +

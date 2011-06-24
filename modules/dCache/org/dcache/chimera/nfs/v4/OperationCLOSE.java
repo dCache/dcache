@@ -44,17 +44,17 @@ public class OperationCLOSE extends AbstractNFSv4Operation {
 
             FsInode inode = context.currentInode();
 
-            if (context.getSession() == null) {
-                context.getStateHandler().updateClientLeaseTime(_args.opclose.open_stateid);
-            } else {
-                context.getSession().getClient().updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
-            }
+            if( context.getMinorversion() > 0 ) {
 
-            try {
-                context.getDeviceManager().layoutReturn(context.getSession().getClient(),
+                context.getSession().getClient().updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
+                try {
+                    context.getDeviceManager().layoutReturn(context.getSession().getClient(),
                         _args.opclose.open_stateid);
-            } catch (IOException e) {
-                _log.error("Failed to return a layout: {}", e.getMessage());
+                } catch (IOException e) {
+                    _log.error("Failed to return a layout: {}", e.getMessage());
+                }
+            }else{
+                context.getStateHandler().updateClientLeaseTime(_args.opclose.open_stateid);
             }
 
             res.open_stateid = stateid4.INVAL_STATEID;

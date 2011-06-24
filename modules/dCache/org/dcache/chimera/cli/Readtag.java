@@ -22,26 +22,29 @@ import org.dcache.chimera.posix.Stat;
 
 public class Readtag {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception
+    {
 
-        if (args.length != FsFactory.ARGC + 2) {
+        if (args.length != FsFactory.ARGC +2) {
             System.err.println(
                     "Usage : " + Readtag.class.getName() + " " + FsFactory.USAGE
                     + " <chimera path> <tag>");
             System.exit(4);
         }
 
+        String path = args[FsFactory.ARGC];
+        String tagName = args[FsFactory.ARGC+1];
+
         FileSystemProvider fs = FsFactory.createFileSystem(args);
 
-        FsInode inode = fs.path2inode(args[1]);
+        FsInode inode = fs.path2inode(path);
 
-        Stat stat = fs.statTag(inode, args[2]);
+        Stat stat = fs.statTag(inode, tagName);
 
         byte[] data = new byte[(int) stat.getSize()];
 
-        fs.getTag(inode, args[2], data, 0, data.length);
+        fs.getTag(inode, tagName, data, 0, data.length);
 
-        System.out.println(new String(data));
-
+        System.out.print(new String(data));
     }
 }

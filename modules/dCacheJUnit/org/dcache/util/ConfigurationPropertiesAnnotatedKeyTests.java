@@ -17,6 +17,7 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final String PROPERTY_KEY_NOT_FOR_SERVICES = "property.not_for_services";
     public static final String PROPERTY_KEY_NOT_ANNOTATED = "property.not_annotated";
     public static final String PROPERTY_KEY_DEP_AND_NOT = "property.deprecated_and_not";
+    public static final String PROPERTY_KEY_SCOPED_OBSOLETE = "scope/property.obsolete.scoped";
 
     public static final String ANNOTATION_FOR_DEPRECATED = "(deprecated)";
     public static final String ANNOTATION_FOR_FORBIDDEN = "(forbidden)";
@@ -31,6 +32,7 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     public static final String DECLARATION_KEY_NOT_FOR_SERVICES = ANNOTATION_FOR_NOT_FOR_SERVICES + PROPERTY_KEY_NOT_FOR_SERVICES;
     public static final String DECLARATION_KEY_NOT_ANNOTATED = ANNOTATION_FOR_NOT_ANNOTATED + PROPERTY_KEY_NOT_ANNOTATED;
     public static final String DECLARATION_KEY_DEP_AND_NOT = ANNOTATION_FOR_DEP_AND_NOT + PROPERTY_KEY_DEP_AND_NOT;
+    public static final String DECLARATION_KEY_SCOPED_OBSOLETE = ANNOTATION_FOR_OBSOLETE + PROPERTY_KEY_SCOPED_OBSOLETE;
 
     public static final ConfigurationProperties.AnnotatedKey ANNOTATION_NOT_ANNOTATED =
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_NOT_ANNOTATED, "");
@@ -44,6 +46,8 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_NOT_FOR_SERVICES, "");
     public static final ConfigurationProperties.AnnotatedKey ANNOTATION_DEP_AND_NOT =
         new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_DEP_AND_NOT, "");
+    public static final ConfigurationProperties.AnnotatedKey ANNOTATION_SCOPED_OBSOLETE =
+        new ConfigurationProperties.AnnotatedKey(DECLARATION_KEY_SCOPED_OBSOLETE, "");
 
     public static final EnumSet<Annotation> DEPRECATED = EnumSet.of(Annotation.DEPRECATED);
     public static final EnumSet<Annotation> OBSOLETE = EnumSet.of(Annotation.OBSOLETE);
@@ -423,5 +427,62 @@ public class ConfigurationPropertiesAnnotatedKeyTests {
     @Test
     public void testDepAndNotGetAnnotationDeclaration() {
         assertEquals(ANNOTATION_FOR_DEP_AND_NOT, ANNOTATION_DEP_AND_NOT.getAnnotationDeclaration());
+    }
+
+
+
+
+    @Test
+    public void testScopedObsoleteGetPropertyName() {
+        assertEquals(PROPERTY_KEY_SCOPED_OBSOLETE, ANNOTATION_SCOPED_OBSOLETE.getPropertyName());
+    }
+
+    @Test
+    public void testScopedObsoleteHasAnyOf() {
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(OBSOLETE));
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(FORBIDDEN));
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(NOT_FOR_SERVICES));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE));
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_FORBIDDEN));
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_NOT_FOR_SERVICES));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(OBSOLETE_FORBIDDEN));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(OBSOLETE_NOT_FOR_SERVICES));
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(FORBIDDEN_NOT_FOR_SERVICES));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_FORBIDDEN_NOT_FOR_SERVICES));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_NOT_FOR_SERVICES));
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnyOf(DEPRECATED_OBSOLETE_FORBIDDEN_NOT_FOR_SERVICES));
+    }
+
+    @Test
+    public void testScopedObsoleteIsDeprecated() {
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnnotation(Annotation.DEPRECATED));
+    }
+
+    @Test
+    public void testScopedObsoleteIsForbidden() {
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnnotation(Annotation.FORBIDDEN));
+    }
+
+    @Test
+    public void testScopedObsoleteIsObsolete() {
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnnotation(Annotation.OBSOLETE));
+    }
+
+    @Test
+    public void testScopedObsoleteIsNotForServices() {
+        assertFalse(ANNOTATION_SCOPED_OBSOLETE.hasAnnotation(Annotation.NOT_FOR_SERVICES));
+    }
+
+    @Test
+    public void testScopedObsoleteHasAnnotations() {
+        assertTrue(ANNOTATION_SCOPED_OBSOLETE.hasAnnotations());
+    }
+
+    @Test
+    public void testScopedObsoleteGetAnnotationDeclaration() {
+        assertEquals(ANNOTATION_FOR_OBSOLETE, ANNOTATION_SCOPED_OBSOLETE.getAnnotationDeclaration());
     }
 }

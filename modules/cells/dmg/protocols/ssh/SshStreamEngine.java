@@ -202,7 +202,7 @@ public class      SshStreamEngine
         * sending us the EOF packet and our closing the session.  We silently
         * ignore such EOF messages since we're closing the connection anyway.
         */
-       if(packet.getType() == SshPacket.SSH_CMSG_EOF) {
+       if(packet != null && packet.getType() == SshPacket.SSH_CMSG_EOF) {
            packet = readPacket();
        }
 
