@@ -40,11 +40,6 @@ public class AlwaysFailPlugin implements
     }
 
     @Override
-    public void reverseMap(SessionID sID, Principal sourcePrincipal, Set<Principal> principals) throws AuthenticationException {
-        throw new AuthenticationException(FAIL_MSG);
-    }
-
-    @Override
     public void authenticate(SessionID sID, Set<Object> publicCredentials, Set<Object> privateCredentials, Set<Principal> identifiedPrincipals) throws AuthenticationException {
         throw new AuthenticationException(FAIL_MSG);
     }

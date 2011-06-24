@@ -242,12 +242,6 @@ public class KpwdPlugin
         authorizedPrincipals.add(new GidPrincipal(record.GID, true));
     }
 
-    @Override
-    public void reverseMap(SessionID sID, Principal sourcePrincipal,
-                           Set<Principal> principals) throws AuthenticationException
-    {
-    }
-
     /**
      * Checks whether KpwdPrincipal is flagged as disabled.
      */

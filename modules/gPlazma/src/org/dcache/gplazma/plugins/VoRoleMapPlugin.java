@@ -128,15 +128,4 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
             throw new AuthenticationException(logmessage);
         }
     }
-
-    /**
-     * Reverse mapping is not possible for VOMS, because mapping is
-     * surjective and therefore the inverse is not uniquely defined.
-     */
-    @Override
-    public void reverseMap(SessionID sID, Principal sourcePrincipal,
-            Set<Principal> principals) throws AuthenticationException
-    {
-        // TODO
-    }
 }
