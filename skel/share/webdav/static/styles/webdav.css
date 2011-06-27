@@ -38,7 +38,7 @@ a{
 
 a:hover{
 
-    color:#00a2ff;
+    color:#1B65C0;
 
 }
 
@@ -120,6 +120,9 @@ h1 {
     text-align:center;
     font-size:18px;
     line-height:22px;
+    color: white;
+    background: #1B65C0;
+    text-transform: uppercase;
 
 }
 
@@ -139,6 +142,19 @@ table{
 div.fileicon, div.directoryicon {
     float: right;
     width: 25px;
+}
+
+div.fileicon, div.directoryicon {
+    float: right;
+    width: 25px;
+}
+
+
+.errortext{
+    color:#1B65C0;
+    font-family: "Lucida Grande","Lucida Sans Unicode","Lucida Sans","Lucida",Verdana,"Bitstream Vera Sans",sans-serif;
+    font-size:12px;
+    font-weight:bold;
 }
 
 /**********************************  FOOTER */
@@ -162,7 +178,7 @@ div.fileicon, div.directoryicon {
 
 #footer a:hover{
 
-    color:#00a2ff;
+    color:#1B65C0;
 
 }
 
