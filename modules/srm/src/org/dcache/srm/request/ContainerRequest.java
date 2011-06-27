@@ -248,7 +248,15 @@ public abstract class ContainerRequest extends Request {
      * @return
      * a number of file requests
      */
-    public abstract int getNumOfFileRequest();
+    public int getNumOfFileRequest()
+    {
+        rlock();
+        try {
+            return fileRequests.size();
+        } finally {
+            runlock();
+        }
+    }
 
 
 

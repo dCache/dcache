@@ -157,11 +157,6 @@ public final class LsRequest extends ContainerRequest {
         }
 
         @Override
-        public int getNumOfFileRequest() {
-                return getFileRequests().size();
-        }
-
-        @Override
         public String getMethod() {
                 return "Ls";
         }

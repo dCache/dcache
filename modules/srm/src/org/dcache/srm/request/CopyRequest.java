@@ -287,13 +287,6 @@ public final class CopyRequest extends ContainerRequest implements PropertyChang
      }
 
 
-
-    @Override
-    public int getNumOfFileRequest() {
-        return getFileRequests().size();
-    }
-
-
     public void proccessRequest()  throws java.sql.SQLException,Exception {
 
         logger.debug("Proccessing request");

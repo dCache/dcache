@@ -226,16 +226,6 @@ public final class BringOnlineRequest extends ContainerRequest {
         }
     }
 
-    // ContainerRequest request;
-    /**
-     * for each file request in the request
-     * call storage.PrepareToGet() which should do all the work
-     */
-    @Override
-    public int getNumOfFileRequest() {
-        return getFileRequests().size();
-    }
-
      public String[] getProtocols() {
         if(protocols == null) return null;
         String[] copy = new String[protocols.length];

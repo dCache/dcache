@@ -229,12 +229,6 @@ public final class PutRequest extends ContainerRequest{
         }
     }
 
-    @Override
-    public int getNumOfFileRequest() {
-        return getFileRequests().size();
-    }
-
-
     public void proccessRequest() {
         logger.debug("proccessing put request");
         String supported_protocols[];

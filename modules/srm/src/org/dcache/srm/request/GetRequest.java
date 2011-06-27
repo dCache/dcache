@@ -213,22 +213,6 @@ public final class GetRequest extends ContainerRequest {
         }
     }
 
-    // ContainerRequest request;
-    /**
-     * for each file request in the request
-     * call storage.PrepareToGet() which should do all the work
-     */
-    @Override
-    public int getNumOfFileRequest() {
-        rlock();
-        try {
-            return getFileRequests().size();
-        } finally {
-            runlock();
-        }
-    }
-
-
     public HashSet callbacks_set =  new HashSet();
 
     private static final long serialVersionUID = -3739166738239918248L;
