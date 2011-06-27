@@ -110,8 +110,8 @@ public class KpwdPlugin
     {
         try {
             if (_kpwdFile != null && _kpwdFile.lastModified() >= _cacheTime) {
-                _cacheTime = System.currentTimeMillis();
                 _cacheAuthFile = new KAuthFile(_kpwdFile.getPath());
+                _cacheTime = System.currentTimeMillis();
             }
             return _cacheAuthFile;
         } catch (IOException e) {
