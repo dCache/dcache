@@ -1,9 +1,9 @@
 /* HTML Template for directory listing.
  *
- * Must provide a page template. 
+ * Must provide a page template.
  *
- * See StringTemplate documentation at http://www.stringtemplate.org/ 
- * for details on the format. 
+ * See StringTemplate documentation at http://www.stringtemplate.org/
+ * for details on the format.
  *
  * Do not modify this file. Any changes will be lost on upgrade. To
  * customize the look and feel a copy of this file should be
@@ -62,27 +62,12 @@ breadcrumbs(base,path) ::= <<
  */
 page(static,subject,path,files) ::= <<
 <html>
-    <head>
-        <title>dCache.org - File system</title>
-        <link rel="stylesheet" type="text/css" href="$static$/styles/webdav.css"/>
-    </head>
+     $header()$
     <body>
-        <div id="navi">
-            <div class="figure">
-                <img class="scaled" src="$static$/images/logo.png"/>
-            </div>
-
-            <p>$subject$</p>
-
-            <p>
-                $breadcrumbs(base="",path=path)$
-            </p>
-        </div>
-
+         $navi()$
         <div id="wrap">
             <div class="content">
-                <h1>File System</h1>
-
+                $title()$
                 <table>
                     <thead>
                         <tr>
@@ -97,10 +82,74 @@ page(static,subject,path,files) ::= <<
                     </tbody>
             </table>
             </div>
-            <div id="footer">
-                www.dCache.org
-            </div>
+             $footer()$
         </div>
     </body>
 </html>
+>>
+
+errorpage(static,subject,path,errorcode,errormessage) ::= <<
+<html>
+ $header()$
+    <body>
+     $navi()$
+        <div id="wrap">
+            <div class="content">
+                $title()$
+                  <table>
+                    <tbody>
+                        <tr>
+			<td><span class="errortext">$errorcode$</span></td>
+                        <td><span class="errortext">$errormessage$</span></td>
+			</tr>
+                    </tbody>
+                </table>
+            </div>
+           $footer()$
+        </div>
+    </body>
+</html>
+>>
+
+/**
+ * generates a title
+ */
+title() ::= <<
+<h1>File System</h1>
+>>
+
+
+/**
+ * generates a header
+ */
+header() ::= <<
+    <head>
+        <title>dCache.org - File system</title>
+        <link rel="stylesheet" type="text/css" href="$static$/styles/webdav.css"/>
+    </head>
+>>
+
+/**
+ * generates a navigation path and adds a logo
+ */
+navi() ::= <<
+    <div id="navi">
+            <div class="figure">
+                <img class="scaled" src="$static$/images/logo.png"/>
+            </div>
+            <p>$subject$</p>
+            <p>
+                $breadcrumbs(base="",path=path)$
+            </p>
+    </div>
+>>
+
+
+/**
+ * generates a footer
+ */
+footer() ::= <<
+    <div id="footer">
+        www.dCache.org
+    </div>
 >>

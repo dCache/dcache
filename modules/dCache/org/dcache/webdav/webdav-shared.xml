@@ -78,13 +78,16 @@
 
   <bean id="authentication-service"
         class="com.bradmcevoy.http.AuthenticationService">
-    <description>Milton authentication service</description>
+      <description>Milton authentication service</description>
+      <property name="disableDigest" value="true"/>
   </bean>
 
   <bean id="response-handler"
-        class="org.dcache.webdav.DcacheResponseHandler">
-    <description>Generates WebDAV responses</description>
-    <constructor-arg ref="authentication-service"/>
+          class="org.dcache.webdav.DcacheResponseHandler">
+        <description>Generates WebDAV responses</description>
+        <constructor-arg ref="authentication-service"/>
+        <property name="staticContentPath" value="${webdav.static-content.location}"/>
+        <property name="templateResource" value="${webdav.templates.html}"/>
   </bean>
 
   <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory"
@@ -103,7 +106,7 @@
     <property name="killTimeout" value="${webdavKillTimeout}"/>
     <property name="transferConfirmationTimeout" value="${webdavTransferConfirmationTimeout}"/>
     <property name="internalAddress" value="${webdavInternalAddress}"/>
-    <property name="listTemplateResource" value="${webdav.templates.list}"/>
+    <property name="templateResource" value="${webdav.templates.html}"/>
     <property name="staticContentPath" value="${webdav.static-content.location}"/>
     <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
     <property name="overwriteAllowed" value="${webdav.overwrite}"/>
