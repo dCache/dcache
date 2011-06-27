@@ -86,12 +86,12 @@
         <dependency groupId="commons-codec" artifactId="commons-codec" version="1.4"/>
         <dependency groupId="commons-httpclient" artifactId="commons-httpclient" version="3.1"/>
         <dependency groupId="ch.qos.logback" artifactId="logback-classic" version="0.9.28"/>
-        <dependency groupId="org.eclipse.jetty" artifactId="jetty-server" version="7.2.2.v20101205"/>
-        <dependency groupId="org.eclipse.jetty" artifactId="jetty-deploy" version="7.2.2.v20101205"/>
-        <dependency groupId="org.eclipse.jetty" artifactId="jetty-webapp" version="7.2.2.v20101205"/>
-        <dependency groupId="org.eclipse.jetty" artifactId="jetty-servlets" version="7.2.2.v20101205"/>
-        <dependency groupId="org.eclipse.jetty" artifactId="jetty-plus" version="7.2.2.v20101205"/>
-        <dependency groupId="org.eclipse.jetty" artifactId="jetty-security" version="7.2.2.v20101205"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-server" version="7.4.2.v20110526"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-deploy" version="7.4.2.v20110526"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-webapp" version="7.4.2.v20110526"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-servlets" version="7.4.2.v20110526"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-plus" version="7.4.2.v20110526"/>
+        <dependency groupId="org.eclipse.jetty" artifactId="jetty-security" version="7.4.2.v20110526"/>
         <dependency groupId="javax.servlet" artifactId="servlet-api" version="2.5"/>
         <dependency groupId="com.sleepycat" artifactId="je" version="4.1.10"/>
         <dependency groupId="axis" artifactId="axis" version="1.3" />
