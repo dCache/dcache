@@ -405,7 +405,7 @@ public class DcacheResourceFactory
      * Sets the resource containing the StringTemplateGroup for
      * directory listing.
      */
-    public void setListTemplateResource(org.springframework.core.io.Resource resource)
+    public void setTemplateResource(org.springframework.core.io.Resource resource)
         throws IOException
     {
         InputStream in = resource.getInputStream();
