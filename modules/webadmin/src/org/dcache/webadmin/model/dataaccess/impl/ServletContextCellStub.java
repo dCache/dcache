@@ -4,6 +4,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.dcache.admin.webadmin.jettycell.JettyCell;
@@ -16,7 +17,6 @@ import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.impl.AlwaysFailLoginService;
 import org.dcache.webadmin.controller.impl.GuestLogInDecorator;
 import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
-import org.dcache.webadmin.model.dataaccess.communication.impl.CellDomainContextHolder;
 
 /**
  * Cell-Stub in Webadmin which is responsible for Cell-Communication
@@ -38,7 +38,10 @@ public class ServletContextCellStub extends CellStub {
     private String _dcacheName = "";
     private File _kpwdFile;
     private LogInService _logInService = LOGINSERVICE_DUMMY_FOR_NONAUTH_MODE;
-    private CellDomainContextHolder _domainContextHolder;
+    private ThreadFactory _threadFactory;
+    private String _loginBrokerName = "";
+    private long _collectorTimeout;
+    private long _transfersCollectorUpdate;
 
     public ServletContextCellStub(String destination) throws NamingException {
         InitialContext lookupContext = new InitialContext();
@@ -47,6 +50,10 @@ public class ServletContextCellStub extends CellStub {
         _authenticatedMode = jettyCell.isAuthenticatedMode();
         _httpPort = jettyCell.getHttpPort();
         _dcacheName = jettyCell.getDcacheName();
+        _threadFactory = jettyCell.getNucleus();
+        _loginBrokerName = jettyCell.getLoginBrokerName();
+        _collectorTimeout = jettyCell.getCollectorTimeout();
+        _transfersCollectorUpdate = jettyCell.getTransfersCollectorUpdate();
 //      warning true evilness! This is against architecture, because it is a call
 //      from a lower architectual level to an upper (model depending on a
 //      controller package! But the whole class would be obsolete if all of this
@@ -60,7 +67,7 @@ public class ServletContextCellStub extends CellStub {
         }
         setCellEndpoint((CellEndpoint) jettyCell);
         setDestination(destination);
-        _domainContextHolder = new CellDomainContextHolder(jettyCell.getNucleus());
+
     }
 
     private void initLoginService() {
@@ -121,7 +128,19 @@ public class ServletContextCellStub extends CellStub {
         return _logInService;
     }
 
-    public CellDomainContextHolder getDomainContextHolder() {
-        return _domainContextHolder;
+    public ThreadFactory getThreadFactory() {
+        return _threadFactory;
+    }
+
+    public long getCollectorTimeout() {
+        return _collectorTimeout;
+    }
+
+    public String getLoginBrokerName() {
+        return _loginBrokerName;
+    }
+
+    public long getTransfersCollectorUpdate() {
+        return _transfersCollectorUpdate;
     }
 }

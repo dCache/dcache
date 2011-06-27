@@ -7,7 +7,7 @@ import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
-import org.dcache.webadmin.model.dataaccess.communication.impl.CellDomainContextHolder;
+import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ public class DAOFactoryImpl implements DAOFactory {
 
     private Logger _log = LoggerFactory.getLogger(DAOFactory.class);
     private CommandSenderFactory _defaultCommandSenderFactory;
-    private CellDomainContextHolder _domainContextHolder;
+    private PageInfoCache _pageCache;
 
     @Override
     public PoolsDAO getPoolsDAO() {
@@ -61,9 +61,9 @@ public class DAOFactoryImpl implements DAOFactory {
         _defaultCommandSenderFactory = commandSenderFactory;
     }
 
-    public void setDomainContextHolder(CellDomainContextHolder domainContextHolder) {
-        _log.debug("DomainContextHolder set {}", domainContextHolder.toString());
-        _domainContextHolder = domainContextHolder;
+    public void setPageCache(PageInfoCache pageCache) {
+        _log.debug("PageCache set {}", pageCache);
+        _pageCache = pageCache;
     }
 
     private void checkDefaultCommandSenderSet() {

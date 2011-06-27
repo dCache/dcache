@@ -19,7 +19,48 @@
     <bean id="LoginCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value="gPlazma"/>
-        <property name="timeout" value="180000"/>
+        <property name="timeout" value="5000"/>
+    </bean>
+
+    <bean id="CollectorCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value=""/>
+        <property name="timeout">
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="LoginCellStub"/>
+                <property name="propertyPath" value="collectorTimeout"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="PageInfoCache"
+        class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache">
+        <constructor-arg >
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="LoginCellStub"/>
+                <property name="propertyPath" value="threadFactory"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg >
+            <list>
+                <bean id="activeTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
+                    <property name="cellStub" ref="CollectorCellStub"/>
+                    <property name="name" value="Active Transfers Collector"/>
+                    <property name="update">
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="LoginCellStub"/>
+                            <property name="propertyPath" value="transfersCollectorUpdate"/>
+                        </bean>
+                    </property>
+                    <property name="loginBrokerName">
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="LoginCellStub"/>
+                            <property name="propertyPath" value="loginBrokerName"/>
+                        </bean>
+                    </property>
+                </bean>
+            </list>
+        </constructor-arg>
     </bean>
 
     <bean id="CommandSenderFactory"
@@ -29,12 +70,7 @@
 
     <bean id="DAOFactory" class="org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImpl">
         <property name="defaultCommandSenderFactory" ref="CommandSenderFactory"/>
-        <property name="domainContextHolder">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="domainContextHolder"/>
-            </bean>
-        </property>
+        <property name="pageCache" ref="PageInfoCache"/>
     </bean>
 
     <bean id="PoolSpaceService" class="org.dcache.webadmin.controller.impl.StandardPoolSpaceService">

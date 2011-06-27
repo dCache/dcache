@@ -99,6 +99,18 @@ public class JettyCell extends AbstractCell {
     description = "The dCache-Instance Name",
     required = false)
     private String _dcacheName;
+    @Option(name = "loginBrokerName",
+    description = "LoginBrokers Name",
+    required = true)
+    private String _loginBrokerName;
+    @Option(name = "collectorTimeout",
+    description = "timeout for the collectors",
+    required = true)
+    private long _collectorTimeout;
+    @Option(name = "transfersCollectorUpdate",
+    description = "Update interval of transferscollector",
+    required = true)
+    private long _transfersCollectorUpdate;
 //    URL to the ressources folder of jetty (will be put inside of dcache.jar)
 //    dont know how to get rid of the hardcoding, should be
 //    package of class+/resources
@@ -216,6 +228,18 @@ public class JettyCell extends AbstractCell {
 
     public boolean isAuthenticatedMode() {
         return _authenticatedMode;
+    }
+
+    public long getCollectorTimeout() {
+        return _collectorTimeout;
+    }
+
+    public String getLoginBrokerName() {
+        return _loginBrokerName;
+    }
+
+    public long getTransfersCollectorUpdate() {
+        return _transfersCollectorUpdate;
     }
 
     private class LegacyForwardHandler extends AbstractHandler {
