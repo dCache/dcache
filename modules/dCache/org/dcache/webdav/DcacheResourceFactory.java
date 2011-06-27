@@ -512,7 +512,7 @@ public class DcacheResourceFactory
         } catch (FileNotFoundCacheException e) {
             return null;
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, null);
+            throw new UnauthorizedException(e.getMessage(), e, null);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, null);
         }
