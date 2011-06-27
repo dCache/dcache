@@ -304,7 +304,26 @@ public class XrootdDoor
                        UUID uuid, InetSocketAddress local, Subject subject)
     {
         XrootdTransfer transfer =
-            new XrootdTransfer(_pnfs, subject, path);
+            new XrootdTransfer(_pnfs, subject, path) {
+                public synchronized void finished(CacheException error)
+                {
+                    super.finished(error);
+
+                    _transfers.remove(getFileHandle());
+
+                    if (error == null) {
+                        notifyBilling(0, "");
+                        _log.info("Transfer {}@{} finished",
+                                  getPnfsId(), getPool());
+                    } else {
+                        int rc = error.getRc();
+                        String message = error.getMessage();
+                        notifyBilling(rc, message);
+                        _log.info("Transfer {}@{} failed: {} (error code={})",
+                                  new Object[] {getPnfsId(), getPool(), message, rc});
+                    }
+                }
+            };
         transfer.setCellName(_cellName);
         transfer.setDomainName(_domainName);
         transfer.setPoolManagerStub(_poolManagerStub);
@@ -776,22 +795,9 @@ public class XrootdDoor
             XrootdProtocolInfo info =
                 (XrootdProtocolInfo) msg.getProtocolInfo();
             XrootdTransfer transfer =
-                _transfers.remove(info.getXrootdFileHandle());
+                _transfers.get(info.getXrootdFileHandle());
             if (transfer != null) {
                 transfer.finished(msg);
-
-                int rc = msg.getReturnCode();
-                if (rc == 0) {
-                    transfer.notifyBilling(0, "");
-                    _log.info("Transfer {}@{} finished",
-                              msg.getPnfsId(), msg.getPoolName());
-
-                } else {
-                    transfer.notifyBilling(rc, msg.getErrorObject().toString());
-                    _log.info("Transfer {}@{} failed: {} (error code={})",
-                              new Object[] {msg.getPnfsId(), msg.getPoolName(),
-                                            msg.getErrorObject(), rc});
-                }
             }
         } else {
             _log.warn("Ignoring unknown protocol info {} from pool {}",

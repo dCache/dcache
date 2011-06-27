@@ -6,6 +6,7 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Response;
 import com.bradmcevoy.http.ServletRequest;
 import com.bradmcevoy.http.HttpManager;
+import com.bradmcevoy.http.Auth;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
@@ -87,6 +88,15 @@ public class SecurityFilter implements Filter
              * LoginStrategies currently do not process the Origin.
              */
             addOriginToSubject(servletRequest, subject);
+
+            /* Although we don't rely on the authorization tag
+             * ourselves, Milton uses it to detect that the request
+             * was preauthenticated.
+             */
+            Auth auth = request.getAuthorization();
+            if (auth != null) {
+                auth.setTag(subject);
+            }
 
             /* Process the request as the authenticated user.
              */

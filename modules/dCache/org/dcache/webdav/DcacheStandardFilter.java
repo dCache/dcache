@@ -13,6 +13,7 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Response;
 import com.bradmcevoy.http.Handler;
 import com.bradmcevoy.http.HttpManager;
+import com.bradmcevoy.http.http11.Http11ResponseHandler;
 import com.bradmcevoy.http.exceptions.ConflictException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.BadRequestException;
@@ -33,54 +34,52 @@ public class DcacheStandardFilter implements Filter
     private final static Logger log =
         LoggerFactory.getLogger(DcacheStandardFilter.class);
 
-    public final static String FORBIDDEN_HTML =
-        "<html><body><h1>Permission denied (403)</h1></body></html>";
-
-    private void errorResponse(Response response,
-                               Response.Status status, String error)
-    {
-        try {
-            response.setStatus(status);
-            response.getOutputStream().write(error.getBytes());
-        } catch (IOException ex) {
-            log.warn("exception writing content");
-        }
-    }
-
     public void process(FilterChain chain, Request request, Response response)
     {
         HttpManager manager = chain.getHttpManager();
+        Http11ResponseHandler responseHandler = manager.getResponseHandler();
 
         try {
             Request.Method method = request.getMethod();
             Handler handler = manager.getMethodHandler(method);
             if (handler == null) {
-                manager.getResponseHandler().respondMethodNotImplemented(new EmptyResource(request), response, request);
+                responseHandler.respondMethodNotImplemented(new EmptyResource(request), response, request);
                 return;
             }
 
-            handler.process(manager,request,response);
+            try {
+                handler.process(manager,request,response);
+            } catch (RuntimeException e) {
+                /* Milton wraps our WebDavException in a
+                 * RuntimeException.
+                 */
+                if (e.getCause() instanceof WebDavException) {
+                    throw (WebDavException) e.getCause();
+                }
+                /* Milton also wraps critical errors that should not
+                 * be caught.
+                 */
+                if (e.getCause() instanceof Error) {
+                    throw (Error) e.getCause();
+                }
+                throw e;
+            }
         } catch (BadRequestException e) {
-            manager.getResponseHandler().respondBadRequest(e.getResource(),
-                                                           response, request);
+            responseHandler.respondBadRequest(e.getResource(), response, request);
         } catch (ConflictException e) {
-            manager.getResponseHandler().respondConflict(e.getResource(),
-                                                         response, request,
-                                                         e.getMessage());
+            responseHandler.respondConflict(e.getResource(), response, request, e.getMessage());
         } catch (NotAuthorizedException e) {
-            manager.getResponseHandler().respondUnauthorised(e.getResource(),
-                                                             response, request);
+            responseHandler.respondUnauthorised(e.getResource(), response, request);
+        } catch (UnauthorizedException e) {
+            responseHandler.respondUnauthorised(e.getResource(), response, request);
         } catch (ForbiddenException e) {
-            errorResponse(response,
-                          Response.Status.SC_FORBIDDEN, FORBIDDEN_HTML);
+            responseHandler.respondForbidden(e.getResource(), response, request);
         } catch (WebDavException e) {
             log.warn("Internal server error: " + e);
-            manager.getResponseHandler().respondServerError(request, response,
-                                                            e.getMessage());
+            responseHandler.respondServerError(request, response, e.getMessage());
         } catch (RuntimeException e) {
             log.error("Internal server error", e);
-            manager.getResponseHandler().respondServerError(request, response,
-                                                            e.getMessage());
+            responseHandler.respondServerError(request, response, e.getMessage());
         } finally {
             response.close();
         }
