@@ -3,6 +3,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
+import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
@@ -47,5 +48,10 @@ public class DAOFactoryImplHelper implements DAOFactory {
     @Override
     public LinkGroupsDAO getLinkGroupsDAO() {
         return _linkGroupsDao;
+    }
+
+    @Override
+    public MoverDAO getMoverDAO() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

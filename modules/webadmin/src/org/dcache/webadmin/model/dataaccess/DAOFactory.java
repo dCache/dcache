@@ -19,5 +19,7 @@ public interface DAOFactory {
 
     public LinkGroupsDAO getLinkGroupsDAO();
 
+    public MoverDAO getMoverDAO();
+
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

@@ -3,6 +3,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
+import org.dcache.webadmin.model.dataaccess.MoverDAO;
 import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
@@ -56,6 +57,13 @@ public class DAOFactoryImpl implements DAOFactory {
     }
 
     @Override
+    public MoverDAO getMoverDAO() {
+        checkPageCacheSet();
+        return new StandardMoverDAO(_pageCache,
+                _defaultCommandSenderFactory);
+    }
+
+    @Override
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory) {
         _log.debug("DefaultCommandSenderFactory set {}", commandSenderFactory.toString());
         _defaultCommandSenderFactory = commandSenderFactory;
@@ -69,6 +77,12 @@ public class DAOFactoryImpl implements DAOFactory {
     private void checkDefaultCommandSenderSet() {
         if (_defaultCommandSenderFactory == null) {
             throw new IllegalStateException("DefaultPoolCommandSender not set");
+        }
+    }
+
+    private void checkPageCacheSet() {
+        if (_pageCache == null) {
+            throw new IllegalStateException("PageCache not set");
         }
     }
 }
