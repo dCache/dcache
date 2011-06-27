@@ -16,6 +16,8 @@ import com.bradmcevoy.http.DeletableResource;
 import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Auth;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
@@ -53,7 +55,7 @@ public class DcacheFileResource
             _factory.readFile(new FsPath(_path), _attributes.getPnfsId(),
                               out, range);
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new NotAuthorizedException(this);
         } catch (FileNotFoundCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
         } catch (NotInTrashCacheException e) {
@@ -98,7 +100,7 @@ public class DcacheFileResource
                 return null;
             }
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new UnauthorizedException(e.getMessage(), e, this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (InterruptedException e) {
@@ -108,11 +110,12 @@ public class DcacheFileResource
 
     @Override
     public void delete()
+        throws NotAuthorizedException, ConflictException, BadRequestException
     {
         try {
             _factory.deleteFile(_attributes.getPnfsId(), _path);
         } catch (PermissionDeniedCacheException e) {
-            throw new ForbiddenException(e.getMessage(), e, this);
+            throw new NotAuthorizedException(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
