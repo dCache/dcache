@@ -88,19 +88,4 @@ public class GridMapFilePlugin
         principals.add(principal);
         authorizedPrincipals.add(entry.getKey());
     }
-
-    @Override
-    public void reverseMap(SessionID sID,
-                           Principal sourcePrincipal,
-                           Set<Principal> principals)
-        throws AuthenticationException
-    {
-        _gridMapFile.refresh();
-        if (sourcePrincipal instanceof UserNamePrincipal) {
-            // TODO: need to extend GridMapFile to allow lookup for
-            // reverse map. Also need to add a configuration option
-            // that tells us whether the gridmap file maps to personal
-            // user names or group names.
-        }
-    }
 }

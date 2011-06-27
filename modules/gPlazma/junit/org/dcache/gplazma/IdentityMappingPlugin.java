@@ -18,9 +18,4 @@ public class IdentityMappingPlugin implements GPlazmaMappingPlugin {
             authorizedPrincipals.add(p);
         }
     }
-
-    @Override
-    public void reverseMap(SessionID sID, Principal sourcePrincipal, Set<Principal> principals) throws AuthenticationException {
-        principals.add(sourcePrincipal);
-    }
 }
