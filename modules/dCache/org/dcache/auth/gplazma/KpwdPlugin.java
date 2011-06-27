@@ -82,7 +82,7 @@ public class KpwdPlugin
                GPlazmaAccountPlugin,
                GPlazmaSessionPlugin
 {
-    private final static String KPWD = "kpwd";
+    private final static String KPWD = "gplazma.kpwd.file";
 
     private final File _kpwdFile;
 
@@ -93,7 +93,7 @@ public class KpwdPlugin
     {
         String path = properties.getProperty(KPWD, null);
         if (path == null) {
-            throw new IllegalArgumentException("kpwd argument must be specified");
+            throw new IllegalArgumentException(KPWD + " argument must be specified");
         }
         _kpwdFile = new File(path);
     }
