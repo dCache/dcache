@@ -19,9 +19,4 @@ public interface MappingStrategy
                     Set<Principal> principals,
                     Set<Principal> authorizedPrincipals)
                 throws AuthenticationException;
-
-    public void reverseMap(SessionID sID,
-                           Principal sourcePrincipal,
-                           Set<Principal> principals)
-               throws AuthenticationException;
 }

@@ -56,36 +56,4 @@ public class DefaultMappingStrategy implements MappingStrategy {
             }
         });
     }
-
-    /**
-     * Devegates execution of the
-     * {@link GPlazmaMappingPlugin.reverseMap(SessionID, Set<Principal>, Set<Principal>) map}
-     * methods of the plugins supplied by
-     * {@link GPlazmaStrategy.setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
-     *  to
-     * {@link  PAMStyleStrategy#callPlugins(PluginCaller<T>) PAMStyleStrategy.callPlugins(PluginCaller<T>)}
-     * by providing anonymous implementation of the
-     * {@link PluginCaller#call(org.dcache.gplazma.plugins.GPlazmaPlugin) PluginCaller}
-     * interface.
-     * @param sessionID
-     * @param sourcePrincipal
-     * @param principals
-     * @throws org.dcache.gplazma.AuthenticationException
-     * @see PAMStyleStrategy
-     * @see PluginCaller
-     */
-    @Override
-    public synchronized void reverseMap(
-            final SessionID sessionID,
-            final Principal sourcePrincipal,
-            final Set<Principal> principals)
-            throws AuthenticationException {
-        logger.debug("call to reverse-map");
-        pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>() {
-            @Override
-            public void call(GPlazmaMappingPlugin plugin) throws AuthenticationException {
-                plugin.reverseMap(sessionID, sourcePrincipal, principals);
-            }
-        });
-    }
 }
