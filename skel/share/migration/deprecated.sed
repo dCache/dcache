@@ -53,6 +53,7 @@ s/^srmJdbcSaveCompletedRequestsOnly *=/srmStoreCompleteRequestsOnly=/
 s/^srmJdbcEnabled *=/srmDatabaseEnabled=/
 s/^images *=/httpd.static-content.images=/
 s/^styles *=/httpd.static-content.styles=/
+s/^gPlazmaNumberOfSimutaneousRequests *=/gPlazmaNumberOfSimultaneousRequests=/
 
 s/^useFileSystem *=.*//
 s/^srmVacuum *=.*//
@@ -76,3 +77,4 @@ s/^waitForRepositoryReady *=.*//
 s/^xylophoneConfigurationFile *=.*//
 s/^httpdEnablePoolCollector *=.*//
 s/^removeUnexistingEntriesOnFlush *=.*//
+
