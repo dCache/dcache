@@ -18,7 +18,12 @@
 
     <bean id="LoginCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg type="java.lang.String" value="gPlazma"/>
+        <constructor-arg >
+            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                <property name="targetBeanName" value="PoolCellStub"/>
+                <property name="propertyPath" value="gPlazmaName"/>
+            </bean>
+        </constructor-arg>
         <property name="timeout" value="5000"/>
     </bean>
 
@@ -56,6 +61,34 @@
                         <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
                             <property name="targetBeanName" value="LoginCellStub"/>
                             <property name="propertyPath" value="loginBrokerName"/>
+                        </bean>
+                    </property>
+                </bean>
+                <bean id="cellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
+                    <property name="cellStub" ref="CollectorCellStub"/>
+                    <property name="name" value="Cellstatus Collector"/>
+                    <property name="loginBrokerName">
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="LoginCellStub"/>
+                            <property name="propertyPath" value="loginBrokerName"/>
+                        </bean>
+                    </property>
+                    <property name="pnfsManagerName">
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="LoginCellStub"/>
+                            <property name="propertyPath" value="pnfsManagerName"/>
+                        </bean>
+                    </property>
+                    <property name="poolManagerName">
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="LoginCellStub"/>
+                            <property name="propertyPath" value="poolManagerName"/>
+                        </bean>
+                    </property>
+                    <property name="gPlazmaName">
+                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
+                            <property name="targetBeanName" value="LoginCellStub"/>
+                            <property name="propertyPath" value="gPlazmaName"/>
                         </bean>
                     </property>
                 </bean>

@@ -13,6 +13,9 @@ create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
            -kpwd-file=${kpwdFile} \
            -dCacheInstanceName=${webadminDCacheInstanceName}  \
            -loginBrokerName=${loginBroker} \
+           -pnfsManagerName=${pnfsmanager} \
+           -poolManagerName=${poolmanager} \
+           -gPlazmaName=${gplazma} \
            -collectorTimeout=${collectorTimeout} \
            -transfersCollectorUpdate=${transfersCollectorUpdate} \
 "

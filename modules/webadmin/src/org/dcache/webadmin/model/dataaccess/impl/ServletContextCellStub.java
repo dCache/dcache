@@ -40,6 +40,9 @@ public class ServletContextCellStub extends CellStub {
     private LogInService _logInService = LOGINSERVICE_DUMMY_FOR_NONAUTH_MODE;
     private ThreadFactory _threadFactory;
     private String _loginBrokerName = "";
+    private String _pnfsManagerName = "";
+    private String _poolManagerName = "";
+    private String _gPlazmaName = "";
     private long _collectorTimeout;
     private long _transfersCollectorUpdate;
 
@@ -52,6 +55,9 @@ public class ServletContextCellStub extends CellStub {
         _dcacheName = jettyCell.getDcacheName();
         _threadFactory = jettyCell.getNucleus();
         _loginBrokerName = jettyCell.getLoginBrokerName();
+        _pnfsManagerName = jettyCell.getPnfsManagerName();
+        _poolManagerName = jettyCell.getPoolManagerName();
+        _gPlazmaName = jettyCell.getGPlazmaName();
         _collectorTimeout = jettyCell.getCollectorTimeout();
         _transfersCollectorUpdate = jettyCell.getTransfersCollectorUpdate();
 //      warning true evilness! This is against architecture, because it is a call
@@ -138,6 +144,18 @@ public class ServletContextCellStub extends CellStub {
 
     public String getLoginBrokerName() {
         return _loginBrokerName;
+    }
+
+    public String getPnfsManagerName() {
+        return _pnfsManagerName;
+    }
+
+    public String getPoolManagerName() {
+        return _poolManagerName;
+    }
+
+    public String getgPlazmaName() {
+        return _gPlazmaName;
     }
 
     public long getTransfersCollectorUpdate() {

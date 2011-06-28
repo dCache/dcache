@@ -103,6 +103,18 @@ public class JettyCell extends AbstractCell {
     description = "LoginBrokers Name",
     required = true)
     private String _loginBrokerName;
+    @Option(name = "pnfsManagerName",
+    description = "Name of pnfsManager cell",
+    required = true)
+    private String _pnfsManagerName;
+    @Option(name = "poolManagerName",
+    description = "Name of poolManager cell",
+    required = true)
+    private String _poolManagerName;
+    @Option(name = "gPlazmaName",
+    description = "Name of gPlazma cell",
+    required = true)
+    private String _gPlazmaName;
     @Option(name = "collectorTimeout",
     description = "timeout for the collectors",
     required = true)
@@ -236,6 +248,18 @@ public class JettyCell extends AbstractCell {
 
     public String getLoginBrokerName() {
         return _loginBrokerName;
+    }
+
+    public String getPnfsManagerName() {
+        return _pnfsManagerName;
+    }
+
+    public String getPoolManagerName() {
+        return _poolManagerName;
+    }
+
+    public String getGPlazmaName() {
+        return _gPlazmaName;
     }
 
     public long getTransfersCollectorUpdate() {
