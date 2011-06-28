@@ -2,9 +2,11 @@ package org.dcache.webadmin.controller.util;
 
 import java.util.List;
 import java.util.Map;
+import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.Pool;
+import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
@@ -75,5 +77,39 @@ public class BeanDataMapper {
         cellService.setThreadCount(cellBusinessObject.getThreadCount());
         cellService.setVersion(cellBusinessObject.getVersion());
         return cellService;
+    }
+
+    public static ActiveTransfersBean moverModelToView(MoverInfo moverInfo) {
+        ActiveTransfersBean transfer = new ActiveTransfersBean();
+        transfer.setCellDomainName(moverInfo.getIoDoorInfo().getDomainName());
+        transfer.setCellName(moverInfo.getIoDoorInfo().getCellName());
+        transfer.setOwner(moverInfo.getIoDoorInfo().getOwner());
+        if (moverInfo.getIoDoorEntry().getPnfsId() == null) {
+            transfer.setPnfsId("");
+        } else {
+            transfer.setPnfsId(moverInfo.getIoDoorEntry().getPnfsId().toString());
+        }
+        transfer.setPool(moverInfo.getIoDoorEntry().getPool());
+        transfer.setProcess(moverInfo.getIoDoorInfo().getProcess());
+        transfer.setProtocolFamily(moverInfo.getIoDoorInfo().getProtocolFamily());
+        transfer.setProtocolVersion(moverInfo.getIoDoorInfo().getProtocolVersion());
+        transfer.setReplyHost(moverInfo.getIoDoorEntry().getReplyHost());
+        transfer.setSerialId(moverInfo.getIoDoorEntry().getSerialId());
+        if (moverInfo.getIoDoorEntry().getStatus() == null) {
+            transfer.setStatus("");
+        } else {
+            String status = moverInfo.getIoDoorEntry().getStatus();
+            status = status.replace(" ", "&nbsp;");
+            transfer.setStatus(status);
+        }
+        transfer.setWaitingSince(moverInfo.getIoDoorEntry().getWaitingSince());
+        if (moverInfo.hasJobInfo()) {
+            transfer.setBytesTransferred(moverInfo.getIoJobInfo().getBytesTransferred());
+            transfer.setJobId(moverInfo.getIoJobInfo().getJobId());
+            transfer.setLastTransferred(moverInfo.getIoJobInfo().getLastTransferred());
+            transfer.setState(moverInfo.getIoJobInfo().getStatus());
+            transfer.setTransferTime(moverInfo.getIoJobInfo().getTransferTime());
+        }
+        return transfer;
     }
 }

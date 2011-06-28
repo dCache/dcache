@@ -27,6 +27,7 @@ import org.apache.wicket.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authorization.strategies.role.RoleAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.protocol.http.WebRequestCycleProcessor;
+import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
 import org.dcache.webadmin.controller.InfoService;
@@ -63,6 +64,7 @@ public class WebAdminInterface extends WebApplication {
     private PoolAdminService _poolAdminService;
     private CellAdminService _cellAdminService;
     private LinkGroupsService _linkGroupsService;
+    private ActiveTransfersService _activeTransfersService;
     private int _httpPort;
     private int _httpsPort;
     private boolean _authenticatedMode;
@@ -202,6 +204,14 @@ public class WebAdminInterface extends WebApplication {
 
     public void setLinkGroupsService(LinkGroupsService linkGroupsService) {
         _linkGroupsService = linkGroupsService;
+    }
+
+    public ActiveTransfersService getActiveTransfersService() {
+        return _activeTransfersService;
+    }
+
+    public void setActiveTransfersService(ActiveTransfersService activeTransfersService) {
+        _activeTransfersService = activeTransfersService;
     }
 
     public void setDcacheName(String dCacheName) {
