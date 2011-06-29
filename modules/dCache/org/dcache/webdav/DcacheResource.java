@@ -20,7 +20,6 @@ import com.bradmcevoy.http.exceptions.ConflictException;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
