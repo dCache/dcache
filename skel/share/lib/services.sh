@@ -77,7 +77,8 @@ domainStart() # $1 = domain
 
     # Don't do anything if already running
     if [ "$(printDomainStatus "$domain")" != "stopped" ]; then
-        fail 1 "${domain} is already running"
+        echo "${domain} is already running" 1>&2
+        return 1
     fi
 
     # Build classpath
@@ -177,7 +178,8 @@ domainStop() # $1 = domain
 
     # Fail if we don't have permission to signal the daemon
     if ! kill -0 $daemonPid; then
-	fail 1 "Failed to kill ${DOMAN}"
+	echo "Failed to kill ${DOMAN}" 1>&2
+        return 1
     fi
 
     # Stopping a dCache domain for good requires that we supress the
@@ -207,8 +209,9 @@ domainStop() # $1 = domain
             fi
         fi
     done
-    echo
-    fail 4 "Giving up. ${domain} might still be running."
+    echo 1>&2
+    echo "Giving up. ${domain} might still be running." 1>&2
+    return 4
 }
 
 # Check prerequisites
