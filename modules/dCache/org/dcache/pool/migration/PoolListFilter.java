@@ -2,16 +2,16 @@ package org.dcache.pool.migration;
 
 import java.util.List;
 import java.util.Collection;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-import org.dcache.util.ImmutableList;
 
 import org.dcache.util.expression.Expression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * RefreshablePoolList decorator that can filter the list of pools.
@@ -22,7 +22,7 @@ public class PoolListFilter implements RefreshablePoolList
         LoggerFactory.getLogger(PoolListFilter.class);
 
     private static final ImmutableList<PoolManagerPoolInformation> EMPTY_LIST =
-        new ImmutableList(new ArrayList<PoolManagerPoolInformation>());
+        ImmutableList.of();
 
     private final Collection<Pattern> _exclude;
     private final Expression _excludeWhen;
@@ -71,14 +71,14 @@ public class PoolListFilter implements RefreshablePoolList
 
         ImmutableList<PoolManagerPoolInformation> list = _poolList.getPools();
         if (!list.equals(_cachedList)) {
-            ArrayList<PoolManagerPoolInformation> filteredList =
-                new ArrayList<PoolManagerPoolInformation>(list.size());
+            ImmutableList.Builder<PoolManagerPoolInformation> filteredList =
+                ImmutableList.builder();
             for (PoolManagerPoolInformation pool: list) {
                 if (!isExcluded(pool) && isIncluded(pool)) {
                     filteredList.add(pool);
                 }
             }
-            _filteredList = new ImmutableList(filteredList);
+            _filteredList = filteredList.build();
         }
         _cachedList = list;
         return _filteredList;

@@ -1,13 +1,11 @@
 package org.dcache.pool.migration;
 
-import java.util.List;
-import java.util.ArrayList;
-
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.AbstractMessageCallback;
-import org.dcache.util.ImmutableList;
+
+import com.google.common.collect.ImmutableList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +18,7 @@ public abstract class PoolListFromPoolManager
         LoggerFactory.getLogger(PoolListFromPoolManager.class);
 
     protected ImmutableList<PoolManagerPoolInformation> _pools =
-        new ImmutableList(new ArrayList<PoolManagerPoolInformation>());
+        ImmutableList.of();
 
     protected boolean _isValid = false;
 
@@ -39,7 +37,7 @@ public abstract class PoolListFromPoolManager
     @Override
     synchronized public void success(PoolManagerGetPoolsMessage msg)
     {
-        _pools = new ImmutableList(new ArrayList(msg.getPools()));
+        _pools = ImmutableList.copyOf(msg.getPools());
         _isValid = true;
     }
 
