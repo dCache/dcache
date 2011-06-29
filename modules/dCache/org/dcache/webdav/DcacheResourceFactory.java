@@ -92,7 +92,6 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
-
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -939,22 +938,27 @@ public class DcacheResourceFactory
         return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
     }
 
+    private void initializeTransfer(HttpTransfer transfer, Subject subject)
+    {
+        transfer.setCellName(_cellName);
+        transfer.setDomainName(_domainName);
+        transfer.setPoolManagerStub(_poolManagerStub);
+        transfer.setPoolStub(_poolStub);
+        transfer.setBillingStub(_billingStub);
+        transfer.setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
+                                                        PROTOCOL_INFO_UNKNOWN_PORT));
+        transfer.setOverwriteAllowed(_isOverwriteAllowed);
+    }
+
     /**
      * Specialisation of the Transfer class for HTTP transfers.
      */
     private class HttpTransfer extends RedirectedTransfer<String>
     {
-
         public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
         {
             super(pnfs, subject, path);
-            this.setCellName(_cellName);
-            this.setDomainName(_domainName);
-            this.setPoolManagerStub(_poolManagerStub);
-            this.setPoolStub(_poolStub);
-            this.setBillingStub(_billingStub);
-            this.setClientAddress(new InetSocketAddress(Subjects.getOrigin(subject).getAddress(),
-                                                   PROTOCOL_INFO_UNKNOWN_PORT));
+            initializeTransfer(this, subject);
         }
 
         protected ProtocolInfo createProtocolInfo()
@@ -1065,7 +1069,6 @@ public class DcacheResourceFactory
         public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
         {
             super(pnfs, subject, path);
-            this.setOverwriteAllowed(_isOverwriteAllowed);
         }
 
         public synchronized void openServerChannel()
