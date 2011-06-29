@@ -60,6 +60,7 @@ public class SecurityFilter implements Filter
 
     private String _realm;
     private boolean _isReadOnly;
+    private boolean _isBasicAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
 
     @Override
@@ -144,7 +145,8 @@ public class SecurityFilter implements Filter
     private void addPasswordCredentialToSubject(Request request, Subject subject)
     {
         Auth auth = request.getAuthorization();
-        if (auth != null && auth.getScheme().equals(Auth.Scheme.BASIC)) {
+        if (auth != null && auth.getScheme().equals(Auth.Scheme.BASIC) &&
+            _isBasicAuthenticationEnabled) {
             PasswordCredential credential =
                 new PasswordCredential(auth.getUser(), auth.getPassword());
             subject.getPrivateCredentials().add(credential);
@@ -203,6 +205,11 @@ public class SecurityFilter implements Filter
     public void setReadOnly(boolean isReadOnly)
     {
         _isReadOnly = isReadOnly;
+    }
+
+    public void setEnableBasicAuthentication(boolean isEnabled)
+    {
+        _isBasicAuthenticationEnabled = isEnabled;
     }
 
     public void setLoginStrategy(LoginStrategy loginStrategy)

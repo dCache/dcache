@@ -65,6 +65,7 @@
     <description>Handles authorization for the WebDAV door</description>
     <property name="readOnly" value="${webdavReadOnly}"/>
     <property name="loginStrategy" ref="login-strategy"/>
+    <property name="enableBasicAuthentication" value="${webdavBasicAuthentication}"/>
   </bean>
 
   <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
@@ -80,6 +81,7 @@
         class="com.bradmcevoy.http.AuthenticationService">
       <description>Milton authentication service</description>
       <property name="disableDigest" value="true"/>
+      <property name="disableBasic" value="#{ '${webdavBasicAuthentication}' != 'true' }"/>
   </bean>
 
   <bean id="response-handler"

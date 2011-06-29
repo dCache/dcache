@@ -24,6 +24,7 @@ check -strong webdavMoverTimeout
 check -strong webdavTransferConfirmationTimeout
 check -strong webdavWantClientAuth
 check -strong webdavNeedClientAuth
+check -strong webdavBasicAuthentication
 check -strong pnfsmanager
 check -strong poolmanager
 check -strong gplazma
@@ -103,6 +104,7 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
     -webdavKeyStorePassword=${webdavKeyStorePassword} \
     -webdavTrustStore=\"${webdavTrustStore}\" \
     -webdavTrustStorePassword=${webdavTrustStorePassword} \
+    -webdavBasicAuthentication=\"${webdavBasicAuthentication}\" \
     -webdavPnfsTimeout=${webdavPnfsTimeout} \
     -webdavPoolManagerTimeout=${webdavPoolManagerTimeout} \
     -webdavPoolTimeout=${webdavPoolTimeout} \
