@@ -99,7 +99,7 @@ public class BeanDataMapper {
             transfer.setStatus("");
         } else {
             String status = moverInfo.getIoDoorEntry().getStatus();
-            status = status.replace(" ", "&nbsp;");
+            status = status.replace(" ", "\n");
             transfer.setStatus(status);
         }
         transfer.setWaitingSince(moverInfo.getIoDoorEntry().getWaitingSince());

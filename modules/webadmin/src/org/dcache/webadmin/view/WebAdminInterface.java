@@ -36,6 +36,7 @@ import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.PoolQueuesService;
+import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.info.Info;
@@ -93,6 +94,7 @@ public class WebAdminInterface extends WebApplication {
         mountBookmarkablePage("pooladmin", PoolAdmin.class);
         mountBookmarkablePage("celladmin", CellAdmin.class);
         mountBookmarkablePage("infoxml", InfoXml.class);
+        mountBookmarkablePage("transfers", ActiveTransfers.class);
     }
 
     private void markAdminOnlyPages() {

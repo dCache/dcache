@@ -1,13 +1,13 @@
 package org.dcache.webadmin.view.panels.navigation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.google.common.collect.Lists;
 import java.util.List;
 import org.apache.wicket.authorization.strategies.role.Roles;
 import org.apache.wicket.behavior.SimpleAttributeModifier;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.basic.Label;
+import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
@@ -34,10 +34,10 @@ public class BasicNavigationPanel extends BasePanel {
 
     private Class _currentPage;
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
-    private static List<Class> _linkList = new ArrayList<Class>(Arrays.asList(
+    private static List<Class<? extends BasePage>> _linkList = Lists.newArrayList(
             DCacheServices.class, CellServices.class, PoolList.class,
-            PoolQueues.class, PoolGroupView.class, PoolAdmin.class,
-            CellAdmin.class, SpaceTokens.class, InfoXml.class));
+            PoolQueues.class, PoolGroupView.class, ActiveTransfers.class,
+            PoolAdmin.class, CellAdmin.class, SpaceTokens.class, InfoXml.class);
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {

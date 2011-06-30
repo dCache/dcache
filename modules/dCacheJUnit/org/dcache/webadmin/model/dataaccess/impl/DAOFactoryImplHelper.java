@@ -19,6 +19,7 @@ public class DAOFactoryImplHelper implements DAOFactory {
     PoolGroupDAOHelper _poolGroupDao = new PoolGroupDAOHelper();
     DomainsDAOHelper _domainsDao = new DomainsDAOHelper();
     LinkGroupsDAOHelper _linkGroupsDao = new LinkGroupsDAOHelper();
+    MoverDAO _moverDao = new MoverDAOHelper();
 
     @Override
     public PoolsDAO getPoolsDAO() {
@@ -52,6 +53,6 @@ public class DAOFactoryImplHelper implements DAOFactory {
 
     @Override
     public MoverDAO getMoverDAO() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return _moverDao;
     }
 }

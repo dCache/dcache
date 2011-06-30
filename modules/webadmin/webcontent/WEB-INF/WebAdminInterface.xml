@@ -189,6 +189,12 @@
         </constructor-arg>
     </bean>
 
+    <bean id="ActiveTransfersService" class="org.dcache.webadmin.controller.impl.StandardActiveTransfersService">
+        <constructor-arg>
+            <ref bean="DAOFactory"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">
         <property name="poolSpaceService" ref="PoolSpaceService"/>
         <property name="poolQueuesService" ref="PoolQueuesService"/>
@@ -198,6 +204,7 @@
         <property name="poolAdminService" ref="PoolAdminService"/>
         <property name="cellAdminService" ref="CellAdminService"/>
         <property name="linkGroupsService" ref="LinkGroupsService"/>
+        <property name="activeTransfersService" ref="ActiveTransfersService"/>
         <!--<property name="logInService" ref="LogInService"/>-->
         <property name="logInService">
             <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
