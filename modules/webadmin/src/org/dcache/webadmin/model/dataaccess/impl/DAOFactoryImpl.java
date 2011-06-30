@@ -47,7 +47,8 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public DomainsDAO getDomainsDAO() {
         checkDefaultCommandSenderSet();
-        return new StandardDomainsDAO(_defaultCommandSenderFactory);
+        checkPageCacheSet();
+        return new StandardDomainsDAO(_pageCache, _defaultCommandSenderFactory);
     }
 
     @Override

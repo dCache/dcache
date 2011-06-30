@@ -1,11 +1,12 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.dcache.webadmin.model.businessobjects.CellStatus;
+import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.webadmin.model.businessobjects.CellResponse;
 import org.dcache.webadmin.model.dataaccess.communication.impl.StringCommandMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -13,7 +14,9 @@ import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
+import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
+import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
@@ -30,50 +33,28 @@ public class StandardDomainsDAO implements DomainsDAO {
 
     private static final String EMPTY_STRING = "";
     private static final List<String> DOMAINS_PATH = Arrays.asList("domains");
-    private static final List<String> DOORS_PATH = Arrays.asList("doors");
-    private static final List<String> POOLS_PATH = Arrays.asList("pools");
     private static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardDomainsDAO.class);
     private DomainsXmlToObjectMapper _xmlToObjectMapper = new DomainsXmlToObjectMapper();
+    private PageInfoCache _pageCache;
     private CommandSenderFactory _commandSenderFactory;
 
-    public StandardDomainsDAO(CommandSenderFactory commandSenderFactory) {
+    public StandardDomainsDAO(PageInfoCache pageCache,
+            CommandSenderFactory commandSenderFactory) {
         _commandSenderFactory = commandSenderFactory;
+        _pageCache = pageCache;
     }
 
     @Override
     public Set<CellStatus> getCellStatuses() throws DAOException {
         _log.debug("getCellStatuses called");
-        try {
-            Set<String> doors = tryToGetAllDoorNames();
-            Set<String> pools = tryToGetAllPoolNames();
-            return tryToGetCellStatuses(doors, pools);
-        } catch (ParsingException ex) {
-            throw new DAOException(ex);
-        } catch (DataGatheringException ex) {
-            throw new DAOException(ex);
+        Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
+                ContextPaths.CELLINFO_LIST);
+        if (states != null) {
+            return states;
+        } else {
+            return Collections.EMPTY_SET;
         }
-    }
-
-    private Set<String> tryToGetAllDoorNames() throws DataGatheringException,
-            ParsingException {
-        String serialisedXML = getXmlForStatePath(DOORS_PATH);
-        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
-        return _xmlToObjectMapper.parseDoorList(xmlDocument);
-    }
-
-    private Set<String> tryToGetAllPoolNames() throws DataGatheringException, ParsingException {
-        String serialisedXML = getXmlForStatePath(POOLS_PATH);
-        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
-        return _xmlToObjectMapper.parsePoolsList(xmlDocument);
-    }
-
-    private Set<CellStatus> tryToGetCellStatuses(Set<String> doors,
-            Set<String> pools) throws DataGatheringException, ParsingException {
-
-        String serialisedXML = getXmlForStatePath(DOMAINS_PATH);
-        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
-        return _xmlToObjectMapper.parseDomainsDocument(doors, pools, xmlDocument);
     }
 
     private String getXmlForStatePath(List<String> statePath) throws DataGatheringException {

@@ -1,6 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,9 +27,9 @@ public class StandardMoverDAO implements MoverDAO {
     private PageInfoCache _pageCache;
     private CommandSenderFactory _commandSenderFactory;
 
-    public StandardMoverDAO(PageInfoCache domainContext,
+    public StandardMoverDAO(PageInfoCache pageCache,
             CommandSenderFactory commandSenderFactory) {
-        _pageCache = domainContext;
+        _pageCache = pageCache;
         _commandSenderFactory = commandSenderFactory;
     }
 
@@ -40,7 +40,7 @@ public class StandardMoverDAO implements MoverDAO {
         if (transfers != null) {
             return transfers;
         } else {
-            return new ArrayList<MoverInfo>();
+            return Collections.EMPTY_LIST;
         }
 
     }

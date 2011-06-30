@@ -13,7 +13,7 @@ public class CellServicesBean implements Comparable<CellServicesBean>,
     private String _domainName = "";
     private String _createdDateTime = "unknown";
     private String _version = "";
-    private String _ping = "unknown";
+    private long _ping = Long.MAX_VALUE;
     private int _threadCount = 0;
     private int _eventQueueSize = 0;
 
@@ -50,10 +50,10 @@ public class CellServicesBean implements Comparable<CellServicesBean>,
     }
 
     public String getPing() {
-        return _ping;
+        return (_ping != Long.MAX_VALUE) ? String.valueOf(_ping) : "not reached";
     }
 
-    public void setPing(String ping) {
+    public void setPing(long ping) {
         _ping = ping;
     }
 

@@ -2,8 +2,8 @@ package org.dcache.webadmin.controller.util;
 
 import java.util.List;
 import java.util.Map;
+import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
-import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;

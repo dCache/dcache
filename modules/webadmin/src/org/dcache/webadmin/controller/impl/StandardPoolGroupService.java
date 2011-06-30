@@ -8,8 +8,8 @@ import org.dcache.webadmin.view.beans.PoolGroupBean;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.webadmin.controller.util.BeanDataMapper;
-import org.dcache.webadmin.model.businessobjects.CellStatus;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
@@ -111,16 +111,12 @@ public class StandardPoolGroupService implements PoolGroupService {
     }
 
     private CellStatus getMatchingCellStatus(Pool pool, Set<CellStatus> cellStatuses) {
-        CellStatus result = null;
+        CellStatus result = new CellStatus(pool.getName());
         for (CellStatus cell : cellStatuses) {
             if (cell.getName().equals(pool.getName())) {
                 result = cell;
                 break;
             }
-        }
-        if (result == null) {
-            result = new CellStatus();
-            result.setName(pool.getName());
         }
         return result;
     }
