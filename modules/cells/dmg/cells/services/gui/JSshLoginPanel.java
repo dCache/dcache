@@ -16,17 +16,17 @@ import dmg.cells.applets.login.DomainObjectFrame ;
 import dmg.protocols.ssh.* ;
 /**
  */
-public class      JSshLoginPanel 
-       extends    JLoginPanel 
+public class      JSshLoginPanel
+       extends    JLoginPanel
        implements SshClientAuthentication {
-       
+
    private SshDomainConnection _connection = new SshDomainConnection() ;
    private ObjectOutputStream _objOut = null ;
    private ObjectInputStream  _objIn  = null ;
    private Socket             _socket = null ;
    public DomainConnection getDomainConnection(){ return _connection ; }
-   public JSshLoginPanel(){ 
-      super() ; 
+   public JSshLoginPanel(){
+      super() ;
       addActionListener(
          new ActionListener(){
             public void actionPerformed( ActionEvent event ){
@@ -61,7 +61,7 @@ public class      JSshLoginPanel
             ee.printStackTrace();
             setErrorMessage("Connection Broken");
          }finally{
-            try{ _socket.close() ;}catch( Exception ce ){}      
+            try{ _socket.close() ;}catch( IOException ce ){}
             _connection.informListenersClosed() ;
             displayLoginPanel() ;
          }
@@ -78,7 +78,7 @@ public class      JSshLoginPanel
           writer.flush() ;
           String  check  = null ;
           do{
-             check = reader.readLine()   ;      
+             check = reader.readLine()   ;
           }while( ! check.equals( "$BINARY$" ) ) ;
           setMessage("Binary acknowledged");
           _objOut = new ObjectOutputStream( engine.getOutputStream() ) ;
@@ -113,25 +113,25 @@ public class      JSshLoginPanel
   }
   //===============================================================================
   //
-  //   domain connection interface 
-  //  
+  //   domain connection interface
+  //
   public class SshDomainConnection implements DomainConnection {
      private Hashtable _packetHash = new Hashtable() ;
-     private Object    _ioLock     = new Object() ; 
+     private Object    _ioLock     = new Object() ;
      private int       _ioCounter  = 100 ;
      private Vector    _listener   = new Vector() ;
      private boolean   _connected  = false ;
-     
+
      public String getAuthenticatedUser(){ return getLogin() ; }
-     
-     public int sendObject( Object obj , 
+
+     public int sendObject( Object obj ,
                             DomainConnectionListener listener ,
-                            int id 
+                            int id
                                                  ) throws IOException {
          System.out.println("Sending : "+obj ) ;
          synchronized( _ioLock ){
              if( ! _connected )throw new IOException( "Not connected" ) ;
-             DomainObjectFrame frame = 
+             DomainObjectFrame frame =
                      new DomainObjectFrame( obj , ++_ioCounter , id ) ;
              _objOut.writeObject( frame ) ;
              _objOut.reset() ;
@@ -140,14 +140,14 @@ public class      JSshLoginPanel
          }
      }
      public int sendObject( String destination ,
-                            Object obj , 
+                            Object obj ,
                             DomainConnectionListener listener ,
-                            int id 
+                            int id
                                                  ) throws IOException {
          System.out.println("Sending : "+obj ) ;
          synchronized( _ioLock ){
              if( ! _connected )throw new IOException( "Not connected" ) ;
-             DomainObjectFrame frame = 
+             DomainObjectFrame frame =
                      new DomainObjectFrame( destination , obj , ++_ioCounter , id ) ;
              _objOut.writeObject( frame ) ;
              _objOut.reset() ;
@@ -205,8 +205,8 @@ public class      JSshLoginPanel
   /////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   //
-  //   Client Authentication interface 
-  //   
+  //   Client Authentication interface
+  //
   private int _requestCounter = 0 ;
   public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
@@ -224,15 +224,15 @@ public class      JSshLoginPanel
      System.out.println( "getUser : "+loginName ) ;
      return loginName ;
   }
-  public SshSharedKey  getSharedKey( InetAddress host ){ 
-     return null ; 
+  public SshSharedKey  getSharedKey( InetAddress host ){
+     return null ;
   }
 
-  public SshAuthMethod getAuthMethod(){  
+  public SshAuthMethod getAuthMethod(){
       String password = getPassword() ;
       System.out.println("getAuthMethod("+_requestCounter+") "+password) ;
-      return _requestCounter++ > 2 ? 
-             null : 
+      return _requestCounter++ > 2 ?
+             null :
              new SshAuthPassword( password) ;
   }
 }

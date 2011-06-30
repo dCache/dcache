@@ -116,7 +116,7 @@ public class       StateThread
         synchronized( _timerLock ){
            try{
               _timerLock.wait( _timerTime * 1000 ) ;
-           }catch(Exception ie ){}
+           }catch(InterruptedException ie ){}
            if( _workerThread != null )_workerThread.interrupt() ;
            _timerState = _timeoutState ;
            _workerThread  = new Thread( this ) ;

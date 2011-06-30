@@ -88,7 +88,7 @@ public class      AliasLoginCell
    public void   cleanUp(){
 
      _log.info( "Clean up called" ) ;
-     try{ _out.close() ; }catch(Exception ee){}
+     try { _out.close() ; } catch (IOException ee){}
      _log.info( "Removing routes" ) ;
      Enumeration e = _routes.elements() ;
      while( e.hasMoreElements() ){

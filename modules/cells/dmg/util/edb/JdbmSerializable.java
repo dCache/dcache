@@ -2,8 +2,8 @@ package dmg.util.edb ;
 
 import java.io.* ;
 
-public interface JdbmSerializable {
-   
+public interface JdbmSerializable extends Serializable {
+
     public static final int BASIC = 0x10 ;
     public static final int BUCKET_ELEMENT   = 0x11 ;
     public static final int BUCKET           = 0x12 ;
@@ -17,6 +17,6 @@ public interface JdbmSerializable {
            throws IOException ;
     public void readObject( ObjectInput in )
            throws IOException , ClassNotFoundException ;
-           
+
     public int getPersistentSize() ;
 }

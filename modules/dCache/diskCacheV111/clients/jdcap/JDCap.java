@@ -127,7 +127,7 @@ public class JDCap extends JFrame {
             }catch(Exception ioe ){
                _message.setText("IOException : "+ioe.getMessage() ) ;
             }
-            try{ c.close() ; }catch(Exception eee){}
+            try{ c.close() ; }catch(IOException eee){}
             _infoBar._button.setBackground(Color.magenta);
             vsp.close();
             _infoBar._button.setBackground(Color.white);

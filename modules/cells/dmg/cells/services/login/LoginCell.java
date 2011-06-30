@@ -157,7 +157,7 @@ public class      LoginCell
 
      _log.info( "Clean up called" ) ;
      println("");
-     try{ _out.close() ; }catch(Exception ee){}
+     _out.close();
      _readyGate.check() ;
      _log.info( "finished" ) ;
 

@@ -57,8 +57,6 @@ public class Args implements java.io.Serializable {
    }
    public Dictionary  options() { return _optHash ; }
 
-   public Object clone(){ return new Args( this ) ; }
-
    public String toString(){ return _line ; }
    public String getInfo(){
       StringBuffer sb = new StringBuffer() ;

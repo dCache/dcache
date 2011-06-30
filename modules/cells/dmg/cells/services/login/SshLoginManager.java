@@ -124,7 +124,7 @@ public class       SshLoginManager
   public void cleanUp(){
      _log.info( "cleanUp requested by nucleus, closing listen socket" ) ;
      if( _serverSocket != null )
-       try{ _serverSocket.close() ; }catch(Exception eee){}
+       try{ _serverSocket.close() ; }catch(IOException eee){}
      _log.info( "Bye Bye" ) ;
   }
   private void acceptConnections(){

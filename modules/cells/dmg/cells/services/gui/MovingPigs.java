@@ -7,10 +7,10 @@ import javax.swing.*;
 import java.util.*;
 import java.io.*;
 
-public class      MovingPigs 
-       extends    JPanel 
+public class      MovingPigs
+       extends    JPanel
        implements MouseListener, MouseMotionListener {
-            
+
     private  HashMap   _list = new HashMap() ;
     private  Item      _cursor = null ;
     private  Point     _offset = new Point() ;
@@ -29,24 +29,24 @@ public class      MovingPigs
     private  Dimension  _dimension = null ;
     private  Rectangle  _shutdown  = null ;
     private  Random     _random    = new Random( new Date().getTime() ) ;
-    private  static Color black = new Color(20, 20, 20); 
-    private  static Color white = new Color(240, 240, 255); 
+    private  static Color black = new Color(20, 20, 20);
+    private  static Color white = new Color(240, 240, 255);
     private  static Color red = new Color(149, 43, 42);
-    private  static Color blue = new Color(94, 105, 176); 
+    private  static Color blue = new Color(94, 105, 176);
     private  static Color yellow = new Color(255, 255, 140);
-    
+
     public class Item {
 
-       private Rectangle _r = null ; 
-       private Color     _c = null ; 
+       private Rectangle _r = null ;
+       private Color     _c = null ;
        private String    _s = null ;
        private double    _nextX = -1.0 , _nextY = -1.0 ;
        private int       _frame = 8 ;
-       
+
        private boolean   _doesListen   = false ;
        private HashMap   _links        = new HashMap() ;
        private Item      _defaultRoute = null ;
-       
+
        private Item( String string , Color c ){
           _s = string ;
           _c = c ;
@@ -59,17 +59,17 @@ public class      MovingPigs
           }
        }
        public synchronized void setListener( boolean listen ){
-           _doesListen = listen ; 
+           _doesListen = listen ;
            repaint() ;
        }
        public boolean isListener(){ return _doesListen ; }
-       
-       public synchronized void setDefaultRoute( Item item ){ 
-          _defaultRoute = item ; 
+
+       public synchronized void setDefaultRoute( Item item ){
+          _defaultRoute = item ;
           repaint() ;
        }
        public synchronized Item getDefaultRoute(){ return _defaultRoute ; }
-       
+
        private synchronized void setPosition( Point p ){
           _r.x = p.x  ; _r.y = p.y ;
           repaint() ;
@@ -82,7 +82,7 @@ public class      MovingPigs
            _r.x = (int)( (double)_r.x / (double)oldDim.width * (double)newDim.width );
            _r.y = (int)( (double)_r.y / (double)oldDim.height * (double)newDim.height );
        }
-       private Point getCenter(){ 
+       private Point getCenter(){
           Point p = new Point( _r.x + _r.width/2 , _r.y + _r.height/2 ) ;
 //          System.out.println(" center of "+_s+" : "+p ) ;
           return p ;
@@ -125,10 +125,10 @@ public class      MovingPigs
        private synchronized void draw( Graphics g ){
 
           recalculate( g ) ;
-          
+
           g.setColor( _c ) ;
           g.fill3DRect( _r.x , _r.y , _r.width , _r.height , _mode ) ;
-          
+
           g.setColor(_textColor);
           if( _doesListen ){
              int [] x = new int[3] ;
@@ -159,15 +159,15 @@ public class      MovingPigs
     private void createPopup(){
         JMenuItem      mi = null ;
         ActionListener al = null ;
-        
+
         _popup = new JPopupMenu("Edit") ;
         _edit  = new JMenu("Edit") ;
-        
+
         _popup.setBorderPainted(true);
-        
+
         al= new ActionListener(){
               public void actionPerformed(ActionEvent e){
-                 String string = 
+                 String string =
                      JOptionPane.showInputDialog(
                           MovingPigs.this,"Name of new Domain") ;
                  if( string != null ){
@@ -177,18 +177,18 @@ public class      MovingPigs
            } ;
         mi = _popup.add( new JMenuItem("New Domain") ) ;
         mi.addActionListener(al) ;
-        
+
         mi = _edit.add(new JMenuItem("New Domain")) ;
         mi.addActionListener(al) ;
-        mi.setAccelerator( 
+        mi.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_D,InputEvent.CTRL_MASK,false) ) ;
 
-        _edit.addSeparator() ;        
+        _edit.addSeparator() ;
         _popup.addSeparator() ;
-        
+
         al = new ActionListener(){
               public void actionPerformed(ActionEvent e){
-                 _backgroundColor = 
+                 _backgroundColor =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the bg color",Color.red) ;
                  if( _backgroundColor != null ){
                     MovingPigs.this.setBackground(_backgroundColor) ;
@@ -201,10 +201,10 @@ public class      MovingPigs
         mi.addActionListener( al ) ;
         mi = _edit.add(new JMenuItem("Background Color")) ;
         mi.addActionListener( al ) ;
-        
+
         al = new ActionListener(){
               public void actionPerformed(ActionEvent e){
-                 Color color = 
+                 Color color =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the item color",Color.red) ;
                  if( color != null ){
                     _itemColor = color ;
@@ -217,10 +217,10 @@ public class      MovingPigs
         mi.addActionListener(al) ;
         mi = _edit.add( new JMenuItem("Item Color")) ;
         mi.addActionListener(al) ;
-        
+
         al = new ActionListener(){
               public void actionPerformed(ActionEvent e){
-                 _textColor = 
+                 _textColor =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the text color",Color.red) ;
                  if( _textColor != null ){
                     MovingPigs.this.repaint() ;
@@ -235,7 +235,7 @@ public class      MovingPigs
 
         al = new ActionListener(){
               public void actionPerformed(ActionEvent e){
-                 _linkColor = 
+                 _linkColor =
                      JColorChooser.showDialog(MovingPigs.this,"Choose the link color",Color.red) ;
                  if( _linkColor != null ){
                     MovingPigs.this.repaint() ;
@@ -247,14 +247,14 @@ public class      MovingPigs
         mi.addActionListener(al) ;
         mi = _edit.add( new JMenuItem("Link Color") ) ;
         mi.addActionListener(al) ;
-        
-        _edit.addSeparator() ;        
+
+        _edit.addSeparator() ;
         _popup.addSeparator() ;
-        
-        
+
+
         JMenu submenu = null ;
 
-        al = new ActionListener(){      
+        al = new ActionListener(){
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
                _currentFontType = ac ;
@@ -262,7 +262,7 @@ public class      MovingPigs
                repaint() ;
            }
         } ;
-        String [] fontTypes = { "Times" , "Courier" , "LucidaBright" } ;        
+        String [] fontTypes = { "Times" , "Courier" , "LucidaBright" } ;
         submenu = new JMenu("Font Type") ;
         for( int i = 0 ; i < fontTypes.length ; i++ ){
            mi = submenu.add( new JMenuItem( fontTypes[i] ) ) ;
@@ -271,18 +271,18 @@ public class      MovingPigs
         }
         _edit.add( submenu ) ;
 
-        al = new ActionListener(){      
+        al = new ActionListener(){
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
                try{
                   _currentFontSize = Integer.parseInt( ac ) ;
-               }catch(Exception eee){}
+               }catch(NumberFormatException eee){}
                _font = new Font( _currentFontType , _currentFontMode , _currentFontSize ) ;
                repaint() ;
            }
         } ;
-        
-        String [] fontSizes = { "8" , "10" , "12" , "14" , "16" } ;        
+
+        String [] fontSizes = { "8" , "10" , "12" , "14" , "16" } ;
         submenu = new JMenu("Font Size") ;
         for( int i = 0 ; i < fontSizes.length ; i++ ){
            mi = submenu.add( new JMenuItem( fontSizes[i] ) ) ;
@@ -291,7 +291,7 @@ public class      MovingPigs
         }
         _edit.add( submenu ) ;
 
-        al = new ActionListener(){      
+        al = new ActionListener(){
            public void actionPerformed( ActionEvent event ){
                String ac = event.getActionCommand() ;
                if( ac.equals("Plain") )_currentFontMode = 0 ;
@@ -302,7 +302,7 @@ public class      MovingPigs
                repaint() ;
            }
         } ;
-        String [] fontModes = { "Plain" , "Italic" , "Bold" , "BoldItalic"  } ;        
+        String [] fontModes = { "Plain" , "Italic" , "Bold" , "BoldItalic"  } ;
         submenu = new JMenu("Font Mode") ;
         for( int i = 0 ; i < fontModes.length ; i++ ){
            mi = submenu.add( new JMenuItem( fontModes[i] ) ) ;
@@ -310,9 +310,9 @@ public class      MovingPigs
            submenu.add(mi) ;
         }
         _edit.add( submenu ) ;
-        
+
         _edit.addSeparator() ;
-        al = new ActionListener(){      
+        al = new ActionListener(){
            public void actionPerformed( ActionEvent event ){
               Iterator i = items() ;
               while( i.hasNext() ){
@@ -323,24 +323,24 @@ public class      MovingPigs
         } ;
         mi = _edit.add( new JMenuItem("Revert Position") ) ;
         mi.addActionListener(al) ;
-        mi.setAccelerator( 
+        mi.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_X,InputEvent.CTRL_MASK,false) ) ;
-        
-        al = new ActionListener(){      
+
+        al = new ActionListener(){
            public void actionPerformed( ActionEvent event ){
               shutdown();
            }
         } ;
         mi = _edit.add( new JMenuItem("Shutdown") ) ;
         mi.addActionListener(al) ;
-        mi.setAccelerator( 
+        mi.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_Z,InputEvent.CTRL_MASK,false) ) ;
-        
-        
-        
+
+
+
     }
     public void shutdown(){
-       new Thread( 
+       new Thread(
           new Runnable(){
              public void run(){
                 _shutdown = new Rectangle() ;
@@ -388,8 +388,8 @@ public class      MovingPigs
           addActionListener(
               new ActionListener(){
                  public void actionPerformed( ActionEvent event ){
-                 
-                   Color color =  
+
+                   Color color =
                      JColorChooser.showDialog(
                                MovingPigs.this,
                                "Choose Color",
@@ -423,20 +423,20 @@ public class      MovingPigs
     public JComponent getEditMenu(){ return _edit ; }
     private JPopupMenu createPrivateMenu( final Item item ){
         JPopupMenu popup = new JPopupMenu( item.getName() ) ;
-        
-        
+
+
         JMenu submenu = null ;
         Iterator i    = null ;
         i = items() ;
         int counter = 0 ;
         while( i.hasNext() ){
            Item toLink = (Item)i.next() ;
-           if( toLink.hasLink(item) )counter++ ;         
+           if( toLink.hasLink(item) )counter++ ;
         }
         JMenuItem mi = new JMenuItem( item.isListener() ? "Don't Listen" : "Listen" ) ;
         mi.setEnabled( counter == 0 ) ;
         popup.add( mi ) ;
-        mi.addActionListener( 
+        mi.addActionListener(
            new ActionListener(){
               public void actionPerformed(ActionEvent e){
                  item.setListener( ! item.isListener() ) ;
@@ -450,7 +450,7 @@ public class      MovingPigs
         while( i.hasNext() ){
            Item linkItem = (Item)i.next() ;
            if( linkItem.getName().equals( item.getName() ) )continue ;
-           submenu.add( 
+           submenu.add(
               new CreateLinkMenuItem(item,linkItem,true)
            );
         }
@@ -460,29 +460,29 @@ public class      MovingPigs
         i = item.links() ;
         while( i.hasNext() ){
            Item linkItem = (Item)i.next() ;
-           submenu.add( 
+           submenu.add(
               new CreateLinkMenuItem(item,linkItem,false)
            );
         }
         popup.add( submenu ) ;
-        
+
         popup.addSeparator() ;
-        
+
         popup.add( new DeleteMenuItem(item));
 
         popup.addSeparator() ;
-        
+
         popup.add( new SetColorMenuItem(item));
 
         return popup ;
     }
-    private JPopupMenu createPrivateLineMenu( final Item from , 
+    private JPopupMenu createPrivateLineMenu( final Item from ,
                                               final Item to     ){
         JPopupMenu popup = new JPopupMenu( from.getName() ) ;
-        JMenuItem mi = null ;   
+        JMenuItem mi = null ;
 
         mi = popup.add( new JMenuItem("Remove This Link") ) ;
-        mi.addActionListener( 
+        mi.addActionListener(
            new ActionListener(){
               public void actionPerformed(ActionEvent e){
                  from.removeLink(to.getName()) ;
@@ -491,12 +491,12 @@ public class      MovingPigs
               }
            }
         ) ;
-        
+
         popup.addSeparator() ;
-        
+
         mi = popup.add( new JMenuItem("Set Default Route") ) ;
         mi.setEnabled( from.getDefaultRoute() != to ) ;
-        mi.addActionListener( 
+        mi.addActionListener(
            new ActionListener(){
               public void actionPerformed(ActionEvent e){
                  from.setDefaultRoute(to) ;
@@ -504,10 +504,10 @@ public class      MovingPigs
               }
            }
         ) ;
-        
+
         mi = popup.add( new JMenuItem("Remove Default Route") ) ;
         mi.setEnabled( from.getDefaultRoute() == to ) ;
-        mi.addActionListener( 
+        mi.addActionListener(
            new ActionListener(){
               public void actionPerformed(ActionEvent e){
                  from.setDefaultRoute(null) ;
@@ -524,20 +524,20 @@ public class      MovingPigs
         createPopup() ;
     }
     public Item getItem( String name ){ return getItem( name , false ) ; }
-    
-    public Item getItem( String name , boolean create ){ 
-       Item item = (Item)_list.get(name) ; 
+
+    public Item getItem( String name , boolean create ){
+       Item item = (Item)_list.get(name) ;
        if( item == null ){
           if( ! create )return null ;
-          item = new Item( name , _itemColor ) ;  
-          _list.put( name , item ) ;     
+          item = new Item( name , _itemColor ) ;
+          _list.put( name , item ) ;
        }
        repaint() ; // DON'T REMOVE
        return item ;
     }
     public Iterator items(){ return _list.values().iterator() ; }
     public synchronized void addItem( String name ){
-    
+
        if( _list.get(name) == null )getItem(name,true) ;
 
     }
@@ -555,28 +555,28 @@ public class      MovingPigs
        x.addLink(y) ;
        repaint();
     }
-    
-    
+
+
     private Polygon getTriangle( Point from , Point to ){
         double  nu = 20 ;
         double  mu = 10 ;
-        
+
         Polygon triangle = new Polygon() ;
-        
+
         Point N   = new Point( to.x - from.x , to.y - from.y ) ;
         double NN =  ((double)N.x) *((double)N.x)+((double)N.y) *((double)N.y) ;
         NN        = Math.sqrt(NN) ;
-        
+
         Point  M  = new Point( N.y , - N.x ) ;
         double MM =  ((double)M.x) *((double)M.x)+((double)M.y) *((double)M.y) ;
-        
+
         double tmp = 0.5 + nu / NN ;
-        
+
         triangle.addPoint( (int)( tmp * (double)N.x )  +  from.x ,
                            (int)( tmp * (double)N.y )  +  from.y  ) ;
         tmp = 0.5 - nu / NN ;
         MM  = Math.sqrt(MM) ;
-        
+
         triangle.addPoint( (int)( tmp * (double)N.x + mu * M.x / MM ) + from.x ,
                            (int)( tmp * (double)N.y + mu * M.y / MM ) + from.y  ) ;
 
@@ -585,24 +585,24 @@ public class      MovingPigs
 
         triangle.addPoint( (int)( tmp * (double)N.x - mu * M.x / MM ) + from.x ,
                            (int)( tmp * (double)N.y - mu * M.y / MM ) + from.y  ) ;
-              
+
         return triangle ;
     }
     private Point getDistance( Point from , Point to , Point p ){
         Point N  = new Point( to.x - from.x , to.y - from.y ) ;
         Point P  = new Point( p.x - from.x , p.y - from.y ) ;
-        
+
         double NN =  ((double)N.x) *((double)N.x)+((double)N.y) *((double)N.y) ;
-        
+
         double NP = ((double)N.x)*((double)P.x)+((double)N.y)*((double)P.y) ;
 
         double mu =   NP / NN  ;
         if( ( mu < 0.0 ) || ( mu > 1.0 ) )return null ;
-        
+
         double PP = ((double)P.x) *((double)P.x)+((double)P.y) *((double)P.y) ;
-        
+
         double dd = PP + NP*NP/NN - 2.0 * NP * NP / NN ;
-        
+
         return new Point( mu < 0.5 ? -1 : 1 , (int)dd ) ;
     }
     public void paintComponent( Graphics g ){
@@ -618,13 +618,13 @@ public class      MovingPigs
        Color c = g.getColor() ;
        g.setColor(_linkColor) ;
        while( iter.hasNext() ){
-       
+
           Item     item = (Item)iter.next() ;
           item.recalculate(g) ; // nasty but we need it
           Item     def  = item.getDefaultRoute() ;
           Point    t    = item.getCenter() ;
           Iterator n    = item.links() ;
-          
+
           while( n.hasNext() ){
               Item  linkTo  = (Item)n.next() ;
               linkTo.recalculate(g) ;
@@ -634,7 +634,7 @@ public class      MovingPigs
                   drawCircle( g , t , pointTo ) ;
               if( linkTo.getDefaultRoute() == item )
                   drawCircle( g , pointTo , t ) ;
-              
+
               g.fillPolygon( getTriangle( t , pointTo ) ) ;
           }
        }
@@ -651,7 +651,7 @@ public class      MovingPigs
           g.setPaintMode() ;
        }
        if( _shutdown != null )
-            g.fillRect( _shutdown.x , 
+            g.fillRect( _shutdown.x ,
                         _shutdown.y,
                         _shutdown.width ,
                         _shutdown.height ) ;
@@ -692,7 +692,7 @@ public class      MovingPigs
       }
     }
     public void mousePressed( MouseEvent e ){
-       
+
       Point p = e.getPoint() ;
       //
       // first check if we hit an item
@@ -705,7 +705,7 @@ public class      MovingPigs
                createPrivateMenu(item).show(this,p.x,p.y) ;
                return ;
             }
-            _cursor = item ; 
+            _cursor = item ;
             _offset.x = p.x - item._r.x  ;
             _offset.y = p.y - item._r.y  ;
             repaint() ;
@@ -731,7 +731,7 @@ public class      MovingPigs
                       diff.x < 0 ? toItem : item    ).show(this,p.x,p.y) ;
                    return ;
                 }
-            }         
+            }
          }
       }
       //
@@ -801,19 +801,19 @@ public class      MovingPigs
        }
     }
     private void moveToRevert( Item item ){
-       moveTo( item , 
+       moveTo( item ,
        (double)( _dimension.width  - item._r.x -item._r.width  ) / (double)_dimension.width ,
        (double)( _dimension.height - item._r.y -item._r.height ) / (double)_dimension.height  ) ;
     }
     private void moveTo( final Item item , final double newX , final double newY ){
-     new Thread( 
+     new Thread(
            new Runnable(){
                public void run(){
        double x = (double)item._r.x  / (double) _dimension.width ;
        double y = (double)item._r.y  / (double) _dimension.height ;
        double diffX = newX - x ;
        double diffY = newY - y ;
-       
+
        try{
           for( double gamma = 0.0 ; gamma < 1.0 ; gamma += 0.02 ){
              item.setPosition( gamma * diffX + x , gamma * diffY + y ) ;
@@ -822,7 +822,7 @@ public class      MovingPigs
           }
        }catch(Exception ee){}
        item.setPosition( newX , newY ) ;
-       
+
                }
             }
       ).start() ;
@@ -830,7 +830,7 @@ public class      MovingPigs
     public String command( String command ){
        if( command.length() < 2 )return null ;
        if( command.charAt(0) == '#' )return command( command.substring(1) ) ;
-       
+
        StringTokenizer st = new StringTokenizer( command ) ;
        int count = st.countTokens() ;
        String [] c = new String[count] ;
@@ -840,7 +840,7 @@ public class      MovingPigs
    private static Color colorByString( String string ){
        StringTokenizer st = new StringTokenizer(string,",") ;
        try{
-          return new Color( 
+          return new Color(
                        Integer.parseInt(st.nextToken()) ,
                        Integer.parseInt(st.nextToken()) ,
                        Integer.parseInt(st.nextToken())  ) ;
@@ -857,7 +857,7 @@ public class      MovingPigs
           if( c.length < 2 )return null ;
           Item item = null ;
           for( int i = 1 ; i < c.length ; i++ ){
-             item = getItem(c[i],true) ;         
+             item = getItem(c[i],true) ;
              item.setListener(true) ;
           }
        }else if( c[0].equals( "defaultroute" ) ){
@@ -894,7 +894,7 @@ public class      MovingPigs
                               Integer.parseInt(c[3]) ,
                               Integer.parseInt(c[4]) ,
                               Integer.parseInt(c[5])  ) ;
-             
+
              if( c[1].equals("*") ){
                 if( c[2].equals("background") ){
                    _backgroundColor = cc ;
@@ -906,11 +906,11 @@ public class      MovingPigs
                 }else if( c[2].equals("link") ){
                    _linkColor = cc ;
                 }
-             }else{                
+             }else{
                 Item item = getItem(c[1],true) ;
                 if( c[2].equals("background") ){
                    item._c = cc ;
-                } 
+                }
              }
              repaint() ;
           }catch(Exception ii){

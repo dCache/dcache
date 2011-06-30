@@ -46,7 +46,7 @@ public class VspListener implements Runnable {
        private DataInputStream _dataIn  = null ;
        private DataOutputStream _dataOut = null ;
        private Thread _worker = null ;
-       private IoChannel( Socket socket , int session )throws Exception {
+       private IoChannel( Socket socket , int session ) throws IOException {
           _session = session ;
           _socket = socket ;
           try{
@@ -58,9 +58,9 @@ public class VspListener implements Runnable {
              int chSize = _dataIn.readInt() ;
              say( "Challenge Size is "+chSize ) ;
              _dataIn.skipBytes(chSize) ;
-          }catch(Exception e){
+          }catch(IOException e){
              System.err.println( "["+_session+"] : exc : "+e ) ;
-             try{ _socket.close() ; }catch(Exception ii ){}
+             try{ _socket.close() ; }catch(IOException ii ){}
              throw e ;
           }
           _worker = new Thread( this ) ;
@@ -140,7 +140,7 @@ public class VspListener implements Runnable {
              }
           }
         }catch(Exception e ){
-          try{ _socket.close() ; }catch(Exception ii ){}
+          try{ _socket.close() ; }catch(IOException ii ){}
           _hash.remove( Integer.valueOf(_session) ) ;
         }
        }
@@ -271,12 +271,10 @@ public class VspListener implements Runnable {
                Socket socket  = _listen.accept() ;
                _counter ++ ;
                System.out.println( "[m] Connection accepted : ["+_counter+"]" ) ;
-               try{
-                  _hash.put(
-                     Integer.valueOf(_counter) ,
-                     new IoChannel( socket , _counter )
-                           ) ;
-               }catch(Exception iii ){}
+               try {
+                   _hash.put(_counter, new IoChannel(socket, _counter));
+               } catch (IOException e) {
+               }
            }
          }
         }catch(IOException ioe ){

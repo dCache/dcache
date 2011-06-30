@@ -506,7 +506,7 @@ public class BillingDB {
                     Thread.sleep(_maxTimeBeforeCommit);
                     // do only if something to do
                     doCommitIfNeeded(true);
-                } catch ( Exception ingnored ) {}
+                } catch ( InterruptedException ingnored ) {}
             }
         }
     }

@@ -12,7 +12,7 @@ import dmg.cells.applets.login.DomainObjectFrame ;
 import dmg.protocols.ssh.* ;
 /**
  */
-public class Ssh1DomainConnection 
+public class Ssh1DomainConnection
        extends DomainConnectionAdapter
        implements SshClientAuthentication {
 
@@ -28,41 +28,41 @@ public class Ssh1DomainConnection
       _portnumber = portnumber ;
    }
    public void go() throws Exception {
-   
+
       _socket = new Socket( _hostname , _portnumber ) ;
       SshStreamEngine engine  = new SshStreamEngine( _socket , this ) ;
 
-      setIoStreams( engine.getInputStream() , 
+      setIoStreams( engine.getInputStream() ,
                     engine.getOutputStream(),
                     engine.getReader() ,
                     engine.getWriter() );
-      
+
       try{
          super.go() ;
       }finally{
          try{ _socket.close() ; }catch(Exception ee ){}
       }
-      
+
    }
-   public void setLoginName( String name ){ 
+   public void setLoginName( String name ){
       _loginName = name ;
    }
    public void setPassword( String password ){
       _password = password ;
    }
    public void setIdentityFile( File identityFile ) throws Exception {
-   
+
        InputStream in  = new FileInputStream(identityFile) ;
        SshRsaKey   key = new SshRsaKey( in ) ;
        try{ in.close() ; }catch(Exception ee ){}
-       
+
        _rsaAuth = new SshAuthRsa( key ) ;
-       
+
    }
    ////////////////////////////////////////////////////////////////////////////////////////
    //
-   //   Client Authentication interface 
-   //   
+   //   Client Authentication interface
+   //
    private int _requestCounter = 0 ;
    public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
@@ -78,11 +78,11 @@ public class Ssh1DomainConnection
       _requestCounter = 0 ;
       return _loginName ;
    }
-   public SshSharedKey  getSharedKey( InetAddress host ){ 
-      return null ; 
+   public SshSharedKey  getSharedKey( InetAddress host ){
+      return null ;
    }
    public SshAuthMethod getAuthMethod(){
-    
+
        SshAuthMethod result = null ;
        if( _requestCounter++ == 0 ){
           if( _rsaAuth == null )result = new SshAuthPassword( _password ) ;
@@ -97,7 +97,7 @@ public class Ssh1DomainConnection
     }
    public static void main( String [] args )throws Exception {
       if( args.length < 2 ){
-      
+
           System.err.println("Usage : <hostname> <portNumber>");
           System.exit(4);
       }
@@ -110,15 +110,15 @@ public class Ssh1DomainConnection
 
 
    }
-   private class RunConnection 
+   private class RunConnection
            implements Runnable, DomainConnectionListener, DomainEventListener {
-      
-        
+
+
       public RunConnection(  ) throws Exception {
          System.out.println("class runConnection init");
          addDomainEventListener(this);
          setLoginName("admin");
-         setIdentityFile( new File("/home/patrick/.ssh/identity" ) );
+         setIdentityFile( new File(System.getProperty("user.home") + "/.ssh/identity" ) );
          setPassword("dickerelch");
          new Thread(this).start() ;
       }
@@ -139,7 +139,7 @@ public class Ssh1DomainConnection
                 System.out.println("Exception in sendObject"+ee);
              }
           }
-      } 
+      }
       public void connectionOpened( DomainConnection connection ){
          System.out.println("DomainConnection : connectionOpened");
          try{

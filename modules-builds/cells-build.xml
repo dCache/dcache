@@ -105,6 +105,7 @@
         <fileset dir="${libDir}/cog" includes="**/*.jar" excludes="**/commons-logging-*.jar"/>
         <fileset dir="${libDir}/jline" includes="jline*.jar" />
         <pathelement location="${classesDir}/dcache-common.jar" />
+        <pathelement location="${libDir}/findbugs/lib/annotations.jar"/>
         <path refid="dependency.classpath" />
     </path>
 

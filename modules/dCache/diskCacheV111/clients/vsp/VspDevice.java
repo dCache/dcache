@@ -343,8 +343,8 @@ public class      VspDevice
              if( _debug )ee.printStackTrace() ;
              setFailed(ee.toString()) ;
           }
-          try{ _dataIn.close() ;}catch(Exception ee ){}
-          try{ _dataOut.close() ;} catch(Exception ee ){}
+          try{ _dataIn.close() ;}catch(IOException ee ){}
+          try{ _dataOut.close() ;} catch(IOException ee ){}
           say( "Worker finished" ) ;
        }
        private void doTheWriteData(){
@@ -659,10 +659,10 @@ public class      VspDevice
       say( "sending interrupt to service thread" ) ;
       _serviceThread.interrupt() ;
       say( "CloseAll done" ) ;
-      try{ if(_in!=null)_in.close() ;}catch(Exception ee){}
-      try{ if(_out!=null)_out.close() ;}catch(Exception ee){}
-      try{ if(_door!=null)_door.close() ;}catch(Exception ee ){}
-      try{ if(_listen!=null)_listen.close() ;}catch(Exception ee ){}
+      try{ if(_in!=null)_in.close() ;}catch(IOException ee){}
+      if(_out!=null)_out.close();
+      try{ if(_door!=null)_door.close() ;}catch(IOException ee ){}
+      try{ if(_listen!=null)_listen.close() ;}catch(IOException ee ){}
    }
    public static void main( String [] args ) throws Exception {
        if( args.length < 4 ){

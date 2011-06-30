@@ -19,21 +19,21 @@ public class DomainConnection implements Runnable {
    private int                _port = 0 ;
    private DomainConnectionListener _listener = null ;
    private boolean  _inUse = false , _ok = false ;
-  
+
    public DomainConnection( String host , int port ) {
-       _host = host ; 
+       _host = host ;
        _port = port ;
    }
    public void addConnectionListener( DomainConnectionListener listener ){
        _listener = listener ;
    }
    public void connect() throws Exception {
-   
-      synchronized( this ){ 
-          if( _inUse )throw new Exception( "Still In Use" ) ; 
+
+      synchronized( this ){
+          if( _inUse )throw new Exception( "Still In Use" ) ;
           _inUse = true ;
       }
-      
+
       _listen  = new Thread( this ) ;
       _listen.start() ;
    }
@@ -44,7 +44,7 @@ public class DomainConnection implements Runnable {
          _in      = new ObjectInputStream( _socket.getInputStream() ) ;
       }catch( Exception e ){
          if( _listener != null )
-             _listener.connectionFailed( 
+             _listener.connectionFailed(
                  new DomainConnectionEvent( this , "Problem : "+e.toString() ) ) ;
          synchronized( this ){
            _inUse = false ;
@@ -62,12 +62,12 @@ public class DomainConnection implements Runnable {
              if( ( o == null ) ||
                 ! ( o instanceof MessageObjectFrame ) )
                 throw new Exception("Protocol violation") ;
-                
+
              MessageObjectFrame frame = (MessageObjectFrame)o ;
              FrameArrivable client = (FrameArrivable)_hash.get( frame ) ;
              if( client == null ){
                 System.err.println( "Client not found" ) ;
-                continue ;               
+                continue ;
              }
              client.frameArrived( frame ) ;
          }
@@ -76,23 +76,23 @@ public class DomainConnection implements Runnable {
          synchronized( this ){ _ok = false ; }
 //         System.out.println( "Calling listener") ;
          if( _listener != null )
-             _listener.connectionDeactivated( 
+             _listener.connectionDeactivated(
                  new DomainConnectionEvent( this , "Connection Closed : "+e.toString()) ) ;
 //         System.out.println( "Connection closed by foreign host "+e ) ;
-         try{ _out.close() ; }catch(Exception ee){} ;      
-         try{ _in.close() ; }catch(Exception ee){} ;      
-         try{ _socket.close() ; }catch(Exception ee){} ;      
+         try{ _out.close() ; }catch(IOException ee){} ;
+         try{ _in.close() ; }catch(IOException ee){} ;
+         try{ _socket.close() ; }catch(IOException ee){} ;
          synchronized( this ){ _inUse = false ; }
      }
 
    }
    public void send( String cell , Object obj , FrameArrivable client ){
-   
+
       synchronized( this ){ if( ! _ok )return ; }
-      
+
       try{
          int next = _counter++ ;
-         MessageObjectFrame frame = 
+         MessageObjectFrame frame =
             new MessageObjectFrame( next , new CellPath( cell ) , obj ) ;
          _hash.put( frame , client ) ;
          _out.writeObject( frame ) ;
@@ -102,11 +102,11 @@ public class DomainConnection implements Runnable {
          System.err.println( "Send Problem : "+e ) ;
       }
    }
-   public void close(){ 
+   public void close(){
 //      System.out.println( "Close called" ) ;
       synchronized( this ){ if( ! _ok )return ; }
 //      System.out.println( "Close starting" ) ;
-//      try{ _socket.close() ; }catch(Exception e){} ; 
+//      try{ _socket.close() ; }catch(Exception e){} ;
       try{
          _out.writeObject( "BYE BYE" ) ;
          _out.flush() ;
@@ -117,4 +117,4 @@ public class DomainConnection implements Runnable {
    }
 
 }
- 
+

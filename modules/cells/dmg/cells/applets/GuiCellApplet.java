@@ -7,15 +7,15 @@ import java.awt.event.* ;
 import dmg.util.* ;
 import dmg.cells.nucleus.* ;
 
-public class      GuiCellApplet 
-       extends    Applet 
+public class      GuiCellApplet
+       extends    Applet
        implements ActionListener, Runnable       {
-       
+
   LogoCanvas _logo  ;
   int        _state = 0 ;
   int        _counter = 0 ;
   Thread     _timer   ;
-  
+
   private  void engine( boolean force ){
        _counter -- ;
        showStatus( " Counter "+_counter+" state "+_state+" Mode "+force ) ;
@@ -27,7 +27,7 @@ public class      GuiCellApplet
                      _counter = 4 ;
                      _state   = 1 ;
                      System.out.println( " leaving wait " ) ;
-            break ;                     
+            break ;
             case 1 : _logo.animation( LogoCanvas.SNOW ) ;
                      _counter = 20 ;
                      _state   = 2 ;
@@ -35,27 +35,30 @@ public class      GuiCellApplet
             case 2 : _logo.animation( LogoCanvas.SHRINKING ) ;
                      _counter = 100000 ;
                      _state   = 3 ;
-            break ; 
+            break ;
             case 3 : _logo.setString( "Connected" ) ;
                      _counter = 100000 ;
                      _state   = 4 ;
-            break ;  
-          }       
-       }    
-  
+            break ;
+          }
+       }
+
   }
   public void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( " Action : " + command ) ;
      engine(true);
      System.out.println( " Ready "  ) ;
-     
+
   }
   public void run(){
     if( Thread.currentThread() == _timer ){
      while(true){
-       try{ Thread.sleep(1000) ; }
-       catch( Exception e ){}
+       try {
+           Thread.sleep(1000) ;
+       } catch (InterruptedException e) {
+           System.err.println("Ignored: " + e.getMessage());
+       }
        engine(false);
      }
     }
@@ -63,7 +66,7 @@ public class      GuiCellApplet
   public void init(){
       Dimension   d  = getSize() ;
       setLayout( new FlowLayout() ) ;
-      
+
       add( _logo = new LogoCanvas("Hallo") ) ;
       _logo.setSize(200,200);
       _logo.setActionListener( this ) ;
@@ -79,10 +82,10 @@ public class      GuiCellApplet
     _timer.start() ;
   }
   public void stop(){
-  
+
   }
   public void destroy(){
-  
-  }      
-       
+
+  }
+
 }

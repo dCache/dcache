@@ -372,9 +372,12 @@ public CellVersion getCellVersion(){
         _info.setHosts(hosts);
         _info.setPort(_listenThread.getListenPort());
         _info.setLoad(_currentLoad);
-        try{
+        try {
            sendMessage(new CellMessage(new CellPath(_loginBroker),_info));
-        }catch(Exception ee){}
+        } catch (NoRouteToCellException ee) {
+            _log.info("Failed to register with LoginBroker: {}",
+                      ee.getMessage());
+        }
      }
      public void getInfo( PrintWriter pw ){
         if( _loginBroker == null ){

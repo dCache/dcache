@@ -143,7 +143,7 @@ public class      Snmp
 
       try{
         _socket = new DatagramSocket() ;
-      }catch( Exception e ){}
+      }catch( SocketException e ){}
       _receiverThread = new Thread(this);
       _receiverThread.start();
       _senderThread = new Thread(this);

@@ -9,6 +9,8 @@ import  java.io.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+
 public class MemoryWatch extends CellAdapter implements Runnable {
 
    private final static Logger _log =
@@ -105,6 +107,11 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          }
       }
    }
+
+   @SuppressWarnings(
+       value="DM_GC",
+       justification="Although bad practice, the GC call is part of the design of the cell"
+   )
    public void run(){
       while( ! Thread.interrupted() ){
          try{

@@ -73,9 +73,9 @@ public class      VspClient
    private void serviceRun(){
       try{
 
-         Socket s = null ;
+         Socket s;
          int sessionId = 0 ;
-         DataInputStream data = null ;
+         DataInputStream data;
          while( ( s = _listen.accept() ) != null ){
             try{
                 data = new DataInputStream( s.getInputStream() ) ;
@@ -245,9 +245,9 @@ public class      VspClient
            System.err.println("Exception in run : "+e ) ;
 //           setResult(44,e.getMessage());
          }finally{
-           try{ _dataOut.close() ; }catch(Exception ee ){}
-           try{ _dataIn.close() ; }catch(Exception ee){}
-           try{ _socket.close() ; }catch(Exception ee){}
+           try{ _dataOut.close() ; }catch(IOException ee ){}
+           try{ _dataIn.close() ; }catch(IOException ee){}
+           try{ _socket.close() ; }catch(IOException ee){}
          }
          synchronized( _requestHash ){
              _ioFinished = true ;

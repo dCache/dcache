@@ -363,7 +363,9 @@ public class      SshStreamEngine
                   md5.update( cBytes ) ;
                   md5.update( sessionId ) ;
                   cBytes = md5.digest() ;
-               }catch( Exception eee ){}
+               }catch( Exception eee ){
+                   _log.warn("Ignored exception: {}", eee.toString());
+               }
                writePacket( new  SshCmsgAuthRsaResponse( cBytes ) ) ;
                state  = ST_RSA_RESPONSE ;
             }

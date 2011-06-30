@@ -9,14 +9,14 @@ import dmg.util.* ;
 import dmg.protocols.ssh.* ;
 
 
-public class      SshLoginPanel 
-       extends    SshActionPanel 
-       implements ActionListener, 
-                  Runnable, 
+public class      SshLoginPanel
+       extends    SshActionPanel
+       implements ActionListener,
+                  Runnable,
                   SshClientAuthentication,
                   DomainConnection          {
-       
-       
+
+
     private CardLayout  _cardsLayout ;
     private SshLoginFPPanel _fpPanel ;
 //    private SshLoginLGPanel _lgPanel ;
@@ -28,7 +28,7 @@ public class      SshLoginPanel
     private boolean         _hostKeyOk        = true ;
     private String _remoteHost = null , _remotePort = null ,
                    _remoteUser = null , _remotePassword = null ;
-    private int _b = 10 ;  
+    private int _b = 10 ;
     private int     _requestCounter = 0 ;
     private long    _timeout       = 20000 ;
     private ObjectInputStream   _objIn  = null ;
@@ -42,35 +42,35 @@ public class      SshLoginPanel
     private static final int ST_WAITING_FOR_OK = 3 ;
     private static final int ST_OK = 4 ;
     private static final int ST_TIMEOUT = 6 ;
-    
+
     private int  _status = ST_IDLE ;
-    
-    
+
+
     public SshLoginPanel(){
        setLayout( _cardsLayout = new CardLayout() ) ;
        setBackground( Color.white ) ;
-       
+
 //       add( _lgPanel = new SshLoginLGPanel() , "login" ) ;
        add( _lgPanel = new HelloPanel("Welcome to EuroStore") , "login" ) ;
        add( _fpPanel = new SshLoginFPPanel() , "fp" ) ;
        add( _okPanel = new SshLoginOKPanel() , "ok" ) ;
-       
+
        _lgPanel.addActionListener(this) ;
        _fpPanel.addActionListener(this) ;
        _okPanel.addActionListener(this) ;
 
        _cardsLayout.show( this , "login" ) ;
-       
+
        setVisible( true ) ;
     }
-    
+
     public void run(){
        Thread current = Thread.currentThread() ;
        if( current == _connectionThread ){
           try{
-          
+
              runConnectionProtocol() ;
-             
+
              synchronized( _threadLock ){
                  System.out.println( "ST_OK -> notify" ) ;
                  _status = ST_OK ;
@@ -78,7 +78,7 @@ public class      SshLoginPanel
              }
              _receiverThread = new Thread( this ) ;
              _receiverThread.start() ;
-             
+
              informActionListeners( "connected" ) ;
              informListenersOpened() ;
           }catch( Exception rcpe ){
@@ -86,14 +86,14 @@ public class      SshLoginPanel
              try{ _socket.close() ; }catch(Exception eeee){
                 System.out.println( "Socket close : "+eeee ) ;
              }
-             
+
              rcpe.printStackTrace() ;
              System.err.println( "runConnectionProtocol failed : "+rcpe ) ;
              _cardsLayout.show( this , "login" ) ;
              _lgPanel.setEnabled(true);
 //             _lgPanel.setText( "Not connected : "+rcpe.getMessage() ) ;
              _lgPanel.setText( "Not connected : Login Failed") ;
-          
+
              synchronized( _threadLock ){
                  System.out.println( "ST_IDLE -> notify" ) ;
                  _status = ST_IDLE ;
@@ -103,13 +103,13 @@ public class      SshLoginPanel
           System.out.println( "!!! Connection Thread finished" ) ;
        }else if( current == _timeoutThread ){
           synchronized( _threadLock ){
-          
+
              _connectionThread.start() ;
 
              long start = System.currentTimeMillis() ;
              long rest  = _timeout ;
              while( ( rest > 0 ) && ( _status != ST_OK ) ){
-                try{ 
+                try{
                     _threadLock.wait(rest) ;
                 }catch( InterruptedException ie ){
                    System.out.println( "isHostKey was interrupted");
@@ -120,9 +120,7 @@ public class      SshLoginPanel
 
              if( _status != ST_OK ){
 
-                 try{
-                     _connectionThread.interrupt() ;
-                 }catch( Exception iee ){}
+                 _connectionThread.interrupt() ;
                  _cardsLayout.show( this , "login" ) ;
                  _lgPanel.setEnabled( true ) ;
                  _status = ST_IDLE ;
@@ -152,7 +150,7 @@ public class      SshLoginPanel
         writer.flush() ;
         String  check  = null ;
         do{
-           check = reader.readLine()   ;      
+           check = reader.readLine()   ;
         }while( ! check.equals( "$BINARY$" ) ) ;
 //        if( check.equals( "$BINARY$" ) ){
 //           System.out.println( "Switch to binary ack." ) ;
@@ -164,7 +162,7 @@ public class      SshLoginPanel
         System.out.println("Binary ack.");
         _objOut = new ObjectOutputStream( engine.getOutputStream() ) ;
         _objIn  = new ObjectInputStream( engine.getInputStream() ) ;
-    
+
     }
     public synchronized void actionPerformed( ActionEvent event ){
        String command = event.getActionCommand() ;
@@ -186,20 +184,20 @@ public class      SshLoginPanel
               System.exit(4);
            }
        }else if( obj == _okPanel ){
-           try{ _socket.close() ; }catch(Exception ee ){}
+           try{ _socket.close() ; }catch(IOException ee ){}
            _cardsLayout.show( this , "login" ) ;
            _lgPanel.setEnabled( true ) ;
        }else if( obj == _fpPanel ){
            if( command.equals("accept" ) ){
               _cardsLayout.show( this , "ok" ) ;
-              synchronized(_threadLock){ 
+              synchronized(_threadLock){
                   System.out.println( "ST_ACCEPT -> notify" ) ;
                   _status = ST_ACCEPT ;
                   _threadLock.notifyAll() ;
               }
            }else if( command.equals("reject") ){
               _cardsLayout.show( this , "login" ) ;
-              synchronized(_threadLock){ 
+              synchronized(_threadLock){
                   System.out.println( "ST_REJECT -> notify" ) ;
                   _status = ST_REJECT ;
                   _threadLock.notifyAll() ;
@@ -207,17 +205,17 @@ public class      SshLoginPanel
            }
       }
     }
-   public Dimension getMinimumSize(){ 
+   public Dimension getMinimumSize(){
       Dimension d = super.getMinimumSize() ;
 //      System.out.println( "getMin : "+d ) ;
       return  d ;
    }
-   public Dimension getPreferredSize(){ 
+   public Dimension getPreferredSize(){
       Dimension d = getMinimumSize() ;
 //      System.out.println( "getPr : "+d ) ;
       return  d ;
    }
-   public Dimension getMaximumSize(){ 
+   public Dimension getMaximumSize(){
        Dimension d = getMinimumSize() ;
 //      System.out.println( "getPr : "+d ) ;
        return  d ;
@@ -225,7 +223,7 @@ public class      SshLoginPanel
     public void ok(){ _lgPanel.ok() ; }
     public void logout(){
     /* *
-       *   not allowed 
+       *   not allowed
        *
         try{ _objOut.close() ; }catch(Exception e){
            System.err.println( "Closing _objOut : "+e ) ;
@@ -276,7 +274,7 @@ public class      SshLoginPanel
        Dimension d = getSize() ;
        int h = _b / 2 ;
        g.setColor( new Color(0,255,255) ) ;
-       int [] xs = new int[4] ; 
+       int [] xs = new int[4] ;
        int [] ys = new int[4] ;
        xs[0] = h           ; ys[0] = h ;
        xs[1] = d.width-h-1 ; ys[1] = h ;
@@ -287,20 +285,20 @@ public class      SshLoginPanel
     */
   //===============================================================================
   //
-  //   domain connection interface 
-  //  
+  //   domain connection interface
+  //
   private Hashtable _packetHash = new Hashtable() ;
-  private Object    _ioLock     = new Object() ; 
+  private Object    _ioLock     = new Object() ;
   private int       _ioCounter  = 100 ;
   private Vector    _listener   = new Vector() ;
   private boolean   _connected  = false ;
   public String getAuthenticatedUser(){ return _remoteUser ; }
-  public int sendObject( Object obj , 
+  public int sendObject( Object obj ,
                          DomainConnectionListener listener ,
-                         int id 
+                         int id
                                               ) throws IOException {
       synchronized( _ioLock ){
-          DomainObjectFrame frame = 
+          DomainObjectFrame frame =
                   new DomainObjectFrame( obj , ++_ioCounter , id ) ;
           _objOut.writeObject( frame ) ;
           _objOut.reset() ;
@@ -309,12 +307,12 @@ public class      SshLoginPanel
       }
   }
   public int sendObject( String destination ,
-                         Object obj , 
+                         Object obj ,
                          DomainConnectionListener listener ,
-                         int id 
+                         int id
                                               ) throws IOException {
       synchronized( _ioLock ){
-          DomainObjectFrame frame = 
+          DomainObjectFrame frame =
                   new DomainObjectFrame( destination , obj , ++_ioCounter , id ) ;
           _objOut.writeObject( frame ) ;
           _objOut.reset() ;
@@ -400,13 +398,13 @@ public class      SshLoginPanel
          System.out.println( "Closing connection" ) ;
          _socket.close() ;
      }catch( Exception ce ){
-     
+
      }
   }
   ////////////////////////////////////////////////////////////////////////////////////////
   //
-  //   Client Authentication interface 
-  //   
+  //   Client Authentication interface
+  //
   public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
 
@@ -414,7 +412,7 @@ public class      SshLoginPanel
 //                      keyModulus.getFingerPrint()+"<--\n"   ) ;
 
       if( ! _hostKeyOk ){
-          _fpPanel.setFingerPrint( host.getHostName() , 
+          _fpPanel.setFingerPrint( host.getHostName() ,
                                    keyModulus.getFingerPrint() ) ;
 
           synchronized( _threadLock ){
@@ -430,7 +428,7 @@ public class      SshLoginPanel
       }else{
           _status = ST_ACCEPT ;
       }
-      return _status == ST_ACCEPT ; 
+      return _status == ST_ACCEPT ;
 
   }
   public String getUser( ){
@@ -440,11 +438,11 @@ public class      SshLoginPanel
   }
   public SshSharedKey  getSharedKey( InetAddress host ){ return null ; }
 
-  public SshAuthMethod getAuthMethod(){  
-      return _requestCounter++ > 2 ? 
-             null : 
+  public SshAuthMethod getAuthMethod(){
+      return _requestCounter++ > 2 ?
+             null :
              new SshAuthPassword( _remotePassword ) ;
   }
 
 
-} 
+}

@@ -2,7 +2,7 @@ package dmg.cells.network ;
 import java.net.* ;
 
 public class timeoutTest implements Runnable {
-  
+
   private String _hostname ;
   private int    _port ;
   private Socket _socket ;
@@ -17,7 +17,7 @@ public class timeoutTest implements Runnable {
   private int    _timerTime    = 0 ;
   private int    _timerState   = 0 ;
   private int    _timeoutState = 0 ;
-  
+
   private void _resetTimer(){
      synchronized( _timerLock ){
         if( _timerThread != null ){
@@ -32,18 +32,18 @@ public class timeoutTest implements Runnable {
         _timerTime   = sec ;
         _timerThread = new Thread( this ) ;
         _timerThread.start() ;
-     
+
      }
   }
   private void setState( int state ){
-     synchronized( _timerLock ){  
+     synchronized( _timerLock ){
         _resetTimer() ;
         _timerState   = state ;
         _timeoutState = 0 ;
      }
   }
   private void setState( int state , int to , int toState ){
-     synchronized( _timerLock ){  
+     synchronized( _timerLock ){
         _resetTimer() ;
         _timerState   = state ;
         _timeoutState = toState ;
@@ -60,17 +60,17 @@ public class timeoutTest implements Runnable {
   public timeoutTest( String host , int port ){
       _hostname = host ;
       _port     = port ;
-      
+
       _workerThread = new Thread( this ) ;
       _workerThread.start() ;
-      
+
       _tickerThread = new Thread( this ) ;
       _tickerThread.start() ;
-  
+
   }
   private static String [] _sn = {
-    "<init>" , 
-    "<go_connecting>" , 
+    "<init>" ,
+    "<go_connecting>" ,
     "<connecting>" ,
     "<connection_ready>" ,
     "<connection_failed>" ,
@@ -82,14 +82,14 @@ public class timeoutTest implements Runnable {
   private static final int TS_CONNECTION_FAILED  = 4 ;
   private static final int TS_CONNECTION_TIMEOUT = 5 ;
   private static final int TS_FINISHED           = 6 ;
-  
+
   public void run(){
      if( Thread.currentThread() == _workerThread ){
        while( ! Thread.interrupted() ){
          int state = _getState() ;
          System.out.println( "Changing to state "+_sn[state]+
              " Thread "+Thread.currentThread() ) ;
-         
+
          switch( state ){
            case 0 :   //     initial state ;
              setState( TS_GO_CONNECTING ) ;
@@ -121,8 +121,8 @@ public class timeoutTest implements Runnable {
              System.out.println( "Connection finished" ) ;
            return ;
          }
-         
-       
+
+
        }
      }else if( Thread.currentThread() == _tickerThread ){
         while( true ){
@@ -130,9 +130,9 @@ public class timeoutTest implements Runnable {
            System.out.println( " Ticker : state = "+_sn[state] ) ;
            try{
              Thread.sleep( 1000 ) ;
-           }catch( Exception eee){}
+           }catch( InterruptedException eee){}
            if( state == TS_FINISHED )return ;
-        
+
         }
      }else if( Thread.currentThread() == _timerThread ){
         synchronized( _timerLock ){
@@ -145,19 +145,19 @@ public class timeoutTest implements Runnable {
            _workerThread.start() ;
         }
      }
-  
+
   }
-  
+
   public static void main( String [] args ){
      if( args.length < 2 ){
        System.err.println( " USAGE : <hostname> <port>" ) ;
        System.exit(3);
      }
-     
+
      int port = new Integer( args[1] ).intValue() ;
-     
+
      new timeoutTest( args[0] , port ) ;
-  
+
   }
 
 

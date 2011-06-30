@@ -196,7 +196,7 @@ public class    HyperModeUserShell
            if(  _instance.equals("") ){
                try{
                    _instance = InetAddress.getLocalHost().getHostName() ;
-               }catch(Exception ee){ }
+               }catch(UnknownHostException ee){ }
            }else if( _instance.equals("hide") ){
                _instance = null ;
            }

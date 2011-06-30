@@ -8,23 +8,23 @@ import java.io.*;
 import dmg.util.* ;
 import dmg.protocols.ssh.* ;
 
-public class      SshClientApplet2 
-       extends    Applet 
-       implements ActionListener, 
+public class      SshClientApplet2
+       extends    Applet
+       implements ActionListener,
                   Runnable ,
                   SshClientAuthentication       {
-       
+
   //
-  // remember to change the following variable to your needs 
-  //  
+  // remember to change the following variable to your needs
+  //
   private String    _remoteHost = "eshome" ;
   private int       _remotePort = 22124 ;
   private String    _remoteUser = "manfred" ;
   private String    _remotePassword = "manfred" ;
   private Font      _font = new Font( "TimesRoman" , 0 , 16 ) ;
-  
+
   private boolean   _binary  = true ;
-  
+
   private SshClientIoPanel       _ioPanel ;
   private SshClientIoBinaryPanel _ioBinaryPanel ;
   private SshClientLoginPanel  _loginPanel ;
@@ -34,7 +34,7 @@ public class      SshClientApplet2
   private Gate    _fpGate  = new Gate(false) ;
   private boolean _hostOk  = false ;
   private int     _requestCounter = 0 ;
-  
+
   public synchronized void actionPerformed( ActionEvent event ){
      String command = event.getActionCommand() ;
      System.out.println( "Action x : "+command ) ;
@@ -68,7 +68,7 @@ public class      SshClientApplet2
            _hostOk = false ;
            _cardsLayout.show( this , "login" ) ;
         }
-        
+
         _fpGate.open() ;
      }
   }
@@ -78,8 +78,8 @@ public class      SshClientApplet2
           Socket socket = new Socket( _remoteHost , _remotePort ) ;
           SshStreamEngine engine = new SshStreamEngine( socket , this ) ;
           if( _binary ){
-             _ioBinaryPanel.startIO( 
-                     engine.getInputStream() , 
+             _ioBinaryPanel.startIO(
+                     engine.getInputStream() ,
                      engine.getOutputStream() ,
                      engine.getReader() ,
                      engine.getWriter()            ) ;
@@ -98,14 +98,14 @@ public class      SshClientApplet2
 //          System.exit(4);
        }
      }
-     
+
   }
   public void init(){
       System.out.println( "init ..." ) ;
       Dimension   d  = getSize() ;
 //      setFont( _font ) ;
       setLayout( _cardsLayout = new CardLayout() ) ;
-      
+
       add( _loginPanel = new SshClientLoginPanel() , "login" )   ;
       if( ! _binary ){
           add( _ioPanel       = new SshClientIoPanel()    , "io" ) ;
@@ -115,11 +115,11 @@ public class      SshClientApplet2
           _ioBinaryPanel.addActionListener(this );
       }
       add( _fpPanel    = new SshClientFPPanel()    , "fp" ) ;
-            
+
       _loginPanel.addActionListener(this );
       _fpPanel.addActionListener(this );
 
-      
+
       _cardsLayout.show( this , "login" ) ;
       setVisible( true ) ;
   }
@@ -134,24 +134,24 @@ public class      SshClientApplet2
   }
   public void destroy(){
       System.out.println("destroy ..." ) ;
-      try{
+      if (_connectionThread != null) {
           _connectionThread.interrupt();
-      }catch( Exception e ){}
-  }      
+      }
+  }
   //
-  //   Client Authentication interface 
-  //   
+  //   Client Authentication interface
+  //
   public boolean isHostKey( InetAddress host , SshRsaKey keyModulus ) {
 
 
       System.out.println( "Host key Fingerprint\n   -->"+
                       keyModulus.getFingerPrint()+"<--\n"   ) ;
       _fpGate.close();
-      _fpPanel.setFingerPrint( host.getHostName() , 
+      _fpPanel.setFingerPrint( host.getHostName() ,
                                keyModulus.getFingerPrint() ) ;
       _cardsLayout.show( this , "fp" ) ;
       _fpGate.check() ;
-      return _hostOk ; 
+      return _hostOk ;
 
   }
   public String getUser( ){
@@ -160,10 +160,10 @@ public class      SshClientApplet2
   }
   public SshSharedKey  getSharedKey( InetAddress host ){ return null ; }
 
-  public SshAuthMethod getAuthMethod(){  
-      return _requestCounter++ > 2 ? 
-             null : 
+  public SshAuthMethod getAuthMethod(){
+      return _requestCounter++ > 2 ?
+             null :
              new SshAuthPassword( _remotePassword ) ;
   }
-       
+
 }

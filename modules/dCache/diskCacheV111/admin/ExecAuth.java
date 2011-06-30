@@ -23,7 +23,7 @@ public class ExecAuth implements Runnable {
       }
       public void run(){
          try{ while( _error.read() > -1 ) ; }catch(Exception ee){}
-         try{ _error.close() ; }catch(Exception eee ){}
+         try{ _error.close() ; }catch(IOException eee ){}
          System.out.println("Destroy done");
       }
    }
