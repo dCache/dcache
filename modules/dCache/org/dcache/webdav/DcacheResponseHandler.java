@@ -53,6 +53,7 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
         public final static String CONFLICT = "CONFLICT";
         public final static String UNAUTHORIZED = "UNAUTHORIZED";
         public final static String METHOD_NOT_ALLOWED = "METHOD NOT ALLOWED";
+        public final static String FILE_NOT_FOUND = "FILE NOT FOUND";
 
         public Http11ResponseHandler(AuthenticationService authenticationService) {
             super(authenticationService);
@@ -189,6 +190,8 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
                 errorMessage = UNAUTHORIZED;
             } else if (status == Response.Status.SC_METHOD_NOT_ALLOWED) {
                 errorMessage = METHOD_NOT_ALLOWED;
+            } else if (status == Response.Status.SC_NOT_FOUND) {
+                errorMessage = FILE_NOT_FOUND;
             }
             return errorMessage;
         }
