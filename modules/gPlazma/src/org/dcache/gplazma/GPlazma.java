@@ -130,11 +130,11 @@ public class GPlazma {
          return reply;
     }
 
-    public Principal map(Principal principal) throws AuthenticationException {
+    public Principal map(Principal principal) throws NoSuchPrincipalException {
         return getIdentityStrategy().map(principal);
     }
 
-    public Set<Principal> reverseMap(Principal principal) throws AuthenticationException {
+    public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException {
         return getIdentityStrategy().reverseMap(principal);
     }
 

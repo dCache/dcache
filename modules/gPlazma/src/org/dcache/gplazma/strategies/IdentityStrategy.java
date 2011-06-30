@@ -4,7 +4,7 @@ import java.security.Principal;
 
 import java.util.Set;
 
-import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
 
 /**
@@ -15,6 +15,6 @@ import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
 public interface IdentityStrategy
                  extends GPlazmaStrategy<GPlazmaIdentityPlugin> {
 
-    public Principal map(Principal principal) throws AuthenticationException;
-    public Set<Principal> reverseMap(Principal principal) throws AuthenticationException;
+    public Principal map(Principal principal) throws NoSuchPrincipalException;
+    public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException;
 }

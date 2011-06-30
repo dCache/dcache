@@ -25,6 +25,7 @@ import java.security.Principal;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import org.dcache.gplazma.NoSuchPrincipalException;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -121,8 +122,8 @@ public class Gplazma2LoginStrategy
     {
         try {
             return _gplazma.map(principal);
-        } catch (AuthenticationException e) {
-            throw new PermissionDeniedCacheException("map failed: " + e.getMessage());
+        } catch (NoSuchPrincipalException e) {
+            return null;
         }
     }
 
@@ -131,8 +132,8 @@ public class Gplazma2LoginStrategy
     {
         try {
             return _gplazma.reverseMap(principal);
-        } catch (AuthenticationException e) {
-            throw new PermissionDeniedCacheException("reverseMap failed: " + e.getMessage());
+        } catch (NoSuchPrincipalException e) {
+            return Collections.emptySet();
         }
     }
 }
