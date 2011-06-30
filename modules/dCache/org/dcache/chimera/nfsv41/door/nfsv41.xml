@@ -78,6 +78,7 @@
 
     <bean id="id-mapper" class="org.dcache.chimera.nfsv41.door.StrategyIdMapper">
         <constructor-arg ref="identity-strategy" />
+        <constructor-arg value="${nfs.domain}"/>
     </bean>
 
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
