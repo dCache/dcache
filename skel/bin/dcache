@@ -248,7 +248,12 @@ checkForNonMigratedDcache()
                 many sites correctly.  For more complicated sites, the      \
                 output from this script may serve as a good starting        \
                 point.  Please review the release notes for more            \
-                information."
+                information."                                               \
+                                                                            \
+               "If you are ABSOLUTELY CERTAIN you have HAND-WRITTEN your    \
+                new configuration then you may rename the redundant         \
+                configuration files, dCacheSetup and node_config, to allow  \
+                dCache to start."
     fi
 }
 
