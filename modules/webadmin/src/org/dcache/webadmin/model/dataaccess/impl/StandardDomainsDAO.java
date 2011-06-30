@@ -20,6 +20,7 @@ import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.exceptions.DataGatheringException;
+import org.dcache.webadmin.model.exceptions.NoSuchContextException;
 import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,11 +49,11 @@ public class StandardDomainsDAO implements DomainsDAO {
     @Override
     public Set<CellStatus> getCellStatuses() throws DAOException {
         _log.debug("getCellStatuses called");
-        Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
-                ContextPaths.CELLINFO_LIST);
-        if (states != null) {
+        try {
+            Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
+                    ContextPaths.CELLINFO_LIST);
             return states;
-        } else {
+        } catch (NoSuchContextException e) {
             return Collections.EMPTY_SET;
         }
     }

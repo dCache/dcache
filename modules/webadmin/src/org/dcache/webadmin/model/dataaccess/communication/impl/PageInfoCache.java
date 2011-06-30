@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import org.dcache.webadmin.model.dataaccess.communication.collectors.Collector;
+import org.dcache.webadmin.model.exceptions.NoSuchContextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,12 @@ public class PageInfoCache {
         }
     }
 
-    public Object getCacheContent(String context) {
-        return _cache.get(context);
+    public Object getCacheContent(String context) throws NoSuchContextException {
+        Object content = _cache.get(context);
+        if (content != null) {
+            return content;
+        } else {
+            throw new NoSuchContextException();
+        }
     }
 }

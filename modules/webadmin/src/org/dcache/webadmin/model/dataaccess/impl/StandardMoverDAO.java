@@ -14,6 +14,7 @@ import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PoolMoverKillMessageGenerator;
 import org.dcache.webadmin.model.exceptions.DAOException;
+import org.dcache.webadmin.model.exceptions.NoSuchContextException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +36,13 @@ public class StandardMoverDAO implements MoverDAO {
 
     @Override
     public List<MoverInfo> getActiveTransfers() throws DAOException {
-        List<MoverInfo> transfers = (List<MoverInfo>) _pageCache.getCacheContent(
-                ContextPaths.MOVER_LIST);
-        if (transfers != null) {
+        try {
+            List<MoverInfo> transfers = (List<MoverInfo>) _pageCache.getCacheContent(
+                    ContextPaths.MOVER_LIST);
             return transfers;
-        } else {
+        } catch (NoSuchContextException e) {
             return Collections.EMPTY_LIST;
         }
-
     }
 
     @Override
