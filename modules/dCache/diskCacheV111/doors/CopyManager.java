@@ -404,6 +404,7 @@ public class CopyManager extends AbstractCell
             _target.setPoolStub(_poolStub);
             _target.setDomainName(getCellDomainName());
             _target.setCellName(getCellName());
+            _target.setWrite(true);
             // _target.setClientAddress();
             // _target.setBillingStub();
 
@@ -528,7 +529,7 @@ public class CopyManager extends AbstractCell
     {
         if (!_queue.isEmpty()) {
             if (newTransfer()) {
-                return (CellMessage) _queue.remove();
+                return _queue.remove();
             }
         }
         return null;
