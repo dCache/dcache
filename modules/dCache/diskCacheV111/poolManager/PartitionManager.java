@@ -92,7 +92,7 @@ public class PartitionManager
        "    OPTIONS\n"+
        "       -spacecostfactor=<scf>|off\n"+
        "       -cpucostfactor=<ccf>|off\n"+
-       "       -max-pnfs-copies=<ccf>|off\n"+
+       "       -max-copies=<max-replicas>|off\n"+
        "       -idle=<value>|off\n"+
        "       -p2p=<value>|off\n"+
        "       -alert=<value>|off\n"+
