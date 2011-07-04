@@ -76,8 +76,16 @@
         <property name="cellStub" ref="login-stub"/>
     </bean>
 
+    <bean id="cache-identity-strategy" class="org.dcache.services.login.CachingLoginStrategy">
+        <description>Processes mapping requests</description>
+        <constructor-arg index="0" ref="identity-strategy" />
+        <constructor-arg index="1" value="${nfs.idmap.cache.size}" />
+        <constructor-arg index="2" value="${nfs.idmap.cache.timeout}" />
+        <constructor-arg index="3" value="${nfs.idmap.cache.timeunit}" />
+    </bean>
+
     <bean id="id-mapper" class="org.dcache.chimera.nfsv41.door.StrategyIdMapper">
-        <constructor-arg ref="identity-strategy" />
+        <constructor-arg ref="cache-identity-strategy" />
         <constructor-arg value="${nfs.domain}"/>
     </bean>
 

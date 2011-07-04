@@ -13,6 +13,9 @@ check -strong chimera.db.user
 check -strong chimera.db.url
 check -strong chimera.db.dialect
 check -strong chimera.db.driver
+check -strong nfs.idmap.cache.size
+check -strong nfs.idmap.cache.timeout
+check -strong nfs.idmap.cache.timeunit
 check chimera.db.password
 
 set context -c poolManagerTimeout 28000
@@ -30,6 +33,9 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
        -chimera.db.url=\"${chimera.db.url}\" \
        -chimera.db.dialect=\"${chimera.db.dialect}\" \
        -chimera.db.driver=\"${chimera.db.driver}\" \
+       -nfs.idmap.cache.size=\"${nfs.idmap.cache.size}\" \
+       -nfs.idmap.cache.timeout=\"${nfs.idmap.cache.timeout}\" \
+       -nfs.idmap.cache.timeunit=\"${nfs.idmap.cache.timeunit}\" \
        -poolManagerTimeout=\"${poolManagerTimeout}\" \
        -poolTimeout=\"${poolTimeout}\" \
        -nfsIoQueue=\"${nfsIoQueue}\" \
