@@ -40,6 +40,10 @@ public class RpcAuthVerifier implements XdrAble {
         return _type;
     }
 
+    public byte[] getBody() {
+        return _body;
+    }
+
     public void xdrDecode(XdrDecodingStream xdr) throws OncRpcException, IOException {
         _type = xdr.xdrDecodeInt();
         _body = xdr.xdrDecodeDynamicOpaque();

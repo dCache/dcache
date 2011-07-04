@@ -76,17 +76,33 @@ public class RpcCall {
     private final Xdr _xdr;
 
     public RpcCall(int prog, int ver, RpcAuth cred, XdrTransport transport) {
+        this(prog, ver, cred, new Xdr(Xdr.MAX_XDR_SIZE), transport);
+    }
+
+    public RpcCall(int prog, int ver, RpcAuth cred, Xdr xdr, XdrTransport transport) {
         _prog = prog;
         _version = ver;
         _cred = cred;
         _transport = transport;
-        _xdr = new Xdr(Xdr.MAX_XDR_SIZE);
+        _xdr = xdr;
+        _proc = 0;
     }
 
     public RpcCall(int xid, Xdr xdr, XdrTransport transport) {
         _xid = xid;
         _xdr = xdr;
         _transport = transport;
+    }
+
+    public RpcCall(int xid, int prog, int ver, int proc, RpcAuth cred, Xdr xdr, XdrTransport transport) {
+        _xid = xid;
+        _prog = prog;
+        _version = ver;
+        _proc = proc;
+        _cred = cred;
+        _xdr = xdr;
+        _transport = transport;
+        _rpcvers = RPCVERS;
     }
 
     public void accept() throws IOException, OncRpcException {
@@ -136,6 +152,14 @@ public class RpcCall {
         return _transport;
     }
 
+    public int getXid() {
+        return _xid;
+    }
+
+    public Xdr getXdr() {
+        return _xdr;
+    }
+
     @Override
     public String toString() {
         return String.format("RPCv%d call: program=%d, version=%d, procedure=%d",
@@ -181,7 +205,7 @@ public class RpcCall {
         acceptedReply(RpcAccepsStatus.SUCCESS, reply);
     }
 
-    private void acceptedReply(int state, XdrAble reply) {
+    public void acceptedReply(int state, XdrAble reply) {
 
         XdrEncodingStream xdr = _xdr;
         try {

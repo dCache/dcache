@@ -16,6 +16,7 @@
  */
 package org.dcache.xdr;
 
+import org.dcache.xdr.gss.GssProtocolFilter;
 import com.sun.grizzly.Controller;
 import com.sun.grizzly.ControllerStateListenerAdapter;
 import com.sun.grizzly.DefaultProtocolChain;
@@ -34,6 +35,7 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import org.dcache.xdr.gss.GssSessionManager;
 import org.dcache.xdr.portmap.GenericPortmapClient;
 import org.dcache.xdr.portmap.OncPortmapClient;
 import org.dcache.xdr.portmap.OncRpcPortmap;
@@ -53,6 +55,12 @@ public class OncRpcSvc {
     private final Controller _controller = new Controller();
     private final CountDownLatch _serverReady = new CountDownLatch(1);
     private final boolean _publish;
+
+    /**
+     * Handle RPCSEC_GSS
+     */
+    private GssSessionManager _gssSessionManager;
+
     /**
      * mapping of registered programs.
      */
@@ -134,11 +142,6 @@ public class OncRpcSvc {
             throw new IllegalArgumentException("TCP or UDP protocol have to be defined");
         }
 
-        final ProtocolFilter protocolKeeper = new ProtocolKeeperFilter();
-        final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
-        final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
-        final ProtocolFilter rpcDispatcher = new RpcDispatcher(_programs);
-
         /*
          * By default, a SelectionKey will be active for 30 seconds.
          * If during that 30 seconds the client isn't pushing bytes
@@ -172,29 +175,6 @@ public class OncRpcSvc {
                         _serverReady.countDown();
                     }
                 });
-
-        final ProtocolChain protocolChain = new DefaultProtocolChain();
-        protocolChain.addFilter(protocolKeeper);
-        protocolChain.addFilter(rpcFilter);
-        protocolChain.addFilter(rpcProcessor);
-        protocolChain.addFilter(rpcDispatcher);
-
-        ((DefaultProtocolChain) protocolChain).setContinuousExecution(true);
-
-        ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
-
-            @Override
-            public ProtocolChain poll() {
-                return protocolChain;
-            }
-
-            @Override
-            public boolean offer(ProtocolChain pc) {
-                return false;
-            }
-        };
-
-        _controller.setProtocolChainInstanceHandler(pciHandler);
     }
 
     /**
@@ -233,10 +213,47 @@ public class OncRpcSvc {
         }
     }
 
+    public void setGssSessionManager( GssSessionManager gssSessionManager) {
+        _gssSessionManager = gssSessionManager;
+    }
     /**
      * Start service.
      */
     public void start() throws IOException  {
+
+        final ProtocolFilter protocolKeeper = new ProtocolKeeperFilter();
+        final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
+        final ProtocolFilter rpcProcessor = new RpcProtocolFilter();
+        final ProtocolFilter rpcDispatcher = new RpcDispatcher(_programs);
+
+        final ProtocolChain protocolChain = new DefaultProtocolChain();
+        protocolChain.addFilter(protocolKeeper);
+        protocolChain.addFilter(rpcFilter);
+        protocolChain.addFilter(rpcProcessor);
+
+        // use GSS if configures
+        if (_gssSessionManager != null ) {
+            final ProtocolFilter gssManager = new GssProtocolFilter(_gssSessionManager);
+            protocolChain.addFilter(gssManager);
+        }
+        protocolChain.addFilter(rpcDispatcher);
+
+        ((DefaultProtocolChain) protocolChain).setContinuousExecution(true);
+
+        ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
+
+            @Override
+            public ProtocolChain poll() {
+                return protocolChain;
+            }
+
+            @Override
+            public boolean offer(ProtocolChain pc) {
+                return false;
+            }
+        };
+
+        _controller.setProtocolChainInstanceHandler(pciHandler);
         new Thread(_controller, _name).start();
         try {
             _serverReady.await();
