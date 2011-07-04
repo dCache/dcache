@@ -878,14 +878,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _info.setTransactionTime( System.currentTimeMillis()-_timestamp);
             if( rc == 0 ){
                 problem = String.format("%d %d %s ok", _sessionId, _commandId, _vargs.getName());
-                _log.debug("{}: {}", tag, problem);
             }else{
                 problem = String.format("%d %d %s failed %d \"%s\" %s",
                         _sessionId, _commandId, _vargs.getName(),
                         rc, msg, posixErr);
-                _log.error("{}: {}", tag, problem);
                 _info.setResult( rc , msg ) ;
             }
+
+            _log.debug("{}: {}", tag, problem);
             println( problem ) ;
             postToBilling(_info);
         }
