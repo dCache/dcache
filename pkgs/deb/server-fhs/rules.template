@@ -18,6 +18,7 @@ install_package_data:
 	dh_installdebconf
 	dh_installdeb
 	dh_installdocs
+	dh_bash-completion
 	dh_fixperms
 	dh_gencontrol
 	dh_md5sums
