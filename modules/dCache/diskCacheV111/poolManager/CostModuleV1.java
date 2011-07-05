@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -37,6 +38,8 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellInfo;
 import dmg.util.Args;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CostModuleV1
     implements Serializable,
@@ -672,6 +675,14 @@ public class CostModuleV1
       return sb.toString();
    }
 
+    @Override
+    public Collection<PoolCostInfo> getAllPoolCostInfos() {
+        Set<PoolCostInfo> costInfos = new HashSet<PoolCostInfo>();
+        for (Entry entry : _hash.values()) {
+            costInfos.add(entry.getPoolCostInfo());
+        }
+        return costInfos;
+    }
 
    @Override
    public synchronized PoolCostInfo getPoolCostInfo(String poolName) {

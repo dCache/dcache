@@ -5,6 +5,7 @@ package diskCacheV111.poolManager ;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import dmg.cells.nucleus.CellMessage;
+import java.util.Collection;
 
 
 /**
@@ -50,4 +51,10 @@ public interface CostModule {
     * @return the n-th percentile performance cost, or 0 if no pools are known.
     */
    public double getPoolsPercentilePerformanceCost( double fraction);
+
+   /**
+    * Obtain PoolCostInfo of all known pools
+    * @return Collection of all PoolCostInfos
+    */
+   public Collection<PoolCostInfo> getAllPoolCostInfos();
 }
