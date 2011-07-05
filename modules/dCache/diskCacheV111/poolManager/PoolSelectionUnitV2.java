@@ -2036,6 +2036,11 @@ public class PoolSelectionUnitV2
         return xlsResult;
     }
 
+    @Override
+    public Collection<String> getAllPoolGroups() {
+        return _pGroups.keySet();
+    }
+
     public String hh_psux_ls_unit = "[<unit>]";
 
     public Object ac_psux_ls_unit_$_0_1(Args args) throws Exception {
