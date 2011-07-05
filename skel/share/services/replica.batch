@@ -29,7 +29,6 @@ create diskCacheV111.replicaManager.ReplicaManagerV2 ${cell.name} \
         -export \
         -debug=${replicaDebug} \
         -dbClass=diskCacheV111.replicaManager.ReplicaDbV1 \
-        -configDirectory=${config} \
         -coldStart \
 #        -hotRestart \
         -maxWorkers=${replicaMaxWorkers} \

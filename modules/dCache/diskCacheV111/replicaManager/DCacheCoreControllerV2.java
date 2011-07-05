@@ -88,7 +88,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private static final long _TO_GetFreeSpace         = 2*60 * 1000L;
    private static final long _TO_SendObject           = 2*60 * 1000L;
 
-   private File        _config   = null ;
    private boolean     _dcccDebug = false;
 
    private final BlockingQueue<CellMessage> _msgFifo ;
@@ -114,15 +113,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
       _msgFifo = new LinkedBlockingQueue<CellMessage>() ;
-
-      String tmp = _args.getOpt("configDirectory") ;
-      if( tmp == null )
-         throw new IllegalArgumentException("'configDirectory' not specified");
-
-      _config = new File(tmp) ;
-
-      if( ! _config.isDirectory() )
-        throw new IllegalArgumentException("'configDirectory' not a directory");
 
       useInterpreter( true ) ;
 
