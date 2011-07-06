@@ -81,7 +81,7 @@
         <constructor-arg index="0" ref="identity-strategy" />
         <constructor-arg index="1" value="${nfs.idmap.cache.size}" />
         <constructor-arg index="2" value="${nfs.idmap.cache.timeout}" />
-        <constructor-arg index="3" value="${nfs.idmap.cache.timeunit}" />
+        <constructor-arg index="3" value="${nfs.idmap.cache.timeout.unit}" />
     </bean>
 
     <bean id="id-mapper" class="org.dcache.chimera.nfsv41.door.StrategyIdMapper">
