@@ -406,18 +406,6 @@ public class XrootdProtocol_3
     }
 
     @Override
-    public void setAttribute(String name, Object attribute)
-    {
-        /* currently not implemented */
-    }
-
-    @Override
-    public Object getAttribute(String name)
-    {
-        throw new IllegalArgumentException("Couldn't find " + name);
-    }
-
-    @Override
     public long getBytesTransferred()
     {
         return _bytesTransferred.get();

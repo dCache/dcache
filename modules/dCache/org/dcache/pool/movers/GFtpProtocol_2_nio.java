@@ -597,24 +597,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         return _verboseLogging;
     }
 
-    /**
-     * Part of the MoverProtocol interface. This class does not
-     * recognise any attributes.
-     */
-    public void setAttribute(String name , Object attribute)
-    {
-	/* Deliberately empty. */
-    }
-
-    /**
-     * Part of the MoverProtocol interface. This class does not have
-     * any attributes.
-     */
-    public Object getAttribute(String name)
-    {
-	return null;
-    }
-
     /** Part of the MoverProtocol interface. */
     public long getBytesTransferred()
     {

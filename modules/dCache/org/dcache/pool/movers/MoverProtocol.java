@@ -21,10 +21,6 @@ public interface MoverProtocol
                       IoMode         access)
         throws Exception;
 
-    public void setAttribute(String name, Object attribute);
-
-    public Object getAttribute(String name);
-
     /**
      * Get number of bytes transfered. The number of bytes may exceed
      * total file size if client does some seek requests in between.

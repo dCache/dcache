@@ -378,15 +378,6 @@ public class HttpProtocol_2 implements MoverProtocol
     }
 
     @Override
-    public void setAttribute(String name, Object attribute) {
-    }
-
-    @Override
-    public Object getAttribute(String name) {
-        return null;
-    }
-
-    @Override
     public long getBytesTransferred() {
         return _httpMonitor.getBytesTransferred();
     }

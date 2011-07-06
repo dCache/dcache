@@ -199,13 +199,6 @@ public class HttpProtocol_1 implements MoverProtocol
         return httpconnection.getLast_transfer_time();
     }
 
-    public void setAttribute(String name, Object attribute)
-    {
-    }
-    public Object getAttribute(String name)
-    {
-        return null;
-    }
     public long getBytesTransferred()
     {
         if(httpconnection == null)

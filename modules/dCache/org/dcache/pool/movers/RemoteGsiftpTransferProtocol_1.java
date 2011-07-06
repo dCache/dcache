@@ -294,15 +294,6 @@ public class RemoteGsiftpTransferProtocol_1
         return _timeout_time;
     }
 
-    public void setAttribute(String name, Object attribute)
-    {
-    }
-
-    public Object getAttribute(String name)
-    {
-        return null;
-    }
-
     public long getBytesTransferred()
     {
         return (_client == null ? 0 : _client.getTransfered());

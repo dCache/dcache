@@ -130,13 +130,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         return last_transfer_time;
     }
 
-    public void setAttribute(String name, Object attribute)
-    {
-    }
-    public Object getAttribute(String name)
-    {
-        return null;
-    }
     public long getBytesTransferred()
     {
         return  transfered;

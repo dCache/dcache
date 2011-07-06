@@ -31,17 +31,6 @@ public class NFSv41ProtocolMover implements ManualMover {
     /*
      * (non-Javadoc)
      *
-     * @see org.dcache.pool.movers.MoverProtocol#getAttribute()
-     */
-	@Override
-    public Object getAttribute(String name) {
-        // forced by MoverProtocol interface
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
      * @see org.dcache.pool.movers.MoverProtocol#getBytesTransferred()
      */
 	@Override
@@ -88,17 +77,6 @@ public class NFSv41ProtocolMover implements ManualMover {
 
             throw new RuntimeException("This mover it not suposed to run in legacy mode");
     }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see diskCacheV111.movers.MoverProtocol#setAttribute(String name, Object attribute)
-     */
-	@Override
-    public void setAttribute(String name, Object attribute) {
-        // forced by MoverProtocol interface
-    }
-
 
     /*
      * (non-Javadoc)

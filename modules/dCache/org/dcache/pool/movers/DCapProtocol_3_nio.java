@@ -1118,20 +1118,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             System.currentTimeMillis() - _transferStarted :
             _transferTime ;
     }
-    //
-    //   attributes
-    //
-    public synchronized void setAttribute(String name, Object attribute){
-        if(name.equals("allocationSpace")){
-            _spaceMonitorHandler.setAllocationSpace(
-                                                    Integer.parseInt(attribute.toString())
-                                                   );
-        }
-    }
-    public synchronized Object getAttribute(String name){
-        throw new
-            IllegalArgumentException("Couldn't find "+name);
-    }
+
     public boolean wasChanged(){ return _wasChanged; }
 
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo) { return null; }
