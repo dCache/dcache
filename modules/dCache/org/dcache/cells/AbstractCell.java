@@ -190,7 +190,7 @@ public class AbstractCell extends CellAdapter
      */
     private static Args stripDefinedSetup(Args args)
     {
-        args = (Args) args.clone();
+        args = new Args(args);
         if ((args.argc() > 0) && args.argv(0).startsWith("!")) {
             args.shift();
         }

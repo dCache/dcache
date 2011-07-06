@@ -85,7 +85,7 @@ public class      LoginCell
 
      objList[0][0] = _subject ;
      objList[0][1] = getNucleus() ;
-     objList[0][2] = (Args)args.clone() ;
+     objList[0][2] = new Args(args);
      objList[1][0] = getNucleus() ;
 
      Class       c   = null ;

@@ -837,7 +837,7 @@ public class UniversalSpringCell
 
         private ByteArrayResource getArgumentsResource()
         {
-            Args args = (Args)getArgs().clone();
+            Args args = new Args(getArgs());
             args.shift();
 
             Properties properties = new Properties();

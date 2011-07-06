@@ -30,7 +30,6 @@ import com.google.common.base.Objects;
  * values appear at the place of the first use of that option.
  */
 public class Args
-    implements Cloneable
 {
     private final ImmutableListMultimap<String,String> _options;
     private final String _oneChar;
@@ -196,11 +195,6 @@ public class Args
             builder.put(e.getKey(), e.getValue());
         }
         return builder.build();
-    }
-
-    public Object clone()
-    {
-        return new Args(this);
     }
 
     public boolean equals(Object other)

@@ -168,7 +168,7 @@ public class       SshLoginManager
           args =  new Object[3] ;
           args[0] = getCellName()+"-"+userPrincipal+"*" ;
           args[1] = engine ;
-          args[2] = (Args)getArgs().clone() ;
+          args[2] = new Args(getArgs());
        }
        try{
             Object cell = _loginConstructor.newInstance( args ) ;

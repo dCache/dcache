@@ -918,7 +918,7 @@ public void cleanUp(){
              args =  new Object[3] ;
              args[0] = getCellName()+"-"+userName+"*" ;
              args[1] = engine ;
-             args[2] = getArgs().clone() ;
+             args[2] = new Args(getArgs());
           }
 
           Object cell = _loginConstructor.newInstance( args ) ;

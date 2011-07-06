@@ -377,7 +377,7 @@ public class CommandTaskCell extends CellAdapter {
       return executeLocalCommand( args ) ;
    }
    public Object command( Args args )throws CommandException {
-      Args copyArgs = (Args)args.clone() ;
+      Args copyArgs = new Args(args);
       try{
           return super.command(args) ;
       }catch(CommandSyntaxException ee ){

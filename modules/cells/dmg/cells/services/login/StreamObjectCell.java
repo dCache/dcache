@@ -205,7 +205,7 @@ public class StreamObjectCell
             _log.info( "Using helloMethod : " + _helloMethod);
         }
 
-        Args extArgs = (Args) getArgs().clone();
+        Args extArgs = new Args(getArgs());
         Object [] args = null;
         extArgs.shift();
         switch (commandConstMode) {
