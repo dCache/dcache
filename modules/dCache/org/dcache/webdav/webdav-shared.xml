@@ -65,6 +65,7 @@
     <description>Handles authorization for the WebDAV door</description>
     <property name="readOnly" value="${webdavReadOnly}"/>
     <property name="loginStrategy" ref="login-strategy"/>
+    <property name="enableBasicAuthentication" value="${webdavBasicAuthentication}"/>
   </bean>
 
   <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
@@ -78,7 +79,9 @@
 
   <bean id="authentication-service"
         class="com.bradmcevoy.http.AuthenticationService">
-    <description>Milton authentication service</description>
+      <description>Milton authentication service</description>
+      <property name="disableDigest" value="true"/>
+      <property name="disableBasic" value="#{ '${webdavBasicAuthentication}' != 'true' }"/>
   </bean>
 
   <bean id="response-handler"
@@ -124,5 +127,34 @@
         <ref bean="dispatch-filter"/>
       </list>
     </property>
+  </bean>
+
+  <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+      <property name="handlers">
+          <list>
+              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <property name="contextPath" value="${webdav.static-content.location}"/>
+                  <property name="handler">
+                      <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                          <property name="directoriesListed" value="true"/>
+                          <property name="resourceBase" value="${webdav.static-content.dir.local}"/>
+                      </bean>
+                  </property>
+              </bean>
+              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <property name="contextPath" value="${webdav.static-content.location}"/>
+                  <property name="handler">
+                      <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                          <property name="directoriesListed" value="true"/>
+                          <property name="resourceBase" value="${webdav.static-content.dir.default}"/>
+                      </bean>
+                  </property>
+              </bean>
+              <bean class="org.dcache.webdav.MiltonHandler">
+                  <property name="httpManager" ref="milton"/>
+              </bean>
+              <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+          </list>
+      </property>
   </bean>
 </beans>

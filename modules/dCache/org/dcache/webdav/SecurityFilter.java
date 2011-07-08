@@ -20,6 +20,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.LoginReply;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.Origin;
@@ -59,6 +60,7 @@ public class SecurityFilter implements Filter
 
     private String _realm;
     private boolean _isReadOnly;
+    private boolean _isBasicAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
 
     @Override
@@ -74,6 +76,7 @@ public class SecurityFilter implements Filter
 
             addX509ChainToSubject(servletRequest, subject);
             addOriginToSubject(servletRequest, subject);
+            addPasswordCredentialToSubject(request, subject);
 
             LoginReply login = _loginStrategy.login(subject);
             subject = login.getSubject();
@@ -139,6 +142,17 @@ public class SecurityFilter implements Filter
         }
     }
 
+    private void addPasswordCredentialToSubject(Request request, Subject subject)
+    {
+        Auth auth = request.getAuthorization();
+        if (auth != null && auth.getScheme().equals(Auth.Scheme.BASIC) &&
+            _isBasicAuthenticationEnabled) {
+            PasswordCredential credential =
+                new PasswordCredential(auth.getUser(), auth.getPassword());
+            subject.getPrivateCredentials().add(credential);
+        }
+    }
+
     private boolean isAuthorizedMethod(Request.Method method, LoginReply login)
     {
         return (!_isReadOnly && !isUserReadOnly(login)) || isReadMethod(method);
@@ -191,6 +205,11 @@ public class SecurityFilter implements Filter
     public void setReadOnly(boolean isReadOnly)
     {
         _isReadOnly = isReadOnly;
+    }
+
+    public void setEnableBasicAuthentication(boolean isEnabled)
+    {
+        _isBasicAuthenticationEnabled = isEnabled;
     }
 
     public void setLoginStrategy(LoginStrategy loginStrategy)
