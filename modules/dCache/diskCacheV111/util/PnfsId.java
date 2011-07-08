@@ -25,11 +25,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private final static int NEW_ID_SIZE = 18; // chimera
 
     private final byte[] _a;
-    @Deprecated
-    private final String _idString;
     private final String _domain;
-    @Deprecated
-    private final String _toString;
 
     private static final long serialVersionUID = -112220393521303857L;
 
@@ -58,14 +54,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         _a = new byte[length];
         System.arraycopy(id, 0, _a, 0, length);
 
-        _idString = bytesToHexString(_a);
-        if (domain != null) {
-            _domain = domain.intern();
-            _toString = _idString + "." + _domain;
-        } else {
-            _domain = null;
-            _toString = _idString;
-        }
+        _domain = (domain != null) ? domain.intern() : null;
     }
 
     @Override
