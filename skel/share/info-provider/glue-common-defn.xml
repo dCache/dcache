@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE xylophone [
+<!ENTITY % dCache-config PUBLIC "-//dCache//ENTITIES dCache Properties//EN" "/unused/path" >
+%dCache-config;
+]>
+
 <!--+
     |  This file contains info-provider elements that are
     |  common to both Glue 1.3 and Glue 2.0
@@ -12,6 +19,14 @@
     <factor mode="divide" name="bytes-to-gigabytes">1000000000</factor>
     <factor mode="multiply" name="negative">-1</factor>
   </scale>
+
+
+  <!--+
+      |  Pull in the configured location of the tape-info XML file.
+      +-->
+  <locations>
+    <location name="tape-info">&info-provider.paths.tape-info;</location>
+  </locations>
 
 
   <mapping>
