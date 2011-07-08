@@ -111,7 +111,7 @@
         <dependency groupId="org.datanucleus" artifactId="datanucleus-jpa" version="2.1.8"/>
         <dependency groupId="org.datanucleus" artifactId="datanucleus-rdbms" version="2.2.4"/>
         <dependency groupId="toplink.essentials" artifactId="toplink-essentials" version="2.1-60f"/>
-        <dependency groupId="com.google.guava" artifactId="guava" version="r07"/>
+        <dependency groupId="com.google.guava" artifactId="guava" version="r09"/>
         <dependency groupId="com.caucho" artifactId="hessian" version="4.0.7" />
         <dependency groupId="com.ettrema" artifactId="milton-api" version="1.5.10"/>
         <dependency groupId="com.ettrema" artifactId="milton-servlet" version="1.5.10"/>
