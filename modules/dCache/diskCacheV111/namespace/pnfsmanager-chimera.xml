@@ -61,4 +61,9 @@
       <property name="aclEnabled" value="${aclEnabled}"/>
   </bean>
 
+  <bean id="acl-admin" class="org.dcache.acl.AclAdmin">
+      <description>Provides commands for manipulating ACLs</description>
+      <property name="nameSpaceProvider" ref="name-space-provider"/>
+  </bean>
+
 </beans>

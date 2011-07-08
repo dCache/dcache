@@ -1,16 +1,1 @@
-# Starts ACL-administration cell
-#
-
-onerror shutdown
-
-check -strong cell.name
-check -strong pnfsmanager
-
-set context -c pnfsManagerTimeout 28000
-
-create org.dcache.cells.UniversalSpringCell acladmin \
-        "classpath:org/dcache/acl/acl.xml \
-        -export \
-        -pnfsManager=\"${pnfsmanager}\" \
-        -pnfsManagerTimeout=\"${pnfsManagerTimeout}\" \
-        "
+say -level=2 "The acl service is obsolete; the functionality was moved to pnfsmanager "

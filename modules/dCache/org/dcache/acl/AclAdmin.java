@@ -10,19 +10,17 @@ import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACEParser;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.auth.Subjects;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.namespace.NameSpaceProvider;
 import dmg.util.Args;
-import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
-import org.dcache.cells.CellInfoProvider;
 
 /**
- * This Cell provides administration tool to manage ACLs (commands for setting and getting ACL of files/directories).
- * In dCache Administration interface use command "cd acladmin" to get to the ACL Administration tool.
+ * This component provides administration tool to manage ACLs
+ * (commands for setting and getting ACL of files/directories).
  *
  * There are two commands for administration ACLs of the files or directories:
  * (1) set ACL (+ means ALLOW, - means DENY) :
@@ -38,11 +36,9 @@ import org.dcache.cells.CellInfoProvider;
  * @version 16 Dec 2008
  *
  */
-public class AclCell  extends AbstractCellComponent
-    implements CellCommandListener, CellInfoProvider {
-
-    private PnfsHandler _pnfs;
-
+public class AclAdmin
+    implements CellCommandListener
+{
     public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
     final static int ACE_MIN_format2 = 2;
@@ -50,11 +46,16 @@ public class AclCell  extends AbstractCellComponent
 
     public static final String OPTION_HELP = "h";
 
-    private static final Logger _logger = LoggerFactory.getLogger("logger.org.dcache.authorization.adminACL." + AclCell.class);
+    private static final Logger _logger =
+        LoggerFactory.getLogger(AclAdmin.class);
 
-    public void setPnfsHandler(PnfsHandler pnfs) {
-        _pnfs = pnfs;
+    private NameSpaceProvider _nameSpaceProvider;
+
+    public void setNameSpaceProvider(NameSpaceProvider provider)
+    {
+        _nameSpaceProvider = provider;
     }
+
      /**
       * Command for getting ACL
       * Examples :
@@ -63,10 +64,11 @@ public class AclCell  extends AbstractCellComponent
       *
       */
 
-     public String hh_getfacl = "<pnfsId>|<globalPath>" +
+     public final static String hh_getfacl = "<pnfsId>|<globalPath>" +
             "# gets ACL of an object";
 
-     public String fh_getfacl = "getfacl <pnfsId>|<globalPath> \n" +
+     public final static String fh_getfacl =
+            "getfacl <pnfsId>|<globalPath> \n" +
             "Gets ACL of a resource (a file or directory) \n" +
             "which is defined by its pnfsId or globalPath. \n" +
             "        \n" +
@@ -82,26 +84,23 @@ public class AclCell  extends AbstractCellComponent
             "The extra format is suitable for the setfacl command. \n" +
             "See the help for that command for more details.";
 
-     public String ac_getfacl_$_1(Args args) throws ACLException, CacheException {
-
-        if ( args.argc() < 1 )
-            throw new IllegalArgumentException("Usage : getfacl <pnfsId>|<globalPath> ");
-
-        FileAttributes attr;
-        try {
-            PnfsId pnfsId = new PnfsId(args.argv(0));
-            attr = _pnfs.getFileAttributes(pnfsId, EnumSet.of(FileAttribute.ACL));
-        } catch (IllegalArgumentException ee) {
-            // path provided
-            attr = _pnfs.getFileAttributes(args.argv(0), EnumSet.of(FileAttribute.ACL));
+     public String ac_getfacl_$_1(Args args)
+         throws ACLException, CacheException
+    {
+        if (args.argc() < 1) {
+            throw new IllegalArgumentException("Usage: getfacl <pnfsId>|<globalPath>");
         }
 
-       ACL acl = attr.getAcl();
-        if ( acl != null ) {
-            _logger.info("getfacl Response: {}", acl);
+        PnfsId pnfsId = getPnfsId(args.argv(0));
+        FileAttributes attr =
+            _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsId,
+                                                 EnumSet.of(FileAttribute.ACL));
+        ACL acl = attr.getAcl();
+        if (acl != null) {
             return acl.toExtraFormat();
-        } else
+        } else {
             return "ACL for the object rsId = " + args.argv(0) + "  does not exist.";
+        }
     }
 
     /**
@@ -112,11 +111,11 @@ public class AclCell  extends AbstractCellComponent
     * ace_spec examples: USER:6750:+rlx:fd EVERYONE@:-w USER:3550:+rlwfx:do GROUP:4352:+rlwfx
     *
     */
-    public String hh_setfacl =
+    public final static String hh_setfacl =
         "<pnfsId|globalPath>  <subject>:<+|-><access_msk>[:<flags>] [ ... ] \n" +
         "# sets a new ACL to an object <pnfsId|globalPath>";
 
-    public String fh_setfacl =
+    public final static String fh_setfacl =
             "setfacl <ID> <ACE> [<ACE> ...] \n" +
             "where \n"+
             "<ID>  is <pnfsId|globalPath> \n" +
@@ -214,38 +213,15 @@ public class AclCell  extends AbstractCellComponent
             "For further information on ACLs in dCache please refer to: \n" +
             "http://trac.dcache.org/trac.cgi/wiki/Integrate";
 
-    public String ac_setfacl_$_2_99(Args args) throws Exception, CacheException, IllegalArgumentException, RuntimeException {
-
-        if ( args.argc() < 2 )
+    public String ac_setfacl_$_2_99(Args args)
+        throws CacheException, IllegalArgumentException
+    {
+        if (args.argc() < 2) {
             throw new IllegalArgumentException("Usage : setfacl <pnfsid|globalPath>  <who>[:<who_id>]:<+|-><access_msk>[:<flags>] [ ... ] ");
-
-        PnfsId pnfsId;
-        FileMetaData fileMetaData;
-        ACE ace;
-
-        if( PnfsId.isValid(args.argv(0))) {
-            pnfsId = new PnfsId(args.argv(0));
-            fileMetaData =
-                new FileMetaData(_pnfs.getFileAttributes(pnfsId, FileMetaData.getKnownFileAttributes()));
-        } else {
-            String path = args.argv(0);
-            EnumSet<FileAttribute> request = EnumSet.of(FileAttribute.PNFSID);
-            request.addAll(FileMetaData.getKnownFileAttributes());
-            FileAttributes attributes = _pnfs.getFileAttributes(path, request);
-            fileMetaData = new FileMetaData(attributes);
-            pnfsId = attributes.getPnfsId();
         }
 
-        // get rs_id
-        String rsId = pnfsId.toString();
-
-        // get rs_type
-        RsType rsType = null;
-        if ( fileMetaData.isDirectory() ) {
-            rsType = RsType.DIR;
-        } else if ( fileMetaData.isRegularFile() ) {
-            rsType = RsType.FILE;
-        }
+        PnfsId pnfsId = getPnfsId(args.argv(0));
+        RsType rsType = getRsType(pnfsId);
 
         // get list of ACEs
         List<ACE> aces = new ArrayList<ACE>();
@@ -253,18 +229,40 @@ public class AclCell  extends AbstractCellComponent
         for (int i = 1; i < args.argc(); i++) {
             String ace_spec_format2 = args.argv(i);
 
-            ace = ACEParser.parseAdmACE(ace_spec_format2);
+            ACE ace = ACEParser.parseAdmACE(ace_spec_format2);
             if ( ace == null )
                 throw new IllegalArgumentException("Can't parse provided ACE: " + ace_spec_format2);
             aces.add(ace);
         }
 
-        ACL newACL = new ACL(rsId, rsType, aces);
-        _logger.debug("New ACL: {}", newACL);
-
         FileAttributes attributes = new FileAttributes();
-        attributes.setAcl(newACL);
-        _pnfs.setFileAttributes(pnfsId, attributes);
+        attributes.setAcl(new ACL(pnfsId.toString(), rsType, aces));
+        _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, attributes);
         return "Done";
+    }
+
+    private PnfsId getPnfsId(String s)
+        throws CacheException
+    {
+        if (PnfsId.isValid(s)) {
+            return new PnfsId(s);
+        } else {
+            return _nameSpaceProvider.pathToPnfsid(Subjects.ROOT, s, true);
+        }
+    }
+
+    private RsType getRsType(PnfsId pnfsId)
+        throws CacheException
+    {
+        FileAttributes attributes =
+            _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsId,
+                                                 EnumSet.of(FileAttribute.TYPE));
+        switch (attributes.getFileType()) {
+        case DIR:
+            return RsType.DIR;
+        case REGULAR:
+            return RsType.FILE;
+        }
+        return null;
     }
 }
