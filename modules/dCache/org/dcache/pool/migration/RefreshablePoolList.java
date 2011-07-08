@@ -1,7 +1,8 @@
 package org.dcache.pool.migration;
 
-import org.dcache.util.ImmutableList;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * A list of pools.

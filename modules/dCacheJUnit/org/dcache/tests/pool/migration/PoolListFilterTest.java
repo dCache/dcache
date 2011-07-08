@@ -7,14 +7,11 @@ import static org.junit.Assert.*;
 import org.dcache.pool.migration.PoolListFilter;
 import org.dcache.pool.migration.RefreshablePoolList;
 import org.dcache.util.Glob;
-import org.dcache.util.ImmutableList;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.regex.Pattern;
@@ -28,6 +25,8 @@ import org.dcache.util.expression.ExpressionParser;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
 import org.dcache.pool.migration.SymbolTable;
+
+import com.google.common.collect.ImmutableList;
 
 public class PoolListFilterTest
 {
@@ -287,7 +286,7 @@ public class PoolListFilterTest
 
         public void setPools(PoolManagerPoolInformation... pools)
         {
-            _list = new ImmutableList(new ArrayList(Arrays.asList(pools)));
+            _list = ImmutableList.copyOf(pools);
         }
 
         @Override
