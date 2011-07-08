@@ -27,9 +27,10 @@
     <loadproperties srcFile="version.build" />
     <loadproperties srcFile="patch.build" />
     <property name="patch.number" value="${patch.id}rc" />
+    <property name="local.version" value="" />
 
     <property name="version" value="${code.base}.${release.major.id}.${release.minor.id}" />
-    <property name="patch" value="${patch.number}" />
+    <property name="patch" value="${patch.number}${local.version}" />
 
     <property name="build.name" value="${release.id}-${version}-${patch}" />
     <echo message="Current Build version : ${build.name}" />
