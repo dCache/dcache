@@ -77,6 +77,7 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import java.util.HashSet;
 import java.util.Date;
+import java.util.List;
 import java.net.URI;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -89,6 +90,8 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 /*
  * @author  timur
@@ -122,14 +125,15 @@ public final class GetRequest extends ContainerRequest {
         int len = protocols.length;
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
-        len = surls.length;
-        fileRequests = new FileRequest[len];
-        for(int i = 0; i<len; ++i) {
-            GetFileRequest fileRequest =
-            new GetFileRequest(getId(),requestCredentialId, surls[i],  lifetime,  max_number_of_retries);
 
-            fileRequests[i] = fileRequest;
+        List<FileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
+        for(String surl : surls) {
+            FileRequest request = new GetFileRequest(getId(),
+                    requestCredentialId, surl, lifetime,
+                    max_number_of_retries);
+            requests.add(request);
         }
+        setFileRequests(requests);
         updateMemoryCache();
     }
 
@@ -183,13 +187,14 @@ public final class GetRequest extends ContainerRequest {
 
     }
 
-      public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
+    @Override
+    public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
-        for(int i =0; i<fileRequests.length;++i) {
-            if(((GetFileRequest)fileRequests[i]).getSurl().equals(surl)) {
-                return fileRequests[i];
+        for(FileRequest request : getFileRequests()) {
+            if(((GetFileRequest)request).getSurl().equals(surl)) {
+                return request;
             }
         }
         throw new SRMException("file request for surl ="+surl +" is not found");
@@ -203,29 +208,10 @@ public final class GetRequest extends ContainerRequest {
         // file requests will get stored as soon as they are
         // scheduled, and the saved state needs to be consistent
         saveJob(true);
-        for(int i = 0; i < fileRequests.length ;++ i) {
-            GetFileRequest fileRequest = (GetFileRequest) fileRequests[i];
-            fileRequest.schedule();
+        for(FileRequest request : getFileRequests()) {
+            request.schedule();
         }
     }
-
-    // ContainerRequest request;
-    /**
-     * for each file request in the request
-     * call storage.PrepareToGet() which should do all the work
-     */
-    public int getNumOfFileRequest() {
-        rlock();
-        try {
-            if(fileRequests == null) {
-                return 0;
-            }
-            return fileRequests.length;
-        } finally {
-            runlock();
-        }
-    }
-
 
     public HashSet callbacks_set =  new HashSet();
 
@@ -238,6 +224,7 @@ public final class GetRequest extends ContainerRequest {
      * progress
      */
 
+    @Override
     public String getMethod() {
         return "Get";
     }
@@ -251,22 +238,23 @@ public final class GetRequest extends ContainerRequest {
         return false;
     }
 
+    @Override
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
     }
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
             logger.debug("get request state changed to "+state);
-            for(int i = 0 ; i < fileRequests.length; ++i) {
+            for(FileRequest request : getFileRequests()) {
                 try {
-                    FileRequest fr = fileRequests[i];
-                    State fr_state = fr.getState();
+                    State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
                     {
 
-                        logger.debug("changing fr#"+fileRequests[i].getId()+" to "+state);
-                            fr.setState(state,"changing file state because request state has changed");
+                        logger.debug("changing fr#"+request.getId()+" to "+state);
+                        request.setState(state,"changing file state because request state has changed");
                     }
                 }
                 catch(IllegalStateTransition ist) {
@@ -381,7 +369,7 @@ public final class GetRequest extends ContainerRequest {
             = new TGetRequestFileStatus[len];
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                GetFileRequest fr =(GetFileRequest)fileRequests[i];
+                GetFileRequest fr =(GetFileRequest)getFileRequests().get(i);
                 getFileStatuses[i] = fr.getTGetRequestFileStatus();
             }
         } else {
@@ -398,6 +386,7 @@ public final class GetRequest extends ContainerRequest {
         return null;
     }
      */
+    @Override
     public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
@@ -412,7 +401,7 @@ public final class GetRequest extends ContainerRequest {
         }
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                GetFileRequest fr =(GetFileRequest)fileRequests[i];
+                GetFileRequest fr =(GetFileRequest) getFileRequests().get(i);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
         } else {
@@ -425,6 +414,7 @@ public final class GetRequest extends ContainerRequest {
         return surlLReturnStatuses;
     }
 
+    @Override
     public TRequestType getRequestType() {
         return TRequestType.PREPARE_TO_GET;
     }

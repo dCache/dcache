@@ -76,6 +76,7 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.SRMUser;
 import java.util.HashSet;
 import java.util.Date;
+import java.util.List;
 import java.net.URI;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
@@ -92,6 +93,8 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 /**
  *
  * @author  timur
@@ -139,21 +142,15 @@ public final class PutRequest extends ContainerRequest{
             "srcFileNames, destUrls, sizes,"+
             " wantPermanent arrays dimensions mismatch");
         }
-        fileRequests = new FileRequest[len];
+        List<FileRequest> requests = Lists.newArrayListWithCapacity(len);
         for(int i = 0; i < len; ++i) {
-
-            PutFileRequest fileRequest = new PutFileRequest(getId(),
-            requestCredentialId,
-            destUrls[i],sizes[i],
-            lifetime,
-            max_number_of_retries,
-            spaceToken,
-            retentionPolicy,
-            accessLatency
-            );
-
-            fileRequests[i] = fileRequest;
+            FileRequest request = new PutFileRequest(getId(),
+                    requestCredentialId, destUrls[i], sizes[i], lifetime,
+                    max_number_of_retries, spaceToken, retentionPolicy,
+                    accessLatency);
+            requests.add(request);
         }
+        setFileRequests(requests);
         updateMemoryCache();
 
     }
@@ -205,13 +202,14 @@ public final class PutRequest extends ContainerRequest{
 
     }
 
+    @Override
     public FileRequest getFileRequestBySurl(URI surl) throws java.sql.SQLException, SRMException{
         if(surl == null) {
            throw new SRMException("surl is null");
         }
-        for(int i =0; i<fileRequests.length;++i) {
-            if(((PutFileRequest)fileRequests[i]).getSurl().equals(surl)) {
-                return (PutFileRequest)fileRequests[i];
+        for(FileRequest request : getFileRequests()) {
+            if(((PutFileRequest)request).getSurl().equals(surl)) {
+                return request;
             }
         }
         throw new SRMException("file request for surl ="+surl +" is not found");
@@ -226,19 +224,10 @@ public final class PutRequest extends ContainerRequest{
         // scheduled, and the saved state needs to be consistent
 
         saveJob(true);
-        for(int i = 0; i < fileRequests.length ;++ i) {
-            PutFileRequest fileRequest = (PutFileRequest) fileRequests[i];
-            fileRequest.schedule();
+        for(FileRequest request : getFileRequests()) {
+            request.schedule();
         }
     }
-
-    public int getNumOfFileRequest() {
-        if(fileRequests == null) {
-            return 0;
-        }
-        return fileRequests.length;
-    }
-
 
     public void proccessRequest() {
         logger.debug("proccessing put request");
@@ -273,6 +262,7 @@ public final class PutRequest extends ContainerRequest{
      * storage.prepareToPut calls methods of callbacks to indicate progress
      */
 
+    @Override
     public String getMethod() {
         return "Put";
     }
@@ -286,22 +276,23 @@ public final class PutRequest extends ContainerRequest{
         return false;
     }
 
+    @Override
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
     }
 
+    @Override
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         if(State.isFinalState(state)) {
 
             logger.debug("copy request state changed to "+state);
-            for(int i = 0 ; i < fileRequests.length; ++i) {
+            for(FileRequest request : getFileRequests()) {
                 try {
-                    FileRequest fr = fileRequests[i];
-                    State fr_state = fr.getState();
+                    State fr_state = request.getState();
                     if(!State.isFinalState(fr_state ))
                     {
-                        logger.debug("changing fr#"+fileRequests[i].getId()+" to "+state);
-                        fr.setState(state,"changing file state because request state has changed");
+                        logger.debug("changing fr#"+request.getId()+" to "+state);
+                        request.setState(state,"changing file state because request state has changed");
                     }
                 }
                 catch(IllegalStateTransition ist) {
@@ -408,7 +399,7 @@ public final class PutRequest extends ContainerRequest{
             = new TPutRequestFileStatus[len];
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                PutFileRequest fr =(PutFileRequest)fileRequests[i];
+                PutFileRequest fr =(PutFileRequest)getFileRequests().get(i);
                 putFileStatuses[i] = fr.getTPutRequestFileStatus();
             }
         } else {
@@ -422,6 +413,7 @@ public final class PutRequest extends ContainerRequest{
     }
 
 
+    @Override
     public TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls) throws SRMException,java.sql.SQLException {
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
@@ -441,7 +433,7 @@ public final class PutRequest extends ContainerRequest{
         String fr_error="";
         if(surls == null) {
             for(int i = 0; i< len; ++i) {
-                PutFileRequest fr =(PutFileRequest)fileRequests[i];
+                PutFileRequest fr =(PutFileRequest)getFileRequests().get(i);
                 surlLReturnStatuses[i] = fr.getTSURLReturnStatus();
             }
         } else {
@@ -454,6 +446,7 @@ public final class PutRequest extends ContainerRequest{
         return surlLReturnStatuses;
     }
 
+    @Override
     public TRequestType getRequestType() {
         return TRequestType.PREPARE_TO_PUT;
     }

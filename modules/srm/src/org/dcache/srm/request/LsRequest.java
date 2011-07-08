@@ -17,7 +17,11 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.util.RequestStatusTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
+
 import java.util.Date;
+import java.util.List;
 import java.net.URI;
 
 public final class LsRequest extends ContainerRequest {
@@ -57,16 +61,15 @@ public final class LsRequest extends ContainerRequest {
                 this.numOfLevels = numOfLevels;
                 this.longFormat = longFormat;
                 this.maxNumOfResults = maxNumOfResults;
-                int len = request.getArrayOfSURLs().getUrlArray().length;
-                fileRequests = new FileRequest[len];
-                for(int i = 0; i<len; ++i) {
-                        fileRequests[i] =
-                                new LsFileRequest(getId(),
-                                                  requestCredentialId,
-                                                  request.getArrayOfSURLs().getUrlArray()[i],
-                                                  lifetime,
-                                                  max_number_of_retries);
+                org.apache.axis.types.URI[] urls = request.getArrayOfSURLs().getUrlArray();
+                List<FileRequest> requests = Lists.newArrayListWithCapacity(urls.length);
+                for(org.apache.axis.types.URI url : urls) {
+                    FileRequest fileRequest = new LsFileRequest(getId(),
+                            requestCredentialId, url, lifetime,
+                            max_number_of_retries);
+                    requests.add(fileRequest);
                 }
+                setFileRequests(requests);
                 updateMemoryCache();
         }
 
@@ -124,15 +127,16 @@ public final class LsRequest extends ContainerRequest {
 
         }
 
+        @Override
         public FileRequest getFileRequestBySurl(URI surl)
                 throws java.sql.SQLException,
                 SRMException{
                 if(surl == null) {
                         throw new SRMException("surl is null");
                 }
-                for(int i=0; i<fileRequests.length;++i) {
-                        if(((LsFileRequest)fileRequests[i]).getSurl().equals(surl)) {
-                                return fileRequests[i];
+                for(FileRequest request : getFileRequests()) {
+                        if(((LsFileRequest)request).getSurl().equals(surl)) {
+                                return request;
                         }
                 }
                 throw new SRMException("ls file request for surl ="+surl +" is not found");
@@ -147,16 +151,12 @@ public final class LsRequest extends ContainerRequest {
                 // scheduled, and the saved state needs to be consistent
 
                 saveJob(true);
-                for(int i = 0; i < fileRequests.length ;++ i) {
-                        LsFileRequest fileRequest = (LsFileRequest) fileRequests[i];
-                        fileRequest.schedule();
+                for(FileRequest request : getFileRequests()) {
+                        request.schedule();
                 }
         }
 
-        public int getNumOfFileRequest() {
-                return (fileRequests==null?0:fileRequests.length);
-        }
-
+        @Override
         public String getMethod() {
                 return "Ls";
         }
@@ -169,13 +169,15 @@ public final class LsRequest extends ContainerRequest {
                 return "request was ready, set all ready file statuses to done";
         }
 
+        @Override
         public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure, org.dcache.srm.scheduler.FatalJobFailure {
         }
 
+        @Override
         protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
                 State state = getState();
                 if(State.isFinalState(state)) {
-                        for(FileRequest fr : fileRequests ) {
+                        for(FileRequest fr : getFileRequests() ) {
                                 try {
                                         State fr_state = fr.getState();
                                         if(!State.isFinalState(fr_state)) {
@@ -251,10 +253,10 @@ public final class LsRequest extends ContainerRequest {
 
         public TMetaDataPathDetail[] getPathDetailArray()
                 throws SRMException,java.sql.SQLException {
-                int len = fileRequests.length;
+                int len = getFileRequests().size();
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];
                 for(int i = 0; i<len; ++i) {
-                        LsFileRequest fr =(LsFileRequest)fileRequests[i];
+                        LsFileRequest fr =(LsFileRequest)getFileRequests().get(i);
                         detail[i] = fr.getMetaDataPathDetail();
                 }
                 return detail;
@@ -283,6 +285,7 @@ public final class LsRequest extends ContainerRequest {
             }
         }
 
+        @Override
         public TRequestType getRequestType() {
                 return TRequestType.LS;
         }
@@ -377,7 +380,7 @@ public final class LsRequest extends ContainerRequest {
                 int done_req             = 0;
                 int got_exception        = 0;
                 int auth_failure         = 0;
-                for(FileRequest fr : fileRequests) {
+                for(FileRequest fr : getFileRequests()) {
                         TReturnStatus fileReqRS = fr.getReturnStatus();
                         TStatusCode fileReqSC   = fileReqRS.getStatusCode();
                         try {
@@ -469,6 +472,7 @@ public final class LsRequest extends ContainerRequest {
                 }
         }
 
+        @Override
         public  TSURLReturnStatus[] getArrayOfTSURLReturnStatus(URI[] surls)
                 throws SRMException,java.sql.SQLException {
                 return null;
@@ -479,7 +483,7 @@ public final class LsRequest extends ContainerRequest {
                 sb.append(getMethod()).append("Request #").append(getId()).append(" created by ").append(getUser());
                 sb.append(" with credentials : ").append(getCredential()).append(" state = ").append(getState());
                 sb.append("\n SURL(s) : ");
-                for(FileRequest fr: fileRequests) {
+                for(FileRequest fr: getFileRequests()) {
                         LsFileRequest lsfr = (LsFileRequest) fr;
                         sb.append(lsfr.getSurlString()).append(" ");
                 }
@@ -492,11 +496,11 @@ public final class LsRequest extends ContainerRequest {
                         sb.append("\n error message=").append(getErrorMessage());
                         sb.append("\n History of State Transitions: \n");
                         sb.append(getHistory());
-                        for(FileRequest fr: fileRequests) {
+                        for(FileRequest fr: getFileRequests()) {
                                 fr.toString(sb,longformat);
                         }
                 } else {
-                    sb.append(" number of surls in request:").append(fileRequests.length);
+                    sb.append(" number of surls in request:").append(getFileRequests().size());
                 }
         }
 
