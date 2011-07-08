@@ -1,0 +1,152 @@
+package org.dcache.gplazma.plugins;
+
+import static com.google.common.collect.Iterables.filter;
+import com.google.common.collect.Sets;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.ptr.IntByReference;
+import java.security.Principal;
+import java.util.Properties;
+import java.util.Set;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.NoSuchPrincipalException;
+import org.dcache.gplazma.SessionID;
+
+/**
+ * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for
+ * Unix based systems. The actual mapping happens according to systems {@literal /etc/nsswith.conf}
+ * configuration.
+ */
+public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin {
+
+    /**
+     * handle to libc.
+     */
+    private final LibC _libc;
+
+    /**
+     * Create an instance of {@link Nss} gplazma plugin.
+     *
+     * @param properties
+     * @throws UnsatisfiedLinkError if unable to load system libraries.
+     */
+    public Nsswitch(Properties properties) throws UnsatisfiedLinkError {
+        _libc = (LibC) Native.loadLibrary("c", LibC.class);
+    }
+
+    @Override
+    public void map(SessionID sID, Set<Principal> principals, Set<Principal> authorizedPrincipals) throws AuthenticationException {
+        for (UserNamePrincipal principal: filter(principals, UserNamePrincipal.class)) {
+            __password p = _libc.getpwnam(principal.getName());
+            if (p != null) {
+                authorizedPrincipals.add(principal);
+                authorizedPrincipals.add(new UidPrincipal(p.uid));
+                authorizedPrincipals.add(new GidPrincipal(p.gid, true));
+                int[] gids = groupsOf(p);
+                for (int id : gids) {
+                    authorizedPrincipals.add(new GidPrincipal(id, false));
+                }
+                return;
+            }
+        }
+        throw new AuthenticationException("No mapping for " + principals);
+    }
+
+    @Override
+    public Principal map(Principal principal) throws NoSuchPrincipalException {
+
+        if (principal instanceof UserNamePrincipal) {
+            __password p = _libc.getpwnam(principal.getName());
+            if (p != null) {
+                return new UidPrincipal(p.uid);
+            }
+        } else if (principal instanceof GroupNamePrincipal) {
+            __group g = _libc.getgrnam(principal.getName());
+            if (g != null) {
+                return new GidPrincipal(g.gid, false);
+            }
+        }
+        throw new NoSuchPrincipalException(principal);
+    }
+
+    @Override
+    public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException {
+
+        if (principal instanceof UidPrincipal) {
+            __password p = _libc.getpwuid((int) ((UidPrincipal) principal).getUid());
+            if (p != null) {
+               return Sets.newHashSet((Principal)new UserNamePrincipal(p.name));
+            }
+        } else if (principal instanceof GidPrincipal) {
+            __group g = _libc.getgrgid((int) ((GidPrincipal) principal).getGid());
+            if (g != null) {
+               return Sets.newHashSet((Principal)new GroupNamePrincipal(g.name));
+            }
+        }
+        throw new NoSuchPrincipalException(principal);
+    }
+
+    private int[] groupsOf(__password pwrecord) {
+
+        boolean done = false;
+        int[] groups = new int[0];
+        while (!done) {
+            IntByReference ngroups = new IntByReference();
+            ngroups.setValue(groups.length);
+            if (_libc.getgrouplist(pwrecord.name, pwrecord.gid, groups, ngroups) < 0) {
+                groups = new int[ngroups.getValue()];
+                continue;
+            }
+            done = true;
+        }
+
+        return groups;
+    }
+
+    /*
+     * struct passwd equivalent  as defined in <pwd.h>
+     */
+    static public class __password extends Structure {
+
+        public String name;
+        public String passwd;
+        public int uid;
+        public int gid;
+        public String gecos;
+        public String dir;
+        public String shell;
+    }
+
+    /*
+     * struct group equivalent as defined in <pwd.h>
+     */
+    static public class __group extends Structure {
+
+        public String name;
+        public String passwd;
+        public int gid;
+        public Pointer mem;
+    }
+
+    /*
+     * hook required functions from libc
+     */
+    public interface LibC extends Library {
+
+        __password getpwnam(String name);
+
+        __password getpwuid(int id);
+
+        __group getgrnam(String name);
+
+        __group getgrgid(int id);
+
+        int getgrouplist(String user, int gid, int[] groups, IntByReference ngroups);
+    }
+}

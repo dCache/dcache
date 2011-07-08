@@ -23,4 +23,8 @@
         <name>x509</name>
         <class>org.dcache.gplazma.plugins.X509Plugin</class>
     </plugin>
+    <plugin>
+        <name>nsswitch</name>
+        <class>org.dcache.gplazma.plugins.Nsswitch</class>
+    </plugin>
 </plugins>
