@@ -110,7 +110,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         FileRequest[] fileRequests = new FileRequest[fileIds.length];
         for(int i = 0; i<fileRequests.length; ++i) {
             try {
-                fileRequests[i] = (FileRequest) Job.getJob(fileIds[i],_con);
+                fileRequests[i] = Job.getJob(fileIds[i], FileRequest.class, _con);
             } catch (SRMInvalidRequestException ire){
                 logger.error(ire.toString());
             }

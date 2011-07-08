@@ -383,7 +383,7 @@ public final class GetFileRequest extends FileRequest {
 
     private URI getTURL() throws SRMException, java.sql.SQLException{
         String firstDcapTurl = null;
-        GetRequest request = (GetRequest) Job.getJob(requestId);
+        GetRequest request = Job.getJob(requestId, GetRequest.class);
         if (request != null) {
             firstDcapTurl = request.getFirstDcapTurl();
             if (firstDcapTurl == null) {
@@ -458,7 +458,7 @@ public final class GetFileRequest extends FileRequest {
     public void pinFile()
         throws NonFatalJobFailure, FatalJobFailure, SRMException
     {
-        GetRequest request = (GetRequest) Job.getJob(requestId);
+        GetRequest request = Job.getJob(requestId, GetRequest.class);
         if (!isProtocolSupported(request.protocols)) {
             throw new FatalJobFailure("Transfer protocols not supported");
         }
@@ -633,7 +633,7 @@ public final class GetFileRequest extends FileRequest {
         public GetFileRequest getGetFileRequest()
             throws SRMInvalidRequestException
         {
-            return (GetFileRequest) Job.getJob(fileRequestJobId);
+            return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 
         public void FileNotFound(String reason) {
@@ -784,11 +784,7 @@ public final class GetFileRequest extends FileRequest {
 
         public GetFileRequest getGetFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (GetFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, GetFileRequest.class);
         }
 
         public void Error( String error) {
@@ -854,6 +850,5 @@ public final class GetFileRequest extends FileRequest {
                 logger.error(e.toString());
             }
         }
-
     }
 }

@@ -458,7 +458,7 @@ public final class PutFileRequest extends FileRequest {
                 // if we can not read this path for some reason
                 //(not in ftp root for example) this will throw exception
                 // we do not care about the return value yet
-                PutRequest request = (PutRequest) getJob(requestId);
+                PutRequest request = getJob(requestId, PutRequest.class);
                 String[] supportedProts = getStorage().supportedPutProtocols();
                 boolean found_supp_prot=false;
                 String[] requestProtocols = request.getProtocols();
@@ -787,11 +787,7 @@ public final class PutFileRequest extends FileRequest {
         }
 
         public PutFileRequest getPutFileRequest() throws SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (PutFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
         public void DuplicationError(String reason) {
@@ -940,11 +936,7 @@ public final class PutFileRequest extends FileRequest {
         public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException,
                 SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (PutFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
 
@@ -1031,11 +1023,7 @@ public final class PutFileRequest extends FileRequest {
         public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException,
                   SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (PutFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
 
@@ -1079,11 +1067,7 @@ public final class PutFileRequest extends FileRequest {
         public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException,
                 SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (PutFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
 
@@ -1234,11 +1218,7 @@ public final class PutFileRequest extends FileRequest {
 
         public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (PutFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
 
@@ -1286,11 +1266,7 @@ public final class PutFileRequest extends FileRequest {
 
         public PutFileRequest getPutFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (PutFileRequest) job;
-            }
-            return null;
+            return Job.getJob(fileRequestJobId, PutFileRequest.class);
         }
 
         public void Error( String error) {

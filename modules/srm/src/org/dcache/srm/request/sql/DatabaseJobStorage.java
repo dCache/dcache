@@ -72,6 +72,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -679,9 +681,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             {
                 Long ID = (Long)i.next();
                 try {
-                    Job job = Job.getJob(ID,
-
-                    _con);
+                    Job job = Job.getJob(ID, Job.class, _con);
                     scheduler.schedule(job);
                 } catch (SRMInvalidRequestException ire) {
                     logger.error(ire.toString());
@@ -734,8 +734,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 // we just restore the job, which will triger the experation of the job, if its lifetime
                 // is over
                 try {
-                    Job job = Job.getJob(ID,
-                    _con);
+                    Job.getJob(ID, Job.class, _con);
                 } catch (SRMInvalidRequestException ire) {
                     logger.error(ire.toString());
                 }

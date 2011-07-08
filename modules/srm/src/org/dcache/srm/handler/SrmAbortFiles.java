@@ -21,6 +21,7 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
@@ -143,13 +144,8 @@ public class SrmAbortFiles {
                     TStatusCode.SRM_INVALID_REQUEST);
         }
 
-        ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
-        if(request == null) {
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not found",
-                    TStatusCode.SRM_INVALID_REQUEST);
+        ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
 
-        }
         URI[] surls;
         if(  srmAbortFilesRequest.getArrayOfSURLs() == null ){
             return getFailedResponse("request does not contain any SURLs",

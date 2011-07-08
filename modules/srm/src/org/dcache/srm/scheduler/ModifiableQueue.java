@@ -120,7 +120,7 @@ public class ModifiableQueue  {
                 headId =  queue.get(0);
                 //System.out.println("headId is "+headId+" returning job ");
         }
-        return Job.getJob(headId);
+        return Job.getJob(headId, Job.class);
     }
     
     
@@ -137,7 +137,7 @@ public class ModifiableQueue  {
                 }
                 if(id != null) 
                 {
-                    return Job.getJob(id);
+                    return Job.getJob(id, Job.class);
                 }
                 try {
                     queue.wait();
@@ -166,7 +166,7 @@ public class ModifiableQueue  {
                 }
                 if(id != null) 
                 {
-                    return Job.getJob(id);
+                    return Job.getJob(id, Job.class);
                 }
                 if ( waitTime <= 0) {
                     return null;
@@ -304,7 +304,7 @@ public class ModifiableQueue  {
         int index =0;
         int size = queueCopy.size();
         for (Long currentJobId:queueCopy) {
-            Job currentJob = Job.getJob(currentJobId);
+            Job currentJob = Job.getJob(currentJobId, Job.class);
             int currentValue = calc.calculateValue(size,index,currentJob);
             if(currentValue > greatestValue) {
                 greatestValueJob = currentJob;

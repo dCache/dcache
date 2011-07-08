@@ -79,6 +79,9 @@ public class SrmExtendFileLifeTime {
             logger.debug(" malformed uri : "+e.getMessage());
             response = getFailedResponse(" malformed uri : "+e.getMessage(),
                     TStatusCode.SRM_INVALID_REQUEST);
+        } catch(SRMInvalidRequestException e) {
+            logger.debug(e.toString());
+            response = getFailedResponse(e.toString(), TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
@@ -170,19 +173,9 @@ public class SrmExtendFileLifeTime {
                     TStatusCode.SRM_INVALID_REQUEST);
         }
 
-        job = Job.getJob(requestId);
+        ContainerRequest containerRequest = Job.getJob(requestId,
+                ContainerRequest.class);
 
-        if(job == null ) {
-            return getFailedResponse("request for requestToken \""+
-                    token+"\"is not found",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        if ( ! (job instanceof ContainerRequest)){
-            return getFailedResponse("request for requestToken \""+
-                    token+"\"is of incorrect type",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        ContainerRequest containerRequest = (ContainerRequest) job;
         long newLifetimeInMillis;
         long configMaximumLifetime;
         if(containerRequest instanceof CopyRequest){

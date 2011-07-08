@@ -14,6 +14,8 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.PutRequest;
@@ -82,6 +84,10 @@ public class SrmStatusOfPutRequest {
             logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMInvalidRequestException e) {
+            logger.error(e.toString());
+            response = getFailedResponse(e.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
@@ -135,20 +141,8 @@ public class SrmStatusOfPutRequest {
                     TStatusCode.SRM_FAILURE);
         }
 
-        ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
-        if(request == null) {
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not found",
-                    TStatusCode.SRM_FAILURE);
+        PutRequest putRequest = Job.getJob(requestId, PutRequest.class);
 
-        }
-        if ( !(request instanceof PutRequest) ){
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not srmPrepareToPut request",
-                    TStatusCode.SRM_FAILURE);
-
-        }
-        PutRequest putRequest = (PutRequest) request;
         if( statusOfPutRequestRequest.getArrayOfTargetSURLs() == null ){
             return putRequest.getSrmStatusOfPutRequestResponse();
         }

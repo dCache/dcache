@@ -1296,11 +1296,7 @@ public final class CopyFileRequest extends FileRequest {
 
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException{
-			Job job = Job.getJob(fileRequestJobId);
-			if(job != null) {
-				return (CopyFileRequest) job;
-			}
-			throw new java.sql.SQLException("CopyFileRequest for id="+fileRequestJobId+" is not found");
+			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
 		public void DuplicationError(String reason) {
@@ -1511,11 +1507,7 @@ public final class CopyFileRequest extends FileRequest {
 
 		private CopyFileRequest getCopyFileRequest()
                 throws SRMInvalidRequestException{
-			Job job = Job.getJob(fileRequestJobId);
-			if(job != null) {
-				return (CopyFileRequest) job;
-			}
-			return null;
+			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
 		public void copyComplete(FileMetaData fmd) {
@@ -1690,11 +1682,7 @@ public final class CopyFileRequest extends FileRequest {
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException
         {
-			Job job = Job.getJob(fileRequestJobId);
-			if(job != null) {
-				return (CopyFileRequest) job;
-			}
-			return null;
+		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
 		public TheReserveSpaceCallbacks(Long fileRequestJobId) {
@@ -1787,11 +1775,7 @@ public final class CopyFileRequest extends FileRequest {
 
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
-			Job job = Job.getJob(fileRequestJobId);
-			if(job != null) {
-				return (CopyFileRequest) job;
-			}
-			return null;
+		    return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
 		public void ReleaseSpaceFailed( String error) {
@@ -1887,11 +1871,7 @@ public final class CopyFileRequest extends FileRequest {
 
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException{
-			Job job = Job.getJob(fileRequestJobId);
-			if(job != null) {
-				return (CopyFileRequest) job;
-			}
-			return null;
+			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
 		public CopyUseSpaceCallbacks(Long fileRequestJobId) {
@@ -2044,11 +2024,7 @@ public final class CopyFileRequest extends FileRequest {
 
 		public CopyFileRequest getCopyFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
-			Job job = Job.getJob(fileRequestJobId);
-			if(job != null) {
-				return (CopyFileRequest) job;
-			}
-			return null;
+			return Job.getJob(fileRequestJobId, CopyFileRequest.class);
 		}
 
 		public CopyCancelUseOfSpaceCallbacks(Long fileRequestJobId) {

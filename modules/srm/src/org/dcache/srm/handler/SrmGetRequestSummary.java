@@ -17,7 +17,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.request.Request;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
@@ -76,6 +76,10 @@ public class SrmGetRequestSummary {
             logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMInvalidRequestException e) {
+            logger.debug(e.getMessage());
+            response = getFailedResponse(e.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
@@ -119,35 +123,22 @@ public class SrmGetRequestSummary {
 
             String requestToken = requestTokens[i];
             try {
-                requestIds[i] = new Long( requestToken);
+                requestIds[i] = new Long(requestToken);
+                ContainerRequest request = Job.getJob(requestIds[i], ContainerRequest.class);
+
+                // FIXME we do this to make the srm update the status of the request if it changed
+                requestSummaries[i] = request.getRequestSummary();
             } catch (NumberFormatException nfe){
                 requestSummaries[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_INVALID_REQUEST,
-                " requestToken \""+requestToken+"\"is not valid"));
-                continue;
-            }
-
-            Job job = Job.getJob(requestIds[i]);
-
-            if(job == null) {
+                " requestToken \""+requestToken+"\" is not valid"));
+            } catch(SRMInvalidRequestException e) {
                 requestSummaries[i].setStatus(new TReturnStatus(
                         TStatusCode.SRM_INVALID_REQUEST,
-                        "request for requestToken \""+
-                        requestToken+"\"is not found"));
-
-            }
-            if(job instanceof ContainerRequest) {
-                requestSummaries[i] =
-                // we do this to make the srm update the status of the request if it changed
-                ((ContainerRequest)job).getRequestSummary();
-            } else {
-                requestSummaries[i].setStatus(new TReturnStatus(
-                        TStatusCode.SRM_INVALID_REQUEST,
-                        "request for requestToken \""+
-                        requestToken+"\"is of wrong type"));
-
+                        e.getMessage()));
             }
         }
+
         SrmGetRequestSummaryResponse response =
                 new SrmGetRequestSummaryResponse();
 

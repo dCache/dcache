@@ -382,8 +382,8 @@ public final class BringOnlineFileRequest extends FileRequest {
     public void pinFile()
         throws NonFatalJobFailure, FatalJobFailure, SRMException
     {
-        BringOnlineRequest request =
-            (BringOnlineRequest) Job.getJob(requestId);
+        BringOnlineRequest request = Job.getJob(requestId,
+                BringOnlineRequest.class);
 
         String[] protocols = request.getProtocols();
         if (protocols != null && !isProtocolSupported(protocols)) {
@@ -593,7 +593,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         public BringOnlineFileRequest getBringOnlineFileRequest()
             throws SRMInvalidRequestException
         {
-            return (BringOnlineFileRequest) Job.getJob(fileRequestJobId);
+            return Job.getJob(fileRequestJobId, BringOnlineFileRequest.class);
         }
 
         public void FileNotFound(String reason) {
@@ -733,10 +733,7 @@ public final class BringOnlineFileRequest extends FileRequest {
         public BringOnlineFileRequest getBringOnlineFileRequest()
                 throws java.sql.SQLException, SRMInvalidRequestException {
             if(fileRequestJobId != null) {
-                Job job = Job.getJob(fileRequestJobId);
-                if(job != null) {
-                    return (BringOnlineFileRequest) job;
-                }
+                return Job.getJob(fileRequestJobId, BringOnlineFileRequest.class);
             }
             return null;
         }

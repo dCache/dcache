@@ -185,18 +185,8 @@ public class SrmReleaseFiles {
             surls = toUris(srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray());
         }
 
-        ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
-        if(request == null) {
-            if(surls != null && surls.length > 0) {
-                return unpinFilesDirectlyBySURLAndRequestId(requestId, surls);
+        ContainerRequest request = Job.getJob(requestId, ContainerRequest.class);
 
-            } else {
-                return getFailedResponse("request for requestToken \""+
-                                         requestToken+"\"is not found",
-                                         TStatusCode.SRM_INVALID_REQUEST);
-            }
-
-        }
         if ( !(request instanceof GetRequest || request instanceof BringOnlineRequest) ){
             return getFailedResponse("request for requestToken \""+
 				     requestToken+"\"is not srmPrepareToGet or srmBringOnlineRequest request",
@@ -241,7 +231,8 @@ public class SrmReleaseFiles {
             srmReleaseFilesResponse.setArrayOfFileStatuses(
                     new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
         }
-        // we do this to make the srm update the status of the request if it changed
+
+        // FIXME we do this to make the srm update the status of the request if it changed
         request.getTReturnStatus();
         return srmReleaseFilesResponse;
 
@@ -336,9 +327,6 @@ public class SrmReleaseFiles {
     }
 
     private void unpinFilesDirectlyBySURLs(URI[] surls, Map<URI,TSURLReturnStatus> surlsMap) {
-        TSURLReturnStatus[] surlReturnStatusArray =
-            new TSURLReturnStatus[surls.length];
-        int failure_num=0;
         for (URI surl:surls) {
            TSURLReturnStatus rs=surlsMap.get(surl);
             try {
@@ -442,17 +430,15 @@ public class SrmReleaseFiles {
             }
 
             for(Long requestId:activeRequestIds) {
-                Job job;
+                BringOnlineFileRequest bofr;
+
                 try {
-                    job =  Job.getJob(requestId);
+                    bofr = Job.getJob(requestId, BringOnlineFileRequest.class);
                 } catch (SRMInvalidRequestException ire) {
                     logger.error(ire.toString());
                     continue;
                 }
-                if(job == null || !(job instanceof BringOnlineFileRequest)) {
-                    continue;
-                }
-                BringOnlineFileRequest bofr = (BringOnlineFileRequest)job;
+
                 for(URI surl: surls) {
                     if(bofr.getSurl().equals(surl)) {
                         foundRequests.add(bofr);
@@ -484,17 +470,14 @@ public class SrmReleaseFiles {
 
 
         for(Long requestId:activeRequestIds) {
-            Job job;
+            GetFileRequest gfr;
             try {
-                job =  Job.getJob(requestId);
+                gfr = Job.getJob(requestId, GetFileRequest.class);
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
                 continue;
             }
-            if(job == null || !(job instanceof GetFileRequest)) {
-                continue;
-            }
-            GetFileRequest gfr = (GetFileRequest)job;
+
             for(URI surl: surls) {
                 if(gfr.getSurl().equals(surl)) {
                     foundRequests.add(gfr);

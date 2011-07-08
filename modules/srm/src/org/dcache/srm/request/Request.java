@@ -236,7 +236,7 @@ public abstract class Request extends Job {
 
     public static Request getRequest(Long requestId)
             throws  SRMInvalidRequestException {
-        Job job = Job.getJob( requestId);
+        Job job = Job.getJob( requestId, Job.class);
         if (job == null || !(job instanceof Request)) {
             return null;
         }
@@ -247,7 +247,7 @@ public abstract class Request extends Job {
 
     public static Request getRequest(int requestNum)
             throws SRMInvalidRequestException {
-        return (Request) Job.getJob((long) requestNum);
+        return Job.getJob((long) requestNum, Request.class);
     }
 
 

@@ -13,10 +13,12 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.sql.CopyFileRequestStorage;
 import org.dcache.srm.request.sql.CopyRequestStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.slf4j.Logger;
@@ -79,6 +81,10 @@ public class SrmStatusOfCopyRequest {
             logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMInvalidRequestException e) {
+            logger.error(e.toString());
+            response = getFailedResponse(e.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
@@ -120,20 +126,8 @@ public class SrmStatusOfCopyRequest {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        ContainerRequest r =(ContainerRequest) ContainerRequest.getRequest(requestId);
-        if(r == null) {
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not found",
-                    TStatusCode.SRM_INVALID_REQUEST);
-        }
-        if ( !(r instanceof CopyRequest) ){
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not srmPrepareToGet request",
-                    TStatusCode.SRM_INVALID_REQUEST);
-            
-        }
-        CopyRequest copyRequest = (CopyRequest) r;
-        
+        CopyRequest copyRequest = Job.getJob(requestId, CopyRequest.class);
+
         if (request.getArrayOfSourceSURLs() == null ||
                 request.getArrayOfTargetSURLs() == null) {
             return copyRequest.getSrmStatusOfCopyRequest();

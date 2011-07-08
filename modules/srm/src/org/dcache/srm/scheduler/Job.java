@@ -300,11 +300,46 @@ public abstract class Job  {
        }
     }
 
-    public static final Job getJob(Long jobId) throws SRMInvalidRequestException{
-         return getJob ( jobId, null);
+    /**
+     * Return the Job (or subclass thereof).  This may involve retrieving the
+     * information from an external storage.  If the job cannot be found then
+     * SRMInvalidRequestException is thrown.
+     * <p>
+     * The returned type is determined by the type parameter and must be Job
+     * or a subclass of Job.  If the job doesn't have the right type then
+     * SRMInvalidRequestException is thrown.
+     * @param id which job to fetch.
+     * @param type the desired class to represent this job
+     * @return the requested class for the job with requested id
+     * @throws SRMInvalidRequestException if the job cannot be found or if
+     * the job has the wrong type.
+     */
+    public static final <T extends Job> T getJob(Long id, Class<T> type)
+            throws SRMInvalidRequestException
+    {
+        return getJob(id, type, null);
     }
 
-    public static final Job getJob(Long jobId, Connection _con)
+    public static final <T extends Job> T getJob(Long id, Class<T> type,
+            Connection connection) throws SRMInvalidRequestException
+    {
+        Job job = getJob(id, connection);
+        try {
+            return type.cast(job);
+        } catch(ClassCastException e) {
+            throw new SRMInvalidRequestException("Job " + id + " has type " + Job.class.getSimpleName() + " and not the expected type " + Job.class.getSimpleName());
+        }
+    }
+
+    /**
+     * Fetch the Job associated with the supplied ID.  If no such job exists
+     * then throw SRMInvalidRequestException.  This method never returns null.
+     * @param jobId the ID of the Job
+     * @param _con either a valid database Connection or null
+     * @return a object representing this job.
+     * @throws SRMInvalidRequestException if the job cannot be found
+     */
+    private static final Job getJob(Long jobId, Connection _con)
             throws SRMInvalidRequestException  {
         synchronized(weakJobStorage) {
             WeakReference<Job> ref = weakJobStorage.get(jobId);
@@ -957,7 +992,7 @@ public abstract class Job  {
         {
             remove(_id);
             try {
-                expireJob(Job.getJob(_id));
+                expireJob(Job.getJob(_id, Job.class));
             } catch (IllegalArgumentException e) {
                 // Job is already gone
             } catch (Exception e) {

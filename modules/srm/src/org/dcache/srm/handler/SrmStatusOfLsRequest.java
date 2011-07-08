@@ -8,8 +8,8 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.request.ContainerRequest;
+import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
@@ -72,6 +72,10 @@ public class SrmStatusOfLsRequest {
                     logger.error(sqle.toString());
                     response = getFailedResponse("sql error "+sqle.getMessage(),
                             TStatusCode.SRM_INTERNAL_ERROR);
+                } catch(SRMInvalidRequestException e) {
+                    logger.error(e.toString());
+                    response = getFailedResponse(e.getMessage(),
+                            TStatusCode.SRM_INVALID_REQUEST);
                 } catch(SRMException srme) {
                     logger.error(srme.toString());
                     response = getFailedResponse(srme.toString());
@@ -111,19 +115,8 @@ public class SrmStatusOfLsRequest {
                                                  requestToken+"\"is not valid",
                                                  TStatusCode.SRM_FAILURE);
                 }
-                ContainerRequest containerRequest =(ContainerRequest) ContainerRequest.getRequest(requestId);
-                if(containerRequest == null) {
-                        return getFailedResponse("request for requestToken \""+
-                                                 requestToken+"\"is not found",
-                                                 TStatusCode.SRM_FAILURE);
+                LsRequest request = Job.getJob(requestId, LsRequest.class);
 
-                }
-                if ( !(containerRequest instanceof LsRequest) ){
-                        return getFailedResponse("request for requestToken \""+
-                                                 requestToken+"\"is not srmLs request",
-                                                 TStatusCode.SRM_FAILURE);
-
-                }
-                return ((LsRequest)containerRequest).getSrmStatusOfLsRequestResponse();
+                return request.getSrmStatusOfLsRequestResponse();
         }
 }

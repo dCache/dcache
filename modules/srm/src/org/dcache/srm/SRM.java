@@ -113,6 +113,7 @@ import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
 import diskCacheV111.srm.StorageElementInfo;
+
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
@@ -801,7 +802,7 @@ public class SRM {
         try {
             // Try to get the request with such id
             logger.debug("getRequestStatus() Request.getRequest(" + requestId + ");");
-            ContainerRequest r = (ContainerRequest) ContainerRequest.getRequest(requestId);
+            ContainerRequest r = Job.getJob((long) requestId, ContainerRequest.class);
             logger.debug("getRequestStatus() received Request  ");
             if (r != null) {
                 // we found one make sure it is the same  user
@@ -971,10 +972,8 @@ public class SRM {
             }
 
             //try to get the request
-            ContainerRequest r = (ContainerRequest) ContainerRequest.getRequest(requestId);
-            if (r == null) {
-                return createFailedRequestStatus("setFileStatus(): request #" + requestId + " was not found");
-            }
+            ContainerRequest r = Job.getJob((long)requestId, ContainerRequest.class);
+
             // check that user is the same
             SRMUser req_user = r.getUser();
             if (req_user != null && !req_user.equals(user)) {
@@ -1018,6 +1017,8 @@ public class SRM {
 
             // return request status
             return r.getRequestStatus();
+        } catch(SRMInvalidRequestException e) {
+            return createFailedRequestStatus(e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1053,7 +1054,7 @@ public class SRM {
      */
     public ContainerRequest getRequest(Integer id) {
         try {
-            return (ContainerRequest) ContainerRequest.getRequest(id.intValue());
+            return Job.getJob((long)id.intValue(), ContainerRequest.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1101,7 +1102,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                GetRequest gr = Job.getJob(requestId, GetRequest.class);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1115,7 +1116,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                GetRequest gr = Job.getJob(requestId, GetRequest.class);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1129,7 +1130,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                GetRequest gr = Job.getJob(requestId, GetRequest.class);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1143,7 +1144,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                GetRequest gr = (GetRequest) ContainerRequest.getRequest(requestId);
+                GetRequest gr = Job.getJob(requestId, GetRequest.class);
                 sb.append(gr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1239,7 +1240,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
+                PutRequest pr = Job.getJob(requestId, PutRequest.class);
                 sb.append(pr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1278,7 +1279,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1291,7 +1292,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1304,7 +1305,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1317,7 +1318,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                CopyRequest cr = (CopyRequest) ContainerRequest.getRequest(requestId);
+                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
                 sb.append(cr).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1441,7 +1442,7 @@ public class SRM {
         for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long) i.next();
             try {
-                Request r = (Request) Request.getRequest(requestId);
+                Request r = Job.getJob(requestId, Request.class);
                 sb.append(r).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
@@ -1473,7 +1474,7 @@ public class SRM {
 
     public void listRequest(StringBuilder sb, Long requestId, boolean longformat) throws java.sql.SQLException,
     SRMInvalidRequestException {
-        Job job = Job.getJob(requestId);
+        Job job = Job.getJob(requestId, Job.class);
         if (job == null) {
             sb.append("request with reqiest id " + requestId + " is not found\n");
             return;
@@ -1484,7 +1485,7 @@ public class SRM {
 
     public void cancelRequest(StringBuilder sb, Long requestId) throws java.sql.SQLException,
     SRMInvalidRequestException {
-        Job job = Job.getJob(requestId);
+        Job job = Job.getJob(requestId, Job.class);
         if (job == null || !(job instanceof ContainerRequest)) {
             sb.append("request with reqiest id " + requestId + " is not found\n");
             return;
@@ -1560,22 +1561,22 @@ public class SRM {
             return;
         }
         for (Long requestId : jobsToKill) {
-            final Job job = Job.getJob(requestId);
-            if (job == null || !(job instanceof ContainerRequest)) {
-                logger.error(" request with reqiest id " + requestId + " is not found\n");
-                continue;
-            }
-            sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
-            new Thread(new Runnable() {
+            try {
+                final ContainerRequest job = Job.getJob(requestId, ContainerRequest.class);
+                sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
+                new Thread(new Runnable() {
 
-                public void run() {
-                    try {
-                        job.setState(State.CANCELED, "Canceled by admin through cancelall command");
-                    } catch (IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : " +ist.getMessage());
+                    public void run() {
+                        try {
+                            job.setState(State.CANCELED, "Canceled by admin through cancelall command");
+                        } catch (IllegalStateTransition ist) {
+                            logger.error("Illegal State Transition : " +ist.getMessage());
+                        }
                     }
-                }
-            }).start();
+                }).start();
+            } catch(SRMInvalidRequestException e) {
+                logger.error(" request with request id " + requestId + " is not found\n");
+            }
         }
     }
 

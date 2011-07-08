@@ -16,7 +16,6 @@ import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
@@ -124,16 +123,11 @@ public class SrmAbortRequest {
                     requestToken+"\"is not valid",
                     TStatusCode.SRM_INVALID_REQUEST);
         }
-        Job job = Job.getJob(requestId);
 
-        if(job == null) {
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not found",
-                    TStatusCode.SRM_INVALID_REQUEST);
-            
-        }
+        Job job = Job.getJob(requestId, Job.class);
+
         if(job instanceof ContainerRequest) {
-            // we do this to make the srm update the status of the request if it changed
+            // FIXME we do this to make the srm update the status of the request if it changed
             ((ContainerRequest)job).getTReturnStatus();
         }
         

@@ -8,6 +8,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.PutFileRequest;
@@ -16,6 +17,7 @@ import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.sql.PutRequestStorage;
 import org.dcache.srm.request.sql.PutFileRequestStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
@@ -73,6 +75,10 @@ public class SrmPutDone {
             logger.error(sqle.toString());
             response = getFailedResponse("sql error "+sqle.getMessage(),
                     TStatusCode.SRM_INTERNAL_ERROR);
+        } catch(SRMInvalidRequestException e) {
+            logger.error(e.toString());
+            response = getFailedResponse(e.getMessage(),
+                    TStatusCode.SRM_INVALID_REQUEST);
         } catch(SRMException srme) {
             logger.error(srme.toString());
             response = getFailedResponse(srme.toString());
@@ -128,20 +134,8 @@ public class SrmPutDone {
                     TStatusCode.SRM_FAILURE);
         }
 
-        ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
-        if(request == null) {
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not found",
-                    TStatusCode.SRM_FAILURE);
+        PutRequest putRequest = Job.getJob(requestId, PutRequest.class);
 
-        }
-        if ( !(request instanceof PutRequest) ){
-            return getFailedResponse("request for requestToken \""+
-                    requestToken+"\"is not srmPrepareToGet request",
-                    TStatusCode.SRM_FAILURE);
-
-        }
-        PutRequest putRequest = (PutRequest) request;
         URI[] surls;
         if(srmPutDoneRequest.getArrayOfSURLs() == null) {
             surls = null;

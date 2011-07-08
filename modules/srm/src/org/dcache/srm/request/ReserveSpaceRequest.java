@@ -329,11 +329,7 @@ public final class ReserveSpaceRequest extends Request {
 
     public static ReserveSpaceRequest getRequest(Long requestId)
             throws SRMInvalidRequestException {
-        Job job = Job.getJob( requestId);
-        if(job == null || !(job instanceof ReserveSpaceRequest)) {
-            return null;
-        }
-        return (ReserveSpaceRequest) job;
+        return Job.getJob( requestId, ReserveSpaceRequest.class);
     }
 
     private class SrmReserveSpaceCallbacks implements org.dcache.srm.SrmReserveSpaceCallbacks {
@@ -344,11 +340,7 @@ public final class ReserveSpaceRequest extends Request {
 
         public ReserveSpaceRequest getReserveSpacetRequest()
                 throws SRMInvalidRequestException {
-            Job job = Job.getJob(requestJobId);
-            if(job != null) {
-                return (ReserveSpaceRequest) job;
-            }
-            return null;
+            return Job.getJob(requestJobId, ReserveSpaceRequest.class);
         }
 
         public void ReserveSpaceFailed(String reason) {
@@ -428,7 +420,6 @@ public final class ReserveSpaceRequest extends Request {
                 wunlock();
             }
         }
-
     }
 
     public long getSizeInBytes() {

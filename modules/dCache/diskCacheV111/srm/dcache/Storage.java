@@ -908,10 +908,7 @@ public final class Storage
             return "Failed to parse priority: "+s2;
         }
         try {
-            Job job = Job.getJob(requestId);
-            if(job == null ) {
-                return "request with reqiest id "+requestId+" is not found\n";
-            }
+            Job job = Job.getJob(requestId, Job.class);
             job.setPriority(priority);
             job.setPriority(priority);
             StringBuilder sb = new StringBuilder();
@@ -920,6 +917,8 @@ public final class Storage
         } catch (RuntimeException e) {
             _log.error("Failure in set job priority", e);
             return e.toString();
+        } catch (SRMInvalidRequestException e) {
+            return e.getMessage() + "\n";
         } catch (Exception e) {
             _log.warn("Failure in set job priority: " + e.getMessage());
             return e.toString();
