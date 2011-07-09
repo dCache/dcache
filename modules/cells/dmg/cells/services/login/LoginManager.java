@@ -254,10 +254,13 @@ public CellVersion getCellVersion(){
   }
   public class LoginBrokerHandler implements Runnable {
 
+     private static final long EAGER_UPDATE_TIME = 1000;
+
      private String _loginBroker        = null ;
      private String _protocolFamily     = null ;
      private String _protocolVersion    = null ;
      private long   _brokerUpdateTime   = 5*60*1000 ;
+     private long   _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
      private double _brokerUpdateOffset = 0.1 ;
      private LoginBrokerInfo _info      = null ;
      private double _currentLoad        = 0.0 ;
@@ -303,7 +306,7 @@ public CellVersion getCellVersion(){
                 }catch(Exception ie){
                    _log.warn("Login Broker Thread reports : "+ie);
                 }
-                wait( _brokerUpdateTime ) ;
+                wait(_currentBrokerUpdateTime);
              }
           }
         }catch( Exception io ){
@@ -374,9 +377,11 @@ public CellVersion getCellVersion(){
         _info.setLoad(_currentLoad);
         try {
            sendMessage(new CellMessage(new CellPath(_loginBroker),_info));
+           _currentBrokerUpdateTime = _brokerUpdateTime;
         } catch (NoRouteToCellException ee) {
             _log.info("Failed to register with LoginBroker: {}",
                       ee.getMessage());
+            _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
         }
      }
      public void getInfo( PrintWriter pw ){
