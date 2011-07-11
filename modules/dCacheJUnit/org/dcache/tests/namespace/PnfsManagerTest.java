@@ -1,6 +1,5 @@
 package org.dcache.tests.namespace;
 
-import com.mchange.v2.c3p0.DataSources;
 import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
@@ -58,6 +57,8 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import com.jolbox.bonecp.BoneCPDataSource;
+
 public class PnfsManagerTest
 {
     private static final String OSM_URI_STEM = "osm://example-osm-instance/";
@@ -94,9 +95,12 @@ public class PnfsManagerTest
             SqlHelper.tryToClose(st);
         }
 
-        DataSource dataSource =
-            DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem", "sa", "");
-        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
+        BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl("jdbc:hsqldb:mem:chimeramem");
+        ds.setUsername("sa");
+        ds.setPassword("");
+
+        _fs = new JdbcFs(ds, "HsqlDB");
 
         ChimeraNameSpaceProvider chimera = new ChimeraNameSpaceProvider();
         chimera.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY, StorageInfo.DEFAULT_RETENTION_POLICY));

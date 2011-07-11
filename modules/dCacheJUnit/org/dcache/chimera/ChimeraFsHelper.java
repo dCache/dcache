@@ -1,9 +1,10 @@
 package org.dcache.chimera;
 
-import com.mchange.v2.c3p0.DataSources;
 import java.io.IOException;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+
+import com.jolbox.bonecp.BoneCPDataSource;
 
 public class ChimeraFsHelper {
 
@@ -15,9 +16,11 @@ public class ChimeraFsHelper {
 
         Class.forName(drv);
 
-        DataSource dataSource = DataSources.unpooledDataSource(url,
-                user, pass);
+        BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl(url);
+        ds.setUsername(user);
+        ds.setPassword(pass);
 
-        return new JdbcFs(DataSources.pooledDataSource(dataSource), dialect);
+        return new JdbcFs(ds, dialect);
     }
 }

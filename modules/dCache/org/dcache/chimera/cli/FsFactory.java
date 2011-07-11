@@ -16,10 +16,11 @@
  */
 package org.dcache.chimera.cli;
 
-import com.mchange.v2.c3p0.DataSources;
 import javax.sql.DataSource;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.JdbcFs;
+
+import com.jolbox.bonecp.BoneCPDataSource;
 
 public class FsFactory {
 
@@ -39,8 +40,19 @@ public class FsFactory {
 
         Class.forName(jdbcDrv);
 
-        DataSource dataSource = DataSources.unpooledDataSource(jdbcUrl, dbUser, dbPass);
+        BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl(jdbcUrl);
+        ds.setUsername(dbUser);
+        ds.setPassword(dbPass);
+        ds.setIdleConnectionTestPeriodInMinutes(60);
+        ds.setIdleMaxAgeInMinutes(240);
+        ds.setMaxConnectionsPerPartition(30);
+        ds.setMaxConnectionsPerPartition(10);
+        ds.setPartitionCount(3);
+        ds.setAcquireIncrement(5);
+        ds.setStatementsCacheSize(100);
+        ds.setReleaseHelperThreads(3);
 
-        return new JdbcFs(DataSources.pooledDataSource(dataSource), dbDialect);
+        return new JdbcFs(ds, dbDialect);
     }
 }

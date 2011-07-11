@@ -8,7 +8,7 @@ import javax.sql.DataSource;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.config.Config;
 
-import com.mchange.v2.c3p0.DataSources;
+import com.jolbox.bonecp.BoneCPDataSource;
 
 /**
  * Basic component, extended by AclHandler, FPathHandler and PrincipalHandler.
@@ -49,8 +49,19 @@ class THandler {
                 if ( d.acceptsURL(url) == false )
                     throw new ACLException("Get DataSource", "Driver not accept the URL: " + url);
 
-                DataSource unpooled = DataSources.unpooledDataSource(url, _config.getUser(), _config.getPswd());
-                _ds_pooled = DataSources.pooledDataSource(unpooled);
+                BoneCPDataSource ds = new BoneCPDataSource();
+                ds.setJdbcUrl(url);
+                ds.setUsername(_config.getUser());
+                ds.setPassword(_config.getPswd());
+                ds.setIdleConnectionTestPeriodInMinutes(60);
+                ds.setIdleMaxAgeInMinutes(240);
+                ds.setMaxConnectionsPerPartition(30);
+                ds.setMaxConnectionsPerPartition(10);
+                ds.setPartitionCount(3);
+                ds.setAcquireIncrement(5);
+                ds.setStatementsCacheSize(100);
+                ds.setReleaseHelperThreads(3);
+                _ds_pooled = ds;
 
                 initPreparedStatements();
 
@@ -102,8 +113,7 @@ class THandler {
 
     public void close() throws ACLException {
         try {
-            DataSources.destroy(_ds_pooled);
-
+            ((BoneCPDataSource) _ds_pooled).close();
         } catch (Exception e) {
             throw new ACLException("Close ACL Handler", e);
         }

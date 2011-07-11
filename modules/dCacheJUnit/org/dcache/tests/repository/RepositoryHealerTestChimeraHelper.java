@@ -1,6 +1,5 @@
 package org.dcache.tests.repository;
 
-import com.mchange.v2.c3p0.DataSources;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -21,6 +20,8 @@ import diskCacheV111.util.PnfsId;
 import javax.sql.DataSource;
 import org.dcache.commons.util.SqlHelper;
 
+import com.jolbox.bonecp.BoneCPDataSource;
+
 public class RepositoryHealerTestChimeraHelper implements FileStore {
 
 
@@ -35,10 +36,12 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         // FIXME: make it configurable
         Class.forName("org.hsqldb.jdbcDriver");
 
-        DataSource dataSource = DataSources.unpooledDataSource("jdbc:hsqldb:mem:chimeramem",
-                "sa", "");
+        BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl("jdbc:hsqldb:mem:chimeramem");
+        ds.setUsername("sa");
+        ds.setPassword("");
 
-        _conn = dataSource.getConnection();
+        _conn = ds.getConnection();
 
         File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb.sql");
         StringBuilder sql = new StringBuilder();
@@ -57,7 +60,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
             SqlHelper.tryToClose(st);
         }
 
-        _fs = new JdbcFs(DataSources.pooledDataSource(dataSource), "HsqlDB");
+        _fs = new JdbcFs(ds, "HsqlDB");
         _rootInode = _fs.path2inode("/");
     }
 

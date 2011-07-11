@@ -54,7 +54,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.sql.DataSource;
 
-import com.mchange.v2.c3p0.DataSources;
+import com.jolbox.bonecp.BoneCPDataSource;
+
 /**
  * @author Irina Kozlova
  * @version 22 Oct 2007
@@ -239,8 +240,20 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         // Add driver to JDBC
         Class.forName(jdbcClass);
 
-        DataSource unpooled = DataSources.unpooledDataSource(jdbcUrl, user, pass);
-        _dataSource = DataSources.pooledDataSource( unpooled );
+        BoneCPDataSource ds = new BoneCPDataSource();
+        ds.setJdbcUrl(jdbcUrl);
+        ds.setUsername(user);
+        ds.setPassword(pass);
+        ds.setIdleConnectionTestPeriodInMinutes(60);
+        ds.setIdleMaxAgeInMinutes(240);
+        ds.setMaxConnectionsPerPartition(30);
+        ds.setMaxConnectionsPerPartition(10);
+        ds.setPartitionCount(3);
+        ds.setAcquireIncrement(5);
+        ds.setStatementsCacheSize(100);
+        ds.setReleaseHelperThreads(3);
+
+        _dataSource = ds;
         _db = new JdbcTemplate(_dataSource);
 
         _log.info("Database connection with jdbcUrl={}; user={}",
