@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.Map;
@@ -1825,6 +1827,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
 
         try {
+            List<PinMover> movers = new ArrayList<PinMover>();
             try {
                 db.initDBConnection();
                 Set<Pin> pins = db.allPinsByPnfsId(pnfsId);
@@ -1860,20 +1863,27 @@ public class PinManager extends AbstractCell implements Runnable  {
                         info(" file "+pnfsId+" is  being moved, changing pin request" +srcPin );
                         Pin dstPin =
                             db.newPinForPinMove(pnfsId,dstPool,expirationTime);
-                        new PinMover(this,
-                            pnfsId,
-                            srcPin,
-                            dstPin,
-                            dstPool,
-                            expirationTime,
-                            movePin,
-                             envelope);
+                        movers.add(new PinMover(this,
+                                                pnfsId,
+                                                srcPin,
+                                                dstPin,
+                                                dstPool,
+                                                expirationTime,
+                                                movePin,
+                                                envelope));
                 }
             } finally {
                 db.commitDBOperations();
             }
+
+            for (PinMover mover: movers) {
+                mover.start();
+            }
         } catch (PinDBException pdbe) {
             error(pdbe);
+            movePin.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                              pdbe.getMessage());
+            returnResponse(movePin, envelope);
         }
     }
 
