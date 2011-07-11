@@ -1,4 +1,3 @@
-// $Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $
 package diskCacheV111.poolManager;
 
 import java.net.InetAddress;
@@ -24,6 +23,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Serializable;
 
+import com.google.common.collect.Maps;
+import com.google.common.base.Predicates;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,7 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellSetupProvider;
+import org.dcache.util.Glob;
 
 public class PoolSelectionUnitV2
     implements Serializable,
@@ -1014,16 +1017,19 @@ public class PoolSelectionUnitV2
         return active;
     }
 
-    public void setEnabled(String poolName, boolean enabled) {
+    private int setEnabled(Glob glob, boolean enabled)
+    {
         _psuWriteLock.lock();
         try {
-            Pool pool = _pools.get(poolName);
-            if (pool != null)
+            int count = 0;
+            for (Pool pool: getPools(glob.toPattern())) {
+                count++;
                 pool.setEnabled(enabled);
+            }
+            return count;
         } finally {
             _psuWriteLock.unlock();
         }
-        return;
     }
 
     public boolean isEnabled(String poolName) {
@@ -1616,7 +1622,7 @@ public class PoolSelectionUnitV2
         return map;
     }
 
-    public String hh_psu_set_allpoolsactive = "on|off";
+    public final static String hh_psu_set_allpoolsactive = "on|off";
 
     public String ac_psu_set_allpoolsactive_$_1(Args args) throws CommandSyntaxException {
 
@@ -1638,7 +1644,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_netmatch = "<hostAddress>";
+    public final static String hh_psu_netmatch = "<host address>";
 
     public String ac_psu_netmatch_$_1(Args args) throws UnknownHostException {
 
@@ -1656,7 +1662,7 @@ public class PoolSelectionUnitV2
         return unit.toString();
     }
 
-    public String hh_psu_match = "[-linkGroup=<linkGroup>] read|cache|write|p2p <storeUnit>|* <dCacheUnit>|* <netUnit>|* <protocolUnit>|* ";
+    public final static String hh_psu_match = "[-linkGroup=<link group>] read|cache|write|p2p <store unit>|* <dCache unit>|* <net unit>|* <protocol unit>|* ";
 
     public String ac_psu_match_$_5(Args args) throws Exception {
 
@@ -1691,7 +1697,7 @@ public class PoolSelectionUnitV2
         }
     }
 
-    public String hh_psu_match2 = "<unit> [...] [-net=<netUnit>}";
+    public final static String hh_psu_match2 = "<unit> [...] [-net=<net unit>}";
 
     public String ac_psu_match2_$_1_99(Args args) throws Exception {
         StringBuffer sb = new StringBuffer();
@@ -1743,7 +1749,7 @@ public class PoolSelectionUnitV2
     //
     // the create's
     //
-    public String hh_psu_create_pgroup = "<pGroup>";
+    public final static String hh_psu_create_pgroup = "<pool group>";
 
     public String ac_psu_create_pgroup_$_1(Args args) {
         String name = args.argv(0);
@@ -1762,7 +1768,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_regex = "on | off";
+    public final static String hh_psu_set_regex = "on | off";
 
     public String ac_psu_set_regex_$_1(Args args) {
         String retVal;
@@ -1780,7 +1786,7 @@ public class PoolSelectionUnitV2
         return retVal;
     }
 
-    public String hh_psu_create_pool = "<pool> [-noping]";
+    public final static String hh_psu_create_pool = "<pool> [-noping]";
 
     public String ac_psu_create_pool_$_1(Args args) {
         String name = args.argv(0);
@@ -1802,56 +1808,55 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_pool = "<poolName> enabled|disabled|ping|noping|rdonly|notrdonly";
-
+    public final static String hh_psu_set_pool =
+        "<pool glob> enabled|disabled|ping|noping|rdonly|notrdonly";
     public String ac_psu_set_pool_$_2(Args args) throws Exception {
-        String poolName = args.argv(0);
+        Pattern pattern = Glob.parseGlobToPattern(args.argv(0));
         String mode = args.argv(1);
 
         _psuWriteLock.lock();
         try {
-            Pool pool = _pools.get(poolName);
-            if (pool == null)
-                throw new IllegalArgumentException("Not found : " + poolName);
-
-            if (mode.equals("enabled")) {
-                pool.setEnabled(true);
-            } else if (mode.equals("disabled")) {
-                pool.setEnabled(false);
-            } else if (mode.equals("ping")) {
-                pool.setPing(true);
-            } else if (mode.equals("noping")) {
-                pool.setPing(false);
-            } else if (mode.equals("rdonly")) {
-                pool.setReadOnly(true);
-            } else if (mode.equals("notrdonly")) {
-                pool.setReadOnly(false);
-            } else {
-                throw new IllegalArgumentException("mode not supported : "
-                        + mode);
+            int count = 0;
+            for (Pool pool: getPools(pattern)) {
+                count++;
+                if (mode.equals("enabled")) {
+                    pool.setEnabled(true);
+                } else if (mode.equals("disabled")) {
+                    pool.setEnabled(false);
+                } else if (mode.equals("ping")) {
+                    pool.setPing(true);
+                } else if (mode.equals("noping")) {
+                    pool.setPing(false);
+                } else if (mode.equals("rdonly")) {
+                    pool.setReadOnly(true);
+                } else if (mode.equals("notrdonly")) {
+                    pool.setReadOnly(false);
+                } else {
+                    throw new IllegalArgumentException("mode not supported : "
+                                                       + mode);
+                }
             }
-
+            return poolCountDescriptionFor(count) + " updated";
         } finally {
             _psuWriteLock.unlock();
         }
-        return "";
     }
 
-    public String hh_psu_set_enabled = "<poolName>";
-    public String hh_psu_set_disabled = "<poolName>";
-
-    public String ac_psu_set_enabled_$_1(Args args) {
-        setEnabled(args.argv(0), true);
-        return "";
+    public final static String hh_psu_set_enabled = "<pool glob>";
+    public String ac_psu_set_enabled_$_1(Args args)
+    {
+        int count = setEnabled(new Glob(args.argv(0)), true);
+        return poolCountDescriptionFor(count) + " enabled";
     }
 
-    public String ac_psu_set_disabled_$_1(Args args) {
-        setEnabled(args.argv(0), false);
-        return "";
+    public final static String hh_psu_set_disabled = "<pool glob>";
+    public String ac_psu_set_disabled_$_1(Args args)
+    {
+        int count = setEnabled(new Glob(args.argv(0)), false);
+        return poolCountDescriptionFor(count) + " disabled";
     }
 
-    public String hh_psu_create_link = "<link> <uGroup> [...]";
-
+    public final static String hh_psu_create_link = "<link> <unit group> [...]";
     public String ac_psu_create_link_$_2_99(Args args) {
 
         String name = args.argv(0);
@@ -1890,7 +1895,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_create_ugroup = "<uGroup>";
+    public final static String hh_psu_create_ugroup = "<unit group>";
 
     public String ac_psu_create_ugroup_$_1(Args args) {
         String name = args.argv(0);
@@ -1909,7 +1914,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_create_unit = "<unit> -net|-store|-dcache";
+    public final static String hh_psu_create_unit = "<unit> -net|-store|-dcache";
 
     public String ac_psu_create_unit_$_1(Args args) throws UnknownHostException {
         String name = args.argv(0);
@@ -1944,7 +1949,7 @@ public class PoolSelectionUnitV2
 
     }
 
-    public String hh_psu_create_linkGroup = "<group name> [-reset]";
+    public final static String hh_psu_create_linkGroup = "<group name> [-reset]";
 
     public String ac_psu_create_linkGroup_$_1(Args args) {
 
@@ -1973,7 +1978,7 @@ public class PoolSelectionUnitV2
     //
     // the 'psux ... ls'
     //
-    public String hh_psux_ls_pool = "[<pool>]";
+    public final static String hh_psux_ls_pool = "[<pool>]";
 
     public Object ac_psux_ls_pool_$_0_1(Args args) throws Exception {
 
@@ -2005,7 +2010,7 @@ public class PoolSelectionUnitV2
         return xlsResult;
     }
 
-    public String hh_psux_ls_pgroup = "[<pgroup>]";
+    public final static String hh_psux_ls_pgroup = "[<pool group>]";
 
     public Object ac_psux_ls_pgroup_$_0_1(Args args) throws Exception {
 
@@ -2041,7 +2046,7 @@ public class PoolSelectionUnitV2
         return _pGroups.keySet();
     }
 
-    public String hh_psux_ls_unit = "[<unit>]";
+    public final static String hh_psux_ls_unit = "[<unit>]";
 
     public Object ac_psux_ls_unit_$_0_1(Args args) throws Exception {
 
@@ -2074,7 +2079,7 @@ public class PoolSelectionUnitV2
         return xlsResult;
     }
 
-    public String hh_psux_ls_ugroup = "[<ugroup>]";
+    public final static String hh_psux_ls_ugroup = "[<unit group>]";
 
     public Object ac_psux_ls_ugroup_$_0_1(Args args) throws Exception {
 
@@ -2103,7 +2108,7 @@ public class PoolSelectionUnitV2
         return xlsResult;
     }
 
-    public String hh_psux_ls_link = "[<link>] [-x] [-resolve]";
+    public final static String hh_psux_ls_link = "[<link>] [-x] [-resolve]";
 
     public Object ac_psux_ls_link_$_0_1(Args args) throws Exception {
 
@@ -2208,7 +2213,7 @@ public class PoolSelectionUnitV2
         return result;
     }
 
-    public String hh_psux_match = "[-linkGroup=<linkGroup>] read|cache|write <storeUnit> <dCacheUnit> <netUnit> <protocolUnit>";
+    public final static String hh_psux_match = "[-linkGroup=<link group>] read|cache|write <store unit> <dCache unit> <net unit> <protocol unit>";
 
     public Object ac_psux_match_$_5(Args args) throws Exception {
 
@@ -2224,44 +2229,38 @@ public class PoolSelectionUnitV2
     //
     // the 'ls'
     //
-    public String hh_psu_ls_pool = "[-l] [-a] [<pool> [...]]";
-
-    public String ac_psu_ls_pool_$_0_99(Args args) {
+    public final static String hh_psu_ls_pool =
+        "[-l] [-a] [<pool glob> [...]]";
+    public String ac_psu_ls_pool_$_0_99(Args args)
+    {
         StringBuffer sb = new StringBuffer();
         boolean more = args.getOpt("a") != null;
         boolean detail = (args.getOpt("l") != null) || more;
 
         _psuReadLock.lock();
         try {
-            Iterator i = null;
+            Collection<Pool> pools;
             if (args.argc() == 0) {
-                i = _pools.values().iterator();
+                pools = _pools.values();
             } else {
-                ArrayList l = new ArrayList();
+                pools = new ArrayList<Pool>();
                 for (int n = 0; n < args.argc(); n++) {
-                    Object o = _pools.get(args.argv(n));
-                    if (o != null)
-                        l.add(o);
+                    pools.addAll(getPools(Glob.parseGlobToPattern(args.argv(n))));
                 }
-                i = l.iterator();
             }
-            while (i.hasNext()) {
-                Pool pool = (Pool) i.next();
+            for (Pool pool: pools) {
                 if (!detail) {
                     sb.append(pool.getName()).append("\n");
                 } else {
-                    sb.append(pool.toString()).append("\n");
+                    sb.append(pool).append("\n");
                     sb.append(" linkList   :\n");
-                    Iterator i2 = pool._linkList.values().iterator();
-                    while (i2.hasNext()) {
-                        sb.append("   ").append(i2.next().toString()).append(
-                                "\n");
+                    for (Link link: pool._linkList.values()) {
+                        sb.append("   ").append(link).append("\n");
                     }
                     if (more) {
                         sb.append(" pGroupList : \n");
-                        for (PGroup group : pool._pGroupList.values()) {
-                            sb.append("   ").append(group.toString()).append(
-                                    "\n");
+                        for (PGroup group: pool._pGroupList.values()) {
+                            sb.append("   ").append(group).append("\n");
                         }
                     }
                 }
@@ -2272,7 +2271,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_ls_pgroup = "[-l] [-a] [<pgroup> [...]]";
+    public final static String hh_psu_ls_pgroup = "[-l] [-a] [<pool group> [...]]";
 
     public String ac_psu_ls_pgroup_$_0_99(Args args) {
         StringBuffer sb = new StringBuffer();
@@ -2315,7 +2314,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_ls_link = "[-l] [-a] [ <link> [...]]";
+    public final static String hh_psu_ls_link = "[-l] [-a] [ <link> [...]]";
 
     public String ac_psu_ls_link_$_0_99(Args args) {
 
@@ -2374,7 +2373,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_ls_ugroup = "[-l] [-a] [<uGroup> [...]]";
+    public final static String hh_psu_ls_ugroup = "[-l] [-a] [<unit group> [...]]";
 
     public String ac_psu_ls_ugroup_$_0_99(Args args) {
 
@@ -2419,7 +2418,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_ls_netunits = "";
+    public final static String hh_psu_ls_netunits = "";
 
     public String ac_psu_ls_netunits(Args args) {
         StringBuffer sb = new StringBuffer();
@@ -2446,7 +2445,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_ls_unit = " [-a] [<unit> [...]]";
+    public final static String hh_psu_ls_unit = " [-a] [<unit> [...]]";
 
     public String ac_psu_ls_unit_$_0_99(Args args) {
         StringBuffer sb = new StringBuffer();
@@ -2488,7 +2487,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_ls_linkGroup = "[-l] [<link group1> ... <link groupN>]";
+    public final static String hh_psu_ls_linkGroup = "[-l] [<link group1> ... <link groupN>]";
 
     public String ac_psu_ls_linkGroup_$_0_99(Args args) {
 
@@ -2539,7 +2538,7 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String hh_psu_dump_setup = "";
+    public final static String hh_psu_dump_setup = "";
     public String ac_psu_dump_setup(Args args)
     {
         StringWriter s = new StringWriter();
@@ -2552,7 +2551,7 @@ public class PoolSelectionUnitV2
     //
     // the 'removes'
     //
-    public String hh_psu_remove_unit = "<unit> [-net]";
+    public final static String hh_psu_remove_unit = "<unit> [-net]";
 
     public String ac_psu_remove_unit_$_1(Args args) throws UnknownHostException {
         String unitName = args.argv(0);
@@ -2585,7 +2584,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_remove_ugroup = "<uGroup>";
+    public final static String hh_psu_remove_ugroup = "<unit group>";
 
     public String ac_psu_remove_ugroup_$_1(Args args) {
         String groupName = args.argv(0);
@@ -2613,7 +2612,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_remove_pgroup = "<pGroup>";
+    public final static String hh_psu_remove_pgroup = "<pool group>";
 
     public String ac_psu_remove_pgroup_$_1(Args args) {
         String name = args.argv(0);
@@ -2646,7 +2645,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_remove_pool = "<pool>";
+    public final static String hh_psu_remove_pool = "<pool>";
 
     public String ac_psu_remove_pool_$_1(Args args) {
         String name = args.argv(0);
@@ -2679,7 +2678,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_removefrom_ugroup = "<uGroup> <unit> -net";
+    public final static String hh_psu_removefrom_ugroup = "<unit group> <unit> -net";
 
     public String ac_psu_removefrom_ugroup_$_2(Args args) throws UnknownHostException {
         String groupName = args.argv(0);
@@ -2716,7 +2715,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_removefrom_pgroup = "<pGroup> <pool>";
+    public final static String hh_psu_removefrom_pgroup = "<pool group> <pool>";
 
     public String ac_psu_removefrom_pgroup_$_2(Args args) {
         String groupName = args.argv(0);
@@ -2746,7 +2745,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_removefrom_linkGroup = "<linkGroup> <link>";
+    public final static String hh_psu_removefrom_linkGroup = "<link group> <link>";
 
     public String ac_psu_removefrom_linkGroup_$_2(Args args) {
 
@@ -2782,7 +2781,7 @@ public class PoolSelectionUnitV2
 
     }
 
-    public String hh_psu_remove_linkGroup = "<linkGroup>";
+    public final static String hh_psu_remove_linkGroup = "<link group>";
 
     public String ac_psu_remove_linkGroup_$_1(Args args) {
 
@@ -2810,7 +2809,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_remove_link = "<link>";
+    public final static String hh_psu_remove_link = "<link>";
 
     public String ac_psu_remove_link_$_1(Args args) {
         String name = args.argv(0);
@@ -2856,7 +2855,7 @@ public class PoolSelectionUnitV2
     //
     // relations
     //
-    public String hh_psu_addto_pgroup = "<pGroup> <pool>";
+    public final static String hh_psu_addto_pgroup = "<pool group> <pool>";
 
     public String ac_psu_addto_pgroup_$_2(Args args) {
         String pGroupName = args.argv(0);
@@ -2893,7 +2892,7 @@ public class PoolSelectionUnitV2
         return;
     }
 
-    public String hh_psu_addto_ugroup = "<uGroup> <unit>";
+    public final static String hh_psu_addto_ugroup = "<unit group> <unit>";
 
     public String ac_psu_addto_ugroup_$_2(Args args) throws UnknownHostException {
 
@@ -2929,7 +2928,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_addto_linkGroup = "<linkGroup> <link>";
+    public final static String hh_psu_addto_linkGroup = "<link group> <link>";
 
     public String ac_psu_addto_linkGroup_$_2(Args args) {
         String linkGroupName = args.argv(0);
@@ -2969,7 +2968,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_unlink = "<link> <pool>|<pGroup>";
+    public final static String hh_psu_unlink = "<link> <pool>|<pool group>";
 
     public String ac_psu_unlink_$_2(Args args) {
         String linkName = args.argv(0);
@@ -3000,7 +2999,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_add_link = "<link> <pool>|<pGroup>";
+    public final static String hh_psu_add_link = "<link> <pool>|<pool group>";
 
     public String ac_psu_add_link_$_2(Args args) {
         String linkName = args.argv(0);
@@ -3027,7 +3026,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_active = "<poolName>|* [-no]";
+    public final static String hh_psu_set_active = "<pool>|* [-no]";
 
     public String ac_psu_set_active_$_1(Args args) {
         String poolName = args.argv(0);
@@ -3054,7 +3053,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_link = "<link> [-readpref=<readpref>] [-writepref=<writepref>] [-cachepref=<cachepref>] [-p2ppref=<p2ppref>] [-section=<section>|NONE]";
+    public final static String hh_psu_set_link = "<link> [-readpref=<readpref>] [-writepref=<writepref>] [-cachepref=<cachepref>] [-p2ppref=<p2ppref>] [-section=<section>|NONE]";
 
     public String ac_psu_set_link_$_1(Args args) {
 
@@ -3088,7 +3087,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_linkGroup_attribute = "<linkGroup> [-r] attribute=value";
+    public final static String hh_psu_set_linkGroup_attribute = "<link group> [-r] attribute=value";
 
     public String ac_psu_set_linkGroup_attribute_$_2(Args args) {
 
@@ -3119,7 +3118,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_remove_linkGroup_attribute = "<linkGroup> attribute=value";
+    public final static String hh_psu_remove_linkGroup_attribute = "<link group> attribute=value";
 
     public String ac_psu_remove_linkGroup_attribute_$_2(Args args) {
 
@@ -3149,7 +3148,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_linkGroup_custodialAllowed = "<linkGroup> <true|false>";
+    public final static String hh_psu_set_linkGroup_custodialAllowed = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_custodialAllowed_$_2(Args args) {
 
@@ -3172,7 +3171,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_linkGroup_outputAllowed = "<linkGroup> <true|false>";
+    public final static String hh_psu_set_linkGroup_outputAllowed = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_outputAllowed_$_2(Args args) {
 
@@ -3195,7 +3194,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_linkGroup_replicaAllowed = "<linkGroup> <true|false>";
+    public final static String hh_psu_set_linkGroup_replicaAllowed = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_replicaAllowed_$_2(Args args) {
 
@@ -3218,7 +3217,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_linkGroup_onlineAllowed = "<linkGroup> <true|false>";
+    public final static String hh_psu_set_linkGroup_onlineAllowed = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_onlineAllowed_$_2(Args args) {
 
@@ -3241,7 +3240,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_set_linkGroup_nearlineAllowed = "<linkGroup> <true|false>";
+    public final static String hh_psu_set_linkGroup_nearlineAllowed = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_nearlineAllowed_$_2(Args args) {
 
@@ -3264,7 +3263,7 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    public String hh_psu_clear_im_really_sure = "# don't use this command";
+    public final static String hh_psu_clear_im_really_sure = "# don't use this command";
 
     public String ac_psu_clear_im_really_sure(Args args) {
         // no lock required, while method does it
@@ -3363,5 +3362,24 @@ public class PoolSelectionUnitV2
         }
 
         return pools;
+    }
+
+    /** Returns a live view of pools whos name match the given pattern. */
+    private Collection<Pool> getPools(Pattern pattern)
+    {
+        return Maps.filterKeys(_pools, Predicates.contains(pattern)).values();
+    }
+
+    /** Returns a displayable string describing a quantity of pools. */
+    private String poolCountDescriptionFor(int count)
+    {
+        switch (count) {
+        case 0:
+            return "No pools";
+        case 1:
+            return "One pool";
+        default:
+            return String.valueOf(count) + " pools";
+        }
     }
 }
