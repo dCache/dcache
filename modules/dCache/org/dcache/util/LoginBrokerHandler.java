@@ -32,17 +32,20 @@ public class LoginBrokerHandler
     private final static Logger _log =
         LoggerFactory.getLogger(LoginBrokerHandler.class);
 
+    private static final long EAGER_UPDATE_TIME = 1;
+
     private CellPath _loginBroker;
     private String _protocolFamily;
     private String _protocolVersion;
     private String _protocolEngine;
     private long   _brokerUpdateTime = 5 * 60;
+    private long _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
     private double _brokerUpdateThreshold = 0.1;
     private LoadProvider _load = new FixedLoad(0.0);
     private String[] _hosts;
     private int _port;
     private ScheduledExecutorService _executor;
-    private ScheduledFuture _task;
+    private ScheduledFuture<?> _task;
     private String _cellName;
     private String _domainName;
 
@@ -89,11 +92,30 @@ public class LoginBrokerHandler
 
         try {
             sendMessage(new CellMessage(_loginBroker, info));
+            normalUpdates();
         } catch (NoRouteToCellException e) {
             _log.error("Failed to send update to " + _loginBroker);
+            eagerUpdates();
         }
     }
 
+    private void eagerUpdates()
+    {
+        if(_currentBrokerUpdateTime != EAGER_UPDATE_TIME) {
+            _currentBrokerUpdateTime = EAGER_UPDATE_TIME;
+            rescheduleTask();
+        }
+    }
+
+    private void normalUpdates()
+    {
+        if(_currentBrokerUpdateTime != _brokerUpdateTime) {
+            _currentBrokerUpdateTime = _brokerUpdateTime;
+            rescheduleTask();
+        }
+    }
+
+    @Override
     public synchronized void getInfo(PrintWriter pw)
     {
         if (_loginBroker == null) {
@@ -271,7 +293,7 @@ public class LoginBrokerHandler
                     sendUpdate();
                 }
             };
-        _task = _executor.scheduleWithFixedDelay(command, 0, _brokerUpdateTime,
+        _task = _executor.scheduleWithFixedDelay(command, 0, _currentBrokerUpdateTime,
                                                  TimeUnit.SECONDS);
     }
 
