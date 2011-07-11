@@ -184,8 +184,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         Map<String, List<String>> params = queryStringDecoder.getParameters();
 
         if (!params.containsKey(HttpProtocol_2.UUID_QUERY_PARAM)) {
-            _logger.error("Received request without UUID in the query " +
-                          "string. Request-URI was {}", request.getUri());
+            if(!request.getUri().equals("/favicon.ico")) {
+                _logger.error("Received request without UUID in the query " +
+                        "string. Request-URI was {}", request.getUri());
+            }
+
             throw new IllegalArgumentException("Query string does not include any UUID.");
         }
 
@@ -206,6 +209,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         return mover;
     }
 
+    @Override
     public void exceptionCaught(ChannelHandlerContext context, ExceptionEvent event)
         throws Exception {
 
