@@ -21,6 +21,7 @@ Obsoletes: dCacheConfigure
 Provides: dCachePostInstallConfigurationScripts
 Provides: d-cache-core <= @Version@
 Provides: d-cache-opt <= @Version@
+Provides: dcache-server <= @Version@
 AutoReqProv: no
 
 License: Free
