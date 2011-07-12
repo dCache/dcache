@@ -248,11 +248,11 @@ public abstract class AbstractFtpDoorV1
      */
     protected enum Fact
     {
-        SIZE("size"),
-        MODIFY("modify"),
-        TYPE("type"),
-        UNIQUE("unique"),
-        PERM("perm"),
+        SIZE("Size"),
+        MODIFY("Modify"),
+        TYPE("Type"),
+        UNIQUE("Unique"),
+        PERM("Perm"),
         OWNER("UNIX.owner"),
         GROUP("UNIX.group"),
         MODE("UNIX.mode");
