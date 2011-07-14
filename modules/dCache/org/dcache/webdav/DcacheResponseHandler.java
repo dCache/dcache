@@ -27,41 +27,56 @@ import org.antlr.stringtemplate.language.DefaultTemplateLexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
+
+import static com.bradmcevoy.http.Response.Status.*;
+
 /**
  * Response handler that contains workarounds for bugs in Milton.
  */
-public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
+public class DcacheResponseHandler extends DefaultWebDavResponseHandler
+{
+    private final static Logger log =
+        LoggerFactory.getLogger(DcacheResponseHandler.class);
 
-    public static String _staticContentPath;
-    public static StringTemplateGroup _templateGroup;
+    private final static Splitter PATH_SPLITTER =
+        Splitter.on('/').omitEmptyStrings();
+
+    private final ImmutableMap<Response.Status,String> ERRORS =
+        ImmutableMap.<Response.Status,String>builder()
+        .put(SC_INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR")
+        .put(SC_FORBIDDEN, "PERMISSION DENIED")
+        .put(SC_BAD_REQUEST, "BAD REQUEST")
+        .put(SC_NOT_IMPLEMENTED, "NOT IMPLEMENTED")
+        .put(SC_CONFLICT, "CONFLICT")
+        .put(SC_UNAUTHORIZED, "UNAUTHORIZED")
+        .put(SC_METHOD_NOT_ALLOWED, "METHOD NOT ALLOWED")
+        .put(SC_NOT_FOUND, "FILE NOT FOUND")
+        .build();
+
+    private final AuthenticationService _authenticationService;
+    private String _staticContentPath;
+    private StringTemplateGroup _templateGroup;
 
     public DcacheResponseHandler(AuthenticationService authenticationService) {
         super(new Http11ResponseHandler(authenticationService),
                 new WebDavResourceTypeHelper(),
                 new PropFindXmlGenerator(new ValueWriters()));
+        _authenticationService = authenticationService;
     }
 
-    protected static class Http11ResponseHandler extends DefaultHttp11ResponseHandler {
-
-        private static final Splitter PATH_SPLITTER = Splitter.on('/').omitEmptyStrings();
-        private final static Logger log = LoggerFactory.getLogger(DcacheResponseHandler.class);
-
-        public final static String FORBIDDEN = "PERMISSION DENIED";
-        public final static String INTERNAL_SERVER_ERROR = "INTERNAL SERVER ERROR";
-        public final static String BAD_REQUEST = "BAD REQUEST";
-        public final static String NOT_IMPLEMENTED = "NOT IMPLEMENTED";
-        public final static String CONFLICT = "CONFLICT";
-        public final static String UNAUTHORIZED = "UNAUTHORIZED";
-        public final static String METHOD_NOT_ALLOWED = "METHOD NOT ALLOWED";
-        public final static String FILE_NOT_FOUND = "FILE NOT FOUND";
-
-        public Http11ResponseHandler(AuthenticationService authenticationService) {
+    protected static class Http11ResponseHandler extends DefaultHttp11ResponseHandler
+    {
+        public Http11ResponseHandler(AuthenticationService authenticationService)
+        {
             super(authenticationService);
         }
 
         @Override
-        public void respondHead(Resource resource, Response response, Request request) {
-            setRespondContentCommonHeaders(response, resource, request.getAuthorization());
+        public void respondHead(Resource resource, Response response, Request request)
+        {
+            setRespondContentCommonHeaders(response, resource,
+                                           request.getAuthorization());
 
             if (resource instanceof GetableResource) {
                 GetableResource gr = (GetableResource) resource;
@@ -76,125 +91,6 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
                 }
             }
         }
-
-        @Override
-        public void respondNotFound(Response response, Request request) {
-
-            log.debug("file not found: " + this.getClass().getName());
-            Status status = Response.Status.SC_NOT_FOUND;
-            String reason = generateErrorPage(request, response, status);
-            errorResponse(response, status, reason);
-        }
-
-        @Override
-        public void respondUnauthorised(Resource resource, Response response, Request request) {
-
-            log.debug("Unauthorised: " + this.getClass().getName() + " resource: " + resource.getClass().getName());
-            Status status = Response.Status.SC_UNAUTHORIZED;
-            response.setStatus(status);
-            List<String> challenges = super.getAuthenticationService().getChallenges(resource, request);
-            response.setAuthenticateHeader(challenges);
-            String reason = generateErrorPage(request, response, status);
-            errorResponse(response, status, reason);
-        }
-
-        @Override
-        public void respondMethodNotImplemented(Resource resource, Response response, Request request) {
-
-            log.debug("method not implemented: " + this.getClass().getName() + " resource: " + resource.getClass().getName());
-            Status status = Response.Status.SC_NOT_IMPLEMENTED;
-            String reason = generateErrorPage(request, response, status);
-            errorResponse(response, status, reason);
-        }
-
-        @Override
-        public void respondMethodNotAllowed(Resource resource, Response response, Request request) {
-
-            log.debug("method not allowed: " + this.getClass().getName() + " resource: " + resource.getClass().getName());
-            Status status = Response.Status.SC_METHOD_NOT_ALLOWED;
-            String reason = generateErrorPage(request, response, status);
-            errorResponse(response, status, reason);
-        }
-
-        @Override
-        public void respondServerError(Request request, Response response, String reason) {
-
-            log.debug("server error: " + this.getClass().getName() + " error message: " + reason);
-            Status status = Response.Status.SC_INTERNAL_SERVER_ERROR;
-            String message = generateErrorPage(request, response, status);
-            errorResponse(response, status, message);
-        }
-
-        @Override
-        public void respondConflict(Resource resource, Response response, Request request, String reason) {
-
-            log.debug("respondConflict " + this.getClass().getName() + " resource: " + resource.getClass().getName() + " error message: " + reason);
-            Status status = Response.Status.SC_CONFLICT;
-            String message = generateErrorPage(request, response, status);
-            errorResponse(response, status, message);
-        }
-
-        @Override
-        public void respondForbidden(Resource resource, Response response, Request request) {
-
-            log.debug("respondForbidden " + this.getClass().getName() + " resource: " + resource.getClass().getName());
-            Status status = Response.Status.SC_FORBIDDEN;
-            String reason = generateErrorPage(request, response, status);
-            errorResponse(response, status, reason);
-        }
-
-        private void errorResponse(Response response, Response.Status status, String error) {
-            try {
-                response.setStatus(status);
-                response.setContentTypeHeader("text/html");
-                OutputStream out = response.getOutputStream();
-                out.write(error.getBytes());
-            } catch (IOException ex) {
-                log.warn("exception writing content");
-            }
-        }
-
-        /**
-         * Generates an error page.
-         */
-        public String generateErrorPage(Request request, Response response, Response.Status status) {
-
-            String[] base =
-                    Iterables.toArray(PATH_SPLITTER.split(request.getAbsolutePath()), String.class);
-
-            final StringTemplate _template = _templateGroup.getInstanceOf("errorpage");
-
-            _template.setAttribute("path", base);
-            _template.setAttribute("static", _staticContentPath);
-            _template.setAttribute("subject", Subject.getSubject(AccessController.getContext()).getPrincipals().toString());
-            _template.setAttribute("errorcode", status.toString());
-            _template.setAttribute("errormessage", getMessage(status));
-
-            return _template.toString();
-        }
-
-        public String getMessage(Response.Status status) {
-            String errorMessage = "";
-
-            if (status == Response.Status.SC_INTERNAL_SERVER_ERROR) {
-                errorMessage = INTERNAL_SERVER_ERROR;
-            } else if (status == Response.Status.SC_FORBIDDEN) {
-                errorMessage = FORBIDDEN;
-            } else if (status == Response.Status.SC_BAD_REQUEST) {
-                errorMessage = BAD_REQUEST;
-            } else if (status == Response.Status.SC_NOT_IMPLEMENTED) {
-                errorMessage = NOT_IMPLEMENTED;
-            } else if (status == Response.Status.SC_CONFLICT) {
-                errorMessage = CONFLICT;
-            } else if (status == Response.Status.SC_UNAUTHORIZED) {
-                errorMessage = UNAUTHORIZED;
-            } else if (status == Response.Status.SC_METHOD_NOT_ALLOWED) {
-                errorMessage = METHOD_NOT_ALLOWED;
-            } else if (status == Response.Status.SC_NOT_FOUND) {
-                errorMessage = FILE_NOT_FOUND;
-            }
-            return errorMessage;
-        }
     }
 
     /**
@@ -202,7 +98,8 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
      * directory listing.
      */
     public void setTemplateResource(org.springframework.core.io.Resource resource)
-            throws IOException {
+            throws IOException
+    {
         InputStream in = resource.getInputStream();
         try {
             _templateGroup = new StringTemplateGroup(new InputStreamReader(in),
@@ -215,7 +112,8 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
     /**
      * Returns the static content path.
      */
-    public String getStaticContentPath() {
+    public String getStaticContentPath()
+    {
         return _staticContentPath;
     }
 
@@ -224,7 +122,85 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler {
      * exports the static content. This typically contains stylesheets
      * and image files.
      */
-    public void setStaticContentPath(String path) {
+    public void setStaticContentPath(String path)
+    {
         _staticContentPath = path;
+    }
+
+    @Override
+    public void respondNotFound(Response response, Request request)
+    {
+        errorResponse(request, response, SC_NOT_FOUND);
+    }
+
+    @Override
+    public void respondUnauthorised(Resource resource, Response response, Request request)
+    {
+        List<String> challenges =
+            _authenticationService.getChallenges(resource, request);
+        response.setAuthenticateHeader(challenges);
+        errorResponse(request, response, SC_UNAUTHORIZED);
+    }
+
+    @Override
+    public void respondMethodNotImplemented(Resource resource, Response response, Request request)
+    {
+        errorResponse(request, response, SC_NOT_IMPLEMENTED);
+    }
+
+    @Override
+    public void respondMethodNotAllowed(Resource resource, Response response, Request request)
+    {
+        errorResponse(request, response, SC_METHOD_NOT_ALLOWED);
+    }
+
+    @Override
+    public void respondServerError(Request request, Response response, String reason)
+    {
+        errorResponse(request, response, SC_INTERNAL_SERVER_ERROR);
+    }
+
+    @Override
+    public void respondConflict(Resource resource, Response response, Request request, String reason)
+    {
+        errorResponse(request, response, SC_CONFLICT);
+    }
+
+    @Override
+    public void respondForbidden(Resource resource, Response response, Request request)
+    {
+        errorResponse(request, response, SC_FORBIDDEN);
+    }
+
+    private void errorResponse(Request request, Response response, Response.Status status)
+    {
+        try {
+            String error = generateErrorPage(request.getAbsolutePath(), status);
+            response.setStatus(status);
+            response.setContentTypeHeader("text/html");
+            OutputStream out = response.getOutputStream();
+            out.write(error.getBytes());
+        } catch (IOException ex) {
+            log.warn("exception writing content");
+        }
+    }
+
+    /**
+     * Generates an error page.
+     */
+    public String generateErrorPage(String path, Response.Status status)
+    {
+        String[] base =
+            Iterables.toArray(PATH_SPLITTER.split(path), String.class);
+
+        StringTemplate template = _templateGroup.getInstanceOf("errorpage");
+
+        template.setAttribute("path", base);
+        template.setAttribute("static", _staticContentPath);
+        template.setAttribute("subject", Subject.getSubject(AccessController.getContext()).getPrincipals().toString());
+        template.setAttribute("errorcode", status.toString());
+        template.setAttribute("errormessage", ERRORS.get(status));
+
+        return template.toString();
     }
 }
