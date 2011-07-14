@@ -56,5 +56,5 @@ public interface CostModule {
     * Obtain PoolCostInfo of all known pools
     * @return Collection of all PoolCostInfos
     */
-   public Collection<PoolCostInfo> getAllPoolCostInfos();
+   public Collection<PoolCostInfo> getPoolCostInfos();
 }

@@ -26,6 +26,7 @@ import java.io.Serializable;
 import com.google.common.collect.Maps;
 import com.google.common.base.Predicates;
 
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -2042,8 +2043,13 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Collection<String> getAllPoolGroups() {
-        return _pGroups.keySet();
+    public Collection<String> getPoolGroups() {
+        _psuReadLock.lock();
+        try {
+            return new ArrayList(_pGroups.keySet());
+        } finally {
+            _psuReadLock.unlock();
+        }
     }
 
     public final static String hh_psux_ls_unit = "[<unit>]";

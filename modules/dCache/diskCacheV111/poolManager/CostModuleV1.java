@@ -676,7 +676,7 @@ public class CostModuleV1
    }
 
     @Override
-    public Collection<PoolCostInfo> getAllPoolCostInfos() {
+    public synchronized Collection<PoolCostInfo> getPoolCostInfos() {
         Set<PoolCostInfo> costInfos = new HashSet<PoolCostInfo>();
         for (Entry entry : _hash.values()) {
             costInfos.add(entry.getPoolCostInfo());
