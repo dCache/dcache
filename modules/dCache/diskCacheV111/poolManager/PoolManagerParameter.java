@@ -124,7 +124,7 @@ public class  PoolManagerParameter implements java.io.Serializable {
        map.put( "spacecostfactor" , new Object[]{ Boolean.valueOf(_spaceCostFactorSet)       , new Double(_spaceCostFactor) } ) ;
        map.put( "cpucostfactor"   , new Object[]{ Boolean.valueOf(_performanceCostFactorSet) , new Double(_performanceCostFactor) } ) ;
 
-       map.put( "max-pnfs-copies"    , new Object[]{ Boolean.valueOf(_maxPnfsFileCopiesSet) , Integer.valueOf(_maxPnfsFileCopies) } ) ;
+       map.put( "max-copies"         , new Object[]{ Boolean.valueOf(_maxPnfsFileCopiesSet) , Integer.valueOf(_maxPnfsFileCopies) } ) ;
        map.put( "same-host-copies"   , new Object[]{ Boolean.valueOf(_allowSameHostCopySet) , Integer.valueOf(_allowSameHostCopy) } ) ;
 
       return map ;
