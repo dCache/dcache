@@ -68,10 +68,10 @@ page(static,subject,path,files) ::= <<
         <div id="wrap">
             <div class="content">
                 $title()$
-                <table>
+                <table class="sortable">
                     <thead>
                         <tr>
-                            <th/>
+                            <th></th>
                             <th>Name</th>
                             <th>Size</th>
                             <th>Last Modified</th>
@@ -126,6 +126,15 @@ header() ::= <<
     <head>
         <title>dCache.org - File system</title>
         <link rel="stylesheet" type="text/css" href="$static$/styles/webdav.css"/>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+        <script type="text/javascript" src="$static$/tablesorter/jquery.tablesorter.min.js"></script>
+        <script type="text/javascript">
+            \$(document).ready(function()
+                {
+                     \$('table.sortable').tablesorter();
+                }
+            );
+        </script>
     </head>
 >>
 

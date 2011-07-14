@@ -25,8 +25,9 @@ img {
 
 p{
 
-    padding-top: 15px;
-
+    padding-top:15px;
+    line-height:20px;
+    padding-right:100px;
 }
 
 a{
@@ -39,11 +40,6 @@ a{
 a:hover{
 
     color:#1B65C0;
-
-}
-
-p{
-    line-height:20px;
 
 }
 
@@ -133,29 +129,71 @@ table{
     margin-left:auto;
     margin-right: auto;
     max-width:700;
-    border-spacing:15px;
+    border-spacing:0px 3px;
     text-align:left;
     font:12px/16px "Lucida Grande","Lucida Sans Unicode","Lucida Sans","Lucida",Verdana,"Bitstream Vera Sans",sans-serif;
+}
+
+td {
+
+    padding:5px;
 
 }
 
 div.fileicon, div.directoryicon {
-    float: right;
-    width: 25px;
-}
 
-div.fileicon, div.directoryicon {
-    float: right;
-    width: 25px;
+    float:right;
+    width:25px;
+
 }
 
 
 .errortext{
+
     color:#1B65C0;
     font-family: "Lucida Grande","Lucida Sans Unicode","Lucida Sans","Lucida",Verdana,"Bitstream Vera Sans",sans-serif;
     font-size:12px;
     font-weight:bold;
+
 }
+
+/* TABLE SORTER */
+
+table.sortable thead  {
+
+	background-color: #e6EEEE;
+
+}
+
+table.sortable thead tr th, table.sortable tfoot tr th {
+
+	background-color: #e6EEEE;
+	font-size:8pt;
+	padding:4px;
+
+}
+
+table.sortable thead tr .header {
+
+	background-image: url(/.webdav/images/bg.gif);
+	background-repeat: no-repeat;
+	background-position: center right;
+	cursor: pointer;
+
+}
+
+table.sortable thead tr .headerSortUp {
+
+	background-image: url(/.webdav/images/asc.gif);
+
+}
+
+table.sortable thead tr .headerSortDown {
+
+	background-image: url(/.webdav/images/desc.gif);
+
+}
+
 
 /**********************************  FOOTER */
 
