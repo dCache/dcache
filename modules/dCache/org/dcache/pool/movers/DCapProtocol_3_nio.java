@@ -749,13 +749,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 }
 
             }
-        }catch(Exception e){
-            //
-            // this is an error
-            //
-            _log.error("Problem in command block : "+requestBlock,e);
+        }catch(RuntimeException e){
+            _log.error("Problem in command block : "+requestBlock, e);
             ioException = e;
-
+        }catch(Exception e){
+            _log.warn("Problem in command block : "+requestBlock, e.toString());
+            ioException = e;
         }finally{
 
             try{
