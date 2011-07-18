@@ -173,5 +173,6 @@ public interface PoolSelectionUnit  {
    public String [] getLinkGroups();
    public String [] getLinksByGroupName(String linkGroupName) throws NoSuchElementException ;
    public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup) throws NoSuchElementException;
+   public Collection<SelectionPool> getAllDefinedPools( boolean enabledOnly ) ;
    public Collection<String> getPoolGroups();
 }

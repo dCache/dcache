@@ -3355,6 +3355,7 @@ public class PoolSelectionUnitV2
         return rc;
     }
 
+    @Override
     public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup)
         throws NoSuchElementException
     {
@@ -3367,6 +3368,22 @@ public class PoolSelectionUnitV2
             pools.add(pool);
         }
 
+        return pools;
+    }
+
+    @Override
+    public Collection<SelectionPool> getAllDefinedPools(boolean enabledOnly) {
+        List<SelectionPool> pools = new ArrayList<SelectionPool>(_pools.size());
+        _psuReadLock.lock();
+        try {
+            for (Pool pool : _pools.values()) {
+                if ((!enabledOnly) || pool.isEnabled()) {
+                    pools.add(pool);
+                }
+            }
+        } finally {
+            _psuReadLock.unlock();
+        }
         return pools;
     }
 
