@@ -165,6 +165,7 @@ import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.TransferRetryPolicies;
+import org.dcache.util.FireAndForgetTask;
 
 import dmg.cells.nucleus.CDC;
 
@@ -1388,7 +1389,7 @@ public abstract class AbstractFtpDoorV1
             if (!socket.isClosed() && !socket.isInputShutdown())
                 socket.shutdownInput();
         } catch (IOException e) {
-            _logger.warn("Failed to shut down input stream of the " +
+            _logger.info("Failed to shut down input stream of the " +
                          "control channel: {}", e.getMessage());
         }
     }
@@ -2533,12 +2534,12 @@ public abstract class AbstractFtpDoorV1
              * transfer a few times.
              */
             int retry = 0;
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             try {
                 transfer.createAdapter();
                 transfer.selectPoolAndStartMover(_ioQueueName, _retryPolicy);
             } finally {
-                _commandQueue.disableInterrupt();
+                disableInterrupt();
             }
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
@@ -2640,13 +2641,13 @@ public abstract class AbstractFtpDoorV1
             transfer.createTransactionLog();
             transfer.setChecksum(_checkSum);
 
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             try {
                 transfer.createAdapter();
                 transfer.selectPoolAndStartMover(_ioQueueName,
                                                  TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE));
             } finally {
-                _commandQueue.disableInterrupt();
+                disableInterrupt();
             }
         } catch (InterruptedException e) {
             transfer.abort(451, "Operation cancelled");
@@ -2792,7 +2793,7 @@ public abstract class AbstractFtpDoorV1
         FsPath path = absolutePath(arg);
 
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -2850,7 +2851,7 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             _logger.warn("Error in LIST: {}", e.getMessage());
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
     }
 
@@ -2864,7 +2865,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
 
             FsPath path = absolutePath(arg);
 
@@ -2916,7 +2917,7 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             _logger.warn("Error in NLST: {}", e.getMessage());
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
     }
 
@@ -2952,7 +2953,7 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn();
 
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
 
             FsPath path;
             if (arg.length() == 0) {
@@ -3005,7 +3006,7 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             _logger.warn("Error in MLSD: {}", e.getMessage());
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
     }
 
@@ -3045,12 +3046,12 @@ public abstract class AbstractFtpDoorV1
          * transfers have completed.
          */
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             joinTransfer();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
 
         throw new CommandExitException("", 0);
@@ -3108,6 +3109,29 @@ public abstract class AbstractFtpDoorV1
         if (attributes.getFileType() != FileType.DIR) {
             throw new NotDirCacheException("Not a directory");
         }
+    }
+
+    /**
+     * Allow command processing to be interrupted when the control
+     * channel is closed. Should be called from the command processing
+     * thread.
+     *
+     * @throw InterruptedException if command processing was already
+     * interrupted.
+     */
+    protected void enableInterrupt()
+        throws InterruptedException
+    {
+        _commandQueue.enableInterrupt();
+    }
+
+    /**
+     * Disallow command procesing to be interupted when the control
+     * channel is closed.
+     */
+    protected void disableInterrupt()
+    {
+        _commandQueue.disableInterrupt();
     }
 
     private class PerfMarkerTask
@@ -3292,37 +3316,46 @@ public abstract class AbstractFtpDoorV1
                 if (!_running) {
                     final CDC cdc = new CDC();
                     _running = true;
-                    _executor.submit(new Runnable() {
+                    _executor.submit(new FireAndForgetTask(new Runnable() {
+                            @Override
                             public void run() {
-                                cdc.restore();
-                                String command = get();
-                                while (command != null) {
-                                    execute(command);
-                                    command = get();
+                                CDC old = new CDC();
+                                try {
+                                    cdc.restore();
+                                    String command = getOrDone();
+                                    while (command != null) {
+                                        try {
+                                            execute(command);
+                                        } catch (RuntimeException e) {
+                                            _logger.error("Bug detected", e);
+                                        }
+                                        command = getOrDone();
+                                    }
+                                } finally {
+                                    old.restore();
                                 }
-                                done();
                             }
-                        });
+                        }));
                 }
             }
         }
 
         /**
-         * Returns the next command, or null if the queue has been
-         * stopped or if there is no command in the queue.
+         * Returns the next command.
+         *
+         * Returns null and signals that the command processing loop
+         * was left if the CommandQueue was stopped or the queue is
+         * empty.
          */
-        synchronized private String get()
+        synchronized private String getOrDone()
         {
-            return _stopped ? null : _commands.poll();
-        }
-
-        /**
-         * Signals that the command processing loop was left.
-         */
-        synchronized private void done()
-        {
-            _running = false;
-            notifyAll();
+            if (_stopped || _commands.isEmpty()) {
+                _running = false;
+                notifyAll();
+                return null;
+            } else {
+                return _commands.remove();
+            }
         }
 
         /**
