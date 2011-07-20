@@ -17,99 +17,76 @@
 
 package org.dcache.chimera.nfs;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.dcache.util.Glob;
+
 public class IPMatcher {
 
+    private static final Pattern IPV4_PATTERN = Pattern.compile("((?:\\d{1,3}\\.){3}\\d{1,3})(?:/(\\d{1,2}))?");
+    private static final Pattern IPV6_PATTERN = Pattern.compile("((?:::)|(?:(?:(?:[0-9a-fA-F]{1,4}:)|:){1,7})[0-9a-fA-F]{1,4})(?:/(\\d{1,3}))?");
 
-    // FIXME: make it more elegant
-    public static boolean match(String pattern, InetAddress ip) {
+    private static final int HOST_IP_GROUP_INDEX   = 1;
+    private static final int MASK_BITS_GROUP_INDEX = 2;
 
-
-        if( pattern.indexOf('*') != -1 || pattern.indexOf('?') != -1) {
-            // regexp
-            String hostName = ip.getHostName();
-
-            return match(pattern, hostName);
-
-        }else{
-            // ip
-            try {
-
-                int mask = 32;
-                String ipMask[] = pattern.split("/");
-                if(ipMask.length > 2 ) {
-                    // invalid record - deny
-                    return false;
-                }
-
-                if(ipMask.length == 2) {
-                    mask = Integer.parseInt(ipMask[1]);
-                }
-
-                return match(InetAddress.getByName(ipMask[0]), ip, mask);
-            }catch(UnknownHostException uhe) {
-                return false;
+    /**
+     * Matches an IP with the string representation of a host name.
+     *
+     * @param pattern String representation of a host, either as a hostname glob or an CIDR IP[/subnet] pattern.
+     * @param ip InetAddress to be checked for matching of the mask
+     * @return true if ip belongs into the fits mask, otherwise false.
+     */
+    public static boolean match(String pattern, InetAddress ip)
+    {
+        try {
+            Matcher matcher;
+            if ((matcher = IPV4_PATTERN.matcher(pattern)).matches()) {
+                String netmaskGroup = matcher.group(MASK_BITS_GROUP_INDEX);
+                int netmask = isNullOrEmpty(netmaskGroup) ? 32 : Integer.parseInt(netmaskGroup);
+                return match(InetAddress.getByName(matcher.group(HOST_IP_GROUP_INDEX)), ip, netmask);
+            } else if ((matcher = IPV6_PATTERN.matcher(pattern)).matches()) {
+                String netmaskGroup = matcher.group(MASK_BITS_GROUP_INDEX);
+                int netmask = isNullOrEmpty(netmaskGroup) ? 128 : Integer.parseInt(netmaskGroup);
+                return match(InetAddress.getByName(matcher.group(HOST_IP_GROUP_INDEX)), ip, netmask);
             }
+
+            String hostname = ip.getHostName();
+            return new Glob(pattern).matches(hostname);
+
+        } catch (UnknownHostException unknownHostException) {
+            return false;
         }
     }
 
-
-    public static boolean match(String pattern, String hostName ) {
-
-
-        Pattern p = Pattern.compile(toRegExp(pattern));
-        Matcher m = p.matcher(hostName);
-
-        return m.matches();
-
-    }
-
-
     /**
-     * Checks matching ip in specified subnet.
+     * Checks if an InetAddress matches subnet with mask.
      *
-     * @param ip address to test
+     * Compares the mask# topmost bits of "ip" and "subnet" to find out, if "ip" belongs to
+     * "subnet".
+     *
+     * @param InetAddress to test
      * @param subnet address
-     * @param mask netmask
-     * @return true if ip matches subnet.
+     * @param netmask in CIDR representation
+     * @return true if ip is part of subnet
      */
-    public static boolean match( InetAddress ip, InetAddress subnet, int mask ) {
-
+    public static boolean match( InetAddress ip, InetAddress subnet, int mask )
+    {
         byte[] ipBytes = ip.getAddress();
         byte[] netBytes = subnet.getAddress();
-        int ipLong = 0;
-        int netLong = 0;
 
-        // create an integer from address bytes
-        ipLong |= (255 & ipBytes[0]);
-        ipLong <<= 8;
-        ipLong |= (255 & ipBytes[1]);
-        ipLong <<= 8;
-        ipLong |= (255 & ipBytes[2]);
-        ipLong <<= 8;
-        ipLong |= (255 & ipBytes[3]);
+        if (ipBytes.length != netBytes.length) return false;
 
-        netLong |= (255 & netBytes[0]);
-        netLong <<= 8;
-        netLong |= (255 & netBytes[1]);
-        netLong <<= 8;
-        netLong |= (255 & netBytes[2]);
-        netLong <<= 8;
-        netLong |= (255 & netBytes[3]);
-
-        // first mask bits from left should be the same
-        ipLong  = ipLong >> (32 - mask);
-        netLong = netLong >> (32 - mask);
-
-        return ipLong ==  netLong ;
-    }
-
-
-    private static String toRegExp(String s) {
-                return s.replace(".", "\\.").replace("?", ".").replace("*", ".*");
+        // compare the topmost complete bytes (mask/8):
+        int i;
+        for (i=0; i<mask/8; i++) {
+            if (ipBytes[i] != netBytes[i]) return false;
+        }
+        // and if there are remaining bits, compare those, too, otherwise we're done
+        return i<ipBytes.length ? ((ipBytes[i]^netBytes[i])&((byte)Math.pow(2, mask%8)-1 << 8-(mask%8))) == 0 : true;
     }
 }
