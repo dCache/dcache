@@ -1,6 +1,7 @@
 // $Id: PoolCostInfo.java,v 1.7 2007-07-26 13:43:32 tigran Exp $
 
 package diskCacheV111.pools ;
+import com.google.common.collect.Maps;
 import java.util.* ;
 import org.dcache.pool.classic.IoQueueManager;
 
@@ -28,11 +29,15 @@ public class PoolCostInfo implements java.io.Serializable {
         static final long serialVersionUID = -7097362707394583875L;
 
         private String _name = null ;
-        private NamedPoolQueueInfo( String name , int active , int maxActive , int queued ){
-           super( active , maxActive , queued ) ;
-           _name = name ;
-
+        private NamedPoolQueueInfo(String name, int active, int maxActive, int queued) {
+            super(active, maxActive, queued);
+            _name = name;
         }
+
+        private NamedPoolQueueInfo(String name, PoolQueueInfo queue) {
+            this(name, queue.getActive(), queue.getMaxActive(), queue.getQueued());
+        }
+
         public String getName(){ return _name ; }
         @Override
         public String toString(){
@@ -73,6 +78,32 @@ public class PoolCostInfo implements java.io.Serializable {
     public PoolQueueInfo getP2pQueue(){ return _p2p ; }
     public PoolQueueInfo getP2pClientQueue(){ return _p2pClient ; }
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
+
+    public Map<String, NamedPoolQueueInfo> getMoverQueues() {
+        Map<String, NamedPoolQueueInfo> moverQueues;
+        if (_extendedMoverHash != null) {
+            moverQueues = Maps.newHashMap(_extendedMoverHash);
+        } else {
+            moverQueues = Maps.newHashMap();
+        }
+
+        if (_store != null) {
+            moverQueues.put("Stores", new NamedPoolQueueInfo("Stores", _store));
+        }
+        if (_restore != null) {
+            moverQueues.put("Restores", new NamedPoolQueueInfo("Restores", _restore));
+        }
+        if (_mover != null) {
+            moverQueues.put("Movers", new NamedPoolQueueInfo("Movers", _mover));
+        }
+        if (_p2p != null) {
+            moverQueues.put("P2P-Server", new NamedPoolQueueInfo("P2P-Server", _p2p));
+        }
+        if (_p2pClient != null) {
+            moverQueues.put("P2P-Client", new NamedPoolQueueInfo("P2P-Client", _p2pClient));
+        }
+        return moverQueues;
+    }
 
     public class PoolSpaceInfo implements java.io.Serializable {
 
