@@ -4,59 +4,53 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
+<!--needs to be instatiated first to allow other beans access to configuration-->
+    <bean id="ConfigHolder"
+        class="org.dcache.webadmin.model.configmapping.ConfigHolder">
+    </bean>
+
     <bean id="PoolCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
         <property name="timeout" value="4000"/>
     </bean>
 
-    <bean id="LoginCellStub"
-        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg value="#{ PoolCellStub.gPlazmaName }"/>
-        <property name="timeout" value="5000"/>
-    </bean>
-
     <bean id="PoolManagerCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg type="java.lang.String" value="#{ LoginCellStub.poolManagerName }"/>
+        <constructor-arg type="java.lang.String" value="#{ ConfigHolder.poolManagerName }"/>
         <property name="timeout" value="4000"/>
     </bean>
 
     <bean id="ActiveTransfersCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
-        <property name="timeout" value="#{ LoginCellStub.collectorTimeout }"/>
+        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
     </bean>
 
     <bean id="CellStatusCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
-        <property name="timeout" value="#{ LoginCellStub.collectorTimeout }"/>
+        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
     </bean>
 
     <bean id="PageInfoCache"
         class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache">
-        <constructor-arg >
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="threadFactory"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg value="#{ ConfigHolder.threadFactory }"/>
         <constructor-arg >
             <list>
                 <bean id="activeTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
                     <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
                     <property name="name" value="Active Transfers Collector"/>
-                    <property name="update" value="#{ LoginCellStub.transfersCollectorUpdate }"/>
-                    <property name="loginBrokerName" value="#{ LoginCellStub.loginBrokerName }"/>
+                    <property name="update" value="#{ ConfigHolder.transfersCollectorUpdate }"/>
+                    <property name="loginBrokerName" value="#{ ConfigHolder.loginBrokerName }"/>
                 </bean>
                 <bean id="cellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
                     <property name="cellStub" ref="CellStatusCollectorCellStub"/>
                     <property name="name" value="Cellstatus Collector"/>
-                    <property name="loginBrokerName" value="#{ LoginCellStub.loginBrokerName }"/>
-                    <property name="pnfsManagerName" value="#{ LoginCellStub.pnfsManagerName }"/>
-                    <property name="poolManagerName" value="#{ LoginCellStub.poolManagerName }"/>
-                    <property name="gPlazmaName" value="#{ LoginCellStub.gPlazmaName }"/>
+                    <property name="loginBrokerName" value="#{ ConfigHolder.loginBrokerName }"/>
+                    <property name="pnfsManagerName" value="#{ ConfigHolder.pnfsManagerName }"/>
+                    <property name="poolManagerName" value="#{ ConfigHolder.poolManagerName }"/>
+                    <property name="gPlazmaName" value="#{ ConfigHolder.gplazmaName }"/>
                 </bean>
                 <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector">
                     <property name="cellStub" ref="PoolManagerCellStub"/>
@@ -176,10 +170,10 @@
         <property name="linkGroupsService" ref="LinkGroupsService"/>
         <property name="activeTransfersService" ref="ActiveTransfersService"/>
         <!--<property name="logInService" ref="LogInService"/>-->
-        <property name="logInService" value="#{ LoginCellStub.logInService }"/>
-        <property name="httpPort" value="#{ LoginCellStub.httpPort }"/>
-        <property name="httpsPort" value="#{ LoginCellStub.httpsPort }"/>
-        <property name="authenticatedMode" value="#{ LoginCellStub.authenticatedMode }"/>
-        <property name="dcacheName" value="#{ LoginCellStub.dcacheName }"/>
+        <property name="logInService" value="#{ ConfigHolder.logInService }"/>
+        <property name="httpPort" value="#{ ConfigHolder.httpPort }"/>
+        <property name="httpsPort" value="#{ ConfigHolder.httpsPort }"/>
+        <property name="authenticatedMode" value="#{ ConfigHolder.authenticatedMode }"/>
+        <property name="dcacheName" value="#{ ConfigHolder.dcacheName }"/>
     </bean>
 </beans>
