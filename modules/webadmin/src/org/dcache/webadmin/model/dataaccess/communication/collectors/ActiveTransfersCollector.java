@@ -5,6 +5,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import java.util.Collection;
@@ -49,9 +50,8 @@ public class ActiveTransfersCollector extends Collector {
             CacheException {
         Set<String> doors = new HashSet<String>();
         _log.debug("Requesting doorInfo from LoginBroker {}", _loginBrokerName);
-        _cellStub.setDestination(_loginBrokerName);
-        LoginBrokerInfo[] infos = _cellStub.sendAndWait("ls -binary -all",
-                LoginBrokerInfo[].class);
+        LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(_loginBrokerName),
+                "ls -binary -all", LoginBrokerInfo[].class);
         for (LoginBrokerInfo info : infos) {
             String doorName = getCellPathString(info.getCellName(), info.getDomainName());
             doors.add(doorName);
@@ -67,8 +67,7 @@ public class ActiveTransfersCollector extends Collector {
         for (String doorName : doors) {
             _log.debug("Requesting client list from: {}", doorName);
             try {
-                _cellStub.setDestination(doorName);
-                LoginManagerChildrenInfo info = _cellStub.sendAndWait(
+                LoginManagerChildrenInfo info = _cellStub.sendAndWait(new CellPath(doorName),
                         "get children -binary", LoginManagerChildrenInfo.class);
                 doorInfos.put(doorName, info);
             } catch (CacheException e) {
@@ -97,8 +96,7 @@ public class ActiveTransfersCollector extends Collector {
                 String childDoor = getCellPathString(child, info.getCellDomainName());
                 _log.debug("Requesting IoDoorInfo from {}", childDoor);
                 try {
-                    _cellStub.setDestination(childDoor);
-                    IoDoorInfo ioDoorInfo = _cellStub.sendAndWait(
+                    IoDoorInfo ioDoorInfo = _cellStub.sendAndWait(new CellPath(childDoor),
                             "get door info -binary", IoDoorInfo.class);
                     for (IoDoorEntry ioDoorEntry : ioDoorInfo.getIoDoorEntries()) {
                         _log.debug("Adding Mover {}", ioDoorEntry);
@@ -118,8 +116,7 @@ public class ActiveTransfersCollector extends Collector {
         for (String poolName : poolsToAskForMovers) {
             _log.debug("Asking pool {} for movers", poolName);
             try {
-                _cellStub.setDestination(poolName);
-                IoJobInfo[] infos = _cellStub.sendAndWait(
+                IoJobInfo[] infos = _cellStub.sendAndWait(new CellPath(poolName),
                         "mover ls -binary", IoJobInfo[].class);
                 for (IoJobInfo info : infos) {
                     String client = info.getClientName() + "#" +

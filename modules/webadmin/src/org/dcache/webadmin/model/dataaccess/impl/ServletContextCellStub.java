@@ -154,7 +154,7 @@ public class ServletContextCellStub extends CellStub {
         return _poolManagerName;
     }
 
-    public String getgPlazmaName() {
+    public String getGPlazmaName() {
         return _gPlazmaName;
     }
 

@@ -4,12 +4,6 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-    <bean id="InfoCellStub"
-        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg type="java.lang.String" value="info"/>
-        <property name="timeout" value="4000"/>
-    </bean>
-
     <bean id="PoolCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
@@ -18,24 +12,26 @@
 
     <bean id="LoginCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
-        <constructor-arg >
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="PoolCellStub"/>
-                <property name="propertyPath" value="gPlazmaName"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg value="#{ PoolCellStub.gPlazmaName }"/>
         <property name="timeout" value="5000"/>
     </bean>
 
-    <bean id="CollectorCellStub"
+    <bean id="PoolManagerCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value="#{ LoginCellStub.poolManagerName }"/>
+        <property name="timeout" value="4000"/>
+    </bean>
+
+    <bean id="ActiveTransfersCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value=""/>
-        <property name="timeout">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="collectorTimeout"/>
-            </bean>
-        </property>
+        <property name="timeout" value="#{ LoginCellStub.collectorTimeout }"/>
+    </bean>
+
+    <bean id="CellStatusCollectorCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value=""/>
+        <property name="timeout" value="#{ LoginCellStub.collectorTimeout }"/>
     </bean>
 
     <bean id="PageInfoCache"
@@ -49,48 +45,22 @@
         <constructor-arg >
             <list>
                 <bean id="activeTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
-                    <property name="cellStub" ref="CollectorCellStub"/>
+                    <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
                     <property name="name" value="Active Transfers Collector"/>
-                    <property name="update">
-                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                            <property name="targetBeanName" value="LoginCellStub"/>
-                            <property name="propertyPath" value="transfersCollectorUpdate"/>
-                        </bean>
-                    </property>
-                    <property name="loginBrokerName">
-                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                            <property name="targetBeanName" value="LoginCellStub"/>
-                            <property name="propertyPath" value="loginBrokerName"/>
-                        </bean>
-                    </property>
+                    <property name="update" value="#{ LoginCellStub.transfersCollectorUpdate }"/>
+                    <property name="loginBrokerName" value="#{ LoginCellStub.loginBrokerName }"/>
                 </bean>
                 <bean id="cellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
-                    <property name="cellStub" ref="CollectorCellStub"/>
+                    <property name="cellStub" ref="CellStatusCollectorCellStub"/>
                     <property name="name" value="Cellstatus Collector"/>
-                    <property name="loginBrokerName">
-                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                            <property name="targetBeanName" value="LoginCellStub"/>
-                            <property name="propertyPath" value="loginBrokerName"/>
-                        </bean>
-                    </property>
-                    <property name="pnfsManagerName">
-                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                            <property name="targetBeanName" value="LoginCellStub"/>
-                            <property name="propertyPath" value="pnfsManagerName"/>
-                        </bean>
-                    </property>
-                    <property name="poolManagerName">
-                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                            <property name="targetBeanName" value="LoginCellStub"/>
-                            <property name="propertyPath" value="poolManagerName"/>
-                        </bean>
-                    </property>
-                    <property name="gPlazmaName">
-                        <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                            <property name="targetBeanName" value="LoginCellStub"/>
-                            <property name="propertyPath" value="gPlazmaName"/>
-                        </bean>
-                    </property>
+                    <property name="loginBrokerName" value="#{ LoginCellStub.loginBrokerName }"/>
+                    <property name="pnfsManagerName" value="#{ LoginCellStub.pnfsManagerName }"/>
+                    <property name="poolManagerName" value="#{ LoginCellStub.poolManagerName }"/>
+                    <property name="gPlazmaName" value="#{ LoginCellStub.gPlazmaName }"/>
+                </bean>
+                <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector">
+                    <property name="cellStub" ref="PoolManagerCellStub"/>
+                    <property name="name" value="PoolMonitorCollector Collector"/>
                 </bean>
             </list>
         </constructor-arg>
@@ -206,35 +176,10 @@
         <property name="linkGroupsService" ref="LinkGroupsService"/>
         <property name="activeTransfersService" ref="ActiveTransfersService"/>
         <!--<property name="logInService" ref="LogInService"/>-->
-        <property name="logInService">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="logInService"/>
-            </bean>
-        </property>
-        <property name="httpPort">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="httpPort"/>
-            </bean>
-        </property>
-        <property name="httpsPort">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="httpsPort"/>
-            </bean>
-        </property>
-        <property name="authenticatedMode">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="authenticatedMode"/>
-            </bean>
-        </property>
-        <property name="dcacheName">
-            <bean class="org.springframework.beans.factory.config.PropertyPathFactoryBean">
-                <property name="targetBeanName" value="LoginCellStub"/>
-                <property name="propertyPath" value="dcacheName"/>
-            </bean>
-        </property>
+        <property name="logInService" value="#{ LoginCellStub.logInService }"/>
+        <property name="httpPort" value="#{ LoginCellStub.httpPort }"/>
+        <property name="httpsPort" value="#{ LoginCellStub.httpsPort }"/>
+        <property name="authenticatedMode" value="#{ LoginCellStub.authenticatedMode }"/>
+        <property name="dcacheName" value="#{ LoginCellStub.dcacheName }"/>
     </bean>
 </beans>

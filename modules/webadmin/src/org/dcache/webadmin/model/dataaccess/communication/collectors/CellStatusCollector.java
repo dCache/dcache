@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,8 +52,8 @@ public class CellStatusCollector extends Collector {
         _log.debug("Requesting doorInfo from LoginBroker {}", loginBrokerName);
         Set<String> newDoors = new HashSet<String>();
         try {
-            _cellStub.setDestination(loginBrokerName);
-            LoginBrokerInfo[] infos = _cellStub.sendAndWait("ls -binary -all", LoginBrokerInfo[].class);
+            LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(loginBrokerName),
+                    "ls -binary -all", LoginBrokerInfo[].class);
             for (LoginBrokerInfo info : infos) {
                 String doorName = info.getCellName() + "@" + info.getDomainName();
                 newDoors.add(doorName);
@@ -68,8 +69,8 @@ public class CellStatusCollector extends Collector {
         _log.debug("Requesting Pools from {}", _poolManagerName);
         Set<String> pools = Collections.emptySet();
         try {
-            _cellStub.setDestination(_poolManagerName);
-            PoolManagerCellInfo info = _cellStub.sendAndWait("xgetcellinfo",
+            PoolManagerCellInfo info = _cellStub.sendAndWait(new CellPath(_poolManagerName),
+                    "xgetcellinfo",
                     PoolManagerCellInfo.class);
             pools = ImmutableSet.copyOf(info.getPoolList());
             _log.debug("Pools found: {}", pools);
@@ -107,9 +108,9 @@ public class CellStatusCollector extends Collector {
         CountDownLatch doneSignal = new CountDownLatch(_statusTargets.size());
         for (CellStatus status : _statusTargets.values()) {
             _log.debug("Sending query to : {}", status.getName());
-            _cellStub.setDestination(status.getName());
             CellInfoCallback callback = new CellInfoCallback(status, doneSignal);
-            _cellStub.send("xgetcellinfo", CellInfo.class, callback);
+            _cellStub.send(new CellPath(status.getName()), "xgetcellinfo",
+                    CellInfo.class, callback);
         }
         doneSignal.await(_cellStub.getTimeout(), TimeUnit.MILLISECONDS);
         _log.debug("Queries finished or timeouted");
