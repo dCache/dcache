@@ -13,7 +13,6 @@ import org.dcache.webadmin.controller.util.BeanDataMapper;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
-import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.view.beans.CellServicesBean;
@@ -38,7 +37,7 @@ public class StandardPoolGroupService implements PoolGroupService {
     public List<PoolGroupBean> getPoolGroups() throws PoolGroupServiceException {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
-            Set<String> poolGroupNames = getPoolGroupDAO().getPoolGroupNames();
+            Set<String> poolGroupNames = getPoolsDAO().getPoolGroupNames();
             _log.debug("returned pools: {} returned poolGroups: {}", pools.size(),
                     poolGroupNames.size());
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
@@ -62,10 +61,6 @@ public class StandardPoolGroupService implements PoolGroupService {
 
     private PoolsDAO getPoolsDAO() {
         return _daoFactory.getPoolsDAO();
-    }
-
-    private PoolGroupDAO getPoolGroupDAO() {
-        return _daoFactory.getPoolGroupDAO();
     }
 
     private DomainsDAO getDomainsDAO() {

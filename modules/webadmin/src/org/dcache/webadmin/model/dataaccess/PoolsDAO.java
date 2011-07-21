@@ -20,6 +20,12 @@ public interface PoolsDAO {
 
     /**
      *
+     * @return delivers a list of Poolgroups in dCache
+     */
+    public Set<String> getPoolGroupNames() throws DAOException;
+
+    /**
+     *
      * @param poolIds pools to change mode
      * @param poolMode mode to change to
      * @param userName user who calls the method

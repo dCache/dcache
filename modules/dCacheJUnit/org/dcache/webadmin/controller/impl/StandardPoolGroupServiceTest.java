@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
-import org.dcache.webadmin.model.dataaccess.impl.PoolGroupDAOHelper;
+import org.dcache.webadmin.model.dataaccess.impl.PoolsDAOImplHelper;
 import org.dcache.webadmin.view.beans.PoolGroupBean;
 import static org.junit.Assert.*;
 
@@ -33,7 +33,7 @@ public class StandardPoolGroupServiceTest {
 
     @Test(expected = PoolGroupServiceException.class)
     public void testGetPoolGroupsWithDAOException() throws PoolGroupServiceException {
-        PoolGroupDAOHelper dao = (PoolGroupDAOHelper) _daoFactory.getPoolGroupDAO();
+        PoolsDAOImplHelper dao = (PoolsDAOImplHelper) _daoFactory.getPoolsDAO();
         dao.setAlwaysThrowsDaoException(true);
         List<PoolGroupBean> poolGroups = _poolGroupService.getPoolGroups();
         fail("no exception thrown");

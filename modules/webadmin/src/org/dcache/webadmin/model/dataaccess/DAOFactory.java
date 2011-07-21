@@ -13,8 +13,6 @@ public interface DAOFactory {
 
     public PoolsDAO getPoolsDAO();
 
-    public PoolGroupDAO getPoolGroupDAO();
-
     public InfoDAO getInfoDAO();
 
     public LinkGroupsDAO getLinkGroupsDAO();

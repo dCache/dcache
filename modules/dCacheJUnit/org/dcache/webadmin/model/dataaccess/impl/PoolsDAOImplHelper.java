@@ -16,10 +16,26 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public class PoolsDAOImplHelper implements PoolsDAO {
 
+    private HashSet<String> _poolGroups = new HashSet<String>();
+    private boolean _alwaysThrowsDaoException = false;
     private Set<Pool> _pools = new HashSet();
 
     public PoolsDAOImplHelper() {
         _pools = XMLDataGathererHelper.getExpectedPools();
+        _poolGroups.add(XMLDataGathererHelper.POOL1_POOLGROUP1);
+        _poolGroups.add("testgroup1");
+    }
+
+    @Override
+    public Set<String> getPoolGroupNames() throws DAOException {
+        if (_alwaysThrowsDaoException) {
+            throw new DAOException("you are a bad boy!");
+        }
+        return _poolGroups;
+    }
+
+    public void setAlwaysThrowsDaoException(boolean alwaysThrowsDaoException) {
+        _alwaysThrowsDaoException = alwaysThrowsDaoException;
     }
 
     @Override

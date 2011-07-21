@@ -4,7 +4,6 @@ import org.dcache.webadmin.model.dataaccess.DomainsDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
-import org.dcache.webadmin.model.dataaccess.PoolGroupDAO;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
@@ -25,41 +24,31 @@ public class DAOFactoryImpl implements DAOFactory {
 
     @Override
     public PoolsDAO getPoolsDAO() {
-        _log.debug("PoolsDAO requested");
-        checkDefaultCommandSenderSet();
-//      maybe better make it an singleton - they all end up using one cell anyway?
-        return new StandardPoolsDAO(_defaultCommandSenderFactory);
-    }
-
-    @Override
-    public PoolGroupDAO getPoolGroupDAO() {
-        _log.debug("PoolGroupDAO requested");
-        checkDefaultCommandSenderSet();
-        return new StandardPoolGroupDAO(_defaultCommandSenderFactory);
+        checkDefaultsSet();
+        return new StandardPoolsDAO(_pageCache, _defaultCommandSenderFactory);
     }
 
     @Override
     public InfoDAO getInfoDAO() {
-        checkDefaultCommandSenderSet();
+        checkDefaultsSet();
         return new StandardInfoDAO(_defaultCommandSenderFactory);
     }
 
     @Override
     public DomainsDAO getDomainsDAO() {
-        checkDefaultCommandSenderSet();
-        checkPageCacheSet();
+        checkDefaultsSet();
         return new StandardDomainsDAO(_pageCache, _defaultCommandSenderFactory);
     }
 
     @Override
     public LinkGroupsDAO getLinkGroupsDAO() {
-        checkDefaultCommandSenderSet();
+        checkDefaultsSet();
         return new StandardLinkGroupsDAO(_defaultCommandSenderFactory);
     }
 
     @Override
     public MoverDAO getMoverDAO() {
-        checkPageCacheSet();
+        checkDefaultsSet();
         return new StandardMoverDAO(_pageCache,
                 _defaultCommandSenderFactory);
     }
@@ -73,6 +62,11 @@ public class DAOFactoryImpl implements DAOFactory {
     public void setPageCache(PageInfoCache pageCache) {
         _log.debug("PageCache set {}", pageCache);
         _pageCache = pageCache;
+    }
+
+    private void checkDefaultsSet() {
+        checkDefaultCommandSenderSet();
+        checkPageCacheSet();
     }
 
     private void checkDefaultCommandSenderSet() {

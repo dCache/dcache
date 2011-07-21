@@ -6,6 +6,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import diskCacheV111.poolManager.PoolMonitorV5;
+import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
+import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
+import org.dcache.webadmin.model.exceptions.NoSuchContextException;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
@@ -35,9 +39,12 @@ public class StandardPoolsDAO implements PoolsDAO {
     public static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardPoolsDAO.class);
     private PoolXmlToObjectMapper _xmlToObjectMapper = new PoolXmlToObjectMapper();
+    private PageInfoCache _pageCache;
     private CommandSenderFactory _commandSenderFactory;
 
-    public StandardPoolsDAO(CommandSenderFactory commandSenderFactory) {
+    public StandardPoolsDAO(PageInfoCache pageCache,
+            CommandSenderFactory commandSenderFactory) {
+        _pageCache = pageCache;
         _commandSenderFactory = commandSenderFactory;
     }
 
@@ -50,6 +57,18 @@ public class StandardPoolsDAO implements PoolsDAO {
             throw new DAOException(ex);
         } catch (DataGatheringException ex) {
             throw new DAOException(ex);
+        }
+    }
+
+    @Override
+    public Set<String> getPoolGroupNames() throws DAOException {
+        _log.debug("getPoolGroupNames called");
+        try {
+            PoolMonitorV5 poolMonitor = (PoolMonitorV5) _pageCache.getCacheContent(
+                    ContextPaths.POOLMONITOR);
+            return new HashSet(poolMonitor.getPoolSelectionUnit().getPoolGroups());
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
     }
 
