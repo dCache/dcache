@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.chimera.nfs.ExportClient.Root;
+import org.dcache.util.IPMatcher;
 
 public class FsExport {
 

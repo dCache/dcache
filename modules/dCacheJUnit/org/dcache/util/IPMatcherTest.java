@@ -1,4 +1,4 @@
-package org.dcache.chimera.nfs;
+package org.dcache.util;
 
 
 import static org.junit.Assert.assertFalse;
