@@ -73,7 +73,6 @@ documents or software obtained from this server.
  */
 package org.dcache.srm;
 
-import org.globus.util.GlobusURL;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.Request;
@@ -91,11 +90,8 @@ import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.sql.DatabaseRequestStorage;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
-import org.dcache.srm.util.Tools;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.io.IOException;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.URI;
@@ -132,29 +128,23 @@ import org.slf4j.LoggerFactory;
  */
 public class SRM {
     private static final Logger logger = LoggerFactory.getLogger(SRM.class);
-    private String name;
-    private InetAddress host;
-    private SRMAuthorization authorization;
-    private Configuration configuration;
-    private RequestCredentialStorage requestCredentialStorage;
+    private final InetAddress host;
+    private final Configuration configuration;
+    private final RequestCredentialStorage requestCredentialStorage;
     private AbstractStorageElement storage;
-    private RequestCounters<Class> srmServerV2Counters;
-    private RequestCounters<String> srmServerV1Counters;
-    private RequestCounters<Method> abstractStorageElementCounters;
-    private RrdRequestCounters rrdSrmServerV2Counters;
-    private RrdRequestCounters rrdSrmServerV1Counters;
-    private RrdRequestCounters rrdAstractStorageElementCounters;
-    private RequestExecutionTimeGauges<Class> srmServerV2Gauges;
-    private RequestExecutionTimeGauges<String> srmServerV1Gauges;
-    private RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
-    private RrdRequestExecutionTimeGauges rrdSrmServerV2Gauges;
-    private RrdRequestExecutionTimeGauges rrdSrmServerV1Gauges;
-    private RrdRequestExecutionTimeGauges rrdAstractStorageElementGauges;
+    private final RequestCounters<Class<?>> srmServerV2Counters;
+    private final RequestCounters<String> srmServerV1Counters;
+    private final RequestCounters<Method> abstractStorageElementCounters;
+    private RrdRequestCounters<?> rrdSrmServerV2Counters;
+    private RrdRequestCounters<?> rrdSrmServerV1Counters;
+    private RrdRequestCounters<?> rrdAstractStorageElementCounters;
+    private final RequestExecutionTimeGauges<Class<?>> srmServerV2Gauges;
+    private final RequestExecutionTimeGauges<String> srmServerV1Gauges;
+    private final RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
+    private RrdRequestExecutionTimeGauges<?> rrdSrmServerV2Gauges;
+    private RrdRequestExecutionTimeGauges<?> rrdSrmServerV1Gauges;
+    private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
 
-    private RequestCounters srmRequestCounters;
-    private RequestExecutionTimeGauges srmRequestGauges;
-    private RrdRequestExecutionTimeGauges rrdSrmRequestGauges;
-    private RrdRequestCounters rrdSrmRequestCounters;
     private static SRM srm;
     /**
      * Creates a new instance of SRM
@@ -172,78 +162,71 @@ public class SRM {
             IllegalStateTransition {
         this.configuration = config;
         //First of all decorate the storage with counters and
-        // gauges to measure the performace of storage operations
+        // gauges to measure the performance of storage operations
         this.storage = config.getStorage();
         abstractStorageElementCounters=
-            new RequestCounters<Method> (
-            this.storage.getClass().getName());
+                new RequestCounters<Method> (
+                        this.storage.getClass().getName());
         abstractStorageElementGauges =
-            new RequestExecutionTimeGauges<Method> (
-                this.storage.getClass().getName());
+                new RequestExecutionTimeGauges<Method> (
+                        this.storage.getClass().getName());
         this.storage = MonitoringProxy.decorateWithMonitoringProxy(
                 new Class[]{AbstractStorageElement.class},
                 this.storage,
                 abstractStorageElementCounters,
                 abstractStorageElementGauges);
-         config.setStorage(this.storage);
+        config.setStorage(this.storage);
 
-        this.name = name;
-        srmServerV2Counters = new RequestCounters<Class>("SRMServerV2");
+        srmServerV2Counters = new RequestCounters<Class<?>>("SRMServerV2");
         srmServerV1Counters = new RequestCounters<String>("SRMServerV1");
         if (configuration.getCounterRrdDirectory() != null) {
             String rrddir = configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "srmv1";
             rrdSrmServerV1Counters =
-                    new RrdRequestCounters(srmServerV1Counters, rrddir);
+                    new RrdRequestCounters<String>(srmServerV1Counters, rrddir);
             rrdSrmServerV1Counters.startRrdUpdates();
             rrdSrmServerV1Counters.startRrdGraphPlots();
             rrddir = configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "srmv2";
             rrdSrmServerV2Counters =
-                    new RrdRequestCounters(srmServerV2Counters, rrddir);
+                    new RrdRequestCounters<Class<?>>(srmServerV2Counters, rrddir);
             rrdSrmServerV2Counters.startRrdUpdates();
             rrdSrmServerV2Counters.startRrdGraphPlots();
             rrddir =  configuration.getCounterRrdDirectory() +
                     java.io.File.separatorChar + "storage";
 
             rrdAstractStorageElementCounters =
-                    new RrdRequestCounters(abstractStorageElementCounters, rrddir);
+                    new RrdRequestCounters<Method>(abstractStorageElementCounters, rrddir);
             rrdAstractStorageElementCounters.startRrdUpdates();
             rrdAstractStorageElementCounters.startRrdGraphPlots();
 
 
         }
-        srmServerV2Gauges = new RequestExecutionTimeGauges<Class> ("SRMServerV2");
+        srmServerV2Gauges = new RequestExecutionTimeGauges<Class<?>> ("SRMServerV2");
         srmServerV1Gauges = new RequestExecutionTimeGauges<String> ("SRMServerV1");
         if (configuration.getGaugeRrdDirectory() != null) {
             File rrddir = new File(configuration.getGaugeRrdDirectory() +
                     File.separatorChar + "srmv1");
             rrdSrmServerV1Gauges =
-                    new RrdRequestExecutionTimeGauges(srmServerV1Gauges, rrddir);
+                    new RrdRequestExecutionTimeGauges<String>(srmServerV1Gauges, rrddir);
             rrdSrmServerV1Gauges.startRrdUpdates();
             rrdSrmServerV1Gauges.startRrdGraphPlots();
             rrddir = new File(configuration.getGaugeRrdDirectory() +
                     File.separatorChar + "srmv2");
             rrdSrmServerV2Gauges =
-                    new RrdRequestExecutionTimeGauges(srmServerV2Gauges, rrddir);
+                    new RrdRequestExecutionTimeGauges<Class<?>>(srmServerV2Gauges, rrddir);
             rrdSrmServerV2Gauges.startRrdUpdates();
             rrdSrmServerV2Gauges.startRrdGraphPlots();
             rrddir = new File (configuration.getGaugeRrdDirectory() +
                     java.io.File.separatorChar + "storage");
 
             rrdAstractStorageElementGauges =
-                    new RrdRequestExecutionTimeGauges(abstractStorageElementGauges, rrddir);
+                    new RrdRequestExecutionTimeGauges<Method>(abstractStorageElementGauges, rrddir);
             rrdAstractStorageElementGauges.startRrdUpdates();
             rrdAstractStorageElementGauges.startRrdGraphPlots();
 
 
         }
-
-         srmRequestCounters =
-                 new RequestCounters("SRMRequestsCounters");
-         srmRequestGauges =
-                 new RequestExecutionTimeGauges("SRMRequestsGauges");
-
 
         // these jdbc parameters need to be set before the
         // first jdbc instance is created
@@ -275,11 +258,11 @@ public class SRM {
 
         try {
             RequestsPropertyStorage.initPropertyStorage( config.getJdbcUrl(),
-                config.getJdbcClass(),
-                config.getJdbcUser(),
-                config.getJdbcPass(),
-                config.getNextRequestIdStorageTable()
-                );
+                    config.getJdbcClass(),
+                    config.getJdbcUser(),
+                    config.getJdbcPass(),
+                    config.getNextRequestIdStorageTable()
+                    );
         } catch (IllegalStateException ise) {
             //already initialized
         }
@@ -335,7 +318,7 @@ public class SRM {
         long wait_period = 1000;
         while(srm == null ) {
             System.out.println(new java.util.Date() +
-                   " Waiting for srm initialization to complete.");
+                    " Waiting for srm initialization to complete.");
             SRM.class.wait(wait_period);
             time_expired += wait_period;
             if(time_expired > timeout) {
@@ -376,7 +359,7 @@ public class SRM {
     /**
      * @return the srmServerCounters
      */
-    public RequestCounters<Class> getSrmServerV2Counters() {
+    public RequestCounters<Class<?>> getSrmServerV2Counters() {
         return srmServerV2Counters;
     }
 
@@ -390,7 +373,7 @@ public class SRM {
     /**
      * @return the srmServerV2Gauges
      */
-    public RequestExecutionTimeGauges<Class> getSrmServerV2Gauges() {
+    public RequestExecutionTimeGauges<Class<?>> getSrmServerV2Gauges() {
         return srmServerV2Gauges;
     }
 
@@ -436,6 +419,7 @@ public class SRM {
             this.surl = surl;
         }
 
+        @Override
         public void AdvisoryDeleteFailed(String reason) {
             error = " advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteFailed: " + reason;
             success = false;
@@ -443,11 +427,13 @@ public class SRM {
             done();
         }
 
+        @Override
         public void AdvisoryDeleteSuccesseded() {
             logger.debug(" advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteSuccesseded");
             done();
         }
 
+        @Override
         public void Exception(Exception e) {
             error = " advisoryDelete(" + user + "," + surl + ") Exception :" + e;
             logger.error(error);
@@ -455,6 +441,7 @@ public class SRM {
             done();
         }
 
+        @Override
         public void Timeout() {
             error = " advisoryDelete(" + user + "," + surl + ") Timeout ";
             logger.error(error);
@@ -462,6 +449,7 @@ public class SRM {
             done();
         }
 
+        @Override
         public void Error(String error) {
             this.error = " advisoryDelete(" + user + "," + surl + ") Error " + error;
             logger.error(this.error);
@@ -508,7 +496,6 @@ public class SRM {
             throw new IllegalArgumentException(error);
         }
 
-        final StringBuilder sb = new StringBuilder();
         TheAdvisoryDeleteCallbacks callabacks_array[] =
                 new TheAdvisoryDeleteCallbacks[SURLS.length];
         for (int i = 0; i < SURLS.length; ++i) {
@@ -516,7 +503,6 @@ public class SRM {
                 URI surl = new URI(SURLS[i]);
                 callabacks_array[i] = new TheAdvisoryDeleteCallbacks(user, surl);
                 storage.advisoryDelete(user, surl, callabacks_array[i]);
-
 
             } catch (RuntimeException re) {
                 logger.error(re.toString());
@@ -607,8 +593,8 @@ public class SRM {
                         if (to_urls[i].equals(to_urls[j])) {
                             return createFailedRequestStatus(
                                     "list of sources contains the same url twice " +
-                                    "url#" + i + " is " + to_urls[i] +
-                                    " and url#" + j + " is " + to_urls[j]);
+                                            "url#" + i + " is " + to_urls[i] +
+                                            " and url#" + j + " is " + to_urls[j]);
                         }
                     }
                 }
@@ -668,8 +654,6 @@ public class SRM {
             String[] surls,
             String[] protocols,
             String client_host) {
-        int len = protocols.length;
-        int i = 0;
         // create a request object
         try {
             logger.debug("get(): user = " + user);
@@ -694,12 +678,12 @@ public class SRM {
             }
             ContainerRequest r =
                     new GetRequest(user, credential.getId(),
-                    surls, protocols,
-                    configuration.getGetLifetime(),
-                    configuration.getGetRetryTimeout(),
-                    configuration.getGetMaxNumOfRetries(),
-                    null,
-                    client_host);
+                            surls, protocols,
+                            configuration.getGetLifetime(),
+                            configuration.getGetRetryTimeout(),
+                            configuration.getGetMaxNumOfRetries(),
+                            null,
+                            client_host);
             r.schedule();
             // RequestScheduler will take care of the rest
             //getGetRequestScheduler().add(r);
@@ -889,8 +873,8 @@ public class SRM {
                     if (dests[i].equals(dests[j])) {
                         return createFailedRequestStatus(
                                 "put(): list of sources contains the same url twice " +
-                                "url#" + i + " is " + dests[i] +
-                                " and url#" + j + " is " + dests[j]);
+                                        "url#" + i + " is " + dests[i] +
+                                        " and url#" + j + " is " + dests[j]);
                     }
                 }
             }
@@ -1043,13 +1027,6 @@ public class SRM {
     }
 
     /**
-     * @return iterator for set of ids of all current srm requests
-     */
-    public Iterator getRequestIds() {
-        return null;//RequestScheduler.getRequestIds();
-    }
-
-    /**
      * @return request corresponding ot id
      */
     public ContainerRequest getRequest(Integer id) {
@@ -1089,68 +1066,34 @@ public class SRM {
         listRequests(sb, GetRequest.class);
     }
 
-    public Set getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getGetRequestIds(SRMUser user, String description) throws java.sql.SQLException {
         return getActiveJobIds(GetRequest.class,description);
     }
 
-    public Set getLsRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getLsRequestIds(SRMUser user, String description) throws java.sql.SQLException {
         return getActiveJobIds(LsRequest.class,description);
     }
 
     public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getGetStorage().getLatestCompletedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                GetRequest gr = Job.getJob(requestId, GetRequest.class);
-                sb.append(gr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
-
+        Set<Long> requestIds = getGetStorage().getLatestCompletedRequestIds(maxCount);
+        listRequests(sb,requestIds,GetRequest.class);
     }
 
     public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getGetStorage().getLatestFailedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                GetRequest gr = Job.getJob(requestId, GetRequest.class);
-                sb.append(gr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
-
+        Set<Long> requestIds = getGetStorage().getLatestFailedRequestIds(maxCount);
+        listRequests(sb,requestIds,GetRequest.class);
     }
 
     public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getGetStorage().getLatestDoneRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                GetRequest gr = Job.getJob(requestId, GetRequest.class);
-                sb.append(gr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
-
+        Set<Long> requestIds = getGetStorage().getLatestDoneRequestIds(maxCount);
+        listRequests(sb,requestIds,GetRequest.class);
     }
 
     public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getGetStorage().getLatestCanceledRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                GetRequest gr = Job.getJob(requestId, GetRequest.class);
-                sb.append(gr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getGetStorage().getLatestCanceledRequestIds(maxCount);
+        listRequests(sb,requestIds,GetRequest.class);
     }
+
 
     public void printGetSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
         getGetRequestScheduler().getInfo(sb);
@@ -1192,60 +1135,28 @@ public class SRM {
         listRequests(sb, PutRequest.class);
     }
 
-    public Set getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getPutRequestIds(SRMUser user, String description) throws java.sql.SQLException {
         return getActiveJobIds(PutRequest.class,description);
     }
 
     public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getPutStorage().getLatestCompletedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getPutStorage().getLatestCompletedRequestIds(maxCount);
+        listRequests(sb,requestIds,PutRequest.class);
     }
 
     public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds =getPutStorage().getLatestFailedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getPutStorage().getLatestFailedRequestIds(maxCount);
+        listRequests(sb,requestIds,PutRequest.class);
     }
 
     public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getPutStorage().getLatestCanceledRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                PutRequest pr = (PutRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getPutStorage().getLatestCanceledRequestIds(maxCount);
+        listRequests(sb,requestIds,PutRequest.class);
     }
 
     public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getPutStorage().getLatestDoneRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                PutRequest pr = Job.getJob(requestId, PutRequest.class);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getPutStorage().getLatestDoneRequestIds(maxCount);
+        listRequests(sb,requestIds,PutRequest.class);
     }
 
     public void printPutSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
@@ -1270,60 +1181,29 @@ public class SRM {
         listRequests(sb, CopyRequest.class);
     }
 
-    public Set getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getCopyRequestIds(SRMUser user, String description) throws java.sql.SQLException {
         return getActiveJobIds(CopyRequest.class,description);
     }
 
     public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getCopyStorage().getLatestCompletedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
-                sb.append(cr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getCopyStorage().getLatestCompletedRequestIds(maxCount);
+        listRequests(sb, requestIds, CopyRequest.class);
     }
 
     public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getCopyStorage().getLatestFailedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
-                sb.append(cr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getCopyStorage().getLatestFailedRequestIds(maxCount);
+        listRequests(sb, requestIds, CopyRequest.class);
     }
 
     public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getCopyStorage().getLatestCanceledRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
-                sb.append(cr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getCopyStorage().getLatestCanceledRequestIds(maxCount);
+        listRequests(sb, requestIds, CopyRequest.class);
     }
 
+
     public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getCopyStorage().getLatestDoneRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                CopyRequest cr = Job.getJob(requestId, CopyRequest.class);
-                sb.append(cr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getCopyStorage().getLatestDoneRequestIds(maxCount);
+        listRequests(sb, requestIds, CopyRequest.class);
     }
 
     public void printCopySchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
@@ -1348,60 +1228,29 @@ public class SRM {
         listRequests(sb, BringOnlineRequest.class);
     }
 
-    public Set getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
+    public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws java.sql.SQLException {
         return getActiveJobIds(BringOnlineRequest.class,description);
     }
 
     public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getBringOnlineStorage().getLatestCompletedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getBringOnlineStorage().getLatestCompletedRequestIds(maxCount);
+        listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
     public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getBringOnlineStorage().getLatestFailedRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getBringOnlineStorage().getLatestFailedRequestIds(maxCount);
+        listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
     public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getBringOnlineStorage().getLatestCanceledRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getBringOnlineStorage().getLatestCanceledRequestIds(maxCount);
+        listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
+
     public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws java.sql.SQLException {
-        Set activeRequestIds = getBringOnlineStorage().getLatestDoneRequestIds(maxCount);
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
-            try {
-                BringOnlineRequest pr = (BringOnlineRequest) ContainerRequest.getRequest(requestId);
-                sb.append(pr).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
+        Set<Long> requestIds = getBringOnlineStorage().getLatestDoneRequestIds(maxCount);
+        listRequests(sb, requestIds, BringOnlineRequest.class);
     }
 
     public void printBringOnlineSchedulerInfo(StringBuilder sb) throws java.sql.SQLException {
@@ -1422,10 +1271,11 @@ public class SRM {
 
     }
 
-    private Scheduler getScheduler(Class requestType) {
+    private Scheduler getScheduler(Class<? extends Job> requestType) {
         return SchedulerFactory.getSchedulerFactory().
                 getScheduler(requestType);
     }
+
     public void listReserveSpaceRequests(StringBuilder sb) throws java.sql.SQLException {
         listRequests(sb, ReserveSpaceRequest.class);
     }
@@ -1434,16 +1284,13 @@ public class SRM {
         listRequests(sb, LsRequest.class);
     }
 
-    private void listRequests(StringBuilder sb,
-            Scheduler scheduler,
-            DatabaseRequestStorage storage) throws java.sql.SQLException {
-        Set activeRequestIds =
-                storage.getActiveRequestIds(scheduler.getId());
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
+    private final <T extends Job> void listRequests(StringBuilder sb,
+            Set<Long> requestIds,
+            Class<T> type) throws java.sql.SQLException {
+        for (Long requestId : requestIds) {
             try {
-                Request r = Job.getJob(requestId, Request.class);
-                sb.append(r).append('\n');
+                T request = Job.getJob(requestId, type);
+                sb.append(request).append('\n');
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
@@ -1545,10 +1392,9 @@ public class SRM {
 
         java.util.Set<Long> jobsToKill = new java.util.HashSet<Long>();
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
-        Set activeRequestIds =
+        Set<Long> activeRequestIds =
                 storage.getActiveRequestIds(scheduler.getId());
-        for (Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long) i.next();
+        for (Long requestId : activeRequestIds) {
             java.util.regex.Matcher m = p.matcher(requestId.toString());
             if (m.matches()) {
                 logger.debug("cancelAllRequest: request Id #" + requestId + " in " + scheduler + " matches pattern!");
@@ -1566,6 +1412,7 @@ public class SRM {
                 sb.append("request #" + requestId + " matches pattern=\"" + pattern + "\"; canceling request \n");
                 new Thread(new Runnable() {
 
+                    @Override
                     public void run() {
                         try {
                             job.setState(State.CANCELED, "Canceled by admin through cancelall command");
@@ -1675,8 +1522,8 @@ public class SRM {
         return getScheduler(LsFileRequest.class);
     }
 
-    public static Set<Long> getActiveJobIds(Class type, String description) {
-        Set<Job> jobs = Job.getActiveJobs(type);
+    public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description) {
+        Set<T> jobs = Job.getActiveJobs(type);
         Set<Long> ids = new HashSet<Long>();
         for(Job job: jobs) {
             if(description != null ) {
@@ -1692,6 +1539,5 @@ public class SRM {
         }
         return ids;
     }
-
 
 }

@@ -1,6 +1,5 @@
 package org.dcache.srm.scheduler;
 
-import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.*;
 import java.util.Map;
@@ -14,13 +13,12 @@ import org.slf4j.LoggerFactory;
  */
 public class SchedulerFactory {
     private static final Logger logger = LoggerFactory.getLogger(SchedulerFactory.class);
-    private final Map<Class,Scheduler> schedulerMap;
-    private final String name;
+    private final Map<Class<? extends Job>,Scheduler> schedulerMap;
     private static SchedulerFactory factory=null;
 
     private SchedulerFactory(Configuration config, String name) {
-        schedulerMap = new HashMap<Class,Scheduler>();
-        
+        schedulerMap = new HashMap<Class<? extends Job>,Scheduler>();
+
         Scheduler lsRequestScheduler = new Scheduler("ls_" + name);
         // scheduler parameters
         lsRequestScheduler.setMaxThreadQueueSize(config.getLsReqTQueueSize());
@@ -95,8 +93,6 @@ public class SchedulerFactory {
         Scheduler reserveSpaceScheduler = new Scheduler("reserve_space" + name);
         reserveSpaceScheduler.start();
         schedulerMap.put(ReserveSpaceRequest.class,copyRequestScheduler);
-
-        this.name = name;
     }
 
     public void shutdown() {
@@ -128,21 +124,19 @@ public class SchedulerFactory {
         return factory;
     }
 
-    
+
     public Scheduler getScheduler(Job job) {
         if(job == null) {
             throw new IllegalArgumentException("job is null");
         }
         return getScheduler(job.getClass());
-        
+
     }
 
-    public Scheduler getScheduler(Class jobType) {
+    public Scheduler getScheduler(Class<? extends Job> jobType) {
         Scheduler scheduler = schedulerMap.get(jobType);
         if(scheduler != null) return scheduler;
-         throw new UnsupportedOperationException(
-                 "Scheduler for class "+jobType+ " is not supported");
+        throw new UnsupportedOperationException(
+                "Scheduler for class "+jobType+ " is not supported");
     }
-
-
 }

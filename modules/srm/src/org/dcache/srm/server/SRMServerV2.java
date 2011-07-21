@@ -176,8 +176,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     private SrmAuthorizer srmAuth = null;
     org.dcache.srm.util.Configuration configuration;
     private AbstractStorageElement storage;
-    private final RequestCounters<Class> srmServerCounters;
-    private final RequestExecutionTimeGauges<Class> srmServerGauges;
+    private final RequestCounters<Class<?>> srmServerCounters;
+    private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
 
     public SRMServerV2() throws java.rmi.RemoteException{
         try {
@@ -221,7 +221,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         long startTimeStamp = System.currentTimeMillis();
         JDC.createSession("v2:"+requestName+":");
 
-        Class requestClass = request.getClass();
+        Class<?> requestClass = request.getClass();
         //count requests of each type
         try {
             srmServerCounters.incrementRequests(requestClass);
@@ -250,7 +250,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                 RequestCredential requestCredential = null;
                 try {
                     userCred          = srmAuth.getUserCredentials();
-                    Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+                    Collection<String> roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
                     String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
                     log.debug("SRMServerV2."+requestName+"() : role is "+role);
                     requestCredential = srmAuth.getRequestCredential(userCred,role);
@@ -265,8 +265,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
                             "SRM Authentication failed");
                 }
                 log.debug("About to call SRMServerV2"+requestName+"()");
-                Class handlerClass;
-                Constructor handlerConstructor;
+                Class<?> handlerClass;
+                Constructor<?> handlerConstructor;
                 Object handler;
                 Method handleGetResponseMethod;
                 try {
@@ -330,8 +330,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
             IllegalAccessException,
             java.lang.reflect.InvocationTargetException {
 
-        Class responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
-        Constructor responseConstructor = responseClass.getConstructor((Class[])null);
+        Class<?> responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
+        Constructor<?> responseConstructor = responseClass.getConstructor((Class[])null);
         Object response = responseConstructor.newInstance((Object[])null);
         try {
 		TReturnStatus trs = new TReturnStatus(statusCode,errorMessage );
@@ -340,11 +340,9 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
         }
 	catch (java.lang.NoSuchMethodException nsme) {
 		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
-		// I put it here cause it will go away as soon as this method is present
-		// (by Dmitry Litvintsev (litvinse@fnal.gov))
 		log.error("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
 		if (capitalizedRequestName.equals("SrmPing")) {
-			Class handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
+			Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
 			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
 			return getFailedRespose.invoke(null,new Object[]{errorMessage});
 		}

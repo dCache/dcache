@@ -37,65 +37,67 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
 
     public abstract String getRequestCreateTableFields();
 
+    @Override
     public String getCreateTableFields() {
         return
-        ", "+
-        "CREDENTIALID "+  longType+
-        ", "+
-        "RETRYDELTATIME "+  intType+
-        ", "+
-        "SHOULDUPDATERETRYDELTATIME "+  booleanType+
-        ", "+
-        "DESCRIPTION "+ stringType+
-        ", "+
-        "CLIENTHOST "+ stringType+
-        ", "+
-        "STATUSCODE "+ stringType+
-        ", "+
-        "USERID "+ longType+
+                ", "+
+                "CREDENTIALID "+  longType+
+                ", "+
+                "RETRYDELTATIME "+  intType+
+                ", "+
+                "SHOULDUPDATERETRYDELTATIME "+  booleanType+
+                ", "+
+                "DESCRIPTION "+ stringType+
+                ", "+
+                "CLIENTHOST "+ stringType+
+                ", "+
+                "STATUSCODE "+ stringType+
+                ", "+
+                "USERID "+ longType+
 
-        getRequestCreateTableFields();
+                getRequestCreateTableFields();
     }
 
     protected abstract Request getRequest(
-    Connection _con,
-    Long ID,
-    Long NEXTJOBID,
-    long CREATIONTIME,
-    long LIFETIME,
-    int STATE,
-    String ERRORMESSAGE,
-    SRMUser user,
-    String SCHEDULERID,
-    long SCHEDULER_TIMESTAMP,
-    int NUMOFRETR,
-    int MAXNUMOFRETR,
-    long LASTSTATETRANSITIONTIME,
-    Long CREDENTIALID,
-    int RETRYDELTATIME,
-    boolean SHOULDUPDATERETRYDELTATIME,
-    String DESCRIPTION,
-    String CLIENTHOST,
-    String STATUSCODE,
-    java.sql.ResultSet set,
-    int next_index)throws java.sql.SQLException;
+            Connection _con,
+            Long ID,
+            Long NEXTJOBID,
+            long CREATIONTIME,
+            long LIFETIME,
+            int STATE,
+            String ERRORMESSAGE,
+            SRMUser user,
+            String SCHEDULERID,
+            long SCHEDULER_TIMESTAMP,
+            int NUMOFRETR,
+            int MAXNUMOFRETR,
+            long LASTSTATETRANSITIONTIME,
+            Long CREDENTIALID,
+            int RETRYDELTATIME,
+            boolean SHOULDUPDATERETRYDELTATIME,
+            String DESCRIPTION,
+            String CLIENTHOST,
+            String STATUSCODE,
+            java.sql.ResultSet set,
+            int next_index)throws java.sql.SQLException;
 
+    @Override
     protected final org.dcache.srm.scheduler.Job
     getJob(
-    Connection _con,
-    Long ID,
-    Long NEXTJOBID,
-    long CREATIONTIME,
-    long LIFETIME,
-    int STATE,
-    String ERRORMESSAGE,
-    String SCHEDULERID,
-    long SCHEDULER_TIMESTAMP,
-    int NUMOFRETR,
-    int MAXNUMOFRETR,
-    long LASTSTATETRANSITIONTIME,
-    java.sql.ResultSet set,
-    int next_index) throws java.sql.SQLException {
+            Connection _con,
+            Long ID,
+            Long NEXTJOBID,
+            long CREATIONTIME,
+            long LIFETIME,
+            int STATE,
+            String ERRORMESSAGE,
+            String SCHEDULERID,
+            long SCHEDULER_TIMESTAMP,
+            int NUMOFRETR,
+            int MAXNUMOFRETR,
+            long LASTSTATETRANSITIONTIME,
+            java.sql.ResultSet set,
+            int next_index) throws java.sql.SQLException {
 
         Long CREDENTIALID = set.getLong(next_index++);
         int RETRYDELTATIME = set.getInt(next_index++);
@@ -104,29 +106,29 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         String CLIENTHOST = set.getString(next_index++);
         String STATUSCODE= set.getString(next_index++);
         SRMUser user =
-            srmUserPersistenceManager.find(set.getLong(next_index++));
+                srmUserPersistenceManager.find(set.getLong(next_index++));
         return getRequest(
-        _con,
-        ID,
-        NEXTJOBID ,
-        CREATIONTIME,
-        LIFETIME,
-        STATE,
-        ERRORMESSAGE,
-        user,
-        SCHEDULERID,
-        SCHEDULER_TIMESTAMP,
-        NUMOFRETR,
-        MAXNUMOFRETR,
-        LASTSTATETRANSITIONTIME,
-        CREDENTIALID,
-        RETRYDELTATIME,
-        SHOULDUPDATERETRYDELTATIME,
-        DESCRIPTION,
-        CLIENTHOST,
-        STATUSCODE,
-        set,
-        next_index );
+                _con,
+                ID,
+                NEXTJOBID ,
+                CREATIONTIME,
+                LIFETIME,
+                STATE,
+                ERRORMESSAGE,
+                user,
+                SCHEDULERID,
+                SCHEDULER_TIMESTAMP,
+                NUMOFRETR,
+                MAXNUMOFRETR,
+                LASTSTATETRANSITIONTIME,
+                CREDENTIALID,
+                RETRYDELTATIME,
+                SHOULDUPDATERETRYDELTATIME,
+                DESCRIPTION,
+                CLIENTHOST,
+                STATUSCODE,
+                set,
+                next_index );
     }
     private static int ADDITIONAL_FIELDS_NUM=7;
 
@@ -164,17 +166,17 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             sb.append(", '").append(STATUSCODE).append('\'');
         }
         sb.append(", ").append(
-            r.getUser().getId()
-        ).append(" ");
+                r.getUser().getId()
+                ).append(" ");
         getCreateList(r,sb);
 
     }
 
     public Set<Long> getActiveRequestIds(String schedulerid)  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
-        "' AND STATE !="+State.DONE.getStateId()+
-        " AND STATE !="+State.CANCELED.getStateId()+
-        " AND STATE !="+State.FAILED.getStateId();
+                "' AND STATE !="+State.DONE.getStateId()+
+                " AND STATE !="+State.CANCELED.getStateId()+
+                " AND STATE !="+State.FAILED.getStateId();
         return getJobIdsByCondition(condition);
     }
 
@@ -182,10 +184,10 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             SRMUser user,
             String description )  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
-        "' AND STATE !="+State.DONE.getStateId()+
-        " AND STATE !="+State.CANCELED.getStateId()+
-        " AND STATE !="+State.FAILED.getStateId()+
-        " AND USERID = '"+user.getId()+'\'';
+                "' AND STATE !="+State.DONE.getStateId()+
+                " AND STATE !="+State.CANCELED.getStateId()+
+                " AND STATE !="+State.FAILED.getStateId()+
+                " AND USERID = '"+user.getId()+'\'';
         if(description != null) {
             condition += " AND DESCRIPTION = '"+
                     description+'\'';
@@ -195,33 +197,34 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
 
     public Set<Long> getLatestCompletedRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition(
-        " STATE ="+State.DONE.getStateId()+
-        " OR STATE ="+State.CANCELED.getStateId()+
-        " OR STATE = "+State.FAILED.getStateId()+
-        " ORDER BY ID"+
-        " LIMIT "+maxNum+" ");
+                " STATE ="+State.DONE.getStateId()+
+                " OR STATE ="+State.CANCELED.getStateId()+
+                " OR STATE = "+State.FAILED.getStateId()+
+                " ORDER BY ID"+
+                " LIMIT "+maxNum+" ");
     }
 
-    public Set getLatestDoneRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestDoneRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
-        " ORDERED BY ID"+
-        " LIMIT "+maxNum+" ");
+                " ORDERED BY ID"+
+                " LIMIT "+maxNum+" ");
     }
 
-    public Set getLatestFailedRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestFailedRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
-        " ORDERED BY ID"+
-        " LIMIT "+maxNum+" ");
+                " ORDERED BY ID"+
+                " LIMIT "+maxNum+" ");
     }
 
-    public Set getLatestCanceledRequestIds(int maxNum)  throws java.sql.SQLException {
+    public Set<Long> getLatestCanceledRequestIds(int maxNum)  throws java.sql.SQLException {
         return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
-        " ORDERED BY ID"+
-        " LIMIT "+maxNum+" ");
+                " ORDERED BY ID"+
+                " LIMIT "+maxNum+" ");
     }
 
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
 
+    @Override
     protected final void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
         /*
          *additional fields:
@@ -237,7 +240,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         "CLIENTHOST "+ stringType+
         ", "+
         "STATUSCODE "+ stringType+
-        */
+         */
         if(columnIndex == nextIndex) {
             verifyLongType("CREDENTIALID",columnIndex,tableName, columnName, columnType);
         }
@@ -270,10 +273,11 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         {
             __verify(nextIndex+7,columnIndex,tableName, columnName, columnType);
         }
-   }
+    }
 
     protected abstract int getMoreCollumnsNum();
 
+    @Override
     protected final int getAdditionalColumnsNum() {
         return ADDITIONAL_FIELDS_NUM +getMoreCollumnsNum();
     }
