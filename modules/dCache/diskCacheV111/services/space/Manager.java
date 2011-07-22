@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Collections;
@@ -250,17 +249,6 @@ public final class Manager
                 start();
                 (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
-        }
-
-
-        private boolean isOptionSetToTrueOrYes(String value) {
-                String tmpstr = _args.getOpt(value);
-                return tmpstr!=null&&
-                       (tmpstr.equalsIgnoreCase("true")||
-                        tmpstr.equalsIgnoreCase("on")||
-                        tmpstr.equalsIgnoreCase("yes")||
-                        tmpstr.equalsIgnoreCase("enabled"));
-
         }
 
         private boolean isOptionSetToTrueOrYes(String value,
@@ -1395,9 +1383,8 @@ public final class Manager
         private void fixMissingSize() {
                 synchronized (fixMissingSizeLock) {
                         try {
-                                PnfsHandler pnfs=
-                                        new PnfsHandler(Manager.this,
-                                                        new CellPath("PnfsManager"));
+                                PnfsHandler pnfs=new PnfsHandler(new CellPath(pnfsManager));
+                                pnfs.setCellEndpoint(this);
                                 logger.info("fix missing size: Searching for files...");
                                 Set<File> files=
                                         manager.select(fileIO,
@@ -2039,7 +2026,7 @@ public final class Manager
                         for(LinkGroup group : groups) {
                                 idlist.add(group.getId());
                         }
-                        return (Long[])idlist.toArray(new Long[0]);
+                        return idlist.toArray(new Long[0]);
                 }
                 catch(SQLException sqle) {
                         logger.error("select failed with "+sqle.getMessage());
@@ -2277,7 +2264,6 @@ public final class Manager
 
 
         public void removeFileFromSpace(long id) throws SQLException {
-                boolean found = false;
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -2677,7 +2663,7 @@ public final class Manager
                                       voRole,
                                       retentionPolicy==null? 0 : retentionPolicy.getId(),
                                       accessLatency==null? 0 : accessLatency.getId(),
-                                      linkGroupId,
+                                      g.getId(),
                                       sizeInBytes,
                                       creationTime,
                                       lifetime,
@@ -2822,7 +2808,7 @@ public final class Manager
                                                               voRole);
                         }
                 }
-                return Collections.EMPTY_SET;
+                return Collections.emptySet();
         }
 
         public long[] getSpaceTokens(AuthorizationRecord authRecord,
@@ -3356,7 +3342,7 @@ public final class Manager
                                                        pnfsId.toString());
                 if (files.isEmpty()==true) {
                         throw new SQLException("file with pnfsId="+pnfsId+
-                                               " is not found");
+                                                " is not found");
                 }
                 if (files.size()>1) {
                         throw new SQLException("found two records with pnfsId="+
@@ -3381,7 +3367,7 @@ public final class Manager
                 return Iterables.getFirst(files,null);
         }
 
-        public Set getFiles(String pnfsPath)  throws SQLException{
+        public Set<File> getFiles(String pnfsPath)  throws SQLException{
                 pnfsPath =new FsPath(pnfsPath).toString();
                 Set<File> files = manager.selectPrepared(fileIO,
                                                          FileIO.SELECT_BY_PNFSPATH,
@@ -4177,7 +4163,6 @@ public final class Manager
                 String pnfsPath = use.getPnfsName();
                 PnfsId pnfsId = use.getPnfsId();
                 long lifetime = use.getLifetime();
-                boolean overwriteFlag = use.isOverwrite();
                 long fileId = useSpace(reservationId,
                                        voGroup,
                                        voRole,
@@ -4592,7 +4577,6 @@ public final class Manager
                 }
                 long reservationId = cancelUse.getSpaceToken();
                 String pnfsPath    = cancelUse.getPnfsName();
-                PnfsId pnfsId      = cancelUse.getPnfsId();
                 Connection connection = null;
                 try {
                         connection = connection_pool.getConnection();
@@ -4707,7 +4691,6 @@ public final class Manager
                         logger.warn("find LinkGroups returned 0 linkGroups, no linkGroups found");
                         throw new NoFreeSpaceException(" no space available");
                 }
-                SpaceAuthorizationException sae = null;
                 //
                 // filter out groups we are not authorized to use
                 //
@@ -4771,10 +4754,6 @@ public final class Manager
                                                        e);
                         }
                         catch (SpaceAuthorizationException e)  {
-                                logger.warn(e.getMessage());
-                                throw e;
-                        }
-                        catch (SpaceException e) {
                                 logger.warn(e.getMessage());
                                 throw e;
                         }
