@@ -1,6 +1,7 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import java.util.Arrays;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -15,16 +16,11 @@ import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.C
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
-import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
-import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.dcache.webadmin.model.exceptions.DataGatheringException;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
-import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
 
 /**
  *
@@ -33,10 +29,8 @@ import org.w3c.dom.Document;
 public class StandardDomainsDAO implements DomainsDAO {
 
     private static final String EMPTY_STRING = "";
-    private static final List<String> DOMAINS_PATH = Arrays.asList("domains");
     private static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardDomainsDAO.class);
-    private DomainsXmlToObjectMapper _xmlToObjectMapper = new DomainsXmlToObjectMapper();
     private PageInfoCache _pageCache;
     private CommandSenderFactory _commandSenderFactory;
 
@@ -55,23 +49,6 @@ public class StandardDomainsDAO implements DomainsDAO {
             return states;
         } catch (NoSuchContextException e) {
             return Collections.EMPTY_SET;
-        }
-    }
-
-    private String getXmlForStatePath(List<String> statePath) throws DataGatheringException {
-        try {
-            InfoGetSerialisedDataMessageGenerator messageGenerator =
-                    new InfoGetSerialisedDataMessageGenerator(statePath);
-            CommandSender commandSender =
-                    _commandSenderFactory.createCommandSender(messageGenerator);
-            commandSender.sendAndWait();
-            if (commandSender.allSuccessful()) {
-                return messageGenerator.getXML();
-            } else {
-                throw new DataGatheringException("couldn't get data from info provider");
-            }
-        } catch (InterruptedException e) {
-            throw new DataGatheringException("Interrupted during data gathering", e);
         }
     }
 
@@ -114,18 +91,22 @@ public class StandardDomainsDAO implements DomainsDAO {
     public Map<String, List<String>> getDomainsMap() throws DAOException {
         _log.debug("getDomainsMap called");
         try {
-            return tryToGetDomainsMap();
-        } catch (ParsingException ex) {
-            throw new DAOException(ex);
-        } catch (DataGatheringException ex) {
-            throw new DAOException(ex);
+            Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
+                    ContextPaths.CELLINFO_LIST);
+            Map<String, List<String>> domainsMap = Maps.newHashMap();
+            for (CellStatus state : states) {
+                List<String> cellsOfDomain = domainsMap.get(state.getDomainName());
+                if (cellsOfDomain != null) {
+                    cellsOfDomain.add(state.getName());
+                } else {
+                    cellsOfDomain = Lists.newArrayList();
+                    cellsOfDomain.add(state.getName());
+                    domainsMap.put(state.getDomainName(), cellsOfDomain);
+                }
+            }
+            return domainsMap;
+        } catch (NoSuchContextException e) {
+            return Collections.EMPTY_MAP;
         }
-    }
-
-    private Map<String, List<String>> tryToGetDomainsMap()
-            throws ParsingException, DataGatheringException {
-        String serialisedXML = getXmlForStatePath(DOMAINS_PATH);
-        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
-        return _xmlToObjectMapper.parseDomainsMapDocument(xmlDocument);
     }
 }

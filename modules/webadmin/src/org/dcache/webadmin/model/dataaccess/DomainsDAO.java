@@ -14,7 +14,8 @@ import org.dcache.webadmin.model.exceptions.DAOException;
 public interface DomainsDAO {
 
     /**
-     *
+     * To get a map that contains all names of doors, pools, PoolManager, PnfsManager,
+     * gPlazma, LoginBroker put into the key which is the domain they are in.
      * @return delivers a map<domainname,List<cellname>>
      */
     public Map<String, List<String>> getDomainsMap() throws DAOException;
