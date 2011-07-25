@@ -2236,13 +2236,13 @@ public final class Storage
         IpProtocolInfo protocolInfo;
 
         if (remoteTURL.getScheme().equals("gsiftp")) {
-            //call this for the sake of checking that user is reading
-            // from the "root" of the user
-            String path = getTurlPath(actualFilePath,"gsiftp",user);
-            if (path == null) {
-                throw new SRMException("user is not authorized to access path: "+
-                                       actualFilePath);
+            RequestCredential credential =
+                RequestCredential.getRequestCredential(remoteCredentialId);
+            if (credential == null) {
+                throw new SRMAuthorizationException("Cannot authenticate with remote gsiftp service; credential delegation required.");
             }
+            GSSCredential delegatedCredential =
+                credential.getDelegatedCredential();
 
             String[] hosts = new String[] { remoteTURL.getHost() };
             RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
@@ -2253,9 +2253,10 @@ public final class Storage
                                                      getCellDomainName(),
                                                      config.getBuffer_size(),
                                                      config.getTcp_buffer_size(),
-                                                     remoteCredentialId);
+                                                     remoteCredentialId,
+                                                     delegatedCredential);
             gsiftpProtocolInfo.setEmode(true);
-            gsiftpProtocolInfo.setStreams_num(config.getParallel_streams());
+            gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
             protocolInfo = gsiftpProtocolInfo;
         } else if (remoteTURL.getScheme().equals("http")) {
             String[] hosts = new String[] { remoteTURL.getHost() };
