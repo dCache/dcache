@@ -43,14 +43,20 @@
       <property name="cacheLocationProvider" ref="name-space-provider"/>
   </bean>
 
-  <bean id="companion-data-source"
-        class="com.mchange.v2.c3p0.ComboPooledDataSource"
+  <bean id="companion-data-source" class="com.jolbox.bonecp.BoneCPDataSource"
         destroy-method="close">
-      <description>Companion data source</description>
       <property name="driverClass" value="${cachelocation-provider-jdbcDrv}"/>
       <property name="jdbcUrl" value="${cachelocation-provider-dbURL}"/>
-      <property name="user" value="${cachelocation-provider-dbUser}"/>
+      <property name="username" value="${cachelocation-provider-dbUser}"/>
       <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${cachelocation-provider-pgPass}', '${cachelocation-provider-dbURL}', '${cachelocation-provider-dbUser}', '${cachelocation-provider-dbPass}') }"/>
+      <property name="idleConnectionTestPeriodInMinutes" value="60"/>
+      <property name="idleMaxAgeInMinutes" value="240"/>
+      <property name="maxConnectionsPerPartition" value="30"/>
+      <property name="minConnectionsPerPartition" value="10"/>
+      <property name="partitionCount" value="3"/>
+      <property name="acquireIncrement" value="5"/>
+      <property name="statementsCacheSize" value="100"/>
+      <property name="releaseHelperThreads" value="3"/>
   </bean>
 
   <bean id="cache-location-provider"

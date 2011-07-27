@@ -137,7 +137,7 @@
         <prop key="javax.jdo.option.ConnectionPassword">#{ T(diskCacheV111.util.Pgpass).getPassword('${pgPass}', '${jdbcUrl}', '${dbUser}', '${dbPass}') }</prop>
         <prop key="javax.jdo.option.ConnectionDriverName">${jdbcDriver}</prop>
         <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
-        <prop key="datanucleus.connectionPoolingType">DBCP</prop>
+        <prop key="datanucleus.connectionPoolingType">BoneCP</prop>
         <prop key="datanucleus.connectionPool.maxIdle">${maxIdleJdbcConnections}</prop>
         <prop key="datanucleus.connectionPool.minIdle">2</prop>
         <prop key="datanucleus.connectionPool.minActive">${maxActiveJdbcConnections}</prop>
