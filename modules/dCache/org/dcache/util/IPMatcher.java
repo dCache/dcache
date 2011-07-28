@@ -24,8 +24,6 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.dcache.util.Glob;
-
 public class IPMatcher {
 
     private static final Pattern IPV4_PATTERN = Pattern.compile("((?:\\d{1,3}\\.){3}\\d{1,3})(?:/(\\d{1,2}))?");
@@ -82,6 +80,6 @@ public class IPMatcher {
         for (i=0; i<mask/8; i++) {
             if (ipBytes[i] != netBytes[i]) return false;
         }
-        return i<ipBytes.length ? ((ipBytes[i]^netBytes[i])&((byte)Math.pow(2, mask%8)-1 << 8-(mask%8))) == 0 : true;
+        return i<ipBytes.length ? ((ipBytes[i]&0xFF) >> (8-mask%8)) == ((netBytes[i]&0xFF) >> (8-mask%8)) : true;
     }
 }
