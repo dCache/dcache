@@ -129,6 +129,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         try {
+            enableInterrupt();
             //_serviceContext.setChannelBinding(cb);
             //debug("GssFtpDoorV1::ac_adat: CB set");
             token = _serviceContext.acceptSecContext(token, 0, token.length);
@@ -139,6 +140,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             _logger.error("GssFtpDoorV1::ac_adat: got service context exception", e);
             reply("535 Authentication failed: " + e);
             return;
+        } finally {
+            disableInterrupt();
         }
         if (token != null) {
             if (!_serviceContext.isEstablished()) {

@@ -2482,7 +2482,7 @@ public abstract class AbstractFtpDoorV1
              * transfer a few times.
              */
             int retry = 0;
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             try {
                 transfer.createAdapter();
                 for (;;) {
@@ -2501,7 +2501,7 @@ public abstract class AbstractFtpDoorV1
                     _logger.info("retrieve retry attempt {}", retry);
                 }  //end of retry loop
             } finally {
-                _commandQueue.disableInterrupt();
+                disableInterrupt();
             }
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
@@ -2605,13 +2605,13 @@ public abstract class AbstractFtpDoorV1
             transfer.createTransactionLog();
             transfer.setChecksum(_checkSum);
 
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             try {
                 transfer.createAdapter();
                 transfer.selectPool();
                 transfer.startMover(_ioQueueName);
             } finally {
-                _commandQueue.disableInterrupt();
+                disableInterrupt();
             }
         } catch (InterruptedException e) {
             transfer.abort(451, "Operation cancelled");
@@ -2756,7 +2756,7 @@ public abstract class AbstractFtpDoorV1
         FsPath path = absolutePath(arg);
 
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -2814,7 +2814,7 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             _logger.warn("Error in LIST: {}", e.getMessage());
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
     }
 
@@ -2828,7 +2828,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
 
             FsPath path = absolutePath(arg);
 
@@ -2880,7 +2880,7 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             _logger.warn("Error in NLST: {}", e.getMessage());
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
     }
 
@@ -2916,7 +2916,7 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn();
 
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
 
             FsPath path;
             if (arg.length() == 0) {
@@ -2969,7 +2969,7 @@ public abstract class AbstractFtpDoorV1
             reply("451 Local error in processing");
             _logger.warn("Error in MLSD: {}", e.getMessage());
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
     }
 
@@ -3009,12 +3009,12 @@ public abstract class AbstractFtpDoorV1
          * transfers have completed.
          */
         try {
-            _commandQueue.enableInterrupt();
+            enableInterrupt();
             joinTransfer();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            _commandQueue.disableInterrupt();
+            disableInterrupt();
         }
 
         throw new CommandExitException("", 0);
@@ -3072,6 +3072,29 @@ public abstract class AbstractFtpDoorV1
         if (attributes.getFileType() != FileType.DIR) {
             throw new NotDirCacheException("Not a directory");
         }
+    }
+
+    /**
+     * Allow command processing to be interrupted when the control
+     * channel is closed. Should be called from the command processing
+     * thread.
+     *
+     * @throw InterruptedException if command processing was already
+     * interrupted.
+     */
+    protected void enableInterrupt()
+        throws InterruptedException
+    {
+        _commandQueue.enableInterrupt();
+    }
+
+    /**
+     * Disallow command procesing to be interupted when the control
+     * channel is closed.
+     */
+    protected void disableInterrupt()
+    {
+        _commandQueue.disableInterrupt();
     }
 
     private class PerfMarkerTask
