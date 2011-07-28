@@ -32,13 +32,6 @@ check -strong pnfsDbUser
 check pnfsDbPassword
 check pnfsPasswordFile
 check -strong cell.name
-check -strong aclEnabled
-check -strong aclTable
-check -strong aclConnDriver
-check -strong aclConnUrl
-check -strong aclConnUser
-
-check aclConnPswd
 
 onerror continue
 set env -c  pnfsDeleteRegistration pnfs:
@@ -60,12 +53,6 @@ create org.dcache.cells.UniversalSpringCell ${cell.name} \
         -queueMaxSize=${pnfsQueueMaxSize} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
-        -aclEnabled=${aclEnabled} \
-        -aclTable=${aclTable} \
-        -aclConnDriver=${aclConnDriver} \
-        -aclConnUrl=${aclConnUrl} \
-        -aclConnUser=${aclConnUser} \
-        -aclConnPswd=${aclConnPswd} \
         -DefaultAccessLatency=${DefaultAccessLatency} \
         -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
         -cachelocation-provider-dbURL=jdbc:postgresql://${companionDatabaseHost}/companion \
