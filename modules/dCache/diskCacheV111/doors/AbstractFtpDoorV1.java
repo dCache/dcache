@@ -249,6 +249,16 @@ public abstract class AbstractFtpDoorV1
 
     /**
      * Enumeration type for representing RFC 3659 facts.
+     *
+     * Note that the Globus Online service erroneously requires fact
+     * names to be capitalised, whereas RFC 3659 makes no such
+     * requirement.  This bug has been reported:
+     *
+     *    https://ggus.eu/tech/ticket_show.php?ticket=72601
+     *
+     * and, within Globus' internal tracker, as:
+     *
+     *    http://jira.globus.org/browse/OPS-1
      */
     protected enum Fact
     {
