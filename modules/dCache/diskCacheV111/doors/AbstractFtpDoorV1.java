@@ -165,6 +165,7 @@ import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.TransferRetryPolicies;
+import org.dcache.util.FireAndForgetTask;
 
 import dmg.cells.nucleus.CDC;
 
@@ -3302,37 +3303,46 @@ public abstract class AbstractFtpDoorV1
                 if (!_running) {
                     final CDC cdc = new CDC();
                     _running = true;
-                    _executor.submit(new Runnable() {
+                    _executor.submit(new FireAndForgetTask(new Runnable() {
+                            @Override
                             public void run() {
-                                cdc.restore();
-                                String command = get();
-                                while (command != null) {
-                                    execute(command);
-                                    command = get();
+                                CDC old = new CDC();
+                                try {
+                                    cdc.restore();
+                                    String command = getOrDone();
+                                    while (command != null) {
+                                        try {
+                                            execute(command);
+                                        } catch (RuntimeException e) {
+                                            _logger.error("Bug detected", e);
+                                        }
+                                        command = getOrDone();
+                                    }
+                                } finally {
+                                    old.restore();
                                 }
-                                done();
                             }
-                        });
+                        }));
                 }
             }
         }
 
         /**
-         * Returns the next command, or null if the queue has been
-         * stopped or if there is no command in the queue.
+         * Returns the next command.
+         *
+         * Returns null and signals that the command processing loop
+         * was left if the CommandQueue was stopped or the queue is
+         * empty.
          */
-        synchronized private String get()
+        synchronized private String getOrDone()
         {
-            return _stopped ? null : _commands.poll();
-        }
-
-        /**
-         * Signals that the command processing loop was left.
-         */
-        synchronized private void done()
-        {
-            _running = false;
-            notifyAll();
+            if (_stopped || _commands.isEmpty()) {
+                _running = false;
+                notifyAll();
+                return null;
+            } else {
+                return _commands.remove();
+            }
         }
 
         /**
