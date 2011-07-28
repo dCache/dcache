@@ -128,7 +128,7 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
     # mount another file system below the pool directory.
     if [ -n "$size" ]; then
         ds=$(getFreeSpace "${parent}")
-        stringToGiB "$3" bytes
+        stringToGiB "$size" bytes
         if [ "${ds}" -lt "${bytes}" ]; then
             printp "WARNING: Pool size of ${bytes} GiB exceeds available
                 space. ${path} only has ${ds} GiB of free space."
