@@ -915,4 +915,21 @@ public class XrootdDoor
         doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
         return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
     }
-}
+
+    public static final String hh_kill_mover = " <pool> <moverid> # kill transfer on the pool";
+
+    public String ac_kill_mover_$_2(Args args) throws NumberFormatException {
+
+        int mover = Integer.parseInt(args.argv(1));
+        String pool = args.argv(0);
+
+        for (Transfer transfer : _transfers.values()) {
+            if (transfer.getMoverId() == mover && transfer.getPool() != null && transfer.getPool().equals(pool)) {
+
+                transfer.killMover(0);
+                return "Kill request to the mover " + mover + " has been submitted";
+            }
+        }
+        return "mover " + mover + " not found on the pool " + pool;
+    }
+        }
