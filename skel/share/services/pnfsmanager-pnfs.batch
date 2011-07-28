@@ -20,7 +20,7 @@ endDefine
 eval "${cacheInfo}" companion ==
 exec context setcontext.exe -ifok=rc
 
-set env -c namespaceProvider diskCacheV111.namespace.provider.PnfsNameSpaceProviderFactory
+set env -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
 set env -c locationThreads 0
 
 onerror shutdown
