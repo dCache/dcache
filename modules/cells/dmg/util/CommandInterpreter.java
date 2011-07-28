@@ -611,14 +611,25 @@ public class CommandInterpreter implements Interpretable {
              //
              throw (CommandException)te ;
           }else{
-              // We treat uncaught RuntimeExceptions other than
-              // IllegalArgumentExceptions as bugs and log them as
-              // that.
               if (te instanceof RuntimeException &&
-                  !(te instanceof IllegalArgumentException)) {
-                  throw (RuntimeException) te;
-              }
-              if (te instanceof Error) {
+                  !(te instanceof IllegalArgumentException) &&
+                  !(te instanceof IllegalStateException)) {
+                  /* We treat uncaught RuntimeExceptions other than
+                   * IllegalArgumentException, IllegalStateException,
+                   * and those declared to be thrown by the method as
+                   * bugs and rethrow them.
+                   */
+                  boolean declared = false;
+                  for (Class<?> clazz: m.getExceptionTypes()) {
+                      if (clazz.isAssignableFrom(te.getClass())) {
+                          declared = true;
+                      }
+                  }
+
+                  if (!declared) {
+                      throw (RuntimeException) te;
+                  }
+              } else if (te instanceof Error) {
                   throw (Error) te;
               }
 
