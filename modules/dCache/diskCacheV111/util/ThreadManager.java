@@ -255,7 +255,9 @@ import org.slf4j.LoggerFactory;
   /**
    * Composes output for "info" command
    */
-  public String ac_info( Args args ) throws Exception {
+  @Override
+  public String ac_info(Args args)
+  {
     StringBuffer sb = new StringBuffer(super.ac_info(args));
     sb.append("ActiveCount=" + executor.getActiveCount()).append("\n");
     sb.append("CompletedTaskCount=" + executor.getCompletedTaskCount()).append("\n");
