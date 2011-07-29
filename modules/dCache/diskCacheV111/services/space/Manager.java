@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 8; -*-
 //______________________________________________________________________________
 //
 // Space Manager - cell that handles space reservation management in SRM
@@ -56,6 +57,7 @@ import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
@@ -3810,6 +3812,14 @@ public final class Manager
                                         // this message on its way to the pool
                                         // we need to set the AccessLatency, RetentionPolicy and StorageGroup
                                         transferToBeStarted(poolRequest);
+                                        cellMessage.getDestinationPath().insert(poolManager);
+                                }
+                        }
+                        else if (object instanceof PoolDeliverFileMessage) {
+                                PoolDeliverFileMessage poolRequest =
+                                        (PoolDeliverFileMessage)object;
+                                if (!poolRequest.isReply()) {
+                                        cellMessage.getDestinationPath().insert(poolManager);
                                 }
                         }
                         else if ( object instanceof DoorTransferFinishedMessage) {
