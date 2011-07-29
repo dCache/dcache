@@ -1,12 +1,16 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
-import org.dcache.webadmin.model.dataaccess.xmlmapping.PoolXmlToObjectMapper;
+import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolV2Mode;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.pools.PoolCostInfo;
+import java.util.Collection;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
@@ -14,13 +18,9 @@ import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.dataaccess.PoolsDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
-import org.dcache.webadmin.model.exceptions.DataGatheringException;
-import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.dcache.webadmin.model.exceptions.DAOException;
-import org.w3c.dom.Document;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
-import org.dcache.webadmin.model.dataaccess.communication.impl.InfoGetSerialisedDataMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.impl.PoolModifyModeMessageGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +28,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This is an DataAccessObject for the pools offered by the model. It provides
  * the access to the needed data concerning pools.
- * It maps the collected data
- * in the XML-processor to Business Objects. These are returned to the caller.
- * It sends commands via a commandSender.
+ * It also sends commands to Pools via a commandSender.
  * @author jan schaefer 29-10-2009
  */
 public class StandardPoolsDAO implements PoolsDAO {
@@ -38,7 +36,6 @@ public class StandardPoolsDAO implements PoolsDAO {
     public static final List<String> POOLS_PATH = Arrays.asList("pools");
     public static final String RESPONSE_FAILED = "failed";
     private static final Logger _log = LoggerFactory.getLogger(StandardPoolsDAO.class);
-    private PoolXmlToObjectMapper _xmlToObjectMapper = new PoolXmlToObjectMapper();
     private PageInfoCache _pageCache;
     private CommandSenderFactory _commandSenderFactory;
 
@@ -49,50 +46,68 @@ public class StandardPoolsDAO implements PoolsDAO {
     }
 
     @Override
+    public Set<Pool> getPoolsOfPoolGroup(String poolGroup) throws DAOException {
+        _log.debug("get pools for Poolgroup {} called", poolGroup);
+        try {
+            Collection<SelectionPool> poolGroupPools = getPoolMonitor().
+                    getPoolSelectionUnit().getPoolsByPoolGroup(poolGroup);
+            _log.debug("selectionPools returned: {}", poolGroupPools);
+            return createReturnPoolsFromSelectionPools(poolGroupPools);
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
+        }
+    }
+
+    @Override
     public Set<Pool> getPools() throws DAOException {
         _log.debug("getPools called");
         try {
-            return tryToGetPools();
-        } catch (ParsingException ex) {
-            throw new DAOException(ex);
-        } catch (DataGatheringException ex) {
-            throw new DAOException(ex);
+            Collection<SelectionPool> pools = getPoolMonitor().
+                    getPoolSelectionUnit().getAllDefinedPools(false);
+            _log.debug("selectionPools returned: {}", pools);
+            return createReturnPoolsFromSelectionPools(pools);
+        } catch (NoSuchContextException ex) {
+            throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
+    }
+
+    private Set<Pool> createReturnPoolsFromSelectionPools(Collection<SelectionPool> pools)
+            throws NoSuchContextException {
+        Set<Pool> returnPools = new HashSet<Pool>();
+        for (SelectionPool selectionPool : pools) {
+            PoolCostInfo info = getCostModule().getPoolCostInfo(selectionPool.getName());
+            if (info == null) {
+                info = new PoolCostInfo(selectionPool.getName());
+                info.setSpaceUsage(0, 0, 0, 0, 0);
+            }
+            Pool pool = new Pool(info, selectionPool);
+            returnPools.add(pool);
+        }
+        return returnPools;
     }
 
     @Override
     public Set<String> getPoolGroupNames() throws DAOException {
         _log.debug("getPoolGroupNames called");
         try {
-            PoolMonitorV5 poolMonitor = (PoolMonitorV5) _pageCache.getCacheContent(
-                    ContextPaths.POOLMONITOR);
-            return new HashSet(poolMonitor.getPoolSelectionUnit().getPoolGroups());
+            return new HashSet(getPoolSelectionUnit().getPoolGroups());
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
     }
 
-    private Set<Pool> tryToGetPools() throws ParsingException, DataGatheringException {
-        String serialisedXML = getXmlForStatePath(POOLS_PATH);
-        Document xmlDocument = _xmlToObjectMapper.createXMLDocument(serialisedXML);
-        return _xmlToObjectMapper.parsePoolsDocument(xmlDocument);
+    private PoolSelectionUnit getPoolSelectionUnit() throws NoSuchContextException {
+        return getPoolMonitor().getPoolSelectionUnit();
     }
 
-    private String getXmlForStatePath(List<String> statePath) throws DataGatheringException {
-        try {
-            InfoGetSerialisedDataMessageGenerator messageGenerator =
-                    new InfoGetSerialisedDataMessageGenerator(statePath);
-            CommandSender commandSender =
-                    _commandSenderFactory.createCommandSender(messageGenerator);
-            commandSender.sendAndWait();
-            if (commandSender.allSuccessful()) {
-                return messageGenerator.getXML();
-            } else {
-                throw new DataGatheringException("couldn't get data from info provider");
-            }
-        } catch (InterruptedException e) {
-            throw new DataGatheringException("Interrupted during data gathering", e);
-        }
+    private CostModule getCostModule() throws NoSuchContextException {
+        return getPoolMonitor().getCostModule();
+    }
+
+    private PoolMonitorV5 getPoolMonitor() throws NoSuchContextException {
+        PoolMonitorV5 poolMonitor = (PoolMonitorV5) _pageCache.getCacheContent(
+                ContextPaths.POOLMONITOR);
+        return poolMonitor;
     }
 
     @Override

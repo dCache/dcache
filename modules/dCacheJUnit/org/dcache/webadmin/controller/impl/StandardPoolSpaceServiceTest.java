@@ -40,7 +40,7 @@ public class StandardPoolSpaceServiceTest {
         _poolBeanService.changePoolMode(_expectedPoolBeans,
                 new PoolV2Mode(PoolV2Mode.DISABLED_STRICT), "testuser");
         for (Pool pool : poolsDAO.getPools()) {
-            assertFalse(pool.isEnabled());
+            assertTrue(pool.getSelectionPool().getPoolMode().getMode() == PoolV2Mode.DISABLED_STRICT);
         }
     }
 
@@ -51,7 +51,7 @@ public class StandardPoolSpaceServiceTest {
         _poolBeanService.changePoolMode(_expectedPoolBeans,
                 new PoolV2Mode(PoolV2Mode.ENABLED), "testuser");
         for (Pool pool : poolsDAO.getPools()) {
-            assertTrue(pool.isEnabled());
+            assertTrue(pool.getSelectionPool().getPoolMode().getMode() == PoolV2Mode.ENABLED);
         }
     }
 

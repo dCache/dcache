@@ -1,12 +1,13 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolV2Mode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
-import org.dcache.webadmin.model.businessobjects.MoverQueue;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 
@@ -24,11 +25,11 @@ public class XMLDataGathererHelper {
     public static final long POOL1_TOTAL_SPACE = 2147483648L;
     public static final long POOL1_USED_SPACE = 116110;
     public static final long POOL1_REMOVABLE_SPACE = 100000;
-    public static final MoverQueue POOL1_MOVERS = new MoverQueue("mover", 0, 100, 0);
-    public static final MoverQueue POOL1_RESTORES = new MoverQueue("restore", 0, 100, 0);
-    public static final MoverQueue POOL1_STORES = new MoverQueue("store", 0, 100, 0);
-    public static final MoverQueue POOL1_P2PSERVER = new MoverQueue("p2p-queue", 0, 100, 0);
-    public static final MoverQueue POOL1_P2PCLIENT = new MoverQueue("p2p-clientqueue", 10, 10, 10);
+    private static final MoverQueue POOL1_MOVERS = new MoverQueue(0, 100, 0);
+    private static final MoverQueue POOL1_RESTORES = new MoverQueue(0, 100, 0);
+    private static final MoverQueue POOL1_STORES = new MoverQueue(0, 100, 0);
+    private static final MoverQueue POOL1_P2PSERVER = new MoverQueue(0, 100, 0);
+    private static final MoverQueue POOL1_P2PCLIENT = new MoverQueue(10, 10, 10);
     public static final String POOL1_POOLGROUP1 = "default";
     public static final List<String> POOL1_POOLGROUPS = Arrays.asList(POOL1_POOLGROUP1);
     public static final String POOL2_NAME = "mySecondPool";
@@ -1312,15 +1313,13 @@ public class XMLDataGathererHelper {
         Set<Pool> pools = new HashSet<Pool>(2);
 
         pools.add(createTestPool());
-
-        Pool pool2 = new Pool();
-        pool2.setEnabled(IS_POOL2_ENABLED);
-        pool2.setFreeSpace(POOL2_FREE_SPACE);
-        pool2.setName(POOL2_NAME);
-        pool2.setPreciousSpace(POOL2_PRECIOUS_SPACE);
-        pool2.setTotalSpace(POOL2_TOTAL_SPACE);
-        pool2.setUsedSpace(POOL2_USED_SPACE);
-
+        SelectionPoolHelper sPool = new SelectionPoolHelper();
+        sPool.setEnabled(IS_POOL2_ENABLED);
+        sPool.setPoolMode(new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
+        PoolCostInfo info = new PoolCostInfo(POOL2_NAME);
+        info.setSpaceUsage(POOL2_TOTAL_SPACE, POOL2_FREE_SPACE, POOL2_PRECIOUS_SPACE,
+                0, POOL2_USED_SPACE);
+        Pool pool2 = new Pool(info, sPool);
         pools.add(pool2);
 
         return pools;
@@ -1331,20 +1330,24 @@ public class XMLDataGathererHelper {
     }
 
     private static Pool createTestPool() {
-        Pool pool1 = new Pool();
-        pool1.setEnabled(IS_POOL1_ENABLED);
-        pool1.setFreeSpace(POOL1_FREE_SPACE);
-        pool1.setName(POOL1_NAME);
-        pool1.setPreciousSpace(POOL1_PRECIOUS_SPACE);
-        pool1.setTotalSpace(POOL1_TOTAL_SPACE);
-        pool1.setUsedSpace(POOL1_USED_SPACE);
-        pool1.setRemovableSpace(POOL1_REMOVABLE_SPACE);
-        pool1.addMoverQueue(POOL1_STORES);
-        pool1.addMoverQueue(POOL1_MOVERS);
-        pool1.addMoverQueue(POOL1_RESTORES);
-        pool1.addMoverQueue(POOL1_P2PCLIENT);
-        pool1.addMoverQueue(POOL1_P2PSERVER);
-        pool1.setPoolGroups(POOL1_POOLGROUPS);
+
+        SelectionPoolHelper sPool = new SelectionPoolHelper();
+        sPool.setEnabled(IS_POOL1_ENABLED);
+        PoolCostInfo info = new PoolCostInfo(POOL1_NAME);
+        info.setSpaceUsage(POOL1_TOTAL_SPACE, POOL1_FREE_SPACE, POOL1_PRECIOUS_SPACE,
+                POOL1_REMOVABLE_SPACE, POOL1_USED_SPACE);
+        info.setP2pClientQueueSizes(POOL1_P2PCLIENT._active,
+                POOL1_P2PCLIENT._max, POOL1_P2PCLIENT._queued);
+        info.setP2pServerQueueSizes(POOL1_P2PSERVER._active,
+                POOL1_P2PSERVER._max, POOL1_P2PSERVER._queued);
+        info.setQueueSizes(POOL1_MOVERS._active,
+                POOL1_MOVERS._max, POOL1_MOVERS._queued,
+                POOL1_RESTORES._active,
+                POOL1_RESTORES._max, POOL1_RESTORES._queued,
+                POOL1_STORES._active,
+                POOL1_STORES._max, POOL1_STORES._queued);
+        Pool pool1 = new Pool(info, sPool);
+//        pool1.setPoolGroups(POOL1_POOLGROUPS);
         return pool1;
     }
 
@@ -1389,5 +1392,43 @@ public class XMLDataGathererHelper {
         ids.add(POOL1_NAME);
         ids.add(POOL2_NAME);
         return ids;
+    }
+
+    private static class MoverQueue {
+
+        private int _active;
+        private int _max;
+        private int _queued;
+
+        public MoverQueue(int active, int max, int queued) {
+
+            _active = active;
+            _max = max;
+            _queued = queued;
+        }
+
+        public int getActive() {
+            return _active;
+        }
+
+        public void setActive(int active) {
+            _active = active;
+        }
+
+        public int getMax() {
+            return _max;
+        }
+
+        public void setMax(int max) {
+            _max = max;
+        }
+
+        public int getQueued() {
+            return _queued;
+        }
+
+        public void setQueued(int queued) {
+            _queued = queued;
+        }
     }
 }

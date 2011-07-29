@@ -34,20 +34,19 @@ public class StandardPoolGroupService implements PoolGroupService {
         _daoFactory = daoFactory;
     }
 
+    @Override
     public List<PoolGroupBean> getPoolGroups() throws PoolGroupServiceException {
         try {
-            Set<Pool> pools = getPoolsDAO().getPools();
             Set<String> poolGroupNames = getPoolsDAO().getPoolGroupNames();
-            _log.debug("returned pools: {} returned poolGroups: {}", pools.size(),
-                    poolGroupNames.size());
+            _log.debug("returned poolGroups: {}", poolGroupNames);
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
-            Set<CellStatus> cellStatuses = getDomainsDAO().getCellStatuses();
+            Set<CellStatus> cellStates = getDomainsDAO().getCellStatuses();
 
             List<PoolGroupBean> poolGroups = new ArrayList<PoolGroupBean>();
             for (String currentPoolGroupName : poolGroupNames) {
                 PoolGroupBean newPoolGroup = createPoolGroupBean(
-                        currentPoolGroupName, pools, domainMap, cellStatuses);
+                        currentPoolGroupName, domainMap, cellStates);
                 poolGroups.add(newPoolGroup);
             }
             _log.debug("returned PoolGroupBeans: " + poolGroups.size());
@@ -71,21 +70,20 @@ public class StandardPoolGroupService implements PoolGroupService {
         _daoFactory = daoFactory;
     }
 
-    private PoolGroupBean createPoolGroupBean(String currentPoolGroupName,
-            Set<Pool> pools, Map<String, List<String>> domainMap,
-            Set<CellStatus> cellStatuses) {
+    private PoolGroupBean createPoolGroupBean(String poolGroup,
+            Map<String, List<String>> domainMap, Set<CellStatus> cellStates)
+            throws DAOException {
         List<PoolSpaceBean> poolSpaces = new ArrayList<PoolSpaceBean>();
         List<PoolQueueBean> poolMovers = new ArrayList<PoolQueueBean>();
         List<CellServicesBean> poolStatuses = new ArrayList<CellServicesBean>();
-        for (Pool currentPool : pools) {
-            if (currentPool.isInPoolGroup(currentPoolGroupName)) {
-                poolSpaces.add(createPoolSpaceBean(currentPool, domainMap));
-                poolMovers.add(createPoolQueueBean(currentPool, domainMap));
-                poolStatuses.add(createCellServiceBean(getMatchingCellStatus(
-                        currentPool, cellStatuses)));
-            }
+
+        for (Pool pool : getPoolsDAO().getPoolsOfPoolGroup(poolGroup)) {
+            poolSpaces.add(createPoolSpaceBean(pool, domainMap));
+            poolMovers.add(createPoolQueueBean(pool, domainMap));
+            poolStatuses.add(createCellServiceBean(getMatchingCellStatus(
+                    pool, cellStates)));
         }
-        PoolGroupBean newPoolGroup = new PoolGroupBean(currentPoolGroupName,
+        PoolGroupBean newPoolGroup = new PoolGroupBean(poolGroup,
                 poolSpaces, poolMovers);
         newPoolGroup.setCellStatuses(poolStatuses);
         return newPoolGroup;
@@ -105,9 +103,9 @@ public class StandardPoolGroupService implements PoolGroupService {
         return BeanDataMapper.cellModelToView(cellStatus);
     }
 
-    private CellStatus getMatchingCellStatus(Pool pool, Set<CellStatus> cellStatuses) {
+    private CellStatus getMatchingCellStatus(Pool pool, Set<CellStatus> cellStates) {
         CellStatus result = new CellStatus(pool.getName());
-        for (CellStatus cell : cellStatuses) {
+        for (CellStatus cell : cellStates) {
             if (cell.getName().equals(pool.getName())) {
                 result = cell;
                 break;

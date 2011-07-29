@@ -12,6 +12,13 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public interface PoolsDAO {
 
+
+    /**
+     * @param poolGroup poolgroup asked for containing pools
+     * @return delivers a list of Pools in given pool group
+     */
+    public Set<Pool> getPoolsOfPoolGroup(String poolGroup) throws DAOException;
+
     /**
      *
      * @return delivers a list of Pools in dCache

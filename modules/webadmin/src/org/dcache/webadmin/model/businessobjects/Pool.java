@@ -1,8 +1,9 @@
 package org.dcache.webadmin.model.businessobjects;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.pools.PoolCostInfo;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This is a simple Data-Container Object for the relevant information
@@ -13,106 +14,32 @@ import java.util.List;
 public class Pool implements Serializable {
 
     private String _name = "";
-    private boolean _enabled = false;
-    private long _totalSpace = 0;
-    private long _freeSpace = 0;
-    private long _preciousSpace = 0;
-    private long _removableSpace = 0;
-    private long _usedSpace = 0;
-    private List<MoverQueue> _moverQueues = new ArrayList<MoverQueue>();
-    private List<String> _poolGroups = new ArrayList<String>();
+    private PoolCostInfo _costinfo;
+    private SelectionPool _selectionPool;
 
-    public Pool() {
-    }
-
-    public boolean isEnabled() {
-        return _enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        _enabled = enabled;
-    }
-
-    public long getFreeSpace() {
-        return _freeSpace;
-    }
-
-    public void setFreeSpace(long freeSpace) {
-        _freeSpace = freeSpace;
-    }
-
-    public long getUsedSpace() {
-        return _usedSpace;
-    }
-
-    public void setUsedSpace(long usedSpace) {
-        _usedSpace = usedSpace;
-    }
-
-    public long getPreciousSpace() {
-        return _preciousSpace;
-    }
-
-    public void setPreciousSpace(long preciousSpace) {
-        _preciousSpace = preciousSpace;
-    }
-
-    public long getRemovableSpace() {
-        return _removableSpace;
-    }
-
-    public void setRemovableSpace(long removableSpace) {
-        _removableSpace = removableSpace;
-    }
-
-    public long getTotalSpace() {
-        return _totalSpace;
-    }
-
-    public void setTotalSpace(long totalSpace) {
-        _totalSpace = totalSpace;
+    public Pool(PoolCostInfo costinfo, SelectionPool selectionPool) {
+        checkNotNull(costinfo);
+        checkNotNull(selectionPool);
+        _costinfo = costinfo;
+        _selectionPool = selectionPool;
+        _name = costinfo.getPoolName();
     }
 
     public String getName() {
         return _name;
     }
 
-    public void setName(String name) {
-        _name = name;
+    public PoolCostInfo getCostinfo() {
+        return _costinfo;
     }
 
-    public List<MoverQueue> getMoverQueues() {
-        return _moverQueues;
-    }
-
-    public void setMoverQueues(List<MoverQueue> moverQueues) {
-        _moverQueues = moverQueues;
-    }
-
-    public void addMoverQueue(MoverQueue queue) {
-        _moverQueues.add(queue);
-    }
-
-    public List<String> getPoolGroups() {
-        return _poolGroups;
-    }
-
-    public void setPoolGroups(List<String> poolGroups) {
-        _poolGroups = poolGroups;
-    }
-
-    public void addPoolGroup(String poolGroup) {
-        _poolGroups.add(poolGroup);
-    }
-
-    public boolean isInPoolGroup(String group) {
-        return _poolGroups.contains(group);
+    public SelectionPool getSelectionPool() {
+        return _selectionPool;
     }
 
     @Override
     public int hashCode() {
-        return (int) (_name.hashCode() ^ _totalSpace ^
-                _freeSpace ^ _preciousSpace ^ _usedSpace);
+        return _name.hashCode();
     }
 
     @Override
@@ -131,19 +58,10 @@ public class Pool implements Serializable {
             return false;
         }
 
-        if (!(otherPool._freeSpace == _freeSpace)) {
+        if (!(otherPool._costinfo.equals(_costinfo))) {
             return false;
         }
-        if (!(otherPool._preciousSpace == _preciousSpace)) {
-            return false;
-        }
-        if (!(otherPool._totalSpace == _totalSpace)) {
-            return false;
-        }
-        if (!(otherPool._usedSpace == _usedSpace)) {
-            return false;
-        }
-        if (!(otherPool._moverQueues.equals(_moverQueues))) {
+        if (!(otherPool._selectionPool.equals(_selectionPool))) {
             return false;
         }
 

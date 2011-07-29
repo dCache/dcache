@@ -37,14 +37,13 @@ public class StandardPoolAdminService implements PoolAdminService {
     @Override
     public List<PoolAdminBean> getPoolGroups() throws PoolAdminServiceException {
         try {
-            Set<Pool> pools = getPoolsDAO().getPools();
             Set<String> poolGroups = getPoolsDAO().getPoolGroupNames();
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
             List<PoolAdminBean> adminBeans = new ArrayList<PoolAdminBean>();
             for (String currentPoolGroup : poolGroups) {
                 PoolAdminBean newAdmin = createPoolAdminBean(
-                        currentPoolGroup, pools, domainMap);
+                        currentPoolGroup, domainMap);
                 adminBeans.add(newAdmin);
             }
             return adminBeans;
@@ -67,21 +66,26 @@ public class StandardPoolAdminService implements PoolAdminService {
     }
 
     private PoolAdminBean createPoolAdminBean(String currentPoolGroup,
-            Set<Pool> pools, Map<String, List<String>> domainMap) {
+            Map<String, List<String>> domainMap) throws DAOException {
         PoolAdminBean newAdmin = new PoolAdminBean(currentPoolGroup);
         List<SelectableWrapper<PoolCommandBean>> groupPools =
                 new ArrayList<SelectableWrapper<PoolCommandBean>>();
-        for (Pool currentPool : pools) {
-            if (currentPool.getPoolGroups().contains(currentPoolGroup)) {
-                PoolCommandBean groupPool = new PoolCommandBean();
-                groupPool.setName(currentPool.getName());
-                groupPool.setDomain(NamedCellUtil.findDomainOfUniqueCell(domainMap,
-                        currentPool.getName()));
-                groupPools.add(new SelectableWrapper<PoolCommandBean>(groupPool));
-            }
+        for (Pool currentPool : getPoolsDAO().getPoolsOfPoolGroup(currentPoolGroup)) {
+            groupPools.add(new SelectableWrapper<PoolCommandBean>(
+                    createPoolCommandBean(currentPool, domainMap)));
+
         }
         newAdmin.setPools(groupPools);
         return newAdmin;
+    }
+
+    private PoolCommandBean createPoolCommandBean(Pool currentPool,
+            Map<String, List<String>> domainMap) {
+        PoolCommandBean groupPool = new PoolCommandBean();
+        groupPool.setName(currentPool.getName());
+        groupPool.setDomain(NamedCellUtil.findDomainOfUniqueCell(domainMap,
+                currentPool.getName()));
+        return groupPool;
     }
 
     @Override
