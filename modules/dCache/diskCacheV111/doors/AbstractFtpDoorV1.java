@@ -1384,7 +1384,7 @@ public abstract class AbstractFtpDoorV1
             if (!socket.isClosed() && !socket.isInputShutdown())
                 socket.shutdownInput();
         } catch (IOException e) {
-            _logger.warn("Failed to shut down input stream of the " +
+            _logger.info("Failed to shut down input stream of the " +
                          "control channel: {}", e.getMessage());
         }
     }
