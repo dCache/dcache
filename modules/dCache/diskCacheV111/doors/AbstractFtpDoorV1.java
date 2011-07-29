@@ -1575,14 +1575,23 @@ public abstract class AbstractFtpDoorV1
     @Override
     public String toString()
     {
-        return getUser() + "@" + _clientDataAddress.getAddress().getHostAddress();
+        String user = getUser();
+        String address = _clientDataAddress.getAddress().getHostAddress();
+        if (user == null) {
+            return address;
+        } else {
+            return user + "@" + address;
+        }
     }
 
     @Override
     public void getInfo(PrintWriter pw)
     {
+        String user = getUser();
         pw.println( "            FTPDoor");
-        pw.println( "         User  : " + getUser());
+        if (user != null) {
+            pw.println( "         User  : " + user);
+        }
         pw.println( "    User Host  : " + _clientDataAddress.getAddress().getHostAddress());
         pw.println( "   Local Host  : " + _local_host);
         pw.println( " Last Command  : " + _lastCommand);
@@ -3689,7 +3698,7 @@ public abstract class AbstractFtpDoorV1
         public LongListPrinter(PrintWriter writer)
         {
             _out = writer;
-            _userName = Subjects.getUserName(_subject);
+            _userName = getUser();
         }
 
         @Override

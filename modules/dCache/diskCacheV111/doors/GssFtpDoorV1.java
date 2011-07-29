@@ -200,7 +200,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @Override
     protected String getUser()
     {
-        return _gssIdentity.toString();
+        return (_gssIdentity == null) ? null : _gssIdentity.toString();
     }
 
     // Some clients, even though the user is already logged in via GSS and ADAT,

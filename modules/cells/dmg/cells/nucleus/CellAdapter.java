@@ -759,7 +759,8 @@ public class   CellAdapter
         return getCellInfo();
     }
     public String hh_info = "[-l|-a]";
-    public String ac_info(Args args) throws Exception {
+    public String ac_info(Args args)
+    {
         boolean full = args.getOpt("a") != null;
         boolean lng  = full || (args.getOpt("l") != null);
         if (lng) {
