@@ -222,8 +222,8 @@ public class BasicNameSpaceProvider
         if (cacheLocation_provider != null) {
             _logNameSpace.debug("CacheLocation provider: {}", cacheLocation_provider);
             Class factory = Class.forName(cacheLocation_provider);
-            Method factoryMethod = factory.getMethod("getProvider", Args.class);
-            _cacheLocationProvider = (NameSpaceProvider) factoryMethod.invoke(null, args);
+            Method factoryMethod = factory.getMethod("getProvider", String.class);
+            _cacheLocationProvider = (NameSpaceProvider) factoryMethod.invoke(null, args.toString());
         }else{
             _cacheLocationProvider = this;
         }

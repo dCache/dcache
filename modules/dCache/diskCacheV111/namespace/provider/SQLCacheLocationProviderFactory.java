@@ -10,11 +10,11 @@ public class SQLCacheLocationProviderFactory
 {
     private static SQLNameSpaceProvider provider;
 
-    public static synchronized NameSpaceProvider getProvider(Args args)
+    public static synchronized NameSpaceProvider getProvider(String args)
         throws Exception
     {
         if (provider == null) {
-            provider = new SQLNameSpaceProvider(args);
+            provider = new SQLNameSpaceProvider(new Args(args));
         }
         return provider;
     }
