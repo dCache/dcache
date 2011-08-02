@@ -83,7 +83,7 @@ public class StandardActiveTransfersService implements ActiveTransfersService {
     private Map<String, Set<Integer>> getTargetedPoolsJobIds(List<SelectableWrapper<ActiveTransfersBean>> transfers) {
         Map<String, Set<Integer>> pools = new HashMap<String, Set<Integer>>();
         for (SelectableWrapper<ActiveTransfersBean> transfer : transfers) {
-            if (transfer.isSelected()) {
+            if (transfer.isSelected() && !transfer.getWrapped().getPool().isEmpty()) {
                 if (pools.containsKey(transfer.getWrapped().getPool())) {
                     Set<Integer> jobIds = pools.get(transfer.getWrapped().getPool());
                     jobIds.add((int) transfer.getWrapped().getJobId());

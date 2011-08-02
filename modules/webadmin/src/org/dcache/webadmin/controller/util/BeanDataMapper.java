@@ -91,7 +91,9 @@ public class BeanDataMapper {
         } else {
             transfer.setPnfsId(moverInfo.getIoDoorEntry().getPnfsId().toString());
         }
-        transfer.setPool(moverInfo.getIoDoorEntry().getPool());
+        if (moverInfo.getIoDoorEntry().getPool() != null) {
+            transfer.setPool(moverInfo.getIoDoorEntry().getPool());
+        }
         transfer.setProcess(moverInfo.getIoDoorInfo().getProcess());
         transfer.setProtocolFamily(moverInfo.getIoDoorInfo().getProtocolFamily());
         transfer.setProtocolVersion(moverInfo.getIoDoorInfo().getProtocolVersion());
