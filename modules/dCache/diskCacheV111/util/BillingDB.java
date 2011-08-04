@@ -335,7 +335,7 @@ public class BillingDB {
             else {
                 psDI.setString(  9, "" );
             }
-            psDI.setLong  ( 10, info.getTransactionTime() );
+            psDI.setLong  ( 10, info.getTransactionDuration() );
             psDI.setLong  ( 11, info.getTimeQueued() );
             psDI.setInt   ( 12, info.getResultCode() );
             psDI.setString( 13, info.getMessage() );
