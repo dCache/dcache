@@ -3784,8 +3784,7 @@ public abstract class AbstractFtpDoorV1
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
 
-                DirectoryListPrinter printer
- =
+                DirectoryListPrinter printer =
                     listLong
                     ? new LongListPrinter(writer)
                     : new ShortListPrinter(writer);
@@ -3847,6 +3846,7 @@ public abstract class AbstractFtpDoorV1
                 reply("550 Access denied");
                 return;
             }
+
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -3859,17 +3859,9 @@ public abstract class AbstractFtpDoorV1
             try {
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
-                DirectoryListPrinter printer =  new ShortListPrinter(writer);
-                File f = new File(path);
-                try {
-                    total = _listSource.printDirectory(null, printer,
-                                                       f, null, null);
-                }
-                catch (FileNotFoundCacheException e) {
-                    total =
-                        _listSource.printDirectory(null, printer, f.getParentFile(),
-                                                   new Glob(f.getName()), null);
-                }
+
+                total = _listSource.printDirectory(null, new ShortListPrinter(writer),
+                                                   new File(path), null, null);
                 writer.close();
             } finally {
                 closeDataSocket();
