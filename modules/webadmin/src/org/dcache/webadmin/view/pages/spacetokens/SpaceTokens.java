@@ -5,15 +5,14 @@ import java.util.List;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.dcache.webadmin.controller.exceptions.LinkGroupsServiceException;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
+import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
 import org.dcache.webadmin.view.pages.spacetokens.spacereservationpanel.SpaceReservationPanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.slf4j.LoggerFactory;
@@ -24,8 +23,11 @@ import org.slf4j.Logger;
  */
 public class SpaceTokens extends BasePage implements AuthenticatedWebPage {
 
-    private Panel _spaceReservationsPanel =
-            new EmptyPanel("spaceReservationsPanel");
+    private SpaceReservationPanel _spaceReservationsPanel =
+            new SpaceReservationPanel("spaceReservationsPanel",
+            new PropertyModel<List<SpaceReservationBean>>(
+            this, "_currentLinkGroup._reservations"));
+    private LinkGroupBean _currentLinkGroup;
     private List<LinkGroupBean> _linkGroups;
     private static final Logger _log = LoggerFactory.getLogger(SpaceTokens.class);
 
@@ -64,12 +66,8 @@ public class SpaceTokens extends BasePage implements AuthenticatedWebPage {
 
                 @Override
                 public void onClick() {
-                    SpaceReservationPanel spaceReservations =
-                            new SpaceReservationPanel("spaceReservationsPanel",
-                            linkGroup.getName());
-                    spaceReservations.setReservations(linkGroup.getReservations());
-                    _spaceReservationsPanel.replaceWith(spaceReservations);
-                    _spaceReservationsPanel = spaceReservations;
+                    _currentLinkGroup = linkGroup;
+                    _spaceReservationsPanel.setLinkGroupName(linkGroup.getName());
                 }
             };
             linkGroupName.add(new Label("nameMessage", linkGroup.getName()));

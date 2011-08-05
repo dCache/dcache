@@ -102,6 +102,7 @@ public class StandardLinkGroupsService implements LinkGroupsService {
             newReservation.setStorage(mapReservationAllowanceFlags(reservation));
             newReservation.setUsedSpace(reservation.getUsedSpace());
             newReservation.setVogroup(reservation.getVogroup());
+            reservations.add(newReservation);
         }
         return reservations;
     }

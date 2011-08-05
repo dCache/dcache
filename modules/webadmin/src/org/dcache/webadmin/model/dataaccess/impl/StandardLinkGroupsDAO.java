@@ -58,7 +58,7 @@ public class StandardLinkGroupsDAO implements LinkGroupsDAO {
             Set<SpaceReservation> reservations) {
         for (LinkGroup linkGroup : linkGroups) {
             for (SpaceReservation reservation : reservations) {
-                if (reservation.belongsToLinkGroup(linkGroup.getName())) {
+                if (reservation.belongsToLinkGroup(linkGroup.getId())) {
                     linkGroup.addSpaceReservation(reservation);
                 }
             }
