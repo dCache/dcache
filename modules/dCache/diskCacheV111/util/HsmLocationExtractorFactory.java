@@ -57,15 +57,15 @@ public class HsmLocationExtractorFactory {
     public static URI validate(URI location) throws IllegalArgumentException {
 
         if(location.getScheme() == null) {
-            throw new IllegalArgumentException("hsm type not defined");
+            throw new IllegalArgumentException("hsm type not defined in " + location);
         }
 
         if(location.getAuthority() == null) {
-            throw new IllegalArgumentException("hsm instance id not defined");
+            throw new IllegalArgumentException("hsm instance id not defined in " + location);
         }
 
         if (location.getPath() == null || location.getPath().isEmpty() ) {
-            throw new IllegalArgumentException("hsm-specific opaque data not defined");
+            throw new IllegalArgumentException("hsm-specific opaque data not defined in " + location);
         }
 
         return location;
