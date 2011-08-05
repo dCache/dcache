@@ -4,11 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
-import org.dcache.webadmin.model.dataaccess.xmlmapping.DomainsXmlToObjectMapper;
 import org.dcache.webadmin.model.exceptions.ParsingException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.w3c.dom.Document;
 import static org.junit.Assert.*;
 
 /**
@@ -23,9 +21,7 @@ public class NamedCellUtilTest {
 
     @BeforeClass
     public static void setUpClass() throws ParsingException {
-        DomainsXmlToObjectMapper mapper = new DomainsXmlToObjectMapper();
-        Document document = mapper.createXMLDocument(XMLDataGathererHelper.domainsXmlcontent);
-        _domainsMap = mapper.parseDomainsMapDocument(document);
+        _domainsMap = XMLDataGathererHelper.getDomainsMap();
     }
 
     @Test

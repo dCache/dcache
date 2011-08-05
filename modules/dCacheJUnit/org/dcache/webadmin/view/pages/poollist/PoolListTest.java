@@ -10,7 +10,6 @@ import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.ApplicationFactoryHelper;
-import org.dcache.webadmin.view.pages.login.LogIn;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
