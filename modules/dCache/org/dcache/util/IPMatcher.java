@@ -21,6 +21,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,10 +36,15 @@ public class IPMatcher {
     /**
      * Matches an IP with the string representation of a host name.
      *
+     * This method is deprecated. Please use one of the following new methods:
+     * - matchHostGlob
+     * - matchCordPattern
+     *
      * @param pattern String representation of a host, either as a hostname glob or an CIDR IP[/subnet] pattern.
      * @param ip InetAddress to be checked for matching of the mask
      * @return true if ip belongs into the fits mask, otherwise false.
      */
+    @Deprecated
     public static boolean match(String pattern, InetAddress ip)
     {
         try {
@@ -61,15 +67,95 @@ public class IPMatcher {
         }
     }
 
+
+    /**
+     * Returns the subnet part of an InetAddress according to a mask in CIDR notation
+     *
+     * Example: inetAddress=123.123.45.67, mask=16 will return an InetAddress of 123.123.0.0
+     *
+     * @param inetAddress base address
+     * @param mask mask in CIDR notation
+     * @return
+     * @throws UnknownHostException will be thrown if the resulting InetAddress is not valid.
+     * This should not happen since the base address will always be valid.
+     */
+    public static InetAddress maskInetAddress(InetAddress inetAddress, int mask) throws UnknownHostException {
+        byte[] address = inetAddress.getAddress();
+        ByteBuffer resultBuffer = ByteBuffer.allocate(address.length);
+
+        int i;
+        for (i=0; i<mask/8; i++) {
+            resultBuffer.put(address[i]);
+        }
+        resultBuffer.put((byte)(i<address.length ? ((address[i]&0xFF) >> (8-mask%8)) << (8-mask%8) : 0));
+
+        return InetAddress.getByAddress(resultBuffer.array());
+    }
+
+    /**
+     * Matches the hostname of an InetAddress with a glob.
+     *
+     * Example: *.example.org will match host1.example.org and www.host2.example.org
+     *
+     * Warning: We stronly advise you not to use host globs for security relevant methods
+     * as they may easily introduce security holes.
+     *
+     * Example: Given you have 5 hosts (foo1, foo11, foo1a, foo-b and foofoo) that you
+     * want to allow access to. If you specify to allow all hosts that match foo* also
+     * for example foo.bogus.com will be allowed.
+     *
+     * @param hostGlob glob notation of a hostname pattern
+     * @param inetAddress address to be matched
+     * @return
+     */
+    public static boolean matchHostGlob(InetAddress inetAddress, String hostGlob) {
+        return new Glob(hostGlob).matches(inetAddress.getHostName());
+    }
+
+    /**
+     * Matches an InetAddress with the CIDR notation of a subnet.
+     *
+     * @param cidrPattern CIDR notation of the subnet
+     * @param inetAddress address to be matched
+     * @return
+     */
+    public static boolean matchCidrPattern(InetAddress inetAddress, String cidrPattern) {
+        return Subnet.create(cidrPattern).contains(inetAddress);
+    }
+
+    /**
+     * @param hostname Hostname to be matched with the subnet defined by subnet and mask
+     * @param subnet subnet address
+     * @param mask netmask in CIDR notation
+     * @return true if any of the IPs assigned to the host specified by hostname lies iwthin the subnet, otherwise false
+     * @throws UnknownHostException
+     */
+    public static boolean matchHostname(String hostname, InetAddress subnet, int mask) throws UnknownHostException {
+        return matchAny(InetAddress.getAllByName(hostname), subnet, mask);
+    }
+
+    /**
+     * @param ips array of ips to be matched with the subnet defined by subnet and mask
+     * @param subnet subnet address
+     * @param mask netmask in CIDR notation
+     * @return true if any of the IPs in ips falls lies the subnet, otherwise false
+     */
+    public static boolean matchAny(InetAddress[] ips, InetAddress subnet, int mask) {
+        for (InetAddress inetAddress : ips) {
+            if (match(inetAddress, subnet, mask)) return true;
+        }
+        return false;
+    }
+
     /**
      * Checks matching ip in specified subnet.
      *
      * @param ip address to test
      * @param subnet address
-     * @param mask netmask
+     * @param mask netmask in CIDR notation
      * @return true if ip matches subnet.
      */
-    public static boolean match( InetAddress ip, InetAddress subnet, int mask )
+    public static boolean match(InetAddress ip, InetAddress subnet, int mask)
     {
         byte[] ipBytes = ip.getAddress();
         byte[] netBytes = subnet.getAddress();

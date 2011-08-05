@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 
 import org.junit.Test;
 
+@SuppressWarnings("deprecation")
 public class IPMatcherTest {
 
     // FIXME: Depends on DNS entry
@@ -122,4 +123,53 @@ public class IPMatcherTest {
         assertTrue("Failed to match localhost.", match);
     }
 
+    @Test
+    public void testMatchAny() throws UnknownHostException {
+
+        boolean match = IPMatcher.matchAny(new InetAddress[]
+                { InetAddress.getByName("131.169.213.1"), InetAddress.getByName("131.169.215.1") },
+                InetAddress.getByName("131.169.214.0"), 24);
+
+        assertFalse(match);
+
+        match = IPMatcher.matchAny(new InetAddress[]
+                { InetAddress.getByName("131.169.213.1"), InetAddress.getByName("131.169.214.1"), InetAddress.getByName("131.169.215.1") },
+                InetAddress.getByName("131.169.214.0"), 24);
+
+        assertTrue(match);
+    }
+
+    @Test
+    public void testMatchHostname() throws UnknownHostException
+    {
+        assertTrue(IPMatcher.matchHostname("nairi.desy.de", InetAddress.getByName("nairi.desy.de"), 24));
+
+        assertFalse(IPMatcher.matchHostname("nairi.desy.de", InetAddress.getByName("cern.ch"), 24));
+    }
+
+    @Test
+    public void testMatchCidrPattern() throws UnknownHostException {
+        assertTrue(IPMatcher.matchCidrPattern(InetAddress.getByName("192.168.0.25"), "192.168.0.0/24"));
+        assertFalse(IPMatcher.matchCidrPattern(InetAddress.getByName("192.168.1.25"), "192.168.0.0/24"));
+    }
+
+    @Test
+    public void testSubnetAllMatch() throws UnknownHostException {
+
+       Subnet AllNet = Subnet.create();
+       assertTrue(AllNet.contains(InetAddress.getByName("192.168.0.25")));
+       assertTrue(AllNet.contains(InetAddress.getLocalHost()));
+       assertTrue(AllNet.containsAny(InetAddress.getAllByName("localhost")));
+       assertTrue(AllNet.containsHost("cern.ch"));
+    }
+
+    @Test
+    public void testSubnetMatch() throws UnknownHostException {
+        Subnet subnet = Subnet.create("131.169.214.0/24");
+
+        assertTrue(subnet.contains(InetAddress.getByName("131.169.214.10")));
+        assertFalse(subnet.contains(InetAddress.getByName("131.169.215.10")));
+        assertTrue(subnet.containsHost("nairi.desy.de"));
+        assertFalse(subnet.containsHost("cern.ch"));
+    }
 }
