@@ -40,7 +40,7 @@ public class PoolMonitorCollector extends Collector {
                     reply.getPoolMonitor());
             _log.debug("Pool Monitor retrieved successfully");
         } catch (CacheException ex) {
-            _log.debug("Could not retrieve poolselectionunit ", ex);
+            _log.debug("Could not retrieve Pool Monitor ", ex);
         }
     }
 }

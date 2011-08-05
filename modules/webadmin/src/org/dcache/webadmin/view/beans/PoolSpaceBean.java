@@ -2,6 +2,7 @@ package org.dcache.webadmin.view.beans;
 
 import java.io.Serializable;
 import org.dcache.webadmin.view.util.DiskSpaceUnit;
+import diskCacheV111.pools.PoolV2Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     private String _name = "";
     private String _domainName = "";
     private boolean _enabled;
+    private PoolV2Mode _poolMode = new PoolV2Mode();
     private boolean _selected = false;
     private long _freeSpace = 0;
     private long _preciousSpace = 0;
@@ -168,6 +170,14 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
 
     public void setSelected(boolean selected) {
         _selected = selected;
+    }
+
+    public PoolV2Mode getPoolMode() {
+        return _poolMode;
+    }
+
+    public void setPoolMode(PoolV2Mode poolMode) {
+        _poolMode = poolMode;
     }
 
     @Override

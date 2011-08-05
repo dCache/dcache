@@ -30,6 +30,7 @@ public class BeanDataMapper {
     private static PoolSpaceBean poolModelToView(Pool poolBusinessObject) {
         PoolSpaceBean returnPoolBean = new PoolSpaceBean();
         returnPoolBean.setEnabled(poolBusinessObject.getSelectionPool().isEnabled());
+        returnPoolBean.setPoolMode(poolBusinessObject.getSelectionPool().getPoolMode());
         returnPoolBean.setName(poolBusinessObject.getName());
         PoolCostInfo poolCostInfo = poolBusinessObject.getCostinfo();
         returnPoolBean.setFreeSpace(poolCostInfo.getSpaceInfo().getFreeSpace());
