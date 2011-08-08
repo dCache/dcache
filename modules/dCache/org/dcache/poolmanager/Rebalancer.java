@@ -11,6 +11,7 @@ import org.dcache.pool.migration.PoolMigrationJobCancelMessage;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
 
@@ -65,9 +66,9 @@ public class Rebalancer
         "A migration job will be submitted to each pool in the pool group.\n" +
         "The combined effect of these migration jobs is to move files until\n" +
         "either the relative space usage (used space relative to the total\n" +
-        "size of the poo) is the same or the space cost is the same; which\n" +
+        "size of the pool) is the same or the space cost is the same; which\n" +
         "depends on the metric used. The default is balance relative space\n" +
-        "usage\n\n" +
+        "usage.\n\n" +
 
         "A pool can only  be the source of  one rebalance  run at a time.\n" +
         "Previous  rebalancing jobs  will be cancelled.  The PoolManager\n" +
@@ -108,11 +109,11 @@ public class Rebalancer
         Collection<SelectionPool> pools = new ArrayList<SelectionPool>();
         Collection<String> names = new ArrayList<String>();
         for (SelectionPool pool: _psu.getPoolsByPoolGroup(poolGroup)) {
-            if (pool.getPoolMode().isEnabled()) {
-                PoolSpaceInfo cost =
-                    _cm.getPoolCostInfo(pool.getName()).getSpaceInfo();
-                used += cost.getUsedSpace();
-                total += cost.getTotalSpace();
+            PoolCostInfo cost = _cm.getPoolCostInfo(pool.getName());
+            if (pool.getPoolMode().isEnabled() && cost != null) {
+                PoolSpaceInfo spaceInfo = cost.getSpaceInfo();
+                used += spaceInfo.getUsedSpace();
+                total += spaceInfo.getTotalSpace();
                 pools.add(pool);
                 names.add(pool.getName());
             }
