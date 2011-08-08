@@ -875,7 +875,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected void sendReply( String tag , int rc , String msg , String posixErr){
 
             String problem;
-            _info.setTransactionTime( System.currentTimeMillis()-_timestamp);
+            _info.setTransactionDuration(System.currentTimeMillis()-_timestamp);
             if( rc == 0 ){
                 problem = String.format("%d %d %s ok", _sessionId, _commandId, _vargs.getName());
             }else{
