@@ -27,8 +27,14 @@ public class InfoMessage implements java.io.Serializable {
      _cellType    = cellType ;
      _messageType = messageType ;
    }
+
+   protected synchronized static String formatTimestamp(Date timestamp)
+   {
+       return __dateFormat.format(timestamp);
+   }
+
    public String getInfoHeader(){
-      return __dateFormat.format(new Date(_timestamp))+" ["+_cellType+":"+_cellName+":"+_messageType+"]" ;
+      return formatTimestamp(new Date(_timestamp))+" ["+_cellType+":"+_cellName+":"+_messageType+"]" ;
    }
    public String getResult(){
       return "{"+_resultCode+":\""+_message+"\"}" ;
