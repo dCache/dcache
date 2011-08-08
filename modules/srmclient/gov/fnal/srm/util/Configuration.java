@@ -2450,7 +2450,7 @@ public class Configuration {
             srm_protocol_version=2;
         }
         else if (srm_protocol_version==0) {
-            srm_protocol_version=1;
+            srm_protocol_version=2;
         }
         if(srm_protocol_version != 1 && srm_protocol_version != 2) {
             throw new IllegalArgumentException("illegal srm protocol version "+ srm_protocol_version);
