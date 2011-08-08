@@ -466,8 +466,8 @@ case "$1" in
 
                 # Make sure the destination does not exist
                 if [ -e "$dst" ]; then
-                    fail 2 "$dst already exists. The target directory must"
-                           "not exist prior to recovering a pool."
+                    fail 2 "$dst already exists. The target directory must
+                            not exist prior to recovering a pool."
                 fi
 
                 # Reconstruct the DB
