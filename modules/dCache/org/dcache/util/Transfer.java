@@ -876,7 +876,7 @@ public class Transfer implements Comparable<Transfer>
                 msg.setGid((int) gids[0]);
             }
             msg.setPath(_path.toString());
-            msg.setTransactionTime(_startedAt);
+            msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
             msg.setTransaction(getTransaction());
             msg.setClient(_clientAddress.getAddress().getHostAddress());
             msg.setPnfsId(getPnfsId());

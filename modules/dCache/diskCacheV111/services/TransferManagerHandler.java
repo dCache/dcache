@@ -131,7 +131,7 @@ public class TransferManagerHandler implements CellMessageAnswerable
 
                 info = new DoorRequestInfoMessage(manager.getCellName()+"@"+
                                                   manager.getCellDomainName());
-                info.setTransactionTime(creationTime);
+                info.setTransactionDuration(-creationTime);
                 info.setGid((int) Subjects.getPrimaryGid(subject));
                 info.setUid((int) Subjects.getUid(subject));
                 info.setPath(pnfsPath);
@@ -499,7 +499,6 @@ public class TransferManagerHandler implements CellMessageAnswerable
 						       poolMessage.getErrorObject() ) );
 			return;
 		}
-		info.setTransactionTime(-System.currentTimeMillis());
 		log.debug("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolMessage.getMoverId());
 		log.debug("Starting moverTimeout timer");
 		manager.startTimer(id);
@@ -607,8 +606,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		}
 		if (info.getTimeQueued() < 0)
 			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-		if (info.getTransactionTime() < 0)
-			info.setTransactionTime(info.getTransactionTime() + System.currentTimeMillis());
+		if (info.getTransactionDuration() < 0)
+			info.setTransactionDuration(info.getTransactionDuration() + System.currentTimeMillis());
 		sendDoorRequestInfo(replyCode, errorObject.toString());
 
 		setState(SENT_ERROR_REPLY_STATE,errorObject);
@@ -656,8 +655,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		}
 		if (info.getTimeQueued() < 0)
 			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-		if (info.getTransactionTime() < 0)
-			info.setTransactionTime(info.getTransactionTime() + System.currentTimeMillis());
+		if (info.getTransactionDuration() < 0)
+			info.setTransactionDuration(info.getTransactionDuration() + System.currentTimeMillis());
 		sendDoorRequestInfo(replyCode, errorObject.toString());
 
 		setState(SENT_ERROR_REPLY_STATE,errorObject);
@@ -693,8 +692,8 @@ public class TransferManagerHandler implements CellMessageAnswerable
 		log.debug("sendSuccessReply for: "+toString(true));
 		if (info.getTimeQueued() < 0)
 			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-		if (info.getTransactionTime() < 0)
-			info.setTransactionTime(info.getTransactionTime() + System.currentTimeMillis());
+		if (info.getTransactionDuration() < 0)
+			info.setTransactionDuration(info.getTransactionDuration() + System.currentTimeMillis());
 		sendDoorRequestInfo(0, "");
 		setState(SENT_SUCCESS_REPLY_STATE);
 		manager.persist(this);

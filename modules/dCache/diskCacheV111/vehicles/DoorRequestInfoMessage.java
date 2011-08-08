@@ -22,11 +22,11 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
     	super(action, "door", cellName, null);
      }
     
-    public void setTransactionTime(long transactionTime) {
-        _transactionTime = transactionTime;
+    public void setTransactionDuration(long duration) {
+        _transactionTime = duration;
     }
 
-    public long getTransactionTime() {
+    public long getTransactionDuration() {
         return _transactionTime;
     }
 
