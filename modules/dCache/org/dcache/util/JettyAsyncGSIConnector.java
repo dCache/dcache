@@ -9,10 +9,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.io.Buffer;
 import org.eclipse.jetty.io.Buffers;
-import org.eclipse.jetty.io.Buffers.Type;
-import org.eclipse.jetty.io.BuffersFactory;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EndPoint;
+import org.eclipse.jetty.io.ThreadLocalBuffers;
 import org.eclipse.jetty.io.bio.SocketEndPoint;
 import org.eclipse.jetty.io.nio.DirectNIOBuffer;
 import org.eclipse.jetty.io.nio.SelectChannelEndPoint;
@@ -54,7 +53,6 @@ public class JettyAsyncGSIConnector extends SelectChannelConnector
         TimeUnit.MILLISECONDS.convert(12, TimeUnit.HOURS);
     private static final long DEFAULT_TRUST_ANCHOR_REFRESH_INTERVAL =
         TimeUnit.MILLISECONDS.convert(4, TimeUnit.HOURS);
-    private static final int IN_BUFFER_SIZE = 16384;
 
     /** credentials cached for all connections */
     private static GSSCredential _credentials;
@@ -236,13 +234,30 @@ public class JettyAsyncGSIConnector extends SelectChannelConnector
     }
 
     @Override
-    protected void doStart() throws Exception
-    {
-        Type type = getUseDirectBuffers() ? Type.DIRECT : Type.INDIRECT;
-        _gsiBuffers = BuffersFactory.newBuffers(type, IN_BUFFER_SIZE,
-                                                type, IN_BUFFER_SIZE,
-                                                type, getMaxBuffers());
+    protected void doStart() throws Exception {
+
+        ThreadLocalBuffers buffers = new ThreadLocalBuffers()
+        {
+            @Override
+            protected Buffer newBuffer(int size)
+            {
+                return new DirectNIOBuffer(size);
+            }
+            @Override
+            protected Buffer newHeader(int size)
+            {
+                return new DirectNIOBuffer(size);
+            }
+            @Override
+            protected boolean isHeader(Buffer buffer)
+            {
+                return true;
+            }
+        };
+
+        _gsiBuffers = buffers;
         super.doStart();
+
     }
 
     @Override
