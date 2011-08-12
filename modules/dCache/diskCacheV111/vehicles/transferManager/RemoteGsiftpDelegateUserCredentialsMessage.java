@@ -6,7 +6,9 @@ package diskCacheV111.vehicles.transferManager;
  * @version 0.0, 28 Jun 2002
  */
 
-public class RemoteGsiftpDelegateUserCredentialsMessage extends TransferManagerMessage
+@Deprecated // Kept for compatibility with pools before 1.9.14
+public class RemoteGsiftpDelegateUserCredentialsMessage
+    extends TransferManagerMessage
 {
   private String host;
   private int port;

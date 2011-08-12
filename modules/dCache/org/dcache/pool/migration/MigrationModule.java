@@ -295,7 +295,7 @@ public class MigrationModule
                                     String type)
     {
         if (type.equals("proportional")) {
-            return new ProportionalPoolSelectionStrategy(spaceCost, cpuCost);
+            return new ProportionalPoolSelectionStrategy();
         } else if (type.equals("best")) {
             return new BestPoolSelectionStrategy(spaceCost, cpuCost);
         } else if (type.equals("random")) {
@@ -761,10 +761,10 @@ public class MigrationModule
         "  -select=proportional|best|random\n" +
         "          Determines how a pool is selected from the set of target pools:\n" +
         "          proportional:\n" +
-        "              selects a pool with a probability inversely proportional\n" +
-        "              to the cost of the pool.\n" +
+        "              selects a pool with a probability proportional\n" +
+        "              to the free space.\n" +
         "          best:\n" +
-        "              selects the pool with the lowest cost.\n" +
+        "              selects the pool with the lowest space cost.\n" +
         "          random:\n" +
         "              selects a pool randomly.\n" +
         "          The default is 'proportional'.\n" +

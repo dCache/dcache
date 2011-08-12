@@ -79,7 +79,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -151,94 +150,19 @@ public class RemoteGsiftpTransferProtocol_1
         _cell = cell;
     }
 
-    private void createFtpClient(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo ) throws CacheException,ServerException, ClientException,
-                                                                                                    GlobusCredentialException, GSSException, IOException,NoRouteToCellException {
+    private void createFtpClient(RemoteGsiftpTransferProtocolInfo protocolInfo)
+        throws ServerException, ClientException,
+               GlobusCredentialException, GSSException, IOException
+    {
+        if (_client != null)
+            return;
 
-        if ( _client != null )
-            return ;
-
-        CellPath cellpath =
-            new CellPath(remoteGsiftpProtocolInfo.getGsiftpTranferManagerName(),
-                         remoteGsiftpProtocolInfo.getGsiftpTranferManagerDomain());
-        _log.debug(" runIO() RemoteGsiftpTranferManager cellpath=" + cellpath);
-
-        ServerSocket serverSocket = null;
-        try {
-            serverSocket = new ServerSocket(0, 1);
-            serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
-        } catch (IOException e) {
-            _log.error("exception while trying to create a server socket : " + e);
-            throw e;
-        }
-
-        InetAddress localAddress = NetworkUtils.getLocalAddressForClient(remoteGsiftpProtocolInfo.getHosts());
-
-        RemoteGsiftpDelegateUserCredentialsMessage cred_request =
-            new RemoteGsiftpDelegateUserCredentialsMessage(localAddress.getCanonicalHostName(),
-                                                           serverSocket.getLocalPort(),
-                                                           remoteGsiftpProtocolInfo.getRequestCredentialId());
-
-        _log.debug(" runIO() created message");
-        _cell.sendMessage(new CellMessage(cellpath, cred_request));
-        _log.debug("waiting for delegation connection");
-        //timeout after 5 minutes if credentials not delegated
-        Socket deleg_socket = serverSocket.accept();
-        _log.debug("connected");
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            _log.error("failed to close server socket");
-            _log.error(e.toString());
-            // we still can continue, this is non-fatal
-        }
-        GSSCredential deleg_cred;
-        GSSContext context = getServerContext();
-        GSIGssSocket gsiSocket = new GSIGssSocket(deleg_socket, context);
-        gsiSocket.setUseClientMode(false);
-        gsiSocket.setAuthorization(new Authorization() {
-                public void authorize(GSSContext context, String host) {
-                    //we might add some authorization here later
-                    //but in general we trust that the connection
-                    //came from a head node and user was authorized
-                    //already
-                }
-            });
-        gsiSocket.setWrapMode(GssSocket.SSL_MODE);
-        gsiSocket.startHandshake();
-
-        deleg_cred = context.getDelegCred();
-        gsiSocket.close();
-        /*
-         *  the following code saves delegated credentials in a file
-         *  this can be used for debugging the gsi problems
-         *
-         try
-         {
-         byte [] data = ((ExtendedGSSCredential)(deleg_cred)).export(
-         ExtendedGSSCredential.IMPEXP_OPAQUE);
-         String proxy_file = "/tmp/fnisd1.pool.proxy.pem";
-         FileOutputStream out = new FileOutputStream(proxy_file);
-         out.write(data);
-         out.close();
-         }catch (Exception e)
-         {
-         _log.error(e.toString());
-         }
-        */
-
-        if (deleg_cred != null) {
-            _log.debug("successfully received user credentials: "
-                + deleg_cred.getName().toString());
-        } else {
-            throw new CacheException("delegation request failed");
-        }
-
-        GlobusURL url = new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
+        GlobusURL url = new GlobusURL(protocolInfo.getGsiftpUrl());
         _client = new GridftpClient(url.getHost(), url.getPort(),
-                                    remoteGsiftpProtocolInfo.getTcpBufferSize(),
-                                    deleg_cred);
-        _client.setStreamsNum(remoteGsiftpProtocolInfo.getStreams_num());
-        _client.setTcpBufferSize(remoteGsiftpProtocolInfo.getTcpBufferSize());
+                                    protocolInfo.getTcpBufferSize(),
+                                    protocolInfo.getCredential());
+        _client.setStreamsNum(protocolInfo.getNumberOfStreams());
+        _client.setTcpBufferSize(protocolInfo.getTcpBufferSize());
     }
 
     public void runIO(RandomAccessFile diskFile,
@@ -316,13 +240,6 @@ public class RemoteGsiftpTransferProtocol_1
     public boolean wasChanged()
     {
         return _client == null;
-    }
-
-    private GSSContext getServerContext() throws GSSException
-    {
-        return SslGsiSocketFactory.getServiceContext("/etc/grid-security/hostcert.pem",
-                                                     "/etc/grid-security/hostkey.pem",
-                                                     "/etc/grid-security/certificates");
     }
 
     public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
@@ -446,8 +363,6 @@ public class RemoteGsiftpTransferProtocol_1
                 _log.error("Checksum algorithm is not supported: " + e.getMessage());
             } catch (IllegalArgumentException e) {
                 _log.error("Checksum algorithm is not supported: " + e.getMessage());
-            } catch (NoRouteToCellException e) {
-                _log.error("Failed to communicate with transfer manager: " + e.getMessage());
             } catch (GlobusCredentialException e) {
                 _log.error("Failed to authenticate with FTP server: " + e.getMessage());
             } catch (GSSException e) {

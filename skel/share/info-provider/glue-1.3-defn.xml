@@ -1025,7 +1025,7 @@
     <!-- The GlueSE object: we move much of the attributes here to
          avoid cluttering the DIT hierarchy -->
     <class name="GlueSE">
-      <attr name="GlueSEStatus">&info-provider.dcache-status;</attr>
+      <attr name="GlueSEStatus">&info-provider.glue-se-status;</attr>
       <attr name="GlueSEUniqueID">&info-provider.se-unique-id;</attr>
       <attr not-empty="1" name="GlueSEName">&info-provider.se-name;</attr>
       <attr name="GlueSEImplementationName">dCache</attr>
