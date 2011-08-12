@@ -612,6 +612,7 @@ public class PartitionManager
     private void dumpMiscOptions(PrintWriter pw, PoolManagerParameter para)
     {
         pw.append(" -max-copies=").print(para._maxPnfsFileCopies);
+        pw.append(" -slope=").print(para._slope);
     }
 
     /**
