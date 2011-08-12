@@ -32,6 +32,7 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.PingMoversTask;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellCommandListener;
@@ -261,7 +262,7 @@ public class XrootdDoor
      */
     public void setExecutor(ScheduledExecutorService executor)
     {
-        executor.scheduleAtFixedRate(new PingMoversTask(_transfers.values()),
+        executor.scheduleAtFixedRate(new FireAndForgetTask(new PingMoversTask(_transfers.values())),
                                      PING_DELAY, PING_DELAY,
                                      TimeUnit.MILLISECONDS);
     }
