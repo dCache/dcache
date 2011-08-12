@@ -1068,12 +1068,18 @@ public class BasicNameSpaceProvider
                     attributes.setSize(filesize);
                     break;
                 case CHECKSUM:
+                    if( !pf.isFile())
+                        break;
+
                     cacheInfo = getCacheInfo(pf, cacheInfo);
                     ChecksumCollection collection =
                         ChecksumCollection.extract(cacheInfo);
                     attributes.setChecksums(collection.getChecksums());
                     break;
                 case LOCATIONS:
+                    if (!pf.isFile())
+                        break;
+
                     if (_cacheLocationProvider != this) {
                         attributes.setLocations(_cacheLocationProvider.getCacheLocation(subject, pnfsId));
                     } else {

@@ -37,6 +37,16 @@ abstract class Receiver
     {
         return String.format("Object: %1$s; Method: %2$s", _object, _method);
     }
+
+    public boolean isDeclaredToThrow(Class<?> exceptionClass)
+    {
+        for (Class<?> clazz: _method.getExceptionTypes()) {
+            if (clazz.isAssignableFrom(exceptionClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 class ShortReceiver extends Receiver
@@ -264,15 +274,25 @@ public class CellMessageDispatcher
             } catch (InvocationTargetException e) {
                 Throwable cause = e.getCause();
                 if (cause instanceof IllegalArgumentException ||
-                    cause instanceof IllegalStateException) {
-                    /* We recognize these two unchecked exceptions as
-                     * something special and report back to the
-                     * client.
+                    cause instanceof IllegalStateException ||
+                    receiver.isDeclaredToThrow(cause.getClass())) {
+                    /* We recognize IllegalArgumentException,
+                     * IllegalStateException, and any exception
+                     * declared to be thrown by the method as part of
+                     * the public contract of the receiver and
+                     * propagate the exception back to the client.
                      */
                 } else if (cause instanceof RuntimeException) {
-                    throw (RuntimeException)cause;
+                    throw (RuntimeException) cause;
                 } else if (cause instanceof Error) {
-                    throw (Error)cause;
+                    throw (Error) cause;
+                } else {
+                    /* Since any Throwable not a RuntimeException and
+                     * not an Error should have been declared to be
+                     * thrown by the method, this branch should be
+                     * unreachable.
+                     */
+                    throw new RuntimeException("Bug: This should have been unreachable. Please report to support@dcache.org.", cause);
                 }
 
                 if (result != null) {

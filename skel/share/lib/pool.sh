@@ -128,7 +128,7 @@ createPool() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optio
     # mount another file system below the pool directory.
     if [ -n "$size" ]; then
         ds=$(getFreeSpace "${parent}")
-        stringToGiB "$3" bytes
+        stringToGiB "$size" bytes
         if [ "${ds}" -lt "${bytes}" ]; then
             printp "WARNING: Pool size of ${bytes} GiB exceeds available
                 space. ${path} only has ${ds} GiB of free space."
@@ -171,20 +171,19 @@ reconstructMeta() # in $1 = src meta dir, in $2 = dst meta dir
     local databases
     local classpath
 
-    classpath="$(getProperty dcache.paths.classpath)"
-
     src="$1"
     dst="$2"
-    dump="CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbDump"
-    load="CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbLoad"
+    classpath="$(getProperty dcache.paths.classpath)"
     databases="java_class_catalog state_store storage_info_store"
 
     for db in ${databases}; do
-        ${dump} -h "$src" -r -d "$dst" -v -s $db || return
+        CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbDump \
+              -h "$src" -r -d "$dst" -v -s $db || return
     done
 
     for db in ${databases}; do
-        ${load} -f "${dst}/${db}.dump" -h "$dst" -s $db || return
+        CLASSPATH=\"${classpath}\" ${JAVA} com.sleepycat.je.util.DbLoad \
+              -f "${dst}/${db}.dump" -h "$dst" -s $db || return
         rm "${dst}/${db}.dump"
     done
 }

@@ -133,7 +133,7 @@ when "put"
 
   sleep waitTime
   
-  puts "hsm://#{instance}?store=#{store}&group=#{group}&bfid=#{pnfsid}"
+  puts "hsm://#{instance}/?store=#{store}&group=#{group}&bfid=#{pnfsid}"
 
 when "remove"
   if !options.has_key? "uri"
