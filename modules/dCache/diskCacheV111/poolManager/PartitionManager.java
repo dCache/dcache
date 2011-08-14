@@ -518,7 +518,6 @@ public class PartitionManager
        }
 
     }
-    private boolean _useLegacySetupPrintout = true ;
 
     @Override
     public void beforeSetup()
@@ -534,16 +533,11 @@ public class PartitionManager
     @Override
     public void printSetup(PrintWriter pw)
     {
-        if (_useLegacySetupPrintout) {
-           dumpLegacyDefaultInfo(pw, _defaultPartitionInfo);
-        } else {
-           Info info = _infoMap.get("default");
-           dumpInfo(pw, info);
-        }
+        dumpInfo(pw, _infoMap.get("default"));
         for (Info info: _infoMap.values()) {
-            if (info._name.equals("default"))
+            if (info.getName().equals("default"))
                 continue;
-            pw.append("pm create ").append(info._name).append("\n");
+            pw.append("pm create ").append(info.getName()).append("\n");
             dumpInfo(pw, info);
         }
     }
@@ -612,36 +606,6 @@ public class PartitionManager
     private void dumpMiscOptions(PrintWriter pw, PoolManagerParameter para)
     {
         pw.append(" -max-copies=").print(para._maxPnfsFileCopies);
-    }
-
-    /**
-      *   legacy output
-      */
-    private void dumpLegacyDefaultInfo(PrintWriter pw, Info info)
-    {
-        PoolManagerParameter para = info._parameter;
-
-        pw.append("set pool decision");
-        dumpCostOptions(pw, para);
-        pw.append("\n");
-
-        pw.append("set costcuts") ;
-        dumpThresholdOptions(pw, para);
-        pw.append("\n");
-
-        dumpP2pDefaultOptions(pw, para);
-    }
-
-    private void dumpP2pDefaultOptions(PrintWriter pw, PoolManagerParameter para)
-    {
-        pw.append("rc set p2p " ).println(para._p2pAllowed ? "on":"off");
-        if (para._p2pOnCost)
-            pw.println("rc set p2p oncost");
-        if (para._p2pForTransfer )
-            pw.println("rc set p2p fortransfer");
-        pw.append("rc set stage oncost ").println(para._stageOnCost?"on":"off");
-        pw.append("rc set stage ").println(para._hasHsmBackend?"on":"off");
-        pw.append("rc set slope ").println(para._slope);
-        pw.append("rc set max copies ").println(para._maxPnfsFileCopies);
+        pw.append(" -slope=").print(para._slope);
     }
 }
