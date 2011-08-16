@@ -35,6 +35,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     private static final String RANGE_PRE_TOTAL = "/";
     private static final String RANGE_SP = " ";
     private static final String RANGE_ASTERISK = "*";
+    private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
 
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpRequestHandler.class);
@@ -149,10 +150,57 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR +
             upper + RANGE_PRE_TOTAL + total;
 
-        response.setHeader(CONTENT_RANGE, contentRange);
+        response.setHeader(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
+        response.setHeader(CONTENT_RANGE, contentRange);
 
         return event.getChannel().write(response);
+    }
+
+    protected ChannelFuture sendHTTPMultipartHeader(ChannelHandlerContext context,
+            MessageEvent event)
+            throws IOException {
+        HttpResponse response =
+                new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
+
+        String type = "multipart/x-mixed-replace; boundary=\"" + BOUNDARY + "\"";
+        response.setHeader(ACCEPT_RANGES, BYTES);
+        response.setHeader(CONTENT_TYPE, type);
+
+        return event.getChannel().write(response);
+    }
+
+    protected ChannelFuture sendHTTPMultipartFragment(ChannelHandlerContext context,
+            MessageEvent event,
+            long lower,
+            long upper,
+            long total)
+            throws IOException {
+
+        ChannelBuffer buffer = ChannelBuffers.buffer(BOUNDARY.length()+2);
+        buffer.writeBytes((BOUNDARY+"\r\n").getBytes());
+
+        event.getChannel().write(buffer);
+
+        HttpResponse response =
+                new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
+        String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR
+                + upper + RANGE_PRE_TOTAL + total;
+
+        response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
+        response.setHeader(CONTENT_RANGE, contentRange);
+
+        return event.getChannel().write(response);
+    }
+
+    protected ChannelFuture sendHTTPMultipartEnd(ChannelHandlerContext context,
+            MessageEvent event)
+            throws IOException {
+
+        ChannelBuffer buffer = ChannelBuffers.buffer(BOUNDARY.length() + 6);
+        buffer.writeBytes(("--" + BOUNDARY + "--\r\n").getBytes());
+
+        return event.getChannel().write(buffer);
     }
 
     protected ChannelFuture sendHTTPFullHeader(ChannelHandlerContext context,
@@ -168,7 +216,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     {
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, NOT_IMPLEMENTED);
 
-        response.setHeader(CONNECTION, "close");
+        response.setHeader(CONNECTION, CLOSE);
         ChannelFuture future = event.getChannel().write(response);
         future.addListener(ChannelFutureListener.CLOSE);
     }
@@ -195,37 +243,25 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
      * @throws ParseException Range is illegal
      * @throws IOException Accessing diskFile failed
      */
-    protected HttpByteRange parseHttpRange(HttpRequest request,
+    protected List<HttpByteRange> parseHttpRange(HttpRequest request,
                                            long lowerRange,
                                            long upperRange)
         throws ParseException, IOException {
         String rangeHeader = request.getHeader(RANGE);
 
-        HttpByteRange range = null;
-
-        if (rangeHeader == null) {
-
-            range = null;
-
-        } else {
-
+        if (rangeHeader != null) {
             try {
-                List<HttpByteRange> ranges =
-                    HttpByteRange.parseRanges(rangeHeader, lowerRange, upperRange);
-
-                if (ranges == null || ranges.size() < 1) {
-                } else {
-                    range = ranges.get(0);
-                }
+                return HttpByteRange.parseRanges(rangeHeader, lowerRange, upperRange);
             } catch (ParseException e) {
-                /* ignore errors in the range, if the If-Range header is present */
+                /*
+                 * ignore errors in the range, if the If-Range header is present
+                 */
                 if (request.getHeader(IF_RANGE) == null) {
                     throw e;
                 }
             }
         }
-
-        return range;
+        return null;
     }
 
 }
