@@ -31,7 +31,7 @@ import diskCacheV111.util.HttpByteRange;
 
 public class HttpRequestHandler extends IdleStateAwareChannelHandler
 {
-    private static final String RANGE_SEPARATOR = " - ";
+    private static final String RANGE_SEPARATOR = "-";
     private static final String RANGE_PRE_TOTAL = "/";
     private static final String RANGE_SP = " ";
     private static final String RANGE_ASTERISK = "*";
@@ -150,7 +150,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             upper + RANGE_PRE_TOTAL + total;
 
         response.setHeader(CONTENT_RANGE, contentRange);
-        response.setHeader(CONTENT_LENGTH, String.valueOf(upper - lower));
+        response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
 
         return event.getChannel().write(response);
     }
