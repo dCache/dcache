@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsFile;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
@@ -65,7 +65,6 @@ import org.dcache.pool.movers.IoMode;
 public class HttpProtocol_2 implements MoverProtocol
 {
     public static final String UUID_QUERY_PARAM = "dcache-http-uuid";
-    private static final String QUERY_PREFIX = "?";
     private static final String QUERY_PARAM_ASSIGN = "=";
     private static final String PROTOCOL_HTTP = "http";
 
@@ -338,17 +337,18 @@ public class HttpProtocol_2 implements MoverProtocol
      */
     private void checkRequestPath(String requestedPath)
         throws IllegalArgumentException {
-        requestedPath = requestedPath.substring(0, requestedPath.indexOf(QUERY_PREFIX));
-        String transferPath = _protocolInfo.getPath();
 
-        PnfsFile requestedFile;
-        PnfsFile transferFile;
+        FsPath requestedFile;
+        FsPath transferFile;
 
         try {
-            requestedFile = new PnfsFile(requestedPath);
-            transferFile = new PnfsFile(transferPath);
-        } catch (CacheException cex) {
-            throw new IllegalArgumentException(cex);
+
+            URI uri = new URI(requestedPath);
+
+            requestedFile = new FsPath(uri.getPath());
+            transferFile = new FsPath(_protocolInfo.getPath());
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
         }
 
         if (!requestedFile.equals(transferFile)) {
