@@ -15,7 +15,7 @@
         <property name="timeout" value="4000"/>
     </bean>
 
-    <bean id="PoolManagerCellStub"
+    <bean id="PoolMonitorCollectorCellStub"
         class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
         <constructor-arg type="java.lang.String" value="#{ ConfigHolder.poolManagerName }"/>
         <property name="timeout" value="4000"/>
@@ -33,18 +33,24 @@
         <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
     </bean>
 
+    <bean id="SpaceTokenCollectorCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value="SrmSpaceManager"/>
+        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
+    </bean>
+
     <bean id="PageInfoCache"
         class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache">
         <constructor-arg value="#{ ConfigHolder.threadFactory }"/>
         <constructor-arg >
             <list>
-                <bean id="activeTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
+                <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector">
                     <property name="cellStub" ref="ActiveTransfersCollectorCellStub"/>
                     <property name="name" value="Active Transfers Collector"/>
                     <property name="update" value="#{ ConfigHolder.transfersCollectorUpdate }"/>
                     <property name="loginBrokerName" value="#{ ConfigHolder.loginBrokerName }"/>
                 </bean>
-                <bean id="cellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
+                <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector">
                     <property name="cellStub" ref="CellStatusCollectorCellStub"/>
                     <property name="name" value="Cellstatus Collector"/>
                     <property name="loginBrokerName" value="#{ ConfigHolder.loginBrokerName }"/>
@@ -53,8 +59,12 @@
                     <property name="gPlazmaName" value="#{ ConfigHolder.gplazmaName }"/>
                 </bean>
                 <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector">
-                    <property name="cellStub" ref="PoolManagerCellStub"/>
-                    <property name="name" value="PoolMonitorCollector Collector"/>
+                    <property name="cellStub" ref="PoolMonitorCollectorCellStub"/>
+                    <property name="name" value="PoolMonitor Collector"/>
+                </bean>
+                <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector">
+                    <property name="cellStub" ref="SpaceTokenCollectorCellStub"/>
+                    <property name="name" value="SpaceToken Collector"/>
                 </bean>
             </list>
         </constructor-arg>
