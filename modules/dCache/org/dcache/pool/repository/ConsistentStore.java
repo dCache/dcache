@@ -362,10 +362,17 @@ public class ConsistentStore
     @Override
     public void remove(PnfsId id)
     {
-        if(!_fileStore.get(id).delete()) {
-            String msg = "Failed to delete file " + id + " on pool";
-            _log.error(msg);
-            throw new RuntimeException(msg);
+        File f = _fileStore.get(id);
+        if(!f.delete()) {
+            /*
+             * restore scriprs may fail to create a disk file,
+             * but repository still will get request to destroy it.
+             */
+            if( f.exists() && !f.delete() ) {
+                String msg = "Failed to delete file " + id + " on pool";
+                _log.error(msg);
+                throw new RuntimeException(msg);
+            }
         }
         _metaDataStore.remove(id);
     }
