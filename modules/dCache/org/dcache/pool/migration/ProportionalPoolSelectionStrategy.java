@@ -31,7 +31,7 @@ public class ProportionalPoolSelectionStrategy
         return _random.nextDouble();
     }
 
-    long getAvailable(PoolSpaceInfo space)
+    double getAvailable(PoolSpaceInfo space)
     {
         long free = space.getFreeSpace();
         double removable = space.getRemovableSpace();
@@ -130,7 +130,7 @@ public class ProportionalPoolSelectionStrategy
         /* The amount of available space on a pool is the sum of
          * whatever is free and decayed removable space.
          */
-        long available = free + (long) decayed;
+        double available = free + decayed;
 
         /* If available space is less than the gap then the pool is
          * considered full.
@@ -138,16 +138,46 @@ public class ProportionalPoolSelectionStrategy
         return (available > gap) ? available : 0;
     }
 
+    double getWeightedAvailable(PoolCostInfo info)
+    {
+        /* To add a feedback from write activity we reduce the
+         * available space exponentially with the number of
+         * writers. The weighted available space is:
+         *
+         *          available
+         *     ----------------------
+         *          (f writers)
+         *        2
+         *
+         * where available is the unweighted available space, writers
+         * the current number of write movers, and f a corrective
+         * factor.
+         *
+         * Intuitively the reciprocal of f is the number of writers it
+         * takes to half the weighted available space.
+         *
+         * Setting f to 0 means the available space will be
+         * unweighted, ie load does not affect pool selection. A value
+         * of 1 would mean that every write half the available
+         * space. The useful range of f is probably 0 to 1.
+         *
+         * The corrective factor is defined per pool and expresses how
+         * quickly a pool degrades with load.
+         */
+        double available = getAvailable(info.getSpaceInfo());
+        double load = info.getMoverCostFactor() * info.getWriters();
+        return available / Math.pow(2.0, load);
+    }
+
     @Override
     public PoolManagerPoolInformation
         select(List<PoolManagerPoolInformation> pools)
     {
-        long[] available = new long[pools.size()];
+        double[] available = new double[pools.size()];
         double sum = 0.0;
 
         for (int i = 0; i < available.length; i++) {
-            PoolCostInfo info = pools.get(i).getPoolCostInfo();
-            available[i] = getAvailable(info.getSpaceInfo());
+            available[i] = getWeightedAvailable(pools.get(i).getPoolCostInfo());
             sum += available[i];
         }
 

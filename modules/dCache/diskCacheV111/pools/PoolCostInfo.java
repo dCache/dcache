@@ -3,6 +3,8 @@
 package diskCacheV111.pools ;
 import com.google.common.collect.Maps;
 import java.util.* ;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import org.dcache.pool.classic.IoQueueManager;
 
 public class PoolCostInfo implements java.io.Serializable {
@@ -16,6 +18,7 @@ public class PoolCostInfo implements java.io.Serializable {
     private final String  _defaultQueueName;
     private PoolSpaceInfo _space  = null ;
     private final String  _poolName ;
+    private double _moverCostFactor;
 
     public PoolCostInfo(String poolName)
     {
@@ -29,13 +32,16 @@ public class PoolCostInfo implements java.io.Serializable {
         static final long serialVersionUID = -7097362707394583875L;
 
         private String _name = null ;
-        private NamedPoolQueueInfo(String name, int active, int maxActive, int queued) {
-            super(active, maxActive, queued);
+        private NamedPoolQueueInfo(String name,
+                                   int active, int maxActive, int queued,
+                                   int readers, int writers)
+        {
+            super(active, maxActive, queued, readers, writers);
             _name = name;
         }
 
         private NamedPoolQueueInfo(String name, PoolQueueInfo queue) {
-            this(name, queue.getActive(), queue.getMaxActive(), queue.getQueued());
+            this(name, queue.getActive(), queue.getMaxActive(), queue.getQueued(), queue.getReaders(), queue.getWriters());
         }
 
         public String getName(){ return _name ; }
@@ -51,20 +57,64 @@ public class PoolCostInfo implements java.io.Serializable {
         private int _active    = 0;
         private int _maxActive =0 ;
         private int _queued    = 0 ;
+        private int _readers    = 0;
+        private int _writers    = 0;
 
-        private PoolQueueInfo( int active , int maxActive , int queued ){
-           _active    = active ;
-           _maxActive = maxActive ;
-           _queued    = queued ;
-
+        private PoolQueueInfo(int active, int maxActive, int queued, int readers, int writers)
+        {
+           _active = active;
+           _maxActive = maxActive;
+           _queued = queued;
+           _readers = readers;
+           _writers = writers;
         }
+
         @Override
-        public String toString(){ return "a="+_active+";m="+_maxActive+";q="+_queued ; }
+        public String toString(){ return "a="+_active+";m="+_maxActive+";q="+_queued + ";r=" + _readers + ";w=" + _writers; }
         public int getActive(){ return _active ; }
         public int getMaxActive(){ return _maxActive ; }
         public int getQueued(){ return _queued ; }
-        public void modifyQueue( int diff ){
 
+        public int getReaders()
+        {
+            /* For pre 1.9.14 pools we estimate the number of readers.
+             */
+            if (_readers + _writers > 0 || _active + _queued == 0) {
+                return _readers;
+            } else if (this == _p2pClient) {
+                return 0;
+            } else if (this == _p2p) {
+                return _active + _queued;
+            } else if (this == _store) {
+                return _active + _queued;
+            } else if (this == _restore) {
+                return 0;
+            } else {
+                return (_active + _queued + 1) / 2;
+            }
+        }
+
+        public int getWriters()
+        {
+            /* For pre 1.9.14 pools we estimate the number of writers.
+             */
+            if (_readers + _writers > 0 || _active + _queued == 0) {
+                return _writers;
+            } else if (this == _p2pClient) {
+                return _active + _queued;
+            } else if (this == _p2p) {
+                return 0;
+            } else if (this == _store) {
+                return 0;
+            } else if (this == _restore) {
+                return _active + _queued;
+            } else {
+                return (_active + _queued) / 2;
+            }
+        }
+
+        public void modifyQueue(int diff)
+        {
             int total = Math.max(0, _active + _queued + diff);
 
            _active = Math.min( total , _maxActive ) ;
@@ -177,29 +227,93 @@ public class PoolCostInfo implements java.io.Serializable {
     public void setSpaceUsage( long total , long free , long precious , long removable , long lru ){
         _space = new PoolSpaceInfo( total , free , precious , removable , lru ) ;
     }
-    public void setQueueSizes( int moverActive   , int moverMaxActive   , int moverQueued ,
-                               int restoreActive , int restoreMaxActive , int restoreQueued ,
-                               int storeActive   , int storeMaxActive   , int storeQueued        ){
 
-       _mover   = new PoolQueueInfo( moverActive , moverMaxActive , moverQueued ) ;
-       _restore = new PoolQueueInfo( restoreActive , restoreMaxActive , restoreQueued ) ;
-       _store   = new PoolQueueInfo( storeActive , storeMaxActive , storeQueued ) ;
+    public void
+        setQueueSizes(int moverActive, int moverMaxActive, int moverQueued,
+                      int restoreActive, int restoreMaxActive, int restoreQueued,
+                      int storeActive, int storeMaxActive, int storeQueued)
+    {
+        _mover = new PoolQueueInfo(moverActive, moverMaxActive, moverQueued, 0, 0);
+        _restore = new PoolQueueInfo(restoreActive, restoreMaxActive,
+                                     restoreQueued, 0,
+                                     restoreActive + restoreQueued);
+        _store   = new PoolQueueInfo(storeActive, storeMaxActive, storeQueued,
+                                     storeActive + storeQueued, 0);
+    }
 
+    public void addExtendedMoverQueueSizes(String name, int moverActive,
+                                           int moverMaxActive, int moverQueued,
+                                           int moverReaders, int moverWriters)
+    {
+        NamedPoolQueueInfo info =
+            new NamedPoolQueueInfo(name, moverActive, moverMaxActive,
+                                   moverQueued, moverReaders, moverWriters);
+        if (_extendedMoverHash == null) {
+            _extendedMoverHash = new HashMap<String,NamedPoolQueueInfo>();
+        }
+        _extendedMoverHash.put(name, info);
     }
-    public void addExtendedMoverQueueSizes( String name , int moverActive   , int moverMaxActive   , int moverQueued ){
-       if( _extendedMoverHash == null ){
-           _extendedMoverHash = new HashMap<String, NamedPoolQueueInfo>() ;
-       }
-       _extendedMoverHash.put( name, new NamedPoolQueueInfo( name, moverActive, moverMaxActive, moverQueued ));
+
+    public Map<String,NamedPoolQueueInfo> getExtendedMoverHash()
+    {
+        return _extendedMoverHash;
     }
-    public Map<String, NamedPoolQueueInfo> getExtendedMoverHash(){ return _extendedMoverHash ; }
-    public String getDefaultQueueName(){ return _defaultQueueName ; }
-    public void setP2pServerQueueSizes( int p2pActive     , int p2pMaxActive     , int p2pQueued  ){
-       _p2p = new PoolQueueInfo( p2pActive   , p2pMaxActive   , p2pQueued ) ;
+
+    public String getDefaultQueueName()
+    {
+        return _defaultQueueName;
     }
-    public void setP2pClientQueueSizes( int p2pClientActive     , int p2pClientMaxActive     , int p2pClientQueued ){
-       _p2pClient = new PoolQueueInfo( p2pClientActive   , p2pClientMaxActive   , p2pClientQueued ) ;
+
+    public void setP2pServerQueueSizes(int p2pActive, int p2pMaxActive, int p2pQueued)
+    {
+        _p2p = new PoolQueueInfo(p2pActive, p2pMaxActive, p2pQueued,
+                                 p2pActive + p2pQueued, 0);
     }
+
+    public void setP2pClientQueueSizes(int p2pClientActive, int p2pClientMaxActive, int p2pClientQueued)
+    {
+        _p2pClient = new PoolQueueInfo(p2pClientActive, p2pClientMaxActive,
+                                       p2pClientQueued, 0,
+                                       p2pClientActive + p2pClientQueued);
+    }
+
+    public void setMoverCostFactor(double moverCostFactor)
+    {
+        _moverCostFactor = moverCostFactor;
+    }
+
+    public double getMoverCostFactor()
+    {
+        return _moverCostFactor;
+    }
+
+    public int getWriters()
+    {
+        int writers = 0;
+        if (_store != null) {
+            writers += _store.getWriters();
+        }
+        if (_restore != null) {
+            writers += _restore.getWriters();
+        }
+        if (_p2p != null) {
+            writers += _p2p.getWriters();
+        }
+        if (_p2pClient != null) {
+            writers += _p2pClient.getWriters();
+        }
+        if (_extendedMoverHash != null) {
+            for (NamedPoolQueueInfo info: _extendedMoverHash.values()) {
+                writers += info.getWriters();
+            }
+        } else {
+            if (_mover != null) {
+                writers += _mover.getWriters();
+            }
+        }
+        return writers;
+    }
+
     @Override
     public String toString() {
        StringBuffer sb = new StringBuffer() ;
@@ -222,6 +336,14 @@ public class PoolCostInfo implements java.io.Serializable {
        return sb.toString();
     }
 
-
-
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException
+    {
+        /* For compatibility with pre 1.9.14 pools we inject a default
+         * value for the mover cost factor. REVISIT: Can be removed
+         * after the third golden release.
+         */
+        _moverCostFactor = 0.5;
+        stream.defaultReadObject();
+    }
 }

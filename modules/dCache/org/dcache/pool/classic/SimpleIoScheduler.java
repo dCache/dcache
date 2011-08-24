@@ -178,6 +178,18 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     }
 
     @Override
+    public int getCountByPriority(IoPriority priority)
+    {
+        int count = 0;
+        for (PrioritizedRequest request: _queue) {
+            if (request.getPriority() == priority) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @Override
     public String getName() {
         return _name;
     }

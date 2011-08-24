@@ -174,7 +174,8 @@ public class PoolV4
     private ReplicaStatePolicy _replicaStatePolicy;
 
     private boolean _running = false;
-    private double _breakEven = 250.0;
+    private double _breakEven = 0.7;
+    private double _moverCostFactor = 0.5;
 
     public PoolV4(String poolName, String args)
     {
@@ -572,6 +573,7 @@ public class PoolV4
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
         pw.println("set report remove " + (_reportOnRemovals ? "on" : "off"));
         pw.println("set breakeven " + _breakEven);
+        pw.println("set mover cost factor " + _moverCostFactor);
         if (_suppressHsmLoad)
             pw.println("pool suppress hsmload on");
         pw.println("set gap " + _gap);
@@ -1509,47 +1511,71 @@ public class PoolV4
                            space.getLRU());
 
         info.getSpaceInfo().setParameter(_breakEven, _gap);
+        info.setMoverCostFactor(_moverCostFactor);
 
         for (IoScheduler js : _ioQueue.getSchedulers()) {
             /*
-             * we skip p2p queue as it handled differently
+             * we skip p2p queue as it is handled differently
              * FIXME: no special cases
              */
             if(js.getName().equals(P2P_QUEUE_NAME)) continue;
 
             info.addExtendedMoverQueueSizes(js.getName(),
-                    js.getActiveJobs(), js.getMaxActiveJobs(), js.getQueueSize());
+                                            js.getActiveJobs(),
+                                            js.getMaxActiveJobs(),
+                                            js.getQueueSize(),
+                                            js.getCountByPriority(IoPriority.REGULAR),
+                                            js.getCountByPriority(IoPriority.HIGH));
         }
 
-        info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(), _p2pClient
-                                    .getMaxActiveJobs(), _p2pClient.getQueueSize());
+        info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(),
+                                    _p2pClient.getMaxActiveJobs(),
+                                    _p2pClient.getQueueSize());
 
         IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
         info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
-                p2pQueue.getMaxActiveJobs(), p2pQueue.getQueueSize());
+                                    p2pQueue.getMaxActiveJobs(),
+                                    p2pQueue.getQueueSize());
 
-        info.setQueueSizes(_ioQueue.getActiveJobs() - p2pQueue.getActiveJobs(), _ioQueue
-                           .getMaxActiveJobs() - p2pQueue.getMaxActiveJobs(),
-                           _ioQueue.getQueueSize() - p2pQueue.getQueueSize(), _storageHandler
-                            .getFetchScheduler().getActiveJobs(), _suppressHsmLoad ? 0
-                            : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
-                            _storageHandler.getFetchScheduler().getQueueSize(),
-                            _storageHandler.getStoreScheduler().getActiveJobs(),
-                            _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler()
-                            .getMaxActiveJobs(), _storageHandler
-                            .getStoreScheduler().getQueueSize()
-
-                           );
+        info.setQueueSizes(_ioQueue.getActiveJobs() - p2pQueue.getActiveJobs(),
+                           _ioQueue.getMaxActiveJobs() - p2pQueue.getMaxActiveJobs(),
+                           _ioQueue.getQueueSize() - p2pQueue.getQueueSize(),
+                           _storageHandler.getFetchScheduler().getActiveJobs(),
+                           _suppressHsmLoad ? 0 : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
+                           _storageHandler.getFetchScheduler().getQueueSize(),
+                           _storageHandler.getStoreScheduler().getActiveJobs(),
+                           _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler().getMaxActiveJobs(),
+                           _storageHandler.getStoreScheduler().getQueueSize());
         return info;
     }
 
-    public String hh_set_breakeven = "<breakEven> # free and recovable space";
-
+    public final static String hh_set_breakeven =
+        "[<breakEven>] # free and recoverable space";
     public String ac_set_breakeven_$_0_1(Args args)
     {
         if (args.argc() > 0)
             _breakEven = Double.parseDouble(args.argv(0));
         return "BreakEven = " + _breakEven;
+    }
+
+    public final static String hh_set_mover_cost_factor =
+        "[<factor>]";
+    public final static String fh_set_mover_cost_factor =
+        "The mover cost factor controls how much the number of movers" +
+        "affects proportional pool selection.\n\n" +
+        "Intuitively, for every 1/f movers, where f is the mover cost" +
+        "factor, the probability of choosing this pools is halfed. When" +
+        "set to zero, the number of movers does not affect pool selection.";
+    public String ac_set_mover_cost_factor_$_0_1(Args args)
+    {
+        if (args.argc() > 0) {
+            double value = Double.parseDouble(args.argv(0));
+            if (value < 0.0) {
+                throw new IllegalArgumentException("Mover cost factor must be larger than or equal to 0.0");
+            }
+            _moverCostFactor = value;
+        }
+        return "Cost factor is " + _moverCostFactor;
     }
 
     // /////////////////////////////////////////////////

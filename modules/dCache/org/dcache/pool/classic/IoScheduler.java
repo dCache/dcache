@@ -46,6 +46,11 @@ public interface IoScheduler {
     public int getQueueSize();
 
     /**
+     * Get the number of write requests running or waiting to run.
+     */
+    public int getCountByPriority(IoPriority priority);
+
+    /**
      * Set maximal number of concurrently running jobs by this scheduler. All pending
      * jobs will be executed.
      * @param max
