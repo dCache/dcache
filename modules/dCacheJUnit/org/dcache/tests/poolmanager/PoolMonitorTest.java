@@ -11,8 +11,8 @@ import org.junit.Test;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.poolmanager.PartitionManager;
 import diskCacheV111.poolManager.CostModuleV1;
-import diskCacheV111.poolManager.PartitionManager;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;

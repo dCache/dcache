@@ -25,6 +25,9 @@ import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellCommandListener;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.poolmanager.PartitionManager;
+import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.ClassicPartition;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
@@ -57,6 +60,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
 import dmg.util.Args;
 import java.util.NavigableMap;
+
+import com.google.common.collect.ImmutableMap;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -271,7 +276,7 @@ public class RequestContainerV5
     @Override
     public void getInfo(PrintWriter pw)
     {
-       PoolManagerParameter def = _partitionManager.getParameterCopyOf() ;
+       ClassicPartition def = _partitionManager.getDefaultPartition();
 
        pw.println("Restore Controller [$Revision$]\n") ;
        pw.println( "      Retry Timeout : "+(_retryTimer/1000)+" seconds" ) ;
@@ -287,7 +292,7 @@ public class RequestContainerV5
        pw.println( "Allow stage on cost : "+(def._stageOnCost ? "on":"off") ) ;
        pw.println( "          P2p Slope : "+(float)def._slope ) ;
        pw.println( "     P2p Max Copies : "+def._maxPnfsFileCopies) ;
-       pw.println( "          Cost Cuts : idle="+def._minCostCut+",p2p="+def.getCostCutString()+
+       pw.println( "          Cost Cuts : idle="+def._minCostCut+",p2p="+def.getProperty("p2p")+
                                        ",alert="+def._alertCostCut+",halt="+def._panicCostCut+
                                        ",fallback="+def._fallbackCostCut) ;
        pw.println( "      Restore Limit : "+(_maxRestore<0?"unlimited":(""+_maxRestore)));
@@ -311,8 +316,6 @@ public class RequestContainerV5
         pw.append("rc set poolpingtimer ").println(_checkFilePingTimer/1000);
         pw.append("rc set max restore ")
             .println(_maxRestore<0?"unlimited":(""+_maxRestore));
-        pw.append("rc set sameHostCopy ")
-            .println(getSameHostCopyMode());
         pw.append("rc set sameHostRetry ")
             .println(getSameHostRetryMode());
         pw.append("rc set max threads ")
@@ -327,12 +330,11 @@ public class RequestContainerV5
 
      }
 
-     private String getSameHostCopyMode(){
-       PoolManagerParameter def = _partitionManager.getParameterCopyOf() ;
-       return def._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_BEST_EFFORT ? STRING_BESTEFFORT :
-              def._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_NEVER       ? STRING_NEVER :
-              STRING_NOTCHECKED ;
-     }
+    private String getSameHostCopyMode()
+    {
+        ClassicPartition def = _partitionManager.getDefaultPartition();
+        return def._allowSameHostCopy.toString().toLowerCase();
+    }
 
     public String hh_rc_set_max_threads = "<threadCount> # 0 : no limits" ;
     public String ac_rc_set_max_threads_$_1( Args args ){
@@ -341,23 +343,12 @@ public class RequestContainerV5
        return "New max thread count : "+n;
     }
 
-    public String hh_rc_set_sameHostCopy = STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED ;
-    public String ac_rc_set_sameHostCopy_$_1( Args args ){
-        String type = args.argv(0) ;
-        PoolManagerParameter para = _partitionManager.getDefaultPartitionInfo().getParameter() ;
-        synchronized( para ){
-           if( type.equals(STRING_NEVER) ){
-              para._allowSameHostCopy = PoolManagerParameter.P2P_SAME_HOST_NEVER ;
-           }else if( type.equals(STRING_BESTEFFORT) ){
-              para._allowSameHostCopy = PoolManagerParameter.P2P_SAME_HOST_BEST_EFFORT ;
-           }else if( type.equals(STRING_NOTCHECKED) ){
-              para._allowSameHostCopy = PoolManagerParameter.P2P_SAME_HOST_NOT_CHECKED ;
-           }else{
-              throw new
-              IllegalArgumentException("Value not supported : "+type) ;
-           }
-        }
-        return "" ;
+    public final static String hh_rc_set_sameHostCopy =
+        STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED ;
+    public String ac_rc_set_sameHostCopy_$_1(Args args)
+    {
+        _partitionManager.setProperties("default", ImmutableMap.of("sameHostCopy", args.argv(0)));
+        return "";
      }
 
     public String hh_rc_set_sameHostRetry = STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED ;
@@ -775,7 +766,7 @@ public class RequestContainerV5
         private CheckFilePingHandler  _pingHandler = new CheckFilePingHandler(_checkFilePingTimer) ;
 
         private PoolMonitorV5.PnfsFileLocation _pnfsFileLocation  = null ;
-        private PoolManagerParameter           _parameter         = _partitionManager.getParameterCopyOf() ;
+        private ClassicPartition           _parameter         = _partitionManager.getDefaultPartition() ;
 
         /**
          * Indicates the next time a TTL of a request message will be
@@ -2003,7 +1994,7 @@ public class RequestContainerV5
               // we define the top row as the default parameter set
               // for cases where none of the pools hold the file.
               //
-              List<PoolManagerParameter> paraList =
+              List<ClassicPartition> paraList =
                   _pnfsFileLocation.getListOfParameter() ;
               _parameter = paraList.get(0);
 
@@ -2067,7 +2058,7 @@ public class RequestContainerV5
 
               double bestPoolPerformanceCost = _bestPool.getPerformanceCost() ;
 
-              if(   (  _parameter.getCostCut()     > 0.0         ) &&
+              if(   (  _parameter._costCut     > 0.0         ) &&
                     (  bestPoolPerformanceCost >= getCurrentCostCut( _parameter))    ){
 
                  if( allowFallbackOnPerformance ){
@@ -2174,7 +2165,7 @@ public class RequestContainerV5
 				//
 				// Here we get the parameter set of the 'read'
 				//
-				PoolManagerParameter parameter = _pnfsFileLocation
+				ClassicPartition parameter = _pnfsFileLocation
 						.getCurrentParameterSet();
 
 				if (sources.size() == 0) {
@@ -2311,7 +2302,7 @@ public class RequestContainerV5
 
 						PoolCheckable destinationCost = destinations.get(d);
 
-						if (parameter._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_NOT_CHECKED) {
+						if (parameter._allowSameHostCopy == ClassicPartition.SameHost.NOTCHECKED) {
 							// we take the pair with the least cost without
 							// further hostname checking
 							sourcePool = sourceCost;
@@ -2344,12 +2335,12 @@ public class RequestContainerV5
 
 //					ok, we could not find a pair on different hosts, what now?
 
-					if (parameter._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_BEST_EFFORT) {
+					if (parameter._allowSameHostCopy == ClassicPartition.SameHost.BESTEFFORT) {
 						_log.info("P2P : sameHostCopy=bestEffort : couldn't find a src/dest-pair on different hosts, choosing pair with the least cost");
 						sourcePool = bestEffortSourcePool;
 						destinationPool = bestEffortDestinationPool;
 
-					} else if (parameter._allowSameHostCopy == PoolManagerParameter.P2P_SAME_HOST_NEVER) {
+					} else if (parameter._allowSameHostCopy == ClassicPartition.SameHost.NEVER) {
 						_log.info("P2P : sameHostCopy=never : no matching pool found");
 						setError(137,
 								"Not replicated : sameHostCopy=never : no matching pool found");
@@ -2408,7 +2399,7 @@ public class RequestContainerV5
                                 _storageInfo.getFileSize() ) ;
 
 
-            PoolManagerParameter parameter = _pnfsFileLocation.getCurrentParameterSet() ;
+            ClassicPartition parameter = _pnfsFileLocation.getCurrentParameterSet() ;
 
             if( matrix.size() == 0 )
                   throw new
@@ -2588,10 +2579,11 @@ public class RequestContainerV5
      * @param parameter which set of parameters to consider.
      * @return the costCut, taking into account possible relative costCut.
      */
-    private double getCurrentCostCut( PoolManagerParameter parameter) {
-        return parameter.isCostCutPercentile()
-            ? _poolMonitor.getPoolsPercentilePerformanceCost( parameter.getCostCut())
-            : parameter.getCostCut();
+    private double getCurrentCostCut(ClassicPartition parameter)
+    {
+        return parameter._costCutIsPercentile
+            ? _poolMonitor.getPoolsPercentilePerformanceCost( parameter._costCut)
+            : parameter._costCut;
     }
     //VP
 

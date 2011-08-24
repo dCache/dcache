@@ -38,7 +38,7 @@
     </property>
   </bean>
 
-  <bean id="pm" class="diskCacheV111.poolManager.PartitionManager">
+  <bean id="pm" class="org.dcache.poolmanager.PartitionManager">
     <description>Partition manager</description>
   </bean>
 

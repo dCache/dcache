@@ -1,0 +1,351 @@
+package org.dcache.poolmanager;
+
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.dcache.cells.CellSetupProvider;
+import org.dcache.cells.CellCommandListener;
+
+import dmg.util.Args;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Ordering;
+import com.google.common.base.Function;
+import static com.google.common.collect.Maps.filterKeys;
+import static com.google.common.collect.Maps.filterValues;
+import static com.google.common.collect.Maps.transformValues;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.notNull;
+import static com.google.common.base.Predicates.equalTo;
+import static com.google.common.base.Predicates.not;
+
+/**
+ * Manages one of more pool manager partitions.
+ *
+ * A partition encapsulates configuration properties and pool
+ * selection logic. Pool manager maintains a default partition, but
+ * additional named partitions may be defined. Pool manager links
+ * identify a partition to use for transfers in that link.
+ *
+ * A set of shared properties is maintained by PartitionManager. These
+ * properties are inherited by all partitions, including the default
+ * partition.
+ *
+ * Various kinds of partitions are planned, but currently
+ * ClassicPartition is hardcoded.
+ */
+public class PartitionManager
+    implements Serializable,
+               CellCommandListener,
+               CellSetupProvider
+{
+    static final long serialVersionUID = 3245564135066081407L;
+
+    private final static String DEFAULT = "default";
+
+    /**
+     * Properties inherited by all partitions. Each partition may
+     * override any of the properties.
+     */
+    private ImmutableMap<String,String> _properties =
+        ImmutableMap.of();
+
+    /**
+     * Partition manager manges a set of named partitions.
+     *
+     * Like Partitions themself the map over partitions uses copy on
+     * write semantics. Any property update requires that the complete
+     * map and affected Partitions are recreated.
+     */
+    private volatile ImmutableMap<String,Partition> _partitions =
+        ImmutableMap.of();
+
+    public PartitionManager()
+    {
+        clear();
+    }
+
+    public synchronized void clear()
+    {
+        _properties = ImmutableMap.of();
+        _partitions =
+            ImmutableMap.of(DEFAULT, (Partition) new ClassicPartition());
+    }
+
+    private Function<Partition,Partition>
+        updateInherited(final Map<String,String> properties)
+    {
+        return new Function<Partition,Partition>() {
+            public Partition apply(Partition partition) {
+                return partition.updateInherited(properties);
+            }
+        };
+    }
+
+    public synchronized void setProperties(String name,
+                                           Map<String,String> properties)
+        throws IllegalArgumentException
+    {
+        if (name == null || name.equals(DEFAULT)) {
+            _properties =
+                ImmutableMap.<String,String>builder()
+                .putAll(filterKeys(_properties, not(in(properties.keySet()))))
+                .putAll(filterValues(properties, notNull()))
+                .build();
+            _partitions =
+                ImmutableMap.copyOf(transformValues(_partitions, updateInherited(_properties)));
+        } else if (_partitions.containsKey(name)) {
+            _partitions =
+                ImmutableMap.<String,Partition>builder()
+                .putAll(filterKeys(_partitions, not(equalTo(name))))
+                .put(name, _partitions.get(name).updateProperties(properties))
+                .build();
+        } else {
+            throw new IllegalArgumentException("No such partition: " + name);
+        }
+    }
+
+    public synchronized void createPartition(String name)
+        throws IllegalArgumentException
+    {
+        if (_partitions.containsKey(name)) {
+            throw new IllegalArgumentException("Partition " + name + " already exists.");
+        }
+
+        Partition partition = new ClassicPartition(_properties);
+        _partitions =
+            ImmutableMap.<String,Partition>builder()
+            .putAll(_partitions)
+            .put(name, partition)
+            .build();
+    }
+
+    public synchronized void destroyPartition(String name)
+        throws IllegalArgumentException
+    {
+        if (name.equals(DEFAULT)) {
+            throw new IllegalArgumentException("Can't destroy default parameter partition");
+        }
+
+        if (!_partitions.containsKey(name)) {
+            throw new IllegalArgumentException("No such parameter partition " + name);
+        }
+
+        _partitions =
+            ImmutableMap.<String,Partition>builder()
+            .putAll(filterKeys(_partitions, not(equalTo(name))))
+            .build();
+    }
+
+    public ClassicPartition getDefaultPartition()
+    {
+        return (ClassicPartition) _partitions.get(DEFAULT);
+    }
+
+    public ClassicPartition getPartition(String name)
+    {
+        if (name == null) {
+            return getDefaultPartition();
+        }
+        Partition partition = _partitions.get(name);
+        if (partition == null) {
+            return getDefaultPartition();
+        }
+        return (ClassicPartition) partition;
+    }
+
+    public final static String hh_pmx_get_map = "";
+    public Object ac_pmx_get_map(Args args)
+    {
+       return _partitions;
+    }
+
+    public final static String fh_pm_set =
+       "pm set [<partitionName>] OPTIONS\n"+
+       "    OPTIONS\n"+
+       "       -spacecostfactor=<scf>|off\n"+
+       "       -cpucostfactor=<ccf>|off\n"+
+       "       -max-copies=<max-replicas>|off\n"+
+       "       -idle=<value>|off\n"+
+       "       -p2p=<value>|off\n"+
+       "       -alert=<value>|off\n"+
+       "       -panic=<value>|off\n"+
+       "       -fallback=<value>|off\n"+
+       "       -slope=<value>|off\n"+
+       "       -p2p-allowed=yes|no|off\n"+
+       "       -p2p-oncost=yes|no|off\n"+
+       "       -p2p-fortransfer=yes|no|off\n"+
+       "       -stage-allowed=yes|no|off\n"+
+       "       -stage-oncost=yes|no|off\n"+
+       "";
+    public final static String hh_pm_set =
+        "[<partitionName>] OPTIONS #  help pm set" ;
+    public String ac_pm_set_$_0_1(Args args)
+        throws IllegalArgumentException
+    {
+        setProperties(args.argv(0), scanParameter(args));
+        return "";
+    }
+
+    public final static String hh_pm_create = "<partitionName>";
+    public String ac_pm_create_$_1(Args args)
+    {
+        createPartition(args.argv(0));
+        return "";
+    }
+
+    public final static String hh_pm_destroy =
+        "<partitionName> # destroys parameter partition";
+    public String ac_pm_destroy_$_1(Args args)
+    {
+        destroyPartition(args.argv(0));
+        return "";
+    }
+
+    public final static String hh_pm_ls = "[-l] [<partitionName>]";
+    public synchronized String ac_pm_ls_$_0_1(Args args)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (args.argc() != 0) {
+            String name = args.argv(0);
+            Partition partition = _partitions.get(name);
+            if (partition == null)
+                throw new IllegalArgumentException("Section not found: " + name);
+
+            sb.append(name).append("\n");
+            printProperties(sb, partition);
+        } else if (args.getOpt("l") != null) {
+            for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
+                sb.append(entry.getKey()).append("\n");
+                printProperties(sb, entry.getValue());
+            }
+        } else {
+            for (String name: _partitions.keySet()) {
+                sb.append(name).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private void printProperties(StringBuilder sb, Partition partition)
+    {
+        Set<String> all = partition.getAllProperties().keySet();
+        Set<String> defined = partition.getProperties().keySet();
+
+        for (String key: Ordering.<String>natural().sortedCopy(all)) {
+            sb.append("    -").append(key)
+                .append("=").append(partition.getProperty(key));
+            if (defined.contains(key)) {
+                sb.append("\n");
+            } else if (_properties.containsKey(key)) {
+                sb.append(" [inherited]\n");
+            } else {
+                sb.append(" [default]\n");
+            }
+        }
+    }
+
+    // public final static String fh_set_costcuts =
+    //       "  set costcuts [-<options>=<value> ... ]\n"+
+    //       "\n"+
+    //       "   Options  |  Default  |  Description\n"+
+    //       " -------------------------------------------------------------------\n"+
+    //       "     idle   |   0.0     |  below 'idle' : 'reduce duplicate' mode\n"+
+    //       "     p2p    |   0.0     |  above : start pool to pool mode\n"+
+    //       "            |           |  If p2p value is a percent then p2p is dynamically\n"+
+    //       "            |           |  assigned that percentile value of pool performance costs\n"+
+    //       "     alert  |   0.0     |  stop pool 2 pool mode, start stage only mode\n"+
+    //       "     halt   |   0.0     |  suspend system\n"+
+    //       "   fallback |   0.0     |  Allow fallback in Permission matrix on high load\n"+
+    //       "\n"+
+    //       "     A value of zero disabled the corresponding value\n\n";
+
+    /**
+      * COSTFACTORS
+      *
+      *   spacecostfactor   double
+      *   cpucostfactor     double
+      *
+      * COSTCUTS
+      *
+      *   idle      double
+      *   p2p       double
+      *   alert     double
+      *   panic     double
+      *   slope     double
+      *   fallback  double
+      *
+      * P2P
+      *
+      *   p2p-allowed     boolean
+      *   p2p-oncost      boolean
+      *   p2p-fortransfer boolean
+      *
+      * STAGING
+      *
+      *   stage-allowed   boolean
+      *   stage-oncost    boolean
+      *
+      * OTHER
+      *   max-copies     int
+      *
+      */
+    private Map<String,String> scanParameter(Args args)
+    {
+        Map<String,String> map = new HashMap<String,String>();
+        for (Map.Entry<String,String> entry: args.optionsAsMap().entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (value.equals("off")) {
+                map.put(key, null);
+            } else {
+                map.put(key, value);
+            }
+        }
+        return map;
+    }
+
+    @Override
+    public void beforeSetup()
+    {
+        clear();
+    }
+
+    @Override
+    public void afterSetup()
+    {
+    }
+
+    @Override
+    public synchronized void printSetup(PrintWriter pw)
+    {
+        dumpInfo(pw, "", _properties);
+        for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
+            if (!entry.getKey().equals(DEFAULT)) {
+                pw.append("pm create ").append(entry.getKey()).println();
+            }
+            dumpInfo(pw, entry.getKey(), entry.getValue().getProperties());
+        }
+    }
+
+    private void dumpInfo(PrintWriter pw, String name,
+                          Map<String,String> properties)
+    {
+        if (!properties.isEmpty()) {
+            pw.append("pm set");
+            if (!name.isEmpty()) {
+                pw.append(" ").append(name);
+            }
+            for (Map.Entry<String,String> entry: properties.entrySet()) {
+                pw.append(" -").append(entry.getKey()).append("=").append(entry.getValue());
+            }
+            pw.println();
+        }
+    }
+}

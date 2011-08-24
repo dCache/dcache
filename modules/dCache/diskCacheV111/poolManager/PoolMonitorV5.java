@@ -35,6 +35,9 @@ import diskCacheV111.pools.PoolCostInfo;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PartitionManager;
+import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.ClassicPartition;
 import static org.dcache.namespace.FileAttribute.*;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -106,7 +109,7 @@ public class PoolMonitorV5
 
    public class PnfsFileLocation
    {
-       private List<PoolManagerParameter> _listOfPartitions;
+       private List<ClassicPartition> _listOfPartitions;
        private List<List<PoolCostCheckable>> _allowedAndAvailableMatrix;
 
        /**
@@ -128,8 +131,6 @@ public class PoolMonitorV5
       private final ProtocolInfo _protocolInfo ;
       private final String _linkGroup          ;
 
-      //private PoolManagerParameter _recentParameter = _partitionManager.getParameterCopyOf()  ;
-
        public PnfsFileLocation(FileAttributes fileAttributes,
                                ProtocolInfo protocolInfo,
                                String linkGroup)
@@ -139,7 +140,7 @@ public class PoolMonitorV5
            _linkGroup    = linkGroup;
        }
 
-       public List<PoolManagerParameter> getListOfParameter()
+       public List<ClassicPartition> getListOfParameter()
            throws CacheException
        {
            if (!_calculationDone) {
@@ -148,7 +149,7 @@ public class PoolMonitorV5
            return _listOfPartitions;
        }
 
-       public PoolManagerParameter getCurrentParameterSet()
+       public ClassicPartition getCurrentParameterSet()
            throws CacheException
        {
            if (!_calculationDone) {
@@ -286,7 +287,7 @@ public class PoolMonitorV5
                                    _fileAttributes.getStorageInfo(),
                                    _linkGroup ) ;
 
-         _listOfPartitions          = new ArrayList<PoolManagerParameter>();
+         _listOfPartitions          = new ArrayList<ClassicPartition>();
          _allowedAndAvailableMatrix = new ArrayList<List<PoolCostCheckable>>();
          _allowedPoolCount          = 0 ;
 
@@ -316,11 +317,11 @@ public class PoolMonitorV5
                 continue;
             }
 
-            PoolManagerParameter parameter =
-                _partitionManager.getParameterCopyOf(level[prio].getTag()) ;
-            _listOfPartitions.add(  parameter ) ;
+            ClassicPartition partition =
+                _partitionManager.getPartition(level[prio].getTag()) ;
+            _listOfPartitions.add(partition);
 
-            sortByCost(result, false, parameter);
+            sortByCost(result, false, partition);
 
             _log.debug("calculateFileAvailableMatrix : av matrix[*,{}] {}",
                        prio, result);
@@ -331,7 +332,7 @@ public class PoolMonitorV5
          // just in case, let us define a default parameter set
          //
          if( _listOfPartitions.isEmpty() )
-             _listOfPartitions.add( _partitionManager.getParameterCopyOf() ) ;
+             _listOfPartitions.add( _partitionManager.getDefaultPartition() ) ;
          //
          _calculationDone = true ;
          return  ;
@@ -406,7 +407,7 @@ public class PoolMonitorV5
          //
          // Build a new matrix containing the Costs.
          //
-         _listOfPartitions = new ArrayList<PoolManagerParameter>();
+         _listOfPartitions = new ArrayList<ClassicPartition>();
          List<List<PoolCostCheckable>> costMatrix =
              new ArrayList<List<PoolCostCheckable>>();
 
@@ -414,9 +415,9 @@ public class PoolMonitorV5
              //
              // skip empty level
              //
-             PoolManagerParameter parameter =
-                 _partitionManager.getParameterCopyOf(preferenceLevel.getTag());
-            _listOfPartitions.add(parameter);
+             ClassicPartition partition =
+                 _partitionManager.getPartition(preferenceLevel.getTag());
+            _listOfPartitions.add(partition);
 
              List<String> poolList = preferenceLevel.getPoolList() ;
              if( poolList.isEmpty() )continue ;
@@ -434,7 +435,7 @@ public class PoolMonitorV5
              //
              // sort according to (cpu & space) cost
              //
-             sortByCost( row , true , parameter ) ;
+             sortByCost(row, true, partition);
              //
              // and add it to the matrix
              //
@@ -471,13 +472,13 @@ public class PoolMonitorV5
 
          List<PoolCostCheckable> costs = null ;
 
-         PoolManagerParameter parameter = null ;
+         ClassicPartition partition = null;
 
          for( int prio = 0 ; prio < Math.min( maxDepth , level.length ) ; prio++ ){
 
             costs     = queryPoolsForCost( level[prio].getPoolList() , filesize ) ;
 
-            parameter = _partitionManager.getParameterCopyOf(level[prio].getTag()) ;
+            partition = _partitionManager.getPartition(level[prio].getTag()) ;
 
             if( !costs.isEmpty() ) break ;
          }
@@ -488,11 +489,11 @@ public class PoolMonitorV5
                                 "> in the linkGroup " +
                                 ( _linkGroup == null ? "[none]" : _linkGroup));
 
-         sortByCost( costs , true , parameter ) ;
+         sortByCost( costs , true , partition ) ;
 
          PoolCostCheckable check = costs.get(0) ;
 
-         double lowestCost = calculateCost( check , true , parameter ) ;
+         double lowestCost = calculateCost( check , true , partition ) ;
 
          /* Notice that
           *
@@ -515,47 +516,47 @@ public class PoolMonitorV5
        }
 
        public void sortByCost(List<PoolCostCheckable> list, boolean cpuAndSize,
-                               PoolManagerParameter parameter)
+                              ClassicPartition partition)
        {
-           ssortByCost(list, cpuAndSize, parameter);
+           ssortByCost(list, cpuAndSize, partition);
        }
    }
 
     private void ssortByCost(List<PoolCostCheckable> list, boolean cpuAndSize,
-                            PoolManagerParameter parameter)
+                            ClassicPartition partition)
     {
         Collections.shuffle(list);
-        Collections.sort(list, new CostComparator(cpuAndSize, parameter));
+        Collections.sort(list, new CostComparator(cpuAndSize, partition));
     }
 
     public Comparator<PoolCostCheckable>
-        getCostComparator(boolean both, PoolManagerParameter parameter)
+        getCostComparator(boolean both, ClassicPartition partition)
     {
-        return new CostComparator(both, parameter);
+        return new CostComparator(both, partition);
     }
 
    public class CostComparator implements Comparator<PoolCostCheckable> {
 
-       private final boolean              _useBoth;
-       private final PoolManagerParameter _para;
-       private CostComparator( boolean useBoth , PoolManagerParameter para ){
-         _useBoth = useBoth ;
-         _para    = para ;
+       private final boolean _useBoth;
+       private final ClassicPartition _partition;
+       private CostComparator(boolean useBoth, ClassicPartition partition) {
+         _useBoth = useBoth;
+         _partition = partition;
        }
 
        @Override
        public int compare(PoolCostCheckable check1, PoolCostCheckable check2)
        {
-           return Double.compare(calculateCost(check1, _useBoth, _para),
-                                 calculateCost(check2, _useBoth, _para));
+           return Double.compare(calculateCost(check1, _useBoth, _partition),
+                                 calculateCost(check2, _useBoth, _partition));
        }
     }
-    private double calculateCost( PoolCostCheckable checkable , boolean useBoth , PoolManagerParameter para ){
+    private double calculateCost( PoolCostCheckable checkable , boolean useBoth , ClassicPartition partition){
        if( useBoth ){
-          return Math.abs(checkable.getSpaceCost())       * para._spaceCostFactor +
-                 Math.abs(checkable.getPerformanceCost()) * para._performanceCostFactor ;
+          return Math.abs(checkable.getSpaceCost())       * partition._spaceCostFactor +
+                 Math.abs(checkable.getPerformanceCost()) * partition._performanceCostFactor ;
        }else{
-          return Math.abs(checkable.getPerformanceCost()) * para._performanceCostFactor ;
+          return Math.abs(checkable.getPerformanceCost()) * partition._performanceCostFactor ;
        }
     }
     /*
@@ -572,7 +573,7 @@ public class PoolMonitorV5
     public List<PoolCostCheckable> queryPoolsByLinkName(String linkName, long filesize) {
 
         PoolSelectionUnit.SelectionLink link = _selectionUnit.getLinkByName(linkName);
-        PoolManagerParameter parameter = _partitionManager.getParameterCopyOf(link.getTag());
+        ClassicPartition partition = _partitionManager.getPartition(link.getTag());
 
         Collection<String> poolNames = transform(link.pools(),
             new Function<PoolSelectionUnit.SelectionPool, String>()   {
@@ -585,7 +586,7 @@ public class PoolMonitorV5
 
         List<PoolCostCheckable> list = queryPoolsForCost(poolNames, filesize);
 
-        ssortByCost(list, true, parameter);
+        ssortByCost(list, true, partition);
 
         return list;
     }

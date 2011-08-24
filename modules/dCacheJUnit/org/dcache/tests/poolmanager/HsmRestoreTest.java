@@ -16,9 +16,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import org.dcache.poolmanager.PartitionManager;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.CostModuleV1;
-import diskCacheV111.poolManager.PartitionManager;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
@@ -90,7 +90,7 @@ public class HsmRestoreTest {
         /*
          * allow stage
          */
-        _partitionManager.ac_rc_set_stage_$_1_2(new Args("on"));
+        _partitionManager.ac_pm_set_$_0_1(new Args("-stage-allowed=yes"));
         _rc = new RequestContainerV5(RETRY_INTERVAL);
         _rc.setPoolSelectionUnit(_selectionUnit);
         _rc.setPnfsHandler(_pnfsHandler);

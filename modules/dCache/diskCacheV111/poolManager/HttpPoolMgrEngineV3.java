@@ -21,6 +21,7 @@ import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
+import org.dcache.poolmanager.Partition;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
@@ -554,7 +555,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             } else if (!(o instanceof Map)) {
                 showProblem(pw, "Unexpected class arrived : "+o.getClass().getName());
             } else {
-                Map<String,PoolManagerParameter> parameterMap = (Map<String,PoolManagerParameter>) o;
+                Map<String,Partition> parameterMap = (Map<String,Partition>) o;
                 if (key.equals("section"))
                     printParameterInSections(pw, parameterMap);
                 else if (key.equals("matrix"))
@@ -570,25 +571,22 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private void printParameterInMatrix(PrintWriter pw, Map<String,PoolManagerParameter> parameterMap)
+    private void printParameterInMatrix(PrintWriter pw, Map<String,Partition> parameterMap)
     {
-        PoolManagerParameter defaultParas = parameterMap.get("default");
+        Partition defaultParas = parameterMap.get("default");
         if (defaultParas == null)return;
 
         Map<String,Object[]>[] restMap = new Map[parameterMap.size()-1];
         String[] header  = new String[parameterMap.size()-1];
         int row = 0;
 
-        for (Map.Entry<String,PoolManagerParameter> entry : parameterMap.entrySet()) {
+        for (Map.Entry<String,Partition> entry : parameterMap.entrySet()) {
             String mapName = entry.getKey();
 
             if (mapName.equals("default"))continue;
 
             header[row]  = mapName;
-            restMap[row] = new PoolManagerParameter(defaultParas).
-                setValid(false).
-                merge(entry.getValue()).
-                toMap();
+            restMap[row] = entry.getValue().toMap();
             row ++;
         }
 
@@ -640,17 +638,17 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     }
 
 
-    private void printParameterInSections(PrintWriter pw, Map<String,PoolManagerParameter> parameterMap)
+    private void printParameterInSections(PrintWriter pw, Map<String,Partition> parameterMap)
     {
-        for (Map.Entry<String,PoolManagerParameter> entry : parameterMap.entrySet()) {
+        for (Map.Entry<String,Partition> entry : parameterMap.entrySet()) {
             String name = entry.getKey();
-            PoolManagerParameter p = entry.getValue();
+            Partition p = entry.getValue();
             pw.println("<h2>"+name+"</h2>");
             printParameterEntry(pw, p);
         }
     }
 
-    private void printParameterEntry(PrintWriter pw, PoolManagerParameter p)
+    private void printParameterEntry(PrintWriter pw, Partition p)
     {
         Map<String, Object[]> map = p.toMap();
 
