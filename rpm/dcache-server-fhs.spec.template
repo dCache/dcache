@@ -92,6 +92,8 @@ fi
 %defattr(-,root,root)
 /usr/bin/chimera-cli
 /usr/bin/dcache
+/usr/bin/chimera-get-acl
+/usr/bin/chimera-set-acl
 /usr/bin/meta2yaml
 /usr/sbin/dcache-info-provider
 /usr/share/doc/dcache-server
