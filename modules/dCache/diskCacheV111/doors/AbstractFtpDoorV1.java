@@ -859,7 +859,6 @@ public abstract class AbstractFtpDoorV1
             info =
                 new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
                                            getNucleus().getCellDomainName());
-            info.setTransactionTime(startedAt);
             info.setClient(_engine.getInetAddress().getHostName());
             // some requests do not have a pnfsId yet, fill it with dummy
             info.setPnfsId( new PnfsId("000000000000000000000000") );
@@ -873,6 +872,7 @@ public abstract class AbstractFtpDoorV1
         {
             try {
                 info.setResult(code, msg);
+                info.setTransactionDuration(System.currentTimeMillis() - startedAt);
                 sendMessage(new CellMessage(_billingCellPath , info));
             } catch (NoRouteToCellException e) {
                 error("FTP Door: couldn't send door request data to " +

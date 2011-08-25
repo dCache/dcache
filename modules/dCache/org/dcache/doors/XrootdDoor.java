@@ -818,8 +818,6 @@ public class XrootdDoor extends AbstractCell
             new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
                                        getNucleus().getCellDomainName());
         msg.setClient(getDoorSocket().getInetAddress().getHostName());
-        msg.setTransactionTime(System.currentTimeMillis());
-
         msg.setPath(wrapper.getPath());
 
         if (wrapper.getUser() != null) {

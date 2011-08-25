@@ -681,8 +681,6 @@ public class XrootdDoor
         DoorRequestInfoMessage msg =
             new DoorRequestInfoMessage(getCellName() + "@" + getCellDomainName());
         msg.setClient(client.getHostName());
-        msg.setTransactionTime(System.currentTimeMillis());
-
         msg.setPath(wrapper.getPath());
 
         if (wrapper.getUser() != null) {

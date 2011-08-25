@@ -4,7 +4,7 @@ package diskCacheV111.vehicles;
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
     private long _transactionTime = 0;
 
-    
+
     private String _client = "unknown";
     private String _owner = "unknown";
 
@@ -18,15 +18,15 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
     }
 
     public DoorRequestInfoMessage(String cellName, String action) {
-    	//action: "remove"
-    	super(action, "door", cellName, null);
-     }
-    
-    public void setTransactionTime(long transactionTime) {
-        _transactionTime = transactionTime;
+        //action: "remove"
+        super(action, "door", cellName, null);
     }
 
-    public long getTransactionTime() {
+    public void setTransactionDuration(long duration) {
+        _transactionTime = duration;
+    }
+
+    public long getTransactionDuration() {
         return _transactionTime;
     }
 
@@ -68,10 +68,10 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
     public void setClient(String _client) {
         this._client = _client;
     }
-    
+
     public String getUserInfo() {
-        
+
         return "[\"" + _owner + "\":" + _uid + ":" + _gid + ":" + _client + "]" ;
-        
+
     }
 }
