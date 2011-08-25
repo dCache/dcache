@@ -8,11 +8,13 @@ import static java.util.concurrent.TimeUnit.*;
 
 import org.dcache.cells.CellStub;
 import org.dcache.cells.CellMessageReceiver;
+import org.dcache.util.FireAndForgetTask;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,11 +63,15 @@ public class PinManager
 
     public void init()
     {
-        _executor.scheduleWithFixedDelay(new ExpirationTask(),
+        Runnable expirationTask =
+            new FireAndForgetTask(new ExpirationTask());
+        _executor.scheduleWithFixedDelay(expirationTask,
                                          INITIAL_EXPIRATION_DELAY,
                                          _expirationPeriod,
                                          TimeUnit.MILLISECONDS);
-        _executor.scheduleWithFixedDelay(new UnpinProcessor(_dao, _poolStub),
+        Runnable unpinProcessor =
+            new FireAndForgetTask(new UnpinProcessor(_dao, _poolStub));
+        _executor.scheduleWithFixedDelay(unpinProcessor,
                                          INITIAL_UNPIN_DELAY,
                                          _expirationPeriod,
                                          TimeUnit.MILLISECONDS);
@@ -85,7 +91,10 @@ public class PinManager
             } catch (JDOException e) {
                 _log.error("Database failure while expiring pins: {}",
                            e.getMessage());
-            } catch (RuntimeException e) {
+            } catch (DataAccessException e) {
+                _log.error("Database failure while expiring pins: {}",
+                           e.getMessage());
+           } catch (RuntimeException e) {
                 _log.error("Unexpected failure while expiring pins", e);
             }
         }

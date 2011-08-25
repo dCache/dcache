@@ -8,6 +8,7 @@ import javax.jdo.Transaction;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
+import javax.jdo.FetchPlan;
 import javax.jdo.JDOObjectNotFoundException;
 
 import diskCacheV111.util.PnfsId;
@@ -16,6 +17,8 @@ import org.dcache.pinmanager.model.Pin;
 import org.springframework.stereotype.Repository;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.google.common.base.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,8 +170,35 @@ public class JdoDao implements PinDao
         Date now = new Date();
         PersistenceManager pm = _pmf.getPersistenceManager();
         Query query = pm.newQuery(Pin.class, "_expirationTime < :now && _state != 'UNPINNING'");
-        for (Pin pin: (Collection<Pin>) query.execute(now)) {
-            pin.setState(Pin.State.UNPINNING);
+        query.addExtension("datanucleus.rdbms.query.resultSetType", "scroll-insensitive");
+        query.addExtension("datanucleus.query.resultCacheType", "none");
+        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
+        try {
+            for (Pin pin: (Collection<Pin>) query.execute(now)) {
+                pin.setState(Pin.State.UNPINNING);
+            }
+        } finally {
+            query.closeAll();
         }
+    }
+
+    @Override @Transactional
+    public boolean all(Pin.State state, Predicate<Pin> f)
+    {
+        PersistenceManager pm = _pmf.getPersistenceManager();
+        Query query = pm.newQuery(Pin.class, "_state == :state");
+        query.addExtension("datanucleus.rdbms.query.resultSetType", "scroll-insensitive");
+        query.addExtension("datanucleus.query.resultCacheType", "none");
+        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
+        try {
+            for (Pin pin: (Collection<Pin>) query.execute(state)) {
+                if (!f.apply(pm.detachCopy(pin))) {
+                    return false;
+                }
+            }
+        } finally {
+            query.closeAll();
+        }
+        return true;
     }
 }

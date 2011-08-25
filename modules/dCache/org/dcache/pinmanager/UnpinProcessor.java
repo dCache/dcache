@@ -15,6 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataAccessException;
+
+import com.google.common.base.Predicate;
 
 /**
  * Performs the work of unpinning files.
@@ -43,12 +46,14 @@ public class UnpinProcessor implements Runnable
     {
         try {
             Semaphore idle = new Semaphore(MAX_RUNNING);
-            Semaphore finished = new Semaphore(0);
-            int running = unpin(idle, finished);
-            finished.acquire(running);
+            unpin(idle);
+            idle.acquire(MAX_RUNNING);
         } catch (InterruptedException e) {
             _logger.debug(e.toString());
         } catch (JDOException e) {
+            _logger.error("Database failure while unpinning: {}",
+                          e.getMessage());
+        } catch (DataAccessException e) {
             _logger.error("Database failure while unpinning: {}",
                           e.getMessage());
         } catch (RuntimeException e) {
@@ -57,30 +62,35 @@ public class UnpinProcessor implements Runnable
     }
 
     @Transactional
-    protected int unpin(Semaphore idle, Semaphore finished)
-        throws InterruptedException
+    protected void unpin(final Semaphore idle)
     {
-        int running = 0;
-        for (Pin pin: _dao.getPins(Pin.State.UNPINNING)) {
-            /**
-             * For purposes of migrating from the previous PinManager
-             * we need to deal with sticky flags shared by multiple
-             * pins. We will not remove a sticky flag as long as there
-             * are other pins using it.
-             */
-            if (pin.getPool() == null || _dao.hasSharedSticky(pin)) {
-                _dao.deletePin(pin);
-                continue;
-            }
+        _dao.all(Pin.State.UNPINNING, new Predicate<Pin>() {
+                @Override
+                public boolean apply(Pin pin)
+                {
+                    try {
+                        /**
+                         * For purposes of migrating from the previous
+                         * PinManager we need to deal with sticky flags
+                         * shared by multiple pins. We will not remove a
+                         * sticky flag as long as there are other pins
+                         * using it.
+                         */
+                        if (pin.getPool() == null || _dao.hasSharedSticky(pin)) {
+                            _dao.deletePin(pin);
+                        } else {
+                            clearStickyFlag(idle, pin);
+                        }
 
-            clearStickyFlag(idle, finished, pin);
-            running++;
-        }
-        return running;
+                        return true;
+                    } catch (InterruptedException e) {
+                        return false;
+                    }
+                }
+            });
     }
 
-    private void clearStickyFlag(final Semaphore idle,
-                                 final Semaphore finished, final Pin pin)
+    private void clearStickyFlag(final Semaphore idle, final Pin pin)
         throws InterruptedException
     {
         idle.acquire();
@@ -97,7 +107,6 @@ public class UnpinProcessor implements Runnable
                            public void success(PoolSetStickyMessage msg)
                            {
                                idle.release();
-                               finished.release();
                                _dao.deletePin(pin);
                            }
 
@@ -105,7 +114,6 @@ public class UnpinProcessor implements Runnable
                            public void failure(int rc, Object error)
                            {
                                idle.release();
-                               finished.release();
                                switch (rc) {
                                case CacheException.FILE_NOT_IN_REPOSITORY:
                                    _dao.deletePin(pin);
