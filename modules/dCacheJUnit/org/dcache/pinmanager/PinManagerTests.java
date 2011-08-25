@@ -16,6 +16,7 @@ import org.dcache.vehicles.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Objects;
 
 public class PinManagerTests
@@ -346,6 +347,19 @@ class TestDao implements PinDao
             }
         }
         return pins;
+    }
+
+    @Override
+    public boolean all(Pin.State state, Predicate<Pin> f)
+    {
+        for (Pin pin: _pins.values()) {
+            if (state == pin.getState()) {
+                if (!f.apply(pin)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
