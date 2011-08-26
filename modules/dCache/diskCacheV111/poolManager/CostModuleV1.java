@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -38,8 +40,6 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellInfo;
 import dmg.util.Args;
-import java.util.HashSet;
-import java.util.Set;
 
 public class CostModuleV1
     implements Serializable,
@@ -566,7 +566,7 @@ public class CostModuleV1
      return "";
    }
    public String hh_cm_fake = "<poolName> [off] | [-space=<spaceCost>|off] [-cpu=<cpuCost>|off]" ;
-   public String ac_cm_fake_$_1_2( Args args ){
+   public synchronized String ac_cm_fake_$_1_2( Args args ){
       String poolName = args.argv(0) ;
       Entry e = _hash.get(poolName);
       if( e == null )
@@ -591,7 +591,7 @@ public class CostModuleV1
       return poolName+" -space="+e._fakeSpace+" -cpu="+e._fakeCpu ;
    }
    public String hh_xcm_ls = "<poolName> [<filesize>] [-l]" ;
-   public Object ac_xcm_ls_$_0_2( Args args )throws Exception {
+   public synchronized Object ac_xcm_ls_$_0_2( Args args )throws Exception {
 
 
       if( args.argc()==0 ){   // added by nicolo : binary full cm ls list
@@ -638,7 +638,7 @@ public class CostModuleV1
       return reply ;
    }
    public String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
-   public String ac_cm_ls_$_0_1( Args args )throws Exception {
+   public synchronized String ac_cm_ls_$_0_1( Args args )throws Exception {
       StringBuilder   sb = new StringBuilder() ;
       boolean useTime   = args.getOpt("t") != null ;
       boolean useDetail = args.getOpt("d") != null ;
@@ -676,27 +676,27 @@ public class CostModuleV1
    }
 
     @Override
-    public synchronized Collection<PoolCostInfo> getPoolCostInfos() {
-        Set<PoolCostInfo> costInfos = new HashSet<PoolCostInfo>();
-        for (Entry entry : _hash.values()) {
-            costInfos.add(entry.getPoolCostInfo());
+    public synchronized Collection<PoolCostInfo> getPoolCostInfos()
+    {
+        List<PoolCostInfo> costInfos = new ArrayList<PoolCostInfo>();
+        for (Entry entry: _hash.values()) {
+            if (entry.isValid() || !_update) {
+                costInfos.add(entry.getPoolCostInfo());
+            }
         }
         return costInfos;
     }
 
-   @Override
-   public synchronized PoolCostInfo getPoolCostInfo(String poolName) {
+    @Override
+    public synchronized PoolCostInfo getPoolCostInfo(String poolName)
+    {
+        Entry entry = _hash.get(poolName);
+        if (entry != null && (entry.isValid() || !_update)) {
+            return entry.getPoolCostInfo();
+        }
 
-	   PoolCostInfo poolCostInfo = null;
-
-	   Entry poolEntry = _hash.get(poolName);
-
-	   if( poolEntry != null ) {
-		   poolCostInfo = poolEntry.getPoolCostInfo();
-	   }
-
-	   return poolCostInfo;
-   }
+        return null;
+    }
 
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
