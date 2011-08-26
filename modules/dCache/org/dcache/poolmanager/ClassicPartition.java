@@ -37,8 +37,10 @@ public class ClassicPartition extends Partition
 
     public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED };
 
+    public static final String TYPE = "classic";
+
     private static final Map<String,String> NO_PROPERTIES =
-        ImmutableMap.<String,String>of();
+        ImmutableMap.of();
     private static final double MAX_WRITE_COST = 1000000.0;
 
     private final static Map<String,String> DEFAULTS =
@@ -136,6 +138,11 @@ public class ClassicPartition extends Partition
         return new ClassicPartition(inherited, properties);
     }
 
+    @Override
+    public String getType()
+    {
+        return TYPE;
+    }
 
     @Override
     public PoolInfo selectWritePool(CostModule cm,

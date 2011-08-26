@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
+import java.util.ServiceLoader;
+import java.util.NoSuchElementException;
+import java.util.Formatter;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,6 +20,9 @@ import dmg.util.Args;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.Iterables.find;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.collect.Maps.transformValues;
@@ -24,6 +30,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.compose;
 
 /**
  * Manages one of more pool manager partitions.
@@ -36,9 +43,6 @@ import static com.google.common.base.Predicates.not;
  * A set of shared properties is maintained by PartitionManager. These
  * properties are inherited by all partitions, including the default
  * partition.
- *
- * Various kinds of partitions are planned, but currently
- * ClassicPartition is hardcoded.
  */
 public class PartitionManager
     implements Serializable,
@@ -48,6 +52,18 @@ public class PartitionManager
     static final long serialVersionUID = 3245564135066081407L;
 
     private final static String DEFAULT = "default";
+
+    private final static ServiceLoader<PartitionFactory> _factories =
+        ServiceLoader.load(PartitionFactory.class);
+
+    private final static Function<PartitionFactory,String> getType =
+        new Function<PartitionFactory,String>()
+        {
+            public String apply(PartitionFactory factory)
+            {
+                return factory.getType();
+            }
+        };
 
     /**
      * Properties inherited by all partitions. Each partition may
@@ -76,6 +92,12 @@ public class PartitionManager
         _properties = ImmutableMap.of();
         _partitions =
             ImmutableMap.of(DEFAULT, (Partition) new ClassicPartition());
+    }
+
+    private PartitionFactory getFactory(String type)
+        throws NoSuchElementException
+    {
+        return find(_factories, compose(equalTo(type), getType));
     }
 
     private Function<Partition,Partition>
@@ -111,14 +133,15 @@ public class PartitionManager
         }
     }
 
-    public synchronized void createPartition(String name)
-        throws IllegalArgumentException
+    public synchronized void
+        createPartition(PartitionFactory factory, String name)
+        throws IllegalArgumentException, NoSuchElementException
     {
         if (_partitions.containsKey(name)) {
             throw new IllegalArgumentException("Partition " + name + " already exists.");
         }
 
-        Partition partition = new ClassicPartition(_properties);
+        Partition partition = factory.createPartition(_properties);
         _partitions =
             ImmutableMap.<String,Partition>builder()
             .putAll(_partitions)
@@ -143,12 +166,12 @@ public class PartitionManager
             .build();
     }
 
-    public ClassicPartition getDefaultPartition()
+    public Partition getDefaultPartition()
     {
-        return (ClassicPartition) _partitions.get(DEFAULT);
+        return _partitions.get(DEFAULT);
     }
 
-    public ClassicPartition getPartition(String name)
+    public Partition getPartition(String name)
     {
         if (name == null) {
             return getDefaultPartition();
@@ -157,7 +180,7 @@ public class PartitionManager
         if (partition == null) {
             return getDefaultPartition();
         }
-        return (ClassicPartition) partition;
+        return partition;
     }
 
     public final static String hh_pmx_get_map = "";
@@ -193,10 +216,27 @@ public class PartitionManager
         return "";
     }
 
-    public final static String hh_pm_create = "<partitionName>";
+    public String ac_pm_types_$_0(Args args)
+    {
+        final String format = "%-16s %s\n";
+        Formatter s = new Formatter(new StringBuilder());
+        s.format(format, "Partition type", "Description");
+        s.format(format, "--------------", "-----------");
+        StringBuilder sb = new StringBuilder();
+        for (PartitionFactory factory: _factories) {
+            s.format(format, factory.getType(), factory.getDescription());
+        }
+        return s.toString();
+    }
+
+    public final static String hh_pm_create =
+        "[-type=<partitionType>] <partitionName>";
     public String ac_pm_create_$_1(Args args)
     {
-        createPartition(args.argv(0));
+        String type = args.getOption("type");
+        PartitionFactory factory =
+            getFactory((type == null) ? "classic" : type);
+        createPartition(factory,args.argv(0));
         return "";
     }
 
@@ -210,6 +250,7 @@ public class PartitionManager
 
     public final static String hh_pm_ls = "[-l] [<partitionName>]";
     public synchronized String ac_pm_ls_$_0_1(Args args)
+        throws IllegalArgumentException
     {
         StringBuilder sb = new StringBuilder();
         if (args.argc() != 0) {
@@ -218,16 +259,17 @@ public class PartitionManager
             if (partition == null)
                 throw new IllegalArgumentException("Section not found: " + name);
 
-            sb.append(name).append("\n");
+            sb.append(name).append(" (").append(partition.getType()).append(")\n");
             printProperties(sb, partition);
-        } else if (args.getOpt("l") != null) {
-            for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
-                sb.append(entry.getKey()).append("\n");
-                printProperties(sb, entry.getValue());
-            }
         } else {
-            for (String name: _partitions.keySet()) {
-                sb.append(name).append("\n");
+            for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
+                sb.append(entry.getKey())
+                    .append(" (")
+                    .append(entry.getValue().getType())
+                    .append(")\n");
+                if (args.getOpt("l") != null) {
+                    printProperties(sb, entry.getValue());
+                }
             }
         }
         return sb.toString();
@@ -328,7 +370,8 @@ public class PartitionManager
         dumpInfo(pw, "", _properties);
         for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
             if (!entry.getKey().equals(DEFAULT)) {
-                pw.append("pm create ").append(entry.getKey()).println();
+                pw.format("pm create -type=%s %s\n",
+                          entry.getValue().getType(), entry.getKey());
             }
             dumpInfo(pw, entry.getKey(), entry.getValue().getProperties());
         }

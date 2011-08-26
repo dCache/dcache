@@ -271,6 +271,12 @@ abstract public class Partition implements Serializable
     }
 
     /**
+     * Returns the short name of the partitions type. Must correspond
+     * the short name used by the Partition's factory.
+     */
+    abstract public String getType();
+
+    /**
      * Selects a pool for writing among a set of pools. May modify
      * the input list of pools.
      */
