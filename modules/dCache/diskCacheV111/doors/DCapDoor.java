@@ -81,7 +81,7 @@ public class      DCapDoor
             _subject = engine.getSubject();
 	   _host     = engine.getInetAddress().toString();
 
-           _interpreter = new DCapDoorInterpreterV3(this, _out, _subject);
+           _interpreter = new DCapDoorInterpreterV3(this, _out, _subject, engine.getInetAddress());
            addCommandListener(_interpreter);
         }catch(Exception ee ){
            start() ;
