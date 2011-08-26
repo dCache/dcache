@@ -21,6 +21,7 @@ import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellMessageReceiver;
 import org.dcache.cells.CellInfoProvider;
 import org.dcache.cells.CellSetupProvider;
+import org.dcache.poolmanager.PoolInfo;
 
 import diskCacheV111.pools.CostCalculatable;
 import diskCacheV111.pools.CostCalculationEngine;
@@ -40,6 +41,8 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellInfo;
 import dmg.util.Args;
+
+import com.google.common.collect.ImmutableMap;
 
 public class CostModuleV1
     implements Serializable,
@@ -71,6 +74,7 @@ public class CostModuleV1
     private transient CellMessageDispatcher _handlers =
         new CellMessageDispatcher("messageToForward");
 
+
     /**
      * Information about some specific pool.
      */
@@ -78,29 +82,40 @@ public class CostModuleV1
    {
        static final long serialVersionUID = -6380756950554320179L;
 
-       private long timestamp ;
-       private PoolCostInfo _info ;
-       private double _fakeCpu   = -1.0 ;
-       private double _fakeSpace = -1.0 ;
-       private Map<String, String> _tagMap = null;
-       private Entry( PoolCostInfo info ){
-          setPoolCostInfo(info) ;
+       private final long timestamp;
+       private final PoolCostInfo _info;
+       private double _fakeCpu = -1.0;
+       private double _fakeSpace = -1.0;
+       private final ImmutableMap<String,String> _tagMap;
+
+       public Entry(PoolCostInfo info, Map<String,String> tagMap)
+       {
+           timestamp = System.currentTimeMillis();
+           _info = info;
+           _tagMap =
+               (tagMap == null)
+               ? ImmutableMap.<String,String>of()
+               : ImmutableMap.copyOf(tagMap);
        }
-       private void setPoolCostInfo( PoolCostInfo info ){
-          timestamp = System.currentTimeMillis();
-          _info = info ;
+
+       public boolean isValid()
+       {
+           return (System.currentTimeMillis() - timestamp) < 5*60*1000L;
        }
-       private PoolCostInfo getPoolCostInfo(){
-           return _info ;
-        }
-       private boolean isValid(){
-          return ( System.currentTimeMillis() - timestamp ) < 5*60*1000L ;
+
+       public PoolCostInfo getPoolCostInfo()
+       {
+           return _info;
        }
-       private void setTagMap(Map<String, String> tagMap) {
-           _tagMap = tagMap;
-       }
-       private Map<String, String> getTagMap() {
+
+       public ImmutableMap<String, String> getTagMap()
+       {
            return _tagMap;
+       }
+
+       public PoolInfo getPoolInfo()
+       {
+           return new PoolInfo(_info, _tagMap);
        }
    }
    private CostCalculationEngine _costCalculationEngine = null ;
@@ -163,18 +178,10 @@ public class CostModuleV1
             considerInvalidatingCache(currentInfo, newInfo);
         }
 
-        if(shouldRemovePool) {
+        if (shouldRemovePool) {
             _hash.remove(poolName);
-        } else {
-            if(newInfo != null) {
-                if(isNewPool) {
-                    poolEntry = new Entry(newInfo);
-                    _hash.put(poolName, poolEntry);
-                } else {
-                    poolEntry.setPoolCostInfo(newInfo);
-                }
-                poolEntry.setTagMap(msg.getTagMap());
-            }
+        } else if (newInfo != null) {
+            _hash.put(poolName, new Entry(newInfo, msg.getTagMap()));
         }
     }
 
@@ -678,7 +685,7 @@ public class CostModuleV1
     @Override
     public synchronized Collection<PoolCostInfo> getPoolCostInfos()
     {
-        List<PoolCostInfo> costInfos = new ArrayList<PoolCostInfo>();
+        Collection<PoolCostInfo> costInfos = new ArrayList<PoolCostInfo>();
         for (Entry entry: _hash.values()) {
             if (entry.isValid() || !_update) {
                 costInfos.add(entry.getPoolCostInfo());
@@ -694,8 +701,35 @@ public class CostModuleV1
         if (entry != null && (entry.isValid() || !_update)) {
             return entry.getPoolCostInfo();
         }
-
         return null;
+    }
+
+    @Override
+    public synchronized
+        List<PoolInfo> getPoolInfo(Iterable<String> pools)
+    {
+        List<PoolInfo> infos = new ArrayList<PoolInfo>();
+        for (String pool: pools) {
+            Entry entry = _hash.get(pool);
+            if (entry != null && (entry.isValid() || !_update)) {
+                infos.add(entry.getPoolInfo());
+            }
+        }
+        return infos;
+    }
+
+    @Override
+    public synchronized
+        Map<String,PoolInfo> getPoolInfoAsMap(Iterable<String> pools)
+    {
+        Map<String,PoolInfo> map = new HashMap<String,PoolInfo>();
+        for (String pool: pools) {
+            Entry entry = _hash.get(pool);
+            if (entry != null && (entry.isValid() || !_update)) {
+                map.put(pool, entry.getPoolInfo());
+            }
+        }
+        return map;
     }
 
     private void readObject(ObjectInputStream in)

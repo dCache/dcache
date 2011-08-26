@@ -4,11 +4,14 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 import java.util.NoSuchElementException;
 
+import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 
 import com.google.common.collect.ImmutableMap;
 import static com.google.common.base.Predicates.in;
@@ -54,8 +57,6 @@ abstract public class Partition implements Serializable
         .put("p2p-fortransfer", "no")
         .put("stage-allowed", "no")
         .put("stage-oncost", "no")
-        .put("slope", "0.0")
-        .put("idle", "0.0")
         .build();
 
     private final ImmutableMap<String,String> _defaults;
@@ -68,9 +69,6 @@ abstract public class Partition implements Serializable
 
     public final boolean _hasHsmBackend;
     public final boolean _stageOnCost;
-
-    public final double  _slope;
-    public final double  _minCostCut;
 
     protected Partition(Map<String,String> defaults,
                         Map<String,String> inherited,
@@ -91,8 +89,6 @@ abstract public class Partition implements Serializable
         _p2pForTransfer = getBoolean("p2p-fortransfer");
         _hasHsmBackend = getBoolean("stage-allowed");
         _stageOnCost = getBoolean("stage-oncost");
-        _slope = getDouble("slope");
-        _minCostCut = getDouble("idle");
     }
 
     /**
@@ -274,13 +270,58 @@ abstract public class Partition implements Serializable
         return _stageOnCost;
     }
 
-    public double getSlope()
-    {
-        return _slope;
-    }
+    /**
+     * Selects a pool for writing among a set of pools. May modify
+     * the input list of pools.
+     */
+    abstract public PoolInfo
+        selectWritePool(CostModule cm, List<PoolInfo> pools, long filesize)
+        throws CacheException;
 
-    public double getMinCostCut()
+    /**
+     * Selects a pool for reading among a set of pools. May modify
+     * the input list of pools.
+     */
+    abstract public PoolInfo
+        selectReadPool(CostModule cm, List<PoolInfo> pools, PnfsId pnfsId)
+        throws CacheException;
+
+    /**
+     * Selects a pair of pools for pool to pool among a set of
+     * pools. May modify the input lists of pools.
+     */
+    abstract public P2pPair
+        selectPool2Pool(CostModule cm,
+                        List<PoolInfo> src,
+                        List<PoolInfo> dst,
+                        long filesize,
+                        boolean force)
+        throws CacheException;
+
+    /**
+     * Selects a pool for staging among a set of pools. May modify the
+     * input list of pools.
+     */
+    abstract public PoolInfo selectStagePool(CostModule cm,
+                                             List<PoolInfo> pools,
+                                             String previousPool,
+                                             String previousHost,
+                                             long size)
+        throws CacheException;
+
+    /**
+     * Immutable helper class to represent a source and destination
+     * pair for pool to pool selection.
+     */
+    public static class P2pPair
     {
-        return _minCostCut;
+        public final PoolInfo source;
+        public final PoolInfo destination;
+
+        public P2pPair(PoolInfo source, PoolInfo destination)
+        {
+            this.source = source;
+            this.destination = destination;
+        }
     }
 }

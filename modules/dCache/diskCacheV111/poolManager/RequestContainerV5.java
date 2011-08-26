@@ -28,6 +28,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.ClassicPartition;
+import org.dcache.poolmanager.PoolInfo;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
@@ -38,6 +39,11 @@ import diskCacheV111.util.ThreadPool;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.CostException;
+import diskCacheV111.util.SourceCostException;
+import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
@@ -123,11 +129,6 @@ public class RequestContainerV5
     private final int _stagingRetryInterval;
 
     private final Thread _tickerThread;
-
-    /**
-     * define host selection behaviour on restore retry
-     */
-    private int _sameHostRetry = SAME_HOST_RETRY_NOTCHECKED ;
 
     /**
      * Tape Protection.
@@ -276,7 +277,7 @@ public class RequestContainerV5
     @Override
     public void getInfo(PrintWriter pw)
     {
-       ClassicPartition def = _partitionManager.getDefaultPartition();
+       Partition def = _partitionManager.getDefaultPartition();
 
        pw.println("Restore Controller [$Revision$]\n") ;
        pw.println( "      Retry Timeout : "+(_retryTimer/1000)+" seconds" ) ;
@@ -290,15 +291,8 @@ public class RequestContainerV5
                                           " fortransfer="+( def._p2pForTransfer ? "on" : "off" ) );
        pw.println( "      Allow staging : "+(def._hasHsmBackend ? "on":"off") ) ;
        pw.println( "Allow stage on cost : "+(def._stageOnCost ? "on":"off") ) ;
-       pw.println( "          P2p Slope : "+(float)def._slope ) ;
-       pw.println( "     P2p Max Copies : "+def._maxPnfsFileCopies) ;
-       pw.println( "          Cost Cuts : idle="+def._minCostCut+",p2p="+def.getProperty("p2p")+
-                                       ",alert="+def._alertCostCut+",halt="+def._panicCostCut+
-                                       ",fallback="+def._fallbackCostCut) ;
        pw.println( "      Restore Limit : "+(_maxRestore<0?"unlimited":(""+_maxRestore)));
        pw.println( "   Restore Exceeded : "+_restoreExceeded ) ;
-       pw.println( "Allow same host p2p : "+getSameHostCopyMode() ) ;
-       pw.println( "    Same host retry : "+getSameHostRetryMode() ) ;
        if( _suspendIncoming )
             pw.println( "   Suspend Incoming : on (not persistent)");
        if( _suspendStaging )
@@ -316,24 +310,8 @@ public class RequestContainerV5
         pw.append("rc set poolpingtimer ").println(_checkFilePingTimer/1000);
         pw.append("rc set max restore ")
             .println(_maxRestore<0?"unlimited":(""+_maxRestore));
-        pw.append("rc set sameHostRetry ")
-            .println(getSameHostRetryMode());
         pw.append("rc set max threads ")
             .println(_threadPool.getMaxThreadCount());
-    }
-
-    private String getSameHostRetryMode(){
-        return _sameHostRetry == SAME_HOST_RETRY_NEVER      ? STRING_NEVER :
-               _sameHostRetry == SAME_HOST_RETRY_BESTEFFORT ? STRING_BESTEFFORT :
-               _sameHostRetry == SAME_HOST_RETRY_NOTCHECKED ? STRING_NOTCHECKED :
-               "UNDEFINED" ;
-
-     }
-
-    private String getSameHostCopyMode()
-    {
-        ClassicPartition def = _partitionManager.getDefaultPartition();
-        return def._allowSameHostCopy.toString().toLowerCase();
     }
 
     public String hh_rc_set_max_threads = "<threadCount> # 0 : no limits" ;
@@ -344,27 +322,19 @@ public class RequestContainerV5
     }
 
     public final static String hh_rc_set_sameHostCopy =
-        STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED ;
+        STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED;
     public String ac_rc_set_sameHostCopy_$_1(Args args)
     {
         _partitionManager.setProperties("default", ImmutableMap.of("sameHostCopy", args.argv(0)));
         return "";
-     }
+    }
 
-    public String hh_rc_set_sameHostRetry = STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED ;
-    public String ac_rc_set_sameHostRetry_$_1( Args args ){
-
-       String value = args.argv(0) ;
-       if( value.equals(STRING_NEVER) ){
-           _sameHostRetry = SAME_HOST_RETRY_NEVER ;
-       }else if( value.equals( STRING_BESTEFFORT ) ){
-           _sameHostRetry = SAME_HOST_RETRY_BESTEFFORT ;
-       }else if( value.equals( STRING_NOTCHECKED) ){
-           _sameHostRetry = SAME_HOST_RETRY_NOTCHECKED ;
-       }else
-          throw new
-          IllegalArgumentException("Value not supported for \"set sameHostRetry\" : "+value ) ;
-       return "" ;
+    public final static String hh_rc_set_sameHostRetry =
+        STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED;
+    public String ac_rc_set_sameHostRetry_$_1(Args args)
+    {
+        _partitionManager.setProperties("default", ImmutableMap.of("sameHostRetry", args.argv(0)));
+        return "" ;
     }
 
     public String fh_rc_set_max_restore = "Limit total number of concurrent restores.  If the total number of\n" +
@@ -721,7 +691,7 @@ public class RequestContainerV5
          * askIfAvailable() returns with an error. Eg when the best
          * pool is too expensive.
          */
-        private   PoolCostCheckable _bestPool = null;
+        private   String _bestPool;
 
         /**
          * The pool from which to read the file or the pool to which
@@ -766,7 +736,7 @@ public class RequestContainerV5
         private CheckFilePingHandler  _pingHandler = new CheckFilePingHandler(_checkFilePingTimer) ;
 
         private PoolMonitorV5.PnfsFileLocation _pnfsFileLocation  = null ;
-        private ClassicPartition           _parameter         = _partitionManager.getDefaultPartition() ;
+        private Partition _parameter = _partitionManager.getDefaultPartition();
 
         /**
          * Indicates the next time a TTL of a request message will be
@@ -1066,16 +1036,12 @@ public class RequestContainerV5
 	private void sendPool2PoolRequest( String sourcePool , String destPool )
             throws NoRouteToCellException
         {
-
             Pool2PoolTransferMsg pool2pool =
                   new Pool2PoolTransferMsg(sourcePool,destPool,_pnfsId,_storageInfo) ;
             pool2pool.setDestinationFileStatus( _destinationFileStatus ) ;
-            _log.info("Sending pool2pool request : "+pool2pool);
+            _log.info("[p2p] Sending transfer request: "+pool2pool);
 	    CellMessage cellMessage =
-                new CellMessage(
-                                  new CellPath( destPool ),
-                                  pool2pool
-                                );
+                new CellMessage(new CellPath(destPool), pool2pool);
 
             synchronized( _messageHash ){
                 sendMessage( cellMessage );
@@ -1480,7 +1446,7 @@ public class RequestContainerV5
                        setError(0,"");
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
-                       if (_sendHitInfo ) sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getPoolName():"<UNKNOWN>", true );   //VP
+                       if (_sendHitInfo ) sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool:"<UNKNOWN>", true );   //VP
 
                     }else if( rc == RT_NOT_FOUND ){
                        //
@@ -1498,7 +1464,7 @@ public class RequestContainerV5
                           nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
-                           sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool.getPoolName():"<UNKNOWN>", false );   //VP
+                           sendHitMsg(  _pnfsId, (_bestPool!=null)?_bestPool:"<UNKNOWN>", false );   //VP
                        }
                        //
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1574,7 +1540,7 @@ public class RequestContainerV5
                                nextStep(RequestState.ST_SUSPENDED , WAIT ) ;
                             }
                         }else{
-                            _poolCandidate = _bestPool.getPoolName();
+                            _poolCandidate = _bestPool;
                             _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
 
                           setError(0,"");
@@ -1597,7 +1563,7 @@ public class RequestContainerV5
 
                           if( _bestPool != null ){
 
-                              _poolCandidate = _bestPool.getPoolName();
+                              _poolCandidate = _bestPool;
                               _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
 
                              setError(0,"");
@@ -1627,7 +1593,7 @@ public class RequestContainerV5
 
                        }else{
 
-                           _poolCandidate = _bestPool.getPoolName();
+                           _poolCandidate = _bestPool;
 
                           _log.info(" found high cost object");
 
@@ -1970,175 +1936,48 @@ public class RequestContainerV5
         //         - No entry in configuration Permission Matrix
         //         - Code Exception
         //
-        private int askIfAvailable(){
+        private int askIfAvailable()
+        {
+           try {
+               _bestPool = _pnfsFileLocation.selectReadPool().getName();
+               _parameter = _pnfsFileLocation.getCurrentParameterSet();
+           } catch (FileNotInCacheException e) {
+               _log.info("[read] {}", e.getMessage());
+               return RT_NOT_FOUND;
+           } catch (PermissionDeniedCacheException e) {
+               _log.info("[read] {}", e.getMessage());
+               return RT_NOT_PERMITTED;
+           } catch (CostException e) {
+               if (e.getPool() == null) {
+                   _log.info("[read] {}", e.getMessage());
+                   setError(125, e.getMessage());
+                   return RT_ERROR;
+               }
 
-           String err = null ;
-           try{
-
-              List<List<PoolCostCheckable>> avMatrix =
-                  _pnfsFileLocation.getFileAvailableMatrix();
-
-              //
-              // the DB matrix has no rows, which means that there are
-              // no pools which are allowed to serve this request.
-              //
-              if (_pnfsFileLocation.getAllowedPoolCount() == 0) {
-
-                  err="Configuration Error : No entries in Permission Matrix for this request" ;
-                  setError(130,err) ;
-                  _log.warn("askIfAvailable : "+err);
-                  return RT_ERROR ;
-              }
-
-              //
-              // we define the top row as the default parameter set
-              // for cases where none of the pools hold the file.
-              //
-              List<ClassicPartition> paraList =
-                  _pnfsFileLocation.getListOfParameter() ;
-              _parameter = paraList.get(0);
-
-              //
-              // The file is not in the dCache at all.
-              //
-              if (_pnfsFileLocation.getOnlinePools().isEmpty()){
-                  _log.info("askIfAvailable : file not in pool at all");
-                  return RT_NOT_FOUND ;
-              }
-
-              //
-              // The file is in the cache but not on a pool where we
-              // would be allowed to read it from.
-              //
-              if (avMatrix.isEmpty()) {
-                  _log.info("askIfAvailable : file in cache but not in read-allowed pool");
-                  return RT_NOT_PERMITTED ;
-              }
-
-              //
-              // File is at least on one pool from which we could get
-              // it. Now we have to find the pool with the best
-              // performance cost.  Matrix is assumed to be sorted, so
-              // we only have to check the leftmost entry in the list
-              // (get(0)). Rows could be empty.
-              //
-              _bestPool       = null;
-              List<PoolCostCheckable> bestAv = null;
-              List<PoolCostCheckable> tmpList = new ArrayList<PoolCostCheckable>();
-              int  level      = 0;
-              boolean allowFallbackOnPerformance = false;
-
-              for(List<PoolCostCheckable> av: avMatrix) {
-
-                 PoolCostCheckable cost = av.get(0);
-                 tmpList.add(cost);
-
-                 if( ( _bestPool == null ) ||
-                     ( _bestPool.getPerformanceCost() > cost.getPerformanceCost() ) ){
-
-                    _bestPool = cost ;
-                    bestAv    = av ;
-
-                 }
-                 _parameter = paraList.get(level);
-                 allowFallbackOnPerformance = _parameter._fallbackCostCut > 0.0 ;
-
-                 if( ( ( ! allowFallbackOnPerformance ) &&
-                       ( level == 0              )    ) ||
-                     ( _bestPool.getPerformanceCost() < _parameter._fallbackCostCut ) )break ;
-
-                 level++;
-              }
-              //
-              // this can't happen because we already know that
-              // there are pools which contain the files and which
-              // are allowed for us.
-              //
-              if( _bestPool == null )return RT_NOT_FOUND ;
-
-              double bestPoolPerformanceCost = _bestPool.getPerformanceCost() ;
-
-              if(   (  _parameter._costCut     > 0.0         ) &&
-                    (  bestPoolPerformanceCost >= getCurrentCostCut( _parameter))    ){
-
-                 if( allowFallbackOnPerformance ){
-                    //
-                    // if all costs are too high, the above list
-                    // has been scanned up to the very end. But it
-                    // could be that one of the first rows has a
-                    // better cost than the last one, so we have
-                    // to correct here.
-                    //
-                    _log.info("askIfAvailable : allowFallback , recalculation best cost");
-                    _bestPool = Collections.min(
-                                   tmpList ,
-                                    _poolMonitor.getCostComparator(false,_parameter)
-                                ) ;
-
-                 }
-                 _log.info("askIfAvailable : cost exceeded on all available pools, "+
-                     "best pool would have been "+_bestPool);
-                 return RT_COST_EXCEEDED ;
-              }
-
-              if( ( _parameter._panicCostCut > 0.0 ) && ( bestPoolPerformanceCost > _parameter._panicCostCut ) ){
-                 _log.info("askIfAvailable : cost of best pool exceeds 'panic' level");
-                 setError(125,"Cost of best pool exceeds panic level") ;
-                 return RT_ERROR ;
-              }
-              _log.info("askIfAvailable : Found candidates : "+bestAv);
-              //
-              //  this part is intended to get rid of duplicates if the
-              //  load is decreasing.
-              //
-              PoolCostCheckable cost = null ;
-              NavigableMap<Integer,PoolCostCheckable> list =
-                  new TreeMap<Integer,PoolCostCheckable>();
-
-              if( _parameter._minCostCut > 0.0 ){
-
-                 for( int i = 0 , n = bestAv.size() ; i < n ; i++ ){
-
-                    cost = bestAv.get(i) ;
-
-                    double costValue = cost.getPerformanceCost() ;
-
-                    if( costValue < _parameter._minCostCut ){
-                       //
-                       // here we sort it arbitrary but reproducible
-                       // (whatever that means)
-                       //
-                       String poolName = cost.getPoolName() ;
-                       _log.info("askIfAvailable : "+poolName+" below "+_parameter._minCostCut+" : "+costValue);
-                       list.put((_pnfsId.toString()+poolName).hashCode(), cost);
-                    }
-                 }
-
-              }
-
-              cost = list.isEmpty() ? _bestPool : list.firstEntry().getValue();
-
-              _log.info( "askIfAvailable : candidate : "+cost ) ;
-
-
-              _poolCandidate = cost.getPoolName();
-              setError(0,"") ;
-
-              return RT_FOUND ;
+               _bestPool = e.getPool().getName();
+               _parameter = _pnfsFileLocation.getCurrentParameterSet();
+               if (e.shouldTryAlternatives()) {
+                   _log.info("[read] {} ({})",
+                             e.getMessage(), _bestPool);
+                   return RT_COST_EXCEEDED;
+               }
            } catch (CacheException e) {
-               err = "Exception in getFileAvailableList : " + e;
+               String err = "Read pool selection failed: " + e.getMessage();
                _log.warn(err);
                setError(130, err);
                return RT_ERROR;
            } catch (RuntimeException e) {
-               err = "Exception in getFileAvailableList : " + e;
-               _log.error(err, e);
-               setError(130,err) ;
+               _log.error("Read pool selection failed", e);
+               setError(130, "Read pool selection failed: " + e.toString());
                return RT_ERROR;
            } finally {
-               _log.info("askIfAvailable : Took  {}",
+               _log.info("[read] Took  {} ms",
                          (System.currentTimeMillis() - _started));
            }
+
+           _poolCandidate = _bestPool;
+           setError(0,"");
+           return RT_FOUND;
         }
         //
         // Result :
@@ -2156,340 +1995,48 @@ public class RequestContainerV5
         //    ERROR
         //        - no source pool (code problem)
         //
-		private int askForPoolToPool(boolean overwriteCost) {
-			try {
-				//
-				//
-				List<PoolCostCheckable> sources =
-                                    _pnfsFileLocation.getCostSortedAvailable();
-				//
-				// Here we get the parameter set of the 'read'
-				//
-				ClassicPartition parameter = _pnfsFileLocation
-						.getCurrentParameterSet();
+        private int askForPoolToPool(boolean overwriteCost)
+        {
+            try {
+                Partition.P2pPair pools =
+                    _pnfsFileLocation.selectPool2Pool(overwriteCost);
 
-				if (sources.size() == 0) {
-
-					setError(132,
-							"PANIC : Tried to do p2p, but source was empty");
-					return RT_ERROR;
-
-				} else if (sources.size() >= parameter._maxPnfsFileCopies) {
-					//
-					// already too many copies of the file
-					//
-					_log.info("askForPoolToPool : already too many copies : "
-							+ sources.size());
-					setError(133, "Not replicated : already too many copies : "
-							+ sources.size());
-					return RT_NOT_PERMITTED;
-
-				} else if ((!overwriteCost)
-						&& (parameter._alertCostCut > 0.0)
-						&& ((sources.get(0))
-								.getPerformanceCost() > parameter._alertCostCut)) {
-					//
-					// all source are too busy
-					//
-					_log.info("askForPoolToPool : all p2p source(s) are too busy (cost > "
-							+ parameter._alertCostCut + ")");
-					setError(134,
-							"Not replicated : all p2p source(s) are too busy (cost > "
-									+ parameter._alertCostCut + ")");
-					return RT_S_COST_EXCEEDED;
-
-				}
-				//
-				// make sure we are either below costCut or
-				// 'slope' below the source pool.
-				//
-				double maxCost = parameter._slope > 0.01 ? (parameter._slope * sources.get(0).getPerformanceCost())
-						: getCurrentCostCut( parameter);
-
-
-				List<List<PoolCostCheckable>> matrix =
-                                    _pnfsFileLocation.getFetchPoolMatrix(DirectionType.P2P,
-                                                                         _storageInfo.getFileSize());
-
-				if (matrix.size() == 0) {
-					setError(
-							136,
-							"Not replicated : No pool candidates available/configured/left for p2p or file already everywhere");
-					_log.info("askForPoolToPool : No pool candidates available/configured/left for p2p or file already everywhere");
-					return RT_NOT_PERMITTED;
-				}
-				//
-				// Here we get the parameter set of the 'p2p'
-				//
-				parameter = _pnfsFileLocation.getCurrentParameterSet();
-
-				List<PoolCostCheckable> destinations = null;
-
-				for (Iterator<List<PoolCostCheckable>> it = matrix.iterator(); it.hasNext();) {
-					destinations = it.next();
-					if (destinations.size() > 0)
-						break;
-				}
-
-//				subtract all source pools from the list of destination pools (those pools already have a copy)
-				for (PoolCostCheckable dest : destinations) {
-					for (PoolCheckable src : sources) {
-						if (dest.getPoolName().equals( src.getPoolName()) ) {
-							_log.info("removing pool "+dest.getPoolName()+" from dest pool list");
-							destinations.remove(dest);
-						}
-					}
-				}
-
-				//
-				if (destinations.size() == 0) {
-					//
-					// file already everywhere
-					//
-					_log.info("askForPoolToPool : file already everywhere");
-					setError(137, "Not replicated : file already everywhere");
-					return RT_NOT_PERMITTED;
-				}
-
-				if ((!overwriteCost) && (maxCost > 0.0)) {
-
-					List<PoolCostCheckable> selected =
-                                            new ArrayList<PoolCostCheckable>();
-					for (PoolCostCheckable dest : destinations) {
-						PoolCostCheckable cost = dest;
-						if (cost.getPerformanceCost() < maxCost)
-							selected.add(cost);
-					}
-					if (selected.size() == 0) {
-						_log.info("askForPoolToPool : All destination pools exceed cost "
-								+ maxCost);
-						setError(137,
-								"Not replicated : All destination pools exceed cost "
-										+ maxCost);
-						return RT_COST_EXCEEDED;
-					}
-
-					destinations = selected;
-				}
-				//
-				// The 'performance cost' of all destination pools is below
-				// maxCost,
-				// and the destination list is sorted according to the
-				// 'full cost'.
-				//
-
-				_pnfsFileLocation.sortByCost(destinations, true);
-
-				//
-				// loop over all source, destination combinations and find the
-				// most appropriate for (source.hostname !=
-				// destination.hostname)
-				//
-                PoolCheckable sourcePool                = null;
-                PoolCheckable destinationPool           = null;
-                PoolCheckable bestEffortSourcePool      = null;
-                PoolCheckable bestEffortDestinationPool = null;
-
-				Map<String, String> map = null;
-
-				for (int s = 0, sMax = sources.size(); s < sMax; s++) {
-
-					PoolCheckable sourceCost = sources.get(s);
-
-					String sourceHost = ((map = sourceCost.getTagMap()) == null ? null : map.get("hostname"));
-
-					for (int d = 0, dMax = destinations.size(); d < dMax; d++) {
-
-						PoolCheckable destinationCost = destinations.get(d);
-
-						if (parameter._allowSameHostCopy == ClassicPartition.SameHost.NOTCHECKED) {
-							// we take the pair with the least cost without
-							// further hostname checking
-							sourcePool = sourceCost;
-							destinationPool = destinationCost;
-							break;
-						}
-
-						// save the pair with the least cost for later reuse
-						if (bestEffortSourcePool == null) bestEffortSourcePool = sourceCost;
-						if (bestEffortDestinationPool == null) bestEffortDestinationPool = destinationCost;
-
-						_log.info("p2p same host checking : "
-								+ sourceCost.getPoolName() + " "
-								+ destinationCost.getPoolName());
-
-						String destinationHost = ((map = destinationCost.getTagMap()) == null ? null : map.get("hostname"));
-
-						if (sourceHost != null && !sourceHost.equals(destinationHost)) {
-							// we take the first src/dest-pool pair not residing on the same host
-							sourcePool = sourceCost;
-							destinationPool = destinationCost;
-							break;
-						}
-					}
-					if (sourcePool != null && destinationPool != null)
-						break;
-				}
-
-				if (sourcePool == null || destinationPool == null) {
-
-//					ok, we could not find a pair on different hosts, what now?
-
-					if (parameter._allowSameHostCopy == ClassicPartition.SameHost.BESTEFFORT) {
-						_log.info("P2P : sameHostCopy=bestEffort : couldn't find a src/dest-pair on different hosts, choosing pair with the least cost");
-						sourcePool = bestEffortSourcePool;
-						destinationPool = bestEffortDestinationPool;
-
-					} else if (parameter._allowSameHostCopy == ClassicPartition.SameHost.NEVER) {
-						_log.info("P2P : sameHostCopy=never : no matching pool found");
-						setError(137,
-								"Not replicated : sameHostCopy=never : no matching pool found");
-						return RT_NOT_PERMITTED;
-
-					} else {
-						_log.info("P2P : coding error, bad state");
-						setError(137,
-								"Not replicated : coding error, bad state");
-						return RT_NOT_PERMITTED;
-					}
-				}
-
-                _p2pSourcePool = sourcePool.getPoolName();
-                _p2pDestinationPool = destinationPool.getPoolName();
-                _log.info("P2P : source={};dest={}",
+                _p2pSourcePool = pools.source.getName();
+                _p2pDestinationPool = pools.destination.getName();
+                _log.info("[p2p] source={};dest={}",
                           _p2pSourcePool, _p2pDestinationPool);
                 sendPool2PoolRequest(_p2pSourcePool, _p2pDestinationPool);
 
                 return RT_FOUND;
-
+            } catch (PermissionDeniedCacheException e) {
+                setError(e.getRc(), e.getMessage());
+                _log.warn("[p2p] {}", e.toString());
+                return RT_NOT_PERMITTED;
+            } catch (SourceCostException e) {
+                setError(e.getRc(), e.getMessage());
+                _log.info("[p2p] {}", e.getMessage());
+                return RT_S_COST_EXCEEDED;
+            } catch (DestinationCostException e) {
+                setError(e.getRc(), e.getMessage());
+                _log.info("[p2p] {}", e.getMessage());
+                return RT_COST_EXCEEDED;
             } catch (CacheException e) {
                 setError(e.getRc(), e.getMessage());
-                _log.warn(e.toString());
+                _log.warn("[p2p] {}", e.getMessage());
                 return RT_ERROR;
             } catch (NoRouteToCellException e) {
                 setError(128, e.getMessage());
-                _log.error(e.toString());
-                return RT_ERROR;
-            } catch (InterruptedException e) {
-                setError(128, e.getMessage());
-                _log.info(e.toString());
+                _log.error("[p2p] {}", e.toString());
                 return RT_ERROR;
             } catch (RuntimeException e) {
                 setError(128, e.getMessage());
-                _log.error(e.getMessage(), e);
+                _log.error("[p2p] contact support@dcache.org", e);
                 return RT_ERROR;
             } finally {
-                _log.info("Selection pool 2 pool took : {}",
+                _log.info("[p2p] Selection took {} ms",
                           (System.currentTimeMillis() - _started));
             }
-
-		}
-
-        private PoolCostCheckable askForFileStoreLocation( DirectionType mode  )
-            throws CacheException, InterruptedException
-        {
-
-            //
-            // matrix contains cost for original db matrix minus
-            // the pools already containing the file.
-            //
-            List<List<PoolCostCheckable>> matrix =
-                    _pnfsFileLocation.getFetchPoolMatrix (
-                                mode ,
-                                _storageInfo.getFileSize() ) ;
-
-
-            ClassicPartition parameter = _pnfsFileLocation.getCurrentParameterSet() ;
-
-            if( matrix.size() == 0 )
-                  throw new
-                  CacheException( 149 , "No pool candidates available/configured/left for "+mode ) ;
-
-            PoolCostCheckable cost = null ;
-            if( _poolCandidate == null ){
-                int n = 0 ;
-                for( Iterator<List<PoolCostCheckable>> i = matrix.iterator() ; i.hasNext() ; n++ ){
-
-                    parameter = _pnfsFileLocation.getListOfParameter().get(n) ;
-                    cost = i.next().get(0);
-                    if( ( parameter._fallbackCostCut  == 0.0 ) ||
-                        ( cost.getPerformanceCost() < parameter._fallbackCostCut ) )break ;
-
-                 }
-            }else{
-
-                 //
-                 // find a pool which is not identical to the first candidate
-                 //
-
-                PoolCostCheckable rememberBest = null ;
-
-                 for( Iterator<List<PoolCostCheckable>> i = matrix.iterator() ; i.hasNext() ; ){
-
-                    for( Iterator<PoolCostCheckable> n = i.next().iterator() ; n.hasNext() ; ){
-
-                       PoolCostCheckable c  = n.next() ;
-                       //
-                       // skip this one if we tried this last time
-                       //
-                       if( c.getPoolName().equals(_poolCandidate) &&  n.hasNext() ) {
-                           _log.info("askFor {} : Second shot excluding : {}",
-                                     mode, _poolCandidate);
-                           continue;
-                       }
-
-                       //
-                       //  If the setting disallows 'sameHostRetry' and the hostname information
-                       //  is present, we try to honor this.
-                       //
-                       if( ( _sameHostRetry != SAME_HOST_RETRY_NOTCHECKED ) && ( _stageCandidateHost != null )){
-                           //
-                           // Remember the best even if it is on the same host, in case of 'best effort'.
-                           //
-                           if( rememberBest == null )rememberBest = c  ;
-                           //
-                           // skip this if the hostname is available and identical to the first candidate.
-                           //
-                           Map<String, String> tagMap = c.getTagMap();
-                           String thisHostname =
-                               (tagMap == null) ? null : tagMap.get("hostname");
-                           if( ( thisHostname != null ) && ( thisHostname.equals(_stageCandidateHost) ) )continue ;
-                        }
-                        //
-                        // If the 'fallbackoncost' option is enabled and the cost of the smallest
-                        // pool is still higher than the specified threshold, don't set the pool and
-                        // step to the next level.
-                        //
-                        if( (  parameter._fallbackCostCut > 0.0 ) &&  ( c.getPerformanceCost() > parameter._fallbackCostCut ) ){
-                            rememberBest = null ;
-                            break ;
-                        }
-                        //
-                        // now we can safely assign the best pool and break the loop.
-                        //
-                        cost = c ;
-
-                       break ;
-                    }
-                    if( cost != null )break ;
-                 }
-
-                 //
-                 // clear the pool candidate if this second shot didn't find a good pool. So we can try the first one
-                 // again. If we don't, systems with a single pool for this request will never recover. (lionel bug 2132)
-                 //
-
-                 cost = ( cost == null ) && ( _sameHostRetry == SAME_HOST_RETRY_BESTEFFORT )  ? rememberBest : cost ;
-
-           }
-           _parameter = parameter ;
-
-           if( cost == null )
-              throw new
-              CacheException( 150 , "No cheap candidates available for '"+mode+"'");
-
-           return cost ;
-       }
+        }
 
         //
         //   FOUND :
@@ -2501,47 +2048,49 @@ public class RequestContainerV5
         //   OUT_OF_RESOURCES :
         //        - too many requests queued
         //
-        private int askForStaging(){
+        private int askForStaging()
+        {
+            try {
+                PoolInfo pool =
+                    _pnfsFileLocation.selectStagePool(_poolCandidate,
+                                                      _stageCandidateHost);
+                _poolCandidate = pool.getName();
+                _stageCandidateHost = pool.getHostName();
 
-           try{
+                _log.info("[staging] poolCandidate -> {}", _poolCandidate);
+                if (!sendFetchRequest(_poolCandidate, _storageInfo)) {
+                    return RT_OUT_OF_RESOURCES;
+                }
 
-               PoolCostCheckable pool =
-                   askForFileStoreLocation(DirectionType.CACHE);
-               _poolCandidate = pool.getPoolName();
-               Map<String, String> tagMap = pool.getTagMap();
-               _stageCandidateHost =
-                   (tagMap == null) ? null : tagMap.get("hostname");
+                setError(0,"");
 
-               _log.info("askForStaging : poolCandidate -> {}", _poolCandidate);
-
-               if (!sendFetchRequest(_poolCandidate, _storageInfo)) {
-                   return RT_OUT_OF_RESOURCES;
+                return RT_FOUND;
+            } catch (CostException e) {
+               if (e.getPool() != null) {
+                   _poolCandidate = e.getPool().getName();
+                   _stageCandidateHost = e.getPool().getHostName();
+                   return RT_FOUND;
                }
-
-               setError(0,"");
-
-              return RT_FOUND ;
-           } catch (CacheException e) {
-               setError(e.getRc(), e.getMessage());
-               _log.warn(e.toString());
-               return RT_NOT_FOUND;
-           } catch (NoRouteToCellException e) {
-              setError(128, e.getMessage());
-              _log.error(e.toString());
-              return RT_ERROR;
-           } catch (InterruptedException e) {
-              setError(128, e.getMessage());
-              _log.info(e.toString());
-              return RT_ERROR;
-           } catch (RuntimeException e) {
-              setError(128, e.getMessage());
-              _log.error(e.getMessage(), e);
-              return RT_ERROR;
-           } finally {
-               _log.info("Selection cache took : {}",
-                         (System.currentTimeMillis() - _started));
-           }
-       }
+               _log.info("[stage] {}", e.getMessage());
+               setError(125, e.getMessage());
+               return RT_ERROR;
+            } catch (CacheException e) {
+                setError(e.getRc(), e.getMessage());
+                _log.warn("[stage] {}", e.getMessage());
+                return RT_NOT_FOUND;
+            } catch (NoRouteToCellException e) {
+                setError(128, e.getMessage());
+                _log.error("[stage] {}", e.toString());
+                return RT_ERROR;
+            } catch (RuntimeException e) {
+                setError(128, e.getMessage());
+                _log.error("[stage] contact support@dcache.org", e);
+                return RT_ERROR;
+            } finally {
+                _log.info("[stage] Selection took {} ms",
+                          (System.currentTimeMillis() - _started));
+            }
+        }
     }
 
     private void sendInfoMessage( PnfsId pnfsId ,
@@ -2571,21 +2120,6 @@ public class RequestContainerV5
                       pnfsId, e.toString());
         }
     }
-
-    /**
-     * Establish the costCut at the moment for the given set of parameters.
-     * If the costCut was assigned a value from a string ending with a '%' then
-     * that percentile cost is used.
-     * @param parameter which set of parameters to consider.
-     * @return the costCut, taking into account possible relative costCut.
-     */
-    private double getCurrentCostCut(ClassicPartition parameter)
-    {
-        return parameter._costCutIsPercentile
-            ? _poolMonitor.getPoolsPercentilePerformanceCost( parameter._costCut)
-            : parameter._costCut;
-    }
-    //VP
 
     public void setStageConfigurationFile(String path)
     {

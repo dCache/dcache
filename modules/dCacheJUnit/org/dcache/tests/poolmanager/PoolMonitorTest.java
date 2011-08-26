@@ -2,7 +2,7 @@ package org.dcache.tests.poolmanager;
 
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
@@ -59,10 +59,7 @@ public class PoolMonitorTest
 
         PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
 
-        List<String> pools = new ArrayList<String>();
-
-        pools.add("pool1");
-        pools.add("pool2");
+        List<String> pools = Arrays.asList("pool1", "pool2");
 
         /*
          * pre-configure pool selection unit
@@ -102,27 +99,10 @@ public class PoolMonitorTest
         PnfsFileLocation availableLocations =
             _poolMonitor.getPnfsFileLocation(attributes, _protocolInfo, null);
 
-        List<PoolCostCheckable> onlinePools =
-            availableLocations.getOnlinePools();
-
-        assertFalse("No pools found (test setup error)",
-                    onlinePools.isEmpty());
-        assertFalse("No pools acknowledged (test setup error)",
-                    availableLocations.getFileAvailableMatrix().isEmpty());
-
-        boolean found1 = false;
-        boolean found2 = false;
-        for( PoolCostCheckable pool : onlinePools) {
-            if( pool.getPoolName().equals("pool1") ) {
-                found1 = true;
-            }
-            if( pool.getPoolName().equals("pool2") ) {
-                found2 = true;
-            }
-        }
-
-        assertTrue("Pool with the file not used by selection", found1 );
-        assertTrue("Pool with the file not used by selection", found2 );
+        /* The following isn't testing much as both pools are valid
+         * replies.
+         */
+        assertTrue(pools.contains(availableLocations.selectReadPool().getName()));
+        assertTrue(pools.contains(availableLocations.selectPinPool().getName()));
     }
-
 }

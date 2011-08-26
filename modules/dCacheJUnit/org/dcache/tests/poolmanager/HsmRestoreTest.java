@@ -132,6 +132,7 @@ public class HsmRestoreTest {
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
+        attributes.setSize(5);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -206,6 +207,7 @@ public class HsmRestoreTest {
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
+        attributes.setSize(5);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -302,6 +304,7 @@ public class HsmRestoreTest {
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
+        attributes.setSize(5);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);
@@ -398,6 +401,7 @@ public class HsmRestoreTest {
         attributes.setStorageInfo(_storageInfo);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
+        attributes.setSize(5);
         fileAttributesMessage.setFileAttributes(attributes);
         GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
                                              fileAttributesMessage, true);

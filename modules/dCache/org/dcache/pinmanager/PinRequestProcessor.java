@@ -38,6 +38,7 @@ import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.poolManager.RequestContainerV5;
@@ -328,58 +329,18 @@ public class PinRequestProcessor
     private void selectReadPool(final PinTask task)
         throws CacheException
     {
-        PoolMonitorV5.PnfsFileLocation location =
-            _poolMonitor.getPnfsFileLocation(task.getFileAttributes(),
-                                             task.getProtocolInfo(),
-                                             null);
+        try {
+            PoolMonitorV5.PnfsFileLocation location =
+                _poolMonitor.getPnfsFileLocation(task.getFileAttributes(),
+                                                 task.getProtocolInfo(),
+                                                 null);
 
-        if (location.getAllowedPoolCount() == 0) {
-            // Talking to PoolManager doesn't help, because there are
-            // no pools in the system that are able to serve the
-            // request even if they had the file.
-            throw new FileNotInCacheException("File is unavailable");
-        }
-
-        if (location.getOnlinePools().isEmpty()){
-            // There is no copy on any online pool. If the file is a
-            // disk only file, then we fail the request. If the file
-            // is on tape, then we have to ask pool manager.
-            StorageInfo info = task.getFileAttributes().getStorageInfo();
-            if (!info.isStored()) {
-                throw new FileNotInCacheException("File is unavailable");
-            }
-
+            String name = location.selectPinPool().getName();
+            setPool(task, name);
+            setStickyFlag(task, name);
+        } catch (FileNotOnlineCacheException e) {
             askPoolManager(task);
-            return;
         }
-
-        List<List<PoolCostCheckable>> matrix =
-            location.getFileAvailableMatrix();
-        if (matrix.isEmpty()) {
-            // The file is in on a pool, but not on a pool from which
-            // we can read it. PoolManager may be able to move the
-            // file to a better location.
-            askPoolManager(task);
-            return;
-        }
-
-        // Choose a pool deterministically. We use the same ordering
-        // used by pool manager when it implements min cost cut.
-        final String id = task.getPnfsId().toString();
-        PoolCostCheckable pool =
-            Collections.min(matrix.get(0), new Comparator<PoolCostCheckable>() {
-                    public int compare(PoolCostCheckable o1,
-                                       PoolCostCheckable o2)
-                    {
-                        String s1 = id + o1.getPoolName();
-                        String s2 = id + o2.getPoolName();
-                        return Ints.compare(s1.hashCode(), s2.hashCode());
-                    }
-                });
-
-        String name = pool.getPoolName();
-        setPool(task, name);
-        setStickyFlag(task, name);
     }
 
     private void askPoolManager(final PinTask task)

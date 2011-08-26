@@ -15,6 +15,8 @@ import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.poolmanager.Utils;
+import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.PoolInfo;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolV2Mode;
@@ -62,6 +64,9 @@ import org.dcache.vehicles.PoolManagerSelectLinkGroupForWriteMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+
+import com.google.common.base.Function;
+import static com.google.common.collect.Iterables.transform;
 
 public class PoolManagerV5
     extends AbstractCellComponent
@@ -295,28 +300,31 @@ public class PoolManagerV5
              pw.println("         Watchdog : "+_watchdog ) ;
         }
     }
-    public String hh_set_max_threads = "# OBSOLETE";
-    public String ac_set_max_threads_$_1( Args args )throws CommandException{
-      return "'set max threads' is obsolete" ;
+    public final static String hh_set_max_threads = "# OBSOLETE";
+    public String ac_set_max_threads_$_1(Args args)
+    {
+        return "'set max threads' is obsolete";
     }
 
-    public String hh_set_timeout_pool = "# OBSOLETE";
-    public String ac_set_timeout_pool_$_1( Args args )throws CommandException{
-      return "'set timeout pool' is obsolete" ;
+    public final static String hh_set_timeout_pool = "# OBSOLETE";
+    public String ac_set_timeout_pool_$_1(Args args)
+    {
+        return "'set timeout pool' is obsolete";
     }
-    public String hh_getpoolsbylink = "<linkName> [-size=<filesize>]" ;
-    public String ac_getpoolsbylink_$_1( Args args )throws Exception {
-       String sizeString = args.getOpt("size") ;
-       long size = sizeString == null ? 50000000L : Long.parseLong( sizeString ) ;
-       String linkName = args.argv(0) ;
 
-       List<PoolCostCheckable> list = _poolMonitor.queryPoolsByLinkName( linkName , size ) ;
-
-       StringBuffer sb = new StringBuffer() ;
-       for(PoolCostCheckable poolCost : list) {
-           sb.append(poolCost.toString()).append("\n");
+    public final static String hh_getpoolsbylink =
+        "<linkName> [-size=<filesize>]";
+    public String ac_getpoolsbylink_$_1(Args args)
+        throws NumberFormatException
+    {
+       String sizeString = args.getOpt("size");
+       long size = (sizeString == null) ? 50000000L : Long.parseLong(sizeString);
+       String link = args.argv(0);
+       StringBuilder sb = new StringBuilder();
+       for (PoolCostCheckable pool: _poolMonitor.queryPoolsByLinkName(link, size)) {
+           sb.append(pool).append("\n");
        }
-       return sb.toString() ;
+       return sb.toString();
     }
 
     public synchronized
@@ -438,19 +446,30 @@ public class PoolManagerV5
     }
 
     public PoolMgrGetPoolByLink messageArrived(PoolMgrGetPoolByLink msg)
-            throws CacheException {
-
+        throws CacheException
+    {
         String linkName = msg.getLinkName();
         long filesize = msg.getFilesize();
 
-        List<PoolCostCheckable> pools =
-                _poolMonitor.queryPoolsByLinkName(linkName, filesize);
-        if ((pools == null) || pools.isEmpty()) {
+        Function<PoolSelectionUnit.SelectionPool,String> getName =
+            new Function<PoolSelectionUnit.SelectionPool,String>() {
+                public String apply(PoolSelectionUnit.SelectionPool pool) {
+                    return pool.getName();
+                }
+            };
+
+        PoolSelectionUnit.SelectionLink link =
+            _selectionUnit.getLinkByName(linkName);
+        List<PoolInfo> pools =
+            _costModule.getPoolInfo(transform(link.pools(), getName));
+        if (pools.isEmpty()) {
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }
-        msg.setPoolName(pools.get(0).getPoolName());
-        msg.setSucceeded();
 
+        Partition partition =
+            _poolMonitor.getPartitionManager().getPartition(link.getTag());
+        msg.setPoolName(partition.selectWritePool(_costModule, pools, filesize).getName());
+        msg.setSucceeded();
         return msg;
     }
 
@@ -613,13 +632,12 @@ public class PoolManagerV5
               _poolMonitor.getPnfsFileLocation(fileAttributes,
                                                protocolInfo, null ) ;
 
-          List<List<PoolCostCheckable>> available =
-              pnfsFileLocation.getFileAvailableMatrix() ;
+          List<List<PoolInfo>> available = pnfsFileLocation.getReadPools();
 
           StringBuffer sb = new StringBuffer() ;
           sb.append("Available and allowed\n");
-          for( PoolCostCheckable cost : available.get(0)) {
-              sb.append("  ").append( cost.toString() ).append("\n");
+          for (PoolInfo pool: available.get(0)) {
+              sb.append("  ").append(pool).append("\n");
           }
           sb.append("Allowed (not available)\n");
 
@@ -874,20 +892,15 @@ public class PoolManagerV5
                FileAttributes fileAttributes = new FileAttributes();
                fileAttributes.setPnfsId(_pnfsId);
                fileAttributes.setStorageInfo(storageInfo);
-               List<PoolCostCheckable> storeList = _poolMonitor.
-                   getPnfsFileLocation(fileAttributes, protocolInfo, _request.getLinkGroup()).
-                   getStorePoolList( expectedLength ) ;
-              /*
-              List storeList =
-                  _poolMonitor.getStorePoolList(  storageInfo ,
-                                                  protocolInfo ,
-                                                  expectedLength );
-              */
-              String poolName = storeList.get(0).getPoolName() ;
+               String poolName =
+                   _poolMonitor
+                   .getPnfsFileLocation(fileAttributes, protocolInfo, _request.getLinkGroup())
+                   .selectWritePool(expectedLength)
+                   .getName();
 
-              _log.info(_pnfsId+" write handler selected "+poolName+" after "+
-                  ( System.currentTimeMillis() - started ) );
-              requestSucceeded( poolName ) ;
+              _log.info("{} write handler selected {} after {} ms",
+                        new Object[] { _pnfsId, poolName, System.currentTimeMillis() - started });
+              requestSucceeded(poolName);
 
            }catch(CacheException ce ){
               requestFailed( ce.getRc() , ce.getMessage() ) ;

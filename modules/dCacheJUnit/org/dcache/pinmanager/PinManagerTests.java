@@ -9,7 +9,9 @@ import org.junit.*;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 import diskCacheV111.poolManager.*;
+import diskCacheV111.pools.*;
 
+import org.dcache.poolmanager.*;
 import org.dcache.pinmanager.model.*;
 import static org.dcache.pinmanager.model.Pin.State.*;
 import org.dcache.cells.*;
@@ -19,6 +21,7 @@ import dmg.util.*;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
 
 public class PinManagerTests
 {
@@ -84,18 +87,10 @@ public class PinManagerTests
                                                                         String linkGroup)
                             {
                                 return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
-                                    public int getAllowedPoolCount() {
-                                        return 1;
-                                    }
-
-                                    public List<PoolCostCheckable> getOnlinePools()
+                                    public PoolInfo selectPinPool()
                                     {
-                                        return Collections.singletonList((PoolCostCheckable) new PoolCheckAdapter(POOL1));
-                                    }
-
-                                    public List<List<PoolCostCheckable>> getFileAvailableMatrix()
-                                    {
-                                        return Collections.singletonList(getOnlinePools());
+                                        return new PoolInfo(new PoolCostInfo(POOL1),
+                                                            ImmutableMap.<String,String>of());
                                     }
                                 };
                             }

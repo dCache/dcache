@@ -3,14 +3,23 @@
 package diskCacheV111.poolManager;
 
 import com.google.common.base.Function;
-import static com.google.common.collect.Collections2.*;
+import com.google.common.base.Functions;
+import com.google.common.primitives.Ints;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.notNull;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.Iterables.isEmpty;
+
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +34,10 @@ import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.CostException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FileNotOnlineCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
@@ -38,9 +51,9 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.ClassicPartition;
+import org.dcache.poolmanager.PoolInfo;
 import static org.dcache.namespace.FileAttribute.*;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 public class PoolMonitorV5
     implements Serializable
@@ -52,12 +65,7 @@ public class PoolMonitorV5
 
     private PoolSelectionUnit _selectionUnit ;
     private CostModule        _costModule    ;
-    private double            _maxWriteCost          = 1000000.0;
     private PartitionManager  _partitionManager ;
-
-    public PoolMonitorV5()
-    {
-    }
 
     public PoolSelectionUnit getPoolSelectionUnit()
     {
@@ -94,12 +102,6 @@ public class PoolMonitorV5
         _costModule.messageArrived(cellMessage);
     }
 
-    // output[0] -> Allowed and Available
-    // output[1] -> available but not allowed (sorted, cpu)
-    // output[2] -> allowed but not available (sorted, cpu + space)
-    // output[3] -> pools from pnfs
-    // output[4] -> List of List (all allowed pools)
-
     public PnfsFileLocation getPnfsFileLocation(FileAttributes fileAttributes,
                                                 ProtocolInfo protocolInfo,
                                                 String linkGroup)
@@ -107,491 +109,355 @@ public class PoolMonitorV5
         return new PnfsFileLocation(fileAttributes, protocolInfo, linkGroup);
     }
 
-   public class PnfsFileLocation
-   {
-       private List<ClassicPartition> _listOfPartitions;
-       private List<List<PoolCostCheckable>> _allowedAndAvailableMatrix;
+    public class PnfsFileLocation
+    {
+        private Partition _partition;
 
-       /**
-        * Pools that are supposed to have a copy of the file and which
-        * are online. Online here means that they are actively
-        * registering themselves with the pool manager.
-        */
-       private List<PoolCostCheckable> _onlinePools;
+        private final FileAttributes _fileAttributes;
+        private final ProtocolInfo _protocolInfo;
+        private final String _linkGroup;
 
-       /**
-        * Number of pools that would be able to serve the request if
-        * they had a copy of the file.
-        */
-       private int  _allowedPoolCount          = 0;
+        public PnfsFileLocation(FileAttributes fileAttributes,
+                                ProtocolInfo protocolInfo,
+                                String linkGroup)
+        {
+            _fileAttributes = fileAttributes;
+            _protocolInfo = protocolInfo;
+            _linkGroup    = linkGroup;
+        }
 
-      private boolean  _calculationDone       = false ;
+        /**
+         * Returns the partition used for the last result of
+         * selectReadPool.
+         */
+        public Partition getCurrentParameterSet()
+        {
+            return _partition;
+        }
 
-      private final FileAttributes _fileAttributes;
-      private final ProtocolInfo _protocolInfo ;
-      private final String _linkGroup          ;
+        /**
+         * Returns the result of a PSU match for this
+         * PnfsFileLocation.
+         */
+        public PoolPreferenceLevel[] match(DirectionType direction)
+        {
+            String hostName =
+                (_protocolInfo instanceof IpProtocolInfo)
+                ? ((IpProtocolInfo) _protocolInfo).getHosts()[0]
+                : null;
+            String protocol =
+                _protocolInfo.getProtocol() + "/" +
+                _protocolInfo.getMajorVersion() ;
+            return _selectionUnit.match(direction,
+                                        hostName,
+                                        protocol,
+                                        _fileAttributes.getStorageInfo(),
+                                        _linkGroup);
+        }
 
-       public PnfsFileLocation(FileAttributes fileAttributes,
-                               ProtocolInfo protocolInfo,
-                               String linkGroup)
-       {
-           _fileAttributes = fileAttributes;
-           _protocolInfo = protocolInfo;
-           _linkGroup    = linkGroup;
-       }
+        /**
+         * Returns all available read pools for this
+         * PnfsFileLocation. Read pools are grouped and ordered
+         * according to link preferences.
+         */
+        public List<List<PoolInfo>> getReadPools()
+            throws CacheException
+        {
+            Map<String,PoolInfo> onlineLocations =
+                _costModule.getPoolInfoAsMap(_fileAttributes.getLocations());
+            Function<String,PoolInfo> toPoolInfo =
+                Functions.forMap(onlineLocations, null);
 
-       public List<ClassicPartition> getListOfParameter()
-           throws CacheException
-       {
-           if (!_calculationDone) {
-               calculateFileAvailableMatrix();
-           }
-           return _listOfPartitions;
-       }
-
-       public ClassicPartition getCurrentParameterSet()
-           throws CacheException
-       {
-           if (!_calculationDone) {
-               calculateFileAvailableMatrix();
-           }
-           return _listOfPartitions.get(0);
-       }
-
-       public List<PoolCostCheckable> getOnlinePools()
-           throws CacheException
-       {
-           if (!_calculationDone) {
-               calculateFileAvailableMatrix();
-           }
-           return _onlinePools;
-       }
-
-       public int getAllowedPoolCount()
-           throws CacheException
-       {
-           if (!_calculationDone) {
-               calculateFileAvailableMatrix();
-           }
-           return _allowedPoolCount;
-       }
-
-       public List<List<PoolCostCheckable>> getFileAvailableMatrix()
-           throws CacheException
-       {
-           if (!_calculationDone) {
-               calculateFileAvailableMatrix();
-           }
-           return _allowedAndAvailableMatrix;
-       }
-      //
-      //   getFileAvailableList
-      //  -------------------------
-      //
-      //  expected  = getPoolsFromPnfs() ;
-      //  allowed[] = getAllowedFromConfiguration() ;
-      //
-      //   +----------------------------------------------------+
-      //   |  for i in  0,1,2,3,...                             |
-      //   |     result = intersection( expected , allowed[i] ) |
-      //   |     found  = CheckFileInPool( result)              |
-      //   |     if( found > 0 )break                           |
-      //   |     if( ! allowFallbackOnCost )break               |
-      //   |     if( minCost( found ) < MAX_COST )break         |
-      //   +----------------------------------------------------+
-      //   |                  found == 0                        |
-      //   |                      |                             |
-      //   |        yes           |             NO              |
-      //   |----------------------|-----------------------------|
-      //   | output[0] = empty    | [0] = SortCpuCost(found)    |
-      //   | output[1] = null     | [1] = null                  |
-      //   | output[2] = null     | [2] = null                  |
-      //   | output[3] = expected | [3] = expected              |
-      //   | output[4] = allowed  | [4] = allowed               |
-      //   +----------------------------------------------------+
-      //
-      //   preparePool2Pool
-      //  -------------------------
-      //
-      //  output[1] = SortCpuCost( CheckFileInPool( expected ) )
-      //
-      //   +----------------------------------------------------+
-      //   |                   output[0] > 0                    |
-      //   |                                                    |
-      //   |        yes              |             NO           |
-      //   |-------------------------|--------------------------|
-      //   | veto = Hash( output[0] )|                          |
-      //   |-------------------------|                          |
-      //   |for i in  0,1,2,3,.      | for i in  0,1,2,3,.      |
-      //   |  tmp = allowed[i]-veto  |   if(allowed[i]==0)cont  |
-      //   |  if( tmp == 0 )continue |                          |
-      //   |  out[2] =               |   out[2] =               |
-      //   |   SortCost(getCost(tmp))|     SortCost(getCost(    |
-      //   |                         |        allowed[i]))      |
-      //   |   break                 |   break                  |
-      //   +----------------------------------------------------+
-      //   |if(out[2] == 0)          |if(out[2] == 0)           |
-      //   |    out[2] = out[0]      |    out[2] = empty        |
-      //   +----------------------------------------------------+
-      //
-       /*
-        *   Input : _fileAttributes
-        *   Output :
-        *             _onlinePools
-        *             _allowedAndAvailableMatrix
-        *             _allowedAndAvailable
-        */
-       private void calculateFileAvailableMatrix()
-           throws CacheException
-       {
-         String hostName     = _protocolInfo instanceof IpProtocolInfo  ?((IpProtocolInfo)_protocolInfo).getHosts()[0] : null ;
-         String protocolString = _protocolInfo.getProtocol() + "/" + _protocolInfo.getMajorVersion() ;
-
-         Collection<String> expectedFromPnfs = _fileAttributes.getLocations();
-
-         _log.debug("calculateFileAvailableMatrix _expectedFromPnfs : {}",
-                    expectedFromPnfs);
-
-         //
-         // check if pools are up and file is really there.
-         // (returns unsorted list of costs)
-         //
-         _onlinePools = new ArrayList<PoolCostCheckable>();
-         for (String poolName: expectedFromPnfs) {
-             PoolCostCheckable cost = _costModule.getPoolCost(poolName, 0);
-             if (cost != null) {
-                 PoolCheckAdapter check = new PoolCheckAdapter(cost);
-                 check.setHave(true);
-                 check.setPnfsId(_fileAttributes.getPnfsId());
-                 _onlinePools.add(check);
-             }
-         }
-
-         _log.debug("calculateFileAvailableMatrix _onlinePools : {}",
-                    _onlinePools);
-
-         Map<String, PoolCostCheckable> availableHash =
-             new HashMap<String, PoolCostCheckable>() ;
-         for( PoolCostCheckable cost: _onlinePools ){
-             availableHash.put( cost.getPoolName() , cost ) ;
-         }
-         //
-         //  get the prioritized list of allowed pools for this
-         //  request. (We are only allowed to use the level-1
-         //  pools.
-         //
-         PoolPreferenceLevel [] level =
-             _selectionUnit.match( DirectionType.READ ,
-                                   hostName ,
-                                   protocolString ,
-                                   _fileAttributes.getStorageInfo(),
-                                   _linkGroup ) ;
-
-         _listOfPartitions          = new ArrayList<ClassicPartition>();
-         _allowedAndAvailableMatrix = new ArrayList<List<PoolCostCheckable>>();
-         _allowedPoolCount          = 0 ;
-
-         for( int prio = 0 ; prio < level.length ; prio++ ){
-
-            List<String> poolList = level[prio].getPoolList() ;
-
-            //
-            // get the allowed pools for this level and
-            // and add them to the result list only if
-            // they are really available.
-            //
-            _log.debug("calculateFileAvailableMatrix : db matrix[*,{}] {}",
-                       prio, poolList);
-
-            List<PoolCostCheckable> result =
-                new ArrayList<PoolCostCheckable>(poolList.size());
-            for (String poolName : poolList) {
-                PoolCostCheckable cost;
-                if ((cost = availableHash.get(poolName)) != null) {
-                    result.add(cost);
+            List<List<PoolInfo>> result = Lists.newArrayList();
+            for (PoolPreferenceLevel level: match(DirectionType.READ)) {
+                List<PoolInfo> pools =
+                    Lists.newArrayList(filter(transform(level.getPoolList(),
+                                                        toPoolInfo),
+                                              notNull()));
+                if (!pools.isEmpty()) {
+                    result.add(pools);
                 }
-                _allowedPoolCount++;
+            }
+            return result;
+        }
+
+        /**
+         * Returns a pool for writing a file of the given size
+         * described by this PnfsFileLocation.
+         */
+        public PoolInfo selectWritePool(long size)
+            throws CacheException, InterruptedException
+        {
+            PoolPreferenceLevel[] levels = match(DirectionType.WRITE);
+
+            if (levels.length == 0) {
+                throw new CacheException(19,
+                                         "No write pools configured for <" +
+                                         _fileAttributes.getStorageInfo() +
+                                         "> in the linkGroup " +
+                                         (_linkGroup == null ? "[none]" : _linkGroup));
             }
 
-            if (result.isEmpty()) {
-                continue;
+            for (PoolPreferenceLevel level: levels) {
+                List<PoolInfo> pools =
+                    _costModule.getPoolInfo(level.getPoolList());
+                if (!pools.isEmpty()) {
+                    Partition partition =
+                        _partitionManager.getPartition(level.getTag());
+                    return partition.selectWritePool(_costModule, pools, size);
+                }
             }
 
-            ClassicPartition partition =
-                _partitionManager.getPartition(level[prio].getTag()) ;
-            _listOfPartitions.add(partition);
+            throw new CacheException(20,
+                                     "No write pool available for <" +  _fileAttributes.getStorageInfo() +
+                                     "> in the linkGroup " +
+                                     (_linkGroup == null ? "[none]" : _linkGroup));
+        }
 
-            sortByCost(result, false, partition);
+        /**
+         * Returns a pool for reading the file.
+         *
+         * The partition used for the pool selection is available after
+         * this method returns by calling getCurrentParameterSet().
+         *
+         * @throw FileNotInCacheException if the file is not on any
+         *        pool that is online.
+         * @throw PermissionDeniedCacheException if the file is is not
+         *        on a pool from which we are allowed to read it
+         * @throw CostExceededException if a read pool is available, but
+         *        it exceed cost limits; the exception contains information
+         *        about how the caller may recover
+         * @throw
+         */
+        public PoolInfo selectReadPool()
+            throws CacheException
+        {
+            Collection<String> locations = _fileAttributes.getLocations();
+            _log.debug("[read] Expected from pnfs: {}", locations);
 
-            _log.debug("calculateFileAvailableMatrix : av matrix[*,{}] {}",
-                       prio, result);
+            Map<String,PoolInfo> onlinePools =
+                _costModule.getPoolInfoAsMap(locations);
+            _log.debug("[read] Online pools: {}", onlinePools);
 
-            _allowedAndAvailableMatrix.add(result);
-         }
-         //
-         // just in case, let us define a default parameter set
-         //
-         if( _listOfPartitions.isEmpty() )
-             _listOfPartitions.add( _partitionManager.getDefaultPartition() ) ;
-         //
-         _calculationDone = true ;
-         return  ;
-      }
-
-       public List<PoolCostCheckable> getCostSortedAvailable()
-           throws CacheException
-       {
-           //
-           // here we don't now exactly which parameter set to use.
-           //
-           if (!_calculationDone)
-               calculateFileAvailableMatrix();
-           List<PoolCostCheckable> list =
-               new ArrayList<PoolCostCheckable>(getOnlinePools());
-           sortByCost(list, false);
-           return list;
-       }
-
-       public List<List<PoolCostCheckable>>
-           getFetchPoolMatrix(DirectionType       mode ,        /* cache, p2p */
-                              long         filesize  )
-           throws CacheException, InterruptedException
-       {
-
-         String hostName     =
-             _protocolInfo instanceof IpProtocolInfo ?
-             ((IpProtocolInfo) _protocolInfo).getHosts()[0] :
-             null ;
-
-
-         PoolPreferenceLevel [] level =
-             _selectionUnit.match( mode ,
-                                   hostName ,
-                                   _protocolInfo.getProtocol()+"/"+_protocolInfo.getMajorVersion() ,
-                                   _fileAttributes.getStorageInfo(),
-                                   _linkGroup) ;
-         //
-         //
-         if( level.length == 0 )
-             return Collections.EMPTY_LIST;
-
-         //
-         // Copy the matrix into a linear HashMap(keys).
-         // Exclude pools which contain the file.
-         //
-         List<PoolCostCheckable> online = getOnlinePools();
-         Map<String, PoolCostCheckable> poolMap =
-             new HashMap<String,PoolCostCheckable>();
-         Set<String> poolAvailableSet =
-             new HashSet<String>();
-         for (PoolCheckable pool: online)
-             poolAvailableSet.add(pool.getPoolName());
-         for (int prio = 0; prio < level.length; prio++) {
-            for (String poolName : level[prio].getPoolList()) {
-               //
-               // skip if pool already contains the file.
-               //
-               if (poolAvailableSet.contains(poolName))
-                   continue;
-
-               poolMap.put(poolName, null);
+            /* Is the file in any of the online pools?
+             */
+            if (onlinePools.isEmpty()){
+                throw new FileNotInCacheException("File not in any pool");
             }
-         }
-         //
-         // Add the costs to the pool list.
-         //
-         for (PoolCostCheckable cost :
-                  queryPoolsForCost(poolMap.keySet(), filesize)) {
-             poolMap.put(cost.getPoolName(), cost);
-         }
-         //
-         // Build a new matrix containing the Costs.
-         //
-         _listOfPartitions = new ArrayList<ClassicPartition>();
-         List<List<PoolCostCheckable>> costMatrix =
-             new ArrayList<List<PoolCostCheckable>>();
 
-         for (PoolPreferenceLevel preferenceLevel: level) {
-             //
-             // skip empty level
-             //
-             ClassicPartition partition =
-                 _partitionManager.getPartition(preferenceLevel.getTag());
-            _listOfPartitions.add(partition);
+            /* Get the prioritized list of allowed pools for this
+             * request.
+             */
+            PoolPreferenceLevel[] level = match(DirectionType.READ);
 
-             List<String> poolList = preferenceLevel.getPoolList() ;
-             if( poolList.isEmpty() )continue ;
+            /* An empty array indicates that no links were found that
+             * could serve the request. No reason to try any further;
+             * not even a stage or P2P would help.
+             */
+            if (level.length == 0) {
+                throw new CacheException("No links for this request");
+            }
 
-             List<PoolCostCheckable> row = new ArrayList<PoolCostCheckable>(poolList.size());
-             for (String pool : poolList) {
-                PoolCostCheckable cost = poolMap.get(pool);
-                if (cost != null)
-                    row.add(cost);
-             }
-             //
-             // skip if non of the pools is available
-             //
-             if( row.isEmpty() )continue ;
-             //
-             // sort according to (cpu & space) cost
-             //
-             sortByCost(row, true, partition);
-             //
-             // and add it to the matrix
-             //
-             costMatrix.add( row ) ;
-         }
+            CostException fallback = null;
+            for (int prio = 0; prio < level.length; prio++) {
+                List<String> poolNames = level[prio].getPoolList();
+                _log.debug("[read] Allowed pools at level {}: {}",
+                           prio, poolNames);
 
-         return costMatrix ;
-       }
+                /* Reduce the set to the pools that are supposed to
+                 * contain the file and which are online.
+                 */
+                List<PoolInfo> pools = new ArrayList<PoolInfo>(poolNames.size());
+                for (String poolName: poolNames) {
+                    PoolInfo info = onlinePools.get(poolName);
+                    if (info != null) {
+                        pools.add(info);
+                    }
+                }
+                _log.debug("[read] Available pools at level {}: {}",
+                           prio, pools);
 
-      public List<PoolCostCheckable> getStorePoolList(long filesize)
-          throws CacheException, InterruptedException
-      {
-         String  hostName    =
-                    _protocolInfo instanceof IpProtocolInfo ?
-                    ((IpProtocolInfo)_protocolInfo).getHosts()[0] :
-                    null ;
-         int  maxDepth      = 9999 ;
-         PoolPreferenceLevel [] level =
-             _selectionUnit.match( DirectionType.WRITE ,
-                                   hostName ,
-                                   _protocolInfo.getProtocol()+"/"+_protocolInfo.getMajorVersion() ,
-                                   _fileAttributes.getStorageInfo(),
-                                   _linkGroup ) ;
-         //
-         // this is the final knock out.
-         //
-         if (level.length == 0) {
-             throw new CacheException(19,
-                                      "No write pools configured for <" +
-                                      _fileAttributes.getStorageInfo() +
-                                      "> in the linkGroup " +
-                                      (_linkGroup == null ? "[none]" : _linkGroup));
-         }
+                /* The caller may want to know which partition we used
+                 * to select a pool.
+                 */
+                _partition =
+                    _partitionManager.getPartition(level[prio].getTag());
 
-         List<PoolCostCheckable> costs = null ;
+                /* Fallback to next link if current link doesn't point
+                 * to any available pools.
+                 */
+                if (pools.isEmpty()) {
+                    continue;
+                }
 
-         ClassicPartition partition = null;
+                /* The actual pool selection is delegated to the
+                 * Partition.
+                 */
+                try {
+                    return _partition.selectReadPool(_costModule, pools,
+                                                     _fileAttributes.getPnfsId());
+                } catch (CostException e) {
+                    if (!e.shouldFallBack()) {
+                        throw e;
+                    }
+                    fallback = e;
+                }
+            }
 
-         for( int prio = 0 ; prio < Math.min( maxDepth , level.length ) ; prio++ ){
+            /* We were asked to fall back, but all available links were
+             * exhausted. Let the caller deal with it.
+             */
+            if (fallback != null) {
+                throw fallback;
+            }
 
-            costs     = queryPoolsForCost( level[prio].getPoolList() , filesize ) ;
+            /* None of the pools we were allowed to read from were
+             * online or had the file.
+             */
+            throw new PermissionDeniedCacheException("File is online, but not in read-allowed pool");
+        }
 
-            partition = _partitionManager.getPartition(level[prio].getTag()) ;
+        public Partition.P2pPair selectPool2Pool(boolean force)
+            throws CacheException
+        {
+            Collection<String> locations = _fileAttributes.getLocations();
+            _log.debug("[p2p] Expected source from pnfs: {}", locations);
+            Map<String,PoolInfo> sources =
+                _costModule.getPoolInfoAsMap(locations);
+            _log.debug("[p2p] Online source pools: {}", sources.values());
 
-            if( !costs.isEmpty() ) break ;
-         }
+            if (sources.size() == 0) {
+                throw new CacheException("P2P denied: No source pools available");
+            }
 
-         if( costs == null || costs.isEmpty() )
-            throw new CacheException( 20 ,
-                                      "No write pool available for <"+ _fileAttributes.getStorageInfo() +
-                                "> in the linkGroup " +
-                                ( _linkGroup == null ? "[none]" : _linkGroup));
+            PoolPreferenceLevel[] levels = match(DirectionType.P2P);
+            for (PoolPreferenceLevel level: levels) {
+                List<PoolInfo> pools =
+                    _costModule.getPoolInfo(filter(level.getPoolList(),
+                                                   not(in(sources.keySet()))));
+                if (!pools.isEmpty()) {
+                    _log.debug("[p2p] Online destination candidates: {}", pools);
+                    Partition partition =
+                        _partitionManager.getPartition(level.getTag());
+                    return partition.selectPool2Pool(_costModule,
+                                                     Lists.newArrayList(sources.values()),
+                                                     pools,
+                                                     _fileAttributes.getSize(),
+                                                     force);
+                }
+            }
 
-         sortByCost( costs , true , partition ) ;
+            throw new PermissionDeniedCacheException("P2P denied: No pool candidates available/configured/left for p2p or file already everywhere");
+        }
 
-         PoolCostCheckable check = costs.get(0) ;
+        public PoolInfo selectStagePool(String previousPool, String previousHost)
+            throws CacheException
+        {
+            Collection<String> locations = _fileAttributes.getLocations();
+            _log.debug("[stage] Existing locations of the file: {}", locations);
 
-         double lowestCost = calculateCost( check , true , partition ) ;
+            CostException fallback = null;
+            for (PoolPreferenceLevel level: match(DirectionType.CACHE)) {
+                try {
+                    List<PoolInfo> pools =
+                        _costModule.getPoolInfo(filter(level.getPoolList(),
+                                                       not(in(locations))));
+                    if (!pools.isEmpty()) {
+                        _log.debug("[stage] Online stage candidates: {}", pools);
+                        Partition partition =
+                            _partitionManager.getPartition(level.getTag());
+                        return partition.selectStagePool(_costModule, pools,
+                                                         previousPool,
+                                                         previousHost,
+                                                         _fileAttributes.getSize());
+                    }
+                } catch (CostException e) {
+                    if (!e.shouldFallBack()) {
+                        throw e;
+                    }
+                    fallback = e;
+                }
+            }
 
-         /* Notice that
-          *
-          *    !(lowestCost  <= _maxWriteCost)  != (lowerCost > _maxWriteCost)
-          *
-          * when using floating point calculations!
-          */
-         if( !(lowestCost  <= _maxWriteCost) )
-             throw new
-             CacheException( 21 , "Best pool <"+check.getPoolName()+
-                                  "> too high : "+lowestCost ) ;
+            /* We were asked to fall back, but all available links were
+             * exhausted. Let the caller deal with it.
+             */
+            if (fallback != null) {
+                throw fallback;
+            }
 
-         return costs ;
-      }
+            throw new CacheException(149, "No pool candidates available/configured/left for stage");
+        }
 
-       public void sortByCost(List<PoolCostCheckable> list, boolean cpuAndSize)
-           throws CacheException
-       {
-           sortByCost(list, cpuAndSize, getCurrentParameterSet());
-       }
+        // FIXME: There is a fair amount of overlap between this method
+        // and getFileLocality.
+        public PoolInfo selectPinPool()
+            throws CacheException
+        {
+            /* This is the same arbitrary but deterministic ordering we
+             * use for min cost cut handling.
+             */
+            Ordering<String> ordering =
+                new Ordering<String>()
+                {
+                    final String id = _fileAttributes.getPnfsId().toString();
 
-       public void sortByCost(List<PoolCostCheckable> list, boolean cpuAndSize,
-                              ClassicPartition partition)
-       {
-           ssortByCost(list, cpuAndSize, partition);
-       }
-   }
+                    public int compare(String pool1, String pool2)
+                    {
+                        String s1 = id + pool1;
+                        String s2 = id + pool2;
+                        return Ints.compare(s1.hashCode(), s2.hashCode());
+                    }
+                };
 
-    private void ssortByCost(List<PoolCostCheckable> list, boolean cpuAndSize,
-                            ClassicPartition partition)
+            Collection<String> locations = _fileAttributes.getLocations();
+            _log.debug("[pin] Expected from pnfs: {}", locations);
+
+            Map<String,PoolInfo> onlinePools =
+                _costModule.getPoolInfoAsMap(locations);
+            _log.debug("[pin] Online pools: {}", onlinePools.values());
+
+            boolean isRequestSatisfiable = false;
+            for (PoolPreferenceLevel level: match(DirectionType.READ)) {
+                List<String> pools = level.getPoolList();
+                if (!pools.isEmpty()) {
+                    /* Now we know that the file could be pinned/read if
+                     * any of these pools have the file.
+                     */
+                    isRequestSatisfiable = true;
+                    Iterable<String> pinnablePools =
+                        filter(pools, in(onlinePools.keySet()));
+                    if (!isEmpty(pinnablePools)) {
+                        return onlinePools.get(ordering.min(pinnablePools));
+                    }
+                }
+            }
+
+            if (isRequestSatisfiable &&
+                (!onlinePools.isEmpty() || _fileAttributes.getStorageInfo().isStored())) {
+                throw new FileNotOnlineCacheException("File is not on online");
+            } else {
+                throw new FileNotInCacheException("File is unavailable");
+            }
+        }
+    }
+
+    public Collection<PoolCostCheckable>
+        queryPoolsByLinkName(String linkName, long filesize)
     {
-        Collections.shuffle(list);
-        Collections.sort(list, new CostComparator(cpuAndSize, partition));
-    }
-
-    public Comparator<PoolCostCheckable>
-        getCostComparator(boolean both, ClassicPartition partition)
-    {
-        return new CostComparator(both, partition);
-    }
-
-   public class CostComparator implements Comparator<PoolCostCheckable> {
-
-       private final boolean _useBoth;
-       private final ClassicPartition _partition;
-       private CostComparator(boolean useBoth, ClassicPartition partition) {
-         _useBoth = useBoth;
-         _partition = partition;
-       }
-
-       @Override
-       public int compare(PoolCostCheckable check1, PoolCostCheckable check2)
-       {
-           return Double.compare(calculateCost(check1, _useBoth, _partition),
-                                 calculateCost(check2, _useBoth, _partition));
-       }
-    }
-    private double calculateCost( PoolCostCheckable checkable , boolean useBoth , ClassicPartition partition){
-       if( useBoth ){
-          return Math.abs(checkable.getSpaceCost())       * partition._spaceCostFactor +
-                 Math.abs(checkable.getPerformanceCost()) * partition._performanceCostFactor ;
-       }else{
-          return Math.abs(checkable.getPerformanceCost()) * partition._performanceCostFactor ;
-       }
-    }
-    /*
-    public double getMinPerformanceCost( List list ){
-       double cost = 1000000.0 ;
-       for( int i = 0 ; i < list.size() ; i++ ){
-          double x = ((PoolCostCheckable)(list.get(i))).getPerformanceCost() ;
-          cost = Math.min( cost , x ) ;
-       }
-       return cost ;
-    }
-    */
-
-    public List<PoolCostCheckable> queryPoolsByLinkName(String linkName, long filesize) {
-
-        PoolSelectionUnit.SelectionLink link = _selectionUnit.getLinkByName(linkName);
-        ClassicPartition partition = _partitionManager.getPartition(link.getTag());
-
-        Collection<String> poolNames = transform(link.pools(),
-            new Function<PoolSelectionUnit.SelectionPool, String>()   {
-
+        Function<PoolSelectionUnit.SelectionPool,String> getName =
+            new Function<PoolSelectionUnit.SelectionPool,String>() {
                 @Override
                 public String apply(PoolSelectionUnit.SelectionPool pool) {
                     return pool.getName();
                 }
-            });
-
-        List<PoolCostCheckable> list = queryPoolsForCost(poolNames, filesize);
-
-        ssortByCost(list, true, partition);
-
-        return list;
+            };
+        PoolSelectionUnit.SelectionLink link =
+            _selectionUnit.getLinkByName(linkName);
+        return queryPoolsForCost(transform(link.pools(), getName), filesize);
     }
 
-    private List<PoolCostCheckable> queryPoolsForCost(Collection<String> pools,
+    private List<PoolCostCheckable> queryPoolsForCost(Iterable<String> pools,
                                                       long filesize)
     {
         List<PoolCostCheckable> list = new ArrayList<PoolCostCheckable>();

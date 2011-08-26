@@ -4,8 +4,11 @@ package diskCacheV111.poolManager ;
 
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolCostCheckable;
+import org.dcache.poolmanager.PoolInfo;
 import dmg.cells.nucleus.CellMessage;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -43,18 +46,41 @@ public interface CostModule {
     */
    public PoolCostInfo getPoolCostInfo(String poolName);
 
-   /**
-    * Obtain the n-percentile performance cost, that is the cost of the nth pool when
-    * they have been sorted in increasing performance cost and
-    * n = floor( fraction * numberOfPools).
-    * @throws IllegalArgumentException if fraction <= 0 or >= 1
-    * @return the n-th percentile performance cost, or 0 if no pools are known.
-    */
-   public double getPoolsPercentilePerformanceCost( double fraction);
+    /**
+     * Obtain the PoolInfo associated with a named list of pools.
+     *
+     * Unknown or disabled pools are skipped.
+     *
+     * @param pools pool names
+     * @return List of PostInfo corresponding to the named pools
+     */
+    List<PoolInfo> getPoolInfo(Iterable<String> pools);
 
-   /**
-    * Obtain PoolCostInfo of all known pools
-    * @return Collection of all PoolCostInfos
-    */
-   public Collection<PoolCostInfo> getPoolCostInfos();
+    /**
+     * Obtain the PoolInfo associated with a named list of pools.
+     *
+     * Unknown or disabled pools are skipped.
+     *
+     * @param pools pool names
+     * @return Map from pool name to PostInfo corresponding to the
+     * named pools
+     */
+    Map<String,PoolInfo> getPoolInfoAsMap(Iterable<String> pools);
+
+    /**
+     * Obtain the n-percentile performance cost, that is the cost of
+     * the nth pool when they have been sorted in increasing
+     * performance cost and n = floor( fraction * numberOfPools).
+     *
+     * @throws IllegalArgumentException if fraction <= 0 or >= 1
+     * @return the n-th percentile performance cost, or 0 if no pools are known.
+     */
+    double getPoolsPercentilePerformanceCost( double fraction);
+
+    /**
+     * Obtain PoolCostInfo of all known pools
+     *
+     * @return Collection of all PoolCostInfos
+     */
+    Collection<PoolCostInfo> getPoolCostInfos();
 }
