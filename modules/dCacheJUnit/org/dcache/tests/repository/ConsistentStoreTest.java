@@ -286,8 +286,9 @@ public class ConsistentStoreTest {
 
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test
     public void testRemoveMissing() throws Exception {
+//        trying to remove a non-existing file - nothing should happen
         PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
         _repositoryEntryHealer.remove(pnfsId);
     }
