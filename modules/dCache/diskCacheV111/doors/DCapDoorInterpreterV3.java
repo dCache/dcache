@@ -189,7 +189,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _isAccessLatencyOverwriteAllowed = false;
     private boolean _isRetentionPolicyOverwriteAllowed = false;
 
-    public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw, Subject subject)
+    public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw,
+            Subject subject, InetAddress clientAddress)
         throws ACLException, IOException
     {
         _out  = pw ;
@@ -200,6 +201,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                             subject.getPublicCredentials(),
                                             subject.getPrivateCredentials());
 
+        _clientAddress = clientAddress;
         String auth = _args.getOpt("authorization") ;
         _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
         _authorizationRequired = ( auth != null ) &&
@@ -272,11 +274,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
-
-        // TODO: This should be the source IP of the request, however
-        // this information is currently unavailable in
-        // DCapDoorInterpreterV3.
-        _clientAddress = InetAddress.getLocalHost();
 
         if (_args.getOpt("readOnly") != null)
             _log.debug("Door is configured as read-only");
@@ -1811,10 +1808,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int   port    = Integer.parseInt( _vargs.argv(3) ) ;
 
             StringTokenizer st = new StringTokenizer( _vargs.argv(2) , "," ) ;
-            _hosts    = new String[st.countTokens()]  ;
-            for( int i = 0 ; i < _hosts.length ; i++ )_hosts[i] = st.nextToken() ;
-            //
-            //
+
+            _passive = args.getOpt("passive") != null;
+            if (_passive) {
+                _hosts = new String[]{_clientAddress.getHostAddress()};
+            } else {
+                _hosts = new String[st.countTokens()];
+                for (int i = 0; i < _hosts.length; i++) {
+                    _hosts[i] = st.nextToken();
+                }
+            }
+
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
 
@@ -1832,7 +1836,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _truncFile      = args.getOpt("truncate");
             _truncate       = ( _truncFile != null ) && _truncateAllowed  ;
 
-            _passive        = args.getOpt("passive") != null;
             _protocolInfo.isPassive(_passive);
             _accessLatency = args.getOpt("access-latency");
             _retentionPolicy = args.getOpt("retention-policy");
