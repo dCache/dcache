@@ -112,29 +112,31 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             ChunkedInput responseContent;
             long fileSize = mover.getFileSize();
 
-            HttpByteRange range = parseHttpRange(request,
+            List<HttpByteRange> ranges = parseHttpRange(request,
                                                  0,
                                                  fileSize-1);
 
-            if (range == null) {
-
+            if (ranges == null || ranges.isEmpty()) {
                 responseContent = mover.read(request.getUri());
                 sendHTTPFullHeader(context, event, fileSize);
-
+                future = event.getChannel().write(responseContent);
             } else {
 
-                responseContent = mover.read(request.getUri(),
-                                              range.getLower(),
-                                              range.getUpper());
-                sendHTTPPartialHeader(context,
-                                      event,
-                                      range.getLower(),
-                                      range.getUpper(),
-                                      fileSize);
+                sendHTTPMultipartHeader(context, event);
+                for(HttpByteRange range: ranges) {
+                    responseContent = mover.read(request.getUri(),
+                            range.getLower(),
+                            range.getUpper());
+                    sendHTTPMultipartFragment(context,
+                            event,
+                            range.getLower(),
+                            range.getUpper(),
+                            fileSize);
+                    future = event.getChannel().write(responseContent);
+                }
+                sendHTTPMultipartEnd(context, event);
 
             }
-
-            future = event.getChannel().write(responseContent);
 
         } catch (java.text.ParseException pe) {
             future = sendHTTPError(context, event, BAD_REQUEST, pe.getMessage());

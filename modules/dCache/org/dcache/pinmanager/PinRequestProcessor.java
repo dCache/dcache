@@ -237,7 +237,7 @@ public class PinRequestProcessor
     private void retry(final PinTask task, long delay)
     {
         if (!task.isValidIn(delay)) {
-            fail(task, CacheException.TIMEOUT, "Request timed out");
+            fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded");
         } else {
             _executor.schedule(new Runnable() {
                     public void run() {
@@ -545,7 +545,7 @@ public class PinRequestProcessor
                                 * because the pool is overloaded.
                                 */
                                fail(task, CacheException.TIMEOUT,
-                                    "Request timed out");
+                                    "No reply from " + path);
                            }
                        });
     }

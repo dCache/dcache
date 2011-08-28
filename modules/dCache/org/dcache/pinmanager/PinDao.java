@@ -4,6 +4,7 @@ import java.util.Collection;
 import javax.security.auth.Subject;
 import diskCacheV111.util.PnfsId;
 import org.dcache.pinmanager.model.Pin;
+import com.google.common.base.Predicate;
 
 public interface PinDao
 {
@@ -25,4 +26,6 @@ public interface PinDao
     void expirePins();
 
     boolean hasSharedSticky(Pin pin);
+
+    boolean all(Pin.State state, Predicate<Pin> f);
 }
