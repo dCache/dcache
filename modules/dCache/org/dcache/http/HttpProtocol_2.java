@@ -261,6 +261,8 @@ public class HttpProtocol_2 implements MoverProtocol
         HttpDoorUrlInfoMessage httpDoorMessage =
             new HttpDoorUrlInfoMessage(pnfsId.getId(), targetURI.toString());
 
+        httpDoorMessage.setId(_protocolInfo.getSessionId());
+
         _endpoint.sendMessage(new CellMessage(cellPath, httpDoorMessage));
 
     }
