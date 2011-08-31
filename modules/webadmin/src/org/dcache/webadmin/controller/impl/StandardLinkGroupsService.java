@@ -1,15 +1,14 @@
 package org.dcache.webadmin.controller.impl;
 
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.dcache.webadmin.model.util.AccessLatency;
-import org.dcache.webadmin.model.util.RetentionPolicy;
 import org.dcache.webadmin.controller.LinkGroupsService;
 import org.dcache.webadmin.controller.exceptions.LinkGroupsServiceException;
-import org.dcache.webadmin.model.businessobjects.LinkGroup;
-import org.dcache.webadmin.model.businessobjects.SpaceReservation;
+import org.dcache.webadmin.controller.util.BeanDataMapper;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
@@ -19,10 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Does the mapping between linkgroups and spacereservations of the model layer
- * and the beans of the view layer. It maps linkgroups allowed retention policies
- * and access latencies into the "allowed" String by using a lowercase shortcut
- * for a false and an uppercase one for a true.
+ * Offers services for getting information on LinkGroups and Space Tokens
  * @author jans
  */
 public class StandardLinkGroupsService implements LinkGroupsService {
@@ -40,26 +36,26 @@ public class StandardLinkGroupsService implements LinkGroupsService {
         try {
             Set<LinkGroup> linkGroups = getLinkGroupsDAO().getLinkGroups();
             _log.debug("returned link Groups: {} ", linkGroups.size());
-            List<LinkGroupBean> linkGroupBeans = new ArrayList<LinkGroupBean>();
-            for (LinkGroup linkGroup : linkGroups) {
-                LinkGroupBean newBean = new LinkGroupBean();
-                newBean.setId(linkGroup.getId());
-                newBean.setAllowed(mapAllowanceFlags(linkGroup));
-                newBean.setFree(linkGroup.getFree());
-                newBean.setName(linkGroup.getName());
-                newBean.setAvailable(linkGroup.getAvailable());
-                newBean.setReserved(linkGroup.getReserved());
-                newBean.setTotal(linkGroup.getTotal());
-                newBean.setVos(linkGroup.getVos());
-                newBean.setReservations(createReservations(linkGroup));
-                linkGroupBeans.add(newBean);
-            }
+            Set<Space> reservations = getLinkGroupsDAO().getSpaceReservations();
+            _log.debug("returned spacereservations: {} ", reservations.size());
+            List<SpaceReservationBean> reservationBeans = createReservations(reservations);
+            List<LinkGroupBean> linkGroupBeans = createLinkGroups(linkGroups);
+            mapReservationsToLinkGroups(reservationBeans, linkGroupBeans);
             Collections.sort(linkGroupBeans);
             _log.debug("returned linkGroupBeans: {}", linkGroupBeans.size());
             return linkGroupBeans;
         } catch (DAOException e) {
             throw new LinkGroupsServiceException(e);
         }
+    }
+
+    private List<LinkGroupBean> createLinkGroups(Set<LinkGroup> linkGroups) {
+        List<LinkGroupBean> linkGroupBeans = new ArrayList<LinkGroupBean>();
+        for (LinkGroup linkGroup : linkGroups) {
+            LinkGroupBean newBean = BeanDataMapper.linkGroupModelToView(linkGroup);
+            linkGroupBeans.add(newBean);
+        }
+        return linkGroupBeans;
     }
 
     private LinkGroupsDAO getLinkGroupsDAO() {
@@ -70,60 +66,30 @@ public class StandardLinkGroupsService implements LinkGroupsService {
         _daoFactory = daoFactory;
     }
 
-    private String mapAllowanceFlags(LinkGroup linkGroup) {
-        String result = (linkGroup.isOnlineAllowed()
-                ? AccessLatency.ONLINE.getShortcut().toUpperCase()
-                : AccessLatency.ONLINE.getShortcut().toLowerCase()) +
-                (linkGroup.isNearlineAllowed()
-                ? AccessLatency.NEARLINE.getShortcut().toUpperCase()
-                : AccessLatency.NEARLINE.getShortcut().toLowerCase()) +
-                (linkGroup.isReplicaAllowed()
-                ? RetentionPolicy.REPLICA.getShortcut().toUpperCase()
-                : RetentionPolicy.REPLICA.getShortcut().toLowerCase()) +
-                (linkGroup.isCustodialAllowed()
-                ? RetentionPolicy.CUSTODIAL.getShortcut().toUpperCase()
-                : RetentionPolicy.CUSTODIAL.getShortcut().toLowerCase());
-        return result;
-    }
-
-    private List<SpaceReservationBean> createReservations(LinkGroup linkGroup) {
-        List<SpaceReservationBean> reservations = new ArrayList<SpaceReservationBean>();
-        for (SpaceReservation reservation : linkGroup.getSpaceReservations()) {
-            SpaceReservationBean newReservation = new SpaceReservationBean();
-            newReservation.setAllocatedSpace(reservation.getAllocatedSpace());
-            newReservation.setCreated(reservation.getCreated());
-            newReservation.setDescription(reservation.getDescription());
-//                    newReservation.setExpiration(reservation.g)TODO Info doesn't provide
-            newReservation.setId(reservation.getId());
-//                    newReservation.setLifetime(reservation.ge)TODO Info doesn't provide
-            newReservation.setLinkGroupRef(reservation.getLinkGroupRef());
-            newReservation.setSize(reservation.getTotalSpace());
-            newReservation.setState(reservation.getState());
-            newReservation.setStorage(mapReservationAllowanceFlags(reservation));
-            newReservation.setUsedSpace(reservation.getUsedSpace());
-            newReservation.setVogroup(reservation.getVogroup());
-            reservations.add(newReservation);
+    private List<SpaceReservationBean> createReservations(Set<Space> reservations) {
+        List<SpaceReservationBean> reservationBeans = new ArrayList<SpaceReservationBean>();
+        for (Space reservation : reservations) {
+            SpaceReservationBean newReservation =
+                    BeanDataMapper.spaceReservationModelToView(reservation);
+            reservationBeans.add(newReservation);
         }
-        return reservations;
+        return reservationBeans;
     }
 
-    private String mapReservationAllowanceFlags(SpaceReservation reservation) {
-        String result = mapAccessLatency(reservation.getAccessLatency()) +
-                mapRetentionPolicy(reservation.getRetentionPolicy());
-        return result;
-    }
-
-    private String mapAccessLatency(AccessLatency accessLatency) {
-        if (accessLatency != null) {
-            return accessLatency.getShortcut();
+    private void mapReservationsToLinkGroups(List<SpaceReservationBean> reservations,
+            List<LinkGroupBean> linkGroups) {
+//        only those reservations that have an linkgroupref set are mapped - others
+//        get lost -- normally this should not occour anyway, so skipping check,
+//        if all get mapped!
+        for (LinkGroupBean linkGroup : linkGroups) {
+            _log.debug("Linkgroup id: {}", linkGroup.getId());
+            for (SpaceReservationBean reservation : reservations) {
+                _log.debug("Reservation linkgroupref: {}", reservation.getLinkGroupRef());
+                if (reservation.belongsTo(linkGroup)) {
+                    _log.debug("Reservation added to Linkgroup");
+                    linkGroup.addSpaceReservation(reservation);
+                }
+            }
         }
-        return "";
-    }
-
-    private String mapRetentionPolicy(RetentionPolicy retentionPolicy) {
-        if (retentionPolicy != null) {
-            return retentionPolicy.getShortcut();
-        }
-        return "";
     }
 }

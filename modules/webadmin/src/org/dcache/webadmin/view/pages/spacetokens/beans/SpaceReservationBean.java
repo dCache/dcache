@@ -1,6 +1,8 @@
 package org.dcache.webadmin.view.pages.spacetokens.beans;
 
 import java.io.Serializable;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import org.dcache.webadmin.view.util.DiskSpaceUnit;
 
 /**
@@ -11,7 +13,8 @@ public class SpaceReservationBean implements Serializable {
 
     private String _id = "";
     private String _description = "";
-    private String _linkGroupRef = "";
+//  -1 means not assigend yet
+    private long _linkGroupRef = -1;
     private String _storage = "";
     private String _vogroup = "";
     private String _state = "";
@@ -19,8 +22,8 @@ public class SpaceReservationBean implements Serializable {
     private long _usedSpace;
     private long _allocatedSpace;
     private String _created = "";
-    private String _lifetime = "";
-    private String _expiration = "";
+    private long _lifetime = 0;
+    private long _expiration = 0;
     private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
 
     public long getAllocatedSpace() {
@@ -48,10 +51,14 @@ public class SpaceReservationBean implements Serializable {
     }
 
     public String getExpiration() {
-        return _expiration;
+        if (_expiration != 0) {
+            return _expiration == -1
+                    ? "NEVER" : new Date(_expiration).toString();
+        }
+        return "UNKNOWN";
     }
 
-    public void setExpiration(String expiration) {
+    public void setExpiration(long expiration) {
         _expiration = expiration;
     }
 
@@ -63,19 +70,34 @@ public class SpaceReservationBean implements Serializable {
         _id = id;
     }
 
-    public String getLifetime() {
-        return _lifetime;
+    public String getLifetime(TimeUnit unit) {
+        if (_lifetime != 0) {
+            return _lifetime == -1 ? "NEVER"
+                    : Long.toString(unit.convert(_lifetime, TimeUnit.MILLISECONDS));
+        }
+        return "UNKNOWN";
     }
 
-    public void setLifetime(String lifetime) {
+    public void setLifetime(long lifetime) {
         _lifetime = lifetime;
     }
 
-    public String getLinkGroupRef() {
+    public boolean belongsTo(LinkGroupBean linkGroup) {
+        if (isAssignedToALinkGroup() && linkGroup.hasId()) {
+            return linkGroup.getId() == this.getLinkGroupRef();
+        }
+        return false;
+    }
+
+    public boolean isAssignedToALinkGroup() {
+        return _linkGroupRef != -1;
+    }
+
+    public long getLinkGroupRef() {
         return _linkGroupRef;
     }
 
-    public void setLinkGroupRef(String linkGroupId) {
+    public void setLinkGroupRef(long linkGroupId) {
         _linkGroupRef = linkGroupId;
     }
 

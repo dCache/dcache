@@ -72,7 +72,7 @@ public class SpaceTokens extends BasePage implements AuthenticatedWebPage {
             };
             linkGroupName.add(new Label("nameMessage", linkGroup.getName()));
             item.add(linkGroupName);
-            item.add(new Label("id", linkGroup.getId()));
+            item.add(new Label("id", Long.toString(linkGroup.getId())));
             item.add(new Label("allowed", linkGroup.getAllowed()));
             item.add(new Label("vo", linkGroup.getVos()));
             item.add(new Label("availableSpace", Long.valueOf(

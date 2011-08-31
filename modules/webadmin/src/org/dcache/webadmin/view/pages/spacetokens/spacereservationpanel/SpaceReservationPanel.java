@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages.spacetokens.spacereservationpanel;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.model.IModel;
@@ -34,7 +35,7 @@ public class SpaceReservationPanel extends BasePanel {
                 SpaceReservationBean spaceReservation = item.getModelObject();
                 item.add(new Label("id", spaceReservation.getId()));
                 item.add(new Label("description", spaceReservation.getDescription()));
-                item.add(new Label("linkGroupId", spaceReservation.getLinkGroupRef()));
+                item.add(new Label("linkGroupId", Long.toString(spaceReservation.getLinkGroupRef())));
                 item.add(new Label("storage", spaceReservation.getStorage()));
                 item.add(new Label("vogroup", spaceReservation.getVogroup()));
                 item.add(new Label("state", spaceReservation.getState()));
@@ -45,7 +46,7 @@ public class SpaceReservationPanel extends BasePanel {
                 item.add(new Label("allocated", Long.valueOf(
                         spaceReservation.getAllocatedSpace()).toString()));
                 item.add(new Label("created", spaceReservation.getCreated()));
-                item.add(new Label("lifetime", spaceReservation.getLifetime()));
+                item.add(new Label("lifetime", spaceReservation.getLifetime(TimeUnit.HOURS)));
                 item.add(new Label("expiration", spaceReservation.getExpiration()));
             }
         });

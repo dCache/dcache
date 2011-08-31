@@ -43,7 +43,7 @@ public class DAOFactoryImpl implements DAOFactory {
     @Override
     public LinkGroupsDAO getLinkGroupsDAO() {
         checkDefaultsSet();
-        return new StandardLinkGroupsDAO(_defaultCommandSenderFactory);
+        return new StandardLinkGroupsDAO(_pageCache, _defaultCommandSenderFactory);
     }
 
     @Override

@@ -13,7 +13,8 @@ import org.dcache.webadmin.view.util.DiskSpaceUnit;
 public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
 
     private String _name = "";
-    private String _id = "";
+//  -1 means "not assinged"
+    private long _id = -1;
     private String _allowed = "";
     private String _vos = "";
     private long _available;
@@ -53,6 +54,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
 
     public void setAvailable(long available) {
         _available = available;
+        calculateTotal();
     }
 
     public long getFree() {
@@ -63,11 +65,15 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
         _free = free;
     }
 
-    public String getId() {
+    public boolean hasId() {
+        return _id != -1;
+    }
+
+    public long getId() {
         return _id;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         _id = id;
     }
 
@@ -77,14 +83,11 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
 
     public void setReserved(long reserved) {
         _reserved = reserved;
+        calculateTotal();
     }
 
     public long getTotal() {
         return DiskSpaceUnit.BYTES.convert(_total, _displayUnit);
-    }
-
-    public void setTotal(long total) {
-        _total = total;
     }
 
     public String getVos() {
@@ -93,6 +96,14 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
 
     public void setVos(String vos) {
         _vos = vos;
+    }
+
+    private void calculateTotal() {
+        _total = _available + _reserved;
+    }
+
+    public void addSpaceReservation(SpaceReservationBean reservation) {
+        _reservations.add(reservation);
     }
 
     @Override

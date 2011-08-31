@@ -1,16 +1,24 @@
 package org.dcache.webadmin.controller.util;
 
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.util.VOInfo;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.webadmin.model.businessobjects.Pool;
+import org.dcache.webadmin.model.util.AccessLatency;
+import org.dcache.webadmin.model.util.RetentionPolicy;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.beans.CellServicesBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
 import org.dcache.webadmin.view.beans.PoolRequestQueue;
+import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
+import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
 
 /**
  * Does the mapping between modelobjects and viewobjects
@@ -116,5 +124,80 @@ public class BeanDataMapper {
             transfer.setTransferTime(moverInfo.getIoJobInfo().getTransferTime());
         }
         return transfer;
+    }
+
+    public static LinkGroupBean linkGroupModelToView(LinkGroup linkGroup) {
+        LinkGroupBean newBean = new LinkGroupBean();
+        newBean.setId(linkGroup.getId());
+        newBean.setAllowed(mapLinkGroupAllowanceFlags(linkGroup));
+        newBean.setFree(linkGroup.getFreeSpace());
+        newBean.setName(linkGroup.getName());
+        newBean.setAvailable(linkGroup.getAvailableSpaceInBytes());
+        newBean.setReserved(linkGroup.getReservedSpaceInBytes());
+        if (linkGroup.getVOs() != null) {
+            newBean.setVos(extractVos(linkGroup.getVOs()));
+        }
+        return newBean;
+    }
+
+    private static String mapLinkGroupAllowanceFlags(LinkGroup linkGroup) {
+        String result = (linkGroup.isOnlineAllowed()
+                ? AccessLatency.ONLINE.getShortcut().toUpperCase()
+                : AccessLatency.ONLINE.getShortcut().toLowerCase()) +
+                (linkGroup.isNearlineAllowed()
+                ? AccessLatency.NEARLINE.getShortcut().toUpperCase()
+                : AccessLatency.NEARLINE.getShortcut().toLowerCase()) +
+                (linkGroup.isReplicaAllowed()
+                ? RetentionPolicy.REPLICA.getShortcut().toUpperCase()
+                : RetentionPolicy.REPLICA.getShortcut().toLowerCase()) +
+                (linkGroup.isCustodialAllowed()
+                ? RetentionPolicy.CUSTODIAL.getShortcut().toUpperCase()
+                : RetentionPolicy.CUSTODIAL.getShortcut().toLowerCase());
+        return result;
+    }
+
+    public static SpaceReservationBean spaceReservationModelToView(Space reservation) {
+        SpaceReservationBean newReservation = new SpaceReservationBean();
+        newReservation.setAllocatedSpace(reservation.getAllocatedSpaceInBytes());
+        newReservation.setCreated(new Date(reservation.getCreationTime()).toString());
+        newReservation.setDescription(reservation.getDescription());
+        newReservation.setExpiration(reservation.getExpirationTime());
+        newReservation.setId(Long.toString(reservation.getId()));
+        newReservation.setLifetime(reservation.getLifetime());
+        newReservation.setLinkGroupRef(reservation.getLinkGroupId());
+        newReservation.setState(reservation.getState().toString());
+        newReservation.setStorage(mapReservationAllowanceFlags(reservation));
+        newReservation.setUsedSpace(reservation.getUsedSizeInBytes());
+        newReservation.setSize(reservation.getSizeInBytes());
+        newReservation.setVogroup(reservation.getVoGroup() + ":" + reservation.getVoRole());
+        return newReservation;
+    }
+
+    private static String mapReservationAllowanceFlags(Space reservation) {
+        String result = mapAccessLatency(reservation.getAccessLatency()) +
+                mapRetentionPolicy(reservation.getRetentionPolicy());
+        return result;
+    }
+
+    private static String mapAccessLatency(diskCacheV111.util.AccessLatency accessLatency) {
+        if (accessLatency != null) {
+            return AccessLatency.parseStringValue(accessLatency.toString()).getShortcut();
+        }
+        return "";
+    }
+
+    private static String mapRetentionPolicy(diskCacheV111.util.RetentionPolicy retentionPolicy) {
+        if (retentionPolicy != null) {
+            return RetentionPolicy.parseStringValue(retentionPolicy.toString()).getShortcut();
+        }
+        return "";
+    }
+
+    private static String extractVos(VOInfo[] Vos) {
+        StringBuilder builder = new StringBuilder();
+        for (VOInfo vo : Vos) {
+            builder.append(vo.toString()).append(";");
+        }
+        return builder.toString();
     }
 }

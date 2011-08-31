@@ -228,5 +228,10 @@ public class Space implements java.io.Serializable {
 		this.allocatedSpaceInBytes = allocated;
 
     }
-
+    /*
+     * @return expriation time as long in ms ; -1 means 'Never'
+     */
+    public long getExpirationTime() {
+        return lifetime == -1 ? -1 : creationTime + lifetime;
+    }
 }
