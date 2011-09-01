@@ -50,6 +50,9 @@ abstract public class Partition implements Serializable
 {
     static final long serialVersionUID = -4195341006626972862L;
 
+    protected static final Map<String,String> NO_PROPERTIES =
+        ImmutableMap.of();
+
     private final Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
         .put("p2p-allowed", "yes")

@@ -1,1 +1,2 @@
 org.dcache.poolmanager.ClassicPartitionFactory
+org.dcache.poolmanager.RandomPartitionFactory

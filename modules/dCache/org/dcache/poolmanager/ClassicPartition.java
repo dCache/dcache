@@ -39,8 +39,6 @@ public class ClassicPartition extends Partition
 
     public static final String TYPE = "classic";
 
-    private static final Map<String,String> NO_PROPERTIES =
-        ImmutableMap.of();
     private static final double MAX_WRITE_COST = 1000000.0;
 
     private final static Map<String,String> DEFAULTS =
