@@ -75,12 +75,12 @@ public class ClassicPartition extends Partition
     /**
      * Order by performance cost.
      */
-    private transient Ordering<PoolCost> _byPerformanceCost;
+    protected transient Ordering<PoolCost> _byPerformanceCost;
 
     /**
      * Order by linear combination of performance cost and space cost.
      */
-    private transient Ordering<PoolCost> _byFullCost;
+    protected transient Ordering<PoolCost> _byFullCost;
 
     public ClassicPartition()
     {
@@ -95,7 +95,14 @@ public class ClassicPartition extends Partition
     protected ClassicPartition(Map<String,String> inherited,
                                Map<String,String> properties)
     {
-        super(DEFAULTS, inherited, properties);
+        this(DEFAULTS, inherited, properties);
+    }
+
+    protected ClassicPartition(Map<String,String> defaults,
+                               Map<String,String> inherited,
+                               Map<String,String> properties)
+    {
+        super(defaults, inherited, properties);
 
         initTransientFields();
 
@@ -389,7 +396,7 @@ public class ClassicPartition extends Partition
     /**
      * Returns a hash of pnfsId and pool.
      */
-    private int minCostCutPosition(PnfsId pnfsId, PoolInfo pool)
+    protected int minCostCutPosition(PnfsId pnfsId, PoolInfo pool)
     {
         return (pnfsId.toString() + pool.getName()).hashCode();
     }
@@ -401,29 +408,29 @@ public class ClassicPartition extends Partition
      * @param cm current CostModule
      * @return the costCut, taking into account possible relative costCut.
      */
-    private double getCurrentCostCut(CostModule cm)
+    protected double getCurrentCostCut(CostModule cm)
     {
         return _costCutIsPercentile
             ? cm.getPoolsPercentilePerformanceCost(_costCut)
             : _costCut;
     }
 
-    private boolean isPanicCostExceeded(double cost)
+    protected boolean isPanicCostExceeded(double cost)
     {
         return (_panicCostCut > 0.0 && cost > _panicCostCut);
     }
 
-    private boolean isFallbackCostExceeded(double cost)
+    protected boolean isFallbackCostExceeded(double cost)
     {
         return (_fallbackCostCut > 0.0 && cost > _fallbackCostCut);
     }
 
-    private boolean isCostCutExceeded(CostModule cm, double cost)
+    protected boolean isCostCutExceeded(CostModule cm, double cost)
     {
         return (_costCut > 0.0 && cost >= getCurrentCostCut(cm));
     }
 
-    private boolean isAlertCostExceeded(double cost)
+    protected boolean isAlertCostExceeded(double cost)
     {
         return (_alertCostCut > 0.0 && cost > _alertCostCut);
     }
@@ -432,7 +439,7 @@ public class ClassicPartition extends Partition
      * Internal immutable helper class to hold precomputed performance
      * and space cost.
      */
-    private static class PoolCost
+    protected static class PoolCost
     {
         final PoolInfo pool;
         final double performanceCost;
@@ -453,18 +460,18 @@ public class ClassicPartition extends Partition
         }
     }
 
-    private double getWeightedFullCost(PoolCost cost)
+    protected double getWeightedFullCost(PoolCost cost)
     {
         return Math.abs(cost.spaceCost) * _spaceCostFactor +
             Math.abs(cost.performanceCost) * _performanceCostFactor;
     }
 
-    private double getWeightedPerformanceCost(PoolCost cost)
+    protected double getWeightedPerformanceCost(PoolCost cost)
     {
         return Math.abs(cost.performanceCost) * _performanceCostFactor;
     }
 
-    private Function<PoolInfo,PoolCost> toPoolCost(final long filesize) {
+    protected Function<PoolInfo,PoolCost> toPoolCost(final long filesize) {
         return new Function<PoolInfo,PoolCost>() {
             public PoolCost apply(PoolInfo pool) {
                 CostCalculatable calculatable =
@@ -475,7 +482,7 @@ public class ClassicPartition extends Partition
         };
     }
 
-    private Predicate<PoolCost> performanceCostIsBelow(final double max)
+    protected Predicate<PoolCost> performanceCostIsBelow(final double max)
     {
         return new Predicate<PoolCost>() {
             public boolean apply(PoolCost cost) {
@@ -485,7 +492,7 @@ public class ClassicPartition extends Partition
     }
 
 
-    private Ordering<PoolCost> thisPoolLast(final String name)
+    protected Ordering<PoolCost> thisPoolLast(final String name)
     {
         return new Ordering<PoolCost>() {
             public int compare(PoolCost a, PoolCost b) {
@@ -502,7 +509,7 @@ public class ClassicPartition extends Partition
         };
     }
 
-    private Ordering<PoolCost> thisHostLast(final String host)
+    protected Ordering<PoolCost> thisHostLast(final String host)
     {
         return new Ordering<PoolCost>() {
             public int compare(PoolCost a, PoolCost b) {
