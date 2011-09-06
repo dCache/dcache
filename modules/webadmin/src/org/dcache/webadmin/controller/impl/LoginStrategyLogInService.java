@@ -49,7 +49,7 @@ public class LoginStrategyLogInService implements LogInService {
                 throw new NullPointerException();
             }
         } catch (CacheException ex) {
-            throw new LogInServiceException("failed to authenticate", ex);
+            throw new LogInServiceException(ex.getMessage(), ex);
         }
         UserBean user = mapLoginToUser(login);
         return user;

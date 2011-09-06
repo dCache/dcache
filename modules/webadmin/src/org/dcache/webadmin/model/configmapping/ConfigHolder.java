@@ -77,22 +77,33 @@ public class ConfigHolder {
     }
 
     private void initLoginService(JettyCell jettyCell) {
-        UnionLoginStrategy loginStrategy = new UnionLoginStrategy();
-        loginStrategy.setAnonymousAccess(UnionLoginStrategy.AccessLevel.NONE);
-        loginStrategy.setLoginStrategies(createStrategies(jettyCell));
+        LoginStrategy loginStrategy;
+        if (jettyCell.getGplazmaVersion() == 1) {
+            loginStrategy = createStrategyGplazma1(jettyCell);
+        } else {
+            loginStrategy = createStrategyGplazma2(jettyCell);
+        }
         LoginStrategyLogInService loginService = new LoginStrategyLogInService();
         loginService.setLoginStrategy(loginStrategy);
         loginService.setAdminGid(_adminGid);
         _logInService = new GuestLogInDecorator(loginService);
     }
 
-    private List<LoginStrategy> createStrategies(JettyCell jettyCell) {
+    private LoginStrategy createStrategyGplazma2(JettyCell jettyCell) {
+        return new RemoteLoginStrategy(new CellStub((CellEndpoint) jettyCell,
+                new CellPath(_gplazmaName), LOGIN_CELLSTUB_TIMEOUT));
+    }
+
+    private LoginStrategy createStrategyGplazma1(JettyCell jettyCell) {
+        UnionLoginStrategy loginStrategy = new UnionLoginStrategy();
+        loginStrategy.setAnonymousAccess(UnionLoginStrategy.AccessLevel.NONE);
         List<LoginStrategy> loginStrategies = new ArrayList<LoginStrategy>();
         initKpwd();
         loginStrategies.add(new KauthFileLoginStrategy(_kpwdFile));
         loginStrategies.add(new RemoteLoginStrategy(new CellStub((CellEndpoint) jettyCell,
                 new CellPath(_gplazmaName), LOGIN_CELLSTUB_TIMEOUT)));
-        return loginStrategies;
+        loginStrategy.setLoginStrategies(loginStrategies);
+        return loginStrategy;
     }
 
     private void initKpwd() {

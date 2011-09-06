@@ -123,6 +123,10 @@ public class JettyCell extends AbstractCell {
     description = "Update interval of transferscollector",
     required = true)
     private long _transfersCollectorUpdate;
+    @Option(name = "gplazmaVersion",
+    description = "gPlazma version",
+    required = true)
+    private int _gplazmaVersion;
 //    URL to the ressources folder of jetty (will be put inside of dcache.jar)
 //    dont know how to get rid of the hardcoding, should be
 //    package of class+/resources
@@ -264,6 +268,10 @@ public class JettyCell extends AbstractCell {
 
     public long getTransfersCollectorUpdate() {
         return _transfersCollectorUpdate;
+    }
+
+    public int getGplazmaVersion() {
+        return _gplazmaVersion;
     }
 
     private class LegacyForwardHandler extends AbstractHandler {

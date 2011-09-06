@@ -18,4 +18,5 @@ create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
            -gPlazmaName=${gplazma} \
            -collectorTimeout=${collectorTimeout} \
            -transfersCollectorUpdate=${transfersCollectorUpdate} \
+           -gplazmaVersion=${gplazma.version} \
 "
