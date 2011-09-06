@@ -177,8 +177,11 @@ public class ProportionalPoolSelectionStrategy
         double sum = 0.0;
 
         for (int i = 0; i < available.length; i++) {
-            available[i] = getWeightedAvailable(pools.get(i).getPoolCostInfo());
-            sum += available[i];
+            PoolCostInfo cost = pools.get(i).getPoolCostInfo();
+            if (cost != null) {
+                available[i] = getWeightedAvailable(cost);
+                sum += available[i];
+            }
         }
 
         double threshold = random() * sum;
