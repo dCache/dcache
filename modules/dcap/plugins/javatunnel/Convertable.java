@@ -4,6 +4,7 @@
 
 package javatunnel;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import javax.security.auth.Subject;
@@ -12,8 +13,8 @@ interface Convertable {
 
     public boolean auth( InputStream in, OutputStream out, Object addon);
     public boolean verify( InputStream in, OutputStream out, Object addon);
-    public void encode( byte[] buf , int len, OutputStream out) throws java.io.IOException ;
-    public byte[] decode( InputStream in ) throws java.io.IOException ;
+    public void encode( byte[] buf , int len, OutputStream out) throws IOException ;
+    public byte[] decode( InputStream in ) throws IOException ;
     public Subject getSubject();
-    public Convertable makeCopy();
+    public Convertable makeCopy() throws IOException ;
 }

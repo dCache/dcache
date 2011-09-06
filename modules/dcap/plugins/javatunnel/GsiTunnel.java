@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.glite.voms.FQAN;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.TrustedCertificates;
@@ -40,33 +41,31 @@ class GsiTunnel extends GssTunnel  {
     private Subject _subject = new Subject();
 
     // Creates a new instance of GssTunnel
-    public GsiTunnel(String dummy) {
+    public GsiTunnel(String dummy) throws GSSException {
         this(dummy, true);
     }
 
 
-    public GsiTunnel(String dummy, boolean init) {
+    public GsiTunnel(String dummy, boolean init) throws GSSException {
         if( init ) {
+            GlobusCredential serviceCredential;
+
             try {
-                GlobusCredential serviceCredential;
-
-                serviceCredential =new GlobusCredential(service_cert, service_key);
-
-                GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential, GSSCredential.ACCEPT_ONLY);
-                TrustedCertificates trusted_certs = TrustedCertificates.load(service_trusted_certs);
-                GSSManager manager = ExtendedGSSManager.getInstance();
-                _e_context = (ExtendedGSSContext) manager.createContext(cred);
-                _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
-                _e_context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
-
-                _context = _e_context;
-                // do not use channel binding with GSIGSS
-                super.useChannelBinding(false);
-
-            }catch( Exception e ) {
-                _log.error("Failed to initialize GSI context", e);
+                serviceCredential = new GlobusCredential(service_cert, service_key);
+            } catch (GlobusCredentialException e) {
+                throw new GSSException(GSSException.NO_CRED, 0, e.getMessage());
             }
 
+            GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential, GSSCredential.ACCEPT_ONLY);
+            TrustedCertificates trusted_certs = TrustedCertificates.load(service_trusted_certs);
+            GSSManager manager = ExtendedGSSManager.getInstance();
+            _e_context = (ExtendedGSSContext) manager.createContext(cred);
+            _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
+            _e_context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
+
+            _context = _e_context;
+            // do not use channel binding with GSIGSS
+            super.useChannelBinding(false);
         }
     }
 
@@ -78,8 +77,8 @@ class GsiTunnel extends GssTunnel  {
                     _subject.getPrincipals().add( new GlobusPrincipal(_e_context.getSrcName().toString()) );
         		scanExtendedAttributes(_e_context);
         	}
-        } catch( Exception e) {
-            _log.error("Failed to verify", e);
+        } catch( GSSException e) {
+            _log.error("Failed to verify: {}", e.toString());
         }
 
         return _context.isEstablished();
@@ -87,8 +86,12 @@ class GsiTunnel extends GssTunnel  {
 
 
     @Override
-    public Convertable makeCopy() {
-        return new GsiTunnel( null, true  );
+    public Convertable makeCopy() throws IOException {
+        try {
+            return new GsiTunnel(null, true);
+        } catch (GSSException e) {
+            throw new IOException(e);
+        }
     }
 
     private void scanExtendedAttributes(ExtendedGSSContext gssContext) {
@@ -113,7 +116,7 @@ class GsiTunnel extends GssTunnel  {
             }
 
         } catch (AuthorizationException e) {
-            _log.error("Failed to get users group and role context", e);
+            _log.error("Failed to get users group and role context: {}", e.toString());
         }
 
     }
