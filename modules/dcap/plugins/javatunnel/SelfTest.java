@@ -11,59 +11,24 @@ import javax.net.ServerSocketFactory;
 
 class SelfTest {
 
-    public SelfTest(boolean isServer, int port, boolean isClient, String serverHost) {
+    public static void main(String[] args) throws Exception {
 
-        System.out.println("New SelfTest server=" + isServer + " port=" + port + " client=" + isClient + " host=" + serverHost);
-
-        try {
-            if(isServer) {
-                Reciver r = new Reciver(port);
-                r.start();
-            }
-            if( isClient ) {
-                Sender s = new Sender(serverHost, port);
-                s.start();
-            }
-        } catch(Exception e) {
-            System.out.println(e);
-        }
-    }
-
-    public static void main(String[] args) {
-
-        boolean isServer = true;
-        boolean isClient = true;
         int port = 1717;
         String host = "localhost";
 
-        Args arg = new Args(args);
-
-        if( arg.getOpt("port") != null ) {
-            port =  Integer.parseInt( arg.getOpt("port") );
-        }
-
-        if( arg.getOpt("server") != null ) {
-            isClient = false;
-        }
-
-        if( arg.getOpt("client") != null ) {
-            isClient = true;
-        }
-
-        if( arg.getOpt("host") != null ) {
-            host = arg.getOpt("host");
-        }
-
-
-         new SelfTest(isServer, port, isClient, host);
-         //new GssTunnel("ftp/dcache0.desy.de@DESY.DE");
+        Reciever r = new Reciever(port);
+        r.start();
+        
+        Sender s = new Sender(host, port);
+        s.start();
     }
 
-    class Sender extends Thread {
+    private static class Sender extends Thread {
 
         private String _host;
         private int _port;
         Sender(String host, int port) {
+            super("Sender");
             _port = port;
             _host = host;
         }
@@ -77,7 +42,7 @@ class SelfTest {
             DataInputStream is = null;
 
             try {
-                s = new TunnelSocket( _host, _port, new GssTunnel("tigran@DESY.DE", "ftp/dcache0.desy.de@DESY.DE"));
+                s = new TunnelSocket( _host, _port, new GssTunnel("tigran@DESY.DE", "nfs/anahit.desy.de@DESY.DE"));
                 Thread.sleep(20000);
                 out  = s.getOutputStream();
                 in  =  s.getInputStream();
@@ -109,13 +74,13 @@ class SelfTest {
     }
 
 
-    class Reciver extends Thread {
+    private static class Reciever extends Thread {
 
         private int _port;
-        Reciver(int port) {
+        Reciever(int port) {
+            super("Reciever");
             _port = port;
         }
-
 
         @Override
         public void     run() {
@@ -128,7 +93,7 @@ class SelfTest {
             DataInputStream is = null;
             try {
 
-                String[] initArgs = {"javatunnel.GsiTunnel", "dummy"};
+                String[] initArgs = {"javatunnel.GssTunnel", "nfs/anahit.desy.de@DESY.DE"};
 
                 ServerSocketFactory factory = new TunnelServerSocketCreator(initArgs);
 

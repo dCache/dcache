@@ -967,7 +967,7 @@ public void cleanUp(){
 
        }catch( Exception e ){
           try{ _socket.close() ; }catch(IOException ee ){/* dead any way....*/}
-          _log.warn( "Exception in secure protocol : "+e, e ) ;
+          _log.warn( "Exception in secure protocol : {}", e.toString() ) ;
           _loginFailures ++ ;
           synchronized( _childHash ){ _childCount -- ; }
        }
