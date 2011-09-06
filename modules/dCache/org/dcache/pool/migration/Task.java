@@ -558,8 +558,14 @@ public class Task
         {
             try {
                 _inner.run();
-            } catch (Exception e) {
-                _log.error(e.toString(), e);
+            } catch (RuntimeException e) {
+                Thread me = Thread.currentThread();
+                me.getUncaughtExceptionHandler().uncaughtException(me, e);
+                fail(e.getMessage());
+            } catch (Error e) {
+                Thread me = Thread.currentThread();
+                me.getUncaughtExceptionHandler().uncaughtException(me, e);
+                fail(e.getMessage());
             }
         }
     }
