@@ -59,7 +59,6 @@ import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.Message;
-import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolCheckFreeSpaceMessage;
@@ -1714,24 +1713,9 @@ public class PoolV4
 
     public String hh_pf = "<pnfsId>";
 
-    public String ac_pf_$_1(Args args) throws Exception
+    public String ac_pf_$_1(Args args) throws CacheException, IllegalArgumentException
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        PnfsMapPathMessage info = new PnfsMapPathMessage(pnfsId);
-        CellPath path = new CellPath("PnfsManager");
-        CellMessage m = sendAndWait(new CellMessage(path, info), 10000);
-        if (m == null)
-            throw new CacheException("No reply from PnfsManager");
-
-        info = ((PnfsMapPathMessage) m.getMessageObject());
-        if (info.getReturnCode() != 0) {
-            Object o = info.getErrorObject();
-            if (o instanceof Exception)
-                throw (Exception) o;
-            else
-                throw new CacheException(o.toString());
-        }
-        return info.getGlobalPath();
+        return _pnfs.getPathByPnfsId(new PnfsId(args.argv(0)));
     }
 
     public String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
