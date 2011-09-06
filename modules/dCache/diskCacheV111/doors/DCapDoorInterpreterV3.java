@@ -1904,8 +1904,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         public IoDoorEntry getIoDoorEntry(){
+            /*
+             * as long as door waits for reply to GetFileAttributes
+             * the  _fileAttributes is null.
+             */
+            PnfsId pnfsid =
+                    _fileAttributes != null ? _fileAttributes.getPnfsId() : null;
+
             return new IoDoorEntry(_sessionId,
-                                   _fileAttributes.getPnfsId(),
+                                   pnfsid,
                                    _pool,
                                    _status,
                                    _statusSince,
