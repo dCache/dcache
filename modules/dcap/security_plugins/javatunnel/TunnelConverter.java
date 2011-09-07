@@ -90,7 +90,8 @@ class TunnelConverter implements Convertable,UserBindible  {
         return "nobody@NOWHERE";
     }
     
-    public Convertable makeCopy( ) {
+    @Override
+    public Convertable makeCopy( ) throws IOException{
         return this;
     }
 

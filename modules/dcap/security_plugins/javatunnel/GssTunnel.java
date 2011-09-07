@@ -38,56 +38,46 @@ class GssTunnel extends TunnelConverter {
     	_principalStr   = principalStr;
     }
 
-    public GssTunnel(String principalStr, boolean init) {
+    public GssTunnel(String principalStr, boolean init) throws GSSException {
 
 
         if ( init) {
-            try {
-                Oid krb5Mechanism = new Oid("1.2.840.113554.1.2.2");
 
-                _gManager = GSSManager.getInstance();
-                _myPrincipal = _gManager.createName(principalStr, null);
-
-                _myCredential = _gManager.createCredential(_myPrincipal,
-                GSSCredential.INDEFINITE_LIFETIME,
-                krb5Mechanism,
-                GSSCredential.ACCEPT_ONLY);
-
-                _context = _gManager.createContext(_myCredential);
-            }
-            catch( Exception e ) {
-                _log.error("Failed to initialize GSS context", e);
-            }
-        }
-
-   }
-
-
-
-    public GssTunnel(String principalStr, String peerName) {
-
-        try {
             Oid krb5Mechanism = new Oid("1.2.840.113554.1.2.2");
 
             _gManager = GSSManager.getInstance();
             _myPrincipal = _gManager.createName(principalStr, null);
 
             _myCredential = _gManager.createCredential(_myPrincipal,
+                GSSCredential.INDEFINITE_LIFETIME,
+                krb5Mechanism,
+                GSSCredential.ACCEPT_ONLY);
+
+            _context = _gManager.createContext(_myCredential);
+        }
+
+   }
+
+
+
+    public GssTunnel(String principalStr, String peerName) throws GSSException {
+
+        Oid krb5Mechanism = new Oid("1.2.840.113554.1.2.2");
+
+        _gManager = GSSManager.getInstance();
+        _myPrincipal = _gManager.createName(principalStr, null);
+
+        _myCredential = _gManager.createCredential(_myPrincipal,
             GSSCredential.DEFAULT_LIFETIME,
             krb5Mechanism,
             GSSCredential.INITIATE_ONLY);
 
-            _peerPrincipal = _gManager.createName(peerName, null);
+        _peerPrincipal = _gManager.createName(peerName, null);
 
-            _context = _gManager.createContext(_peerPrincipal,
+        _context = _gManager.createContext(_peerPrincipal,
             krb5Mechanism,
             _myCredential,
             GSSContext.DEFAULT_LIFETIME);
-        }
-        catch( Exception e ) {
-            _log.error("Failed to initialize GSS context", e);
-        }
-
     }
 
 
@@ -206,9 +196,9 @@ class GssTunnel extends TunnelConverter {
         } catch( EOFException e) {
             _log.debug("connection closed");
         } catch( IOException e) {
-            _log.error("Failed to verify", e);
+            _log.error("Failed to verify: " + e);
         } catch (GSSException e) {
-            _log.error("Failed to verify", e);
+            _log.error("Failed to verify: " + e);
         }
 
         _authDone = _context.isEstablished();
@@ -222,8 +212,12 @@ class GssTunnel extends TunnelConverter {
     }
 
     @Override
-    public Convertable makeCopy() {
-        return new GssTunnel( _principalStr, true);
+    public Convertable makeCopy() throws IOException {
+        try {
+            return new GssTunnel( _principalStr, true);
+        } catch (GSSException e) {
+            throw new IOException(e);
+        }
     }
 
     public String getTunnelPrincipal() {

@@ -983,8 +983,7 @@ public void cleanUp(){
 
        }catch( Exception e ){
           try{ _socket.close() ; }catch(IOException ee ){/* dead any way....*/}
-          esay( "Exception in secure protocol : "+e ) ;
-          esay(e);
+          esay( "Exception in secure protocol : " + e ) ;
           _loginFailures ++ ;
           synchronized( _childHash ){ _childCount -- ; }
        }
