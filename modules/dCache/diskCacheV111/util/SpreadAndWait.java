@@ -24,7 +24,7 @@ public class SpreadAndWait implements CellMessageAnswerable {
 		_timeout = timeout;
 	}
 
-	public synchronized void send(CellMessage msg) throws Exception {
+	public synchronized void send(CellMessage msg)  {
 		_endpoint.sendMessage(msg, this, _timeout);
 		_pending++;
 	}

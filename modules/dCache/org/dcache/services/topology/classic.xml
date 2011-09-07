@@ -16,8 +16,16 @@
     <property name="cellStub" ref="stub"/>
   </bean>
 
+  <bean id="hostnameService" class="org.dcache.services.topology.CellsHostnameService">
+    <description>Service for dCache-hostname retrieval</description>
+    <property name="topology" ref="topology"/>
+    <property name="timeout" value="${topoTimeout}"/>
+  </bean>
+
   <bean id="ui" class="org.dcache.services.topology.CellsTopologyInterpreter">
+    <description>Command line interface</description>
     <property name="cellsTopology" ref="topology"/>
+    <property name="hostnameService" ref="hostnameService"/>
   </bean>
 
   <bean id="stub" class="org.dcache.cells.CellStub">
@@ -26,6 +34,7 @@
 
   <task:scheduled-tasks scheduler="scheduler">
     <task:scheduled ref="topology" method="update" fixed-delay="${topoWaitTime}"/>
+    <task:scheduled ref="hostnameService" method="updateHostnames" fixed-delay="${topoWaitTime}"/>
   </task:scheduled-tasks>
 
   <task:scheduler id="scheduler" pool-size="1"/>

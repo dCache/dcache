@@ -2,8 +2,14 @@ package dmg.cells.nucleus ;
 import dmg.util.*;
 import dmg.util.logback.FilterShell;
 import java.io.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,6 +100,23 @@ public class      SystemCell
       _interruptThread.start() ;
       return 0 ;
    }
+
+    public String hh_get_hostname = "# returns the hostname of the " +
+            "computer this domain is running at";
+
+    public String ac_get_hostname_$_0(Args args) {
+        String hostname = "";
+        try {
+            List<InetAddress> adresses = NetworkUtils.getLocalAddressesV4();
+//            pick first and get hostname out of it
+            if (!adresses.isEmpty()) {
+                hostname = adresses.get(0).getHostName();
+            }
+        } catch (SocketException ex) {
+        }
+        return hostname;
+    }
+
    public void run(){
        while( true ){
           try{

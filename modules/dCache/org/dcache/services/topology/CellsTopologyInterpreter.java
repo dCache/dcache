@@ -9,10 +9,15 @@ public class CellsTopologyInterpreter
     implements CellCommandListener
 {
     private CellsTopology _topology;
+    private HostnameService _hostnameService;
 
     public void setCellsTopology(CellsTopology topology)
     {
         _topology = topology;
+    }
+
+    public void setHostnameService(HostnameService hostnameService) {
+        _hostnameService = hostnameService;
     }
 
     public final String hh_ls = "[-l] # list available domains";
@@ -41,5 +46,26 @@ public class CellsTopologyInterpreter
     public Object ac_gettopomap(Args args)
     {
         return _topology.getInfoMap();
+    }
+    public String hh_getallhostnames = "# returns a complete " +
+            "list of all hosts running a domain of this dCache instance. " +
+            "Run updatehostnames first to get uptodate values";
+
+    public String ac_getallhostnames(Args args) {
+        return _hostnameService.getHostnames();
+    }
+    public String hh_updatehostnames = "# starts background thread to retrieve" +
+            "all hostnames of hosts hosting a dCache domain";
+
+    public String ac_updatehostnames(Args args) {
+        Thread thread = new Thread() {
+
+            @Override
+            public void run() {
+                _hostnameService.updateHostnames();
+            }
+        };
+        thread.start();
+        return "Hostname update started";
     }
 }
