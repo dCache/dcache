@@ -2874,6 +2874,10 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+
+    private static final Pattern GLOB_PATTERN =
+        Pattern.compile("[*?]");
+
     public void ac_nlst(String arg)
         throws FTPCommandException
     {
@@ -2891,10 +2895,14 @@ public abstract class AbstractFtpDoorV1
             /* RFC 3659 seems to imply that we have to report on
              * illegal arguments (ie attempts to list files) before
              * opening the data connection. We are therefore forced to
-             * query the file type first.
+             * query the file type first. We allow path to be a pattern though,
+             * to allow mget functionality.
              */
-            checkIsDirectory(path);
-
+            Matcher m = GLOB_PATTERN.matcher(path.getName());
+            boolean pathIsPattern = m.find();
+            if ( !pathIsPattern ) {
+                checkIsDirectory(path);
+            }
             reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
@@ -2907,9 +2915,15 @@ public abstract class AbstractFtpDoorV1
             try {
                 PrintWriter writer =
                     new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(_dataSocket.getOutputStream()), "US-ASCII"));
-
-                total = _listSource.printDirectory(null, new ShortListPrinter(writer),
-                                                   path, null, null);
+                DirectoryListPrinter printer = new ShortListPrinter(writer);
+                if ( pathIsPattern ) {
+                    total =
+                        _listSource.printDirectory(null, printer, path.getParent(),
+                                                   new Glob(path.getName()), null);                }
+                else {
+                    total = _listSource.printDirectory(null, printer,
+                                                       path, null, null);
+                }
                 writer.close();
             } finally {
                 closeDataSocket();
