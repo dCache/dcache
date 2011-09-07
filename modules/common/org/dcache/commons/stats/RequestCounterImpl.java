@@ -36,7 +36,8 @@ public class RequestCounterImpl implements RequestCounterMXBean {
 
         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         try {
-            String mxName = String.format("%s:type=RequestCounter,name=%s", this.getClass().getPackage(), this.name);
+            String mxName = String.format("%s:type=RequestCounter,name=%s",
+                    this.getClass().getPackage().getName(), this.name);
             mxBeanName = new ObjectName(mxName);
             if (!server.isRegistered(mxBeanName)) {
                 server.registerMBean(this, mxBeanName);
