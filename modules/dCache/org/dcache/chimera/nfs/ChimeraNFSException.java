@@ -17,7 +17,9 @@
 
 package org.dcache.chimera.nfs;
 
-public class ChimeraNFSException extends java.io.IOException {
+import org.dcache.chimera.ChimeraFsException;
+
+public class ChimeraNFSException extends ChimeraFsException {
 
     /**
      *

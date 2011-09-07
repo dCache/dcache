@@ -120,12 +120,12 @@ public class OperationRENAME extends AbstractNFSv4Operation {
 
     	}catch(FileNotFoundHimeraFsException fnf) {
     		res.status = nfsstat4.NFS4ERR_NOENT;
-    	}catch(ChimeraFsException hfe) {
-    		res.status = nfsstat4.NFS4ERR_SERVERFAULT;
-                _log.error("RENAME: {}", hfe.getMessage());
         }catch(ChimeraNFSException he) {
             _log.error("RENAME: {}", he.getMessage());
             res.status = he.getStatus();
+        } catch (ChimeraFsException hfe) {
+            res.status = nfsstat4.NFS4ERR_SERVERFAULT;
+            _log.error("RENAME: {}", hfe.getMessage());
         }
 
 
