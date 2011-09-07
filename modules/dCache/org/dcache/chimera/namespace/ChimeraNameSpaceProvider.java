@@ -611,8 +611,6 @@ public class ChimeraNameSpaceProvider
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
-        } catch (ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
 
