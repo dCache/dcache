@@ -262,15 +262,15 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 int count = rs.getInt(1);
                 if(count != states.length) {
                     for(int i = 0; i<states.length; ++i) {
-
                         String insertState = "INSERT INTO "+
-                                srmStateTableName+" VALUES ("+
-                                states[i].getStateId()+
-                                ", '"+states[i].toString()+"' )";
-                        logger.debug("executing statement: "+insertState);
-                        Statement sqlStatement1 = null;
+                                srmStateTableName+" VALUES (?, ?)";
+                        logger.debug("inserting into SRMJOBSTATE values: {} {}",
+                                states[i].getStateId(),states[i]);
+                        PreparedStatement sqlStatement1 = null;
                         try{
-                            sqlStatement1 = _con.createStatement();
+                            sqlStatement1 = _con.prepareStatement(insertState);
+                            sqlStatement1.setInt(1, states[i].getStateId());
+                            sqlStatement1.setString(2, states[i].toString());
                             int result = sqlStatement1.executeUpdate( insertState );
                             _con.commit();
                         } catch(SQLException sqle) {
@@ -563,11 +563,13 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
         try {
             _con = pool.getConnection();
-            Statement sqlStatement = _con.createStatement();
-            String sqlStatementString = "SELECT * FROM " + getTableName() +
-                    " WHERE SCHEDULERID='"+schedulerId+"'";
-            logger.debug("executing statement: "+sqlStatementString);
-            ResultSet set = sqlStatement.executeQuery(sqlStatementString);
+            String sql = "SELECT * FROM ? WHERE SCHEDULERID=?";
+            PreparedStatement sqlStatement = _con.prepareStatement(sql);
+            sqlStatement.setString(1, getTableName());
+            sqlStatement.setString(2, schedulerId);
+            logger.debug("Selecting everything of Scheduler {} from table {}",
+                    schedulerId,getTableName());
+            ResultSet set = sqlStatement.executeQuery(sql);
             while(set.next()) {
                 Long ID = set.getLong(1);
                 Long NEXTJOBID = new Long(set.getLong(2));
@@ -796,20 +798,28 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     public Set<Job> getJobs(String schedulerId, org.dcache.srm.scheduler.State state) throws SQLException {
         Set<Job> jobs = new HashSet<Job>();
         Connection _con =null;
-        Statement sqlStatement = null;
+        PreparedStatement sqlStatement = null;
         ResultSet set = null;
         try {
             _con = pool.getConnection();
-            sqlStatement = _con.createStatement();
-            String sqlStatementString = "SELECT * FROM " + getTableName();
+            String sql = "SELECT * FROM ? WHERE SCHEDULERID";
             if(schedulerId == null) {
-                sqlStatementString += " WHERE SCHEDULERID is NULL";
+                sql += " is NULL";
             } else {
-                sqlStatementString += " WHERE SCHEDULERID='"+schedulerId+'\'';
+                sql += "=?";
             }
-            sqlStatementString += " AND STATE='"+state.getStateId()+"' ";
-            logger.debug("executing statement: "+sqlStatementString);
-            set = sqlStatement.executeQuery(sqlStatementString);
+            sql += " AND STATE=? ";
+            sqlStatement = _con.prepareStatement(sql);
+            sqlStatement.setString(1, getTableName());
+            if(schedulerId == null) {
+                sqlStatement.setInt(2, state.getStateId());
+            } else {
+                sqlStatement.setString(2,schedulerId);
+                sqlStatement.setInt(3, state.getStateId());
+            }
+            logger.debug("executing statement "+sql+" ,values: "+getTableName()+" ,{} ,{}"
+                    ,schedulerId,state.getStateId());
+            set = sqlStatement.executeQuery(sql);
             while(set.next()) {
                 Long ID = set.getLong(1);
                 Long NEXTJOBID = set.getLong(2);
