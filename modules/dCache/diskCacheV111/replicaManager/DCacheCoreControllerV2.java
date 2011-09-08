@@ -1737,8 +1737,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          poolList.add( (String) poolsArray[j] );
        }
 
-       _log.debug("getPoolGroup: Info: '"+ pGroup +"' pool group name='" + groupName + "'\n"
-           + "Pools: " + poolsArray );
+       _log.debug("getPoolGroup: Info: '{}' pool group name='{}'", pGroup, groupName );
+       if(_log.isDebugEnabled()){
+           _log.debug("Pools: {}", Arrays.toString(poolsArray));
+       }
        return poolList;
      }
    }

@@ -3508,7 +3508,7 @@ public final class Manager
                                                         System.out.println("Found "+
                                                                            groups.size()+
                                                                            " link groups to update");
-                                                }
+
                                                 for (LinkGroup group : groups) {
                                                         try {
                                                                 manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
@@ -3521,6 +3521,7 @@ public final class Manager
                                                                                    ",?="+
                                                                                    group.getId());
                                                         }
+                                                }
                                                 }
                                         }
                                         catch (SQLException e) {
@@ -4771,9 +4772,7 @@ public final class Manager
                                 break;
                         }
                 }
-                if (logger.isDebugEnabled()) {
-                        logger.debug("Chose likgroup "+linkGroup);
-                }
+                logger.debug("Chose likgroup {}",linkGroup);
                 return reserveSpaceInLinkGroup(linkGroup.getId(),
                                                voInfo.getVoGroup(),
                                                voInfo.getVoRole(),
@@ -5069,7 +5068,7 @@ public final class Manager
                         StorageInfo storageInfo = selectPool.getStorageInfo();
                         storageInfo.setKey("SpaceToken",Long.toString(spaceId));
                         if (storageInfo.getFileSize() == 0 &&
-                            file != null && file.getSizeInBytes() > 1) {
+                             file.getSizeInBytes() > 1) {
                                 storageInfo.setFileSize(file.getSizeInBytes());
                         }
                         //
