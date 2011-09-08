@@ -190,17 +190,19 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException {
 
-            String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
-            " WHERE RequestID='"+ID+"'";
-            Statement sqlStatement = _con.createStatement();
-            logger.debug("executing statement: "+sqlStatementString);
-            ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
+            String sql = "SELECT PROTOCOL FROM ? WHERE RequestID=?";
+            PreparedStatement statement = _con.prepareStatement(sql);
+            statement.setString(1, getProtocolsTableName());
+            statement.setLong(2, ID);
+            logger.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
+                    getProtocolsTableName(),ID);
+            ResultSet fileIdsSet = statement.executeQuery(sql);
             java.util.Set utilset = new java.util.HashSet();
             while(fileIdsSet.next()) {
                 utilset.add(fileIdsSet.getString(1));
             }
             String [] protocols = (String[]) utilset.toArray(new String[0]);
-            sqlStatement.close();
+            statement.close();
             Job.JobHistory[] jobHistoryArray =
             getJobHistory(ID,_con);
             return new  BringOnlineRequest(
