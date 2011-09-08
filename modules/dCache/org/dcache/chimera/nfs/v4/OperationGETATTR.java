@@ -278,7 +278,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 break;
             case nfs4_prot.FATTR4_FILEHANDLE :
             	nfs_fh4 fh = new nfs_fh4();
-            	fh.value = inode.toFullString().getBytes();
+            	fh.value = context.getFs().inodeToBytes(inode);
                 fattr4_filehandle filehandle = new fattr4_filehandle(fh);
             	ret = filehandle;
                 break;

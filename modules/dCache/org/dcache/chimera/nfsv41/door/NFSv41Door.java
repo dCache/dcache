@@ -378,7 +378,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 deviceid = ds.getDeviceId();
             }
 
-            nfs_fh4 fh = new nfs_fh4(inode.toFullString().getBytes());
+            nfs_fh4 fh = new nfs_fh4(_fileFileSystemProvider.inodeToBytes(inode));
 
             //  -1 is special value, which means entire file
             layout4 layout = Layout.getLayoutSegment(deviceid, fh, ioMode,

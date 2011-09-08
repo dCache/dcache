@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.StringTokenizer;
 import javax.sql.DataSource;
 import org.dcache.acl.ACE;
 
@@ -2468,5 +2469,113 @@ public class JdbcFs implements FileSystemProvider {
      */
     public void close() throws IOException {
         // forced by interface
+    }
+
+    @Override
+    public FsInode inodeFromBytes(byte[] handle) throws ChimeraFsException {
+
+        FsInode inode = null;
+
+        String strHandle = new String(handle);
+
+        StringTokenizer st = new StringTokenizer(strHandle, "[:]");
+
+        if (st.countTokens() < 3) {
+            throw new IllegalArgumentException("Invalid HimeraNFS handler.("
+                    + strHandle + ")");
+        }
+
+        /*
+         * reserved for future use
+         */
+        int fsId = Integer.parseInt(st.nextToken());
+
+        String type = st.nextToken();
+
+        try {
+            // IllegalArgumentException will be thrown is it's wrong type
+
+            FsInodeType inodeType = FsInodeType.valueOf(type);
+            String id;
+            int argc;
+            String[] args;
+
+            switch (inodeType) {
+                case INODE:
+                    id = st.nextToken();
+                    int level = 0;
+                    if (st.countTokens() > 0) {
+                        level = Integer.parseInt(st.nextToken());
+                    }
+                    inode = new FsInode(this, id, level);
+                    break;
+
+                case ID:
+                    id = st.nextToken();
+                    inode = new FsInode_ID(this, id);
+                    break;
+
+                case TAGS:
+                    id = st.nextToken();
+                    inode = new FsInode_TAGS(this, id);
+                    break;
+
+                case TAG:
+                    id = st.nextToken();
+                    String tag = st.nextToken();
+                    inode = new FsInode_TAG(this, id, tag);
+                    break;
+
+                case NAMEOF:
+                    id = st.nextToken();
+                    inode = new FsInode_NAMEOF(this, id);
+                    break;
+                case PARENT:
+                    id = st.nextToken();
+                    inode = new FsInode_PARENT(this, id);
+                    break;
+
+                case PATHOF:
+                    id = st.nextToken();
+                    inode = new FsInode_PATHOF(this, id);
+                    break;
+
+                case CONST:
+                    String cnst = st.nextToken();
+                    inode = new FsInode_CONST(this, cnst);
+                    break;
+
+                case PSET:
+                    id = st.nextToken();
+                    argc = st.countTokens();
+                    args = new String[argc];
+                    for (int i = 0; i < argc; i++) {
+                        args[i] = st.nextToken();
+                    }
+                    inode = new FsInode_PSET(this, id, args);
+                    break;
+
+                case PGET:
+                    id = st.nextToken();
+                    argc = st.countTokens();
+                    args = new String[argc];
+                    for (int i = 0; i < argc; i++) {
+                        args[i] = st.nextToken();
+                    }
+                    inode = new FsInode_PGET(this, id, args);
+                    break;
+
+            }
+        } catch (IllegalArgumentException iae) {
+            _log.info("Failed to generate an inode from file handle : {} : {}", strHandle, iae);
+            inode = null;
+        }
+
+        return inode;
+    }
+
+    @Override
+    public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
+        return inode.toFullString().getBytes();
     }
 }

@@ -44,7 +44,7 @@ public class OperationGETFH extends AbstractNFSv4Operation {
 
 	        res.resok4 = new GETFH4resok();
 	        res.resok4.object = new nfs_fh4();
-	        res.resok4.object.value = context.currentInode().toFullString().getBytes();
+	        res.resok4.object.value = context.getFs().inodeToBytes(context.currentInode());
 	        res.status = nfsstat4.NFS4_OK;
         }catch(ChimeraNFSException he) {
         	res.status = he.getStatus();

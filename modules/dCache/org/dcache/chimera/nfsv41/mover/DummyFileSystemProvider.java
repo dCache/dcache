@@ -527,4 +527,13 @@ public class DummyFileSystemProvider implements FileSystemProvider {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public FsInode inodeFromBytes(byte[] handle) throws ChimeraFsException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
