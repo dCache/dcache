@@ -802,7 +802,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         ResultSet set = null;
         try {
             _con = pool.getConnection();
-            String sql = "SELECT * FROM ? WHERE SCHEDULERID";
+            String sql = "SELECT * FROM " +getTableName() +" WHERE SCHEDULERID";
             if(schedulerId == null) {
                 sql += " is NULL";
             } else {
@@ -810,16 +810,15 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             }
             sql += " AND STATE=? ";
             sqlStatement = _con.prepareStatement(sql);
-            sqlStatement.setString(1, getTableName());
             if(schedulerId == null) {
-                sqlStatement.setInt(2, state.getStateId());
+                sqlStatement.setInt(1, state.getStateId());
             } else {
-                sqlStatement.setString(2,schedulerId);
-                sqlStatement.setInt(3, state.getStateId());
+                sqlStatement.setString(1,schedulerId);
+                sqlStatement.setInt(2, state.getStateId());
             }
             logger.debug("executing statement "+sql+" ,values: "+getTableName()+" ,{} ,{}"
                     ,schedulerId,state.getStateId());
-            set = sqlStatement.executeQuery(sql);
+            set = sqlStatement.executeQuery();
             while(set.next()) {
                 Long ID = set.getLong(1);
                 Long NEXTJOBID = set.getLong(2);

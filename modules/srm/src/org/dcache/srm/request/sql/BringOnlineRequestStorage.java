@@ -190,13 +190,12 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException {
 
-            String sql = "SELECT PROTOCOL FROM ? WHERE RequestID=?";
+        String sql = "SELECT PROTOCOL FROM "+ getProtocolsTableName() +"  WHERE RequestID=?";
             PreparedStatement statement = _con.prepareStatement(sql);
-            statement.setString(1, getProtocolsTableName());
-            statement.setLong(2, ID);
+            statement.setLong(1, ID);
             logger.debug("executing: SELECT PROTOCOL FROM {} WHERE RequestID={} ",
                     getProtocolsTableName(),ID);
-            ResultSet fileIdsSet = statement.executeQuery(sql);
+            ResultSet fileIdsSet = statement.executeQuery();
             java.util.Set utilset = new java.util.HashSet();
             while(fileIdsSet.next()) {
                 utilset.add(fileIdsSet.getString(1));
