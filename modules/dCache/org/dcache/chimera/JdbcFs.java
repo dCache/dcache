@@ -807,13 +807,6 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("path2inode", e);
             throw new IOHimeraFsException(e.getMessage());
-        } catch (IOException e) {
-            /*
-             * will happen if read of link will fail.
-             */
-            _log.error("Failed to resolve id for a path: " + path + " parent: "
-                    + startFrom, e);
-            throw new IOHimeraFsException(e.getMessage());
         } finally {
             tryToClose(dbConnection);
         }

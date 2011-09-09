@@ -134,7 +134,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
      */
     @Override
     FsInode path2inode(Connection dbConnection, FsInode root, String path)
-            throws SQLException, IOException {
+            throws SQLException, IOHimeraFsException {
         /* Ideally we would use the SQL array type for the second
          * parameter to inject the path elements, however there is no
          * easy way to do that with prepared statements. Hence we use
@@ -170,7 +170,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
     @Override
     List<FsInode>
         path2inodes(Connection dbConnection, FsInode root, String path)
-        throws SQLException, IOException
+        throws SQLException, IOHimeraFsException
     {
         /* Ideally we would use the SQL array type for the second
          * parameter to inject the path elements, however there is no

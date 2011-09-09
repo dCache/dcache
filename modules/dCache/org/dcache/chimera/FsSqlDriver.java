@@ -1350,7 +1350,8 @@ class FsSqlDriver {
         return len;
     }
 
-    int read(Connection dbConnection, FsInode inode, int level, long beginIndex, byte[] data, int offset, int len) throws SQLException, IOException {
+    int read(Connection dbConnection, FsInode inode, int level, long beginIndex, byte[] data, int offset, int len)
+            throws SQLException, IOHimeraFsException {
 
         int count = 0;
         PreparedStatement stReadFromInode = null;
@@ -1380,6 +1381,8 @@ class FsSqlDriver {
                 //in.read(data, offset, count);
             }
 
+        } catch (IOException e) {
+            throw new IOHimeraFsException(e.toString());
         } finally {
             SqlHelper.tryToClose(rs);
             SqlHelper.tryToClose(stReadFromInode);
@@ -2292,7 +2295,7 @@ class FsSqlDriver {
      * @throws SQLException
      */
     FsInode path2inode(Connection dbConnection, FsInode root, String path)
-            throws SQLException, IOException {
+            throws SQLException, IOHimeraFsException {
 
 
         File pathFile = new File(path);
@@ -2358,7 +2361,7 @@ class FsSqlDriver {
      */
     List<FsInode>
         path2inodes(Connection dbConnection, FsInode root, String path)
-        throws SQLException, IOException
+        throws SQLException, IOHimeraFsException
     {
         File pathFile = new File(path);
         List<String> pathElements = new ArrayList<String>();
