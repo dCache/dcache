@@ -232,7 +232,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
-            rset = stmt.executeQuery(sql);
+            rset = stmt.executeQuery();
             // getFetchSize() is depreciated and will not work with newer
             // postgres release
             return rset.getFetchSize();
@@ -254,6 +254,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void clearPools(PnfsId pnfsId) {
         Connection conn = null;
         Statement  stmt = null;
+        PreparedStatement statement = null;
         String sqlDeleteFromReplicas = "DELETE FROM replicas WHERE pnfsId = ?";
         String sqlDeleteFromExcluded = "DELETE FROM excluded WHERE pnfsId = ?";
         String sqlDeleteFromFiles = "DELETE FROM files    WHERE pnfsId = ?";
@@ -262,7 +263,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            PreparedStatement statement = conn.prepareStatement(sqlDeleteFromReplicas);
+            statement = conn.prepareStatement(sqlDeleteFromReplicas);
             statement.setString(1, pnfsId.toString());
             statement.executeUpdate(sqlDeleteFromReplicas);
             statement = conn.prepareStatement(sqlDeleteFromExcluded);
@@ -277,6 +278,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             _log.warn("Database access error");
         } finally {
             tryToClose(stmt);
+            tryToClose(statement);
             tryToClose(conn);
         }
     }
@@ -349,7 +351,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setLong(1, timestamp);
             stmt = statement;
-            rset = statement.executeQuery(sql);
+            rset = statement.executeQuery();
         }
     }
 
@@ -435,7 +437,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setString(1, pnfsId.toString());
             stmt = statement;
-            rset = statement.executeQuery(sql);
+            rset = statement.executeQuery();
         }
     }
 
@@ -789,7 +791,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
-            rset = stmt.executeQuery(sql);
+            rset = stmt.executeQuery();
             rset.next();
             return rset.getString(1);
         } catch (SQLException ex) {
@@ -939,7 +941,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
-            rset = stmt.executeQuery(sql);
+            rset = stmt.executeQuery();
             rset.next();
             return rset.getLong(1);
         } catch (Exception ex) {
@@ -984,12 +986,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removePool(String poolName) {
         Connection conn = null;
         Statement  stmt = null;
+        PreparedStatement statement = null;
       String sql = "DELETE FROM ONLY replicas WHERE pool=?";
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
             stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
-            PreparedStatement statement =  conn.prepareStatement(sql);
+            statement =  conn.prepareStatement(sql);
             statement.setString(1, poolName);
             statement.executeUpdate();
             stmt.execute("COMMIT");
@@ -997,6 +1000,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             try { conn.rollback(); } catch (SQLException e1) { }
             _log.warn("Can't remove pool '" + poolName + "' from the DB");
         } finally {
+            tryToClose(statement);
             tryToClose(stmt);
             tryToClose(conn);
         }
