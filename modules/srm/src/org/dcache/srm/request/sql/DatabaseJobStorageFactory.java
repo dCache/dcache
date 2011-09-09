@@ -115,7 +115,6 @@ public class DatabaseJobStorageFactory extends JobStorageFactory{
                     continue;
                 }
                 JobStorage djs = jobStorageMap.get(jobType);
-                scheduler.jobStorageAdded(djs);
                 // get all pending unsheduled jobs
                 Set<Job> jobs = djs.getJobs(null, State.PENDING);
                 for(Job job:jobs) {

@@ -78,7 +78,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -94,7 +93,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author  timur
  */
-public final class Scheduler implements Runnable, PropertyChangeListener {
+public final class Scheduler implements Runnable  {
     private static final Logger logger =
             LoggerFactory.getLogger(Scheduler.class);
 
@@ -195,7 +194,6 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 		}
 		this.id = id;
 		schedulers.put(id, this);
-		Job.addClassStateChangeListener(this);
         threadQueue = new ModifiableQueue("ThreadQueue",id,maxThreadQueueSize);
 		priorityThreadQueue = new ModifiableQueue("PriorityThreadQueue",id,maxThreadQueueSize);
 		readyQueue = new ModifiableQueue("ReadyQueue",id,maxReadyQueueSize);
@@ -1049,192 +1047,6 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         };
         job.setRetryTimer(task);
         retryTimer.schedule(task,retryTimeout);
-    }
-
-
-    public void propertyChange(java.beans.PropertyChangeEvent evt) {
-        if(evt instanceof JobStorageAddedEvent) {
-            JobStorageAddedEvent jobStorageAdded = (JobStorageAddedEvent)evt;
-            JobStorage jobStorage = (JobStorage)jobStorageAdded.getSource();
-            try {
-                jobStorageAdded(jobStorage);
-            }catch(java.sql.SQLException  sqle) {
-                logger.error(sqle.toString());
-            }
-        }
-        else {
-            logger.error("unknown type of event " +evt);
-            return;
-        }
-
-    }
-
-    public void jobStorageAdded( JobStorage jobStorage) throws java.sql.SQLException{
-        logger.debug("Job Storage added:"+jobStorage);
-        if(true) return;
-        Set jobs = jobStorage.getJobs(this.id);
-        for(Iterator i = jobs.iterator(); i.hasNext();) {
-            Job job = (Job) i.next();
-            if(job.getSchedulerTimeStamp() != timeStamp) {
-                job.wlock();
-                try {
-                    try {
-                        logger.debug("found a job belonging to this scheduler:");
-                        logger.debug("job ="+job);
-                        // this means that this is a job from one of the previous runs
-                        // we want to put it in the current scheduler
-                        State state = job.getState();
-                        if(state == State.CANCELED ||
-                        state == State.DONE ||
-                        state == State.FAILED) {
-                            continue;
-                        }
-
-
-                        if(state == State.RETRYWAIT ) {
-                            increaseNumberOfRetryWait(job);
-                        } else if(state == State.ASYNCWAIT ) {
-                            increaseNumberOfAsyncWait(job);
-                        } else if(state == State.RUNNING) {
-                            increaseNumberOfRunningState(job);
-                        } else if(state == State.RUNNINGWITHOUTTHREAD) {
-                            increaseNumberOfRunningWithoutThreadState(job);
-                        } else if(state == State.PRIORITYTQUEUED) {
-                            if(!priorityQueue(job))
-                            {
-                                job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
-                            } else {
-                                increaseNumberOfPriorityTQueued(job);
-                            }
-                        } else if(state == State.TQUEUED) {
-                            increaseNumberOfTQueued(job);
-                        } else if(state == State.RQUEUED) {
-                            increaseNumberOfReadyQueued(job);
-                        } else if(state == State.READY || state == State.TRANSFERRING) {
-                            increaseNumberOfReady(job);
-                        }
-
-                        if(restorePolicy == ON_RESTART_FAIL_REQUEST) {
-
-                            job.setState(State.FAILED,"FAIL_ON_RESTART policy is on");
-                            continue;
-                        }
-
-
-
-                        if(restorePolicy == ON_RESTART_WAIT_FOR_UPDATE_REQUEST) {
-                            job.setState(State.RESTORED,
-                                "Restored job is put in RESTORED state,"+
-                                " waiting for user update before continuing");
-                            increaseNumberOfRestored(job);
-                            continue;
-
-                        }
-
-                        if(state == State.PENDING) {
-                            logger.debug("job is pending, scheduling");
-                            schedule(job);
-                            continue;
-                        }
-
-                        if(state == State.RETRYWAIT ) {
-                            logger.debug("job is Retrywait, scheduling");
-                            startRetryTimer(job);
-                            continue;
-                        }
-
-                        if(state == State.ASYNCWAIT ) {
-                            logger.debug("job is Asysncwait");
-                            // the notification will probably not come
-                            // so set it to be retried
-                            logger.debug("number of async wait is "+getTotalAsyncWait());
-                            logger.debug("setting job state to RETRYWAIT, current number of retry wait is "+getTotalRetryWait());
-                            job.setState(State.RETRYWAIT,"Restored job was in AsyncWait state, it is put in RetryWait state");
-                            logger.debug("after set state value of asyncwait is "+getTotalAsyncWait()+ " number of retry wait is "+getTotalRetryWait());
-                            logger.debug("starting RetryTimer");
-                            startRetryTimer(job);
-                            continue;
-                        }
-
-                        if(state == State.RUNNING) {
-                            logger.debug("job was Running");
-                            // the notification will probably not come
-                            // so set it to be retried
-                            logger.debug("setting job state to RETRYWAIT, starting RetryTimer");
-                            job.setState(State.RETRYWAIT,"Restored job was in Running state, it is put in RetryWait state");
-                            startRetryTimer(job);
-                            continue;
-                        }
-
-                        if(state == State.RUNNINGWITHOUTTHREAD) {
-                            logger.debug("job was RunningWithoutThread");
-                            // the notification will probably not come
-                            // so set it to be retried
-                            logger.debug("setting job state to RETRYWAIT, starting RetryTimer");
-                            job.setState(State.RETRYWAIT,"Restored job was in Running state, it is put in RetryWait state");
-                            startRetryTimer(job);
-                            continue;
-                        }
-
-                        if(state == State.PRIORITYTQUEUED) {
-
-                            logger.debug("job state is  PRIORITYTQUEUED, putting in the priority queue");
-                            // put blocks if priorityThreadQueue is full
-                            // this will block the retry timer (or the event handler)
-                            if(!priorityQueue(job))
-                            {
-                                job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
-                            }
-                            continue;
-
-                        }
-
-                        if(state == State.TQUEUED) {
-
-                            logger.debug("job state is  TQUEUED, putting in the thread queue");
-                            // put blocks if priorityThreadQueue is full
-                            // this will block the retry timer (or the event handler)
-                            if(!threadQueue(job))
-                            {
-                                job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
-                            }
-                            continue;
-                        }
-
-                        if(state == State.RQUEUED) {
-                            logger.debug("job state is  RQUEUED, putting in the ready queue");
-                            // put blocks if ready queue is full
-                            if(!readyQueue(job))
-                            {
-                                job.setState(State.FAILED,"Priority Thread Queue is full. Failing request");
-                            }
-                            continue;
-                        }
-
-                        if(state == State.READY || state == State.TRANSFERRING) {
-                            logger.debug("job is  READY (or TRANSFERRING)");
-                            continue;
-                        }
-
-                        job.setScheduler(id,timeStamp);
-
-                    }
-                    catch(Exception e) {
-                        logger.error(" Exception while re-scheduling  the saved job id= "+job.getId(), e);
-                        try {
-                            job.setState(State.FAILED,
-                            "Exception "+e.toString()+
-                            " while re scheduling  the saved job ");
-                        }
-                        catch( IllegalStateTransition ist) {
-                            logger.error("Illegal State Transition : " +ist.getMessage());
-                        }
-                    }
-                } finally {
-                    job.wunlock();
-                }
-            }
-        }
     }
 
     public void stateChanged(Job job,State oldState,State newState)   {

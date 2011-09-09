@@ -72,8 +72,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.beans.PropertyChangeSupport;
-import java.beans.PropertyChangeListener;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.HashMap;
@@ -117,8 +115,6 @@ public abstract class Job  {
     protected Long nextJobId;
 
     protected final Long id;
-
-    private static PropertyChangeSupport jobsSupport = new PropertyChangeSupport(Job.class);
 
     private volatile State state = State.PENDING;
     protected StringBuilder errorMessage=new StringBuilder();
@@ -170,7 +166,6 @@ public abstract class Job  {
         synchronized(jobStorages) {
             jobStorages.add(jobStorage);
         }
-        //jobsSupport.firePropertyChange(new JobStorageAddedEvent(jobStorage));
     }
 
     public static void shutdown() {
@@ -406,18 +401,6 @@ public abstract class Job  {
             return job;
         }
         throw new SRMInvalidRequestException("jobId = "+jobId+" does not correspond to any known job");
-    }
-
-
-    /*public Job(JobStorage jobStorage,
-        int maxNumberOfRetries) {
-        this(DEFAULT_JOB_LIFETIME_MILLIS,jobStorage,maxNumberOfRetries);
-
-    } */
-
-
-    public static void addClassStateChangeListener(PropertyChangeListener listener) {
-        jobsSupport.addPropertyChangeListener(listener);
     }
 
     /** Performs state transition checking the legality first.
