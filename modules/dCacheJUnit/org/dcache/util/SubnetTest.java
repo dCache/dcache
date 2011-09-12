@@ -79,5 +79,8 @@ public class SubnetTest {
 
         subnet = Subnet.create("0:11:0:11::1");
         assertEquals("0:11:0:11::1/128", subnet.toString());
+
+        subnet = Subnet.create("00ff:ff:00ff:00ff:00ff::1");
+        assertEquals("ff:ff:ff:ff:ff::1/128", subnet.toString());
     }
 }

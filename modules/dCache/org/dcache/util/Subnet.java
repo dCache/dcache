@@ -97,9 +97,9 @@ public class Subnet {
     public static String toIPv6String(Inet6Address inetAddress) {
         byte[] address = inetAddress.getAddress();
 
-        StringBuilder sb = new StringBuilder(Integer.toHexString(address[0] << 8 | address[1]));
+        StringBuilder sb = new StringBuilder(Integer.toHexString(address[0] << 8 | (address[1] & 0xff)));
         for (int i = 2; i<16; i+=2) {
-            sb.append(":" + Integer.toHexString(address[i] << 8 | address[i+1]));
+            sb.append(":" + Integer.toHexString(address[i] << 8 | (address[i+1] & 0xff) ));
         }
         return sb.toString().replaceFirst("((:|^)0){2,}:", "::");
     }
