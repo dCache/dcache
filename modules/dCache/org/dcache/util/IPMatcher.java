@@ -20,7 +20,6 @@ package org.dcache.util;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
 
-import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -176,7 +175,7 @@ public class IPMatcher {
 
 
     public static InetAddress convertToIPv4IfPossible(InetAddress inetAddress) {
-        if (inetAddress instanceof Inet4Address) return inetAddress;
+        if (!(inetAddress instanceof Inet6Address)) return inetAddress;
 
         try {
             return getEmbeddedIPv4ClientAddress((Inet6Address)inetAddress);
