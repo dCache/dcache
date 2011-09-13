@@ -98,12 +98,6 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                 }
             }
 
-            try {
-               _log.debug("CURFH: {}", context.currentInode());
-            } catch (ChimeraNFSException he) {
-                _log.debug("CURFH: NULL");
-            }
-
             res.resarray = context.processedOperations();
             // result  status must be equivalent
             // to the status of the last operation that
