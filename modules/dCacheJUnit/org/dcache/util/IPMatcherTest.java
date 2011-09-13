@@ -1,6 +1,7 @@
 package org.dcache.util;
 
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -57,6 +58,10 @@ public class IPMatcherTest {
                 16);
 
         assertTrue("Failed to match host with netmask.", match);
+
+        match = IPMatcher.match(InetAddress.getByName("192.168.0.1"), InetAddress.getByName("192.168.0.1"), 0);
+
+        assertTrue("Failed to match host with 0-netmask.", match);
     }
 
     @Test
@@ -79,6 +84,10 @@ public class IPMatcherTest {
                 64);
 
         assertTrue("Failed to match host with netmask.", match);
+
+        match = IPMatcher.match(InetAddress.getByName("feed:bad:f00d:feed:bad:f00d:feed:f00d"), InetAddress.getByName("feed:bad:f00d:feed:bad:f00d:feed:f00d"), 0);
+
+        assertTrue("Failed to match host with 0-netmask.", match);
     }
 
     @Test
@@ -124,6 +133,34 @@ public class IPMatcherTest {
     }
 
     @Test
+    public void testMatchCompatibleIPv6Address() throws UnknownHostException {
+        boolean match = IPMatcher.match(InetAddress.getByName("::ffff:192.168.0.3"), InetAddress.getByName("192.168.0.0"), 24);
+
+        assertTrue("Failed to match with compatible IPv6 address.", match);
+    }
+
+    @Test
+    public void testMatchBothCompatibleIPv6Addresses() throws UnknownHostException {
+        boolean match = IPMatcher.match(InetAddress.getByName("::ffff:192.168.0.3"), InetAddress.getByName("::ffff:192.168.0.0"), 120);
+
+        assertTrue("Failed to match compatible IPv6 addresses.", match);
+    }
+
+    @Test
+    public void testMatchWithCompatibleIPv6Subnet() throws UnknownHostException {
+        boolean match = IPMatcher.match(InetAddress.getByName("192.168.0.3"), InetAddress.getByName("::ffff:192.168.0.0"), 120);
+
+        assertTrue("Failed to match compatible IPv6 subnet.", match);
+    }
+
+    @Test
+    public void testMatchWithCompatibleIPv6SubnetHexNotation() throws UnknownHostException {
+        boolean match = IPMatcher.match(InetAddress.getByName("192.168.0.3"), InetAddress.getByName("::ffff:c0a8:0"), 120);
+
+        assertTrue("Failed to match compatible IPv6 subnet.", match);
+    }
+
+    @Test
     public void testMatchAny() throws UnknownHostException {
 
         boolean match = IPMatcher.matchAny(new InetAddress[]
@@ -135,6 +172,25 @@ public class IPMatcherTest {
         match = IPMatcher.matchAny(new InetAddress[]
                 { InetAddress.getByName("131.169.213.1"), InetAddress.getByName("131.169.214.1"), InetAddress.getByName("131.169.215.1") },
                 InetAddress.getByName("131.169.214.0"), 24);
+
+        assertTrue(match);
+    }
+
+    @Test
+    public void testMaskZeroMatchesAll() throws UnknownHostException {
+        boolean match = IPMatcher.match(InetAddress.getByName("1.2.3.4"), InetAddress.getByName("9.8.7.6"), 0);
+
+        assertTrue(match);
+
+        match = IPMatcher.match(InetAddress.getByName("ffff::1234"), InetAddress.getByName("9.8.7.6"), 0);
+
+        assertTrue(match);
+
+        match = IPMatcher.match(InetAddress.getByName("9.8.7.6"), InetAddress.getByName("ffff::1234"), 0);
+
+        assertTrue(match);
+
+        match = IPMatcher.match(InetAddress.getByName("aaaa::4321"), InetAddress.getByName("ffff::1234"), 0);
 
         assertTrue(match);
     }
@@ -154,22 +210,14 @@ public class IPMatcherTest {
     }
 
     @Test
-    public void testSubnetAllMatch() throws UnknownHostException {
+    public void testMaskAddress() throws UnknownHostException {
+        assertEquals("255.255.255.255", IPMatcher.maskInetAddress(InetAddress.getByName("255.255.255.255"), 32).getHostAddress());
+        assertEquals("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", IPMatcher.maskInetAddress(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), 128).getHostAddress());
 
-       Subnet AllNet = Subnet.create();
-       assertTrue(AllNet.contains(InetAddress.getByName("192.168.0.25")));
-       assertTrue(AllNet.contains(InetAddress.getLocalHost()));
-       assertTrue(AllNet.containsAny(InetAddress.getAllByName("localhost")));
-       assertTrue(AllNet.containsHost("cern.ch"));
-    }
+        assertEquals("0.0.0.0", IPMatcher.maskInetAddress(InetAddress.getByName("255.255.255.255"), 0).getHostAddress());
+        assertEquals("0:0:0:0:0:0:0:0", IPMatcher.maskInetAddress(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), 0).getHostAddress());
 
-    @Test
-    public void testSubnetMatch() throws UnknownHostException {
-        Subnet subnet = Subnet.create("131.169.214.0/24");
-
-        assertTrue(subnet.contains(InetAddress.getByName("131.169.214.10")));
-        assertFalse(subnet.contains(InetAddress.getByName("131.169.215.10")));
-        assertTrue(subnet.containsHost("nairi.desy.de"));
-        assertFalse(subnet.containsHost("cern.ch"));
+        assertEquals("255.255.255.128", IPMatcher.maskInetAddress(InetAddress.getByName("255.255.255.255"), 25).getHostAddress());
+        assertEquals("ffff:ffff:ffff:ffff:fff8:0:0:0", IPMatcher.maskInetAddress(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"), 77).getHostAddress());
     }
 }

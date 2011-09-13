@@ -18,10 +18,12 @@
 package org.dcache.util;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.net.InetAddresses.getEmbeddedIPv4ClientAddress;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,7 +40,8 @@ public class IPMatcher {
      *
      * This method is deprecated. Please use one of the following new methods:
      * - matchHostGlob
-     * - matchCordPattern
+     * - matchCidrPattern
+     * They are also more powerful and support a wider range of ipv6 features.
      *
      * @param pattern String representation of a host, either as a hostname glob or an CIDR IP[/subnet] pattern.
      * @param ip InetAddress to be checked for matching of the mask
@@ -81,15 +84,15 @@ public class IPMatcher {
      */
     public static InetAddress maskInetAddress(InetAddress inetAddress, int mask) throws UnknownHostException {
         byte[] address = inetAddress.getAddress();
-        ByteBuffer resultBuffer = ByteBuffer.allocate(address.length);
 
-        int i;
-        for (i=0; i<mask/8; i++) {
-            resultBuffer.put(address[i]);
+        if (mask == 0) return InetAddress.getByAddress(new byte[address.length]);
+
+        if (mask%8 != 0) address[mask/8] = (byte) (address[mask/8] & (0xff << (8-mask%8)));
+        for (int i=mask/8+1; i<address.length; i++) {
+            address[i] = 0;
         }
-        resultBuffer.put((byte)(i<address.length ? ((address[i]&0xFF) >> (8-mask%8)) << (8-mask%8) : 0));
 
-        return InetAddress.getByAddress(resultBuffer.array());
+        return InetAddress.getByAddress(address);
     }
 
     /**
@@ -157,15 +160,29 @@ public class IPMatcher {
      */
     public static boolean match(InetAddress ip, InetAddress subnet, int mask)
     {
-        byte[] ipBytes = ip.getAddress();
-        byte[] netBytes = subnet.getAddress();
+        if (mask == 0) return true;
+
+        byte[] ipBytes = convertToIPv4IfPossible(ip).getAddress();
+        byte[] netBytes = convertToIPv4IfPossible(subnet).getAddress();
 
         if (ipBytes.length != netBytes.length) return false;
 
         int i;
-        for (i=0; i<mask/8; i++) {
+        for (i=0; i<(mask%(netBytes.length*8))/8; i++) {
             if (ipBytes[i] != netBytes[i]) return false;
         }
         return i<ipBytes.length ? ((ipBytes[i]&0xFF) >> (8-mask%8)) == ((netBytes[i]&0xFF) >> (8-mask%8)) : true;
     }
+
+
+    public static InetAddress convertToIPv4IfPossible(InetAddress inetAddress) {
+        if (inetAddress instanceof Inet4Address) return inetAddress;
+
+        try {
+            return getEmbeddedIPv4ClientAddress((Inet6Address)inetAddress);
+        } catch (IllegalArgumentException illegalArgumentException) {}
+
+        return inetAddress;
+    }
+
 }
