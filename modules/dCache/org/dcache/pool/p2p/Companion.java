@@ -493,7 +493,7 @@ class Companion
      */
     synchronized void beginTransfer(final String uri)
     {
-        new Thread("P2P Transfer") {
+        new Thread("P2P Transfer - " + _pnfsId) {
             public void run()
             {
                 transfer(uri);

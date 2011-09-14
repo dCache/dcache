@@ -330,8 +330,7 @@ public class P2PClient
     }
 
     public static final String fh_pp_interface =
-        "Specifies the interface from which connections to other pools\n" +
-        "are expected to originate.\n\n" +
+        "Specifies the interface used when connecting to other pools.\n\n" +
         "For pool to pool transfers, the destination creates a TCP\n" +
         "conection to the source pool. For this to work the source pool\n" +
         "must select one of its network interfaces to which the destination\n" +
