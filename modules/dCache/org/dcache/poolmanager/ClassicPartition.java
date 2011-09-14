@@ -231,9 +231,13 @@ public class ClassicPartition extends Partition
             }
         }
 
-        boolean isPanicCostExceeded = isPanicCostExceeded(bestCost);
-        boolean isFallbackCostExceeded = isFallbackCostExceeded(bestCost);
-        boolean isCostCutExceeded = isCostCutExceeded(cm, bestCost);
+        CostCalculatable calculatable =
+            new CostCalculationV5(bestPool.getCostInfo());
+        calculatable.recalculate(0);
+        double cost = calculatable.getPerformanceCost();
+        boolean isPanicCostExceeded = isPanicCostExceeded(cost);
+        boolean isFallbackCostExceeded = isFallbackCostExceeded(cost);
+        boolean isCostCutExceeded = isCostCutExceeded(cm, cost);
         if (isPanicCostExceeded) {
             throw new CostException("Cost limit exceeded", null,
                                     isFallbackCostExceeded, isCostCutExceeded);
