@@ -41,6 +41,8 @@ public class ClassicPostExecutionService implements PostTransferExecutionService
                     } catch (Throwable e) {
                         Thread t = Thread.currentThread();
                         t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                        request.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                "Transfer failed due to unexpected exception: " + e.getMessage());
                     }
                     request.sendBillingMessage();
                     request.sendFinished();

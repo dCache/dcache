@@ -51,8 +51,10 @@ public class LegacyMoverExecutorService implements MoverExecutorService
                     _log.error("Transfer failed: {}", e.toString());
                     completionHandler.failed(e, null);
                 } catch (Throwable e) {
+                    _log.error("Transfer failed:", e);
                     Thread t = Thread.currentThread();
                     t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                    completionHandler.failed(e, null);
                 } finally {
                     CDC.clear();
                 }
