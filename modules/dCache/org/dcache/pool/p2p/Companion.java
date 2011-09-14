@@ -1,5 +1,6 @@
 package org.dcache.pool.p2p;
 
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledExecutorService;
@@ -7,13 +8,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.SyncFailedException;
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.net.BindException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -36,15 +34,19 @@ import diskCacheV111.util.Adler32;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.PnfsMessage;
 
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.pool.movers.DCapConstants;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,28 +55,34 @@ import org.slf4j.LoggerFactory;
  * Encapsulates the tasks to be performed on the destination of a pool
  * to pool transfer.
  *
- * The companion registers itself with an Acceptor upon creation.  The
- * Acceptor will invoke the transfer method of the Companion when a
- * connection from the source pool is received.
+ * The companion will submit an HTTP download request to the source
+ * pool, wait for the reply and then download the file through HTTP.
  *
- * The companion is driven by a state machine, Companion.sm. Most of
- * the logic is encapsulated in the state machine.
+ * The code is driven by a state machine, Companion.sm. Most of the
+ * logic is encapsulated in the state machine.
  */
 class Companion
 {
     private final static Logger _log = LoggerFactory.getLogger(Companion.class);
 
-    private final static long PING_PERIOD = 5 * 60 * 1000; // 5 minutes
+    private final static long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
+    private final static int BUFFER_SIZE = 65536;
+    private final static String PROTOCOL_INFO_NAME = "Http";
+    private final static int PROTOCOL_INFO_MAJOR_VERSION = 1;
+    private final static int PROTOCOL_INFO_MINOR_VERSION = 1;
 
-    private final Acceptor _acceptor;
+    private final static AtomicInteger _nextId = new AtomicInteger(100);
+
+    private final InetAddress _address;
     private final Repository _repository;
     private final ChecksumModuleV1 _checksumModule;
     private final PnfsId _pnfsId;
-    private final String _poolName;
+    private final String _sourcePoolName;
+    private final String _destinationPoolCellname;
+    private final String _destinationPoolCellDomainName;
     private final EntryState _targetState;
     private final List<StickyRecord> _stickyRecords;
     private final CacheFileAvailable _callback;
-    private final InetSocketAddress _address;
     private final ScheduledExecutorService _executor;
     private final CellStub _pnfs;
     private final CellStub _pool;
@@ -104,7 +112,7 @@ class Companion
      * Creates a new instance.
      *
      * @param executor    Executor used for state machine callbacks
-     * @param acceptor    Acceptor used for registering the companion
+     * @param address     Expected interface to connect to source pool
      * @param repository  Repository in which the replica is created
      * @param checksumModule Checksum module used to verify and
      *                    compute checksums
@@ -113,20 +121,24 @@ class Companion
      * @param pnfsId      PNFS ID of replica to copy
      * @param storageInfo Storage info of the file. May be null.
      * @param poolName    Name of source pool
+     * @param destinationPoolCellname Cell name of the destination pool
+     * @param destinationPoolCellDomainName Domain name of the destination pool
      * @param targetState The repository state used for the new replica
      * @param stickyRecords The sticky flags used for the new replica
      * @param callback    Callback to which success or failure is reported
      * @throws IOException if the P2P socket could not be opened
      */
     Companion(ScheduledExecutorService executor,
-              Acceptor acceptor,
+              InetAddress address,
               Repository repository,
               ChecksumModuleV1 checksumModule,
               CellStub pnfs,
               CellStub pool,
               PnfsId pnfsId,
               StorageInfo storageInfo,
-              String poolName,
+              String sourcePoolName,
+              String destinationPoolCellname,
+              String destinationPoolCellDomainName,
               EntryState targetState,
               List<StickyRecord> stickyRecords,
               CacheFileAvailable callback)
@@ -135,13 +147,16 @@ class Companion
         _fsm = new CompanionContext(this);
 
         _executor = executor;
-        _acceptor = acceptor;
+        _address = address;
         _repository = repository;
         _checksumModule = checksumModule;
         _pnfs = pnfs;
         _pool = pool;
         _pnfsId = pnfsId;
-        _poolName = poolName;
+        _sourcePoolName = sourcePoolName;
+        _destinationPoolCellname = destinationPoolCellname;
+        _destinationPoolCellDomainName = destinationPoolCellDomainName;
+
         _callback = callback;
         _targetState = targetState;
         _stickyRecords = new ArrayList(stickyRecords);
@@ -149,30 +164,7 @@ class Companion
             setStorageInfo(storageInfo);
         }
 
-        _id = _acceptor.register(this);
-
-        boolean success = false;
-        try {
-            /* Determine address that source pool should connect to. If
-             * the acceptor listens on a wildcard address, then we use the
-             * local host name to select an address.
-             */
-            InetSocketAddress address = _acceptor.getSocketAddress();
-            if (address == null) {
-                throw new BindException("P2P socket is not bound");
-            }
-
-            if (address.getAddress().isAnyLocalAddress()) {
-                address = new InetSocketAddress(InetAddress.getLocalHost(),
-                                                address.getPort());
-            }
-            _address = address;
-            success = true;
-        } finally {
-            if (!success) {
-                _acceptor.unregister(_id);
-            }
-        }
+        _id = _nextId.getAndIncrement();
 
         synchronized (this) {
             _fsm.start();
@@ -230,6 +222,14 @@ class Companion
     }
 
     /**
+     * Message handler for redirect messages from the pools.
+     */
+    synchronized public void messageArrived(HttpDoorUrlInfoMessage message)
+    {
+        _fsm.messageArrived(message);
+    }
+
+    /**
      * Sets the thread used for the file transfer.
      */
     synchronized private void setThread(Thread thread)
@@ -237,32 +237,17 @@ class Companion
         _thread = thread;
     }
 
-    /**
-     * Transfer the file from the source pool using the given data
-     * streams. Normally called by the Acceptor.
-     */
-    public void transfer(DataInputStream in, DataOutputStream out)
-        throws IllegalStateException
+    private void transfer(String uri)
     {
         ReplicaDescriptor handle;
         synchronized (this) {
             try {
-                CompanionContext.CompanionState state = _fsm.getState();
-                if (state != CompanionContext.FSM.CreatingMover &&
-                    state != CompanionContext.FSM.WaitingForConnection)
-                    throw new IllegalStateException("Wrong state [" + state + "]");
-
-                handle = _repository.createEntry(_pnfsId,
-                                                 _storageInfo,
-                                                 EntryState.FROM_POOL,
-                                                 _targetState,
-                                                 _stickyRecords);
+                handle = createReplicaEntry();
             } catch (FileInCacheException e) {
                 _fsm.createEntryFailed();
-                throw new IllegalStateException("File already exists", e);
+                return;
             }
             setThread(Thread.currentThread());
-            _fsm.connected();
         }
 
         Throwable error = null;
@@ -273,7 +258,23 @@ class Companion
                 long size = entry.getStorageInfo().getFileSize();
 
                 handle.allocate(size);
-                runIO(in, out, file, size);
+
+                MessageDigest digest = createDigest();
+                HttpURLConnection connection = createConnection(uri);
+                try {
+                    InputStream input = connection.getInputStream();
+                    try {
+                        long total = copy(input, file, digest);
+                        if (total != size) {
+                            throw new IOException("Amount of received data does not match expected file size");
+                        }
+                    } finally {
+                        input.close();
+                    }
+                } finally {
+                    connection.disconnect();
+                }
+                setChecksum(file, digest);
             } finally {
                 setThread(null);
                 Thread.interrupted();
@@ -283,146 +284,67 @@ class Companion
             error = e;
         } finally {
             handle.close();
-        }
-
-        synchronized (this) {
-            _fsm.disconnected(error);
+            synchronized (this) {
+                _fsm.transferEnded(error);
+            }
         }
     }
 
-    private void readReply(DataInputStream in, int minLength,
-                           int expectedType, int expectedMode)
+    private ReplicaDescriptor createReplicaEntry()
+        throws FileInCacheException
+    {
+        return _repository.createEntry(_pnfsId,
+                                       _storageInfo,
+                                       EntryState.FROM_POOL,
+                                       _targetState,
+                                       _stickyRecords);
+    }
+
+    private MessageDigest createDigest()
+    {
+        return _checksumModule.checkOnTransfer() ? new Adler32() : null;
+    }
+
+    private HttpURLConnection createConnection(String uri)
+        throws MalformedURLException, IOException
+    {
+        URL url = new URL(uri);
+        HttpURLConnection connection =
+            (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("Connection", "close");
+        connection.connect();
+        return connection;
+    }
+
+    private void setChecksum(File file, MessageDigest digest)
+        throws CacheException, InterruptedException, IOException
+    {
+        Checksum checksum = null;
+        if (digest != null) {
+            checksum = new Checksum(ChecksumType.ADLER32, digest.digest());
+        }
+
+        _checksumModule.setMoverChecksums(_pnfsId,
+                                          file,
+                                          _checksumModule.getDefaultChecksumFactory(),
+                                          null,
+                                          checksum);
+    }
+
+    private long copy(InputStream input, File file, MessageDigest digest)
         throws IOException
     {
-        int following = in.readInt();
-        if (following < minLength)
-            throw new IOException("Protocol Violation : ack too small : "
-                                  + following);
-
-        int type = in.readInt();
-        if (type != expectedType)
-            throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
-                                  + type);
-
-        int mode = in.readInt();
-        if (mode != expectedMode) // SEEK
-            throw new IOException("Protocol Violation : NOT SEEK : " + mode);
-
-        int returnCode = in.readInt();
-        if (returnCode != 0) {
-            String error = in.readUTF();
-            throw new IOException("Request Failed : (" + returnCode
-                                  + ") " + error);
-        }
-    }
-
-    private long getFileSize(DataOutputStream out, DataInputStream in)
-        throws IOException
-    {
-        out.writeInt(4); // bytes following
-        out.writeInt(DCapConstants.IOCMD_LOCATE);
-
-        readReply(in, 28, DCapConstants.IOCMD_ACK, DCapConstants.IOCMD_LOCATE);
-        long filesize = in.readLong();
-        in.readLong(); // file position
-        return filesize;
-    }
-
-    private void runIO(DataInputStream in, DataOutputStream out,
-                       File file, long filesize)
-        throws IOException, CacheException, InterruptedException,
-               NoSuchAlgorithmException, NoRouteToCellException
-    {
-        MessageDigest digest =
-            _checksumModule.checkOnTransfer()
-            ? new Adler32()
-            : null;
-
-        int challengeSize = in.readInt();
-        while (challengeSize > 0) {
-            challengeSize -= in.skipBytes(challengeSize);
-        }
-
-        long remoteSize = getFileSize(out, in);
-        if (filesize != remoteSize) {
-            throw new IOException("Remote file has incorrect size [expected=" + filesize + ";actual=" + remoteSize + "]");
-        }
-
+        long total = 0L;
         RandomAccessFile dataFile = new RandomAccessFile(file, "rw");
         try {
-            //
-            // request the full file
-            //
-            out.writeInt(12); // bytes following
-            out.writeInt(DCapConstants.IOCMD_READ);
-            out.writeLong(filesize);
-            //
-            // waiting for reply
-            //
-            readReply(in, 12, DCapConstants.IOCMD_ACK, DCapConstants.IOCMD_READ);
-            //
-            // expecting data chain
-            //
-            //
-            // waiting for reply
-            //
-            int following = in.readInt();
-            if (following < 4)
-                throw new IOException("Protocol Violation : ack too small : "
-                                      + following);
-
-            int type = in.readInt();
-            if (type != DCapConstants.IOCMD_DATA)
-                throw new IOException("Protocol Violation : NOT DATA : " + type);
-
-            byte[] data = new byte[256 * 1024];
-
-            int nextPacket = 0;
-            long total = 0L;
-            while (true) {
-                if ((nextPacket = in.readInt()) < 0)
-                    break;
-
-                int restPacket = nextPacket;
-
-                while (restPacket > 0) {
-                    int block = Math.min(restPacket, data.length);
-                    //
-                    // we collect a full block before we write it out
-                    // (a block always fits into our buffer)
-                    //
-                    int position = 0;
-                    for (int rest = block; rest > 0;) {
-                        int rc = in.read(data, position, rest);
-                        if (rc < 0)
-                            throw new IOException("Premature EOF");
-
-                        rest -= rc;
-                        position += rc;
-                    }
-                    total += block;
-                    dataFile.write(data, 0, block);
-                    restPacket -= block;
-
-                    if (digest != null) {
-                        digest.update(data, 0, block);
-                    }
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int read;
+            while ((read = input.read(buffer)) > -1) {
+                dataFile.write(buffer, 0, read);
+                total += read;
+                if (digest != null) {
+                    digest.update(buffer, 0, read);
                 }
-            }
-            //
-            // waiting for reply
-            //
-            readReply(in, 12, DCapConstants.IOCMD_FIN, DCapConstants.IOCMD_READ);
-            //
-            out.writeInt(4); // bytes following
-            out.writeInt(DCapConstants.IOCMD_CLOSE);
-            //
-            // waiting for reply
-            //
-            readReply(in, 12, DCapConstants.IOCMD_ACK, DCapConstants.IOCMD_CLOSE);
-
-            if (total != filesize) {
-                throw new IOException("Amount of received data does not match expected file size");
             }
         } finally {
             try {
@@ -437,18 +359,7 @@ class Companion
 
             dataFile.close();
         }
-
-        Checksum checksum = null;
-        if (digest != null) {
-            checksum = new Checksum(ChecksumType.ADLER32, digest.digest());
-        }
-
-        _checksumModule
-            .setMoverChecksums(_pnfsId,
-                               file,
-                               _checksumModule.getDefaultChecksumFactory(),
-                               null,
-                               checksum);
+        return total;
     }
 
     //
@@ -528,17 +439,26 @@ class Companion
     /** Asynchronously requests delivery from the source pool. */
     synchronized void sendDeliveryRequest()
     {
-        DCapProtocolInfo info =
-            new DCapProtocolInfo("DCap", 3, 0,
-                                 _address.getAddress().getHostAddress(),
-                                 _address.getPort());
-        info.setSessionId(_id);
+        HttpProtocolInfo protocolInfo =
+            new HttpProtocolInfo(PROTOCOL_INFO_NAME,
+                                 PROTOCOL_INFO_MAJOR_VERSION,
+                                 PROTOCOL_INFO_MINOR_VERSION,
+                                 new InetSocketAddress(_address, 0),
+                                 _destinationPoolCellname,
+                                 _destinationPoolCellDomainName,
+                                 "/" +  _pnfsId.toIdString());
+        protocolInfo.setSessionId(_id);
 
         PoolDeliverFileMessage request =
-            new PoolDeliverFileMessage(_poolName, _pnfsId, info, _storageInfo);
+                new PoolDeliverFileMessage(_sourcePoolName,
+                                           _pnfsId,
+                                           protocolInfo,
+                                           _storageInfo);
         request.setPool2Pool();
+        request.setInitiator(getInitiator());
+        request.setId(_id);
 
-        _pool.send(new CellPath(_poolName),
+        _pool.send(new CellPath(_sourcePoolName),
                    request, PoolDeliverFileMessage.class,
                    new Callback<PoolDeliverFileMessage>()
                    {
@@ -551,6 +471,11 @@ class Companion
                    });
     }
 
+    private String getInitiator()
+    {
+        return _destinationPoolCellname + "@" + _destinationPoolCellDomainName;
+    }
+
     synchronized void setMoverId(int moverId)
     {
         _moverId = moverId;
@@ -558,9 +483,22 @@ class Companion
 
     synchronized void ping()
     {
-        _pool.send(new CellPath(_poolName),
+        _pool.send(new CellPath(_sourcePoolName),
                    "p2p ls -binary " + _moverId, IoJobInfo.class,
                    new Callback());
+    }
+
+    /**
+     * Starts a thread that transfers the file from the source pool.
+     */
+    synchronized void beginTransfer(final String uri)
+    {
+        new Thread("P2P Transfer") {
+            public void run()
+            {
+                transfer(uri);
+            }
+        }.start();
     }
 
     /**
@@ -583,8 +521,6 @@ class Companion
         } else {
             _log.info(String.format("P2P for %s completed", _pnfsId));
         }
-
-        _acceptor.unregister(_id);
 
         if (_callback != null) {
 
@@ -616,7 +552,6 @@ class Companion
             _thread.interrupt();
         }
     }
-
 
     /**
      * Helper class implementing the MessageCallback interface,

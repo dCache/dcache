@@ -5,11 +5,10 @@ package org.dcache.pool.p2p;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.util.Map;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -17,10 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.cells.AbstractCellComponent;
 import org.dcache.cells.CellMessageReceiver;
@@ -29,12 +25,11 @@ import org.dcache.cells.CellStub;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.Args;
-import dmg.util.CommandSyntaxException;
 
 public class P2PClient
     extends AbstractCellComponent
@@ -42,7 +37,6 @@ public class P2PClient
                CellCommandListener
 {
     private final static Logger _log = LoggerFactory.getLogger(P2PClient.class);
-    private final static Acceptor _acceptor = new Acceptor();
 
     private final Map<Integer, Companion> _companions = new HashMap();
     private ScheduledExecutorService _executor;
@@ -53,9 +47,15 @@ public class P2PClient
 
     private CellStub _pnfs;
     private CellStub _pool;
+    private String _destinationPoolCellname;
+    private String _destinationPoolCellDomainName;
+    private InetAddress _interface;
 
-    public P2PClient()
+    @Override
+    public void afterSetup()
     {
+        _destinationPoolCellname = getCellName();
+        _destinationPoolCellDomainName = getCellDomainName();
     }
 
     public synchronized void setExecutor(ScheduledExecutorService executor)
@@ -101,10 +101,25 @@ public class P2PClient
             : 0;
     }
 
+    public synchronized InetAddress getInterface()
+        throws UnknownHostException
+    {
+        return (_interface == null) ? InetAddress.getLocalHost() : _interface;
+    }
+
     public synchronized void messageArrived(DoorTransferFinishedMessage message)
     {
-        DCapProtocolInfo pinfo = (DCapProtocolInfo)message.getProtocolInfo();
+        HttpProtocolInfo pinfo = (HttpProtocolInfo)message.getProtocolInfo();
         int sessionId = pinfo.getSessionId();
+        Companion companion = _companions.get(sessionId);
+        if (companion != null) {
+            companion.messageArrived(message);
+        }
+    }
+
+    public synchronized void messageArrived(HttpDoorUrlInfoMessage message)
+    {
+        int sessionId = (int) message.getId();
         Companion companion = _companions.get(sessionId);
         if (companion != null) {
             companion.messageArrived(message);
@@ -194,7 +209,7 @@ public class P2PClient
     }
 
     public synchronized int newCompanion(PnfsId pnfsId,
-                                         String poolName,
+                                         String sourcePoolName,
                                          StorageInfo storageInfo,
                                          EntryState targetState,
                                          List<StickyRecord> stickyRecords,
@@ -219,11 +234,14 @@ public class P2PClient
         Callback cb = new Callback(callback);
 
         Companion companion =
-            new Companion(_executor, _acceptor, _repository,
+            new Companion(_executor, getInterface(), _repository,
                           _checksumModule,
                           _pnfs, _pool,
                           pnfsId, storageInfo,
-                          poolName, targetState, stickyRecords,
+                          sourcePoolName,
+                          _destinationPoolCellname,
+                          _destinationPoolCellDomainName,
+                          targetState, stickyRecords,
                           cb);
 
         int id = addCompanion(companion);
@@ -258,25 +276,27 @@ public class P2PClient
         }
     }
 
+    @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("  Listen     : " + _acceptor);
+        try {
+            pw.println("  Interface  : " + getInterface());
+        } catch (UnknownHostException e) {
+            pw.println("  Interface  : " + e.getMessage());
+        }
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + (_pnfs.getTimeout() / 1000L) + " seconds ");
     }
 
+    @Override
     public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n#  Pool to Pool (P2P) [$Revision$]\n#");
-        InetSocketAddress address = _acceptor.getAddress();
-        if (address.getAddress().isAnyLocalAddress()) {
-            pw.println("pp set port " + address.getPort());
-        } else {
-            pw.println("pp set listen " +
-                       address.getHostName() + " " + address.getPort());
-        }
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfs.getTimeout() / 1000L));
+        if (_interface != null) {
+            pw.println("pp interface " + _interface.getHostAddress());
+        }
     }
 
     public static final String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
@@ -294,33 +314,41 @@ public class P2PClient
         return "";
     }
 
-    public static final String fh_pp_set_port =
-        "Equivalent to calling 'pp set listen * <listenPort>'";
-    public static final String hh_pp_set_port = "<listenPort>";
+    public static final String hh_pp_set_port = "<port> # Obsolete";
     public synchronized String ac_pp_set_port_$_1(Args args)
     {
-        _acceptor.setAddress(new InetSocketAddress(Integer.parseInt(args.argv(0))));
-        return "";
+        return "'pp set port' is obsolete";
     }
 
     public static final String fh_pp_set_listen =
-        "Specifies the interface and port on which to listen for connections\n"+
-        "from other pools. Use * to select the wildcard address. If port is\n"+
-        "ommitted or set to 0, then a free port is selected from the range\n"+
-        "defined by org.dcache.net.tcp.portrange. If the range is not\n"+
-        "defined then a free port is selected by the OS.\n\n"+
-        "Changes will not have any effect until the pool is idle.";
-    public static final String hh_pp_set_listen = "<address> [<port>]";
+        "The command is deprecated. Use 'pp interface' instead.";
+    public static final String hh_pp_set_listen = "<address> # Deprecated";
     public synchronized String ac_pp_set_listen_$_1_2(Args args)
         throws UnknownHostException
     {
-        String host = args.argv(0);
-        int port = (args.argc() == 2) ? Integer.parseInt(args.argv(1)) : 0;
-        InetSocketAddress address = host.equals("*")
-            ? new InetSocketAddress(port)
-            : new InetSocketAddress(host, port);
-        _acceptor.setAddress(address);
-        return "";
+        return ac_pp_interface_$_0_1(new Args(args.argv(0)));
+    }
+
+    public static final String fh_pp_interface =
+        "Specifies the interface from which connections to other pools\n" +
+        "are expected to originate.\n\n" +
+        "For pool to pool transfers, the destination creates a TCP\n" +
+        "conection to the source pool. For this to work the source pool\n" +
+        "must select one of its network interfaces to which the destination\n" +
+        "pool can connect. For compatibility reasons this interface is\n" +
+        "not specified explicitly on the source pool. Instead an interface\n" +
+        "on the target pool is specified and the source pool selects an\n" +
+        "interface facing the target interface.\n\n" +
+        "If * is provided then an interface is selected automatically.";
+    public static final String hh_pp_interface = "[<address>]";
+    public synchronized String ac_pp_interface_$_0_1(Args args)
+        throws UnknownHostException
+    {
+        if (args.argc() == 1) {
+            String host = args.argv(0);
+            _interface =  host.equals("*") ? null : InetAddress.getByName(host);
+        }
+        return "PP interface is " + getInterface();
     }
 
     public static final String hh_pp_get_file = "<pnfsId> <pool>";

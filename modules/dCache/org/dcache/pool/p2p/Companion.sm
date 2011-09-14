@@ -7,6 +7,7 @@
 %package org.dcache.pool.p2p
 %access package
 %import diskCacheV111.vehicles.DoorTransferFinishedMessage
+%import diskCacheV111.vehicles.HttpDoorUrlInfoMessage
 
 %start FSM::Init
 %map FSM
@@ -59,12 +60,13 @@ Entry
 }
 {
         success
-                WaitingForConnection
+                WaitingForURLInfoMessage
                 {
                 }
-        connected
-                Connected
+        messageArrived(message: HttpDoorUrlInfoMessage)
+                Transferring
                 {
+                        beginTransfer(message.getUrl());
                 }
         failure(rc: Integer, cause: Object)
                 Failed
@@ -83,7 +85,7 @@ Entry
                 }
 }
 
-WaitingForConnection
+WaitingForURLInfoMessage
 Entry
 {
         startTimer(ctxt.getPingPeriod());
@@ -118,13 +120,14 @@ Exit
                 {
                         setError("Ping failed (" + cause + ")");
                 }
-        connected
-                Connected
+        messageArrived(message: HttpDoorUrlInfoMessage)
+                Transferring
                 {
+                        beginTransfer(message.getUrl());
                 }
 }
 
-Connected
+Transferring
 {
         messageArrived(message: DoorTransferFinishedMessage)
                 [ message.getReturnCode() == 0]
@@ -137,7 +140,7 @@ Connected
                 {
                         setError(message.getErrorObject());
                 }
-        disconnected(error: Object)
+        transferEnded(error: Object)
                 [ error == null ]
                 Done
                 {
@@ -152,7 +155,7 @@ Connected
 // Remote end of the transfer is closed
 DoorFinished
 {
-        disconnected(error: Object)
+        transferEnded(error: Object)
                 [ error == null ]
                 Done
                 {
@@ -174,7 +177,7 @@ Entry
                 nil
                 {
                 }
-        disconnected(error: Object)
+        transferEnded(error: Object)
                 [ error == null ]
                 Done
                 {
@@ -220,7 +223,7 @@ Default
                 {
                         setError(message.getErrorObject());
                 }
-        disconnected(error: Object)
+        transferEnded(error: Object)
                 [ error != null ]
                 Failed
                 {
