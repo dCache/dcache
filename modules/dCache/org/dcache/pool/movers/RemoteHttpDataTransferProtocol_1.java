@@ -18,6 +18,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
 
+import java.nio.ByteBuffer;
+import org.dcache.pool.repository.RepositortyChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +53,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         _log.info(str);
     }
 
-    public void runIO(RandomAccessFile diskFile,
+    public void runIO(RepositortyChannel fileChannel,
                        ProtocolInfo protocol,
                        StorageInfo  storage,
                        PnfsId       pnfsId ,
@@ -95,6 +97,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                 httpconnection.setDoOutput(false);
                 InputStream httpinput = httpconnection.getInputStream();
                 byte[] buffer = new byte[remoteHttpProtocolInfo.getBufferSize()];
+                ByteBuffer bb = ByteBuffer.wrap(buffer);
                 int read = 0;
                 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE);
                 allocator.allocate(INC_SPACE);
@@ -102,6 +105,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
 
                 while((read = httpinput.read(buffer)) != -1)
                     {
+                        bb.clear();
                         last_transfer_time    = System.currentTimeMillis();
                         if(transfered+read > allocated_space)
                             {
@@ -110,7 +114,8 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                                 allocated_space+=INC_SPACE;
 
                             }
-                        diskFile.write(buffer,0,read);
+                        bb.flip();
+                        fileChannel.write(bb);
                         changed = true;
                         transfered +=read;
                     }

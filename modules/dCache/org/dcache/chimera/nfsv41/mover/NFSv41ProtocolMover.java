@@ -1,7 +1,5 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import java.io.RandomAccessFile;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +9,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
+import java.nio.channels.FileChannel;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.RepositortyChannel;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
@@ -70,7 +70,7 @@ public class NFSv41ProtocolMover implements ManualMover {
      *      SpaceMonitor spaceMonitor, int access)
      */
 	@Override
-    public void runIO(RandomAccessFile raf, ProtocolInfo protocol,
+    public void runIO(RepositortyChannel raf, ProtocolInfo protocol,
             StorageInfo storage, PnfsId pnfsId,
             Allocator allocator, IoMode access)
             throws Exception {

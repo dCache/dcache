@@ -2,7 +2,6 @@ package org.dcache.chimera;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import javax.sql.DataSource;
 
 import com.jolbox.bonecp.BoneCPDataSource;
 

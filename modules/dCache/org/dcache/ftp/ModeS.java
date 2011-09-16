@@ -3,9 +3,9 @@ package org.dcache.ftp;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ClosedChannelException;
 import java.io.IOException;
+import org.dcache.pool.repository.RepositortyChannel;
 
 /** Implementation of MODE S. */
 public class ModeS extends Mode
@@ -80,7 +80,7 @@ public class ModeS extends Mode
         }
     }
 
-    public ModeS(Role role, FileChannel file, ConnectionMonitor monitor,
+    public ModeS(Role role, RepositortyChannel file, ConnectionMonitor monitor,
                  int blockSize)
         throws IOException
     {

@@ -1,9 +1,8 @@
 package org.dcache.xrootd2.pool;
 
-import java.io.RandomAccessFile;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 
+import org.dcache.pool.repository.RepositortyChannel;
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
@@ -26,7 +25,7 @@ public class ReadDescriptor implements FileDescriptor
 
     public ReadDescriptor(XrootdProtocol_3 mover)
     {
-        if (mover.getFile() == null) {
+        if (mover.getChannel() == null) {
             throw new IllegalArgumentException("File must be non-null");
         }
 
@@ -35,7 +34,7 @@ public class ReadDescriptor implements FileDescriptor
 
     private boolean isMoverShutdown()
     {
-        return (_mover == null || _mover.getFile() == null);
+        return (_mover == null || _mover.getChannel() == null);
     }
 
     @Override
@@ -88,14 +87,13 @@ public class ReadDescriptor implements FileDescriptor
     }
 
     @Override
-    public FileChannel getChannel()
+    public RepositortyChannel getChannel()
     {
         if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");
         }
 
-        RandomAccessFile file = _mover.getFile();
-        return file.getChannel();
+        return _mover.getChannel();
     }
 
     public XrootdProtocol_3 getMover()

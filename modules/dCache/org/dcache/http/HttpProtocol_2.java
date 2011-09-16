@@ -2,7 +2,6 @@ package org.dcache.http;
 
 import java.io.IOException;
 
-import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -38,6 +37,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.RepositortyChannel;
 
 /**
  * Netty-based HTTP-mover. The mover generates an UUID that identifies it upon
@@ -70,7 +70,7 @@ public class HttpProtocol_2 implements MoverProtocol
 
     private HttpProtocolInfo _protocolInfo;
 
-    private RandomAccessFile _diskFile;
+    private RepositortyChannel _fileChannel;
 
 
     private final CountDownLatch _connectLatch = new CountDownLatch(1);
@@ -147,7 +147,7 @@ public class HttpProtocol_2 implements MoverProtocol
     }
 
     @Override
-    public void runIO(RandomAccessFile diskFile,
+    public void runIO(RepositortyChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,
@@ -165,7 +165,7 @@ public class HttpProtocol_2 implements MoverProtocol
 
             InetSocketAddress address = _server.getServerAddress();
             sendAddressToDoor(address.getPort(), uuid,  pnfsId);
-            _diskFile = diskFile;
+            _fileChannel = fileChannel;
             _transferStarted  = System.currentTimeMillis();
             _httpMonitor.updateLastTransferred();
 
@@ -183,7 +183,7 @@ public class HttpProtocol_2 implements MoverProtocol
         } finally {
             _logger.debug("Shutting down the mover: {}", uuid);
             _server.unregister(uuid);
-            _diskFile = null;
+            _fileChannel = null;
         }
     }
 
@@ -298,7 +298,7 @@ public class HttpProtocol_2 implements MoverProtocol
         /* need to count position 0 as well */
         long length = (upperRange - lowerRange) + 1;
 
-        content = new ReusableChunkedNioFile(_diskFile.getChannel(),
+        content = new ReusableChunkedNioFile(_fileChannel,
                                              lowerRange, length, _chunkSize,
                                              this);
         return content;
@@ -319,7 +319,7 @@ public class HttpProtocol_2 implements MoverProtocol
     ChunkedInput read(String requestedPath)
         throws IllegalArgumentException, IOException, TimeoutCacheException {
 
-        return read(requestedPath, 0, _diskFile.length() - 1);
+        return read(requestedPath, 0, _fileChannel.size() - 1);
     }
 
     /**
@@ -327,7 +327,7 @@ public class HttpProtocol_2 implements MoverProtocol
      * @throws IOException file is closed or other problem with descriptor
      */
     long getFileSize() throws IOException {
-        return _diskFile.length();
+        return _fileChannel.size();
     }
 
     /**

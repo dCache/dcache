@@ -34,6 +34,8 @@ import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.ftp.*;
+import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.FileRepositoryChannel;
 
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
@@ -75,7 +77,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected CellEndpoint  _cell;
 
     /** A channel to the file we read from or write to. */
-    protected FileChannel  _fileChannel;
+    protected RepositortyChannel  _fileChannel;
 
     /**
      * A BlockLog keeping tracks of which parts of a file we have
@@ -180,16 +182,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected boolean      _inProgress = false;
 
     /**
-     * Whether to use memory mapped files when computing transfer
-     * checksums.
-     */
-    protected boolean      _mappedDigest = false;
-
-    /** True if we use a pre JDK 6 version of Java. */
-    protected static final boolean jdk5 =
-        (System.getProperty("java.version").compareTo("1.6") < 0);
-
-    /**
      * Random number generator used when binding sockets.
      */
     private static Random  _random = new Random();
@@ -212,11 +204,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                     !Boolean.parseBoolean(args.getOpt("ftpProxyPassive"));
             }
 
-            if (!jdk5 && args.getOpt("allowMmap") != null) {
-                _mappedDigest =
-                    Boolean.parseBoolean(args.getOpt("allowMmap"));
-            }
-
             if (args.getOpt("gsiftpBlockSize") != null) {
                 _blockSize =
                     Integer.valueOf(args.getOpt("gsiftpBlockSize"));
@@ -227,7 +214,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /**
      * Factory method for creating the Mode object.
      */
-    protected Mode createMode(String mode, Role role, RandomAccessFile file)
+    protected Mode createMode(String mode, Role role, RepositortyChannel fileChannel)
 	throws IOException
     {
         int blockSize;
@@ -235,15 +222,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         case 'S':
             blockSize =
                 (_blockSize == null) ? MODE_S_DEFAULT_BLOCK_SIZE : _blockSize;
-	    return new ModeS(role, file.getChannel(), this, blockSize);
+	    return new ModeS(role, fileChannel, this, blockSize);
         case 'E':
             blockSize =
                 (_blockSize == null) ? MODE_E_DEFAULT_BLOCK_SIZE : _blockSize;
-	    return new ModeE(role, file.getChannel(), this, blockSize);
+	    return new ModeE(role, fileChannel, this, blockSize);
         case 'X':
             blockSize =
                 (_blockSize == null) ? MODE_X_DEFAULT_BLOCK_SIZE : _blockSize;
-	    return new ModeX(role, file.getChannel(), this, blockSize);
+	    return new ModeX(role, fileChannel, this, blockSize);
         default:
 	    throw new IllegalArgumentException("Unknown mode");
 	}
@@ -255,13 +242,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     protected DigestThread createDigestThread()
     {
-        if (_digest == null) {
+        if (_digest == null)
             return null;
-        } else if (_mappedDigest) {
-            return new MappedDigestThread(_fileChannel, _blockLog, _digest);
-        } else {
-            return new DirectDigestThread(_fileChannel, _blockLog, _digest);
-        }
+        return new DirectDigestThread(_fileChannel, _blockLog, _digest);
     }
 
     /** Utility method for logging. */
@@ -287,7 +270,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /**
      * Receive a file.
      */
-    public void transfer(RandomAccessFile file, Role role,
+    public void transfer(RepositortyChannel fileChannel, Role role,
                          Mode mode, Allocator allocator)
 	throws Exception
     {
@@ -296,7 +279,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	_role             = role;
 	_bytesTransferred = 0;
 	_blockLog         = new BlockLog(this);
-	_fileChannel      = file.getChannel();
+	_fileChannel      = fileChannel;
 	_allocator        = allocator;
 	_reservedSpace    = 0;
 	_spaceUsed        = 0;
@@ -415,7 +398,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the MoverProtocol interface. */
-    public void runIO(RandomAccessFile file,
+    public void runIO(RepositortyChannel fileChannel,
 		      ProtocolInfo protocol,
 		      StorageInfo  storage,
 		      PnfsId       pnfsId,
@@ -459,7 +442,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	_transferStarted  = System.currentTimeMillis();
 	_lastTransferred  = _transferStarted;
 
-	Mode mode = createMode(gftpProtocolInfo.getMode(), role, file);
+	Mode mode = createMode(gftpProtocolInfo.getMode(), role, fileChannel);
 	mode.setBufferSize(bufferSize);
 
         /* For GFtp/2, the FTP door expects a
@@ -549,7 +532,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          * sorry...
 	 */
 	if (role == Role.Sender) {
-	    long fileSize   = file.length();
+	    long fileSize   = fileChannel.size();
 	    if (offset < 0) {
 		String err = "prm_offset is " + offset;
 		esay(err);
@@ -570,7 +553,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	}
 
 	try {
-	    transfer(file, role, mode, allocator);
+	    transfer(fileChannel, role, mode, allocator);
 	} finally {
 	    /* Log some useful information about the transfer. This
              * will be send back to the door by the pool cell.
@@ -777,12 +760,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	    GFtpProtocol_2_nio mover =
                 new GFtpProtocol_2_nio(null);
 
-	    RandomAccessFile file =
-		new RandomAccessFile(args.argv(0),
+	    RepositortyChannel fileChannel =
+		new FileRepositoryChannel(args.argv(0),
 				     role == Role.Sender ? "r" : "rw");
 
             Mode mode =
-                mover.createMode(getOption(args, "mode", "S"), role, file);
+                mover.createMode(getOption(args, "mode", "S"), role, fileChannel);
 
 	    if (args.isOneCharOption('l')) {
 		if (args.argc() != 1) {
@@ -807,7 +790,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	    }
 
 	    if (size == 0) {
-		size = file.length() - offset;
+		size = fileChannel.size() - offset;
 	    }
 
             mode.setParallelism(parallelism);
@@ -818,7 +801,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	    }
 
             mover.setVerboseLogging(verbose);
-	    mover.transfer(file, role, mode, null);
+	    mover.transfer(fileChannel, role, mode, null);
 	    if (digest.length() > 0) {
 		System.out.println(mover.getTransferChecksum());
 	    }

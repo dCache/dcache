@@ -4,7 +4,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
 import org.dcache.pool.repository.Allocator;
 
-import java.io.RandomAccessFile;
+import org.dcache.pool.repository.RepositortyChannel;
 
 public interface MoverProtocol
 {
@@ -13,7 +13,7 @@ public interface MoverProtocol
      * @param allocator Space allocator. May be null for a read-only
      * transfer.
      */
-    public void runIO(RandomAccessFile diskFile,
+    public void runIO(RepositortyChannel diskFile,
                       ProtocolInfo protocol,
                       StorageInfo  storage,
                       PnfsId       pnfsId,

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import org.dcache.pool.repository.RepositortyChannel;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.stream.ChunkedInput;
 
@@ -26,13 +27,13 @@ import org.jboss.netty.handler.stream.ChunkedInput;
  */
 public class ReusableChunkedNioFile implements ChunkedInput
 {
-    private final FileChannel _channel;
+    private final RepositortyChannel _channel;
     private final long _endOffset;
     private final int _chunkSize;
     private final HttpProtocol_2 _mover;
     private volatile long _offset;
 
-    public ReusableChunkedNioFile(FileChannel channel,
+    public ReusableChunkedNioFile(RepositortyChannel channel,
                                   long offset,
                                   long length,
                                   int chunkSize,

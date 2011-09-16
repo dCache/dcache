@@ -1,8 +1,8 @@
 package org.dcache.xrootd2.pool;
 
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 
+import org.dcache.pool.repository.RepositortyChannel;
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
@@ -22,7 +22,7 @@ public class WriteDescriptor implements FileDescriptor
 
     public WriteDescriptor(XrootdProtocol_3 mover)
     {
-        if (mover.getFile() == null) {
+        if (mover.getChannel() == null) {
             throw new IllegalArgumentException("File must be non-null");
         }
 
@@ -31,7 +31,7 @@ public class WriteDescriptor implements FileDescriptor
 
     private boolean isMoverShutdown()
     {
-        return (_mover == null || _mover.getFile() == null);
+        return (_mover == null || _mover.getChannel() == null);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class WriteDescriptor implements FileDescriptor
         }
 
         _mover.updateLastTransferred();
-        _mover.getFile().getFD().sync();
+        _mover.getChannel().sync();
     }
 
     @Override
@@ -81,19 +81,19 @@ public class WriteDescriptor implements FileDescriptor
         _mover.addTransferredBytes(msg.getDataLength());
         _mover.setWasChanged(true);
 
-        FileChannel channel = _mover.getFile().getChannel();
+        RepositortyChannel channel = _mover.getChannel();
         channel.position(msg.getWriteOffset());
         msg.getData(channel);
     }
 
     @Override
-    public FileChannel getChannel()
+    public RepositortyChannel getChannel()
     {
         if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");
         }
 
-        return _mover.getFile().getChannel();
+        return _mover.getChannel();
     }
 
     public XrootdProtocol_3 getMover()

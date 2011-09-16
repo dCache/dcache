@@ -85,14 +85,16 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.EnumSet;
 import java.util.Set;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.dcache.pool.repository.RepositortyChannel;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.security.SslGsiSocketFactory;
@@ -130,7 +132,7 @@ public class RemoteGsiftpTransferProtocol_1
 
     private long _previousUpdateEndOffset = 0;
 
-    private RandomAccessFile _raDiskFile;
+    private RepositortyChannel _fileChannel;
     private GridftpClient _client;
     private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
 
@@ -165,7 +167,7 @@ public class RemoteGsiftpTransferProtocol_1
         _client.setTcpBufferSize(protocolInfo.getTcpBufferSize());
     }
 
-    public void runIO(RandomAccessFile diskFile,
+    public void runIO(RepositortyChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,
@@ -184,7 +186,7 @@ public class RemoteGsiftpTransferProtocol_1
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
         }
-        _raDiskFile = diskFile;
+        _fileChannel = fileChannel;
         _starttime = System.currentTimeMillis();
 
         RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
@@ -326,11 +328,12 @@ public class RemoteGsiftpTransferProtocol_1
                 return null;
             }
 
-            int read;
-            byte[] bytes = new byte[128 * 1024];
-            _raDiskFile.seek(_previousUpdateEndOffset);
-            while ((read = _raDiskFile.read(bytes)) >= 0) {
-                _transferMessageDigest.update(bytes, 0, read);
+            ByteBuffer buffer = ByteBuffer.allocate(128*1024);
+            _fileChannel.position(_previousUpdateEndOffset);
+            while (_fileChannel.read(buffer) >= 0) {
+                buffer.flip();
+                _transferMessageDigest.update(buffer);
+                buffer.clear();
             }
 
             return _checksumFactory.create(_transferMessageDigest.digest());
@@ -381,15 +384,14 @@ public class RemoteGsiftpTransferProtocol_1
                                            long offsetOfArrayInFile)
         throws IOException
     {
-        _raDiskFile.seek(offsetOfArrayInFile);
-        _raDiskFile.write(array, offset, length);
-
         if (array == null) {
             /* REVISIT: Why do we need this?
              */
             return;
         }
 
+        ByteBuffer bb = ByteBuffer.wrap(array, offset, length);
+        _fileChannel.write(bb, offsetOfArrayInFile);
         if (_transferMessageDigest != null
             && _previousUpdateEndOffset == offsetOfArrayInFile) {
             _previousUpdateEndOffset += length;
@@ -445,7 +447,7 @@ public class RemoteGsiftpTransferProtocol_1
         /** Specified in org.globus.ftp.DataSource. */
         public long totalSize() throws IOException
         {
-            return _source ? _raDiskFile.length() : -1;
+            return _source ? _fileChannel.size() : -1;
         }
 
         /** Getter for property last_transfer_time.
@@ -475,9 +477,10 @@ public class RemoteGsiftpTransferProtocol_1
             }
 
             _last_transfer_time = System.currentTimeMillis();
-            byte[] bytes = new byte[_buf_size];
 
-            int read = _raDiskFile.read(bytes);
+            byte[] bytes = new byte[_buf_size];
+            ByteBuffer bb = ByteBuffer.wrap(bytes);
+            int read = _fileChannel.read(bb);
             if (read == -1) {
                 return null;
             }
@@ -508,9 +511,8 @@ public class RemoteGsiftpTransferProtocol_1
 
             }
 
-            String hexValue = org.dcache.srm.util.GridftpClient.getCksmValue(_raDiskFile,type);
-            _log.debug(type + " for file "+_raDiskFile+" is "+hexValue);
-            _raDiskFile.seek(0);
+            String hexValue = org.dcache.srm.util.GridftpClient.getCksmValue(_fileChannel,type);
+            _fileChannel.position(0);
             return hexValue;
         }
 
@@ -526,7 +528,7 @@ public class RemoteGsiftpTransferProtocol_1
 
         public long length() throws IOException
         {
-            return _raDiskFile.length();
+            return _fileChannel.size();
         }
     }
 }

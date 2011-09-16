@@ -1,14 +1,12 @@
 package org.dcache.pool.movers;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.security.MessageDigest;
@@ -36,6 +34,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import diskCacheV111.util.ChecksumFactory;
 import java.util.UUID;
+import org.dcache.pool.repository.RepositortyChannel;
 import org.dcache.util.NetworkUtils;
 
 
@@ -284,7 +283,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         return _cell.getCellInfo().getDomainName();
     }
 
-    public void runIO(RandomAccessFile  diskFile,
+    @Override
+    public void runIO(RepositortyChannel  fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo  storage,
                       PnfsId       pnfsId,
@@ -334,7 +334,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         initialiseBuffer(bufferSize);
 
         SocketChannel socketChannel = null;
-        FileChannel   fileChannel   = diskFile.getChannel();
         DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(1024);
 
         _sessionId  = dcapProtocolInfo.getSessionId();
@@ -438,7 +437,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         _bytesTransferred = 0;
         _lastTransferred  = _transferStarted;
 
-        _spaceMonitorHandler.setInitialSpace(diskFile.length());
+        _spaceMonitorHandler.setInitialSpace(fileChannel.size());
 
         boolean      notDone      = true;
         RequestBlock requestBlock = new RequestBlock();
@@ -572,7 +571,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
                     if(_io_ok){
 
-                        cntOut.writeACK(diskFile.getFilePointer());
+                        cntOut.writeACK(fileChannel.position());
                         socketChannel.write(cntOut.buffer());
 
                     }else{
@@ -692,10 +691,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 case DCapConstants.IOCMD_LOCATE :
 
                     try{
-                        long size     = diskFile.getFilePointer();
-                        long location = diskFile.length();
-                        _log.debug("LOCATE : size={};position={}",
-                                   size, location);
+                        long size     = fileChannel.position();
+                        long location = fileChannel.size();
+                        _log.debug("LOCATE : size={};position={}", size, location);
                         cntOut.writeACK(location, size);
                         socketChannel.write(cntOut.buffer());
                     }catch(Exception e){
@@ -776,7 +774,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                  _bytesTransferred+" bytes in "+
                  (_transferTime/1000) +" seconds) ");
 
-            long diskFileSize = diskFile.length();
+            long diskFileSize = fileChannel.size();
 
             try{
 
@@ -809,7 +807,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
 
     }
-    private void doTheReadv(FileChannel fileChannel, DCapOutputByteBuffer cntOut,
+    private void doTheReadv(RepositortyChannel fileChannel, DCapOutputByteBuffer cntOut,
                             SocketChannel socketChannel, RequestBlock requestBLock) throws Exception {
 
 
@@ -893,7 +891,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         return;
     }
-    private void doTheSeek(FileChannel fileChannel, int whence, long offset,
+    private void doTheSeek(RepositortyChannel fileChannel, int whence, long offset,
                             boolean writeAllowed)
         throws Exception {
 
@@ -962,7 +960,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
 
     }
-    private void doTheWrite(FileChannel          fileChannel,
+    private void doTheWrite(RepositortyChannel          fileChannel,
                              DCapOutputByteBuffer cntOut,
                              SocketChannel        socketChannel ) throws Exception{
 
@@ -1056,7 +1054,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
     }
 
-    private void doTheRead(FileChannel           fileChannel,
+    private void doTheRead(RepositortyChannel           fileChannel,
                             DCapOutputByteBuffer  cntOut,
                             SocketChannel         socketChannel,
                             long                  blockSize) throws Exception{

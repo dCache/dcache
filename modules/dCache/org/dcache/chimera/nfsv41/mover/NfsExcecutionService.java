@@ -4,7 +4,6 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
@@ -19,6 +18,8 @@ import org.dcache.pool.classic.PoolIORequest;
 import org.dcache.pool.classic.PoolIOTransfer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
+import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
@@ -64,10 +65,10 @@ public class NfsExcecutionService implements MoverExecutorService {
             stateid4 stateid = nfs4ProtocolInfo.stateId();
             ReplicaDescriptor descriptor = transfer.getIoHandle();
             String openMode = transfer.getIoMode() == IoMode.WRITE ? "rw" : "r";
-            final RandomAccessFile raf = new RandomAccessFile(descriptor.getFile(), openMode);
+            final RepositortyChannel repositoryChannel = new FileRepositoryChannel(descriptor.getFile(), openMode);
 
             final MoverBridge moverBridge = new MoverBridge((ManualMover) transfer.getMover(),
-                    request.getPnfsId(), stateid, raf.getChannel(), transfer.getIoMode(), descriptor);
+                    request.getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);
             _nfsIO.addHandler(moverBridge);
 
             InetAddress localAddress = NetworkUtils.
@@ -91,7 +92,7 @@ public class NfsExcecutionService implements MoverExecutorService {
                 public boolean cancel(boolean mayInterruptIfRunning) {
                     _nfsIO.removeHandler(moverBridge);
                     try {
-                        raf.close();
+                        fileIoChannel.close();
                     } catch (IOException e) {
                         _log.error("failed to close RAF", e);
                     }

@@ -1,14 +1,14 @@
 package org.dcache.ftp;
 
-import java.nio.channels.FileChannel;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import org.dcache.pool.repository.RepositortyChannel;
 
 public class DirectDigestThread extends DigestThread
 {
     public static final int BLOCK_SIZE = 4096;  // 4 kb
 
-    public DirectDigestThread(FileChannel channel, BlockLog log, MessageDigest digest)
+    public DirectDigestThread(RepositortyChannel channel, BlockLog log, MessageDigest digest)
     {
         super(channel, log, digest);
     }

@@ -1,7 +1,6 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -21,6 +20,7 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.RepositortyChannel;
 
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
@@ -56,7 +56,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             long offset = _args.opwrite.offset.value.value;
             int count = _args.opwrite.data.remaining();
 
-            FileChannel fc = moverBridge.getFileChannel();
+            RepositortyChannel fc = moverBridge.getFileChannel();
 
             if( offset + count > moverBridge.getAllocated() ) {
                 moverBridge.getAllocator().allocate(INC_SPACE);

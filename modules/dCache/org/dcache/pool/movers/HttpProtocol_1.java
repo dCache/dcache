@@ -21,9 +21,11 @@ import java.net.URL;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
+import java.nio.channels.FileChannel;
 import java.util.List;
 import java.text.ParseException;
 
+import org.dcache.pool.repository.RepositortyChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.util.NetworkUtils;
@@ -68,7 +70,7 @@ public class HttpProtocol_1 implements MoverProtocol
     }
 
     private HttpConnectionHandler httpconnection = null;
-    public void runIO(RandomAccessFile diskFile,
+    public void runIO(RepositortyChannel fileChannel,
                        ProtocolInfo protocol,
                        StorageInfo  storage,
                        PnfsId       pnfsId ,
@@ -76,8 +78,6 @@ public class HttpProtocol_1 implements MoverProtocol
                        IoMode       access)
         throws Exception
     {
-        say("runIO("+diskFile+",\n"+
-            protocol+",\n"+storage+",\n"+pnfsId+",\n"+access+")");
         if(! (protocol instanceof HttpProtocolInfo))
             {
                 throw new  CacheException(44, "protocol info not HttpProtocolInfo");
@@ -147,7 +147,7 @@ public class HttpProtocol_1 implements MoverProtocol
                 try{
                     String rangeHeader = httpconnection.getHeaderValue("range");
                     if(rangeHeader != null)
-                        ranges =  HttpByteRange.parseRanges(rangeHeader,0,diskFile.length()-1);
+                        ranges =  HttpByteRange.parseRanges(rangeHeader,0,fileChannel.size()-1);
                 }catch(ParseException e)
                     {
                     say("(HttpProtocol_1) " + e.getMessage());
@@ -159,11 +159,11 @@ public class HttpProtocol_1 implements MoverProtocol
                  * comes to invalid ranges.
                  */
                 if(ranges == null || ranges.size() != 1){
-                    httpconnection.sendFile(diskFile);
+                    httpconnection.sendFile(fileChannel);
                 }else{
                     HttpByteRange range = ranges.get(0);
                     say("received request for range: " + range);
-                    httpconnection.sendPartialFile(diskFile, range.getLower(), range.getSize());
+                    httpconnection.sendPartialFile(fileChannel, range.getLower(), range.getSize());
                 }
                 say("transmission complete");
             }

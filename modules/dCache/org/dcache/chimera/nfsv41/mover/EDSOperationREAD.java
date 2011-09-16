@@ -2,7 +2,6 @@ package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -16,6 +15,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.pool.repository.RepositortyChannel;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
@@ -44,7 +44,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             }
 
             ByteBuffer bb = ByteBuffer.allocate(count);
-            FileChannel fc = moverBridge.getFileChannel();
+            RepositortyChannel fc = moverBridge.getFileChannel();
 
             bb.rewind();
             int bytesReaded = fc.read(bb, offset);

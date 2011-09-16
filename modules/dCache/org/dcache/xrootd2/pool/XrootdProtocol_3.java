@@ -1,8 +1,5 @@
 package org.dcache.xrootd2.pool;
 
-import java.io.RandomAccessFile;
-
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
@@ -39,6 +36,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
 import org.dcache.pool.movers.IoMode;
 
+import org.dcache.pool.repository.RepositortyChannel;
 import org.dcache.xrootd2.protocol.messages.*;
 import org.dcache.xrootd2.util.FileStatus;
 
@@ -147,7 +145,7 @@ public class XrootdProtocol_3
     /**
      * The file served by this mover.
      */
-    private RandomAccessFile _file;
+    private RepositortyChannel _fileChannel;
 
 
     /**
@@ -265,7 +263,7 @@ public class XrootdProtocol_3
     }
 
     @Override
-    public void runIO(RandomAccessFile diskFile,
+    public void runIO(RepositortyChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,
@@ -285,7 +283,7 @@ public class XrootdProtocol_3
         try {
             _server.register(uuid, this);
 
-            _file = diskFile;
+            _fileChannel = fileChannel;
             _allocator = allocator;
             _transferStarted  = System.currentTimeMillis();
             _lastTransferred.set(_transferStarted);
@@ -310,7 +308,7 @@ public class XrootdProtocol_3
             _server.unregister(uuid);
             /* this effectively closes all file descriptors obtained via this
              * mover */
-            _file = null;
+            _fileChannel = null;
             _allocator = null;
             _inProgress = false;
 
@@ -431,8 +429,8 @@ public class XrootdProtocol_3
         return _wasChanged;
     }
 
-    RandomAccessFile getFile() {
-        return _file;
+    RepositortyChannel getChannel() {
+        return _fileChannel;
     }
 
     /**
@@ -494,7 +492,7 @@ public class XrootdProtocol_3
     {
         _lastTransferred.set(System.currentTimeMillis());
         return new FileStatus(DEFAULT_FILESTATUS_ID,
-                              _file.length(),
+                              _fileChannel.size(),
                               DEFAULT_FILESTATUS_FLAGS,
                               DEFAULT_FILESTATUS_MODTIME);
     }

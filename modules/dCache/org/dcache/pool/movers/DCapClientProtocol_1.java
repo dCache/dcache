@@ -22,6 +22,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import org.dcache.pool.repository.RepositortyChannel;
 import org.dcache.util.NetworkUtils;
 
 public class DCapClientProtocol_1 implements MoverProtocol
@@ -57,7 +59,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
         _log.error(t.toString());
     }
 
-    public void runIO(RandomAccessFile diskFile ,
+    public void runIO(RepositortyChannel fileChannel,
                        ProtocolInfo protocol ,
                        StorageInfo  storage ,
                        PnfsId       pnfsId  ,
@@ -121,7 +123,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
         if( access == IoMode.WRITE)
             {
-                dcapReadFile(dcap_socket,diskFile,allocator);
+                dcapReadFile(dcap_socket,fileChannel,allocator);
             }
         else
             {
@@ -151,7 +153,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
     }
 
     private void dcapReadFile(Socket _socket,
-                              RandomAccessFile _dataFile,
+                              RepositortyChannel fileChannel,
                               Allocator allocator) throws Exception
     {
         last_transfer_time    = System.currentTimeMillis();
@@ -252,6 +254,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
                 IOException("Protocol Violation : NOT DATA : "+type);
 
         byte [] data = new byte[256*1024];
+        ByteBuffer bb = ByteBuffer.wrap(data);
         int nextPacket = 0;
         while(true){
             if((nextPacket = in.readInt()) < 0)break;
@@ -259,6 +262,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
             int restPacket = nextPacket;
 
             while(restPacket > 0){
+                bb.clear();
                 int block = Math.min(restPacket , data.length);
                 //
                 // we collect a full block before we write it out
@@ -278,7 +282,9 @@ public class DCapClientProtocol_1 implements MoverProtocol
                 }
                 changed = true;
                 transfered +=block;
-                _dataFile.write(data , 0 , block);
+                bb.limit(block);
+                fileChannel.write(bb);
+
                 restPacket -= block;
             }
         }

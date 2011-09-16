@@ -20,7 +20,6 @@ import org.dcache.pool.movers.ChecksumMover;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.SyncFailedException;
@@ -29,6 +28,8 @@ import java.util.Collections;
 import javax.security.auth.Subject;
 import org.dcache.pool.movers.IoMode;
 
+import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,10 +97,10 @@ public class PoolIOWriteTransfer
         _file.createNewFile();
     }
 
-    private void runMover(RandomAccessFile raf)
+    private void runMover(RepositortyChannel fileIoChannel)
         throws Exception
     {
-        _mover.runIO(raf,
+        _mover.runIO(fileIoChannel,
                      _protocolInfo,
                      _storageInfo,
                      _pnfsId,
@@ -111,7 +112,7 @@ public class PoolIOWriteTransfer
         throws Exception
     {
         try {
-            RandomAccessFile raf = new RandomAccessFile(_file, "rw");
+            RepositortyChannel fileIoChannel = new FileRepositoryChannel(_file, "rw");
             try {
                 if (_checksumModule.checkOnTransfer() &&
                     _mover instanceof ChecksumMover) {
@@ -123,12 +124,12 @@ public class PoolIOWriteTransfer
                     }
                     cm.setDigest(_checksumFactory);
                 }
-                runMover(raf);
+                runMover(fileIoChannel);
             } finally {
                 try {
-                    raf.getFD().sync();
+                   fileIoChannel.sync();
                 } catch (SyncFailedException e) {
-                    raf.getFD().sync();
+                    fileIoChannel.sync();
                     _log.info("First sync failed [" + e + "], but second sync suceeded");
                 }
 
@@ -137,7 +138,7 @@ public class PoolIOWriteTransfer
                  * probably better off propagating the exception,
                  * which is why we do not catch it here.
                  */
-                raf.close();
+                fileIoChannel.close();
             }
         } catch (FileNotFoundException e) {
             throw new CacheException(CacheException.ERROR_IO_DISK,

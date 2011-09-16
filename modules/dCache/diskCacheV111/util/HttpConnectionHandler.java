@@ -6,14 +6,15 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.StringTokenizer;
+import org.dcache.pool.repository.RepositortyChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -345,7 +346,7 @@ public class HttpConnectionHandler
 
 
 
-  private synchronized void returnFileHeader(RandomAccessFile diskFile) throws IOException
+  private synchronized void returnFileHeader(RepositortyChannel fileChannel) throws IOException
   {
     if(isclosed())
     {
@@ -356,14 +357,14 @@ public class HttpConnectionHandler
     sb.append("Server: HttpDoor \n");
     sb.append("Connection: close\n");
     sb.append("Content-Length: ");
-    sb.append(diskFile.length ()).append('\n');
+    sb.append(fileChannel.size()).append('\n');
     sb.append("Content-Type: application/octet-stream\n");
     sb.append('\n');
     out.write(sb.toString());
     out.flush();
   }
 
-  private synchronized void returnPartialFileHeader(RandomAccessFile diskFile, long offset, long length) throws IOException
+  private synchronized void returnPartialFileHeader(RepositortyChannel fileChannel, long offset, long length) throws IOException
   {
     if(isclosed())
     {
@@ -376,7 +377,7 @@ public class HttpConnectionHandler
     sb.append("Content-Length: ");
     sb.append(length).append('\n');
     sb.append("Content-Range: ");
-    sb.append("bytes ").append(offset).append('-').append(offset+length-1).append("/").append(diskFile.length()).append('\n');
+    sb.append("bytes ").append(offset).append('-').append(offset+length-1).append("/").append(fileChannel.size()).append('\n');
     sb.append("Content-Type: application/octet-stream\n");
     sb.append('\n');
     out.write(sb.toString());
@@ -385,35 +386,37 @@ public class HttpConnectionHandler
 
   volatile long read = 0;
   private long last_transfer_time    = System.currentTimeMillis() ;
-  public synchronized void sendFile(RandomAccessFile diskFile) throws IOException
+  public synchronized void sendFile(RepositortyChannel fileChannel) throws IOException
   {
     if(isclosed())
     {
       return;
     }
-    returnFileHeader(diskFile);
-    long length = diskFile.length ();
-    transferFile(diskFile,0,length);
+    returnFileHeader(fileChannel);
+    long length = fileChannel.size();
+    transferFile(fileChannel,0,length);
   }
 
-  public synchronized void sendPartialFile(RandomAccessFile diskFile, long offset, long length) throws IOException
+  public synchronized void sendPartialFile(RepositortyChannel fileChannel, long offset, long length) throws IOException
   {
      if(isclosed())
      {
        return;
      }
-     returnPartialFileHeader(diskFile, offset, length);
-     transferFile(diskFile, offset, length);
+     returnPartialFileHeader(fileChannel, offset, length);
+     transferFile(fileChannel, offset, length);
   }
 
-  private void transferFile(RandomAccessFile diskFile, long offset, long length) throws IOException
+  private void transferFile(RepositortyChannel fileChannel, long offset, long length) throws IOException
   {
     byte[] b = new byte[1024];
-    diskFile.seek(offset);
+    ByteBuffer bb = ByteBuffer.wrap(b);
+    fileChannel.position(offset);
     while(read <length)
     {
       int readlen =(int)( length -read <1024?length -read:1024);
-      readlen = diskFile.read(b,0,readlen);
+      bb.clear().limit(readlen);
+      readlen = fileChannel.read(bb);
       outstream.write(b,0,readlen);
       last_transfer_time    = System.currentTimeMillis() ;
       read += readlen;

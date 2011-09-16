@@ -2,19 +2,19 @@ package org.dcache.pool.classic;
 
 import org.dcache.pool.repository.Repository;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.movers.MoverProtocol;
 
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import javax.security.auth.Subject;
 import java.util.Set;
 import java.util.Collections;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository.OpenFlags;
 
@@ -53,9 +53,9 @@ public class PoolIOReadTransfer
             //                 say("Trying to open " + file);
             long fileSize = file.length();
 
-            RandomAccessFile raf = new RandomAccessFile(file, "r");
+            RepositortyChannel fileIoChannel = new FileRepositoryChannel(file, "r");
             try {
-                _mover.runIO(raf,
+                _mover.runIO(fileIoChannel,
                              _protocolInfo,
                              _storageInfo,
                              _pnfsId,
@@ -67,7 +67,7 @@ public class PoolIOReadTransfer
                  * does, we are probably better off
                  * propagating the exception.
                  */
-                raf.close();
+                fileIoChannel.close();
             }
 
             if (_mover.wasChanged()) {

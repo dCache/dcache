@@ -6,6 +6,8 @@
 
 package org.dcache.srm.util;
 
+import java.nio.channels.FileChannel;
+
 /**
  *
  * @author  timur
@@ -38,8 +40,8 @@ public class Adler32 {
 
         }
 
-        java.io.RandomAccessFile raf = new java.io.RandomAccessFile(f,"r");
-        String adler32 =GridftpClient.long32bitToHexString( GridftpClient.getAdler32(raf));
+        FileChannel fc = new java.io.RandomAccessFile(f,"r").getChannel();
+        String adler32 =GridftpClient.long32bitToHexString( GridftpClient.getAdler32(fc));
         System.out.println(adler32);
     }
 }

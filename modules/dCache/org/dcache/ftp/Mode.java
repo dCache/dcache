@@ -12,6 +12,7 @@ import java.nio.channels.UnresolvedAddressException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.HashMap;
+import org.dcache.pool.repository.RepositortyChannel;
 
 /**
  * Base class for FTP transfer mode implementations.
@@ -25,7 +26,7 @@ public abstract class Mode extends AbstractMultiplexerListener
 {
     protected Role              _role;
     protected Direction         _direction;
-    protected FileChannel       _file;
+    protected RepositortyChannel       _file;
     protected ConnectionMonitor _monitor;
 
     private   long              _position = 0;
@@ -67,7 +68,7 @@ public abstract class Mode extends AbstractMultiplexerListener
         (System.getProperty("java.version").compareTo("1.7") < 0);
 
     /** Constructs a new mode for outgoing connections. */
-    public Mode(Role role, FileChannel file, ConnectionMonitor monitor)
+    public Mode(Role role, RepositortyChannel file, ConnectionMonitor monitor)
         throws IOException
     {
         _fileSize    = file.size();

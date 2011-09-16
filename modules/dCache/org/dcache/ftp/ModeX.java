@@ -6,13 +6,13 @@ import java.net.SocketAddress;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.FileChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 import java.nio.CharBuffer;
+import org.dcache.pool.repository.RepositortyChannel;
 
 /**
  * Implementation of MODE X.
@@ -481,7 +481,7 @@ public class ModeX extends Mode
         }
     }
 
-    public ModeX(Role role, FileChannel file, ConnectionMonitor monitor,
+    public ModeX(Role role, RepositortyChannel file, ConnectionMonitor monitor,
                  int blockSize)
         throws IOException
     {
