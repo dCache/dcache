@@ -15,24 +15,22 @@
         dCache build version number composed form:
 
 
-        version = ${code.base}.${release.major.id}.${release.minor.id}
-        patch   = ${patch.number}
+        version = ${release.major.id}.${release.minor.id}.${patch.number}
 
-        ${release.id}-${version}-${patch}
+        ${release.id}-${version}-${build.id}
 
-        production-1.9.0-6
+        2.0.0-1
 
     -->
     <loadproperties srcFile="release.properties" />
     <loadproperties srcFile="version.build" />
     <loadproperties srcFile="patch.build" />
-    <property name="patch.number" value="${patch.id}rc" />
     <property name="local.version" value="" />
 
-    <property name="version" value="${code.base}.${release.major.id}.${release.minor.id}" />
-    <property name="patch" value="${patch.number}${local.version}" />
+    <property name="version" value="${release.major.id}.${release.minor.id}.${patch.number}" />
+    <property name="build.number" value="${build.id}${local.version}" />
 
-    <property name="build.name" value="${release.id}-${version}-${patch}" />
+    <property name="build.name" value="${version}-${build.number}" />
     <echo message="Current Build version : ${build.name}" />
 
 
@@ -143,25 +141,6 @@
     <target name="clean" description="Remove temporary generated files.">
         <delete dir="${buildDir}" />
     </target>
-
-    <!--
-        MAKE NEW RELEASE.
-
-        current procedure contains following steps:
-
-        1. set rpm/tar name to release id
-        2. build rpm and tar
-        3. tag all modules and build framework with release id
-        4. commit build number
-    -->
-    <target name="release" description="Make new release">
-
-        <ant antfile="build.xml" target="cleanall" inheritall="false">
-             <property name="patch.number" value="${patch.id}" />
-        </ant>
-
-    </target>
-
 
     <!--
         MAKE TEST BUILD.

@@ -445,7 +445,7 @@
         <copy todir="${buildDir}/batik" file="${skelDir}/share/httpd/static/images/${input.svg}"
             overwrite="true">
             <filterset>
-                <filter token="VERSION" value="${version}-${patch}"/>
+                <filter token="VERSION" value="${version}-${build.number}"/>
             </filterset>
         </copy>
 

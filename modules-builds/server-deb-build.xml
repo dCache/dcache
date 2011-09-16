@@ -26,7 +26,7 @@
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
             <filterset>
-                <filter token="Version" value="${version}-${patch}" />
+                <filter token="Version" value="${version}-${build.number}" />
                 <filter token="MaintainerName" value="${server.debMaintainer}" />
                 <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
                 <filter token="Timestamp" value="${timestamp}" />
@@ -72,7 +72,7 @@
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
             <filterset>
-                <filter token="Version" value="${version}-${patch}" />
+                <filter token="Version" value="${version}-${build.number}" />
                 <filter token="MaintainerName" value="${server.debMaintainer}" />
                 <filter token="MaintainerMail" value="${server.debMaintainerMail}" />
                 <filter token="Timestamp" value="${timestamp}" />

@@ -24,7 +24,7 @@
                 <filter token="rpmTopDir" value="${srmclient.rpmTopDir}" />
 
                 <filter token="Version" value="${version}" />
-                <filter token="Release" value="${patch}" />
+                <filter token="Release" value="${build.number}" />
             </filterset>
         </copy>
 

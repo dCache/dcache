@@ -6,7 +6,7 @@
         <copy tofile="${package.root.dir}/server/pkginfo" file="${buildTop}/pkgs/solaris/pkginfo.template"
             overwrite="true">
             <filterset>
-                <filter token="VERSION" value="${version}-${patch}"/>
+                <filter token="VERSION" value="${version}-${build.number}"/>
                 <filter token="VENDOR" value="${vendor}" />
             </filterset>
         </copy>
@@ -16,7 +16,7 @@
               <arg file="${package.root.dir}/server" />
               <arg file="${buildDir}" />
               <arg file="${distDir}" />
-              <arg value="${version}-${patch}" />
+              <arg value="${version}-${build.number}" />
         </exec>
 
     </target>

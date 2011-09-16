@@ -26,7 +26,7 @@
                 <filter token="rpmTopDir" value="${server.rpmTopDir}" />
 
                 <filter token="Version" value="${version}" />
-                <filter token="Release" value="${patch}" />
+                <filter token="Release" value="${build.number}" />
             </filterset>
         </copy>
 
@@ -75,7 +75,7 @@
                 <filter token="rpmTopDir" value="${server.rpmTopDir}" />
 
                 <filter token="Version" value="${version}" />
-                <filter token="Release" value="${patch}" />
+                <filter token="Release" value="${build.number}" />
             </filterset>
         </copy>
 

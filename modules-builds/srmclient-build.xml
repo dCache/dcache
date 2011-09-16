@@ -4,7 +4,7 @@
 
 
     <property name="srmclient.build.dir" location="${buildDir}/srmclient" />
-    <property name="srmclient.version" value="2.1.${release.minor.id}-${patch.id}" />
+    <property name="srmclient.version" value="2.1.${release.minor.id}-${build.number}" />
     <property name="srmclient.vendor" value="Fermi National Accelerator Laboratory" />
 
 

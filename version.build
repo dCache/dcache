@@ -1,4 +1,5 @@
 #Build Number for ANT. Do not edit!
 #Fri May 09 13:15:58 CDT 2008
-release.minor.id=14
+release.minor.id=0
+build.id=1
 local.version=
