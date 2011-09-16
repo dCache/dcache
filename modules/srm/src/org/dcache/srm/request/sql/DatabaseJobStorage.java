@@ -271,7 +271,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                             sqlStatement1 = _con.prepareStatement(insertState);
                             sqlStatement1.setInt(1, states[i].getStateId());
                             sqlStatement1.setString(2, states[i].toString());
-                            int result = sqlStatement1.executeUpdate( insertState );
+                            int result = sqlStatement1.executeUpdate();
                             _con.commit();
                         } catch(SQLException sqle) {
                             //ignoring, state might be already in the table
@@ -569,7 +569,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             sqlStatement.setString(2, schedulerId);
             logger.debug("Selecting everything of Scheduler {} from table {}",
                     schedulerId,getTableName());
-            ResultSet set = sqlStatement.executeQuery(sql);
+            ResultSet set = sqlStatement.executeQuery();
             while(set.next()) {
                 Long ID = set.getLong(1);
                 Long NEXTJOBID = new Long(set.getLong(2));
