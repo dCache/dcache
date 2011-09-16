@@ -92,7 +92,7 @@ public class NfsExcecutionService implements MoverExecutorService {
                 public boolean cancel(boolean mayInterruptIfRunning) {
                     _nfsIO.removeHandler(moverBridge);
                     try {
-                        fileIoChannel.close();
+                        repositoryChannel.close();
                     } catch (IOException e) {
                         _log.error("failed to close RAF", e);
                     }
