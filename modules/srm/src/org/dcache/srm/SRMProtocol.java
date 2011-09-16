@@ -10,24 +10,25 @@ package org.dcache.srm;
  *
  * @author  timur
  */
-public class SRMProtocol {
-    public static final SRMProtocol V1_1 = new SRMProtocol("V1.1");
-    public static final SRMProtocol V2_1 = new SRMProtocol("V2.1");
-    
-    private String protocol;
-    /** Creates a new instance of SRMProtocol */
+public enum  SRMProtocol {
+    V1_1 ("V1.1"),
+        V2_1 ("V2.1");
+
+    private final String _protocol;
+
     private SRMProtocol(String protocol) {
-        this.protocol=protocol;
+        _protocol=protocol;
     }
-    
+
     public static SRMProtocol getSRMProtocol(String protocol) {
-        if(V1_1.protocol.equals(protocol)) return V1_1;
-        if(V2_1.protocol.equals(protocol)) return V2_1;
+        for (SRMProtocol value : values()) {
+            if (value._protocol.equals(protocol))  return value;
+        }
         return null;
     }
-    
+
     public String toString() {
-        return protocol;
+        return _protocol;
     }
-  
+
 }
