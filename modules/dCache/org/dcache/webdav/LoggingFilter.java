@@ -39,26 +39,26 @@ public class LoggingFilter implements Filter
 
             Response.Status status = response.getStatus();
             if (status != null) {
-                _log.info(String.format("%s %s %s %s %d",
-                                        request.getFromAddress(),
-                                        request.getMethod(),
-                                        request.getAbsolutePath(),
-                                        getUser(),
-                                        status.code));
+                _log.info("{} {} {} {} {}",
+                          new Object[] { request.getFromAddress(),
+                                         request.getMethod(),
+                                         request.getAbsolutePath(),
+                                         getUser(),
+                                         status.code });
             } else {
-                _log.info(String.format("%s %s %s %s",
-                                        request.getFromAddress(),
-                                        request.getMethod(),
-                                        request.getAbsolutePath(),
-                                        getUser()));
+                _log.info("{} {} {} {}",
+                          new Object[] { request.getFromAddress(),
+                                         request.getMethod(),
+                                         request.getAbsolutePath(),
+                                         getUser() });
             }
         } catch (RuntimeException e) {
-            _log.warn(String.format("%s %s %s %s %s",
+            _log.warn(String.format("%s %s %s %s",
                                     request.getFromAddress(),
                                     request.getMethod(),
                                     request.getAbsolutePath(),
-                                    getUser(),
-                                    e));
+                                    getUser()),
+                                    e);
             throw e;
         }
     }
