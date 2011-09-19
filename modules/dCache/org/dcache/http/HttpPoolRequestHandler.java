@@ -117,11 +117,36 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                                                  fileSize-1);
 
             if (ranges == null || ranges.isEmpty()) {
+                /*
+                 * GET for a whole file
+                 */
                 responseContent = mover.read(request.getUri());
                 sendHTTPFullHeader(context, event, fileSize);
                 future = event.getChannel().write(responseContent);
+            } else if( ranges.size() == 1){
+                /*
+                 * GET for a single range
+                 *
+                 * rfc2616 is not strong enough about using multi-range reply
+                 * for a single range:
+                 *
+                 *    The multipart/byteranges media type includes two or more parts,
+                 *    each with its own Content-Type and Content-Range fields. The
+                 *    required boundary parameter specifies the boundary string used
+                 *    to separate each body-part.
+                 *
+                 * To keep other'readings' happy, do not send multi-range reply on
+                 * single range request.
+                 */
+                HttpByteRange range = ranges.get(0);
+                sendHTTPPartialHeader(context, event,
+                    range.getLower(),
+                    range.getUpper(),
+                    range.getSize());
             } else {
-
+                /*
+                 * GET for multiple ranges
+                 */
                 sendHTTPMultipartHeader(context, event);
                 for(HttpByteRange range: ranges) {
                     responseContent = mover.read(request.getUri(),
@@ -135,7 +160,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     future = event.getChannel().write(responseContent);
                 }
                 sendHTTPMultipartEnd(context, event);
-
             }
 
         } catch (java.text.ParseException pe) {
