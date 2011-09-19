@@ -1,24 +1,30 @@
 package org.dcache.xrootd2.security.plugins.tokenauthz;
 
-import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
+import org.dcache.xrootd2.security.AuthorizationFactory;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 
-public class NoAuthorizationFactory implements AbstractAuthorizationFactory
+public class NoAuthorizationFactory implements AuthorizationFactory
 {
-    public AuthorizationHandler getAuthzHandler()
+    public final static String NAME = "none";
+
+    private final static AuthorizationHandler HANDLER =
+        new NoAuthorizationHandler();
+
+    @Override
+    public String getName()
     {
-        return null;
+        return NAME;
     }
 
-    public void init()
+    @Override
+    public String getDescription()
     {
+        return "Authorizes all requests";
     }
 
-    public void setKeystore(String path)
+    @Override
+    public AuthorizationHandler createHandler()
     {
-    }
-
-    public void setNoStrongAuthorization(String auth)
-    {
+        return HANDLER;
     }
 }

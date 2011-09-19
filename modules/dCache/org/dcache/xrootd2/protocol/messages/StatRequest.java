@@ -7,6 +7,7 @@ public class StatRequest extends AbstractRequestMessage
 {
     private final short opts;
     private final String path;
+    private final String opaque;
 
     public StatRequest(ChannelBuffer buffer)
     {
@@ -24,14 +25,21 @@ public class StatRequest extends AbstractRequestMessage
         int pos = buffer.indexOf(24, end, (byte)0x3f);
         if (pos > -1) {
             path = buffer.toString(24, pos - 24, XROOTD_CHARSET);
+            opaque = buffer.toString(pos + 1, end - (pos + 1), XROOTD_CHARSET);
         } else {
             path = buffer.toString(24, end - 24, XROOTD_CHARSET);
+            opaque = null;
         }
     }
 
     public String getPath()
     {
         return path;
+    }
+
+    public String getOpaque()
+    {
+        return opaque;
     }
 
     public boolean isVfsSet()

@@ -83,7 +83,8 @@
     <property name="channelFactory" ref="channel-factory"/>
     <property name="connectionTracker" ref="connection-tracker"/>
     <property name="door" ref="door"/>
-    <property name="authenticationFactory" ref="${xrootdAuthNPlugin}-factory" />
+    <property name="authenticationFactory" ref="${xrootdAuthNPlugin}-factory"/>
+    <property name="authorizationFactory" ref="authorization-factory"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
@@ -102,11 +103,10 @@
     <constructor-arg ref="io-thread-pool"/>
   </bean>
 
-  <bean id="authorization-factory" class="${xrootdAuthzPlugin}"
-        init-method="init">
-    <description>Authorization plugin</description>
-    <property name="keystore" value="${xrootdAuthzKeystore}"/>
-    <property name="noStrongAuthorization" value="${nostrongauthorization}"/>
+  <bean id="authorization-factory"
+        class="org.dcache.xrootd2.security.AuthorizationFactoryFactoryBean">
+      <description>Factory for authorization handlers</description>
+      <property name="name" value="${xrootdAuthzPlugin}"/>
   </bean>
 
   <bean id="none-factory" class="org.dcache.xrootd2.security.plugins.authn.none.NoAuthenticationFactory">
@@ -131,7 +131,6 @@
     <property name="billingStub" ref="billing-stub"/>
     <property name="writePaths" value="${xrootdWritePaths}"/>
     <property name="readPaths" value="${xrootdReadPaths}"/>
-    <property name="authorizationFactory" ref="authorization-factory"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="ioQueue" value="${xrootdIoQueue}"/>
     <property name="moverTimeout" value="${xrootdMoverTimeout}"/>

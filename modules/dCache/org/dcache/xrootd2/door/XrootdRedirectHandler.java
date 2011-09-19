@@ -41,6 +41,7 @@ import org.dcache.xrootd2.protocol.messages.StatxResponse;
 import org.dcache.xrootd2.security.AbstractAuthenticationFactory;
 import org.dcache.xrootd2.security.AuthenticationHandler;
 import org.dcache.xrootd2.security.AuthorizationHandler;
+import org.dcache.xrootd2.security.AuthorizationFactory;
 import org.dcache.xrootd2.security.plugins.authn.InvalidHandlerConfigurationException;
 import org.dcache.xrootd2.util.FileStatus;
 import org.dcache.xrootd2.util.OpaqueStringParser;
@@ -92,8 +93,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     /** class used for creating authentication handler.
      *  FIXME: Support more than just one authentication plugin
      */
-    private final AbstractAuthenticationFactory _factory;
+    private final AbstractAuthenticationFactory _authenticationFactory;
     private AuthenticationHandler _authenticationHandler;
+
+    private AuthorizationFactory _authorizationFactory;
 
     private boolean _hasLoggedIn = false;
     private boolean _isReadOnly = true;
@@ -111,10 +114,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         Collections.synchronizedSet(new HashSet<Thread>());
 
     public XrootdRedirectHandler(XrootdDoor door,
-                                 AbstractAuthenticationFactory factory)
+                                 AbstractAuthenticationFactory authnFactory,
+                                 AuthorizationFactory authzFactory)
     {
         _door = door;
-        _factory = factory;
+        _authenticationFactory = authnFactory;
+        _authorizationFactory = authzFactory;
     }
 
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
@@ -165,7 +170,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         try {
             if (_authenticationHandler == null) {
-                _authenticationHandler = _factory.getAuthnHandler();
+                _authenticationHandler = _authenticationFactory.getAuthnHandler();
             }
 
             Subject subject = _authenticationHandler.getSubject();
@@ -211,7 +216,7 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         AbstractResponseMessage response;
         try {
             if (_authenticationHandler == null) {
-                _authenticationHandler = _factory.getAuthnHandler();
+                _authenticationHandler = _authenticationFactory.getAuthnHandler();
             }
 
             response = _authenticationHandler.authenticate(msg);
@@ -269,10 +274,11 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
 
         try {
-           String authPath = checkOperationPermission(neededPerm,
-                                                      req.getPath(),
-                                                      req.getOpaque(),
-                                                      localAddress);
+            String authPath = checkOperationPermission(req.getRequestID(),
+                                                       neededPerm,
+                                                       req.getPath(),
+                                                       req.getOpaque(),
+                                                       localAddress);
 
             ////////////////////////////////////////////////////////////////
             // interact with core dCache to open the requested file
@@ -359,6 +365,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnStat(ChannelHandlerContext ctx, MessageEvent event,
                             StatRequest req)
     {
+        Channel channel = event.getChannel();
+        InetSocketAddress localAddress =
+            (InetSocketAddress) channel.getLocalAddress();
+
         if (!_hasLoggedIn) {
             respondWithError(ctx, event, req,
                              kXR_NotAuthorized,
@@ -367,6 +377,12 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         String path = req.getPath();
         try {
+            path = checkOperationPermission(req.getRequestID(),
+                                            FilePerm.READ,
+                                            path,
+                                            req.getOpaque(),
+                                            localAddress);
+
             FileMetaData meta = _door.getFileMetaData(path, _subject, _rootPath);
             FileStatus fs = convertToFileStatus(meta); // FIXME
             respond(ctx, event, new StatResponse(req.getStreamID(), fs));
@@ -409,6 +425,10 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     protected void doOnStatx(ChannelHandlerContext ctx, MessageEvent event,
                              StatxRequest req)
     {
+        Channel channel = event.getChannel();
+        InetSocketAddress localAddress =
+            (InetSocketAddress) channel.getLocalAddress();
+
         if (!_hasLoggedIn) {
             respondWithError(ctx, event, req,
                              kXR_NotAuthorized,
@@ -423,12 +443,22 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
 
         try {
             String[] paths = req.getPaths();
-            FileMetaData[] allMetas = _door.getMultipleFileMetaData(paths,
+            String[] opaques = req.getOpaques();
+            String[] authPaths = new String[paths.length];
+            for (int i = 0; i < paths.length; i++) {
+                authPaths[i] = checkOperationPermission(req.getRequestID(),
+                                                        FilePerm.READ,
+                                                        paths[i],
+                                                        opaques[i],
+                                                        localAddress);
+            }
+
+            FileMetaData[] allMetas = _door.getMultipleFileMetaData(authPaths,
                                                                     _subject,
                                                                     _rootPath);
 
             int[] flags = new int[allMetas.length];
-            for (int i =0; i < allMetas.length; i++) {
+            for (int i = 0; i < allMetas.length; i++) {
                 if (allMetas[i] == null) {
                     flags[i] = kXR_other;
                 } else {
@@ -480,7 +510,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.info("Trying to delete {}", req.getPath());
 
         try {
-            String authPath = checkOperationPermission(FilePerm.DELETE,
+            String authPath = checkOperationPermission(req.getRequestID(),
+                                                       FilePerm.DELETE,
                                                        req.getPath(),
                                                        req.getOpaque(),
                                                        localAddress);
@@ -526,7 +557,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.info("Trying to delete directory {}", req.getPath());
 
         try {
-            String authPath = checkOperationPermission(FilePerm.DELETE,
+            String authPath = checkOperationPermission(req.getRequestID(),
+                                                       FilePerm.DELETE,
                                                        req.getPath(),
                                                        req.getOpaque(),
                                                        localAddress);
@@ -576,7 +608,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         _log.info("Trying to create directory {}", req.getPath());
 
         try {
-            String authPath = checkOperationPermission(FilePerm.WRITE,
+            String authPath = checkOperationPermission(req.getRequestID(),
+                                                       FilePerm.WRITE,
                                                        req.getPath(),
                                                        req.getOpaque(),
                                                        localAddress);
@@ -642,12 +675,14 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                                                req.getTargetPath());
 
         try {
-            String authSourcePath = checkOperationPermission(FilePerm.DELETE,
+            String authSourcePath = checkOperationPermission(req.getRequestID(),
+                                                             FilePerm.DELETE,
                                                              req.getSourcePath(),
                                                              req.getOpaque(),
                                                              localAddress);
 
-            String authTargetPath = checkOperationPermission(FilePerm.WRITE,
+            String authTargetPath = checkOperationPermission(req.getRequestID(),
+                                                             FilePerm.WRITE,
                                                              req.getTargetPath(),
                                                              req.getOpaque(),
                                                              localAddress);
@@ -705,7 +740,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         }
 
         try {
-            String authPath = checkOperationPermission(FilePerm.READ, listPath,
+            String authPath = checkOperationPermission(request.getRequestID(),
+                                                       FilePerm.READ, listPath,
                                                        request.getOpaque(),
                                                        localAddress);
 
@@ -762,7 +798,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
      *         present in the authZ token, the authZ token is not present or
      *         the format is corrupted.
      */
-    private String checkOperationPermission(FilePerm neededPerm,
+    private String checkOperationPermission(int requestId,
+                                            FilePerm neededPerm,
                                             String path,
                                             String opaque,
                                             InetSocketAddress localAddress)
@@ -785,10 +822,8 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
             }
 
         } else {
-
-            // FIXME: maybe move this authorization to a strategy as well?
             AuthorizationHandler authzHandler =
-                _door.getAuthorizationFactory().getAuthzHandler();
+                _authorizationFactory.createHandler();
 
             if (authzHandler != null) {
                 // all information neccessary for checking authorization
@@ -804,21 +839,16 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
                     throw new PermissionDeniedCacheException(msg.toString());
                 }
 
-                boolean isAuthorized;
-
                 try {
-                    isAuthorized =
-                        authzHandler.checkAuthz(path,
-                                                opaqueMap,
-                                                neededPerm, localAddress);
+                    authzHandler.check(requestId,
+                                       path,
+                                       opaqueMap,
+                                       neededPerm,
+                                       localAddress);
                 } catch (GeneralSecurityException e) {
-                    throw new PermissionDeniedCacheException("authorization check"
-                                                             + "failed: " +
-                                                             e.getMessage());
-                }
-
-                if (!isAuthorized) {
-                    throw new PermissionDeniedCacheException("not authorized");
+                    throw new PermissionDeniedCacheException("Authorization check failed: " + e.getMessage());
+                } catch (SecurityException e) {
+                    throw new PermissionDeniedCacheException("Permission denied: " + e.getMessage());
                 }
 
                 // In case of enabled authorization, the path in the open

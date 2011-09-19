@@ -20,32 +20,47 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
-import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
+import org.dcache.xrootd2.security.AuthorizationFactory;
 import org.dcache.xrootd2.security.AuthorizationHandler;
 import org.dcache.xrootd2.util.ParseException;
 
-public class TokenAuthorizationFactory implements AbstractAuthorizationFactory
+public class TokenAuthorizationFactory implements AuthorizationFactory
 {
-    private Map keystore;
-    private File keystoreFile;
+    public final static String NAME = "alice-token";
 
-    /**
-     * Dirty hack: will be deprecated soon
-     */
-    private String _noStrongAuthz;
+    private final Map _keystore;
 
-    public AuthorizationHandler getAuthzHandler()
+    public TokenAuthorizationFactory(File keystoreFile)
+        throws ParseException, IOException
     {
-        return new TokenAuthzHandler(_noStrongAuthz, keystore);
+        _keystore = loadKeyStore(keystoreFile);
     }
 
-    private void loadKeyStore() throws ParseException,  IOException
+    @Override
+    public String getName()
+    {
+        return NAME;
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return "Uses signed tokens to authorize request and map paths";
+    }
+
+    @Override
+    public TokenAuthzHandler createHandler()
+    {
+        return new TokenAuthzHandler(_keystore);
+    }
+
+    private Map loadKeyStore(File file) throws ParseException, IOException
     {
         LineNumberReader in =
-            new LineNumberReader(new FileReader(keystoreFile));
+            new LineNumberReader(new FileReader(file));
         try {
             // reset keystore
-            keystore = new Hashtable();
+            Map keystore = new Hashtable();
 
             // the RSA keyfactory
             KeyFactory keyFactory = null;
@@ -96,6 +111,7 @@ public class TokenAuthorizationFactory implements AbstractAuthorizationFactory
                              loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
                                          pubKeyToken.substring(pubKeyToken.indexOf(':') + 1), keyFactory));
             }
+            return keystore;
         } finally {
             in.close();
         }
@@ -158,34 +174,5 @@ public class TokenAuthorizationFactory implements AbstractAuthorizationFactory
         in.close();
 
         return result;
-    }
-
-    public void init() throws GeneralSecurityException
-    {
-        try {
-            loadKeyStore();
-        } catch (Exception e) {
-            throw new GeneralSecurityException("unable to load keystore: "+e.getMessage());
-        }
-    }
-
-    public void setKeystore(String file)
-    {
-        keystoreFile = new File(file);
-    }
-
-    public String getKeystore()
-    {
-        return keystoreFile.toString();
-    }
-
-    public void setNoStrongAuthorization(String auth)
-    {
-        _noStrongAuthz = auth;
-    }
-
-    public String getNoStrongAuthorization()
-    {
-        return _noStrongAuthz;
     }
 }

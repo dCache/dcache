@@ -7,46 +7,54 @@ import java.net.InetSocketAddress;
 import org.dcache.xrootd2.protocol.XrootdProtocol.FilePerm;
 
 /**
- * The interface to different authorization plugins .
- * @author radicke
+ * The interface to different authorization and path mapping plugins.
  *
+ * @author radicke
  */
 public interface AuthorizationHandler
 {
    /**
-     * This method examines the granted permissions of the path (file)
-     * which is going to be opened. It then checks whether the
-     * permissions are sufficient to open the file in the requested
-     * mode (read or write).
+     * Authorization and path mapping hook.
      *
-     * @param pathToOpen the file which is checked
-     * @param options the opaque data from the open request
+     * Called upon any xrootd door operation.
+     *
+     * Implementations may perform authorization checks for the
+     * requested operation.
+     *
+     * Operations may provide
+     *
+     * @param requestId xrootd requestId of the operation
+     * @param path the file which is checked
+     * @param opaque the opaque data from the request
      * @param mode the requested mode
-     * @return true, if and only if access is granted according to the
-     * requested open mode (authorization successful).
+     * @param localAddress local socket address of client connection
+     * @throws AccessControlException when the requested access is
+     * denied
      * @throws GeneralSecurityException when the process of
      * authorizing fails
      */
-    boolean checkAuthz(String pathToOpen,
-                       Map<String,String> options,
-                       FilePerm mode,
-                       InetSocketAddress localAddress)
-        throws GeneralSecurityException;
+    void check(int requestId,
+               String path,
+               Map<String,String> opaque,
+               FilePerm mode,
+               InetSocketAddress localAddress)
+        throws SecurityException, GeneralSecurityException;
 
     /**
      * Indicates whether the authorization plugin provides an LFN
-     * (logical file name)-to-PFN (physical file name).  In this case,
-     * the path contained in the xrootd open request is just the
-     * LFN. The "real" path which is going to be opened is then
-     * resolved by the authorization module.
+     * (logical file name)-to-PFN (physical file name) mapping.  In
+     * this case, the path contained in the xrootd request is just the
+     * LFN. The "real" path which is going to be opened is resolved by
+     * the plugin.
      *
-     * @return true, if the PFN is resolved by the athorization handler
+     * @return true iff the PFN is resolved by the plugin
      */
     boolean providesPFN();
 
     /**
      * If authorization plugin provides the LFN-to-PFN-mapping, this
      * method will return the PFN.
+     *
      * @return the PFN or null if no mapping is done by the underlying
      * authorization plugin.
      */
