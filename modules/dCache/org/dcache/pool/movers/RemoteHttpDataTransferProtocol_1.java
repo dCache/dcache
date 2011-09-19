@@ -105,7 +105,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
 
                 while((read = httpinput.read(buffer)) != -1)
                     {
-                        bb.clear();
                         last_transfer_time    = System.currentTimeMillis();
                         if(transfered+read > allocated_space)
                             {
@@ -114,10 +113,11 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                                 allocated_space+=INC_SPACE;
 
                             }
-                        bb.flip();
+                        bb.limit(read);
                         fileChannel.write(bb);
                         changed = true;
                         transfered +=read;
+                        bb.clear();
                     }
 
                 say("runIO() wrote "+transfered+"bytes");
