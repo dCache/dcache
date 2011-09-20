@@ -21,8 +21,22 @@ check chimera.db.password
 set context -c poolManagerTimeout 28000
 set context -c poolTimeout 10000
 
+onerror continue
+#
+# check for nfs.rpcsec_gss = true/false
+#
+define env enableGss end
+  set env -c secflavor gss
+end
+
+eval ${nfs.rpcsec_gss} true ==
+exec env enableGss -ifok
+
+set env -c secflavor nogss
+onerror shutdown
+
 create org.dcache.cells.UniversalSpringCell ${cell.name} \
-        "classpath:org/dcache/chimera/nfsv41/door/nfsv41.xml \
+        "classpath:org/dcache/chimera/nfsv41/door/nfsv41-${secflavor}.xml \
        -loginBrokerUpdateTime=\"${loginBrokerUpdateTime}\" \
        -loginBrokerUpdateThreshold=\"${loginBrokerUpdateThreshold}\" \
        -loginBroker=\"${loginBroker}\" \

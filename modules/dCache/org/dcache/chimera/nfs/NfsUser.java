@@ -26,6 +26,8 @@ import org.dcache.auth.Subjects;
  */
 public class NfsUser {
 
+    private static final UnixUser NOBODY = new UnixUser(-1, -1, new int[0], "localhost");
+
     /*no instances allowed*/
     private NfsUser() {
     }
@@ -38,6 +40,10 @@ public class NfsUser {
         int[] gids;
 
         Subject subject = call.getCredential().getSubject();
+        if( subject.equals(Subjects.NOBODY) ) {
+            return NOBODY;
+        }
+
         uid = (int)Subjects.getUid(subject);
         gids = from(Subjects.getGids(subject));
         gid = gids.length > 0 ? gids[0] : -1;
@@ -55,9 +61,7 @@ public class NfsUser {
             }
         }
 
-        user = new UnixUser(uid, gid, gids, host);
-
-        return user;
+        return  new UnixUser(uid, gid, gids, host);
     }
 
     private static int[] from(long[] longs) {

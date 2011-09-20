@@ -26,6 +26,7 @@ import org.dcache.util.PortRange;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrEncodingStream;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class NfsExcecutionService implements MoverExecutorService {
     private static final Logger _log = LoggerFactory.getLogger(NfsExcecutionService.class);
     private final NFSv4MoverHandler _nfsIO;
 
-    public NfsExcecutionService() throws ChimeraFsException, OncRpcException, IOException {
+    public NfsExcecutionService(boolean withGss) throws ChimeraFsException, OncRpcException, IOException, GSSException {
 
             String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
             PortRange portRange;
@@ -47,7 +48,7 @@ public class NfsExcecutionService implements MoverExecutorService {
             } else {
                 portRange = new PortRange(0);
             }
-            _nfsIO = new NFSv4MoverHandler(portRange);
+            _nfsIO = new NFSv4MoverHandler(portRange, withGss);
     }
 
 

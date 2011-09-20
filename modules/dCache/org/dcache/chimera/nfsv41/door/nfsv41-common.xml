@@ -97,20 +97,6 @@
         <constructor-arg value="${nfs.domain}"/>
     </bean>
 
-    <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
-        init-method="init" destroy-method="destroy">
-        <description>dCache implementation of NFSv4.1 MDS (door)</description>
-        <property name="poolManagerStub" ref="poolManagerStub"/>
-        <property name="billingStub" ref="billing-stub"/>
-        <property name="pnfsHandler" ref="pnfs"/>
-        <property name="fileSystemProvider" ref="fileSystem"/>
-        <property name="ioQueue" value="${nfsIoQueue}" />
-        <property name="exportFile" ref="export" />
-        <property name="idMapper" ref="id-mapper" />
-        <property name="portNumber" value="${nfs.port}" />
-        <property name="enableV3" value="${nfs.v3}" />
-    </bean>
-
     <bean id="lb" class="org.dcache.util.LoginBrokerHandler"
         init-method="start"
         destroy-method="stop">

@@ -4,16 +4,19 @@ import com.google.common.base.Strings;
 import diskCacheV111.util.CacheException;
 import java.security.Principal;
 import java.util.Set;
+import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.chimera.nfs.v4.NfsIdMapping;
+import org.dcache.xdr.RpcLoginService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StrategyIdMapper implements NfsIdMapping {
+public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
     private final String NOBODY = "nobody";
     private final LoginStrategy _remoteLoginStrategy;
@@ -103,5 +106,19 @@ public class StrategyIdMapper implements NfsIdMapping {
 
     private String addDomain(String s) {
         return _domain == null? s : s + "@" + _domain;
+    }
+
+    @Override
+    public Subject login(Principal principal) {
+        Subject in = new Subject();
+        in.getPrincipals().add(principal);
+        in.setReadOnly();
+
+        try {
+            return _remoteLoginStrategy.login(in).getSubject();
+        }catch(CacheException e) {
+            _log.warn("Failed to login for : " + principal.getName() + " : ", e.toString());
+        }
+        return Subjects.NOBODY;
     }
 }

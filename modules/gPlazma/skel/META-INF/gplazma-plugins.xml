@@ -27,4 +27,9 @@
         <name>nsswitch</name>
         <class>org.dcache.gplazma.plugins.Nsswitch</class>
     </plugin>
+    <plugin>
+        <name>krb5</name>
+        <class>org.dcache.gplazma.plugins.Krb5</class>
+    </plugin>
+
 </plugins>

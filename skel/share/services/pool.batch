@@ -97,6 +97,7 @@ create org.dcache.cells.UniversalSpringCell "${cell.name}" \
     -lfs=\"${lfs}\" \
     -waitForFiles=\"${waitForFiles}\" \
     -tags=\"${tags}\" \
+    -nfs.rpcsec_gss=\"${nfs.rpcsec_gss}\" \
 "
 
 

@@ -2,9 +2,13 @@ package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.security.auth.Subject;
+import org.dcache.auth.Subjects;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
@@ -32,6 +36,8 @@ import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.RpcDispatchable;
+import org.dcache.xdr.RpcLoginService;
+import org.dcache.xdr.gss.GssSessionManager;
 
 /**
  *
@@ -54,8 +60,8 @@ public class NFSv4MoverHandler {
             new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
 
-    public NFSv4MoverHandler(PortRange portRange)
-            throws IOException , OncRpcException {
+    public NFSv4MoverHandler(PortRange portRange, boolean withGss)
+            throws IOException , OncRpcException, GSSException {
 
         _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null);
         _rpcService = new OncRpcSvc(
@@ -65,6 +71,18 @@ public class NFSv4MoverHandler {
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
         programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
         _rpcService.setPrograms(programs);
+
+        if(withGss) {
+            RpcLoginService rpcLoginService = new RpcLoginService() {
+
+                @Override
+                public Subject login(Principal principal) {
+                    return Subjects.NOBODY;
+                }
+            };
+            GssSessionManager gss = new GssSessionManager(rpcLoginService);
+            _rpcService.setGssSessionManager(gss);
+        }
         _rpcService.start();
     }
 

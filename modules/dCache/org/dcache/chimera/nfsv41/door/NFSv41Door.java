@@ -85,6 +85,7 @@ import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.XdrDecodingStream;
 import org.dcache.xdr.XdrEncodingStream;
+import org.dcache.xdr.gss.GssSessionManager;
 import org.dcache.xdr.portmap.OncRpcEmbeddedPortmap;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -157,9 +158,15 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private NfsIdMapping _idMapper;
 
+    private GssSessionManager _gssSessionManager;
+
     private final static TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
+
+    public void setGssSessionManager(GssSessionManager sessionManager) {
+        _gssSessionManager = sessionManager;
+    }
 
     public void setIdMapper(NfsIdMapping idMapper)
     {
@@ -204,6 +211,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         final NFSv41DeviceManager _dm = this;
 
         _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true, "NFSv41 door embedded server");
+        _rpcService.setGssSessionManager(_gssSessionManager);
 
         _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
                 _dm, _aclHandler, _fileFileSystemProvider, _idMapper, _exportFile);

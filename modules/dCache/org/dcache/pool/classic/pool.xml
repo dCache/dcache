@@ -333,6 +333,7 @@
   <bean id="nfs-execution-service" class="org.dcache.chimera.nfsv41.mover.NfsExcecutionService"
         destroy-method="shutdown">
       <description>NFSv4.1 request execution service</description>
+      <constructor-arg value="${nfs.rpcsec_gss}" />
   </bean>
 
   <bean id="mover-execution-service" class="org.dcache.pool.classic.MoverExecutorServices" >

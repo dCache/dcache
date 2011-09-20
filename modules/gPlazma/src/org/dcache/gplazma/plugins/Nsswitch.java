@@ -14,6 +14,9 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 import org.dcache.gplazma.SessionID;
@@ -21,9 +24,15 @@ import org.dcache.gplazma.SessionID;
 /**
  * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for
  * Unix based systems. The actual mapping happens according to systems {@literal /etc/nsswith.conf}
- * configuration.
+ * configuration. The following mapping takes place:
+ * <pre>
+ *     login name: {@link UserNamePrincipal}
+ *     uid       : {@link UidPrincipal}
+ *     gid       : {@link GidPrincipal}, primary
+ *     other gids: {@link GidPrincipal}
+ * </pre>
  */
-public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin {
+public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GPlazmaSessionPlugin {
 
     /**
      * handle to libc.
@@ -58,6 +67,13 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin {
         throw new AuthenticationException("No mapping for " + principals);
     }
 
+    /**
+     * Maps {@link UserNamePrincipal} to corresponding {@link UidPrincipal} and
+     * {@link GroupNamePrincipal} to corresponding {@link GidPrincipal}.
+     * @param principal to map
+     * @return mapped principal.
+     * @throws NoSuchPrincipalException if user or group name does can't be mapped.
+     */
     @Override
     public Principal map(Principal principal) throws NoSuchPrincipalException {
 
@@ -75,6 +91,13 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin {
         throw new NoSuchPrincipalException(principal);
     }
 
+    /**
+     * Maps {@link UidPrincipal} to corresponding {@link UserNamePrincipal} and
+     * {@link GidPrincipal} to corresponding {@link GroupNamePrincipal}.
+     * @param principal to map
+     * @return mapped principal
+     * @throws NoSuchPrincipalException if uid or gid can't be mapped.
+     */
     @Override
     public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException {
 
@@ -90,6 +113,13 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin {
             }
         }
         throw new NoSuchPrincipalException(principal);
+    }
+
+    @Override
+    public void session(SessionID sID, Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
+        attrib.add(new HomeDirectory("/"));
+        attrib.add(new RootDirectory("/"));
+        attrib.add(new ReadOnly(false));
     }
 
     private int[] groupsOf(__password pwrecord) {
