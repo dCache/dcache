@@ -143,6 +143,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     range.getLower(),
                     range.getUpper(),
                     range.getSize());
+                responseContent = mover.read(request.getUri(),
+                        range.getLower(),
+                        range.getUpper());
+                future = event.getChannel().write(responseContent);
             } else {
                 /*
                  * GET for multiple ranges
