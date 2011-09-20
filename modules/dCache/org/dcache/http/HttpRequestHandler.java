@@ -163,7 +163,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
 
-        String type = "multipart/x-mixed-replace; boundary=\"" + BOUNDARY + "\"";
+        String type = "multipart/byteranges; boundary=\"" + BOUNDARY + "\"";
         response.setHeader(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_TYPE, type);
 
