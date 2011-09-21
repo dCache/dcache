@@ -534,6 +534,7 @@ public class DummyFileSystemProvider implements FileSystemProvider {
 
     @Override
     public FsInode inodeFromBytes(byte[] handle) throws ChimeraFsException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //FIXME: this works only whlie only state id is used to identify the mover.
+        return new FsInode(this, "");
     }
 }
