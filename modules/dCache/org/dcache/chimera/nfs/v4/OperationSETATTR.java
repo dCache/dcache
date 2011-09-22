@@ -35,11 +35,17 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.SETATTR4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.dcache.acl.ACE;
+import org.dcache.acl.enums.AceType;
+import org.dcache.acl.enums.Who;
 
 import org.dcache.xdr.XdrDecodingStream;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.nfs.v4.acl.AclStore;
+import org.dcache.chimera.nfs.v4.xdr.nfsace4;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.posix.UnixAcl;
@@ -169,17 +175,11 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
             case nfs4_prot.FATTR4_ACL :
                 fattr4_acl acl = new fattr4_acl();
                 acl.xdrDecode(xdr);
-                for(int i = 0; i < acl.value.length; i++ ) {
-                	_log.info("newacl: " + HimeraNFS4Utils.aceToString(acl.value[i]));
+                List<ACE> dacl = new ArrayList<ACE>();
+                for (nfsace4 ace : acl.value) {
+                    dacl.add(valueOf(ace, context.getIdMapping()));
                 }
-
-                /*
-                 * TODO: here is the place to call ACL module
-                 */
-
-                AclStore.getInstance().setAcl(inode, acl.value);
-                inode.setMTime(System.currentTimeMillis());
-
+                context.getFs().setACL(inode, dacl);
                 isApplied = true;
                 break;
             case nfs4_prot.FATTR4_ARCHIVE :
@@ -267,4 +267,21 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
         return isApplied;
     }
 
+    private static ACE valueOf(nfsace4 ace, NfsIdMapping idMapping) {
+
+        String who = ace.who.toString();
+        int type = ace.type.value.value;
+        int flags = ace.flag.value.value;
+        int mask = ace.access_mask.value.value;
+
+        int id = 0;
+        Who whoType = Who.valueOf(flags);
+        if(whoType == Who.GROUP) {
+            id = idMapping.principalToGid(who);
+        } else if( whoType == Who.USER ) {
+            id = idMapping.principalToUid(who);
+        }
+
+        return new ACE(AceType.valueOf(type), flags, mask, whoType, id, ACE.DEFAULT_ADDRESS_MSK);
+    }
 }

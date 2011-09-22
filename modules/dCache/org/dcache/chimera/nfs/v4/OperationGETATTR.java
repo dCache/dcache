@@ -87,7 +87,10 @@ import org.dcache.chimera.nfs.v4.xdr.GETATTR4resok;
 import org.dcache.chimera.nfs.v4.xdr.GETATTR4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.dcache.acl.ACE;
+import org.dcache.acl.enums.Who;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.xdr.XdrAble;
@@ -96,8 +99,9 @@ import org.dcache.xdr.XdrEncodingStream;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.nfs.v4.acl.Ace;
-import org.dcache.chimera.nfs.v4.acl.AclStore;
+import org.dcache.chimera.nfs.v4.xdr.aceflag4;
+import org.dcache.chimera.nfs.v4.xdr.acemask4;
+import org.dcache.chimera.nfs.v4.xdr.acetype4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -280,35 +284,26 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
             	nfs_fh4 fh = new nfs_fh4();
             	fh.value = context.getFs().inodeToBytes(inode);
                 fattr4_filehandle filehandle = new fattr4_filehandle(fh);
-            	ret = filehandle;
+                ret = filehandle;
                 break;
             case nfs4_prot.FATTR4_ACL :
 
-            	/*
-            	 * TODO:
-            	 * here is the place to talk with ACL module
-            	 * for now we just reply some thing
-            	 */
+                nfsace4[] aces;
+                List<ACE> dacl = context.getFs().getACL(inode);
+                if (dacl != null && !dacl.isEmpty()) {
+                    aces = new nfsace4[dacl.size()];
+                    int i = 0;
+                    for(ACE ace: dacl) {
+                        aces[i] = valueOf(ace, context.getIdMapping());
+                        i++;
+                    }
+                } else {
+                    aces = new nfsace4[0];
+                }
 
-            	nfsace4[] aces = null;
+                fattr4_acl acl = new fattr4_acl(aces);
 
-            	/*
-            	 * use dummy store
-            	 */
-
-            	nfsace4[] savedAcl = AclStore.getInstance().getAcl(inode);
-            	if( savedAcl != null ) {
-            		aces = new nfsace4[savedAcl.length];
-            		System.arraycopy(savedAcl, 0, aces, 0, savedAcl.length);
-            	}else{
-            		aces = new nfsace4[0];
-            	}
-
-                _log.debug("{}",  new Ace(aces) );
-
-            	fattr4_acl acl = new fattr4_acl(aces);
-
-            	ret = acl;
+                ret = acl;
                 break;
             case nfs4_prot.FATTR4_ACLSUPPORT :
                 fattr4_aclsupport aclSupport = new fattr4_aclsupport();
@@ -783,4 +778,16 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         return ret;
     }
 
+    private static nfsace4 valueOf(ACE ace, NfsIdMapping idMapping) {
+
+        String subject = ace.getWho() == Who.USER ? idMapping.uidToPrincipal(ace.getWhoID())
+                : idMapping.gidToPrincipal(ace.getWhoID());
+
+        nfsace4 nfsace = new nfsace4();
+        nfsace.access_mask = new acemask4(new uint32_t(ace.getAccessMsk()));
+        nfsace.flag = new aceflag4(new uint32_t(ace.getFlags()));
+        nfsace.type = new acetype4(new uint32_t(ace.getType().getValue()));
+        nfsace.who = HimeraNFS4Utils.string2utf8str_mixed(subject);
+        return nfsace;
+    }
 }

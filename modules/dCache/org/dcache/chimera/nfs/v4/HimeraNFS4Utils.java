@@ -20,6 +20,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfsace4;
 import org.dcache.chimera.nfs.v4.xdr.utf8str_cs;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.utf8str_cis;
+import org.dcache.chimera.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.chimera.nfs.v4.xdr.utf8string;
 
 public class HimeraNFS4Utils {
@@ -71,5 +72,14 @@ public class HimeraNFS4Utils {
      */
     public static utf8str_cis string2utf8str_cis(String str) {
         return new utf8str_cis(new utf8string(str.getBytes()));
+    }
+
+    /**
+     * Convert String to a case insensitive string of UTF-8 characters.
+     * @param str
+     * @return utf8str_mixed representation of <i>str</i>
+     */
+    public static utf8str_mixed string2utf8str_mixed(String str) {
+        return new utf8str_mixed(new utf8string(str.getBytes()));
     }
 }
