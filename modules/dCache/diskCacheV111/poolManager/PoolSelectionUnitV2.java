@@ -26,7 +26,6 @@ import java.io.Serializable;
 import com.google.common.collect.Maps;
 import com.google.common.base.Predicates;
 
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,7 +211,7 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class PGroup extends PoolCore
+    private static class PGroup extends PoolCore implements SelectionPoolGroup
     {
         static final long serialVersionUID = 3883973457610397314L;
 
@@ -423,6 +422,16 @@ public class PoolSelectionUnitV2
             super(name);
         }
 
+        @Override
+        public Collection<SelectionLink> getLinksTargetingPool() {
+            return new ArrayList<SelectionLink>(_linkList.values());
+        }
+
+        @Override
+        public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
+            return new ArrayList<SelectionPoolGroup>(_pGroupList.values());
+        }
+
         public void setActive(boolean active)
         {
             _active =  active ? System.currentTimeMillis() : 0;
@@ -593,6 +602,22 @@ public class PoolSelectionUnitV2
         public String getTag() {
             return _tag;
         }
+
+        @Override
+        public Collection<SelectionPoolGroup> getPoolGroupsPointingTo() {
+            Collection<SelectionPoolGroup> pGroups = new ArrayList<SelectionPoolGroup>();
+            for (PoolCore pGroup : _poolList.values()) {
+                PGroup newPGroup = new PGroup(pGroup.getName());
+                pGroups.add(newPGroup);
+            }
+            return pGroups;
+        }
+
+        @Override
+        public Collection<SelectionUnitGroup> getUnitGroupsTargetedBy() {
+            return  new ArrayList<SelectionUnitGroup>(_uGroupList.values());
+        }
+
         @Override
         public String getName() {
             return _name;
@@ -646,7 +671,7 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class UGroup implements Serializable
+    private static class UGroup implements Serializable, SelectionUnitGroup
     {
         static final long serialVersionUID = 8169708306745935858L;
 
@@ -665,7 +690,18 @@ public class PoolSelectionUnitV2
             _name = name;
         }
 
-        private String getName() {
+        @Override
+        public Collection<SelectionUnit> getMemeberUnits() {
+            return new ArrayList<SelectionUnit>(_unitList.values());
+        }
+
+        @Override
+        public Collection<SelectionLink> getLinksPointingTo() {
+            return new ArrayList<SelectionLink>(_linkList.values());
+        }
+
+        @Override
+        public String getName() {
             return _name;
         }
 
@@ -676,7 +712,7 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private static class Unit implements Serializable
+    private static class Unit implements Serializable, SelectionUnit
     {
         static final long serialVersionUID = -2534629882175347637L;
 
@@ -688,7 +724,7 @@ public class PoolSelectionUnitV2
             _name = name;
             _type = type;
         }
-
+        @Override
         public String getName() {
             return _name;
         }
@@ -708,6 +744,18 @@ public class PoolSelectionUnitV2
         }
 
         @Override
+        public Collection<SelectionUnitGroup> getMemberOfUnitGroups() {
+            return new ArrayList(_uGroupList.values());
+        }
+
+
+
+        @Override
+        public String getUnitType() {
+            return getType();
+        }
+
+        @Override
         public String toString() {
             return _name + "  (type=" + getType() + ";canonical="
                     + getCanonicalName() + ";uGroups=" + _uGroupList.size()
@@ -715,6 +763,51 @@ public class PoolSelectionUnitV2
         }
     }
 
+    @Override
+    public Collection<SelectionLink> getLinks() {
+        _psuReadLock.lock();
+        try {
+            return new ArrayList<SelectionLink>(_links.values());
+        } finally {
+            _psuReadLock.unlock();
+        }
+    }
+
+    @Override
+    public Collection<SelectionUnit> getSelectionUnits() {
+        _psuReadLock.lock();
+        try {
+            return new ArrayList<SelectionUnit>(_units.values());
+        } finally {
+            _psuReadLock.unlock();
+        }
+    }
+
+    @Override
+    public Collection<SelectionUnitGroup> getUnitGroups() {
+        _psuReadLock.lock();
+        try {
+            return new ArrayList<SelectionUnitGroup>(_uGroups.values());
+        } finally {
+            _psuReadLock.unlock();
+        }
+    }
+
+    @Override
+    public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException {
+        _psuReadLock.lock();
+        try {
+            PGroup group = _pGroups.get(poolGroup);
+            if (group == null) {
+                throw new NoSuchElementException("No such pool group: " + poolGroup);
+            }
+            return new ArrayList<SelectionLink>(group._linkList.values());
+        } finally {
+            _psuReadLock.unlock();
+        }
+    }
+
+    @Override
     public SelectionLink getLinkByName(String name) throws NoSuchElementException {
 
         Link link = null;
@@ -730,6 +823,7 @@ public class PoolSelectionUnitV2
         return link;
     }
 
+    @Override
     public String[] getDefinedPools(boolean enabledOnly) {
 
         List<String> list = new ArrayList<String>();
@@ -746,6 +840,7 @@ public class PoolSelectionUnitV2
         return list.toArray(new String[list.size()]);
     }
 
+    @Override
     public String[] getActivePools() {
         List<String> list = new ArrayList<String>();
 
@@ -2050,10 +2145,10 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Collection<String> getPoolGroups() {
+    public Collection<SelectionPoolGroup> getPoolGroups() {
         _psuReadLock.lock();
         try {
-            return new ArrayList(_pGroups.keySet());
+            return new ArrayList(_pGroups.values());
         } finally {
             _psuReadLock.unlock();
         }
@@ -3298,6 +3393,7 @@ public class PoolSelectionUnitV2
         return linkGroups;
     }
 
+    @Override
     public LinkGroup getLinkGroupByName(String linkGroupName) {
         LinkGroup linkGroup = null;
         _psuReadLock.lock();
@@ -3309,6 +3405,7 @@ public class PoolSelectionUnitV2
         return linkGroup;
     }
 
+    @Override
     public String[] getLinksByGroupName(String linkGroupName) throws NoSuchElementException {
 
         String[] linkNames = null;
@@ -3333,6 +3430,22 @@ public class PoolSelectionUnitV2
         }
 
         return linkNames;
+    }
+
+    @Override
+    public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName) {
+        _psuReadLock.lock();
+        try {
+            Pool pool = _pools.get(PoolName);
+            if (pool != null) {
+                return new ArrayList<SelectionPoolGroup>(pool._pGroupList.values());
+            } else {
+                throw new NoSuchElementException(PoolName);
+            }
+        } finally {
+            _psuReadLock.unlock();
+
+        }
     }
 
     /**
@@ -3364,18 +3477,12 @@ public class PoolSelectionUnitV2
 
     @Override
     public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup)
-        throws NoSuchElementException
-    {
+            throws NoSuchElementException {
         PGroup group = _pGroups.get(poolGroup);
-        if (group == null)
+        if (group == null) {
             throw new NoSuchElementException("No such pool group: " + poolGroup);
-
-        List<SelectionPool> pools = new ArrayList(group._poolList.size());
-        for (Pool pool: group._poolList.values()) {
-            pools.add(pool);
         }
-
-        return pools;
+        return new ArrayList(group._poolList.values());
     }
 
     @Override

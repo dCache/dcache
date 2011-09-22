@@ -28,10 +28,11 @@ public interface PoolSelectionUnit  {
         P2P,
         ANY,
     }
+    public interface SelectionEntity {
 
-   public interface SelectionLink {
-      public String getName() ;
-
+        public String getName();
+    }
+   public interface SelectionLink extends SelectionEntity{
       /**
        * Get a defensive copy of the pools defined accessible through this link.
        * @return collection of pools
@@ -39,6 +40,8 @@ public interface PoolSelectionUnit  {
       public Collection<SelectionPool> pools() ;
       public String  getTag() ;
       public LinkReadWritePreferences getPreferences();
+      public Collection<SelectionPoolGroup> getPoolGroupsPointingTo();
+      public Collection<SelectionUnitGroup> getUnitGroupsTargetedBy();
    }
 
     /**
@@ -46,9 +49,8 @@ public interface PoolSelectionUnit  {
      * updated periodically. Due to the distributed nature of dCache,
      * the information may be outdated.
      */
-    public interface SelectionPool
+    public interface SelectionPool extends SelectionEntity
     {
-        public String  getName();
 
         /**
          * Returns the time in milliseconds since the last heartbeat
@@ -135,10 +137,13 @@ public interface PoolSelectionUnit  {
 
         /** Sets the set of names of attached HSM instances. */
         public void setHsmInstances(Set<String> hsmInstances);
-    }
 
-   public interface SelectionLinkGroup {
-	   public String  getName() ;
+        public Collection<SelectionPoolGroup> getPoolGroupsMemberOf();
+        public Collection<SelectionLink> getLinksTargetingPool();
+    }
+    public interface SelectionPoolGroup extends SelectionEntity {
+    }
+   public interface SelectionLinkGroup extends SelectionEntity{
 	   public void add(SelectionLink link);
 	   public boolean remove(SelectionLink link);
 	   Collection<SelectionLink> links();
@@ -159,6 +164,15 @@ public interface PoolSelectionUnit  {
 	   public boolean isOnlineAllowed();
 	   public boolean isNearlineAllowed();
 	}
+    public interface SelectionUnit extends SelectionEntity{
+        public String getUnitType();
+        public Collection<SelectionUnitGroup> getMemberOfUnitGroups();
+    }
+
+    public interface SelectionUnitGroup extends SelectionEntity {
+        public Collection<SelectionUnit> getMemeberUnits();
+        public Collection<SelectionLink> getLinksPointingTo();
+    }
    public SelectionPool getPool( String poolName ) ;
    public SelectionPool getPool( String poolName , boolean create ) ;
    public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
@@ -175,5 +189,10 @@ public interface PoolSelectionUnit  {
    public String [] getLinksByGroupName(String linkGroupName) throws NoSuchElementException ;
    public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup) throws NoSuchElementException;
    public Collection<SelectionPool> getAllDefinedPools( boolean enabledOnly ) ;
-   public Collection<String> getPoolGroups();
+   public Collection<SelectionPoolGroup> getPoolGroups();
+   public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName);
+   public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException;
+   public Collection<SelectionLink> getLinks();
+   public Collection<SelectionUnit> getSelectionUnits();
+   public Collection<SelectionUnitGroup> getUnitGroups();
 }

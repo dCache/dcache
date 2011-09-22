@@ -1,7 +1,10 @@
 package org.dcache.webadmin.model.dataaccess.impl;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLink;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolV2Mode;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -85,6 +88,14 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     public void setHsmInstances(Set<String> hsmInstances) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public Collection<SelectionLink> getLinksTargetingPool() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

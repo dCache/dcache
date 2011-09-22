@@ -9,6 +9,7 @@ import java.util.Set;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolCostInfo;
 import java.util.Collection;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
@@ -90,7 +91,11 @@ public class StandardPoolsDAO implements PoolsDAO {
     public Set<String> getPoolGroupNames() throws DAOException {
         _log.debug("getPoolGroupNames called");
         try {
-            return new HashSet(getPoolSelectionUnit().getPoolGroups());
+            Set<String> poolGroupNames = new HashSet();
+            for (SelectionPoolGroup group : getPoolSelectionUnit().getPoolGroups()) {
+                poolGroupNames.add(group.getName());
+            }
+            return poolGroupNames;
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         }
