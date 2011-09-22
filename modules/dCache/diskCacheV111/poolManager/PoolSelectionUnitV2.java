@@ -585,16 +585,23 @@ public class PoolSelectionUnitV2
         private String _tag = null;
         private LinkGroup _linkGroup = null;
 
+        private Link(String name) {
+            _name = name;
+        }
+
+        @Override
         public String getTag() {
             return _tag;
         }
-
+        @Override
         public String getName() {
             return _name;
         }
 
-        private Link(String name) {
-            _name = name;
+        @Override
+        public LinkReadWritePreferences getPreferences() {
+            return new LinkReadWritePreferences(_readPref, _writePref,
+                    _cachePref, _p2pPref);
         }
 
         @Override

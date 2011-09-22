@@ -38,6 +38,7 @@ public interface PoolSelectionUnit  {
        */
       public Collection<SelectionPool> pools() ;
       public String  getTag() ;
+      public LinkReadWritePreferences getPreferences();
    }
 
     /**
