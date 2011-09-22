@@ -1041,7 +1041,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         // original table remains connected to the renamed table
         /// and the new table creation fails because of imposibility of creation
         // of the new index
-        String dropStatement = "DROP TABLE "+oldName+ " CASCADE";
+        String dropStatement = "DROP TABLE IF EXISTS "+oldName+ " CASCADE";
         Statement s = _con.createStatement();
         logger.error("executing statement: "+dropStatement);
         int result =  s.executeUpdate(dropStatement);
