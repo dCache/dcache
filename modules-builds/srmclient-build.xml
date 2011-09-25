@@ -84,6 +84,7 @@
         <dependency groupId="org.glite" artifactId="glite-security-trustmanager" version="1.8.16-1.norefresh" />
          <dependency groupId="org.glite" artifactId="glite-security-util-java" version="1.4.0-1" />
          <dependency groupId="org.glite" artifactId="glite-security-voms-api-java" version="1.9.8-1" />
+	  <dependency groupId="com.google.guava" artifactId="guava" version="r09"/>
     </artifact:dependencies>
 
     <path id="srmclient.classpath">

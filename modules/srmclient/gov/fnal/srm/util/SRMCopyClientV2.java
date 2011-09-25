@@ -108,6 +108,11 @@ import java.io.IOException;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.request.AccessLatency;
+import org.dcache.srm.request.FileStorageType;
+import org.dcache.srm.request.OverwriteMode;
+
 
 public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private GlobusURL from[];
@@ -165,8 +170,6 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             // form the request
             //
             int len = from.length;
-            String storagetype=configuration.getStorageType();
-
             TCopyFileRequest copyFileRequests[] = new TCopyFileRequest[len];
 
             for(int i = 0; i<from.length;++i) {
@@ -184,40 +187,28 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
+            String storagetype=configuration.getStorageType();
             if (storagetype!=null) {
-                if(storagetype.equals("volatile")){
-                    req.setTargetFileStorageType(TFileStorageType.VOLATILE);
-                }
-                else if(storagetype.equals("durable")){
-                    req.setTargetFileStorageType(TFileStorageType.DURABLE);
-                }
-                else if (storagetype.equals("permanent")) {
-                    req.setTargetFileStorageType(TFileStorageType.PERMANENT);
-                }
-                else {
-                    throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
-                }
+                req.setTargetFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
             req.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
-            TRetentionPolicy retentionPolicy = null;
-            TAccessLatency accessLatency = null;
-            if(configuration.getRetentionPolicy() != null ){
-                retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+            TRetentionPolicy retentionPolicy = configuration.getRetentionPolicy() != null ?
+                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+            TAccessLatency accessLatency = configuration.getAccessLatency() != null ?
+                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
 
+            if ( (accessLatency!=null) && (retentionPolicy==null)) {
+                throw new IllegalArgumentException("if access latency is specified, "+
+                                                   "then retention policy have to be specified as well");
             }
-
-            if(  configuration.getAccessLatency() != null){
-                accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
-
-            }
-            if(retentionPolicy != null) {
+            else if ( retentionPolicy!=null ) {
                 TRetentionPolicyInfo retentionPolicyInfo =
                     new TRetentionPolicyInfo(retentionPolicy,accessLatency);
                 req.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
 
             if(configuration.getOverwriteMode() != null) {
-                req.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
+                req.setOverwriteOption(OverwriteMode.fromString(configuration.getOverwriteMode()).toTOverwriteMode());
             }
             req.setArrayOfFileRequests(new ArrayOfTCopyFileRequest(copyFileRequests));
             req.setUserRequestDescription("This is User request description");
@@ -390,18 +381,17 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 }
             }
         } catch(Exception e) {
-            logger.elog(e.toString());
             try {
                 abortAllPendingFiles();
             }
             catch(Exception e1) {
-                logger.elog(e1.toString());
+                edsay(e1.toString());
             }
+            throw e;
         } finally {
             report.dumpReport();
             if(!report.everythingAllRight()){
                 System.err.println("srm copy of at least one file failed or not completed");
-                System.exit(1);
             }
         }
     }
@@ -409,7 +399,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     @Override
     public void run() {
         try {
-            say("stopping ");
+            dsay("stopping ");
             abortAllPendingFiles();
         }catch(Exception e) {
             logger.elog(e.toString());

@@ -86,6 +86,9 @@ import org.dcache.srm.client.SRMClientV2;
 import java.io.IOException;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.request.AccessLatency;
+
 
 public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     private GlobusURL srmURL;
@@ -131,17 +134,17 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             throw gsse;
         }
         try {
-
-            TRetentionPolicy rp   =  null;
-            if(configuration.getRetentionPolicy() != null ) {
-                rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+            TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
+                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+            TAccessLatency al = configuration.getAccessLatency() != null ?
+                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
+            if ( (al!=null) && (rp==null)) {
+                throw new IllegalArgumentException("if access latency is specified, "+
+                                                   "then retention policy have to be specified as well");
             }
-            TAccessLatency   al = null;
-            if(configuration.getAccessLatency() != null ) {
-                al = TAccessLatency.fromString(configuration.getAccessLatency());
+            else if ( rp!=null ) {
+                request.setRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
             }
-            TRetentionPolicyInfo rpi = new TRetentionPolicyInfo(rp,al);
-            request.setRetentionPolicyInfo(rpi);
             if (configuration.getDesiredReserveSpaceSize()!=null) {
                 request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
             }
@@ -274,23 +277,21 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             Runtime.getRuntime().removeShutdownHook(hook);
         }
         catch(Exception e) {
-            esay(e.toString());
             try {
                 if ( requestToken != null ) {
                     abortRequest();
                 }
-                System.exit(1);
             } catch (Exception e1) {
-                logger.elog(e1.toString());
-                System.exit(1);
+                edsay(e1.toString());
             }
+            throw e;
         }
     }
 
     @Override
     public void run() {
         try {
-            say("stopping ");
+            dsay("stopping ");
             if ( requestToken != null ) {
                 abortRequest();
             }

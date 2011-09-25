@@ -80,6 +80,9 @@ import java.util.Iterator;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.request.AccessLatency;
+
 /**
  *
  * @author  timur
@@ -142,17 +145,13 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 srmBringOnlineRequest.setDesiredLifeTime(
                         new Integer(configuration.getDesiredLifetime().intValue()));
             }
-            TRetentionPolicy rp = null;
-            TAccessLatency al = null;
-            if(configuration.getRetentionPolicy() != null ){
-                rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-            }
-            if(  configuration.getAccessLatency() != null){
-                al = TAccessLatency.fromString(configuration.getAccessLatency());
-            }
+            TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
+                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+            TAccessLatency al = configuration.getAccessLatency() != null ?
+                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
             if ( (al!=null) && (rp==null)) {
                 throw new IllegalArgumentException("if access latency is specified, "+
-                "then retention policy have to be specified as well");
+                                                   "then retention policy have to be specified as well");
             }
             else if ( rp!=null ) {
                 srmBringOnlineRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));

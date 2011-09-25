@@ -82,6 +82,9 @@ import org.dcache.srm.client.SRMClientV2;
 import org.apache.axis.types.URI;
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.request.RetentionPolicy;
+import org.dcache.srm.request.AccessLatency;
+import org.dcache.srm.request.FileStorageType;
 
 /**
  *
@@ -133,7 +136,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             new Thread(copier).start();
             int len = from.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
-            String storagetype=configuration.getStorageType();
             String SURLS[] = new String[len];
             for(int i = 0; i < len; ++i) {
                 GlobusURL filesource = from[i];
@@ -163,17 +165,9 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
 
             SrmPrepareToPutRequest srmPrepareToPutRequest =
                 new SrmPrepareToPutRequest();
+            String storagetype=configuration.getStorageType();
             if (storagetype!=null) {
-                if(storagetype.equals("volatile")){
-                    srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
-                }else if(storagetype.equals("durable")){
-                    srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.DURABLE);
-                }else if (storagetype.equals("permanent")) {
-                    srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
-                }
-                else {
-                    throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
-                }
+                srmPrepareToPutRequest.setDesiredFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
 
@@ -202,14 +196,10 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         arrayOfClientNetworks,
                         protocolArray));
             }
-            TRetentionPolicy rp = null;
-            TAccessLatency al = null;
-            if(configuration.getRetentionPolicy() != null ){
-                rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-            }
-            if(  configuration.getAccessLatency() != null){
-                al = TAccessLatency.fromString(configuration.getAccessLatency());
-            }
+            TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
+                RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;
+            TAccessLatency al = configuration.getAccessLatency() != null ?
+                AccessLatency.fromString(configuration.getAccessLatency()).toTAccessLatency() : null;
             if ( (al!=null) && (rp==null)) {
                 throw new IllegalArgumentException("if access latency is specified, "+
                         "then retention policy have to be specified as well");
@@ -386,25 +376,29 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 }
             }
         }catch(Exception e) {
-            esay(e.toString());
             try {
                 if(copier != null) {
-                    say("stopping copier");
+                    dsay("stopping copier" + e);
                     copier.stop();
                     abortAllPendingFiles();
                 }
             }catch(Exception e1) {
-                logger.elog(e1.toString());
+                edsay(e1.toString());
             }
+            throw e;
         }finally{
             if(copier != null) {
                 copier.doneAddingJobs();
-                copier.waitCompletion();
+                try {
+                    copier.waitCompletion();
+                }
+                catch(Exception e1) {
+                    edsay(e1.toString());
+                }
             }
             report.dumpReport();
             if(!report.everythingAllRight()){
                 System.err.println("srm copy of at least one file failed or not completed");
-                System.exit(1);
             }
         }
     }
@@ -413,7 +407,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
     @Override
     public void run() {
         try{
-            say("stopping copier");
+            dsay("stopping copier");
             copier.stop();
             abortAllPendingFiles();
         }catch(Exception e) {
