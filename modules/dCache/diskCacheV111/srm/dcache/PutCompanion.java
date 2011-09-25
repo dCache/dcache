@@ -235,6 +235,9 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
 
     public void failure(int rc, Object error) {
         String errorString = error.toString();
+        if (_log.isDebugEnabled()) {
+            _log.debug("PutCompanion.failure() {}, rc={} error={}",new Object[] { this.toString(), rc, errorString });
+        }
         if (state == State.WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
             state = State.RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
             errorString = "directory creation failed: "+
