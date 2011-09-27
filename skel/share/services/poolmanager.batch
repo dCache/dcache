@@ -45,11 +45,14 @@ define context poolmanager.defaults endDefine
     #
     psu create pgroup default
 
+    # wrandom selection
+    pm create wrandom -type=wrandom
+
     #
     # The links ...
     #
     psu create link default-link any-store world-net any-protocol
-    psu set link default-link -readpref=10 -writepref=10 -cachepref=10 -p2ppref=-1
+    psu set link default-link -readpref=10 -writepref=10 -cachepref=10 -p2ppref=-1 -section=wrandom
     psu add link default-link default
 endDefine
 

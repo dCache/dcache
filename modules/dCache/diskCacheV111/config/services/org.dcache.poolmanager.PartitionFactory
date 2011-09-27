@@ -2,3 +2,4 @@ org.dcache.poolmanager.ClassicPartitionFactory
 org.dcache.poolmanager.RandomPartitionFactory
 org.dcache.poolmanager.LruPartitionFactory
 org.dcache.poolmanager.WassPartitionFactory
+org.dcache.poolmanager.WRandomPartitionFactory
