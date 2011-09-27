@@ -17,15 +17,13 @@
 
 package org.dcache.chimera.nfs;
 
-
+import com.google.common.base.Splitter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.dcache.chimera.nfs.ExportClient.IO;
@@ -34,33 +32,39 @@ import org.dcache.chimera.nfs.ExportClient.Root;
 
 public class ExportFile {
 
-    private final Map<String, FsExport> _exports ;
-
     /**
-     * Create a new empty exports list
+     * The root node of pseudo fs.
      */
-    public ExportFile()  {
-        _exports = new HashMap<String, FsExport>();
-    }
+    private volatile PseudoFsNode _psudoFS = new PseudoFsNode(null);
+    private final File _exportFile;
 
     public ExportFile(File file) throws IOException  {
-
-        _exports = parse(file);
-
+        _exportFile = file;
+        _psudoFS = scanExportFile(file);
     }
-
 
     public List<String> getExports() {
-
-        return new ArrayList<String>(_exports.keySet());
-
+        List<String> out = new ArrayList<String>();
+        PseudoFsNode pseudoFsRoot = _psudoFS;
+        walk(out, pseudoFsRoot, null);
+        return out;
     }
 
-    private static Map<String, FsExport> parse(File exportFile) throws IOException {
+    private void walk(List<String> out, PseudoFsNode node, String path) {
+        if(node.isMountPoint())
+            out.add(path == null? "/": path);
 
+        if(node.isLeaf())
+            return;
+
+        for(PseudoFsNode next: node.getChildren())
+            walk(out, next, (path == null? "": path) + "/" + next.getData());
+    }
+
+    private PseudoFsNode scanExportFile(File exportFile) throws IOException {
 
         BufferedReader br = new BufferedReader(new FileReader(exportFile));
-        Map<String, FsExport> exports = new HashMap<String, FsExport>();
+        PseudoFsNode pseudoFsRoot = new PseudoFsNode(null);
 
         String line;
         try {
@@ -76,7 +80,7 @@ public class ExportFile {
                 if (line.charAt(0) == '#')
                     continue;
 
-                FsExport  export = null;
+                FsExport  export;
                 StringTokenizer st = new StringTokenizer(line);
                 String path = st.nextToken();
 
@@ -118,8 +122,8 @@ public class ExportFile {
                     export = new FsExport(path, clients );
 
                 }
-                exports.put(path, export);
 
+                pathToPseudoFs(pseudoFsRoot, path, export);
             }
         } finally {
             try {
@@ -128,16 +132,24 @@ public class ExportFile {
                 // ignored
             }
         }
-
-        return exports;
-
+        return pseudoFsRoot;
     }
 
 
     public FsExport getExport(String path) {
 
-        return _exports.get(path);
+        Splitter splitter = Splitter.on('/').omitEmptyStrings();
+        PseudoFsNode rootNode = _psudoFS;
+        PseudoFsNode node = _psudoFS;
 
+        for (String s : splitter.split(path)) {
+            node = rootNode.getNode(s);
+            if(node == null)
+                return null;
+            rootNode = node;
+        }
+
+        return node == null? null: node.getExport();
     }
 
     // FIXME: one trusted client has an access to all tree
@@ -159,12 +171,30 @@ public class ExportFile {
     }
 
     /**
-     * add a new export to existing exports
-     *
-     * @param export
+     * Parse export path into a chain of nodes.
+     * Each node represents a directory of the a pseudo file system.
+     * @param path
+     * @param e
      */
-    public void addExport( FsExport export) {
-        _exports.put(export.getPath(), export);
+    private void pathToPseudoFs(PseudoFsNode root, String path, FsExport e) {
+
+        Splitter splitter = Splitter.on('/').omitEmptyStrings();
+        for (String s : splitter.split(path)) {
+            PseudoFsNode node = root.getNode(s);
+            if (node == null) {
+                node = new PseudoFsNode(s);
+                root.addChild(node);
+            }
+            root = node;
+        }
+        root.addExport(e);
     }
 
+    public PseudoFsNode getPseuFsRoot() {
+        return _psudoFS;
+    }
+
+    public void rescan() throws IOException {
+        _psudoFS = scanExportFile(_exportFile);
+    }
 }
