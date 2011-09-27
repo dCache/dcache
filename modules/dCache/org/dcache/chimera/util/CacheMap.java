@@ -21,13 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CacheMap<K, V> {
 
     private static final long serialVersionUID = -446090383728952825L;
-    private static final Logger _log = Logger.getLogger(CacheMap.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(CacheMap.class);
     private final Map<K, V> _elements = new ConcurrentHashMap<K, V>();
     private final ScheduledExecutorService _cleaner = new ScheduledThreadPoolExecutor(2);
 
