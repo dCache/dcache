@@ -413,47 +413,18 @@
 
     </target>
 
-
-    <property name="batik.home" location="${libDir}/batik-1.7" />
-    <property name="output.image" value="${server.bin.dir}/share/httpd/static/images/bg.jpg" />
+    <property name="output.image" value="${server.bin.dir}/share/httpd/static/images/bg.svg" />
     <property name="input.svg" value="dCache-web-bg-logo.svg" />
-
-    <target name="-is.batik.present" >
-        <condition property="batik.present">
-            <and>
-                <available file="${batik.home}" type="dir" />
-                <!--The openjdk available at macports does not come with a sun proprietary api required by batik. Please remove this once this shortcomming has been addressed. -->
-                <not><os name="Darwin" /></not>
-            </and>
-        </condition>
-
-    </target>
-
     <!--
         generate dcache home page background images with version number
     -->
-    <target name="-gen.bg.image" depends="-is.batik.present" if="batik.present" >
-
-        <mkdir dir="${buildDir}/batik" />
-        <taskdef name="rasterize" classname="org.apache.tools.ant.taskdefs.optional.RasterizerTask">
-            <classpath>
-                <pathelement location="${batik.home}/batik-rasterizer.jar" />
-                <pathelement location="${batik.home}/RasterizerTask.jar" />
-            </classpath>
-        </taskdef>
-
-        <copy todir="${buildDir}/batik" file="${skelDir}/share/httpd/static/images/${input.svg}"
+    <target name="-gen.bg.image">
+        <copy tofile="${output.image}" file="${skelDir}/share/httpd/static/images/${input.svg}"
             overwrite="true">
             <filterset>
                 <filter token="VERSION" value="${version}-${build.number}"/>
             </filterset>
         </copy>
-
-        <echo message="Generating version specific backgroud image" />
-        <rasterize result="image/jpeg" src="${buildDir}/batik/${input.svg}"
-            dest="${output.image}"
-        />
-
     </target>
 
 </project>

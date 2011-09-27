@@ -5,7 +5,7 @@
     <title>DC_CHECK EXECUTION TIME PLOTS</title>
   </head>
 
-  <body background="/dc_check_plots/bg.jpg" link=red vlink=red alink=red>
+  <body background="/dc_check_plots/bg.svg" link=red vlink=red alink=red>
     <% 
 
        String thisPath;

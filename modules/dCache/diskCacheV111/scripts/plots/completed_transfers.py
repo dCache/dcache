@@ -241,7 +241,7 @@ def date_sort(one, two):
 class BillingHtmlFileHour(File):
     
     HEADER = ['<html>\n <head>\n  <title>Completed dCache Transfers for ',
-              '</title>\n </head>\n <body background="bg.jpg">\n  <table border=0 cellpadding=10 cellspacing=0 width="90%">\n  <tr><td align=center valign=center width="1%">\n<a href="',
+              '</title>\n </head>\n <body background="bg.svg">\n  <table border=0 cellpadding=10 cellspacing=0 width="90%">\n  <tr><td align=center valign=center width="1%">\n<a href="',
               '"><img border=0 src="eagleredtrans.gif"></a><br><font color=red>dCache Home</font></td>\n  <td align=center colspan=7><h1>Completed Transfers</h1></td></tr>\n  <tr><td colspan=2><B>',
               '</B></td></tr>\n  <tr><td colspan=2>&nbsp;</td></tr>\n  <tr><font size="+2"><th>Time</th><th>SG.FF</th><th>Node</th><th>Operation</th><th>PNFS Id/File</th><th>Transfer Size</th><th>Transfer Time</th><th>Protocol</th><th>Cell Name</th></font></tr>\n']
 
@@ -343,7 +343,7 @@ class PNFSCache(File):
     
 class BillingHtmlFile(File):
 
-    HEADER = '<HTML>\n<HEAD>\n        <TITLE>Completed dCache Transfers</TITLE>\n</HEAD>\n<BODY BACKGROUND="bg.jpg">\n<TABLE align="LEFT" cellpadding="0" cellspacing="0"><TR><TD align=left valign=center width="1%"><a href="http://cdfdca:443"><img border=0 src="eagleredtrans.gif"></a><br><font color=red>dCache Home</font></TD></TR><TR><TD>\n'
+    HEADER = '<HTML>\n<HEAD>\n        <TITLE>Completed dCache Transfers</TITLE>\n</HEAD>\n<BODY BACKGROUND="bg.svg">\n<TABLE align="LEFT" cellpadding="0" cellspacing="0"><TR><TD align=left valign=center width="1%"><a href="http://cdfdca:443"><img border=0 src="eagleredtrans.gif"></a><br><font color=red>dCache Home</font></TD></TR><TR><TD>\n'
     TRAILER = '\n</TD></TR>\n</TABLE>\n</BODY> </HTML>\n'
     TRUE = 'true'
     PNFS_NAME0 = 'pnfs_name0'
