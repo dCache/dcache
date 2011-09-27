@@ -68,6 +68,7 @@ import dmg.util.Args;
 import java.util.NavigableMap;
 
 import com.google.common.collect.ImmutableMap;
+import org.dcache.commons.stats.RequestCounters;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -129,6 +130,9 @@ public class RequestContainerV5
     private final int _stagingRetryInterval;
 
     private final Thread _tickerThread;
+
+    private final RequestCounters<String> _readStats =
+            new RequestCounters<String>("Read Rerequests");
 
     /**
      * Tape Protection.
@@ -297,6 +301,8 @@ public class RequestContainerV5
             pw.println( "   Suspend Incoming : on (not persistent)");
        if( _suspendStaging )
             pw.println( "   Suspend Staging  : on (not persistent)");
+        pw.println("Statistics:");
+        pw.println(_readStats.toString());
     }
 
     @Override
@@ -1098,6 +1104,7 @@ public class RequestContainerV5
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
                 rpm.setContext(_retryCounter + 1, _stageCandidateHost);
                 if (_currentRc == 0) {
+                    _readStats.getCounter(_poolCandidate).incrementRequests();
                     rpm.setPoolName(_poolCandidate);
                     rpm.setSucceeded();
                 } else {

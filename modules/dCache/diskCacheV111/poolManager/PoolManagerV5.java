@@ -66,6 +66,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 
 import com.google.common.base.Function;
+import org.dcache.commons.stats.RequestCounters;
 import static com.google.common.collect.Iterables.transform;
 
 public class PoolManagerV5
@@ -97,6 +98,8 @@ public class PoolManagerV5
     private final static Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
     private final static Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
+    private final RequestCounters<String> _writeStats =
+            new RequestCounters<String>("Write Rerequests");
 
     public PoolManagerV5()
     {
@@ -299,6 +302,8 @@ public class PoolManagerV5
         }else{
              pw.println("         Watchdog : "+_watchdog ) ;
         }
+        pw.println("Statistics:");
+        pw.println(_writeStats.toString());
     }
     public final static String hh_set_max_threads = "# OBSOLETE";
     public String ac_set_max_threads_$_1(Args args)
@@ -468,7 +473,10 @@ public class PoolManagerV5
 
         Partition partition =
             _poolMonitor.getPartitionManager().getPartition(link.getTag());
-        msg.setPoolName(partition.selectWritePool(_costModule, pools, filesize).getName());
+        String pool = partition.selectWritePool(_costModule, pools, filesize).getName();
+        _writeStats.getCounter(pool).incrementRequests();
+
+        msg.setPoolName(pool);
         msg.setSucceeded();
         return msg;
     }
@@ -898,6 +906,8 @@ public class PoolManagerV5
                    .selectWritePool(expectedLength)
                    .getName();
 
+               _writeStats.getCounter(poolName).incrementRequests();
+
               _log.info("{} write handler selected {} after {} ms",
                         new Object[] { _pnfsId, poolName, System.currentTimeMillis() - started });
               requestSucceeded(poolName);
@@ -905,7 +915,8 @@ public class PoolManagerV5
            }catch(CacheException ce ){
               requestFailed( ce.getRc() , ce.getMessage() ) ;
            }catch(Exception ee ){
-              requestFailed( 17 , ee.getMessage() ) ;
+               _log.error("unexpected exception:", ee);
+              requestFailed( 17 , ee.toString() ) ;
            }
        }
 
