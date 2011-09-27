@@ -38,7 +38,7 @@
   #header { padding: 45px 2em 1em 20px; color: #000; background: #fff; }
   #nav { overflow:hidden; }
   div.hlist {  }
-  #main { margin: 10px 0; background: #fff url("../../images/bg.jpg"); }
+  #main { margin: 10px 0; background: #fff url("../../images/bg.svg"); }
 
   /* (en) navigation: horizontal adjustment | (de) horizontale Ausrichtung  */
   #nav ul { margin-left: 20px; }

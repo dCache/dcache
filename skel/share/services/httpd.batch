@@ -71,7 +71,7 @@ endDefine
 define context home.html endDefine
 <html>
 <head><title>Online dCache Home</title></head>
-<body background="/images/bg.jpg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
+<body background="/images/bg.svg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
 
 <br><br><br>
 
@@ -115,7 +115,7 @@ endDefine
 define context missing.html endDefine
 <html>
 <head><title>No such page</title></head>
-<body background="/images/bg.jpg">
+<body background="/images/bg.svg">
 <h1>Page not found.</h1>
 </body>
 </html>
@@ -127,7 +127,7 @@ endDefine
 define context offline.html endDefine
 <html>
 <head><title>dCache OFFLINE</title></head>
-<body background="/images/bg.jpg">
+<body background="/images/bg.svg">
 <center><img src="/images/eagle-main.gif"></center>
 <p>
 <center>

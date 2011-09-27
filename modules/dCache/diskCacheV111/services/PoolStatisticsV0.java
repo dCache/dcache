@@ -627,7 +627,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            return file.isDirectory() && ( file.getName().length() == 4 ) ;
        }
    }
-   public String hh_set_html_body = "<bodyString> ; eg: \"<body background=/images/bg.jpg>\"";
+   public String hh_set_html_body = "<bodyString> ; eg: \"<body background=/images/bg.svg>\"";
    public String ac_set_html_body_$_1( Args args ){
        _bodyString = args.argv(0);
        return "";

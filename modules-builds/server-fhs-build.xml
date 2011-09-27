@@ -79,7 +79,7 @@
         <move includeEmptyDirs="true"
               file="${server.bin.dir}/etc/users"
               todir="${server.root.dir}/etc/dcache/admin/"/>
-        <move file="${server.bin.dir}/share/httpd/static/images/bg.jpg"
+        <move file="${server.bin.dir}/share/httpd/static/images/bg.svg"
               todir="${server.root.dir}/usr/share/dcache/httpd/static/images/"/>
 
         <delete dir="${server.root.dir}/opt"/>

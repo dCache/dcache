@@ -6,7 +6,7 @@ echo "<head>" >>$TEMP_HTML
 echo "<meta HTTP-EQUIV=\"Refresh\" CONTENT=\"300\">" >>$TEMP_HTML 
 echo "<title>Recent dCache Transfers</title>"  >>$TEMP_HTML 
 echo "</head>" >>$TEMP_HTML 
-echo "<body background=\"bg.jpg\" link=red vlink=red alink=red>" >>$TEMP_HTML 
+echo "<body background=\"bg.svg\" link=red vlink=red alink=red>" >>$TEMP_HTML 
 echo "<table border=0 cellpadding=10 cellspacing=0 width=\"90%\">" >>$TEMP_HTML 
 echo "<tr><td align=center valign=center width=\"1%\">" >>$TEMP_HTML 
 echo "<a href=\"http://$serviceLocatorHost:443\"><img border=0 src=\"eagleredtrans.gif\"></a>" >>$TEMP_HTML 

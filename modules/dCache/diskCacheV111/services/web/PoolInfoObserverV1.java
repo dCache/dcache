@@ -788,7 +788,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
    private static final int HEADER_MIDDLE =   1 ;
    private static final int HEADER_BOTTOM =   2 ;
 
-   private String _bgImage    = "/images/bg.jpg" ;
+   private String _bgImage    = "/images/bg.svg" ;
    private String _linkColor  = "red" ;
    private String _bgType     = "image" ;
    private String _bgColor    = "white" ;
