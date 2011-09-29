@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
+import java.nio.charset.Charset;
 
 public class HttpRequestHandler extends IdleStateAwareChannelHandler
 {
@@ -36,6 +37,9 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     private static final String RANGE_SP = " ";
     private static final String RANGE_ASTERISK = "*";
     private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
+    private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + BOUNDARY + "\"";
+    private static final String CRLF = "\r\n";
+    private static final Charset CHARSET_TO_USE = Charset.forName("UTF-8");
 
     private final static Logger _logger =
         LoggerFactory.getLogger(HttpRequestHandler.class);
@@ -111,7 +115,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         message = message + "\n";
 
         ChannelBuffer buffer = ChannelBuffers.buffer(message.length());
-        buffer.writeBytes(message.getBytes());
+        buffer.writeBytes(message.getBytes(CHARSET_TO_USE));
 
         response.setContent(buffer);
 
@@ -163,9 +167,8 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
 
-        String type = "multipart/byteranges; boundary=\"" + BOUNDARY + "\"";
         response.setHeader(ACCEPT_RANGES, BYTES);
-        response.setHeader(CONTENT_TYPE, type);
+        response.setHeader(CONTENT_TYPE, MULTIPART_TYPE);
 
         return event.getChannel().write(response);
     }
@@ -177,29 +180,36 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             long total)
             throws IOException {
 
-        ChannelBuffer buffer = ChannelBuffers.buffer(BOUNDARY.length()+2);
-        buffer.writeBytes((BOUNDARY+"\r\n").getBytes());
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(CRLF);
+        sb.append("--").append(BOUNDARY).append(CRLF);
+        sb.append(CONTENT_LENGTH).append(": ").append((upper - lower) + 1).append(CRLF);
+        sb.append(CONTENT_RANGE).append(": ")
+                .append(BYTES)
+                .append(RANGE_SP)
+                .append(lower)
+                .append(RANGE_SEPARATOR)
+                .append(upper)
+                .append(RANGE_PRE_TOTAL)
+                .append(total)
+                .append(CRLF);
+        sb.append(CRLF);
 
-        event.getChannel().write(buffer);
-
-        HttpResponse response =
-                new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
-        String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR
-                + upper + RANGE_PRE_TOTAL + total;
-
-        response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
-        response.setHeader(CONTENT_RANGE, contentRange);
-
-        return event.getChannel().write(response);
+        String response = sb.toString();
+        ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(response.getBytes(CHARSET_TO_USE));
+        return event.getChannel().write(buffer);
     }
 
     protected ChannelFuture sendHTTPMultipartEnd(ChannelHandlerContext context,
             MessageEvent event)
             throws IOException {
 
-        ChannelBuffer buffer = ChannelBuffers.buffer(BOUNDARY.length() + 6);
-        buffer.writeBytes(("--" + BOUNDARY + "--\r\n").getBytes());
+        StringBuilder sb = new StringBuilder(64);
+        sb.append(CRLF);
+        sb.append("--").append(BOUNDARY).append("--").append(CRLF);
 
+        String response = sb.toString();
+        ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(response.getBytes(CHARSET_TO_USE));
         return event.getChannel().write(buffer);
     }
 
