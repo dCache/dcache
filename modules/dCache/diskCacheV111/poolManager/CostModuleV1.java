@@ -563,7 +563,7 @@ public class CostModuleV1
      return "";
    }
    public String hh_cm_fake = "<poolName> [off] | [-space=<spaceCost>|off] [-cpu=<cpuCost>|off]" ;
-   public String ac_cm_fake_$_1_2( Args args ){
+   public synchronized String ac_cm_fake_$_1_2( Args args ){
       String poolName = args.argv(0) ;
       Entry e = _hash.get(poolName);
       if( e == null )
@@ -588,7 +588,7 @@ public class CostModuleV1
       return poolName+" -space="+e._fakeSpace+" -cpu="+e._fakeCpu ;
    }
    public String hh_xcm_ls = "<poolName> [<filesize>] [-l]" ;
-   public Object ac_xcm_ls_$_0_2( Args args )throws Exception {
+   public synchronized Object ac_xcm_ls_$_0_2( Args args )throws Exception {
 
 
       if( args.argc()==0 ){   // added by nicolo : binary full cm ls list
@@ -635,7 +635,7 @@ public class CostModuleV1
       return reply ;
    }
    public String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
-   public String ac_cm_ls_$_0_1( Args args )throws Exception {
+   public synchronized String ac_cm_ls_$_0_1( Args args )throws Exception {
       StringBuilder   sb = new StringBuilder() ;
       boolean useTime   = args.getOpt("t") != null ;
       boolean useDetail = args.getOpt("d") != null ;
@@ -672,20 +672,16 @@ public class CostModuleV1
       return sb.toString();
    }
 
+    @Override
+    public synchronized PoolCostInfo getPoolCostInfo(String poolName)
+    {
+        Entry entry = _hash.get(poolName);
+        if (entry != null && (entry.isValid() || !_update)) {
+            return entry.getPoolCostInfo();
+        }
 
-   @Override
-   public synchronized PoolCostInfo getPoolCostInfo(String poolName) {
-
-	   PoolCostInfo poolCostInfo = null;
-
-	   Entry poolEntry = _hash.get(poolName);
-
-	   if( poolEntry != null ) {
-		   poolCostInfo = poolEntry.getPoolCostInfo();
-	   }
-
-	   return poolCostInfo;
-   }
+        return null;
+    }
 
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
