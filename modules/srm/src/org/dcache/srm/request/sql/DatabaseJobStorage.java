@@ -352,7 +352,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         if(jobId == null) {
             throw new NullPointerException ("jobId is null");
         }
-        logger.debug("executing statement: SELECT * FROM " + getTableName() + " WHERE ID=?" + "("+jobId +")");
+        logger.debug("executing statement: SELECT * FROM {} WHERE ID=?({})",
+                     getTableName(), jobId);
         PreparedStatement statement =null;
         ResultSet set = null;
         try{
@@ -599,8 +600,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         set,
                         13 );
 
-                logger.debug("==========> deserialization from database of job id"+job.getId());
-                logger.debug("==========> jobs submitter id is "+job.getSubmitterId());
+                logger.debug("==========> deserialization from database of job id {}", job.getId());
+                logger.debug("==========> jobs submitter id is {}", job.getSubmitterId());
                 jobs.add(job);
             }
 
@@ -629,11 +630,12 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         List<Job.JobHistory> l = new ArrayList<Job.JobHistory>();
         String select = "SELECT * FROM " +getHistoryTableName()+
                 " WHERE JOBID="+jobId;
-        logger.debug("executing statement: "+select);
+        logger.debug("executing statement: {}", select);
         Statement statement = _con.createStatement();
         ResultSet set = statement.executeQuery(select);
         if(!set.next()) {
-            logger.debug("no history elements in table "+getHistoryTableName() +" found, returning NULL");
+            logger.debug("no history elements in table {} found, returning NULL",
+                         getHistoryTableName());
             statement.close();
             return null;
         }
@@ -649,7 +651,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                     TRANSITIONTIME);
             jh.setSaved();
             l.add(jh);
-            logger.debug("found JobHistory:"+jh.toString());
+            logger.debug("found JobHistory: {}", jh.toString());
 
         } while (set.next());
         statement.close();
@@ -668,7 +670,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
                     " WHERE SCHEDULERID is NULL and State="+State.PENDING.getStateId();
-            logger.debug("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to schedule the pending
@@ -719,7 +721,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
                     " WHERE SCHEDULERID is NULL and State="+State.PENDING.getStateId();
-            logger.debug("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             //save in the memory the ids to prevent the exhaust of the connections
             // so we return connections before trying to restore the pending
@@ -766,7 +768,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             Statement sqlStatement = _con.createStatement();
             String sqlStatementString = "SELECT ID FROM " + getTableName() +
                     " WHERE "+sqlCondition+" ";
-            logger.debug("executing statement: "+sqlStatementString);
+            logger.debug("executing statement: {}", sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
                 Long ID = set.getLong(1);
@@ -816,8 +818,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 sqlStatement.setString(1,schedulerId);
                 sqlStatement.setInt(2, state.getStateId());
             }
-            logger.debug("executing statement "+sql+" ,values: "+getTableName()+" ,{} ,{}"
-                    ,schedulerId,state.getStateId());
+            logger.debug("executing statement {} ,values: {} ,{} ,{}",
+                    new Object[]{sql, getTableName(), schedulerId,
+                                 state.getStateId()});
             set = sqlStatement.executeQuery();
             while(set.next()) {
                 Long ID = set.getLong(1);
@@ -847,8 +850,10 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         LASTSTATETRANSITIONTIME,
                         set,
                         13 );
-                logger.debug("==========> deserialization from database of "+job);
-                logger.debug("==========> jobs creator is "+job.getSubmitterId());
+                logger.debug("==========> deserialization from database of {}",
+                             job);
+                logger.debug("==========> jobs creator is {}",
+                             job.getSubmitterId());
                 jobs.add(job);
             }
 
@@ -906,9 +911,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             if(!tableRs.next()) {
                 logger.debug("DatabaseMetaData.getTables returned empty result set");
                 try {
-                    logger.debug(tableName+" does not exits");
+                    logger.debug("{} does not exits", tableName);
                     Statement s = _con.createStatement();
-                    logger.debug("executing statement: "+createStatement);
+                    logger.debug("executing statement: {}", createStatement);
                     int result = s.executeUpdate(createStatement);
                     s.close();
                 }
@@ -933,14 +938,14 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                                 " has wrong number of fields: "+columnIndex+", should be :"+getColumnNum());
                     }
                 } catch(SQLException sqle) {
-                    logger.error("Verification failed, "+
-                            "trying to rename the table and create the new one",
-                            sqle);
+                    logger.warn("Verification failed, trying to rename " +
+                                "the table and create the new one", sqle);
                     renameTable(tableName,_con);
                     reanamed_old_table = true;
 
                     Statement s = _con.createStatement();
-                    logger.error("executing statement: "+createStatement);
+                    logger.warn("Creating table {}", tableName);
+                    logger.debug("executing statement: {}", createStatement);
                     int result = s.executeUpdate(createStatement);
                     s.close();
                 }
@@ -950,7 +955,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         " SET STATE="+State.DONE.getStateId()+
                         " WHERE STATE="+State.READY.getStateId();
                 Statement s = _con.createStatement();
-                logger.debug("executing statement: "+sqlStatementString);
+                logger.debug("executing statement: {}", sqlStatementString);
                 int result = s.executeUpdate(sqlStatementString);
                 s.close();
                 sqlStatementString = "UPDATE " + getTableName() +
@@ -959,7 +964,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                         " STATE !="+State.CANCELED.getStateId()+" AND "+
                         " STATE !="+State.DONE.getStateId();
                 s = _con.createStatement();
-                logger.debug("executing statement: "+sqlStatementString);
+                logger.debug("executing statement: {}", sqlStatementString);
                 result = s.executeUpdate(sqlStatementString);
                 s.close();
             }
@@ -1043,7 +1048,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         // of the new index
         String dropStatement = "DROP TABLE IF EXISTS "+oldName+ " CASCADE";
         Statement s = _con.createStatement();
-        logger.error("executing statement: "+dropStatement);
+        logger.warn("Moving SRM table {} away as its schema is out-of-date", oldName);
+        logger.debug("executing statement: {}", dropStatement);
         int result =  s.executeUpdate(dropStatement);
         s.close();
         return result;
@@ -1080,7 +1086,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 }
             }
             if (listOfColumnsToBeIndexed.size()==0) {
-                logger.debug("all indexes were already made for table "+tableName);
+                logger.debug("all indexes were already made for table {}", tableName);
                 _con.setAutoCommit(false);
                 pool.returnConnection(_con);
                 _con =null;
@@ -1137,7 +1143,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             while (index_rset.next()) {
                 String s = index_rset.getString("index_name").toLowerCase();
                 if (indexname.equals(s)){
-                    logger.debug("index "+indexname+" already exists");
+                    logger.debug("index {} already exists", indexname);
                     _con.setAutoCommit(false);
                     pool.returnConnection(_con);
                     _con =null;
@@ -1180,12 +1186,12 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         String createIndexStatementText = "CREATE INDEX "+indexName+
                 " ON "+tableName+" ("+column_or_expression+")";
         Statement createIndexStatement = _con.createStatement();
-        logger.debug("Executing "+createIndexStatementText);
+        logger.debug("Executing {}", createIndexStatementText);
         try {
             createIndexStatement.executeUpdate(createIndexStatementText);
         }
         catch (Exception e) {
-            logger.error("failed to execute : "+createIndexStatementText,e);
+            logger.error("failed to execute : {}", createIndexStatementText,e);
         }
         createIndexStatement.close();
     }
