@@ -161,7 +161,8 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
                     should_reanamed_old_table = true;
                 }
             } else {
-                should_reanamed_old_table = true;
+                // If getColumns returns a zero-sized ResourceSet then
+                // the table doesn't exist; no need to rename it.
             }
             _con.setAutoCommit(false);
             pool.returnConnection(_con);
