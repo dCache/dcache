@@ -1452,11 +1452,11 @@ public class RequestContainerV5
                        //
                        //
                         _log.debug(" stateEngine: RT_NOT_FOUND ");
-                       if( _parameter._hasHsmBackend ){
-                           _log.debug(" stateEngine: parameter has HSM backend ");
+                       if( _parameter._hasHsmBackend && _storageInfo.isStored()){
+                           _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        }else{
-                          _log.debug(" stateEngine: parameter has NO HSM backend ");
+                          _log.debug(" stateEngine: case 1: parameter has NO HSM backend or case 2: the HSM backend exists but the file isn't stored on it.");
                           _status = "Suspended (pool unavailable) "+_formatter.format(new Date()) ;
                           _currentRc = 1010 ;
                           _currentRm = "Suspend";
@@ -1620,7 +1620,9 @@ public class RequestContainerV5
               break ;
 
               case ST_STAGE :
-                 _log.debug( "stateEngine: case ST_STAGE");
+
+                  _log.debug("stateEngine: case ST_STAGE");
+
                  if( inputObject == null ){
 
                     if( _suspendStaging ){
