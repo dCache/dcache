@@ -77,7 +77,7 @@ public class Formats {
                     state = RP_OPENED ;
                     key   = new StringBuilder();
                 }else{
-                    out.append( '$' ) ;
+                    out.append('$').append(c);
                     state = RP_IDLE ;
                 }
                 break ;
@@ -99,6 +99,16 @@ public class Formats {
                 break ;
             }
         }
+
+        switch(state) {
+        case RP_DOLLAR:
+            out.append('$');
+            break;
+        case RP_OPENED:
+            out.append("${").append(key);
+            break;
+        }
+
         return out.toString();
     }
 
