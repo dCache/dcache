@@ -43,7 +43,7 @@ public class ALRPReplicaStatePolicy implements ReplicaStatePolicy
         RetentionPolicy rp = info.getRetentionPolicy();
         if (info.getKey("overwrite") != null) {
             return EntryState.CACHED;
-        } else if (rp != null && rp.equals(RetentionPolicy.CUSTODIAL)) {
+        } else if (rp != null && !info.isStored() && rp.equals(RetentionPolicy.CUSTODIAL)) {
             return EntryState.PRECIOUS;
         } else {
             return EntryState.CACHED;
