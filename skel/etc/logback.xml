@@ -167,6 +167,11 @@
       <logger>org.glite.security.util.DirectoryList</logger>
       <level>off</level>
     </threshold>
+ 
+    <threshold>
+      <logger>liquibase</logger>
+      <level>warn</level>
+    </threshold>
 
     <threshold>
       <appender>stdout</appender>
