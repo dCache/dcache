@@ -93,6 +93,8 @@ public class LocationManager extends CellAdapter {
              while( i.hasNext() )sb.append(" c:").append(i.next().toString()) ;
              return sb.toString() ;
           }
+
+          @Override
           public String toString(){
              return toWhatToDoReply(false);
           }
@@ -314,15 +316,23 @@ public class LocationManager extends CellAdapter {
          pw.println( "     RepliesSent : "+_repliesSent) ;
          pw.println( "     Exceptions  : "+_totalExceptions) ;
       }
+
+      @Override
       public String toString(){
          return "Server:Nodes="+_nodeDb.size()+";Reqs="+_requestsReceived;
       }
+
       public void run(){
          DatagramPacket packet = null ;
          while (!Thread.currentThread().isInterrupted()){
             try{
                 packet = new DatagramPacket(new byte[1024],1024) ;
                 _socket.receive(packet);
+            }catch(SocketException e) {
+                if(!Thread.currentThread().isInterrupted()) {
+                    _log.warn("Exception in Server receive loop (exiting)", e);
+                }
+                break;
             }catch(Exception ie){
                 _log.warn("Exception in Server receive loop (exiting)", ie);
                break ;
@@ -451,7 +461,7 @@ public class LocationManager extends CellAdapter {
 
       }
       private synchronized NodeInfo getInfo( String nodeName , boolean create ){
-         NodeInfo info = (NodeInfo)_nodeDb.get(nodeName) ;
+         NodeInfo info = _nodeDb.get(nodeName) ;
          if( ( info != null ) || ! create )return info ;
          _nodeDb.put( nodeName , info = new NodeInfo( nodeName ) ) ;
          return info ;
@@ -667,6 +677,7 @@ public class LocationManager extends CellAdapter {
       public int getRequestsSent(){ return _requestsSent ; }
       public int getRepliesReceived(){ return _repliesReceived ; }
 
+       @Override
        public void run()
        {
          DatagramPacket packet = null;
@@ -805,6 +816,8 @@ public class LocationManager extends CellAdapter {
          pw.println( "     RepliesSent : "+_repliesSent) ;
          pw.println( "     Exceptions  : "+_totalExceptions) ;
       }
+
+      @Override
       public String toString(){
          return ""+(_state>-1?("Client<init>("+_state+")"):"ClientReady") ;
       }
@@ -817,6 +830,7 @@ public class LocationManager extends CellAdapter {
             _request = request ;
             _message = message ;
          }
+         @Override
          public void run(){
            try{
 
@@ -929,6 +943,7 @@ public class LocationManager extends CellAdapter {
       private void setDefaultRoute( String domain ) throws Exception {
           _nucleus.routeAdd( new CellRoute( null ,  "*@"+domain , CellRoute.DEFAULT ) ) ;
       }
+      @Override
       public void run(){
          if( Thread.currentThread() == _whatToDo )runWhatToDo() ;
       }
@@ -1111,6 +1126,8 @@ public class LocationManager extends CellAdapter {
        }
        start() ;
    }
+
+   @Override
    public void getInfo( PrintWriter pw ){
       if( _client != null ){
         pw.println( "Client\n--------") ;
@@ -1123,6 +1140,7 @@ public class LocationManager extends CellAdapter {
       return ;
    }
 
+    @Override
     public void cleanUp()
     {
         if (_server != null)
@@ -1131,6 +1149,7 @@ public class LocationManager extends CellAdapter {
             _client.shutdown();
     }
 
+   @Override
    public String toString(){
       StringBuffer sb = new StringBuffer() ;
       if( _client != null )
