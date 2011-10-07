@@ -2,7 +2,6 @@ package org.dcache.cells;
 
 import java.util.Date;
 import java.util.Properties;
-import java.util.Enumeration;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Formatter;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.io.ByteArrayOutputStream;
@@ -25,21 +23,18 @@ import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.FileReader;
 import java.io.BufferedReader;
-import java.lang.reflect.InvocationTargetException;
 import java.beans.PropertyDescriptor;
 
-import com.google.common.collect.ImmutableMultimap;
 
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
 import dmg.util.CommandException;
+import dmg.util.CommandThrowableException;
 
 import org.dcache.util.ClassNameComparator;
 
@@ -52,7 +47,9 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 
@@ -145,9 +142,10 @@ public class UniversalSpringCell
              */
             doInit();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Cell initialization failed: " + e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Cell initialization failed: " + e.getMessage(), e);
+            Throwable t = e.getCause();
+            throw new RuntimeException(t.getMessage(), t);
         }
     }
 
@@ -182,8 +180,28 @@ public class UniversalSpringCell
         /* Instantiate Spring application context. This will
          * eagerly instantiate all beans.
          */
-        _context =
-            new UniversalSpringCellApplicationContext(getArgs());
+        try {
+            _context =
+                new UniversalSpringCellApplicationContext(getArgs());
+        } catch(BeanInstantiationException e) {
+            Throwable t = e.getMostSpecificCause();
+            String msg = "Failed to instantiate class " + e.getBeanClass().getName() +
+            ": " + t.getMessage();
+            if(t instanceof RuntimeException) {
+                throw new RuntimeException(msg, t);
+            } else {
+                throw new CommandThrowableException(msg, t);
+            }
+        } catch(BeanCreationException e) {
+            Throwable t = e.getMostSpecificCause();
+            String msg = "Failed to create bean '" + e.getBeanName() +
+                         "' : " + t.getMessage();
+            if(t instanceof RuntimeException) {
+                throw new RuntimeException(msg, t);
+            } else {
+                throw new CommandThrowableException(msg, t);
+            }
+        }
 
         /* Cell threading is configurable through arguments to
          * UniversalSpringCell. The executors have to be created as
@@ -224,6 +242,7 @@ public class UniversalSpringCell
     /**
      * Closes the application context, which will shutdown all beans.
      */
+    @Override
     public void cleanUp()
     {
         super.cleanUp();
@@ -359,6 +378,7 @@ public class UniversalSpringCell
     /**
      * Collects information from all registered info providers.
      */
+    @Override
     public void getInfo(PrintWriter pw)
     {
         ConfigurableListableBeanFactory factory = _context.getBeanFactory();
@@ -387,6 +407,7 @@ public class UniversalSpringCell
      * CellInfo object. Information is collected from the CellAdapter
      * base class and from all beans implementing CellInfoProvider.
      */
+    @Override
     public CellInfo getCellInfo()
     {
         CellInfo info = super.getCellInfo();
@@ -864,6 +885,7 @@ public class UniversalSpringCell
                  * Fake file name to make
                  * PropertyPlaceholderConfigurer happy.
                  */
+                @Override
                 public String getFilename()
                 {
                     return "arguments.properties";

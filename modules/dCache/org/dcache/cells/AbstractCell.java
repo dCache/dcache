@@ -248,6 +248,7 @@ public class AbstractCell extends CellAdapter
         _definedSetup = getDefinedSetup(arguments);
     }
 
+    @Override
     public void cleanUp()
     {
         super.cleanUp();
@@ -306,7 +307,11 @@ public class AbstractCell extends CellAdapter
             throw e;
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
-            _logger.error("Failed to initialise cell: " + t.getMessage(), t);
+
+            // Treat as exception as a bug (and print the stacktrace) iff RuntimeException
+            if(t instanceof RuntimeException) {
+                _logger.error("Failed to initialise cell: " + t.getMessage(), t);
+            }
             start();
             kill();
             throw e;
@@ -349,6 +354,7 @@ public class AbstractCell extends CellAdapter
 
         final CDC cdc = new CDC();
         _timeoutTask = new TimerTask() {
+                @Override
                 public void run()
                 {
                     try {
@@ -461,18 +467,21 @@ public class AbstractCell extends CellAdapter
     }
 
     /** @deprecated */
+    @Deprecated
     public void say(String s)
     {
         info(s);
     }
 
     /** @deprecated */
+    @Deprecated
     public void esay(String s)
     {
         error(s);
     }
 
     /** @deprecated */
+    @Deprecated
     public void esay(Throwable t)
     {
         error(t);
@@ -901,6 +910,7 @@ public class AbstractCell extends CellAdapter
      * Return values implementing Reply are recognized and the reply
      * is delivered by calling the deliver method on the Reply object.
      */
+    @Override
     public void messageArrived(CellMessage envelope)
     {
         CellEndpoint endpoint = _monitor.getReplyCellEndpoint(envelope);
