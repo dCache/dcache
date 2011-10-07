@@ -81,7 +81,7 @@ public class NFSv41Session {
      */
     private SessionSlot getSlot(int slot) throws ChimeraNFSException {
 
-        if (slot > slotMax()) {
+        if (slot < 0 || slot > slotMax()) {
             throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADSLOT, "slot id overflow");
         }
 
