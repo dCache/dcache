@@ -20,13 +20,14 @@ package org.dcache.xdr;
 import java.io.IOException;
 import java.util.Map;
 
-import com.sun.grizzly.Context;
-import com.sun.grizzly.ProtocolFilter;
+import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.filterchain.NextAction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RpcDispatcher implements ProtocolFilter {
+public class RpcDispatcher extends BaseFilter {
 
     private final static Logger _log = LoggerFactory.getLogger(RpcDispatcher.class);
 
@@ -55,9 +56,9 @@ public class RpcDispatcher implements ProtocolFilter {
     }
 
     @Override
-    public boolean execute(Context context) throws IOException {
+    public NextAction handleRead(FilterChainContext ctx) throws IOException {
 
-        RpcCall call = (RpcCall)context.getAttribute(RpcProtocolFilter.RPC_CALL);
+        RpcCall call = ctx.getMessage();
 
         int prog = call.getProgram();
         int vers = call.getProgramVersion();
@@ -78,13 +79,6 @@ public class RpcDispatcher implements ProtocolFilter {
                 _log.error("Failed to process RPC request: {}", e.getMessage());
             }
         }
-
-        return true;
+        return ctx.getInvokeAction();
     }
-
-    @Override
-    public boolean postExecute(Context context) throws IOException {
-        return true;
-    }
-
 }

@@ -23,8 +23,9 @@ import java.net.UnknownHostException;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcClient;
 import org.dcache.xdr.OncRpcException;
-import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.OncRpcProgram;
+import org.dcache.xdr.OncRpcSvc;
+import org.dcache.xdr.OncRpcSvcBuilder;
 import org.dcache.xdr.RpcAuth;
 import org.dcache.xdr.RpcAuthTypeNone;
 import org.dcache.xdr.RpcCall;
@@ -64,8 +65,12 @@ public class OncRpcEmbeddedPortmap {
         }
 
         if(!localPortmapperRunning) {
-            OncRpcSvc rpcbindServer = new OncRpcSvc(OncRpcPortmap.PORTMAP_PORT, IpProtocolType.UDP | IpProtocolType.TCP,
-            		true, "Embedded Portmap");
+            OncRpcSvc rpcbindServer = new OncRpcSvcBuilder()
+                    .withPort(OncRpcPortmap.PORTMAP_PORT)
+                    .withTCP()
+                    .withUDP()
+                    .withAutoPublish()
+                    .build();
             rpcbindServer.register(new OncRpcProgram( OncRpcPortmap.PORTMAP_PROGRAMM, OncRpcPortmap.PORTMAP_V2), new OncRpcbindServer());
             rpcbindServer.start();
         }

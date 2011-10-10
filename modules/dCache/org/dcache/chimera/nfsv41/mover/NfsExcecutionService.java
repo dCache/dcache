@@ -52,7 +52,7 @@ public class NfsExcecutionService implements MoverExecutorService {
     }
 
 
-    public void shutdown() {
+    public void shutdown() throws IOException {
         _nfsIO.shutdown();
     }
 

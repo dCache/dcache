@@ -210,7 +210,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         final NFSv41DeviceManager _dm = this;
 
-        _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true, "NFSv41 door embedded server");
+        _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true);
         _rpcService.setGssSessionManager(_gssSessionManager);
 
         _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
@@ -229,7 +229,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     }
 
-    public void destroy() {
+    public void destroy() throws IOException {
         _rpcService.stop();
     }
 
