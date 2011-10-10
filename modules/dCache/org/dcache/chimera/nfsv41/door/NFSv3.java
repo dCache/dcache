@@ -1,5 +1,6 @@
 package org.dcache.chimera.nfsv41.door;
 
+import java.io.IOException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v3.MountServer;
@@ -43,7 +44,7 @@ public class NFSv3 {
         _service.start();
     }
 
-    public void destroy() {
+    public void destroy() throws IOException {
         _service.stop();
     }
 

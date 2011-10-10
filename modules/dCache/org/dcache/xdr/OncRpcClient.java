@@ -17,25 +17,20 @@
 
 package org.dcache.xdr;
 
-import com.sun.grizzly.BaseSelectionKeyHandler;
-import com.sun.grizzly.CallbackHandler;
-import com.sun.grizzly.ConnectorHandler;
-import com.sun.grizzly.Context;
-import com.sun.grizzly.Controller;
-import com.sun.grizzly.ControllerStateListenerAdapter;
-import com.sun.grizzly.DefaultProtocolChain;
-import com.sun.grizzly.DefaultProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolChain;
-import com.sun.grizzly.ProtocolChainInstanceHandler;
-import com.sun.grizzly.ProtocolFilter;
-import com.sun.grizzly.TCPSelectorHandler;
-import com.sun.grizzly.UDPSelectorHandler;
-import com.sun.grizzly.util.ConnectionCloseHandler;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.ConnectorHandler;
+import org.glassfish.grizzly.Transport;
+import org.glassfish.grizzly.filterchain.FilterChainBuilder;
+import org.glassfish.grizzly.filterchain.TransportFilter;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
+import org.glassfish.grizzly.nio.transport.UDPNIOTransport;
+import org.glassfish.grizzly.nio.transport.UDPNIOTransportBuilder;
+import static org.dcache.xdr.GrizzlyUtils.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,113 +39,57 @@ public class OncRpcClient {
 
     private final static Logger _log = LoggerFactory.getLogger(OncRpcClient.class);
 
-    private final CountDownLatch clientReady = new CountDownLatch(1);
-    private final Controller controller = new Controller();
-    private final int _port;
-    private final InetAddress _address;
-    private Controller.Protocol _prorocol;
-    private final ReplyQueue<Integer, RpcReply> _replyQueue =
-            new ReplyQueue<Integer, RpcReply>();
+    private final InetSocketAddress _socketAddress;
+    private final Transport _transport;
+    private Connection<InetSocketAddress> _connection;
+    private final ReplyQueue<Integer, RpcReply> _replyQueue = new ReplyQueue<Integer, RpcReply>();
 
     public OncRpcClient(InetAddress address, int protocol, int port) {
 
-        _address = address;
-        _port = port;
-        if( protocol == IpProtocolType.TCP ) {
-            _prorocol = Controller.Protocol.TCP;
-        } else if ( protocol == IpProtocolType.UDP ) {
-            _prorocol = Controller.Protocol.UDP;
-        }else {
+        _socketAddress = new InetSocketAddress(address, port);
+
+        if (protocol == IpProtocolType.TCP) {
+            final TCPNIOTransport tcpTransport = TCPNIOTransportBuilder.newInstance().build();
+            _transport = tcpTransport;
+        } else if (protocol == IpProtocolType.UDP) {
+            final UDPNIOTransport udpTransport = UDPNIOTransportBuilder.newInstance().build();
+            _transport = udpTransport;
+        } else {
             throw new IllegalArgumentException("Unsupported protocol type: " + protocol);
         }
 
-        BaseSelectionKeyHandler selectionKeyHandler = new BaseSelectionKeyHandler();
-        selectionKeyHandler.setConnectionCloseHandler(new ConnectionCloseHandler() {
+        FilterChainBuilder filterChain = FilterChainBuilder.stateless();
+        filterChain.add(new TransportFilter());
+        filterChain.add(rpcMessageReceiverFor(_transport));
+        filterChain.add(new RpcProtocolFilter(_replyQueue));
 
-            public void locallyClosed(SelectionKey sk) {
-                _log.debug("Connection closed (locally)");
-            }
-
-            public void remotlyClosed(SelectionKey sk) {
-                 _log.debug("Remote peer closed connection");
-            }
-        });
-
-        final TCPSelectorHandler tcp_handler = new TCPSelectorHandler(true);
-        tcp_handler.setSelectionKeyHandler(selectionKeyHandler);
-        controller.addSelectorHandler(tcp_handler);
-
-        final UDPSelectorHandler udp_handler = new UDPSelectorHandler(true);
-        udp_handler.setSelectionKeyHandler(selectionKeyHandler);
-        controller.addSelectorHandler(udp_handler);
-
-
-        controller.addStateListener(
-                new ControllerStateListenerAdapter() {
-
-                    @Override
-                    public void onReady() {
-                        clientReady.countDown();
-                        _log.info( "Client ready");
-                    }
-
-                    @Override
-                    public void onException(Throwable e) {
-                        _log.error( "Grizzly controller exception: {}",
-                                e.getMessage());
-                    }
-                });
-        final ProtocolFilter protocolKeeper = new ProtocolKeeperFilter();
-        final ProtocolFilter rpcFilter = new RpcParserProtocolFilter();
-        final ProtocolFilter rpcProcessor = new RpcProtocolFilter(_replyQueue);
-
-        final ProtocolChain protocolChain = new DefaultProtocolChain();
-        protocolChain.addFilter(protocolKeeper);
-        protocolChain.addFilter(rpcFilter);
-        protocolChain.addFilter(rpcProcessor);
-
-        ProtocolChainInstanceHandler pciHandler = new DefaultProtocolChainInstanceHandler() {
-
-            @Override
-            public ProtocolChain poll() {
-                return protocolChain;
-            }
-
-            @Override
-            public boolean offer(ProtocolChain pc) {
-                return false;
-            }
-        };
-
-        controller.setProtocolChainInstanceHandler(pciHandler);
-
+        _transport.setProcessor(filterChain.build());
     }
 
-    public XdrTransport connect() throws IOException {
+     public XdrTransport connect() throws IOException {
+        return connect(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+   }
 
-        new Thread(controller, "ONCRPC Client").start();
+    public XdrTransport connect(long timeout, TimeUnit timeUnit) throws IOException {
 
-        try{
-            clientReady.await();
-        }catch(InterruptedException e) {
-            _log.error( "client initialization interrupted");
-            throw new IOException(e.getMessage());
-        }
+        _transport.start();
+        Future<Connection> future = ((ConnectorHandler) _transport).connect(_socketAddress);
 
+        try {
+            _connection = future.get(timeout, timeUnit);
+        } catch (TimeoutException e) {
+           throw new IOException(e.toString(), e);
+        } catch (InterruptedException e) {
+            throw new IOException(e.toString(), e);
+        } catch (ExecutionException e) {
+            throw new IOException(e.toString(), e);
+         }
 
-        final ConnectorHandler connector_handler;
-        connector_handler =  controller.acquireConnectorHandler(_prorocol);
-        InetSocketAddress remote = new InetSocketAddress(_address, _port);
-        connector_handler.connect(remote, (CallbackHandler<Context>) null);
+        return new ClientTransport(_connection, _replyQueue);
+     }
 
-        if( !connector_handler.isConnected()  ) {
-            throw new IOException("Failed to connect");
-        }
-
-         return new ClientTransport(remote, connector_handler, _replyQueue);
-    }
-
-    public void close() throws IOException {
-        controller.stop();
+     public void close() throws IOException {
+        _connection.close();
+        _transport.stop();
     }
 }

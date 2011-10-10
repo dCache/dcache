@@ -19,16 +19,14 @@ package org.dcache.xdr;
 
 import java.io.IOException;
 
-import com.sun.grizzly.Context;
-import com.sun.grizzly.ProtocolFilter;
-import com.sun.grizzly.ProtocolParser;
+import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.filterchain.NextAction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RpcProtocolFilter implements ProtocolFilter {
-
-    public static final String RPC_CALL = "RPC_CALL";
+public class RpcProtocolFilter extends BaseFilter {
 
     private final static Logger _log = LoggerFactory.getLogger(RpcProtocolFilter.class);
     private final ReplyQueue<Integer, RpcReply> _replyQueue;
@@ -42,18 +40,18 @@ public class RpcProtocolFilter implements ProtocolFilter {
     }
 
     @Override
-    public boolean execute(Context context) throws IOException {
-        Xdr  xdr = (Xdr) context.removeAttribute(ProtocolParser.MESSAGE);
+    public NextAction handleRead(FilterChainContext ctx) throws IOException {
+        Xdr  xdr = ctx.getMessage();
 
         if (xdr == null) {
             _log.error( "Parser returns bad XDR");
-            return false;
+            return ctx.getStopAction();
         }
 
         xdr.beginDecoding();
 
         RpcMessage message = new RpcMessage(xdr);
-        XdrTransport transport = new GrizzlyXdrTransport(context);
+        XdrTransport transport = new GrizzlyXdrTransport(ctx);
 
         if (message.type() == RpcMessageType.CALL) {
             RpcCall call = new RpcCall(message.xid(), xdr, transport);
@@ -63,16 +61,15 @@ public class RpcProtocolFilter implements ProtocolFilter {
                /*
                 * pass RPC call to the next filter in the chain
                 */
-
-               context.setAttribute(RPC_CALL, call);
+               ctx.setMessage(call);
 
             }catch (RpcException e) {
                 call.reject(e.getStatus(), e.getRpcReply());
                 _log.info( "RPC request rejected: {}", e.getMessage());
-                return false;
+               return ctx.getStopAction();
             }catch (OncRpcException e) {
                 _log.info( "failed to process RPC request: {}", e.getMessage());
-                return false;
+                return ctx.getStopAction();
             }
         } else {
             /*
@@ -90,18 +87,6 @@ public class RpcProtocolFilter implements ProtocolFilter {
             }
         }
 
-        return true;
+        return ctx.getInvokeAction();
     }
-
-    @Override
-    public boolean postExecute(Context context) throws IOException {
-
-        /**
-         * cleanup
-         */
-        context.removeAttribute(RPC_CALL);
-
-        return true;
-    }
-
 }

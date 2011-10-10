@@ -17,80 +17,81 @@
 
 package org.dcache.xdr;
 
-import com.sun.grizzly.Context;
-import com.sun.grizzly.filter.ReadFilter;
-import com.sun.grizzly.util.OutputWriter;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SocketChannel;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.CompletionHandler;
+import org.glassfish.grizzly.WriteResult;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.memory.ByteBufferWrapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GrizzlyXdrTransport implements XdrTransport {
 
-    private final Context _context;
-    private final InetSocketAddress _remote;
-    private final InetSocketAddress _local;
+    private final FilterChainContext _context;
 
     private final static Logger _log = LoggerFactory.getLogger(GrizzlyXdrTransport.class);
 
-    public GrizzlyXdrTransport(Context context) {
+    public GrizzlyXdrTransport(FilterChainContext context) {
         _context = context;
-        switch(_context.getProtocol()) {
-            case TCP:
-                SocketChannel socketChannel = ((SocketChannel)context.getSelectionKey().channel());
-                _local = (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
-                _remote =(InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
-                break;
-            case UDP:
-                _remote = (InetSocketAddress) _context.getAttribute(ReadFilter.UDP_SOCKETADDRESS);
-                _local = null;
-                break;
-            default:
-                _local = null;
-                _remote = null;
-                _log.error( "Unsupported protocol: {}", _context.getProtocol());
-
-        }
-        _log.debug("RPC call: remote/local: {}/{}", _remote,  _local );
     }
-
 
     @Override
-    public void send(ByteBuffer data) throws IOException {
+    public void send(Xdr xdr) throws IOException {
+        DisposeXdrBuffer disposeXdr = new DisposeXdrBuffer(xdr);
+        Buffer buffer = new ByteBufferWrapper(xdr.body());
 
-        _log.debug("reply sent: {}", data);
-        SelectableChannel channel = _context.getSelectionKey().channel();
-        switch(_context.getProtocol()) {
-            case TCP:
-                OutputWriter.flushChannel(channel, data);
-                break;
-            case UDP:
-                DatagramChannel datagramChannel = (DatagramChannel) channel;
-                SocketAddress address = (SocketAddress) _context.getAttribute(ReadFilter.UDP_SOCKETADDRESS);
-                OutputWriter.flushChannel(datagramChannel, address, data);
-                break;
-            default:
-                _log.error( "Unsupported protocol: {}", _context.getProtocol());
-        }
+         // pass destination address to handle UDP connections as well
+        _context.write(_context.getAddress(), buffer, disposeXdr);
     }
 
-
+    @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return _local;
+        return (InetSocketAddress) _context.getConnection().getLocalAddress();
     }
 
+    @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return _remote;
+        return (InetSocketAddress) _context.getAddress();
     }
 
+    @Override
     public ReplyQueue<Integer, RpcReply> getReplyQueue() {
         return null;
+    }
+
+    private static class DisposeXdrBuffer implements CompletionHandler<WriteResult> {
+
+        private final Xdr _xdr;
+
+        public DisposeXdrBuffer(Xdr xdr) {
+            _xdr = xdr;
+        }
+
+        @Override
+        public void cancelled() {
+            disposeXdr();
+        }
+
+        @Override
+        public void completed(WriteResult e) {
+            disposeXdr();
+        }
+
+        @Override
+        public void failed(Throwable thrwbl) {
+            disposeXdr();
+        }
+
+        @Override
+        public void updated(WriteResult e) {
+            disposeXdr();
+        }
+
+        private void disposeXdr() {
+            _xdr.close();
+        }
     }
 }

@@ -17,11 +17,11 @@
 
 package org.dcache.xdr;
 
-import com.sun.grizzly.ConnectorHandler;
-import com.sun.grizzly.Controller;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.memory.ByteBufferWrapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,32 +30,26 @@ public class ClientTransport implements XdrTransport {
 
     private final static Logger _log = LoggerFactory.getLogger(ClientTransport.class);
 
-    private final ConnectorHandler _connectorHandler;
+    private final Connection<InetSocketAddress> _connection;
     private final ReplyQueue<Integer, RpcReply> _replyQueue;
-    private final InetSocketAddress _remote;
 
-    public ClientTransport(InetSocketAddress remote, ConnectorHandler connectorHandler ,
+    public ClientTransport(Connection<InetSocketAddress> connection,
             ReplyQueue<Integer, RpcReply> replyQueue ) {
         _replyQueue = replyQueue;
-        _connectorHandler = connectorHandler;
-        _remote = remote;
+        _connection = connection;
     }
 
-    public void send(ByteBuffer data) throws IOException {
-        if( _connectorHandler.protocol() == Controller.Protocol.UDP ) {
-            // skip fragment marker
-            data.getInt();
-        }
-            long n = _connectorHandler.write(data, true);
-            _log.debug("Send {} bytes", n);
-    }
-
+    @Override
+    public void send(Xdr data) throws IOException {
+        Buffer buffer = new ByteBufferWrapper(data.body());
+        _connection.write(buffer);
+     }
     public InetSocketAddress getLocalSocketAddress() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return _connection.getLocalAddress();
     }
 
     public InetSocketAddress getRemoteSocketAddress() {
-        return _remote;
+        return _connection.getPeerAddress();
     }
 
     public ReplyQueue<Integer, RpcReply> getReplyQueue() {

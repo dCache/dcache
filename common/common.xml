@@ -65,7 +65,7 @@
         <dependency groupId="log4j" artifactId="log4j" version="1.2.14" scope="provided"/>
 
         <!-- external dependencies -->
-        <dependency groupId="com.sun.grizzly" artifactId="grizzly-framework" version="1.9.19"/>
+        <dependency groupId="org.glassfish.grizzly" artifactId="grizzly-framework" version="2.1.4"/>
         <dependency groupId="com.sun.messaging.mq" artifactId="jms" version="4.4.2"/>
         <dependency groupId="com.sun.messaging.mq" artifactId="imq" version="4.4.2"/>
         <dependency groupId="org.springframework" artifactId="spring-beans" version="3.0.5.RELEASE"/>

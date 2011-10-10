@@ -89,20 +89,10 @@ public class Xdr implements XdrDecodingStream, XdrEncodingStream {
     }
 
     public void beginEncoding() {
-        /*
-         * Set potision to the begginnig of this XDR in back end buffer and
-         * reserve space for record mark.
-         */
-        _body.clear().position(_position + 4);
+        _body.clear().position(_position);
     }
 
     public void endEncoding() {
-        int len = _body.position() - _position -4 ;
-        _log.debug("Encoded XDR size: {}", len);
-        /*
-         * set record marker:
-         */
-        _body.putInt(_position, len | 0x80000000 );
         _body.limit(_body.position());
         _body.position(_position);
     }

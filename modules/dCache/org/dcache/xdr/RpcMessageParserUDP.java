@@ -14,16 +14,30 @@
  * details); if not, write to the Free Software Foundation, Inc.,
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
 package org.dcache.xdr;
 
-import com.sun.grizzly.ProtocolParser;
-import com.sun.grizzly.filter.ParserProtocolFilter;
+import java.io.IOException;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.filterchain.NextAction;
 
-public class RpcParserProtocolFilter extends  ParserProtocolFilter {
+/**
+ * {@code Filter} to receive RPC message over UDP connection.
+ * According to RFC 1831 RPC message over UDP arrived in a single
+ * UDP packet.
+ */
+public class RpcMessageParserUDP extends BaseFilter {
 
     @Override
-    public ProtocolParser newProtocolParser() {
-        return new RpcProtocolPaser();
+    public NextAction handleRead(FilterChainContext ctx) throws IOException {
+        Buffer messageBuffer = ctx.getMessage();
+
+        Xdr xdr = new Xdr(Xdr.MAX_XDR_SIZE);
+        xdr.fill(messageBuffer.toByteBuffer());
+        ctx.setMessage(xdr);
+        messageBuffer.dispose();
+
+        return ctx.getInvokeAction();
     }
 }

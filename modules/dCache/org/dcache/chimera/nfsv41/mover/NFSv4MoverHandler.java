@@ -65,8 +65,8 @@ public class NFSv4MoverHandler {
 
         _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null);
         _rpcService = new OncRpcSvc(
-                new com.sun.grizzly.PortRange((int)portRange.getLower(), (int)portRange.getUpper()),
-                IpProtocolType.TCP, false, "Embedded NFSv4.1 DS");
+                new org.glassfish.grizzly.PortRange((int)portRange.getLower(), (int)portRange.getUpper()),
+                IpProtocolType.TCP, false);
 
         final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<OncRpcProgram, RpcDispatchable>();
         programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
@@ -155,7 +155,7 @@ public class NFSv4MoverHandler {
         return _rpcService.getInetSocketAddress(IpProtocolType.TCP);
     }
 
-    public void shutdown() {
+    public void shutdown() throws IOException {
         _rpcService.stop();
     }
 }

@@ -1,7 +1,5 @@
 package org.dcache.xdr.gss;
 
-import com.sun.grizzly.Context;
-import com.sun.grizzly.ProtocolFilter;
 import com.google.common.primitives.Ints;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -14,8 +12,10 @@ import org.dcache.xdr.RpcAuthType;
 import org.dcache.xdr.RpcAuthVerifier;
 import org.dcache.xdr.RpcCall;
 import org.dcache.xdr.RpcException;
-import org.dcache.xdr.RpcProtocolFilter;
 import org.dcache.xdr.RpcRejectStatus;
+import org.glassfish.grizzly.filterchain.BaseFilter;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.filterchain.NextAction;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  *
  * @since 0.0.4
  */
-public class GssProtocolFilter implements ProtocolFilter {
+public class GssProtocolFilter extends BaseFilter {
 
     private final static Logger _log = LoggerFactory.getLogger(GssProtocolFilter.class);
     /**
@@ -58,12 +58,12 @@ public class GssProtocolFilter implements ProtocolFilter {
     }
 
     @Override
-    public boolean execute(Context context) throws IOException {
+    public NextAction handleRead(FilterChainContext ctx) throws IOException {
 
-        RpcCall call = (RpcCall) context.getAttribute(RpcProtocolFilter.RPC_CALL);
+        RpcCall call = ctx.getMessage();
 
         if (call.getCredential().type() != RpcAuthType.RPCGSS_SEC) {
-            return true;
+            return ctx.getInvokeAction();
         }
 
         boolean hasContext = false;
@@ -118,8 +118,7 @@ public class GssProtocolFilter implements ProtocolFilter {
                     byte[] crc = Ints.toByteArray(authGss.getSequence());
                     crc = gssContext.getMIC(crc, 0, 4, new MessageProp(false));
                     authGss.setVerifier(new RpcAuthVerifier(authGss.type(), crc));
-                    context.setAttribute(RpcProtocolFilter.RPC_CALL,
-                            new RpcGssCall(call, gssContext, new MessageProp(false)));
+                    ctx.setMessage(new RpcGssCall(call, gssContext, new MessageProp(false)));
                     hasContext = true;
             }
 
@@ -136,7 +135,11 @@ public class GssProtocolFilter implements ProtocolFilter {
             call.reject(RpcRejectStatus.AUTH_ERROR, new RpcAuthError(RpcAuthStat.RPCSEC_GSS_CTXPROBLEM));
             _log.info("GSS mechanism failed {}", e.getMessage());
         }
-        return hasContext;
+
+        if(hasContext)
+            return ctx.getInvokeAction();
+
+        return ctx.getStopAction();
     }
 
     /**
@@ -153,10 +156,5 @@ public class GssProtocolFilter implements ProtocolFilter {
         header.get(bb);
         context.verifyMIC(auth.getVerifier().getBody(), 0, auth.getVerifier().getBody().length,
                 bb, 0, bb.length, new MessageProp(false));
-    }
-
-    @Override
-    public boolean postExecute(Context cntxt) throws IOException {
-        return true;
     }
 }
