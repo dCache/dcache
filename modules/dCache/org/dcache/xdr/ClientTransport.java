@@ -41,13 +41,15 @@ public class ClientTransport implements XdrTransport {
         _remote = remote;
     }
 
-    public void send(ByteBuffer data) throws IOException {
-        if( _connectorHandler.protocol() == Controller.Protocol.UDP ) {
+    public void send(Xdr xdr) throws IOException {
+        ByteBuffer data = xdr.body();
+        if (_connectorHandler.protocol() == Controller.Protocol.UDP) {
             // skip fragment marker
             data.getInt();
         }
-            long n = _connectorHandler.write(data, true);
-            _log.debug("Send {} bytes", n);
+        long n = _connectorHandler.write(data, true);
+        xdr.close();
+        _log.debug("Send {} bytes", n);
     }
 
     public InetSocketAddress getLocalSocketAddress() {

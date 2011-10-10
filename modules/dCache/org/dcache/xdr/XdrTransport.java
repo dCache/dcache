@@ -19,7 +19,6 @@ package org.dcache.xdr;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 
 /**
  *
@@ -34,7 +33,7 @@ public interface XdrTransport {
      * @param data
      * @throws IOException
      */
-    public void send(ByteBuffer data) throws IOException;
+    public void send(Xdr data) throws IOException;
 
     public ReplyQueue<Integer, RpcReply> getReplyQueue();
 

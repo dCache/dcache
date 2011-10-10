@@ -18,7 +18,6 @@
 package org.dcache.xdr;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -187,8 +186,7 @@ public class RpcCall {
             reason.xdrEncode(_xdr);
             xdr.endEncoding();
 
-            ByteBuffer message = xdr.body();
-            _transport.send(message);
+            _transport.send((Xdr)xdr);
 
         } catch (OncRpcException e) {
             _log.warn("Xdr exception: {}", e.getMessage());
@@ -218,9 +216,7 @@ public class RpcCall {
             reply.xdrEncode(xdr);
             xdr.endEncoding();
 
-            ByteBuffer message = xdr.body();
-            _transport.send(message);
-            _xdr.close();
+            _transport.send((Xdr)xdr);
 
         } catch (OncRpcException e) {
             _log.warn("Xdr exception: {}", e.getMessage());
@@ -308,8 +304,7 @@ public class RpcCall {
         _xdr.endEncoding();
 
         _transport.getReplyQueue().registerKey(xid);
-        ByteBuffer data = _xdr.body();
-        _transport.send(data);
+        _transport.send(_xdr);
 
         RpcReply reply;
         try {

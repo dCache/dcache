@@ -63,8 +63,9 @@ public class GrizzlyXdrTransport implements XdrTransport {
 
 
     @Override
-    public void send(ByteBuffer data) throws IOException {
+    public void send(Xdr xdr) throws IOException {
 
+        ByteBuffer data = xdr.body();
         _log.debug("reply sent: {}", data);
         SelectableChannel channel = _context.getSelectionKey().channel();
         switch(_context.getProtocol()) {
@@ -79,6 +80,7 @@ public class GrizzlyXdrTransport implements XdrTransport {
             default:
                 _log.error( "Unsupported protocol: {}", _context.getProtocol());
         }
+        xdr.close();
     }
 
 

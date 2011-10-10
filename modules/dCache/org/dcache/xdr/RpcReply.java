@@ -118,8 +118,7 @@ public class RpcReply {
         reply.xdrEncode(_xdr);
         _xdr.endEncoding();
 
-        ByteBuffer message = _xdr.body();
-        _transport.send(message);
+        _transport.send(_xdr);
     }
 
     @Override
