@@ -27,6 +27,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     public PnfsGetFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr) {
         super(pnfsid);
         _attributes = attr;
+        setReplyRequired(true);
     }
 
     /**
@@ -39,6 +40,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
         super();
         setPnfsPath(path);
         _attributes = attr;
+        setReplyRequired(true);
     }
 
     /**
