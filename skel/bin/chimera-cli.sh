@@ -53,10 +53,15 @@ class_for_command() # in $1 command name, out $2 class
 	    class=Writedata
 	    ;;
 
+        Checksum|checksum)
+            class=Checksum
+            ;;
+
 	*)
 	    echo "Unknown command $1.  Available commands are:"
             echo "    chgrp chmod chown ls lstag mkdir readtag writetag writedata"
-	    exit 1
+            echo "    setfacl getfacl checksum"
+            exit 1
 	    ;;
     esac
 
