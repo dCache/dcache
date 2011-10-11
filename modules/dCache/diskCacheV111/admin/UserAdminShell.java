@@ -17,7 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsFlagMessage;
@@ -33,7 +35,6 @@ import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -51,6 +52,10 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
+import org.dcache.namespace.FileAttribute;
 
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.FileAttributes;
@@ -512,6 +517,83 @@ public class      UserAdminShell
          throw ee ;
       }
     }
+
+
+    public String fh_repinfoof =
+            "repinfoof <pnfsId> # lists info of the pnfsid (cacheinfoof and storageinfoof the pnfsid)";
+    public String hh_repinfoof = "<pnfsId> # lists info of the pnfsid (cacheinfoof and storageinfoof the pnfsid)";
+
+    public String ac_repinfoof_$_1(Args args) throws Exception {
+
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        StringBuffer sb = new StringBuffer();
+
+        FileAttributes fileAttributes = getFileLocations(pnfsId);
+
+        Collection<String> assumed = fileAttributes.getLocations();
+
+        if (assumed.isEmpty()) { // nothing to do
+            return sb.append("no file locations found").toString();
+        }
+
+        List<CellMessage> replies = askPoolsForRepLs(fileAttributes, pnfsId);
+
+        for (CellMessage reply : replies) {
+
+            String replyFromPool = reply.getSourcePath().getCellName();
+            sb.append(replyFromPool).append(" : ");
+            sb.append(reply.getMessageObject().toString());
+
+            if (assumed.contains(replyFromPool)) {
+                assumed.remove(replyFromPool);
+            }
+        }
+
+        if (!assumed.isEmpty()) {
+            for (String pool : assumed) {
+                sb.append(pool + " : no info received");
+            }
+        }
+        return sb.toString();
+    }
+
+    private FileAttributes getFileLocations(PnfsId pnfsId) throws Exception {
+
+        Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS);
+        PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsId, request);
+
+        PnfsGetFileAttributes replyFileLocations = (PnfsGetFileAttributes) sendObject("PnfsManager", msg);
+
+        if (replyFileLocations == null) {
+            throw new CacheException("Request to the PnfsManager timed out");
+        }
+
+        if (replyFileLocations.getReturnCode() != 0) {
+            throw new FileNotFoundException("File with pnfsid " + pnfsId.toString() + " is not found");
+        }
+
+        return replyFileLocations.getFileAttributes();
+    }
+
+    private List<CellMessage> askPoolsForRepLs(FileAttributes fileAttributes, PnfsId pnfsId) {
+
+        SpreadAndWait spreader = new SpreadAndWait(cellEndPoint, _timeout);
+
+        for (String poolName : fileAttributes.getLocations()) {
+
+            CellMessage message = new CellMessage(new CellPath(poolName), "rep ls " + pnfsId);
+            spreader.send(message);
+        }
+
+        try {
+            spreader.waitForReplies();
+        } catch (InterruptedException ex) {
+            _log.info("InterruptedException while waiting for a reply from pools " + ex);
+        }
+
+        return spreader.getReplyList();
+    }
+
     private String setSticky(
                String destination ,
                String target ,
