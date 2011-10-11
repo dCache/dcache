@@ -138,11 +138,70 @@
         <prop key="javax.jdo.option.ConnectionDriverName">${jdbcDriver}</prop>
         <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
         <prop key="datanucleus.connectionPoolingType">BoneCP</prop>
+
+        <!-- The following properties provides configuration for BoneCP via
+             DataNucleus.  Please note that DataNucleus provides control of
+             only a limited set of BoneCP's configuration.  Also, the mapping
+             between the DataNucleus property name and BoneCP configuration
+             method names is not obvious.  These mappings are documented here
+             to aid the reader.
+
+             BoneCP groups threads into partitions with each thread having
+             a thread-local connection pool.  The default number of
+             partitions is 1 and DataNucleus (currently) provides no
+             mechanism to configure this. -->
+
+        <!-- datanucleus.connectionPool.maxIdle is BoneCP's setIdleMaxAge:
+             the duration (in minutes), for a connection to remain unused
+             before it is closed.  The default value is 60 and BoneCP JavaDoc
+             includes the comment: "Do not use aggressive values here!"
+
+             NB #1: DataNucleus uses BoneCP's setIdleMaxAge method, which is
+                    deprecated.  The correct method is setIdleMaxAgeInMinutes.
+                    Because of this, BoneCP emits a warning message in the
+                    log file:
+                        Please use setIdleMaxAgeInMinutes in place of
+                        setIdleMaxAge. This method has been deprecated.
+
+             NB #2: Previous code used the value of the dCache property
+                    maxIdleJdbcConnections; however, this is inappropriate as
+                    this property counts connections, rather than providing
+                    a duration. This inconsistency is likely a bug in
+                    DataNucleus.
+
+             For these reasons, we leave maxIdle property undefined and
+             accept the default value of 1 hour
+
         <prop key="datanucleus.connectionPool.maxIdle">${maxIdleJdbcConnections}</prop>
+        -->
+
+        <!-- datanucleus.connectionPool.minIdle is currently ignored by
+             DataNucleus' BoneCP support
         <prop key="datanucleus.connectionPool.minIdle">2</prop>
+        -->
+
+        <!-- datanucleus.connectionPool.minActive is currently ignored by
+             DataNucleus' BoneCP support
         <prop key="datanucleus.connectionPool.minActive">${maxActiveJdbcConnections}</prop>
+        -->
+
+        <!-- datanucleus.connectionPool.maxWait is currently ignored by
+             DataNucleus' BoneCP support
         <prop key="datanucleus.connectionPool.maxWait">#{ ${maxJdbcConnectionsWaitSec} * 1000 }</prop>
+        -->
+
+        <!-- BoneCP setMaxConnectionsPerPartition: maximum number of
+             connections (per partition) -->
+        <prop key="datanucleus.connectionPool.maxPoolSize">${maxActiveJdbcConnections}</prop>
+
+        <!-- BoneCP setMinConnectionsPerPartition: the minimum number of
+             connections that will be contained in every partition -->
+        <prop key="datanucleus.connectionPool.minPoolSize">2</prop>
+
+        <!-- BoneCP setStatementsCacheSize: the number of statements to
+             cache -->
         <prop key="datanucleus.connectionPool.maxStatements">100</prop>
+
         <prop key="datanucleus.cache.level2.type">none</prop>
       </props>
     </property>
