@@ -41,8 +41,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         byte[] decoded = decoder.xdrDecodeDynamicOpaque();
 
         assertTrue("encoded/decoded data do not match", Arrays.equals(data, decoded));
@@ -70,8 +69,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         boolean decoded = decoder.xdrDecodeBoolean();
         assertEquals("Decoded boolean value incorrect", value, decoded );
     }
@@ -87,8 +85,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         boolean decoded = decoder.xdrDecodeBoolean();
         assertEquals("Decoded boolean value incorrect", value, decoded );
     }
@@ -115,8 +112,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         String decoded = decoder.xdrDecodeString();
 
         assertEquals("encoded/decoded string do not match", original, decoded);
@@ -133,8 +129,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         String decoded = decoder.xdrDecodeString();
 
         assertEquals("encoded/decoded string do not match", original, decoded);
@@ -151,8 +146,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         String decoded = decoder.xdrDecodeString();
 
         assertEquals("encoded/decoded string do not match", "", decoded);
@@ -169,8 +163,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         long decoded = decoder.xdrDecodeLong();
 
         assertEquals("encoded/decoded long do not match", value, decoded);
@@ -187,8 +180,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         long decoded = decoder.xdrDecodeLong();
 
         assertEquals("encoded/decoded long do not match", value, decoded);
@@ -205,8 +197,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         long decoded = decoder.xdrDecodeLong();
 
         assertEquals("encoded/decoded long do not match", value, decoded);
@@ -223,8 +214,7 @@ public class XdrTest {
 
         XdrDecodingStream decoder = new Xdr(_buffer);
         decoder.beginDecoding();
-        // get xdr fragment mark
-        decoder.xdrDecodeInt();
+
         int[] decoded = decoder.xdrDecodeIntVector();
 
         assertArrayEquals("encoded/decoded int array do not match", vector, decoded);
