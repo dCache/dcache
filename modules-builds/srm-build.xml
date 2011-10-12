@@ -28,6 +28,7 @@
         </condition>
     </target>
 
+
     <!-- Packages for srm.jar -->
 
     <!-- Classpath for srm.jar -->
@@ -42,6 +43,8 @@
 	<pathelement location="${classesDir}/gplazma.jar" />
         <path refid="dependency.classpath" />
     </path>
+
+
 
     <!--       =======
              TARGETS
@@ -62,12 +65,21 @@
 
     </target>
 
+   <path id="srm-enhance.classpath">
+        <pathelement path="${srm.build.dir}" />
+	<pathelement location="${classesDir}/dcache-common.jar" />
+	<pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-dcache-1.8.0.jar" />
+        <path refid="dependency.classpath" />
+    </path>
+
+
     <!--
         generate srm jar
     -->
-    <target name="-srm.jar" depends="-isUptodate.srm.jar,-srm.compile" unless="srm.jar.upToDate">
+    <target name="-srm.jar" depends="-isUptodate.srm.jar,-srm.compile,-srm.enhance" unless="srm.jar.upToDate">
 
         <jar jarfile="${srm.jar}">
+	    <fileset dir="${srm.src}" includes="**/*.jdo" />
             <fileset dir="${srm.build.dir}">
                 <and>
                     <filename name="**/*.class" />
@@ -76,6 +88,25 @@
         </jar>
 
     </target>
+
+
+    <!--
+        generate JDO persistency backend
+    -->
+    <target name="-srm.enhance" depends="-srm.compile">
+
+      <taskdef name="enhance" classpathref="srm-enhance.classpath"
+               classname="org.datanucleus.enhancer.tools.EnhancerTask" />
+
+      <enhance classpathref="srm-enhance.classpath"
+               dir="${srm.build.dir}">
+        <fileset dir="${srm.src}/" includes="**/package.jdo"/>
+        <sysproperty key="logback.configurationFile"
+                     value="file:modules-builds/logback.xml"/>
+      </enhance>
+    </target>
+
+
 
     <!--
           Generate Doc
