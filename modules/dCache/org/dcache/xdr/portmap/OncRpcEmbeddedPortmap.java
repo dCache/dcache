@@ -69,7 +69,7 @@ public class OncRpcEmbeddedPortmap {
                     .withPort(OncRpcPortmap.PORTMAP_PORT)
                     .withTCP()
                     .withUDP()
-                    .withAutoPublish()
+                    .withoutAutoPublish()
                     .build();
             rpcbindServer.register(new OncRpcProgram( OncRpcPortmap.PORTMAP_PROGRAMM, OncRpcPortmap.PORTMAP_V2), new OncRpcbindServer());
             rpcbindServer.start();
