@@ -7,6 +7,7 @@ check -strong hostKeyFile
 check -strong userPasswordFile
 check -strong AccessControlCell
 check -strong port
+check -strong cell.name
 check adminHistoryFile
 check listen
 
@@ -59,7 +60,7 @@ create dmg.cells.services.login.SshKeyManager    skm
 #       dmg.cells.services.StreamLoginCell \
 #       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_X"
 
-create dmg.cells.services.login.LoginManager alm \
+create dmg.cells.services.login.LoginManager ${cell.name} \
       "${port}  \
        dmg.cells.services.login.StreamObjectCell \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
