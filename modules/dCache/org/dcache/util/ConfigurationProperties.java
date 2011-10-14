@@ -261,7 +261,7 @@ public class ConfigurationProperties
     }
 
 
-    private void checkIsAllowedKey(AnnotatedKey key)
+    protected void checkIsAllowedKey(AnnotatedKey key)
     {
         String name = key.getPropertyName();
 

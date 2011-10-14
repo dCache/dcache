@@ -98,4 +98,17 @@ public class ScopedConfigurationProperties extends ConfigurationProperties
         String value = getProperty(key);
         return (value == null) ? defaultValue : value;
     }
+
+    @Override
+    public Object put(Object rawKey, Object value)
+    {
+        AnnotatedKey key = new AnnotatedKey(rawKey, value);
+
+        if (!isScoped(key.getPropertyName())) {
+            AnnotatedKey scopedKey = new AnnotatedKey(_scope + "/" + key.getPropertyName(), value);
+            checkIsAllowedKey(scopedKey);
+        }
+
+        return super.put(rawKey, value);
+    }
 }

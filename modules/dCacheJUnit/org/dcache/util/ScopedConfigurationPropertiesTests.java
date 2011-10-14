@@ -146,6 +146,32 @@ public class ScopedConfigurationPropertiesTests
         assertEquals(asSet("P1", "P2", "P3"), p.stringPropertyNames());
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void testSameScopeScopedForbiddenProperty()
+    {
+        ConfigurationProperties a = new ConfigurationProperties(properties);
+
+        a.put("(forbidden)S1/forbidden", "local4");
+
+        ScopedConfigurationProperties p =
+            new ScopedConfigurationProperties(a, "S1");
+
+        p.put("forbidden", "other value"); // attempt to update a (scoped) forbidden property
+    }
+
+    @Test
+    public void testOtherScopeScopedForbiddenProperty()
+    {
+        ConfigurationProperties a = new ConfigurationProperties(properties);
+
+        a.put("(forbidden)S2/forbidden", "local4");
+
+        ScopedConfigurationProperties p =
+            new ScopedConfigurationProperties(a, "S1");
+
+        p.put("forbidden", "other value"); // (forbidden) is on other scope
+    }
+
     private Set<String> asSet(String... names)
     {
         return new HashSet(Arrays.asList(names));
