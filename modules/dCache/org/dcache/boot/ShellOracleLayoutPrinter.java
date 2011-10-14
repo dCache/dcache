@@ -106,7 +106,7 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
                 if (!value.equals(parentProperties.getValue(key))) {
                     out.append(indent).append("  ");
                     out.append(quoteForCase(key)).append(") echo \"");
-                    out.append(quote(properties.getValue(key)));
+                    out.append(quote(value.trim()));
                     out.println("\"; return;;");
                 }
             }
