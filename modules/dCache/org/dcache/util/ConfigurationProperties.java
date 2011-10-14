@@ -273,6 +273,10 @@ public class ConfigurationProperties
                     "annotated assignments are not allowed");
         }
 
+        if(existingKey.hasAnnotation(Annotation.IMMUTABLE)) {
+            _problemConsumer.error(immutableErrorMessageFor(existingKey));
+        }
+
         if(existingKey.hasAnnotation(Annotation.FORBIDDEN)) {
             _problemConsumer.error(forbiddenErrorMessageFor(existingKey));
         }
@@ -354,6 +358,11 @@ public class ConfigurationProperties
             customError;
 
         return "Property " + key.getPropertyName() + ": may not be adjusted; " + suffix;
+    }
+
+    private String immutableErrorMessageFor(AnnotatedKey key)
+    {
+        return "Property " + key.getPropertyName() + ": may not be adjusted as it is marked 'immutable'";
     }
 
     private String obsoleteErrorMessageFor(AnnotatedKey key)
@@ -522,7 +531,8 @@ public class ConfigurationProperties
         FORBIDDEN("forbidden"),
         OBSOLETE("obsolete"),
         DEPRECATED("deprecated"),
-        NOT_FOR_SERVICES("not-for-services");
+        NOT_FOR_SERVICES("not-for-services"),
+        IMMUTABLE("immutable");
 
         private static Map<String,Annotation> ANNOTATION_LABELS = new HashMap<String,Annotation>();
 

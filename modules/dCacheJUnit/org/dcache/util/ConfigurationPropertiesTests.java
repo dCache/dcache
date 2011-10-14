@@ -61,6 +61,12 @@ public class ConfigurationPropertiesTests {
     private static final String DEPRECATED_PROPERTY_KEY =
             "(deprecated)" + DEPRECATED_PROPERTY_NAME;
 
+    private static final String IMMUTABLE_PROPERTY_NAME = "immutableProperty";
+    private static final String IMMUTABLE_PROPERTY_VALUE =
+            "some immutable value";
+    private static final String IMMUTABLE_PROPERTY_KEY = "(immutable)"
+            + IMMUTABLE_PROPERTY_NAME;
+
     private static final String DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME = "deprecatedProperty.forward";
     private static final String DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_VALUE =
             "${" + SIMPLE_PROPERTY_NAME + "}";
@@ -99,6 +105,7 @@ public class ConfigurationPropertiesTests {
     private void resetProperties() {
         _properties = new ConfigurationProperties();
         _properties.put( NORMAL_PROPERTY_NAME, NORMAL_PROPERTY_VALUE);
+        _properties.put( IMMUTABLE_PROPERTY_KEY, IMMUTABLE_PROPERTY_VALUE);
         _properties.put( OBSOLETE_PROPERTY_KEY, "");
         _properties.put( OBSOLETE_PROPERTY_W_ERROR_KEY,
                 OBSOLETE_PROPERTY_W_ERROR_VALUE);
@@ -156,6 +163,12 @@ public class ConfigurationPropertiesTests {
     }
 
     @Test
+    public void testImmutablePropertyGet() {
+        assertEquals( "testing immutable property", IMMUTABLE_PROPERTY_VALUE,
+                _properties.get(IMMUTABLE_PROPERTY_NAME));
+    }
+
+    @Test
     public void testDeprecatedPropertyGet() {
         assertEquals( "testing deprecated property", DEPRECATED_PROPERTY_VALUE,
                 _properties.get( DEPRECATED_PROPERTY_NAME));
@@ -189,6 +202,18 @@ public class ConfigurationPropertiesTests {
     public void testNormalPropertyPut() {
         _properties.put( NORMAL_PROPERTY_NAME, "some value");
         assertEquals(0, _log.size());
+    }
+
+    @Test
+    public void testImmutablePropertyPut() {
+        try {
+            _properties.put(IMMUTABLE_PROPERTY_NAME, "some new value");
+            fail( "no exception thrown");
+        } catch (IllegalArgumentException e) {
+            assertEquals( "Property " + IMMUTABLE_PROPERTY_NAME + ": " +
+                          "may not be adjusted as it is marked 'immutable'",
+                          e.getMessage());
+        }
     }
 
     @Test
@@ -281,7 +306,8 @@ public class ConfigurationPropertiesTests {
     public void testStringPropertyNames()
     {
         String[] expected =
-            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME,
+            new String[] { NORMAL_PROPERTY_NAME, IMMUTABLE_PROPERTY_NAME,
+                           DEPRECATED_PROPERTY_NAME,
                            DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME,
                            DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
@@ -294,7 +320,8 @@ public class ConfigurationPropertiesTests {
     public void testPropertyNames()
     {
         String[] expected =
-            new String[] { NORMAL_PROPERTY_NAME, DEPRECATED_PROPERTY_NAME,
+            new String[] { NORMAL_PROPERTY_NAME, IMMUTABLE_PROPERTY_NAME,
+                           DEPRECATED_PROPERTY_NAME,
                            DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME,
                            DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
