@@ -260,7 +260,10 @@ public class OncRpcSvc {
      */
     public void setThreadCount(int count) {
         for (Transport t : _transports) {
+            t.getWorkerThreadPoolConfig().setCorePoolSize(count);
             t.getWorkerThreadPoolConfig().setMaxPoolSize(count);
+            t.getKernelThreadPoolConfig().setCorePoolSize(count);
+            t.getKernelThreadPoolConfig().setMaxPoolSize(count);
         }
     }
 

@@ -83,6 +83,7 @@ public class NFSv4MoverHandler {
             GssSessionManager gss = new GssSessionManager(rpcLoginService);
             _rpcService.setGssSessionManager(gss);
         }
+        _rpcService.setThreadCount(Runtime.getRuntime().availableProcessors()*4);
         _rpcService.start();
     }
 
