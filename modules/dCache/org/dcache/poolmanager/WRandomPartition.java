@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import static com.google.common.collect.Iterables.filter;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PnfsId;
+import org.dcache.vehicles.FileAttributes;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,19 +25,19 @@ import java.util.Random;
  * where 'free space' is a sum of free and removable space.
  *
  */
-public class WRandom extends Partition {
-
+public class WRandomPartition extends Partition
+{
     public final static String TYPE = "wrandom";
     private final Random _random = new SecureRandom();
 
-    public WRandom(Map<String, String> inherited) {
+    public WRandomPartition(Map<String, String> inherited) {
         super(NO_PROPERTIES, inherited, NO_PROPERTIES);
     }
 
     @Override
     protected Partition create(Map<String, String> inherited,
             Map<String, String> properties) {
-        return new WRandom(inherited);
+        return new WRandomPartition(inherited);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class WRandom extends Partition {
     }
 
     @Override
-    public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src, List<PoolInfo> dst, long filesize, boolean force) throws CacheException {
+    public P2pPair selectPool2Pool(CostModule cm, List<PoolInfo> src, List<PoolInfo> dst, FileAttributes attributes, boolean force) throws CacheException {
 
         Collections.shuffle(src);
 
@@ -58,7 +58,7 @@ public class WRandom extends Partition {
                     filter(dst, new DifferentHost(srcPoolInfo.getHostName())));
 
             if (!tryList.isEmpty()) {
-                PoolInfo destPoolInfo = selectWritePool(cm, tryList, filesize);
+                PoolInfo destPoolInfo = selectWritePool(cm, tryList, attributes);
                 return new P2pPair(srcPoolInfo, destPoolInfo);
             }
         }
@@ -67,17 +67,17 @@ public class WRandom extends Partition {
     }
 
     @Override
-    public PoolInfo selectReadPool(CostModule cm, List<PoolInfo> pools, PnfsId pnfsId) throws CacheException {
+    public PoolInfo selectReadPool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException {
         return pools.get(_random.nextInt(pools.size()));
     }
 
     @Override
-    public PoolInfo selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost, long size) throws CacheException {
-        return selectWritePool(cm, pools, size);
+    public PoolInfo selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost, FileAttributes attributes) throws CacheException {
+        return selectWritePool(cm, pools, attributes);
     }
 
     @Override
-    public PoolInfo selectWritePool(CostModule cm, List<PoolInfo> pools, long filesize) throws CacheException {
+    public PoolInfo selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException {
         WeightedPool weightedPools[] = toWeightedWritePoolsArray(pools);
         int index = selectWrandomIndex(weightedPools);
         return weightedPools[index].getCostInfo();
@@ -106,16 +106,16 @@ public class WRandom extends Partition {
         return weghtedPools;
     }
 
-    private static class CostComparator implements Comparator<WeightedPool> {
-
+    private static class CostComparator implements Comparator<WeightedPool>
+    {
         @Override
         public int compare(WeightedPool o1, WeightedPool o2) {
             return Double.compare(o1.getWeight(), o2.getWeight());
         }
     }
 
-    private static class WeightedPool {
-
+    private static class WeightedPool
+    {
         private final PoolInfo _costInfo;
         private final double _weight;
 
@@ -143,8 +143,8 @@ public class WRandom extends Partition {
         return i - 1;
     }
 
-    private class DifferentHost implements Predicate<PoolInfo> {
-
+    private class DifferentHost implements Predicate<PoolInfo>
+    {
         private final String _host;
 
         DifferentHost(String host) {

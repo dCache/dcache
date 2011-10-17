@@ -11,6 +11,7 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import org.dcache.vehicles.FileAttributes;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
@@ -27,7 +28,7 @@ public class LruPartition extends Partition
 {
     static final long serialVersionUID = 2982471048144479008L;
 
-    public final static String TYPE = "lru";
+    static final String TYPE = "lru";
 
     private final static AtomicLong _counter = new AtomicLong();
 
@@ -69,8 +70,9 @@ public class LruPartition extends Partition
         return TYPE;
     }
 
-    private Predicate<PoolInfo> canHoldFile(final long filesize)
+    private Predicate<PoolInfo> canHoldFile(FileAttributes attributes)
     {
+        final long filesize = attributes.getSize();
         return new Predicate<PoolInfo>() {
             public boolean apply(PoolInfo pool) {
                 PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
@@ -118,13 +120,13 @@ public class LruPartition extends Partition
     }
 
     @Override
-    public PoolInfo
-        selectWritePool(CostModule cm, List<PoolInfo> pools,
-                        long filesize)
+    public PoolInfo selectWritePool(CostModule cm,
+                                    List<PoolInfo> pools,
+                                    FileAttributes attributes)
         throws CacheException
     {
         List<PoolInfo> freePools =
-            Lists.newArrayList(filter(pools, canHoldFile(filesize)));
+            Lists.newArrayList(filter(pools, canHoldFile(attributes)));
         if (freePools.isEmpty()) {
             throw new CacheException(21, "All pools are full");
         }
@@ -132,24 +134,24 @@ public class LruPartition extends Partition
     }
 
     @Override
-    public PoolInfo
-        selectReadPool(CostModule cm, List<PoolInfo> pools, PnfsId pnfsId)
+    public PoolInfo selectReadPool(CostModule cm,
+                                   List<PoolInfo> pools,
+                                   FileAttributes attributes)
         throws CacheException
     {
         return select(pools, _lastRead);
     }
 
     @Override
-    public P2pPair
-        selectPool2Pool(CostModule cm,
-                        List<PoolInfo> src,
-                        List<PoolInfo> dst,
-                        long filesize,
-                        boolean force)
+    public P2pPair selectPool2Pool(CostModule cm,
+                                   List<PoolInfo> src,
+                                   List<PoolInfo> dst,
+                                   FileAttributes attributes,
+                                   boolean force)
         throws CacheException
     {
         return new P2pPair(select(src, _lastRead),
-                           selectWritePool(cm, dst, filesize));
+                           selectWritePool(cm, dst, attributes));
     }
 
     @Override
@@ -157,9 +159,9 @@ public class LruPartition extends Partition
                                     List<PoolInfo> pools,
                                     String previousPool,
                                     String previousHost,
-                                    long size)
+                                    FileAttributes attributes)
         throws CacheException
     {
-        return selectWritePool(cm, pools, size);
+        return selectWritePool(cm, pools, attributes);
     }
 }
