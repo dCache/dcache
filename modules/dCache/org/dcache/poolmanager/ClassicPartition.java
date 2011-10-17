@@ -18,6 +18,8 @@ import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
+import org.dcache.vehicles.FileAttributes;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Objects;
@@ -35,11 +37,11 @@ public class ClassicPartition extends Partition
 {
     static final long serialVersionUID = 8239030345609342048L;
 
-    public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED };
-
-    public static final String TYPE = "classic";
+    static final String TYPE = "classic";
 
     private static final double MAX_WRITE_COST = 1000000.0;
+
+    public enum SameHost { NEVER, BESTEFFORT, NOTCHECKED };
 
     private final static Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
@@ -58,7 +60,7 @@ public class ClassicPartition extends Partition
 
     public final SameHost _allowSameHostCopy;
     public final SameHost _allowSameHostRetry;
-    public final int _maxPnfsFileCopies;
+    public final long _maxPnfsFileCopies;
 
     public final double  _costCut;
     public final boolean _costCutIsPercentile;
@@ -110,7 +112,7 @@ public class ClassicPartition extends Partition
             SameHost.valueOf(getProperty("sameHostCopy").toUpperCase());
         _allowSameHostRetry =
             SameHost.valueOf(getProperty("sameHostRetry").toUpperCase());
-        _maxPnfsFileCopies = getInteger("max-copies");
+        _maxPnfsFileCopies = getLong("max-copies");
         _alertCostCut = getDouble("alert");
         _panicCostCut = getDouble("halt");
         _fallbackCostCut = getDouble("fallback");
@@ -151,7 +153,8 @@ public class ClassicPartition extends Partition
 
     @Override
     public PoolInfo selectWritePool(CostModule cm,
-                                    List<PoolInfo> pools, long filesize)
+                                    List<PoolInfo> pools,
+                                    FileAttributes attributes)
         throws CacheException
     {
         checkState(!pools.isEmpty());
@@ -165,7 +168,8 @@ public class ClassicPartition extends Partition
         /* We use the cheapest pool according to the combined space
          * and performance cost.
          */
-        PoolCost best = _byFullCost.min(transform(pools, toPoolCost(filesize)));
+        PoolCost best =
+            _byFullCost.min(transform(pools, toPoolCost(attributes.getSize())));
 
         /* Note that
          *
@@ -183,8 +187,9 @@ public class ClassicPartition extends Partition
     }
 
     @Override
-    public PoolInfo
-        selectReadPool(CostModule cm, List<PoolInfo> pools, PnfsId pnfsId)
+    public PoolInfo selectReadPool(CostModule cm,
+                                   List<PoolInfo> pools,
+                                   FileAttributes attributes)
         throws CacheException
     {
         checkState(!pools.isEmpty());
@@ -198,6 +203,7 @@ public class ClassicPartition extends Partition
         /* TODO: We could possibly define an Ordering and do a regular
          * min call.
          */
+        PnfsId pnfsId = attributes.getPnfsId();
         double bestCost = Double.POSITIVE_INFINITY;
         PoolInfo bestPool = null;
         for (PoolInfo pool: pools) {
@@ -254,7 +260,7 @@ public class ClassicPartition extends Partition
     public P2pPair selectPool2Pool(CostModule cm,
                                    List<PoolInfo> src,
                                    List<PoolInfo> dst,
-                                   long filesize,
+                                   FileAttributes attributes,
                                    boolean force)
         throws CacheException
     {
@@ -292,7 +298,7 @@ public class ClassicPartition extends Partition
             ? _slope * sources.get(0).performanceCost
             : getCurrentCostCut(cm);
         Iterable<PoolCost> unsortedDestinations =
-            transform(dst, toPoolCost(filesize));
+            transform(dst, toPoolCost(attributes.getSize()));
         if (!force && maxTargetCost > 0.0) {
             unsortedDestinations =
                 filter(unsortedDestinations,
@@ -359,7 +365,7 @@ public class ClassicPartition extends Partition
                                     List<PoolInfo> pools,
                                     String previousPool,
                                     String previousHost,
-                                    long size)
+                                    FileAttributes attributes)
         throws CacheException
     {
         checkState(!pools.isEmpty());
@@ -382,6 +388,7 @@ public class ClassicPartition extends Partition
         }
         order.add(_byFullCost);
 
+        long size = attributes.getSize();
         PoolCost best =
             Ordering.compound(order).min(transform(pools, toPoolCost(size)));
 

@@ -7,12 +7,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import jline.ConsoleReader;
+import jline.UnixTerminal;
 import jline.History;
+import jline.ANSIBuffer;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellAdapter;
@@ -63,6 +66,7 @@ public class StreamObjectCell
     private Thread _workerThread;
     private CellNucleus _nucleus;
     private File _historyFile;
+    private boolean _useColors;
 
     private Object _commandObject;
     private Method[] _commandMethod = new Method[COM_SIGNATURE.length];
@@ -83,6 +87,8 @@ public class StreamObjectCell
                     IllegalArgumentException("Usage : ... <commandClassName>");
 
             tryToSetHistoryFile( args.getOpt("history"));
+
+            _useColors = Boolean.valueOf(args.getOpt("useColors"));
 
             _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
@@ -277,7 +283,9 @@ public class StreamObjectCell
             try {
                 final ConsoleReader console =
                     new ConsoleReader(_engine.getInputStream(),
-                                      _engine.getWriter());
+                                      _engine.getWriter(),
+                                      null,
+                                      new StreamObjectCellTerminal());
                 history.setMaxSize(HISTORY_SIZE);
                 console.setHistory(history);
                 console.setUseHistory(true);
@@ -427,7 +435,9 @@ public class StreamObjectCell
 
         boolean done = false;
         while (!done) {
-            String str = console.readLine(getPrompt());
+            String prompt =
+                new ANSIBuffer().green(getPrompt()).toString(_useColors);
+            String str = console.readLine(prompt);
             if (str == null) {
                 _log.debug( "\"null\" input (e.g., Ctrl-D) received.");
                 break;
@@ -458,14 +468,14 @@ public class StreamObjectCell
                 String s;
                 if (result instanceof CommandSyntaxException) {
                     CommandSyntaxException e = (CommandSyntaxException) result;
-                    StringBuffer sb = new StringBuffer();
-                    sb.append("Syntax error: " + e.getMessage() + "\n");
+                    ANSIBuffer sb = new ANSIBuffer();
+                    sb.red("Syntax error: " + e.getMessage() + "\n");
                     String help  = e.getHelpText();
                     if (help != null) {
-                        sb.append("Help : \n");
-                        sb.append(help);
+                        sb.cyan("Help : \n");
+                        sb.cyan(help);
                     }
-                    s = sb.toString();
+                    s = sb.toString(_useColors);
                 } else {
                     s = result.toString();
                 }
@@ -491,6 +501,49 @@ public class StreamObjectCell
         }
         if (_workerThread != null) {
             _workerThread.interrupt();
+        }
+    }
+
+    private static class StreamObjectCellTerminal extends UnixTerminal
+    {
+        private boolean _swapNext;
+
+        @Override
+        public void initializeTerminal()
+            throws IOException, InterruptedException
+        {
+            /* UnixTerminal expects a tty to have been allocated. That
+             * is not the case for StreamObjectCell and hence we skip
+             * the usual initialization.
+             */
+        }
+
+        @Override
+        public int readCharacter(InputStream in) throws IOException
+        {
+            int c = super.readCharacter(in);
+            if (_swapNext) {
+                /* UnixTerminal has built in support for reversing
+                 * backspace and delete. The field that controls the
+                 * behaviour is however private and hence we have to
+                 * make this hack to translate DEL to BS.
+                 *
+                 * The background for the reversal is that at least on
+                 * Linux backspace sends a DEL character.
+                 */
+                if (c == DELETE) {
+                    c = BACKSPACE;
+                }
+                _swapNext = false;
+            }
+            return c;
+        }
+
+        @Override
+        public int readVirtualKey(InputStream in) throws IOException
+        {
+            _swapNext = true;
+            return super.readVirtualKey(in);
         }
     }
 }

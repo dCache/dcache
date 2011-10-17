@@ -10,6 +10,8 @@ import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.vehicles.FileAttributes;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import static com.google.common.collect.Iterables.filter;
@@ -21,7 +23,7 @@ public class RandomPartition extends Partition
 {
     static final long serialVersionUID = -2614882036844578650L;
 
-    public final static String TYPE = "random";
+    static final String TYPE = "random";
 
     public final static Random random = new Random();
 
@@ -49,8 +51,9 @@ public class RandomPartition extends Partition
         return TYPE;
     }
 
-    private Predicate<PoolInfo> canHoldFile(final long filesize)
+    private Predicate<PoolInfo> canHoldFile(FileAttributes attributes)
     {
+        final long filesize = attributes.getSize();
         return new Predicate<PoolInfo>() {
             public boolean apply(PoolInfo pool) {
                 PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
@@ -67,13 +70,13 @@ public class RandomPartition extends Partition
     }
 
     @Override
-    public PoolInfo
-        selectWritePool(CostModule cm, List<PoolInfo> pools,
-                        long filesize)
+    public PoolInfo selectWritePool(CostModule cm,
+                                    List<PoolInfo> pools,
+                                    FileAttributes attributes)
         throws CacheException
     {
         List<PoolInfo> freePools =
-            Lists.newArrayList(filter(pools, canHoldFile(filesize)));
+            Lists.newArrayList(filter(pools, canHoldFile(attributes)));
         if (freePools.isEmpty()) {
             throw new CacheException(21, "All pools are full");
         }
@@ -81,8 +84,9 @@ public class RandomPartition extends Partition
     }
 
     @Override
-    public PoolInfo
-        selectReadPool(CostModule cm, List<PoolInfo> pools, PnfsId pnfsId)
+    public PoolInfo selectReadPool(CostModule cm,
+                                   List<PoolInfo> pools,
+                                   FileAttributes attributes)
         throws CacheException
     {
         return select(pools);
@@ -93,11 +97,11 @@ public class RandomPartition extends Partition
         selectPool2Pool(CostModule cm,
                         List<PoolInfo> src,
                         List<PoolInfo> dst,
-                        long filesize,
+                        FileAttributes attributes,
                         boolean force)
         throws CacheException
     {
-        return new P2pPair(select(src), selectWritePool(cm, dst, filesize));
+        return new P2pPair(select(src), selectWritePool(cm, dst, attributes));
     }
 
     @Override
@@ -105,9 +109,9 @@ public class RandomPartition extends Partition
                                     List<PoolInfo> pools,
                                     String previousPool,
                                     String previousHost,
-                                    long size)
+                                    FileAttributes attributes)
         throws CacheException
     {
-        return selectWritePool(cm, pools, size);
+        return selectWritePool(cm, pools, attributes);
     }
 }

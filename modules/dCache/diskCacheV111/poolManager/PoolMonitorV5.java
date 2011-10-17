@@ -185,7 +185,7 @@ public class PoolMonitorV5
          * Returns a pool for writing a file of the given size
          * described by this PnfsFileLocation.
          */
-        public PoolInfo selectWritePool(long size)
+        public PoolInfo selectWritePool()
             throws CacheException, InterruptedException
         {
             PoolPreferenceLevel[] levels = match(DirectionType.WRITE);
@@ -204,7 +204,7 @@ public class PoolMonitorV5
                 if (!pools.isEmpty()) {
                     Partition partition =
                         _partitionManager.getPartition(level.getTag());
-                    return partition.selectWritePool(_costModule, pools, size);
+                    return partition.selectWritePool(_costModule, pools, _fileAttributes);
                 }
             }
 
@@ -295,7 +295,7 @@ public class PoolMonitorV5
                  */
                 try {
                     return _partition.selectReadPool(_costModule, pools,
-                                                     _fileAttributes.getPnfsId());
+                                                     _fileAttributes);
                 } catch (CostException e) {
                     if (!e.shouldFallBack()) {
                         throw e;
@@ -342,7 +342,7 @@ public class PoolMonitorV5
                     return partition.selectPool2Pool(_costModule,
                                                      Lists.newArrayList(sources.values()),
                                                      pools,
-                                                     _fileAttributes.getSize(),
+                                                     _fileAttributes,
                                                      force);
                 }
             }
@@ -369,7 +369,7 @@ public class PoolMonitorV5
                         return partition.selectStagePool(_costModule, pools,
                                                          previousPool,
                                                          previousHost,
-                                                         _fileAttributes.getSize());
+                                                         _fileAttributes);
                     }
                 } catch (CostException e) {
                     if (!e.shouldFallBack()) {
