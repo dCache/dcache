@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 import jline.ConsoleReader;
 import jline.UnixTerminal;
 import jline.History;
+import jline.ANSIBuffer;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellAdapter;
@@ -65,6 +66,7 @@ public class StreamObjectCell
     private Thread _workerThread;
     private CellNucleus _nucleus;
     private File _historyFile;
+    private boolean _useColors;
 
     private Object _commandObject;
     private Method[] _commandMethod = new Method[COM_SIGNATURE.length];
@@ -85,6 +87,8 @@ public class StreamObjectCell
                     IllegalArgumentException("Usage : ... <commandClassName>");
 
             tryToSetHistoryFile( args.getOpt("history"));
+
+            _useColors = Boolean.valueOf(args.getOpt("useColors"));
 
             _log.info("StreamObjectCell " + getCellName() + "; arg0=" + args.argv(0));
 
@@ -431,7 +435,9 @@ public class StreamObjectCell
 
         boolean done = false;
         while (!done) {
-            String str = console.readLine(getPrompt());
+            String prompt =
+                new ANSIBuffer().green(getPrompt()).toString(_useColors);
+            String str = console.readLine(prompt);
             if (str == null) {
                 _log.debug( "\"null\" input (e.g., Ctrl-D) received.");
                 break;
@@ -462,14 +468,14 @@ public class StreamObjectCell
                 String s;
                 if (result instanceof CommandSyntaxException) {
                     CommandSyntaxException e = (CommandSyntaxException) result;
-                    StringBuffer sb = new StringBuffer();
-                    sb.append("Syntax error: " + e.getMessage() + "\n");
+                    ANSIBuffer sb = new ANSIBuffer();
+                    sb.red("Syntax error: " + e.getMessage() + "\n");
                     String help  = e.getHelpText();
                     if (help != null) {
-                        sb.append("Help : \n");
-                        sb.append(help);
+                        sb.cyan("Help : \n");
+                        sb.cyan(help);
                     }
-                    s = sb.toString();
+                    s = sb.toString(_useColors);
                 } else {
                     s = result.toString();
                 }

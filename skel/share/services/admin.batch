@@ -7,6 +7,7 @@ check -strong hostKeyFile
 check -strong userPasswordFile
 check -strong AccessControlCell
 check -strong port
+check -strong admin.colors.enable
 check -strong cell.name
 check adminHistoryFile
 check listen
@@ -66,6 +67,7 @@ create dmg.cells.services.login.LoginManager ${cell.name} \
        -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
        -history=${adminHistoryFile} \
        -listen=${listen} \
+       -useColors=${admin.colors.enable} \
        diskCacheV111.admin.UserAdminShell"
 
 create dmg.cells.services.login.user.AclCell ${AccessControlCell} \
