@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
+    <property name="location" value="arguments:"/>
+  </bean>
+
+  <bean id="login-stub" class="org.dcache.cells.CellStub">
+    <description>Login cell communication stub</description>
+    <property name="destination" value="gPlazma"/>
+    <property name="timeout"     value="30000"/>
+  </bean>
+
+  <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+    <description>Processes login requests</description>
+    <property name="loginStrategies">
+      <list>
+        <bean class="org.dcache.services.login.RemoteLoginStrategy">
+          <property name="cellStub" ref="login-stub"/>
+        </bean>
+      </list>
+    </property>
+    <property name="anonymousAccess" value="NONE"/>
+  </bean>
+
+  <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
+    <property name="port"               value="${port}"/>
+    <property name="hostKeyPrivate"     value="${hostKeyPrivate}"/>
+    <property name="hostKeyPublic"      value="${hostKeyPublic}"/>
+    <property name="authorizedKeyList"  value="${authorizedKeyList}"/>
+    <property name="historyFile"    value="${historyFilePath}"/>
+    <property name="loginStrategy"      ref="login-strategy"/>
+  </bean>
+</beans>

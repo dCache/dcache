@@ -1,0 +1,3 @@
+onerror shutdown
+exec file:${domain.service.dir}/admin-ssh1.batch
+exec file:${domain.service.dir}/admin-ssh2.batch
