@@ -51,6 +51,12 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+import dmg.util.RequestTimeOutException;
+
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
+import org.dcache.namespace.FileAttribute;
 
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.FileAttributes;
@@ -1166,6 +1172,7 @@ public class      UserAdminShell
             Thread.currentThread().interrupt();
         }
     }
+
     protected Object executeLocalCommand( Args args ) throws Exception {
        _log.info( "Local command "+args ) ;
        try{
@@ -1176,7 +1183,9 @@ public class      UserAdminShell
           throw (Exception)cpe.getTargetException() ;
        }
     }
-    public Object executeCommand( String str )throws Exception {
+
+    public Object executeCommand(String str) throws Exception
+    {
        _log.info( "String command (super) "+str ) ;
 
        if( str.trim().equals("") )return "" ;
@@ -1211,8 +1220,8 @@ public class      UserAdminShell
            return sendObject( _currentPosition.remote ,  new AuthorizedString(_user,str) ) ;
        }
     }
+
     private Object localCommand( Args args ) throws Exception {
-       try{
            Object or = executeLocalCommand( args ) ;
            if( or == null )return ""  ;
            String r = or.toString() ;
@@ -1221,10 +1230,7 @@ public class      UserAdminShell
               return r   ;
            else
               return r + "\n"  ;
-       }catch(Exception ee ){
-           _log.debug(ee.toString(), ee) ;
-           throw ee ;
-       }
+
 
     }
     private Object sendObject( String cellPath , Object object )
@@ -1232,15 +1238,18 @@ public class      UserAdminShell
    {
        return sendObject( new CellPath( cellPath ) , object ) ;
    }
+
     private Object sendObject( CellPath cellPath , Object object )
-       throws Exception
+    throws Exception
+
    {
 
         CellMessage res =
             cellEndPoint.sendAndWait(
                    new CellMessage( cellPath , object ) ,
               _timeout ) ;
-          if( res == null )throw new Exception("Request timed out" ) ;
+        if (res == null)
+            throw new RequestTimeOutException(_timeout, cellPath);
           Object obj =  res.getMessageObject() ;
           if( ( obj instanceof Throwable ) && _fullException ){
               CharArrayWriter ca = new CharArrayWriter() ;
