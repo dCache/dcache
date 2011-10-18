@@ -47,6 +47,17 @@ public class SshInputStream extends InputStream {
        }
        return -1;
    }
+
+    @Override
+    public int available()
+        throws IOException
+    {
+        if (_rest == 0 && _core.isPacketAvailable()) {
+            nextPacket();
+        }
+        return _rest;
+    }
+
    private boolean nextPacket() throws IOException {
       if( _exitConfirmed )throw new IOException( "Stream inactive" ) ;
       while( true ){
