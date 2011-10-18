@@ -466,9 +466,11 @@ public class PoolManagerV5
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }
 
+        FileAttributes fileAttributes = new FileAttributes();
+        fileAttributes.setSize(filesize);
         Partition partition =
             _poolMonitor.getPartitionManager().getPartition(link.getTag());
-        msg.setPoolName(partition.selectWritePool(_costModule, pools, filesize).getName());
+        msg.setPoolName(partition.selectWritePool(_costModule, pools, fileAttributes).getName());
         msg.setSucceeded();
         return msg;
     }
@@ -892,10 +894,11 @@ public class PoolManagerV5
                FileAttributes fileAttributes = new FileAttributes();
                fileAttributes.setPnfsId(_pnfsId);
                fileAttributes.setStorageInfo(storageInfo);
+               fileAttributes.setSize(expectedLength);
                String poolName =
                    _poolMonitor
                    .getPnfsFileLocation(fileAttributes, protocolInfo, _request.getLinkGroup())
-                   .selectWritePool(expectedLength)
+                   .selectWritePool()
                    .getName();
 
               _log.info("{} write handler selected {} after {} ms",

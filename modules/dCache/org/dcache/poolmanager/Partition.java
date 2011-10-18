@@ -12,6 +12,7 @@ import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import org.dcache.vehicles.FileAttributes;
 
 import com.google.common.collect.ImmutableMap;
 import static com.google.common.base.Predicates.in;
@@ -29,7 +30,10 @@ import static com.google.common.collect.Maps.filterValues;
  * is defined in this Partition.
  *
  * Properties are immutable and any update requires that a new
- * instance is created. When created, properties will be parsed and
+ * instance is created. The abstract create method is used to
+ * implement this copy-on-write scheme.
+ *
+ * Pproperties will be parsed during partition instantiation and
  * values will be cached in immutable fields.
  *
  * Although properties are immutable, the partition may not be: Some
@@ -97,7 +101,11 @@ abstract public class Partition implements Serializable
     /**
      * Creates a new partition of the same type as this partition.
      *
-     * Used when updating properties.
+     * Used when updating properties to implement a copy-on-write
+     * scheme.
+     *
+     * Advanced implementations may choose to preserve additional
+     * state that isn't captured by configuraton parameters.
      */
     abstract protected Partition create(Map<String,String> inherited,
                                         Map<String,String> properties);
@@ -159,6 +167,8 @@ abstract public class Partition implements Serializable
 
     /**
      * Returns the value of a property.
+     *
+     * @throws NoSuchElementException If the property is undefined
      */
     public String getProperty(String name)
         throws NoSuchElementException
@@ -181,8 +191,9 @@ abstract public class Partition implements Serializable
      *
      * Legal values of boolean property are yes and no.
      *
-     * Throws IllegalArgumentException if the property is not a valid
-     * boolean property.
+     * @throws IllegalArgumentException If the value of the property
+     *                                  is not a boolean
+     * @throws NoSuchElementException If the property is undefined
      */
     public boolean getBoolean(String name)
         throws NoSuchElementException,
@@ -199,23 +210,25 @@ abstract public class Partition implements Serializable
     }
 
     /**
-     * Returns the integer value of an integer property.
+     * Returns the long value of an long property.
      *
-     * Throws IllegalArgumentException if the property is not a valid
-     * integer property.
+     * @throws IllegalArgumentException If the value of the property
+     *                                  is not a long
+     * @throws NoSuchElementException If the property is undefined
      */
-    public int getInteger(String name)
+    public long getLong(String name)
         throws NoSuchElementException,
                IllegalArgumentException
     {
-        return Integer.parseInt(getProperty(name));
+        return Long.parseLong(getProperty(name));
     }
 
     /**
      * Returns the double value of an double property.
      *
-     * Throws IllegalArgumentException if the property is not a valid
-     * double property.
+     * @throws IllegalArgumentException If the value of the property
+     *                                  is not a double
+     * @throws NoSuchElementException If the property is undefined
      */
     public double getDouble(String name)
         throws NoSuchElementException,
@@ -282,40 +295,56 @@ abstract public class Partition implements Serializable
     /**
      * Selects a pool for writing among a set of pools. May modify
      * the input list of pools.
+     *
+     * An implementation cannot rely on any file attributes other than
+     * expected file size being defined.
      */
     abstract public PoolInfo
-        selectWritePool(CostModule cm, List<PoolInfo> pools, long filesize)
+        selectWritePool(CostModule cm,
+                        List<PoolInfo> pools,
+                        FileAttributes attributes)
         throws CacheException;
 
     /**
      * Selects a pool for reading among a set of pools. May modify
      * the input list of pools.
+     *
+     * An implementation cannot rely on any file attributes other than
+     * PNFS id, storage info and locations being defined.
      */
     abstract public PoolInfo
-        selectReadPool(CostModule cm, List<PoolInfo> pools, PnfsId pnfsId)
+        selectReadPool(CostModule cm,
+                       List<PoolInfo> pools,
+                       FileAttributes attributes)
         throws CacheException;
 
     /**
      * Selects a pair of pools for pool to pool among a set of
      * pools. May modify the input lists of pools.
+     *
+     * An implementation cannot rely on any file attributes other than
+     * PNFS id, storage info and locations being defined.
      */
     abstract public P2pPair
         selectPool2Pool(CostModule cm,
                         List<PoolInfo> src,
                         List<PoolInfo> dst,
-                        long filesize,
+                        FileAttributes attributes,
                         boolean force)
         throws CacheException;
 
     /**
      * Selects a pool for staging among a set of pools. May modify the
      * input list of pools.
+     *
+     * An implementation cannot rely on any file attributes other than
+     * PNFS id, storage info and locations being defined.
      */
     abstract public PoolInfo selectStagePool(CostModule cm,
                                              List<PoolInfo> pools,
                                              String previousPool,
                                              String previousHost,
-                                             long size)
+                                             FileAttributes attributes)
         throws CacheException;
 
     /**
