@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import jline.ConsoleReader;
+import jline.UnixTerminal;
 import jline.History;
 
 import dmg.cells.applets.login.DomainObjectFrame;
@@ -277,7 +279,9 @@ public class StreamObjectCell
             try {
                 final ConsoleReader console =
                     new ConsoleReader(_engine.getInputStream(),
-                                      _engine.getWriter());
+                                      _engine.getWriter(),
+                                      null,
+                                      new StreamObjectCellTerminal());
                 history.setMaxSize(HISTORY_SIZE);
                 console.setHistory(history);
                 console.setUseHistory(true);
@@ -491,6 +495,49 @@ public class StreamObjectCell
         }
         if (_workerThread != null) {
             _workerThread.interrupt();
+        }
+    }
+
+    private static class StreamObjectCellTerminal extends UnixTerminal
+    {
+        private boolean _swapNext;
+
+        @Override
+        public void initializeTerminal()
+            throws IOException, InterruptedException
+        {
+            /* UnixTerminal expects a tty to have been allocated. That
+             * is not the case for StreamObjectCell and hence we skip
+             * the usual initialization.
+             */
+        }
+
+        @Override
+        public int readCharacter(InputStream in) throws IOException
+        {
+            int c = super.readCharacter(in);
+            if (_swapNext) {
+                /* UnixTerminal has built in support for reversing
+                 * backspace and delete. The field that controls the
+                 * behaviour is however private and hence we have to
+                 * make this hack to translate DEL to BS.
+                 *
+                 * The background for the reversal is that at least on
+                 * Linux backspace sends a DEL character.
+                 */
+                if (c == DELETE) {
+                    c = BACKSPACE;
+                }
+                _swapNext = false;
+            }
+            return c;
+        }
+
+        @Override
+        public int readVirtualKey(InputStream in) throws IOException
+        {
+            _swapNext = true;
+            return super.readVirtualKey(in);
         }
     }
 }

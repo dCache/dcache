@@ -76,7 +76,7 @@
     	<pathelement location="${libDir}/gplazma/privilege-1.0.1.5.jar" />
     	<pathelement location="${libDir}/gplazma/privilege-xacml-2.2.5.jar" />
     	<pathelement location="${libDir}/jing/jing-20091111.jar" />
-    	<pathelement location="${libDir}/jline/jline-0.9.94.jar" />
+    	<pathelement location="${libDir}/jline/jline-1.0.jar" />
     	<pathelement location="${libDir}/rrd4j/rrd4j-2.0.5.jar" />
     	<pathelement location="${libDir}/findbugs/lib/annotations.jar"/>
     	<pathelement location="${web-dcache.lib}/xbean.jar"/>

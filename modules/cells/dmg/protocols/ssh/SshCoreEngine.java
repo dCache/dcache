@@ -33,7 +33,7 @@ public class SshCoreEngine  {
     protected SshCoreEngine( Socket socket ) throws IOException
     {
         _engine = new DummyStreamEngine(socket);
-        _input = new DataInputStream(_engine.getInputStream());
+        _input = new DataInputStream(new BufferedInputStream(_engine.getInputStream()));
         _output = _engine.getOutputStream();
     }
 
@@ -88,6 +88,24 @@ public class SshCoreEngine  {
 		return sshPacket;
 
 	}
+
+    protected boolean isPacketAvailable()
+        throws IOException
+    {
+        if (_input.available() >= 4) {
+            _input.mark(4);
+            try {
+                int len = _input.readInt();
+                if (_input.available() >= len + (8 - (len % 8))) {
+                    return true;
+                }
+            } finally {
+                _input.reset();
+            }
+        }
+        return false;
+    }
+
    protected String readVersionString() throws SshProtocolException {
       byte [] inBytes = new byte[64] ;
       int c = 0 , i ;
