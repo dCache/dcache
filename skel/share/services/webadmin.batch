@@ -1,5 +1,25 @@
 onerror shutdown
-create org.dcache.admin.webadmin.jettycell.JettyCell webadmin \
+check -strong cell.name
+check -strong webadminWebappsPath
+check -strong webadminAuthenticated
+check -strong webadminHttpPort
+check -strong webadminHttpsPort
+check -strong keyStore
+check -strong keyStorePassword
+check -strong trustStore
+check -strong trustStorePassword
+check -strong webadminAdminGid
+check -strong kpwdFile
+check -strong webadminDCacheInstanceName
+check -strong loginBroker
+check -strong pnfsmanager
+check -strong poolmanager
+check -strong gplazma
+check -strong collectorTimeout
+check -strong transfersCollectorUpdate
+check -strong gplazma.version
+
+create org.dcache.admin.webadmin.jettycell.JettyCell ${cell.name} \
           "-webappsPath=${webadminWebappsPath}  \
            -authenticated=${webadminAuthenticated}  \
            -httpPort=${webadminHttpPort}  \
