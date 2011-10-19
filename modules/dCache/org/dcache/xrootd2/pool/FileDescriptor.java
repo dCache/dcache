@@ -2,7 +2,7 @@ package org.dcache.xrootd2.pool;
 
 import java.io.IOException;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
@@ -57,7 +57,7 @@ public interface FileDescriptor
      *
      * @throws IllegalStateException if the descriptor is closed.
      */
-    RepositortyChannel getChannel();
+    RepositoryChannel getChannel();
 
     /**
      * Get the mover associated with this file descriptor.

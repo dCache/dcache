@@ -28,7 +28,7 @@ import java.util.Collections;
 import javax.security.auth.Subject;
 import org.dcache.pool.movers.IoMode;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +97,7 @@ public class PoolIOWriteTransfer
         _file.createNewFile();
     }
 
-    private void runMover(RepositortyChannel fileIoChannel)
+    private void runMover(RepositoryChannel fileIoChannel)
         throws Exception
     {
         _mover.runIO(fileIoChannel,
@@ -112,7 +112,7 @@ public class PoolIOWriteTransfer
         throws Exception
     {
         try {
-            RepositortyChannel fileIoChannel = new FileRepositoryChannel(_file, "rw");
+            RepositoryChannel fileIoChannel = new FileRepositoryChannel(_file, "rw");
             try {
                 if (_checksumModule.checkOnTransfer() &&
                     _mover instanceof ChecksumMover) {

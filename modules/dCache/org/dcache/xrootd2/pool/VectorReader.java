@@ -4,7 +4,7 @@ import java.util.List;
 
 import java.io.IOException;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd2.protocol.messages.ReadResponse;
 import org.dcache.xrootd2.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 
@@ -58,7 +58,7 @@ public class VectorReader implements Reader
         throws IOException
     {
         FileDescriptor descriptor = _descriptors.get(request.getFileHandle());
-        RepositortyChannel channel = descriptor.getChannel();
+        RepositoryChannel channel = descriptor.getChannel();
         long position = request.getOffset();
         long end = position + request.BytesToRead();
 

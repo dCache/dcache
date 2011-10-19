@@ -94,7 +94,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.security.SslGsiSocketFactory;
@@ -132,7 +132,7 @@ public class RemoteGsiftpTransferProtocol_1
 
     private long _previousUpdateEndOffset = 0;
 
-    private RepositortyChannel _fileChannel;
+    private RepositoryChannel _fileChannel;
     private GridftpClient _client;
     private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
 
@@ -167,7 +167,7 @@ public class RemoteGsiftpTransferProtocol_1
         _client.setTcpBufferSize(protocolInfo.getTcpBufferSize());
     }
 
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,

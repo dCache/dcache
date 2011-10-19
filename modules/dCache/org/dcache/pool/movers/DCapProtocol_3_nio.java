@@ -34,7 +34,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import diskCacheV111.util.ChecksumFactory;
 import java.util.UUID;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 
 
@@ -284,7 +284,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     }
 
     @Override
-    public void runIO(RepositortyChannel  fileChannel,
+    public void runIO(RepositoryChannel  fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo  storage,
                       PnfsId       pnfsId,
@@ -807,7 +807,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
 
     }
-    private void doTheReadv(RepositortyChannel fileChannel, DCapOutputByteBuffer cntOut,
+    private void doTheReadv(RepositoryChannel fileChannel, DCapOutputByteBuffer cntOut,
                             SocketChannel socketChannel, RequestBlock requestBLock) throws Exception {
 
 
@@ -891,7 +891,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         return;
     }
-    private void doTheSeek(RepositortyChannel fileChannel, int whence, long offset,
+    private void doTheSeek(RepositoryChannel fileChannel, int whence, long offset,
                             boolean writeAllowed)
         throws Exception {
 
@@ -960,7 +960,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
 
     }
-    private void doTheWrite(RepositortyChannel          fileChannel,
+    private void doTheWrite(RepositoryChannel          fileChannel,
                              DCapOutputByteBuffer cntOut,
                              SocketChannel        socketChannel ) throws Exception{
 
@@ -1054,7 +1054,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         }
     }
 
-    private void doTheRead(RepositortyChannel           fileChannel,
+    private void doTheRead(RepositoryChannel           fileChannel,
                             DCapOutputByteBuffer  cntOut,
                             SocketChannel         socketChannel,
                             long                  blockSize) throws Exception{

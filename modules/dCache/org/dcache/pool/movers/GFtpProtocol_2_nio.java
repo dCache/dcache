@@ -34,7 +34,7 @@ import org.dcache.util.NetworkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.ftp.*;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
 
 /**
@@ -77,7 +77,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected CellEndpoint  _cell;
 
     /** A channel to the file we read from or write to. */
-    protected RepositortyChannel  _fileChannel;
+    protected RepositoryChannel  _fileChannel;
 
     /**
      * A BlockLog keeping tracks of which parts of a file we have
@@ -214,7 +214,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /**
      * Factory method for creating the Mode object.
      */
-    protected Mode createMode(String mode, Role role, RepositortyChannel fileChannel)
+    protected Mode createMode(String mode, Role role, RepositoryChannel fileChannel)
 	throws IOException
     {
         int blockSize;
@@ -270,7 +270,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /**
      * Receive a file.
      */
-    public void transfer(RepositortyChannel fileChannel, Role role,
+    public void transfer(RepositoryChannel fileChannel, Role role,
                          Mode mode, Allocator allocator)
 	throws Exception
     {
@@ -398,7 +398,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the MoverProtocol interface. */
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
 		      ProtocolInfo protocol,
 		      StorageInfo  storage,
 		      PnfsId       pnfsId,
@@ -760,7 +760,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 	    GFtpProtocol_2_nio mover =
                 new GFtpProtocol_2_nio(null);
 
-	    RepositortyChannel fileChannel =
+	    RepositoryChannel fileChannel =
 		new FileRepositoryChannel(args.argv(0),
 				     role == Role.Sender ? "r" : "rw");
 

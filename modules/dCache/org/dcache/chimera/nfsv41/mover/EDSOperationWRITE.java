@@ -20,7 +20,7 @@ import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.uint32_t;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 
 public class EDSOperationWRITE extends AbstractNFSv4Operation {
@@ -56,7 +56,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             long offset = _args.opwrite.offset.value.value;
             int count = _args.opwrite.data.remaining();
 
-            RepositortyChannel fc = moverBridge.getFileChannel();
+            RepositoryChannel fc = moverBridge.getFileChannel();
 
             if( offset + count > moverBridge.getAllocated() ) {
                 moverBridge.getAllocator().allocate(INC_SPACE);

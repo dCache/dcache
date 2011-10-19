@@ -25,7 +25,7 @@ import java.nio.channels.FileChannel;
 import java.util.List;
 import java.text.ParseException;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.util.NetworkUtils;
@@ -70,7 +70,7 @@ public class HttpProtocol_1 implements MoverProtocol
     }
 
     private HttpConnectionHandler httpconnection = null;
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
                        ProtocolInfo protocol,
                        StorageInfo  storage,
                        PnfsId       pnfsId ,

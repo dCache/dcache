@@ -37,7 +37,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 /**
  * Netty-based HTTP-mover. The mover generates an UUID that identifies it upon
@@ -70,7 +70,7 @@ public class HttpProtocol_2 implements MoverProtocol
 
     private HttpProtocolInfo _protocolInfo;
 
-    private RepositortyChannel _fileChannel;
+    private RepositoryChannel _fileChannel;
 
 
     private final CountDownLatch _connectLatch = new CountDownLatch(1);
@@ -147,7 +147,7 @@ public class HttpProtocol_2 implements MoverProtocol
     }
 
     @Override
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,

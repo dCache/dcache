@@ -23,7 +23,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 
 public class DCapClientProtocol_1 implements MoverProtocol
@@ -59,7 +59,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
         _log.error(t.toString());
     }
 
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
                        ProtocolInfo protocol ,
                        StorageInfo  storage ,
                        PnfsId       pnfsId  ,
@@ -153,7 +153,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
     }
 
     private void dcapReadFile(Socket _socket,
-                              RepositortyChannel fileChannel,
+                              RepositoryChannel fileChannel,
                               Allocator allocator) throws Exception
     {
         last_transfer_time    = System.currentTimeMillis();

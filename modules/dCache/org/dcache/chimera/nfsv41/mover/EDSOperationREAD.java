@@ -15,7 +15,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
@@ -44,7 +44,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             }
 
             ByteBuffer bb = ByteBuffer.allocate(count);
-            RepositortyChannel fc = moverBridge.getFileChannel();
+            RepositoryChannel fc = moverBridge.getFileChannel();
 
             bb.rewind();
             int bytesReaded = fc.read(bb, offset);

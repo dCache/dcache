@@ -9,7 +9,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-public interface RepositortyChannel extends GatheringByteChannel, ScatteringByteChannel, ByteChannel {
+public interface RepositoryChannel extends GatheringByteChannel, ScatteringByteChannel, ByteChannel {
 
     /**
      * Get current position in the file.
@@ -22,7 +22,7 @@ public interface RepositortyChannel extends GatheringByteChannel, ScatteringByte
      * @param position
      * @throws IOException
      */
-    RepositortyChannel position(long position) throws IOException;
+    RepositoryChannel position(long position) throws IOException;
 
     /**
      * Get current size of the file.
@@ -72,7 +72,7 @@ public interface RepositortyChannel extends GatheringByteChannel, ScatteringByte
      * @param size
      * @return the file channel.
      */
-    RepositortyChannel truncate(long size) throws IOException;
+    RepositoryChannel truncate(long size) throws IOException;
 
     /**
      * Force all system buffers to synchronize with the underlying

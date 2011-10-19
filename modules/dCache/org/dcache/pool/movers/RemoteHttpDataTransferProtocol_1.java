@@ -19,7 +19,7 @@ import java.net.URLConnection;
 import java.net.HttpURLConnection;
 
 import java.nio.ByteBuffer;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
         _log.info(str);
     }
 
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
                        ProtocolInfo protocol,
                        StorageInfo  storage,
                        PnfsId       pnfsId ,

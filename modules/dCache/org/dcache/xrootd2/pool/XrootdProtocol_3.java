@@ -36,7 +36,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.movers.NetIFContainer;
 import org.dcache.pool.movers.IoMode;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd2.protocol.messages.*;
 import org.dcache.xrootd2.util.FileStatus;
 
@@ -145,7 +145,7 @@ public class XrootdProtocol_3
     /**
      * The file served by this mover.
      */
-    private RepositortyChannel _fileChannel;
+    private RepositoryChannel _fileChannel;
 
 
     /**
@@ -263,7 +263,7 @@ public class XrootdProtocol_3
     }
 
     @Override
-    public void runIO(RepositortyChannel fileChannel,
+    public void runIO(RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,
@@ -429,7 +429,7 @@ public class XrootdProtocol_3
         return _wasChanged;
     }
 
-    RepositortyChannel getChannel() {
+    RepositoryChannel getChannel() {
         return _fileChannel;
     }
 

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.SelectionKey;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 /**
  * Implementation of MODE E.
@@ -332,7 +332,7 @@ public class ModeE extends Mode
         }
     }
 
-    public ModeE(Role role, RepositortyChannel file, ConnectionMonitor monitor,
+    public ModeE(Role role, RepositoryChannel file, ConnectionMonitor monitor,
                  int blockSize)
         throws IOException
     {

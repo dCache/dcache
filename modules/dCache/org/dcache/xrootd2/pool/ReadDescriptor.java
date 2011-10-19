@@ -2,7 +2,7 @@ package org.dcache.xrootd2.pool;
 
 import java.io.IOException;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd2.protocol.messages.ReadRequest;
 import org.dcache.xrootd2.protocol.messages.WriteRequest;
 import org.dcache.xrootd2.protocol.messages.SyncRequest;
@@ -87,7 +87,7 @@ public class ReadDescriptor implements FileDescriptor
     }
 
     @Override
-    public RepositortyChannel getChannel()
+    public RepositoryChannel getChannel()
     {
         if (isMoverShutdown()) {
             throw new IllegalStateException("File not open");

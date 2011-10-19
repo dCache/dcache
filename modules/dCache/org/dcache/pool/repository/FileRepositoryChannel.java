@@ -10,7 +10,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-public class FileRepositoryChannel implements RepositortyChannel {
+public class FileRepositoryChannel implements RepositoryChannel {
 
     private final FileChannel _fileChannel;
     private final RandomAccessFile _raf;
@@ -92,7 +92,7 @@ public class FileRepositoryChannel implements RepositortyChannel {
     }
 
     @Override
-    public RepositortyChannel position(long position) throws IOException {
+    public RepositoryChannel position(long position) throws IOException {
         _fileChannel.position(position);
         return this;
     }
@@ -108,7 +108,7 @@ public class FileRepositoryChannel implements RepositortyChannel {
     }
 
     @Override
-    public RepositortyChannel truncate(long size) throws IOException {
+    public RepositoryChannel truncate(long size) throws IOException {
         _fileChannel.truncate(size);
         return this;
     }

@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -346,7 +346,7 @@ public class HttpConnectionHandler
 
 
 
-  private synchronized void returnFileHeader(RepositortyChannel fileChannel) throws IOException
+  private synchronized void returnFileHeader(RepositoryChannel fileChannel) throws IOException
   {
     if(isclosed())
     {
@@ -364,7 +364,7 @@ public class HttpConnectionHandler
     out.flush();
   }
 
-  private synchronized void returnPartialFileHeader(RepositortyChannel fileChannel, long offset, long length) throws IOException
+  private synchronized void returnPartialFileHeader(RepositoryChannel fileChannel, long offset, long length) throws IOException
   {
     if(isclosed())
     {
@@ -386,7 +386,7 @@ public class HttpConnectionHandler
 
   volatile long read = 0;
   private long last_transfer_time    = System.currentTimeMillis() ;
-  public synchronized void sendFile(RepositortyChannel fileChannel) throws IOException
+  public synchronized void sendFile(RepositoryChannel fileChannel) throws IOException
   {
     if(isclosed())
     {
@@ -397,7 +397,7 @@ public class HttpConnectionHandler
     transferFile(fileChannel,0,length);
   }
 
-  public synchronized void sendPartialFile(RepositortyChannel fileChannel, long offset, long length) throws IOException
+  public synchronized void sendPartialFile(RepositoryChannel fileChannel, long offset, long length) throws IOException
   {
      if(isclosed())
      {
@@ -407,7 +407,7 @@ public class HttpConnectionHandler
      transferFile(fileChannel, offset, length);
   }
 
-  private void transferFile(RepositortyChannel fileChannel, long offset, long length) throws IOException
+  private void transferFile(RepositoryChannel fileChannel, long offset, long length) throws IOException
   {
     byte[] b = new byte[1024];
     ByteBuffer bb = ByteBuffer.wrap(b);

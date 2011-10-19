@@ -13,7 +13,7 @@ import javax.security.auth.Subject;
 import java.util.Set;
 import java.util.Collections;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository.OpenFlags;
@@ -53,7 +53,7 @@ public class PoolIOReadTransfer
             //                 say("Trying to open " + file);
             long fileSize = file.length();
 
-            RepositortyChannel fileIoChannel = new FileRepositoryChannel(file, "r");
+            RepositoryChannel fileIoChannel = new FileRepositoryChannel(file, "r");
             try {
                 _mover.runIO(fileIoChannel,
                              _protocolInfo,

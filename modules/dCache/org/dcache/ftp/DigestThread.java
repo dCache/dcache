@@ -1,17 +1,17 @@
 package org.dcache.ftp;
 
 import java.security.MessageDigest;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 public abstract class DigestThread extends Thread
 {
-    protected RepositortyChannel   _channel;
+    protected RepositoryChannel   _channel;
     protected MessageDigest _digest;
     protected BlockLog      _log;
     protected Exception     _error;
     protected long          _readahead;
 
-    public DigestThread(RepositortyChannel channel, BlockLog log, MessageDigest digest)
+    public DigestThread(RepositoryChannel channel, BlockLog log, MessageDigest digest)
     {
 	_channel = channel;
 	_log     = log;

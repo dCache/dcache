@@ -12,7 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 import java.nio.CharBuffer;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 /**
  * Implementation of MODE X.
@@ -481,7 +481,7 @@ public class ModeX extends Mode
         }
     }
 
-    public ModeX(Role role, RepositortyChannel file, ConnectionMonitor monitor,
+    public ModeX(Role role, RepositoryChannel file, ConnectionMonitor monitor,
                  int blockSize)
         throws IOException
     {

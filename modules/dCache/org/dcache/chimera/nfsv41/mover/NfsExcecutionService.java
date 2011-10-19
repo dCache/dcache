@@ -18,7 +18,7 @@ import org.dcache.pool.classic.PoolIORequest;
 import org.dcache.pool.classic.PoolIOTransfer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.ManualMover;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
@@ -66,7 +66,7 @@ public class NfsExcecutionService implements MoverExecutorService {
             stateid4 stateid = nfs4ProtocolInfo.stateId();
             ReplicaDescriptor descriptor = transfer.getIoHandle();
             String openMode = transfer.getIoMode() == IoMode.WRITE ? "rw" : "r";
-            final RepositortyChannel repositoryChannel = new FileRepositoryChannel(descriptor.getFile(), openMode);
+            final RepositoryChannel repositoryChannel = new FileRepositoryChannel(descriptor.getFile(), openMode);
 
             final MoverBridge moverBridge = new MoverBridge((ManualMover) transfer.getMover(),
                     request.getPnfsId(), stateid, repositoryChannel, transfer.getIoMode(), descriptor);

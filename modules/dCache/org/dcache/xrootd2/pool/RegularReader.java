@@ -2,7 +2,7 @@ package org.dcache.xrootd2.pool;
 
 import java.io.IOException;
 
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xrootd2.protocol.messages.ReadResponse;
 
 /**
@@ -40,7 +40,7 @@ public class RegularReader implements Reader
             return null;
         }
 
-        RepositortyChannel channel = _descriptor.getChannel();
+        RepositoryChannel channel = _descriptor.getChannel();
 
         int length = Math.min(_length, maxFrameSize);
         ReadResponse response = new ReadResponse(_id, length);

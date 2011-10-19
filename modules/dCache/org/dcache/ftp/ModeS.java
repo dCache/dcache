@@ -5,7 +5,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.io.IOException;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 /** Implementation of MODE S. */
 public class ModeS extends Mode
@@ -80,7 +80,7 @@ public class ModeS extends Mode
         }
     }
 
-    public ModeS(Role role, RepositortyChannel file, ConnectionMonitor monitor,
+    public ModeS(Role role, RepositoryChannel file, ConnectionMonitor monitor,
                  int blockSize)
         throws IOException
     {

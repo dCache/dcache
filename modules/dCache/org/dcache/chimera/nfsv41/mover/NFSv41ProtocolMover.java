@@ -11,7 +11,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import java.nio.channels.FileChannel;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.RepositortyChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 
 public class NFSv41ProtocolMover implements ManualMover {
 
@@ -70,7 +70,7 @@ public class NFSv41ProtocolMover implements ManualMover {
      *      SpaceMonitor spaceMonitor, int access)
      */
 	@Override
-    public void runIO(RepositortyChannel raf, ProtocolInfo protocol,
+    public void runIO(RepositoryChannel raf, ProtocolInfo protocol,
             StorageInfo storage, PnfsId pnfsId,
             Allocator allocator, IoMode access)
             throws Exception {
