@@ -99,9 +99,8 @@ import org.dcache.xdr.XdrEncodingStream;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.nfs.v4.xdr.aceflag4;
-import org.dcache.chimera.nfs.v4.xdr.acemask4;
-import org.dcache.chimera.nfs.v4.xdr.acetype4;
+import org.dcache.chimera.nfs.PseudoFsProvider;
+import org.dcache.chimera.nfs.v4.xdr.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -220,6 +219,13 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         XdrAble ret = null;
         FsStat fsStat = null;
 
+        if ( inode instanceof PseudoFsProvider.ReferalInode ) {
+            if( fattr != nfs4_prot.FATTR4_FS_LOCATIONS &&  fattr != nfs4_prot.FATTR4_FSID &&
+                    fattr != nfs4_prot.FATTR4_MOUNTED_ON_FILEID)
+
+            throw new ChimeraNFSException(nfsstat4.NFS4ERR_MOVED, "moved");
+        }
+
         switch(fattr) {
 
             case nfs4_prot.FATTR4_SUPPORTED_ATTRS :
@@ -262,7 +268,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 break;
             case nfs4_prot.FATTR4_FSID :
                 fsid4 fsid = new fsid4();
-                fsid.major = new uint64_t(17);
+                fsid.major = new uint64_t(inode.fsId());
                 fsid.minor = new uint64_t(17);
                 fattr4_fsid id = new fattr4_fsid(fsid);
                 ret = id;
@@ -348,7 +354,31 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 ret = files_total;
                 break;
             case nfs4_prot.FATTR4_FS_LOCATIONS :
-                break;
+
+                    PseudoFsProvider.ReferalInode referral = (PseudoFsProvider.ReferalInode) inode;
+                    String myserver = referral.getHost();
+                    String rootPath = referral.getPath();
+                    String st = referral.getExport();
+
+                    //construct fs_location4 (utf8str_cis [] servers, pathname4 rootpath).
+                    fs_location4 fs_location4 = new fs_location4();
+
+                    utf8str_cis[] servers = {new utf8str_cis(new utf8string(myserver.getBytes()))};
+                    fs_location4.server = servers;
+
+                    component4[] compRootPath = {new component4(new utf8str_cs(new utf8string(rootPath.getBytes())))};
+                    fs_location4.rootpath = new pathname4(compRootPath);
+
+                    fs_locations4 fs_locations4 = new fs_locations4();
+
+                    component4[] comp = {new component4(new utf8str_cs(new utf8string(st.getBytes())))};
+                    fs_locations4.fs_root = new pathname4(comp);
+
+                    fs_location4[] locations = {fs_location4};
+                    fs_locations4.locations = locations;
+                    fattr4_fs_locations att_fs_locations = new fattr4_fs_locations(fs_locations4);
+                    ret = att_fs_locations;
+                    break;
             case nfs4_prot.FATTR4_HIDDEN :
                 fattr4_hidden hidden = new fattr4_hidden(false);
                 ret = hidden;

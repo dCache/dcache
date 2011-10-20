@@ -83,6 +83,7 @@ public class ExportFile {
                 FsExport  export;
                 StringTokenizer st = new StringTokenizer(line);
                 String path = st.nextToken();
+                String referal = null;
 
                 if( st.hasMoreTokens() ) {
                     List<ExportClient> clients = new ArrayList<ExportClient>();
@@ -107,20 +108,21 @@ public class ExportFile {
                                 continue;
                             }
 
+                            if(option.startsWith("refer=")) {
+                                referal = option.substring("refer=".length());
+                            }
                         }
 
-                        ExportClient client = new ExportClient(host,isTrusted, rw );
+                        ExportClient client = new ExportClient(host,isTrusted, rw);
                         clients.add(client);
-
                     }
-                    export  = new FsExport(path, clients);
+                    export  = new FsExport(path, clients, referal);
                 }else{
                     ExportClient everyOne = new ExportClient("*",ExportClient.Root.NOTTRUSTED, ExportClient.IO.RO );
 
                     List<ExportClient> clients = new ArrayList<ExportClient>(1);
                     clients.add(everyOne);
-                    export = new FsExport(path, clients );
-
+                    export = new FsExport(path, clients, referal );
                 }
 
                 pathToPseudoFs(pseudoFsRoot, path, export);
