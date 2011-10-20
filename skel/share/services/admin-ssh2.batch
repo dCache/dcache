@@ -4,7 +4,7 @@ check -strong cell.nameSsh2
 check -strong admin.ssh2AdminPort
 check -strong admin.dsaHostKeyPrivate
 check -strong admin.dsaHostKeyPublic
-check -strong admin.authorizedKey2
+check admin.authorizedKey2
 
 set context knownUsersFile "${knownUsersFile}"
 set context userPasswordFile "${userPasswordFile}"
@@ -18,29 +18,7 @@ onerror continue
 test -f ${admin.dsaHostKeyPrivate}
 set env have_server_key ${rc}
 onerror shutdown
-exec env failMissingServerKeyPub.exe -ifnotok=have_server_key
-
-define env failMissingServerKey.exe endDefine
-   say -level=esay "The host key file ${admin.dsaHostKeyPublic} is missing.  Please generate it with:"
-   say -level=esay "     ssh-keygen -t dsa -f ${admin.dsaHostKeyPublic} -N \"\""
-   exit 1
-endDefine
-onerror continue
-test -f ${admin.dsaHostKeyPublic}
-set env have_server_key_public ${rc}
-onerror shutdown
-exec env failMissingServerKeyPub.exe -ifnotok=have_server_key_public
-
-define env failMissingAuthKeysFile.exe endDefine
-   say -level=esay "The authorized_keys file ${admin.authorizedKey2} is missing.  Please generate it by:"
-   say -level=esay "     vi ${admin.authorizedKey2} and add keys through ssh-add -L >> ${admin.authorizedKey2}"
-   exit 1
-endDefine
-onerror continue
-test -f ${admin.authorizedKey2}
-set env have_auth_keys_file ${rc}
-onerror shutdown
-exec env failMissingAuthKeysFile.exe -ifnotok=have_auth_keys_file
+exec env failMissingServerKey.exe -ifnotok=have_server_key
 
 define env  startssh2Admin.exe enddefine
 onerror shutdown
