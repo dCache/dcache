@@ -142,7 +142,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 sendHTTPPartialHeader(context, event,
                     range.getLower(),
                     range.getUpper(),
-                    range.getSize());
+                    fileSize);
                 responseContent = mover.read(request.getUri(),
                         range.getLower(),
                         range.getUpper());
