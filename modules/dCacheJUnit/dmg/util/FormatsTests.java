@@ -67,6 +67,40 @@ public class FormatsTests
         assertHasReplacement("${does-not-exist}", "${does-not-exist}");
     }
 
+    @Test
+    public void testReplaceSimpleKeywordsWithinKeywordExists()
+    {
+        _replacements.put("other", "keyword");
+        assertHasReplacement("${${other}}", "replacement");
+    }
+
+    @Test
+    public void testReplaceComplexKeywordsWithinKeywordExists()
+    {
+        _replacements.put("other", "wor");
+        assertHasReplacement("${key${other}d}", "replacement");
+    }
+
+    @Test
+    public void testReplaceSimpleKeywordsWithinKeywordOuterDoesntExists()
+    {
+        _replacements.put("other", "foo");
+        assertHasReplacement("${${other}}", "${foo}");
+    }
+
+    @Test
+    public void testReplaceSimpleKeywordsWithinKeywordInnerDoesntExists()
+    {
+        assertHasReplacement("${${other}}", "${${other}}");
+    }
+
+    @Test
+    public void testReplaceComplexKeywordsWithinKeywordPartial()
+    {
+        _replacements.put("other", "foo");
+        assertHasReplacement("${${other}", "${${other}");
+    }
+
     private void assertHasReplacement(String in, String expected)
     {
         String actual = Formats.replaceKeywords(in, _replacements);

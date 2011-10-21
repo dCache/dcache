@@ -62,6 +62,9 @@ public class Formats {
         StringBuilder out = new StringBuilder();
         int state = RP_IDLE ;
         int len   = in.length() ;
+        int braceCount = 0;
+        boolean previousWasDollar = false;
+
         for( int i = 0 ; i < len ; i++ ){
             char c = in.charAt(i) ;
             switch( state ){
@@ -74,29 +77,55 @@ public class Formats {
                 break ;
             case RP_DOLLAR :
                 if( c == '{' ){
+                    previousWasDollar=false;
                     state = RP_OPENED ;
+                    braceCount = 0;
                     key   = new StringBuilder();
                 }else{
                     out.append('$').append(c);
                     state = RP_IDLE ;
                 }
                 break ;
+
             case RP_OPENED :
-                if( c == '}' ){
-                    state = RP_IDLE ;
-                    String keyName  = key.toString() ;
-                    String keyValue = cb.getReplacement( keyName ) ;
-                    if (keyValue == null || replaced.contains(keyName)) {
-                        out.append( "${"+keyName+"}" ) ;
-                    } else {
-                        replaced.push(keyName);
-                        out.append(replaceKeywords(keyValue, cb, replaced));
-                        replaced.pop();
+                switch(c) {
+                case '$':
+                    key.append(c);
+                    previousWasDollar=true;
+                    break;
+
+                case '{':
+                    key.append(c);
+                    if(previousWasDollar) {
+                        braceCount++;
                     }
-                }else{
-                    key.append( c ) ;
+                    previousWasDollar=false;
+                    break;
+
+                case '}':
+                    previousWasDollar=false;
+                    if(braceCount > 0) {
+                        braceCount--;
+                        key.append(c);
+                    } else {
+                        state = RP_IDLE;
+                        String keyName = replaceKeywords(key.toString(), cb, replaced);
+                        String keyValue = cb.getReplacement(keyName);
+
+                        if (keyValue == null || replaced.contains(keyName)) {
+                            out.append( "${"+keyName+"}" );
+                        } else {
+                            replaced.push(keyName);
+                            out.append(replaceKeywords(keyValue, cb, replaced));
+                            replaced.pop();
+                        }
+                    }
+                    break;
+
+                default:
+                    key.append(c);
+                    break;
                 }
-                break ;
             }
         }
 
