@@ -1,5 +1,6 @@
 package org.dcache.boot;
 
+import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.net.UnknownHostException;
 import java.net.InetAddress;
@@ -11,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.LineNumberReader;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import dmg.util.Args;
@@ -47,8 +49,8 @@ public class BootLoader
     private static final String CMD_CHECK = "check-config";
 
     private static final char OPT_SILENT = 'q';
-    private static final String OPT_CONFIG_FILE = "f";
-    private static final String OPT_CONFIG_FILE_DELIMITER = ":";
+
+    private static final String PATH_DELIMITER = ":";
 
     private static final String CONSOLE_APPENDER_NAME = "console";
     private static final String CONSOLE_APPENDER_PATTERN = "%-5level - %msg%n";
@@ -60,11 +62,10 @@ public class BootLoader
     private static void help()
     {
         System.err.println("SYNOPSIS:");
-        System.err.println("  java org.dcache.util.BootLoader [-q] [-f=PATH[:PATH...]] COMMAND [ARGS]");
+        System.err.println("  java org.dcache.util.BootLoader [-q] COMMAND [ARGS]");
         System.err.println();
         System.err.println("OPTIONS:");
         System.err.println("    -q    Suppress warnings and errors.");
-        System.err.println("    -f    Paths to the dCache setup files.");
         System.err.println();
         System.err.println("COMMANDS:");
         System.err.println("   start DOMAIN");
@@ -81,19 +82,33 @@ public class BootLoader
         System.exit(1);
     }
 
+    private static ConfigurationProperties loadSystemProperties()
+        throws UnknownHostException
+    {
+        ConfigurationProperties config =
+            new ConfigurationProperties(System.getProperties());
+        InetAddress localhost = InetAddress.getLocalHost();
+        config.setProperty(PROPERTY_HOST_NAME,
+                           localhost.getHostName().split("\\.")[0]);
+        config.setProperty(PROPERTY_HOST_FQDN,
+                           localhost.getCanonicalHostName());
+        return config;
+    }
+
     private static ConfigurationProperties
-        loadConfiguration(ConfigurationProperties config, String[] paths)
+        loadConfiguration(ConfigurationProperties config, File path)
         throws IOException
     {
-        for (String path: paths) {
-            config = new ConfigurationProperties(config);
-            File file = new File(path);
-            if (file.isFile()) {
-                config.loadFile(file);
-            } else if (file.isDirectory()) {
-                for (File entry: file.listFiles()) {
-                    if (entry.isFile() && entry.getName().endsWith(".properties")) {
-                        config.loadFile(entry);
+        config = new ConfigurationProperties(config);
+        if (path.isFile()) {
+            config.loadFile(path);
+        } else if (path.isDirectory()) {
+            File[] files = path.listFiles();
+            if (files != null) {
+                Arrays.sort(files);
+                for (File file: files) {
+                    if (file.isFile() && file.getName().endsWith(".properties")) {
+                        config.loadFile(file);
                     }
                 }
             }
@@ -102,24 +117,56 @@ public class BootLoader
     }
 
     private static ConfigurationProperties
-        loadConfiguration(ProblemConsumer consumer, Args args)
-        throws IOException, UnknownHostException
+        loadConfiguration(ConfigurationProperties config, String property)
+        throws IOException
     {
-        InetAddress localhost = InetAddress.getLocalHost();
-
-        ConfigurationProperties config =
-            new ConfigurationProperties(System.getProperties());
-        config.setProblemConsumer(consumer);
-        config.setProperty(PROPERTY_HOST_NAME,
-                               localhost.getHostName().split("\\.")[0]);
-        config.setProperty(PROPERTY_HOST_FQDN,
-                               localhost.getCanonicalHostName());
-
-        String tmp = args.getOpt(OPT_CONFIG_FILE);
-        if (tmp != null) {
-            config =
-                loadConfiguration(config, tmp.split(OPT_CONFIG_FILE_DELIMITER));
+        String paths = config.getProperty(property);
+        if (paths != null) {
+            for (String path: paths.split(PATH_DELIMITER)) {
+                config = loadConfiguration(config, new File(path));
+            }
         }
+        return config;
+    }
+
+    /**
+     * Loads plugins in a plugin directory.
+     *
+     * A plugin directory contains a number of plugins. Each plugin is
+     * stored in a sub-directory containing that one plugin.
+     */
+    private static ConfigurationProperties
+        loadPlugins(ConfigurationProperties config, File directory)
+        throws IOException
+    {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file: files) {
+                if (file.isDirectory()) {
+                    config = loadConfiguration(config, file);
+                }
+            }
+        }
+        return config;
+    }
+
+    private static ConfigurationProperties
+        loadConfiguration(ProblemConsumer consumer)
+        throws UnknownHostException, IOException, URISyntaxException
+    {
+        /* Configuration properties are loaded from several
+         * sources, starting with importing Java system
+         * properties...
+         */
+        ConfigurationProperties config = loadSystemProperties();
+        config.setProblemConsumer(consumer);
+
+        /* ... and a chain of properties files. */
+        config = loadConfiguration(config, PROPERTY_DEFAULTS_PATH);
+        for (String dir: getPluginDirs()) {
+            config = loadPlugins(config, new File(dir));
+        }
+        config = loadConfiguration(config, PROPERTY_SETUP_PATH);
 
         return config;
     }
@@ -130,6 +177,26 @@ public class BootLoader
         Layout layout = new Layout(config);
         layout.load(new URI(config.getValue(PROPERTY_DCACHE_LAYOUT_URI)));
         return layout;
+    }
+
+    /**
+     * Returns the top-level plugin directory.
+     *
+     * To allow the plugin directory to be configurable, we first have
+     * to load all the configuration files without the plugins.
+     */
+    private static String[] getPluginDirs()
+        throws IOException, URISyntaxException
+    {
+        ConfigurationProperties config = loadSystemProperties();
+        ProblemConsumer silentConsumer =
+            new OutputStreamProblemConsumer(new ByteArrayOutputStream());
+        config.setProblemConsumer(silentConsumer);
+        config = loadConfiguration(config, PROPERTY_DEFAULTS_PATH);
+        config = loadConfiguration(config, PROPERTY_SETUP_PATH);
+        config = loadLayout(config).properties();
+        String dir = config.getProperty(PROPERTY_PLUGIN_PATH);
+        return (dir == null) ? new String[0] : dir.split(PATH_DELIMITER);
     }
 
     public static void main(String arguments[])
@@ -171,7 +238,7 @@ public class BootLoader
             /* The layout contains all configuration information, and
              * all domains and services of this node.
              */
-            Layout layout = loadLayout(loadConfiguration(problemConsumer, args));
+            Layout layout = loadLayout(loadConfiguration(problemConsumer));
 
             /* The BootLoader is not limitted to starting dCache. The
              * behaviour is controlled by a command provided as a

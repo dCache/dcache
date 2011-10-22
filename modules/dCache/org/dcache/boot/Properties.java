@@ -17,6 +17,9 @@ public class Properties
 
     public static final String PROPERTY_DOMAINS = "dcache.domains";
     public static final String PROPERTY_CELL_NAME = "cell.name";
+    public static final String PROPERTY_PLUGIN_PATH = "dcache.paths.plugins";
+    public static final String PROPERTY_DEFAULTS_PATH = "dcache.paths.defaults";
+    public static final String PROPERTY_SETUP_PATH = "dcache.paths.setup";
 
     protected Properties()
     {
