@@ -38,8 +38,6 @@ public class Domain
 {
     private static final String SYSTEM_CELL_NAME = "System";
     private static final String SCHEME_FILE = "file";
-    private static final String SUFFIX_PROPERTIES = ".properties";
-    private static final String SUFFIX_XML = ".xml";
 
     private static final Logger _log =
         LoggerFactory.getLogger(SystemCell.class);

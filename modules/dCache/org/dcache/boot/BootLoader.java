@@ -81,27 +81,12 @@ public class BootLoader
         System.exit(1);
     }
 
-    private static ConfigurationProperties getDefaults()
-        throws UnknownHostException
-    {
-        InetAddress localhost = InetAddress.getLocalHost();
-
-        ConfigurationProperties properties =
-            new ConfigurationProperties(System.getProperties());
-        properties.setProperty(PROPERTY_HOST_NAME,
-                               localhost.getHostName().split("\\.")[0]);
-        properties.setProperty(PROPERTY_HOST_FQDN,
-                               localhost.getCanonicalHostName());
-        return properties;
-    }
-
     private static ConfigurationProperties
-        loadConfiguration(ConfigurationProperties config, String[] paths,
-                ProblemConsumer consumer) throws IOException
+        loadConfiguration(ConfigurationProperties config, String[] paths)
+        throws IOException
     {
         for (String path: paths) {
             config = new ConfigurationProperties(config);
-            config.setProblemConsumer(consumer);
             File file = new File(path);
             if (file.isFile()) {
                 config.loadFile(file);
@@ -113,6 +98,29 @@ public class BootLoader
                 }
             }
         }
+        return config;
+    }
+
+    private static ConfigurationProperties
+        loadConfiguration(ProblemConsumer consumer, Args args)
+        throws IOException, UnknownHostException
+    {
+        InetAddress localhost = InetAddress.getLocalHost();
+
+        ConfigurationProperties config =
+            new ConfigurationProperties(System.getProperties());
+        config.setProblemConsumer(consumer);
+        config.setProperty(PROPERTY_HOST_NAME,
+                               localhost.getHostName().split("\\.")[0]);
+        config.setProperty(PROPERTY_HOST_FQDN,
+                               localhost.getCanonicalHostName());
+
+        String tmp = args.getOpt(OPT_CONFIG_FILE);
+        if (tmp != null) {
+            config =
+                loadConfiguration(config, tmp.split(OPT_CONFIG_FILE_DELIMITER));
+        }
+
         return config;
     }
 
@@ -131,6 +139,7 @@ public class BootLoader
             if (args.argc() < 1) {
                 help();
             }
+            String command = args.argv(0);
 
             /* Redirects Java util logging to SLF4J.
              */
@@ -144,23 +153,30 @@ public class BootLoader
                 args.isOneCharOption(OPT_SILENT) ? Level.ERROR : Level.WARN;
             logToConsoleAtLevel(level);
 
-            String command = args.argv(0);
+            /* Configuration problems can be directed to the log
+             * system or to stdout, depending on which command was
+             * provided on the command line.
+             */
+            OutputStreamProblemConsumer checkConsumer =
+                new OutputStreamProblemConsumer(System.out);
+            ProblemConsumer problemConsumer =
+                command.equals(CMD_CHECK)
+                ? checkConsumer
+                : new DefaultProblemConsumer();
+            problemConsumer =
+                args.isOneCharOption(OPT_SILENT)
+                ? new ErrorsAsWarningsProblemConsumer(problemConsumer)
+                : problemConsumer;
 
-            ProblemConsumer problemConsumer = command.equals(CMD_CHECK) ?
-                    new OutputStreamProblemConsumer(System.out) :
-                    new DefaultProblemConsumer();
+            /* The layout contains all configuration information, and
+             * all domains and services of this node.
+             */
+            Layout layout = loadLayout(loadConfiguration(problemConsumer, args));
 
-            ConfigurationProperties config = getDefaults();
-            String tmp = args.getOpt(OPT_CONFIG_FILE);
-            if (tmp != null) {
-                ProblemConsumer consumer = args.isOneCharOption(OPT_SILENT)
-                        ? new ErrorsAsWarningsProblemConsumer(problemConsumer)
-                        : problemConsumer;
-                config = loadConfiguration(config,
-                        tmp.split(OPT_CONFIG_FILE_DELIMITER), consumer);
-            }
-
-            Layout layout = loadLayout(config);
+            /* The BootLoader is not limitted to starting dCache. The
+             * behaviour is controlled by a command provided as a
+             * command line argument.
+             */
             if (command.equals(CMD_START)) {
                 if (args.argc() != 2) {
                     throw new IllegalArgumentException("Missing argument: Domain name");
@@ -172,9 +188,8 @@ public class BootLoader
 
                 domain.start();
             } else if (command.equals(CMD_CHECK)) {
-                OutputStreamProblemConsumer consumer = (OutputStreamProblemConsumer) problemConsumer;
-                consumer.printSummary();
-                System.exit(consumer.getReturnCode());
+                checkConsumer.printSummary();
+                System.exit(checkConsumer.getReturnCode());
             } else if (command.equals(CMD_COMPILE)) {
                 LayoutPrinter printer = printerForArgs(args, layout);
                 printer.print(System.out);
