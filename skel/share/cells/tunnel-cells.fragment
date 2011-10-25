@@ -7,5 +7,5 @@ onerror shutdown
 
 create dmg.cells.services.RoutingManager  RoutingMgr
 create dmg.cells.services.LocationManager lm \
-      "${broker.host} ${broker.port}"
+      "${broker.host} ${broker.port} -clientPort=${broker.client.port}"
 

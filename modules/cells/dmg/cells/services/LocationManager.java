@@ -665,12 +665,23 @@ public class LocationManager extends CellAdapter {
       private int _requestsSent     = 0 ;
       private int _repliesReceived  = 0 ;
 
-      private LocationManagerHandler( InetAddress address , int port ) throws Exception {
+      /**
+       * Create a client listening on the supplied UDP port
+       * @param localPort UDP port number to which the client will bind or 0
+       *        for a random port.
+       * @param address location of the server
+       * @param port port number of the server
+       * @throws SocketException if a UDP socket couldn't be created
+       */
+      private LocationManagerHandler(int localPort, InetAddress address,
+                                     int port) throws SocketException
+      {
           _port    = port ;
-          _socket  = new DatagramSocket( ) ;
+          _socket  = new DatagramSocket(localPort);
           _address = address ;
           _thread  = _nucleus.newThread( this , "LocationManagerHandler" ) ;
       }
+
       public void start(){
          _thread.start() ;
       }
@@ -794,19 +805,24 @@ public class LocationManager extends CellAdapter {
 
       private LocationManagerHandler _lmHandler = null ;
 
-      private Client( InetAddress address , int port , Args args ) throws Exception {
-
+      private Client(InetAddress address, int port, Args args)
+              throws SocketException
+      {
          addCommandListener(this);
 
-         _lmHandler = new LocationManagerHandler( address , port ) ;
+         String portOption = args.getOption("clientPort");
+         portOption = portOption == null ? "random" : portOption;
+         int clientPort = portOption.equals("random") ? 0 : Integer.parseInt(portOption);
+
+         _lmHandler = new LocationManagerHandler(clientPort, address, port);
          _lmHandler.start() ;
 
          if( args.getOpt("noboot") == null ){
            _whatToDo = _nucleus.newThread(this,"WhatToDo");
            _whatToDo.start() ;
          }
-
       }
+
       public void getInfo( PrintWriter pw ){
          pw.println( "            ToDo : "+(_state>-1?("Still Busy ("+_state+")"):_toDo));
          pw.println( "      Registered : "+(_registered==null?"no":_registered) ) ;
@@ -1086,7 +1102,7 @@ public class LocationManager extends CellAdapter {
 
    }
    /**
-     *   Usage : ... [<host>] <port> -noclient
+     *   Usage : ... [<host>] <port> -noclient [-clientPort=<UDP port number> | random]
      *   Server Options : -strict=[yes|no] -perm=<helpFilename> -setup=<setupFile>
      *
      */
@@ -1100,7 +1116,7 @@ public class LocationManager extends CellAdapter {
            InetAddress host = null ;
            if( _args.argc() < 1 )
               throw new
-              IllegalArgumentException("Usage : ... [<host>] <port> [-noclient]") ;
+              IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number> | 'random']") ;
 
            if( _args.argc() == 1 ){
               //

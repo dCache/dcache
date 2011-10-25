@@ -24,7 +24,7 @@ define env lmd.exe endDefine
 
   exec file:${dcache.paths.share}/cells/lmd.fragment
   create dmg.cells.services.LocationManager lm \
-    "${broker.host} ${broker.port}"
+    "${broker.host} ${broker.port} -clientPort=${broker.client.port}"
 endDefine
 
 exec env lmd.exe -ifok=is_broker
