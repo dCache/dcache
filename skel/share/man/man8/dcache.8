@@ -256,6 +256,20 @@ message is reported if a file attempts to adjust the value of a
 forbidden property.
 
 .TP
+.B ports
+Lists the TCP and UDP ports that dCache is configured to listen on.
+For each port, the corresponding domain, service and cell-name is also
+listed.
+
+In some cases dCache may listen on a particular port depending on some
+external, run-time conditions.  In this case the number is placed in
+parentheses.
+
+In other cases, dCache will select ports to listen on from a range of
+TCP port numbers.  This is indicated by two numbers separated
+by a single dash ('-').
+
+.TP
 .B dump heap [--force] DOMAIN FILE
 Dumps the Java heap of DOMAIN to FILE. The file will contain
 information about all objects and can be analysed with the Java
