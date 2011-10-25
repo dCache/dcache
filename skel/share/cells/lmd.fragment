@@ -4,7 +4,7 @@ check broker.cells.config
 
 define context lmd.defaults endDefine
   define ${broker.domain}
-  listen ${broker.domain}
+  listen ${broker.domain} -port=${broker.messaging.port}
 
   define *
   defaultroute * ${broker.domain}
