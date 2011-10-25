@@ -120,7 +120,7 @@ public class BootLoader
         loadConfiguration(ConfigurationProperties config, String property)
         throws IOException
     {
-        String paths = config.getProperty(property);
+        String paths = config.getValue(property);
         if (paths != null) {
             for (String path: paths.split(PATH_DELIMITER)) {
                 config = loadConfiguration(config, new File(path));
@@ -195,7 +195,7 @@ public class BootLoader
         config = loadConfiguration(config, PROPERTY_DEFAULTS_PATH);
         config = loadConfiguration(config, PROPERTY_SETUP_PATH);
         config = loadLayout(config).properties();
-        String dir = config.getProperty(PROPERTY_PLUGIN_PATH);
+        String dir = config.getValue(PROPERTY_PLUGIN_PATH);
         return (dir == null) ? new String[0] : dir.split(PATH_DELIMITER);
     }
 
