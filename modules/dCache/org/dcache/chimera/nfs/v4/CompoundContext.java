@@ -54,6 +54,7 @@ public class CompoundContext {
     private final AclHandler _aclHandler;
     private final NFSv4StateHandler _stateHandler;
     private final NfsIdMapping _idMapping;
+    private final ServerIdProvider _idProvider;
 
     /**
      * Create context of COUMPOUND request.
@@ -68,7 +69,8 @@ public class CompoundContext {
             NFSv4StateHandler stateHandler,
             NFSv41DeviceManager deviceManager, AclHandler aclHandler, RpcCall call,
             NfsIdMapping idMapping,
-            ExportFile exportFile) {
+            ExportFile exportFile,
+            ServerIdProvider idProvider) {
         _processedOps = processedOps;
         _minorversion = minorversion;
         _fs = fs;
@@ -79,6 +81,7 @@ public class CompoundContext {
         _user = NfsUser.remoteUser(_callInfo, _exportFile);
         _stateHandler = stateHandler;
         _idMapping = idMapping;
+        _idProvider = idProvider;
     }
 
     public RpcCall getRpcCall() {
@@ -216,5 +219,9 @@ public class CompoundContext {
 
     public NfsIdMapping getIdMapping() {
         return _idMapping;
+    }
+
+    public ServerIdProvider getServerIdProvider() {
+        return _idProvider;
     }
 }

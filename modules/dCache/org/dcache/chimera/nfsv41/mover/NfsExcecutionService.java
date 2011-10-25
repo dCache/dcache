@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.dcache.cells.CellMessageSender;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.pool.classic.CompletionHandler;
@@ -34,23 +36,26 @@ import org.slf4j.LoggerFactory;
  *
  * @since 1.9.11
  */
-public class NfsExcecutionService implements MoverExecutorService {
+public class NfsExcecutionService implements MoverExecutorService, CellMessageSender {
 
     private static final Logger _log = LoggerFactory.getLogger(NfsExcecutionService.class);
-    private final NFSv4MoverHandler _nfsIO;
+    private NFSv4MoverHandler _nfsIO;
+    private CellEndpoint _cellEndpoint;
+    private boolean _withGss = false;
 
-    public NfsExcecutionService(boolean withGss) throws ChimeraFsException, OncRpcException, IOException, GSSException {
+    public void init() throws ChimeraFsException, OncRpcException, IOException, GSSException {
 
-            String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
-            PortRange portRange;
-            if (dcachePorts != null) {
-                portRange = PortRange.valueOf(dcachePorts);
-            } else {
-                portRange = new PortRange(0);
-            }
-            _nfsIO = new NFSv4MoverHandler(portRange, withGss);
+        String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
+        PortRange portRange;
+        if (dcachePorts != null) {
+            portRange = PortRange.valueOf(dcachePorts);
+        } else {
+            portRange = new PortRange(0);
+        }
+
+        _nfsIO = new NFSv4MoverHandler(portRange, _withGss,
+                _cellEndpoint.getCellInfo().getCellName());
     }
-
 
     public void shutdown() throws IOException {
         _nfsIO.shutdown();
@@ -125,5 +130,14 @@ public class NfsExcecutionService implements MoverExecutorService {
             completionHandler.failed(e, null);
         }
         return null;
+    }
+
+    public void setEnableGss(boolean withGss) {
+        _withGss = withGss;
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        _cellEndpoint = endpoint;
     }
 }

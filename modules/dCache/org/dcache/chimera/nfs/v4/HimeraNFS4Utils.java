@@ -16,12 +16,7 @@
  */
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.nfsace4;
-import org.dcache.chimera.nfs.v4.xdr.utf8str_cs;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.utf8str_cis;
-import org.dcache.chimera.nfs.v4.xdr.utf8str_mixed;
-import org.dcache.chimera.nfs.v4.xdr.utf8string;
+import org.dcache.chimera.nfs.v4.xdr.*;
 
 public class HimeraNFS4Utils {
 
@@ -81,5 +76,36 @@ public class HimeraNFS4Utils {
      */
     public static utf8str_mixed string2utf8str_mixed(String str) {
         return new utf8str_mixed(new utf8string(str.getBytes()));
+    }
+
+    /**
+     * Get a {@link ServerIdProvider} which build server scope based on the pool
+     * name. This uses a fact that currently a pool name identified the repository
+     * which pool serves.
+     *
+     * @param cellName
+     * @return id provider
+     */
+    public static ServerIdProvider cellNameToServerIdProvider(final String cellName) {
+        return new ServerIdProvider() {
+
+            @Override
+            public server_owner4 getOwner() {
+                /*
+                 * according to rfc 5661 if major and minor of two servers
+                 * are equal, the we can re-use existing sessions or do a
+                 * session trunking.
+                 */
+                server_owner4 owner = new server_owner4();
+                owner.so_minor_id = new uint64_t(0);
+                owner.so_major_id = new byte[0];
+                return owner;
+            }
+
+            @Override
+            public byte[] getScope() {
+                return cellName.getBytes();
+            }
+        };
     }
 }

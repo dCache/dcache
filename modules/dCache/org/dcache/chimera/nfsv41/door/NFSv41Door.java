@@ -42,7 +42,6 @@ import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -58,13 +57,7 @@ import org.dcache.chimera.nfs.v3.MountServer;
 import org.dcache.chimera.nfs.v3.NfsServerV3;
 import org.dcache.chimera.nfs.v3.xdr.mount_prot;
 import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
-import org.dcache.chimera.nfs.v4.Layout;
-import org.dcache.chimera.nfs.v4.MDSOperationFactory;
-import org.dcache.chimera.nfs.v4.NfsIdMapping;
-import org.dcache.chimera.nfs.v4.OperationFactoryMXBeanImpl;
-import org.dcache.chimera.nfs.v4.RoundRobinStripingPattern;
-import org.dcache.chimera.nfs.v4.SimpleIdMap;
-import org.dcache.chimera.nfs.v4.StripingPattern;
+import org.dcache.chimera.nfs.v4.*;
 import org.dcache.chimera.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfs.v4.xdr.layout4;
 import org.dcache.chimera.nfs.v4.xdr.layouttype4;
@@ -213,8 +206,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         _rpcService = new OncRpcSvc(_port, IpProtocolType.TCP, true);
         _rpcService.setGssSessionManager(_gssSessionManager);
 
+        ServerIdProvider idProvider =
+                HimeraNFS4Utils.cellNameToServerIdProvider(getCellName());
         _nfs4 = new NFSServerV41( new OperationFactoryMXBeanImpl( new MDSOperationFactory() , "door"),
-                _dm, _aclHandler, _fileFileSystemProvider, _idMapper, _exportFile);
+                _dm, _aclHandler, _fileFileSystemProvider, _idMapper, _exportFile, idProvider);
+
         MountServer ms = new MountServer(_exportFile, _fileFileSystemProvider);
 
         if(_enableV3) {
