@@ -121,7 +121,7 @@
         <dependency groupId="org.liquibase" artifactId="liquibase-core" version="2.0.1"/>
         <dependency groupId="org.antlr" artifactId="stringtemplate" version="3.2.1"/>
         <dependency groupId="org.parboiled" artifactId="parboiled-java" version="1.0.0"/>
-        <dependency groupId="com.sun.jna" artifactId="jna" version="3.0.9" />
+        <dependency groupId="net.java.dev.jna" artifactId="jna" version="3.3.0" />
     </artifact:dependencies>
 
     <property name="cog.libDir" value="${libDir}/cog" />
