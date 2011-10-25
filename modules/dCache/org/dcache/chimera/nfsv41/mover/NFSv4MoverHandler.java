@@ -12,20 +12,7 @@ import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
-import org.dcache.chimera.nfs.v4.NFSServerV41;
-import org.dcache.chimera.nfs.v4.NFSv4OperationFactory;
-import org.dcache.chimera.nfs.v4.OperationCOMMIT;
-import org.dcache.chimera.nfs.v4.OperationCREATE_SESSION;
-import org.dcache.chimera.nfs.v4.OperationDESTROY_SESSION;
-import org.dcache.chimera.nfs.v4.OperationEXCHANGE_ID;
-import org.dcache.chimera.nfs.v4.OperationGETATTR;
-import org.dcache.chimera.nfs.v4.OperationILLEGAL;
-import org.dcache.chimera.nfs.v4.OperationPUTFH;
-import org.dcache.chimera.nfs.v4.OperationPUTROOTFH;
-import org.dcache.chimera.nfs.v4.OperationRECLAIM_COMPLETE;
-import org.dcache.chimera.nfs.v4.OperationSEQUENCE;
-import org.dcache.chimera.nfs.v4.SimpleIdMap;
+import org.dcache.chimera.nfs.v4.*;
 import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
 import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
@@ -60,10 +47,11 @@ public class NFSv4MoverHandler {
             new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
 
-    public NFSv4MoverHandler(PortRange portRange, boolean withGss)
+    public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId)
             throws IOException , OncRpcException, GSSException {
 
-        _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null);
+        ServerIdProvider idProvider =  HimeraNFS4Utils.cellNameToServerIdProvider(serverId);
+        _embededDS = new NFSServerV41(_operationFactory, null, null, _fs, new SimpleIdMap(), null, idProvider);
         _rpcService = new OncRpcSvc(
                 new org.glassfish.grizzly.PortRange((int)portRange.getLower(), (int)portRange.getUpper()),
                 IpProtocolType.TCP, false);
