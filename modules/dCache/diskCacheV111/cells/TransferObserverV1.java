@@ -496,7 +496,7 @@ public class TransferObserverV1
     public String hh_go = "[-parallel]";
     public String ac_go(Args args )
     {
-        if (args.getOpt("parallel") != null) {
+        if (args.hasOption("parallel")) {
             _nucleus.newThread(new Runnable(){
                     public void run()
                     {

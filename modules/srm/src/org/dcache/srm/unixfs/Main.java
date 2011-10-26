@@ -188,10 +188,10 @@ public class Main extends CommandInterpreter implements  Runnable {
         public String hh_ls= " [-get] [-put] [-copy] [-l] [<id>]";
         public String ac_ls_$_0_1(Args args) {
             try {
-                boolean get=args.getOpt("get") != null;
-                boolean put=args.getOpt("put") != null;
-                boolean copy=args.getOpt("copy") != null;
-                boolean longformat = args.getOpt("l") != null;
+                boolean get=args.hasOption("get");
+                boolean put=args.hasOption("put");
+                boolean copy=args.hasOption("copy");
+                boolean longformat = args.hasOption("l");
                 StringBuilder sb = new StringBuilder();
                 if(args.argc() == 1) {
                     try {
@@ -237,10 +237,10 @@ public class Main extends CommandInterpreter implements  Runnable {
         public String hh_ls_queues= " [-get] [-put] [-copy] [-l] ";
         public String ac_ls_queues_$_0(Args args) {
             try {
-                boolean get=args.getOpt("get") != null;
-                boolean put=args.getOpt("put") != null;
-                boolean copy=args.getOpt("copy") != null;
-                boolean longformat = args.getOpt("l") != null;
+                boolean get=args.hasOption("get");
+                boolean put=args.hasOption("put");
+                boolean copy=args.hasOption("copy");
+                boolean longformat = args.hasOption("l");
                 StringBuilder sb = new StringBuilder();
 
                 if( !get && !put && !copy ) {
@@ -282,10 +282,10 @@ public class Main extends CommandInterpreter implements  Runnable {
         " #will list completed (done, failed or canceled) requests, if max_count is not specified, it is set to 50";
         public String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
         public String ac_ls_completed_$_0_1(Args args) throws Exception{
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean longformat = args.getOpt("l") != null;
+            boolean get=args.hasOption("get");
+            boolean put=args.hasOption("put");
+            boolean copy=args.hasOption("copy");
+            boolean longformat = args.hasOption("l");
             int max_count=50;
             if(args.argc() == 1) {
                 max_count = Integer.parseInt(args.argv(0));

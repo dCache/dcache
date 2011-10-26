@@ -115,7 +115,7 @@ public class   CellAdapter
             _definedSetup = null;
         }
 
-        if (_args.getOpt("export") != null)export();
+        if (_args.hasOption("export"))export();
 
         String async = _args.getOpt("callback");
         if (async == null)async = (String)_nucleus.getDomainContext("callback");
@@ -128,7 +128,7 @@ public class   CellAdapter
                 _log.info("Callback set to sync");
             } else _log.warn("Illegal value for 'callback' option : "+async);
         }
-        if (_args.getOpt("replyObject") != null && _args.getOpt("replyObject").equals("false")) {
+        if (_args.hasOption("replyObject") && _args.getOpt("replyObject").equals("false")) {
             setCommandExceptionEnabled(false);
         }
 
@@ -761,8 +761,8 @@ public class   CellAdapter
     public String hh_info = "[-l|-a]";
     public String ac_info(Args args)
     {
-        boolean full = args.getOpt("a") != null;
-        boolean lng  = full || (args.getOpt("l") != null);
+        boolean full = args.hasOption("a");
+        boolean lng  = full || args.hasOption("l");
         if (lng) {
             StringBuffer sb = new StringBuffer();
             sb.append(getInfo()).append("\n");

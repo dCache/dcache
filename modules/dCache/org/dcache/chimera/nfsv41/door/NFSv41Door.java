@@ -577,7 +577,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public final static String hh_get_children = "[-binary]";
 
     public Object ac_get_children(Args args) {
-        boolean binary = args.getOpt("binary") != null;
+        boolean binary = args.hasOption("binary");
         if (binary) {
             String[] childrens = new String[]{this.getCellName()};
             return new LoginManagerChildrenInfo(this.getCellName(), this.getCellDomainName(), childrens);
@@ -600,7 +600,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         doorInfo.setOwner("");
         doorInfo.setProcess("");
         doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
-        return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
+        return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 
     /**

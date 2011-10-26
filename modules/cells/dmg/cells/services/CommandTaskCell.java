@@ -227,7 +227,7 @@ public class CommandTaskCell extends CellAdapter {
    public String hh_ls_task = "[-l]" ;
    public String ac_ls_task( Args args ){
       ClientInfo client =_clientHandler.getThisClient() ;
-      boolean  extended = args.getOpt("l") != null ;
+      boolean  extended = args.hasOption("l") ;
       StringBuffer sb = new StringBuffer() ;
       for( Iterator i = _cores.values().iterator() ; i.hasNext() ; ){
          CellCommandTaskCore core = (CellCommandTaskCore)i.next() ;

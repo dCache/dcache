@@ -631,8 +631,8 @@ public class HsmFlushControlManager  extends CellAdapter {
     public String hh_ls_pool = "[<poolName>] -l " ;
     public Object ac_ls_pool_$_0_1( Args args ){
         String poolName = args.argc() == 0 ? null : args.argv(0) ;
-        boolean detail  = args.getOpt("l") != null ;
-        boolean binary  = args.getOpt("binary") != null ;
+        boolean detail  = args.hasOption("l") ;
+        boolean binary  = args.hasOption("binary") ;
 
         StringBuffer sb = new StringBuffer() ;
         if( poolName == null ){

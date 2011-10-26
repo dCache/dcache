@@ -315,7 +315,7 @@ public CellVersion getCellVersion(){
      }
      public String hh_get_children = "[-binary]" ;
      public Object ac_get_children( Args args ){
-        boolean binary = args.getOpt("binary") != null ;
+        boolean binary = args.hasOption("binary") ;
         synchronized( _childHash ){
            if( binary ){
               String [] list = new String[_childHash.size()] ;

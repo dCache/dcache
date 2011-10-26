@@ -397,7 +397,7 @@ public abstract class TransferManager extends AbstractCell
 	public final static String hh_ls = "[-l] [<#transferId>]";
 	public String ac_ls_$_0_1(Args args)
         {
-		boolean long_format = args.getOpt("l") != null;
+		boolean long_format = args.hasOption("l");
 		if (args.argc() >0) {
 			long id = Long.parseLong(args.argv(0));
                         TransferManagerHandler handler = _activeTransfers.get(id);

@@ -310,7 +310,7 @@ public class FileHoppingManager extends CellAdapter {
 
       String destination = args.getOpt("destination") ;
 
-      boolean overwrite  = args.getOpt("overwrite") != null ;
+      boolean overwrite  = args.hasOption("overwrite") ;
 
       String hostName    = args.getOpt("host") ;
       String protocol    = args.getOpt("protType") ;
@@ -330,8 +330,8 @@ public class FileHoppingManager extends CellAdapter {
 
       entry.setDestination( destination ) ;
 
-      entry.setRetry( args.getOpt("retry") != null ) ;
-      entry.setContinue( args.getOpt("continue") != null ) ;
+      entry.setRetry( args.hasOption("retry") ) ;
+      entry.setContinue( args.hasOption("continue") ) ;
 
       if( source != null )entry.setSource(source) ;
 
@@ -450,7 +450,7 @@ public class FileHoppingManager extends CellAdapter {
    public String ac_ls_hop_$_0_1( Args args ){
 
       StringBuffer sb = new StringBuffer() ;
-      boolean   count = ( args.getOpt("count") != null ) || ( args.getOpt("c") != null ) ;
+      boolean   count = args.hasOption("count") || args.hasOption("c") ;
 
       synchronized( _mapLock ){
 

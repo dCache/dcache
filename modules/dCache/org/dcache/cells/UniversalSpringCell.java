@@ -163,7 +163,7 @@ public class UniversalSpringCell
         info("Setup controller set to "
              + (_setupController == null ? "none" : _setupController));
         _setupFile =
-            (args.getOpt("setupFile") == null)
+            (!args.hasOption("setupFile"))
             ? null
             : new File(args.getOpt("setupFile"));
         _setupClass = args.getOpt("setupClass");
@@ -549,7 +549,7 @@ public class UniversalSpringCell
     public String ac_reload(Args args)
         throws IOException, CommandException
     {
-        if (args.getOpt("yes") == null) {
+        if (!args.hasOption("yes")) {
             return
                 " This command destroys the current setup\n" +
                 " and replaces it by the setup on disk\n" +

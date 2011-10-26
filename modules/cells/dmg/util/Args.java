@@ -160,6 +160,11 @@ public class Args
         return values.isEmpty() ? null : values.get(values.size() - 1);
     }
 
+    public boolean hasOption(String name)
+    {
+        return !_options.get(name).isEmpty();
+    }
+
     public ImmutableList<String> getOptions(String name)
     {
         return _options.get(name);
@@ -197,6 +202,7 @@ public class Args
         return builder.build();
     }
 
+    @Override
     public boolean equals(Object other)
     {
         if (other == this) {
@@ -212,6 +218,7 @@ public class Args
             && args._oneChar.equals(_oneChar);
     }
 
+    @Override
     public int hashCode()
     {
         return Objects.hashCode(_options, _arguments);
@@ -243,6 +250,7 @@ public class Args
         }
     }
 
+    @Override
     public String toString()
     {
         StringBuilder s = new StringBuilder();

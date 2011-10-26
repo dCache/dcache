@@ -104,7 +104,7 @@ public class MulticastCommander extends CellAdapter {
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
       String detail       = args.argc() == 2 ? null : args.argv(2) ;
-      boolean overwrite   = args.getOpt("overwrite") != null ;
+      boolean overwrite   = args.hasOption("overwrite") ;
       MulticastOpen open = new MulticastOpen(
              className , instanceName , detail ) ;
       open.setOverwrite(overwrite);

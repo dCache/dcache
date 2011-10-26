@@ -29,7 +29,7 @@ public class CellAdapterHelperTest {
         String opt1= cellArgs.getOpt("opt1");
 
         assertEquals("Invalid option received", "opt1-value",opt1 );
-        assertTrue("Flag is not set", cellArgs.getOpt("flag1") != null);
+        assertTrue("Flag is not set", cellArgs.hasOption("flag1"));
 
         String arg0 = cellArgs.argv(0);
         assertEquals("Invalid arg[0] received", "arg0", arg0 );

@@ -490,8 +490,8 @@ public class PnfsManagerV3
     public String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
     public String ac_storageinfoof_$_1( Args args )throws Exception {
         PnfsId    pnfsId = null ;
-        boolean v = args.getOpt("v") != null ;
-        boolean n = args.getOpt("n") != null ;
+        boolean v = args.hasOption("v") ;
+        boolean n = args.hasOption("n") ;
 
         StringBuffer sb = new StringBuffer() ;
 
@@ -533,8 +533,8 @@ public class PnfsManagerV3
         PnfsId    pnfsId = null ;
         StringBuffer sb = new StringBuffer() ;
 
-        boolean v = args.getOpt("v") != null ;
-        boolean n = args.getOpt("n") != null ;
+        boolean v = args.hasOption("v") ;
+        boolean n = args.hasOption("n") ;
 
         try{
             try{

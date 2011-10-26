@@ -1018,7 +1018,7 @@ public class      CellShell
    public String hh_check = "[-strong] <var1> [<var2> [] ... ]" ;
    public String ac_check_$_1_99( Args args )throws CommandException {
 
-      boolean strong = args.getOpt("strong") != null ;
+      boolean strong = args.hasOption("strong") ;
 
       String varName = null ;
       Object value   = null ;
@@ -1071,8 +1071,8 @@ public class      CellShell
         throws CommandException
     {
       String  varName = args.argv(0);
-      boolean opt_overwrite = (args.getOpt("c") == null);
-      boolean resolve = (args.getOpt( "nr" ) == null);
+      boolean opt_overwrite = !args.hasOption("c");
+      boolean resolve = !args.hasOption( "nr" );
 
       String src = args.getOpt("source");
       Object input;
@@ -1146,8 +1146,8 @@ public class      CellShell
     {
       String name  = args.argv(0) ;
       String value = args.argv(1) ;
-      boolean opt_overwrite   = args.getOpt("c") == null ;
-      boolean opt_interpreter = args.getOpt("s") != null ;
+      boolean opt_overwrite   = !args.hasOption("c") ;
+      boolean opt_interpreter = args.hasOption("s") ;
 
       if( ( ! opt_overwrite ) && ( dict.get( name ) != null ) )
          throw new
@@ -1232,7 +1232,7 @@ public class      CellShell
    public String hh_test_context = "[<contextName>]" ;
    public String hh_test_env     = "[<environmentName>]" ;
    public String ac_ls_$_0_1( Args args ) throws CommandException {
-      return ls_dict( args , args.getOpt("e") != null  ?
+      return ls_dict( args , args.hasOption("e")  ?
                              _environment :
                              _nucleus.getDomainContext()  ) ;
    }
@@ -1299,10 +1299,10 @@ public class      CellShell
             maxLength = Math.max( maxLength , name.length() ) ;
             set.add(name);
           }
-          boolean detail = args.getOpt("l") != null ;
-          boolean moreDetail = args.getOpt("ll") != null ;
+          boolean detail = args.hasOption("l") ;
+          boolean moreDetail = args.hasOption("ll") ;
           if( moreDetail )detail =true ;
-          boolean list   = args.getOpt("list") != null ;
+          boolean list   = args.hasOption("list") ;
           for( Iterator e = set.iterator() ; e.hasNext() ; ){
             String name = (String)e.next() ;
             sb.append(name) ;
@@ -1359,13 +1359,13 @@ public class      CellShell
            throw new IllegalArgumentException( "Expecting exactly one argument");
        }
 
-       if( args.getOption("i") != null) {
+       if( args.hasOption("i")) {
            return new CellRunningTester(args);
-       } else  if( args.getOption( "e") != null) {
+       } else  if( args.hasOption( "e")) {
            return new FileExistsTester(args);
-       } else  if( args.getOption( "f") != null) {
+       } else  if( args.hasOption( "f")) {
            return new FileIsNormalTester(args);
-       } else  if( args.getOption( "d") != null) {
+       } else  if( args.hasOption( "d")) {
            return new FileIsDirectoryTester(args);
        } else {
            throw new IllegalArgumentException( "Expecting either -cell or -file");
@@ -1583,7 +1583,7 @@ public class      CellShell
 
             if (loopName == null) {
                 CellShell shell =
-                    (args.getOpt("shell") != null)
+                    (args.hasOption("shell"))
                     ? new CellShell(_nucleus)
                     : this;
 
@@ -1600,7 +1600,7 @@ public class      CellShell
                     String line;
                     while ((line = reader.readLine()) != null) {
                         CellShell shell =
-                            (args.getOpt("shell") != null)
+                            (args.hasOption("shell"))
                             ? new CellShell(_nucleus)
                             : this;
 
@@ -1617,7 +1617,7 @@ public class      CellShell
                 }
             }
 
-            return (args.getOpt("nooutput") != null) ? "" : out.toString();
+            return args.hasOption("nooutput") ? "" : out.toString();
         } catch (FileNotFoundException e) {
             throw new CommandException(66, e.getMessage(), e);
         } catch (IOException e) {

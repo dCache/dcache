@@ -73,7 +73,7 @@ public class LoginCLI
     public String ac_get_ridentity_$_1(Args args)
             throws CacheException {
         String id = args.argv(0);
-        boolean isGroup = args.getOpt("group") != null;
+        boolean isGroup = args.hasOption("group");
 
         Principal principal;
         if(isGroup) {

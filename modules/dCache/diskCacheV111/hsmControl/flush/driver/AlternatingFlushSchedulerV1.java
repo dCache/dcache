@@ -638,9 +638,9 @@ import org.slf4j.LoggerFactory;
      }
      public String hh_list_pools = "[-p [-l]] [-c]" ;
      public String ac_list_pools( Args args ){
-       boolean parentView     = args.getOpt("p") != null ;
-       boolean configuredView = args.getOpt("c") != null ;
-       boolean extended       = args.getOpt("e") != null ;
+       boolean parentView     = args.hasOption("p") ;
+       boolean configuredView = args.hasOption("c") ;
+       boolean extended       = args.hasOption("e") ;
        if( parentView ){
           for( Iterator hosts = _hostMap.entrySet().iterator() ; hosts.hasNext() ; ){
              Map.Entry hostEntry = (Map.Entry)hosts.next() ;

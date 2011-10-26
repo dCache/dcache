@@ -96,7 +96,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          }
          _log.info("Interval (msec) : "+_sleep);
 
-         if( _args.getOpt("dontstart") != null ){ // debug only
+         if( _args.hasOption("dontstart") ){ // debug only
             _log.info("Worker Thread not started : -dontstart");
          }else{
             _log.info("Starting worker Thread");

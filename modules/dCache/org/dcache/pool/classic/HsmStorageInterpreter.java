@@ -68,7 +68,7 @@ public class HsmStorageInterpreter
     public String hh_rh_jobs_kill = "[-force] <jobId>";
     public String ac_rh_jobs_kill_$_1( Args args )throws Exception {
        int id = Integer.parseInt( args.argv(0) ) ;
-       _fetchQueue.kill( id, args.getOpt("force") != null ) ;
+       _fetchQueue.kill( id, args.hasOption("force") ) ;
        return "Kill initialized" ;
     }
     public String hh_rh_ls = "[<pnfsId>]" ;
@@ -120,7 +120,7 @@ public class HsmStorageInterpreter
     public String hh_st_jobs_kill = "[-force] <jobId>";
     public String ac_st_jobs_kill_$_1( Args args )throws Exception {
        int id = Integer.parseInt( args.argv(0) ) ;
-       _storeQueue.kill( id, args.getOpt("force") != null ) ;
+       _storeQueue.kill( id, args.hasOption("force") ) ;
        return "Kill initialized" ;
     }
     public String hh_st_ls = "[<pnfsId>]" ;
@@ -172,7 +172,7 @@ public class HsmStorageInterpreter
     public Object ac_rh_restore_$_1(Args args)
     {
         final PnfsId pnfsId = new PnfsId(args.argv(0));
-        final boolean block = args.getOpt("block") != null;
+        final boolean block = args.hasOption("block");
         final DelayedReply reply = new DelayedReply();
 
         final CacheFileAvailable cfa = new CacheFileAvailable() {

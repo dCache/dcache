@@ -751,7 +751,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    public String hh_show_link = "-a" ;
    public String ac_show_link_$_0( Args args ) throws Exception {
    try{
-       boolean all = args.getOpt("a") != null ;
+       boolean all = args.hasOption("a") ;
 
        StringBuffer sb = new StringBuffer() ;
 

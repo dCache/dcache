@@ -168,7 +168,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
          tmp = _args.getOpt("domain") ;
          if( tmp != null )_domainName = tmp ;
 
-         if( _args.getOpt("create") != null ){
+         if( _args.hasOption("create") ){
 
             if( ! _dbBase.exists() )_dbBase.mkdirs() ;
             if( _createHtmlTree && ! _htmlBase.exists() )_htmlBase.mkdirs() ;

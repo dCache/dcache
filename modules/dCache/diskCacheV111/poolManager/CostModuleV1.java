@@ -618,7 +618,7 @@ public class CostModuleV1
 
       String poolName = args.argv(0) ;
       long filesize   = Long.parseLong( args.argc() < 2 ? "0" : args.argv(2) ) ;
-      boolean pci     = args.getOpt("l") != null ;
+      boolean pci     = args.hasOption("l") ;
       Object [] reply;
 
       if( pci ){
@@ -647,9 +647,9 @@ public class CostModuleV1
    public String hh_cm_ls = " -d  | -t | -r [-size=<filesize>] <pattern> # list all pools" ;
    public synchronized String ac_cm_ls_$_0_1( Args args )throws Exception {
       StringBuilder   sb = new StringBuilder() ;
-      boolean useTime   = args.getOpt("t") != null ;
-      boolean useDetail = args.getOpt("d") != null ;
-      boolean useReal   = args.getOpt("r") != null ;
+      boolean useTime   = args.hasOption("t") ;
+      boolean useDetail = args.hasOption("d") ;
+      boolean useReal   = args.hasOption("r") ;
       String  sizeStr   = args.getOpt("size") ;
       long    filesize  = Long.parseLong( sizeStr == null ? "0" : sizeStr ) ;
       Pattern pattern   = args.argc() == 0 ? null : Pattern.compile(args.argv(0)) ;

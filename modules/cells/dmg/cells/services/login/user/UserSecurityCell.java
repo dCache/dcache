@@ -278,7 +278,7 @@ public class       UserSecurityCell
     }
     public String hh_add_access = "[-allowed|-denied] <acl> <principal>" ;
     public String ac_add_access_$_2( Args args )throws Exception {
-       boolean allowed = args.getOpt("denied") == null ;
+       boolean allowed = !args.hasOption("denied") ;
        String acl   = args.argv(0) ;
        String princ = args.argv(1) ;
        checkPermission( args.getOpt("auth") , "acl."+acl+".access" ) ;
@@ -298,7 +298,7 @@ public class       UserSecurityCell
     public String hh_ls_acl = "<aclName> -resolve" ;
     public String ac_ls_acl_$_1( Args args )throws Exception {
         if( _aclDb == null )throw new Exception("AclDb not open") ;
-        boolean resolve = args.getOpt("resolve") != null ;
+        boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
         Enumeration e     = dict.getPrincipals() ;
         String inherits   = dict.getInheritance() ;

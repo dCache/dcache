@@ -67,7 +67,7 @@ public class FilterShell
         "with an asterix.";
     public String ac_log_ls_$_0_2(Args args)
     {
-        boolean all = (args.getOpt("a") != null);
+        boolean all = args.hasOption("a");
         String appender = args.argv(0);
         String logger = args.argv(1);
         Formatter out = new Formatter();
@@ -152,7 +152,7 @@ public class FilterShell
         String appender = args.argv(0);
         if (args.argc() == 2) {
             _thresholds.remove(LoggerName.getInstance(args.argv(1)), appender);
-        } else if (args.getOpt("a") == null) {
+        } else if (!args.hasOption("a")) {
             _thresholds.remove(LoggerName.ROOT, appender);
         } else {
             for (Logger logger: getLoggers()) {

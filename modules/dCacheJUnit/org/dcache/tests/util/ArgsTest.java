@@ -90,6 +90,8 @@ public class ArgsTest {
         assertEquals("c:dCacheDomain", args.argv(4));
         assertEquals("118", args.getOpt("serial"));
 
+        assertTrue(args.hasOption("serial"));
+
         assertEquals(args, new Args(args.toString()));
     }
 
@@ -105,6 +107,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -119,6 +123,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -133,6 +139,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -147,6 +155,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -160,6 +170,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('f'));
         assertFalse(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertFalse(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -173,6 +185,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('f'));
         assertFalse(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -187,6 +201,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -201,6 +217,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -215,6 +233,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -229,6 +249,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('f'));
         assertTrue(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -243,6 +265,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('f'));
         assertFalse(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertFalse(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -256,6 +280,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('f'));
         assertFalse(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -268,6 +294,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('-'));
         assertFalse(args.isOneCharOption('f'));
         assertFalse(args.isOneCharOption('o'));
+        assertFalse(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -281,6 +309,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('f'));
         assertFalse(args.isOneCharOption('o'));
         assertFalse(args.isOneCharOption('b'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -290,6 +320,7 @@ public class ArgsTest {
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
         assertEquals("bar bar", args.argv(0));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -299,6 +330,7 @@ public class ArgsTest {
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
         assertEquals("bar\\bar", args.argv(0));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -308,6 +340,7 @@ public class ArgsTest {
         assertEquals(1, args.argc());
         assertEquals(0, args.optc());
         assertEquals("bar", args.argv(0));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -330,6 +363,8 @@ public class ArgsTest {
         assertEquals("bb", args.argv(1));
         assertEquals("-", args.argv(2));
         assertFalse(args.isOneCharOption('-'));
+        assertFalse(args.hasOption("aa"));
+        assertFalse(args.hasOption("bb"));
     }
 
     @Test
@@ -344,6 +379,9 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('b'));
         assertTrue(args.isOneCharOption('a'));
         assertTrue(args.isOneCharOption('r'));
+        assertFalse(args.hasOption("foo"));
+        assertTrue(args.hasOption("=bar"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -360,6 +398,8 @@ public class ArgsTest {
         assertFalse(args.isOneCharOption('b'));
         assertFalse(args.isOneCharOption('a'));
         assertFalse(args.isOneCharOption('r'));
+        assertTrue(args.hasOption("foo"));
+        assertFalse(args.hasOption("bar"));
     }
 
     @Test
@@ -377,6 +417,8 @@ public class ArgsTest {
         assertTrue(args.isOneCharOption('b'));
         assertTrue(args.isOneCharOption('a'));
         assertTrue(args.isOneCharOption('r'));
+        assertTrue(args.hasOption("foo"));
+        assertTrue(args.hasOption("bar"));
     }
 
     @Test

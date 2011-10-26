@@ -83,7 +83,7 @@ public class AclCommander extends CommandInterpreter {
     }
     public String ac_meta_create_principal_$_1( Args args )throws Exception {
         if( _userMetaDb == null )throw new Exception("UserMetaDb not open") ;
-        if( args.getOpt("group") != null ){
+        if( args.hasOption("group") ){
             _userMetaDb.createGroup( args.argv(0) ) ;
         }else{
             _userMetaDb.createUser( args.argv(0) ) ;
@@ -154,7 +154,7 @@ public class AclCommander extends CommandInterpreter {
     public String hh_acl_ls_acl = "<aclName> -resolve" ;
     public String ac_acl_ls_acl_$_1( Args args )throws Exception {
         if( _aclDb == null )throw new Exception("AclDb not open") ;
-        boolean resolve = args.getOpt("resolve") != null ;
+        boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
         Enumeration e = dict.getPrincipals() ;
         String inherits = dict.getInheritance() ;

@@ -1900,9 +1900,9 @@ public class PoolSelectionUnitV2
                 throw new IllegalArgumentException("Duplicated entry : " + name);
 
             Pool pool = new Pool(name);
-            if (args.getOpt("noping") != null)
+            if (args.hasOption("noping"))
                 pool.setPing(false);
-            if (args.getOpt("disabled") != null)
+            if (args.hasOption("disabled"))
                 pool.setEnabled(false);
             _pools.put(pool.getName(), pool);
         } finally {
@@ -2024,15 +2024,15 @@ public class PoolSelectionUnitV2
         Unit unit = null;
         _psuWriteLock.lock();
         try {
-            if (args.getOpt("net") != null) {
+            if (args.hasOption("net")) {
                 NetUnit net = new NetUnit(name);
                 _netHandler.add(net);
                 unit = net;
-            } else if (args.getOpt("store") != null) {
+            } else if (args.hasOption("store")) {
                 unit = new Unit(name, STORE);
-            } else if (args.getOpt("dcache") != null) {
+            } else if (args.hasOption("dcache")) {
                 unit = new Unit(name, DCACHE);
-            } else if (args.getOpt("protocol") != null) {
+            } else if (args.hasOption("protocol")) {
                 unit = new ProtocolUnit(name);
             }
             if (unit == null)
@@ -2057,7 +2057,7 @@ public class PoolSelectionUnitV2
     public String ac_psu_create_linkGroup_$_1(Args args) {
 
         String newGroupName = args.argv(0);
-        boolean reset = (args.getOpt("reset") != null);
+        boolean reset = args.hasOption("reset");
 
         _psuWriteLock.lock();
         try {
@@ -2220,13 +2220,13 @@ public class PoolSelectionUnitV2
 
     public Object ac_psux_ls_link_$_0_1(Args args) throws Exception {
 
-        boolean resolve = args.getOpt("resolve") != null;
+        boolean resolve = args.hasOption("resolve");
         Object xlsResult = null;
         _psuReadLock.lock();
         try {
 
             if (args.argc() == 0) {
-                if (args.getOpt("x") == null) {
+                if (!args.hasOption("x")) {
                     xlsResult = _links.keySet().toArray();
                 } else {
                     List array = new ArrayList();
@@ -2342,8 +2342,8 @@ public class PoolSelectionUnitV2
     public String ac_psu_ls_pool_$_0_99(Args args)
     {
         StringBuffer sb = new StringBuffer();
-        boolean more = args.getOpt("a") != null;
-        boolean detail = (args.getOpt("l") != null) || more;
+        boolean more = args.hasOption("a");
+        boolean detail = args.hasOption("l") || more;
 
         _psuReadLock.lock();
         try {
@@ -2383,8 +2383,8 @@ public class PoolSelectionUnitV2
 
     public String ac_psu_ls_pgroup_$_0_99(Args args) {
         StringBuffer sb = new StringBuffer();
-        boolean more = args.getOpt("a") != null;
-        boolean detail = (args.getOpt("l") != null) || more;
+        boolean more = args.hasOption("a");
+        boolean detail = args.hasOption("l") || more;
 
         _psuReadLock.lock();
         try {
@@ -2427,8 +2427,8 @@ public class PoolSelectionUnitV2
     public String ac_psu_ls_link_$_0_99(Args args) {
 
         StringBuffer sb = new StringBuffer();
-        boolean more = args.getOpt("a") != null;
-        boolean detail = (args.getOpt("l") != null) || more;
+        boolean more = args.hasOption("a");
+        boolean detail = args.hasOption("l") || more;
 
         _psuReadLock.lock();
         try {
@@ -2486,8 +2486,8 @@ public class PoolSelectionUnitV2
     public String ac_psu_ls_ugroup_$_0_99(Args args) {
 
         StringBuffer sb = new StringBuffer();
-        boolean more = args.getOpt("a") != null;
-        boolean detail = (args.getOpt("l") != null) || more;
+        boolean more = args.hasOption("a");
+        boolean detail = args.hasOption("l") || more;
 
         _psuReadLock.lock();
         try {
@@ -2557,8 +2557,8 @@ public class PoolSelectionUnitV2
 
     public String ac_psu_ls_unit_$_0_99(Args args) {
         StringBuffer sb = new StringBuffer();
-        boolean more = args.getOpt("a") != null;
-        boolean detail = (args.getOpt("l") != null) || more;
+        boolean more = args.hasOption("a");
+        boolean detail = args.hasOption("l") || more;
 
         _psuReadLock.lock();
         try {
@@ -2601,7 +2601,7 @@ public class PoolSelectionUnitV2
 
         StringBuilder sb = new StringBuilder();
 
-        boolean isLongOutput = args.getOpt("l") != null;
+        boolean isLongOutput = args.hasOption("l");
         _psuReadLock.lock();
         try {
 
@@ -2666,7 +2666,7 @@ public class PoolSelectionUnitV2
 
         _psuWriteLock.lock();
         try {
-            if (args.getOpt("net") != null) {
+            if (args.hasOption("net")) {
                 NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
@@ -2799,7 +2799,7 @@ public class PoolSelectionUnitV2
                 throw new IllegalArgumentException("UGroup not found : "
                         + groupName);
 
-            if (args.getOpt("net") != null) {
+            if (args.hasOption("net")) {
                 NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
@@ -3009,7 +3009,7 @@ public class PoolSelectionUnitV2
 
         _psuWriteLock.lock();
         try {
-            if (args.getOpt("net") != null) {
+            if (args.hasOption("net")) {
                 NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
                 if (netUnit == null)
                     throw new IllegalArgumentException(
@@ -3138,7 +3138,7 @@ public class PoolSelectionUnitV2
 
     public String ac_psu_set_active_$_1(Args args) {
         String poolName = args.argv(0);
-        boolean active = args.getOpt("no") == null;
+        boolean active = !args.hasOption("no");
 
         _psuWriteLock.lock();
 
@@ -3218,7 +3218,7 @@ public class PoolSelectionUnitV2
             }
 
             linkGroup.attribute(attrKeyValue[0], attrKeyValue[1], args
-                    .getOpt("r") != null);
+                    .hasOption("r"));
 
         } finally {
             _psuWriteLock.unlock();

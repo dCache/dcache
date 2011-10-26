@@ -348,10 +348,10 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       _log.info("Set adjuster maxWorkers=" + mx);
     }
 
-    if( _args.getOpt("coldStart") != null )
+    if( _args.hasOption("coldStart") )
       _hotRestart = false;
 
-    if( _args.getOpt("hotRestart") != null )
+    if( _args.hasOption("hotRestart") )
       _hotRestart = true;
 
     String argSameHost = _args.getOpt("enableSameHostReplica");
@@ -2025,7 +2025,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
       sb.append("Old : ").append(printCacheLocation(pnfsId)).append("\n");
 
-      List list = getCacheLocationList(pnfsId, args.getOpt("c") != null);
+      List list = getCacheLocationList(pnfsId, args.hasOption("c"));
 
       _dbrmv2.clearPools(pnfsId);
 

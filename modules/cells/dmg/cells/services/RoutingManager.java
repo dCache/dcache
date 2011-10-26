@@ -297,7 +297,7 @@ public class RoutingManager
 
     	Object info;
 
-    	if (args.getOpt("x") == null) {
+    	if (!args.hasOption("x")) {
     		// Throw together some meaningful output.
     		ByteArrayOutputStream os = new ByteArrayOutputStream();
     		PrintWriter pw = new PrintWriter( os);

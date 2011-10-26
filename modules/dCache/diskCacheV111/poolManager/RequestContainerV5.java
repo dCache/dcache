@@ -371,7 +371,7 @@ public class RequestContainerV5
              }
              return sb.toString() ;
           }
-          boolean remove = args.getOpt("remove") != null ;
+          boolean remove = args.hasOption("remove") ;
           PnfsId  pnfsId = new PnfsId(args.argv(0));
 
           if( remove ){
@@ -416,7 +416,7 @@ public class RequestContainerV5
     }
     public String hh_rc_suspend = "[on|off] -all" ;
     public String ac_rc_suspend_$_0_1( Args args ){
-       boolean all = args.getOpt("all") != null ;
+       boolean all = args.hasOption("all") ;
        if( args.argc() == 0 ){
           if(all)_suspendIncoming = true ;
           _suspendStaging = true ;
@@ -463,7 +463,7 @@ public class RequestContainerV5
     public String hh_rc_retry = "<pnfsId>|* -force-all";
     public String ac_rc_retry_$_1( Args args ) throws CacheException {
        StringBuffer sb = new StringBuffer() ;
-       boolean forceAll = args.getOpt("force-all") != null ;
+       boolean forceAll = args.hasOption("force-all") ;
        if( args.argv(0).equals("*") ){
           List<PoolRequestHandler> all;
           //
@@ -529,7 +529,7 @@ public class RequestContainerV5
 
        Pattern  pattern = args.argc() > 0 ? Pattern.compile(args.argv(0)) : null ;
 
-       if( args.getOpt("w") == null ){
+       if( !args.hasOption("w") ){
           List<PoolRequestHandler>    allRequestHandlers = null ;
           synchronized( _handlerHash ){
               allRequestHandlers = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;

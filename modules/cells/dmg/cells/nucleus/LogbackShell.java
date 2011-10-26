@@ -89,7 +89,7 @@ public class LogbackShell
     {
         final String format = "%-5s %-30s %s\n";
 
-        boolean all = (args.getOpt("a") != null);
+        boolean all = args.hasOption("a");
         Formatter f = new Formatter();
         f.format(format, "Level", "Appenders", "Logger");
         f.format(format, "-----", "---------", "------");

@@ -27,7 +27,7 @@ public class vsp {
          String a2 = args.argv(1) ;
          boolean a1IsPnfsId = a1.charAt(0) ==  '0' ;
          boolean a2IsPnfsId = a2.charAt(0) ==  '0' ;
-         boolean runDebug   = args.getOpt("debug") != null ;
+         boolean runDebug   = args.hasOption("debug") ;
          if( a1IsPnfsId && a2IsPnfsId ){
             System.err.println( "Can't copy pnfsId into pnfsId" ) ;
             System.exit(4);

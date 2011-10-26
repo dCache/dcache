@@ -179,7 +179,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _args    = getArgs();
         _nucleus = getNucleus();
         try {
-            if( _args.getOpt( OPTION_REPEATHEADER) != null) {
+            if( _args.hasOption( OPTION_REPEATHEADER)) {
                 String optionString = null;
                 try {
                     optionString  = _args.getOpt( OPTION_REPEATHEADER);

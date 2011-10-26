@@ -228,8 +228,8 @@ public class SpaceSweeper2
         throws CacheException, InterruptedException
     {
         StringBuilder sb = new StringBuilder();
-        boolean l = args.getOpt("l") != null;
-        boolean s = args.getOpt("s") != null;
+        boolean l = args.hasOption("l");
+        boolean s = args.hasOption("s");
         List<PnfsId> list;
         synchronized (this) {
             list = new ArrayList<PnfsId>(_list);
@@ -287,7 +287,7 @@ public class SpaceSweeper2
     public String ac_sweeper_get_lru( Args args )
     {
         long lru = (System.currentTimeMillis() - getLru()) / 1000L;
-        boolean f = args.getOpt("f") != null;
+        boolean f = args.hasOption("f");
         return f ? getTimeString(lru) : ("" + lru);
     }
 

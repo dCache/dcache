@@ -57,10 +57,10 @@ public class BillingCell extends CellAdapter {
             throw new
             IllegalArgumentException("<"+_args.argv(0)+"> doesn't exits or not writeable") ;
 
-           if( _args.getOpt("noTXT") != null ) {
+           if( _args.hasOption("noTXT") ) {
                _txtLog = false;
            }
-          if( _args.getOpt("useSQL") != null ) {
+          if( _args.hasOption("useSQL") ) {
              try{
                 _sqlLog = new BillingDB(_args);
              }catch( SQLException sqe) {

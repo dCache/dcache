@@ -171,59 +171,59 @@ public final class Manager
                 if (logger.isDebugEnabled()) {
                         logger.debug("USING LOGGER spaceManagerEnabled="+spaceManagerEnabled);
                 }
-                if(_args.getOpt("poolManager") != null) {
+                if(_args.hasOption("poolManager")) {
                         poolManager = _args.getOpt("poolManager");
                 }
-                if (_args.getOpt("poolManagerTimeout")!=null) {
+                if (_args.hasOption("poolManagerTimeout")) {
                         _poolManagerTimeout = Long.parseLong(_args.getOpt("poolManagerTimeout"));
                 }
-                if(_args.getOpt("pnfsManager") != null) {
+                if(_args.hasOption("pnfsManager")) {
                         pnfsManager = _args.getOpt("pnfsManager");
                 }
-                if(_args.getOpt("updateLinkGroupsPeriod") != null) {
+                if(_args.hasOption("updateLinkGroupsPeriod")) {
                         updateLinkGroupsPeriod = Long.parseLong(_args.getOpt("updateLinkGroupsPeriod"));
                 }
-                if(_args.getOpt("expireSpaceReservationsPeriod") != null) {
+                if(_args.hasOption("expireSpaceReservationsPeriod")) {
                         expireSpaceReservationsPeriod = Long.parseLong(_args.getOpt("expireSpaceReservationsPeriod"));
                 }
-                if(_args.getOpt("cleanupPeriod") != null) {
+                if(_args.hasOption("cleanupPeriod")) {
                         spaceReservationCleanupPeriodInSeconds = Long.parseLong(_args.getOpt("cleanupPeriod"));
                 }
-                if(_args.getOpt("defaultRetentionPolicy") != null) {
+                if(_args.hasOption("defaultRetentionPolicy")) {
                         defaultPolicy = RetentionPolicy.getRetentionPolicy(_args.getOpt("defaultRetentionPolicy"));
                 }
-                if(_args.getOpt("defaultAccessLatency") != null) {
+                if(_args.hasOption("defaultAccessLatency")) {
                         defaultLatency = AccessLatency.getAccessLatency(_args.getOpt("defaultAccessLatency"));
                 }
-                if(_args.getOpt("defaultAccessLatencyForSpaceReservation") != null) {
+                if(_args.hasOption("defaultAccessLatencyForSpaceReservation")) {
                         defaultLatency = AccessLatency.getAccessLatency(
                     _args.getOpt("defaultAccessLatencyForSpaceReservation"));
                 }
-                if(_args.getOpt("reserveSpaceForNonSRMTransfers") != null) {
+                if(_args.hasOption("reserveSpaceForNonSRMTransfers")) {
                         reserveSpaceForNonSRMTransfers=
                                 _args.getOpt("reserveSpaceForNonSRMTransfers").equalsIgnoreCase("true");
                 }
-                if(_args.getOpt("deleteStoredFileRecord") != null) {
+                if(_args.hasOption("deleteStoredFileRecord")) {
                         deleteStoredFileRecord=
                                 _args.getOpt("deleteStoredFileRecord").equalsIgnoreCase("true");
                 }
-                if(_args.getOpt("cleanupExpiredSpaceFiles") != null) {
+                if(_args.hasOption("cleanupExpiredSpaceFiles")) {
                         cleanupExpiredSpaceFiles=
                                 _args.getOpt("cleanupExpiredSpaceFiles").equalsIgnoreCase("true");
                 }
-                if(_args.getOpt("returnFlushedSpaceToReservation") != null) {
+                if(_args.hasOption("returnFlushedSpaceToReservation")) {
                         returnFlushedSpaceToReservation=
                                 _args.getOpt("returnFlushedSpaceToReservation").equalsIgnoreCase("true");
                 }
-                if(_args.getOpt("returnRemovedSpaceToReservation") != null) {
+                if(_args.hasOption("returnRemovedSpaceToReservation")) {
                         returnRemovedSpaceToReservation=
                                 _args.getOpt("returnRemovedSpaceToReservation").equalsIgnoreCase("true");
                 }
-                if(_args.getOpt("matchVoGroupAndVoRole") != null) {
+                if(_args.hasOption("matchVoGroupAndVoRole")) {
                         matchVoGroupAndVoRole=
                                 _args.getOpt("matchVoGroupAndVoRole").equalsIgnoreCase("true");
                 }
-                if(_args.getOpt("linkGroupAuthorizationFileName") != null) {
+                if(_args.hasOption("linkGroupAuthorizationFileName")) {
                         String tmp = _args.getOpt("linkGroupAuthorizationFileName").trim();
                         if(tmp.length() >0) {
                                 linkGroupAuthorizationFileName = tmp;
@@ -234,7 +234,7 @@ public final class Manager
                     "configuration conflict: returnRemovedSpaceToReservation == " +
                     "true and deleteStoredFileRecord == true");
                 }
-                if(_args.getOpt("spaceManagerAuthorizationPolicy") != null ) {
+                if(_args.hasOption("spaceManagerAuthorizationPolicy") ) {
                         spaceManagerAuthorizationPolicyClass =
                                 _args.getOpt("spaceManagerAuthorizationPolicy").trim();
                 }
@@ -477,7 +477,7 @@ public final class Manager
                 String voGroup       = args.getOpt("vog");
                 String voRole        = args.getOpt("vor");
                 String description   = args.getOpt("desc");
-                boolean isLongFormat = args.getOpt("l") != null;
+                boolean isLongFormat = args.hasOption("l");
                 String id = null;
                 if (args.argc() == 1) {
                         id = args.argv(0);
@@ -973,8 +973,8 @@ public final class Manager
 
         public String hh_ls_link_groups = " [-l] [-a]  <id> # list link groups";
         public String ac_ls_link_groups_$_0_1(Args args) throws Exception {
-                boolean isLongFormat = args.getOpt("l") != null;
-                boolean all = args.getOpt("a") != null;
+                boolean isLongFormat = args.hasOption("l");
+                boolean all = args.hasOption("a");
                 String id = null;
                 if (args.argc() == 1) {
                         id = args.argv(0);
@@ -1150,8 +1150,8 @@ public final class Manager
         public String ac_listInvalidSpaces_$_0_3( Args args )
                 throws Exception {
                 int argCount       = args.optc();
-                boolean doExpired  = args.getOpt( "e" ) != null;
-                boolean doReleased = args.getOpt( "r" ) != null;
+                boolean doExpired  = args.hasOption( "e" );
+                boolean doReleased = args.hasOption( "r" );
                 int nRows = 1000;
                 if (args.argc()>0) {
                         nRows = Integer.parseInt(args.argv(0));
@@ -1307,10 +1307,10 @@ public final class Manager
                 if (optCount==0) {
                         sb.append("No option specified, will remove expired RESERVED and TRANSFERRING files\n");
                 }
-                boolean doReserved     = args.getOpt( "r" ) != null;
-                boolean doTransferring = args.getOpt( "t" ) != null;
-                boolean doStored       = args.getOpt( "s" ) != null;
-                boolean doFlushed      = args.getOpt( "f" ) != null;
+                boolean doReserved     = args.hasOption( "r" );
+                boolean doTransferring = args.hasOption( "t" );
+                boolean doStored       = args.hasOption( "s" );
+                boolean doFlushed      = args.hasOption( "f" );
                 Set<Space> spaces=manager.selectPrepared(spaceReservationIO,
                                                          SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
                                                          spaceId);

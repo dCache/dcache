@@ -286,7 +286,7 @@ public class StorageClassContainer
     public String ac_queue_ls_classes(Args args) throws CacheException
     {
         StringBuilder sb = new StringBuilder();
-        boolean l = args.getOpt("l") != null;
+        boolean l = args.hasOption("l");
         for (StorageClassInfo classInfo : getStorageClassInfos()) {
             if (l) {
                 dumpClassInfo(sb, classInfo);
@@ -309,7 +309,7 @@ public class StorageClassContainer
         throws CacheException, InterruptedException
     {
         StringBuilder sb = new StringBuilder();
-        boolean l = args.getOpt("l") != null;
+        boolean l = args.hasOption("l");
         try {
             for (StorageClassInfo classInfo : getStorageClassInfos()) {
                 boolean suspended = classInfo.isSuspended();

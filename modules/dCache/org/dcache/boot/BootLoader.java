@@ -286,8 +286,8 @@ public class BootLoader
 
     private static LayoutPrinter printerForArgs(Args args, Layout layout)
     {
-        boolean compileForShell = args.getOption(CMD_COMPILE_OP_SHELL) != null;
-        boolean compileForXml = args.getOption(CMD_COMPILE_OP_XML) != null;
+        boolean compileForShell = args.hasOption(CMD_COMPILE_OP_SHELL);
+        boolean compileForXml = args.hasOption(CMD_COMPILE_OP_XML);
 
         if(compileForShell == compileForXml) {
             throw new IllegalArgumentException("Must specify exactly one of -" +

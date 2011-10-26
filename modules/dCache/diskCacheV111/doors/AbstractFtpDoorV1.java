@@ -1294,7 +1294,7 @@ public abstract class AbstractFtpDoorV1
                 doorInfo.setProtocol("GFtp", "1");
             }
 
-            if (args.getOpt("binary") != null)
+            if (args.hasOption("binary"))
                 return doorInfo;
             else
                 return doorInfo.toString();
@@ -2802,7 +2802,7 @@ public abstract class AbstractFtpDoorV1
 
         Args args = new Args(arg);
         boolean listLong =
-            args.options().isEmpty() || (args.getOpt("l") != null);
+            args.options().isEmpty() || args.hasOption("l");
         if (args.argc() == 0) {
             arg = "";
         } else {

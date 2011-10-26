@@ -624,7 +624,7 @@ public final class Storage
     {
         Collection<String> sets = new ArrayList<String>();
         for (Map.Entry<String,String> e: OPTION_TO_PARAMETER_SET.entrySet()) {
-            if (args.getOpt(e.getKey()) != null) {
+            if (args.hasOption(e.getKey())) {
                 sets.add(e.getValue());
             }
         }
@@ -676,12 +676,12 @@ public final class Storage
     public final static String hh_cancelall= " [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
     public String ac_cancelall_$_1(Args args) {
         try {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean bring=args.getOpt("bring") != null;
-            boolean reserve=args.getOpt("reserve") != null;
-            boolean ls=args.getOpt("ls") != null;
+            boolean get=args.hasOption("get");
+            boolean put=args.hasOption("put");
+            boolean copy=args.hasOption("copy");
+            boolean bring=args.hasOption("bring");
+            boolean reserve=args.hasOption("reserve");
+            boolean ls=args.hasOption("ls");
             if( !get && !put && !copy && !bring && !reserve && !ls ) {
                 get=true;
                 put=true;
@@ -730,13 +730,13 @@ public final class Storage
     public final static String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
     public String ac_ls_$_0_1(Args args) {
         try {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean bring=args.getOpt("bring") != null;
-            boolean reserve=args.getOpt("reserve") != null;
-            boolean ls=args.getOpt("ls") != null;
-            boolean longformat = args.getOpt("l") != null;
+            boolean get=args.hasOption("get");
+            boolean put=args.hasOption("put");
+            boolean copy=args.hasOption("copy");
+            boolean bring=args.hasOption("bring");
+            boolean reserve=args.hasOption("reserve");
+            boolean ls=args.hasOption("ls");
+            boolean longformat = args.hasOption("l");
             StringBuilder sb = new StringBuilder();
             if(args.argc() == 1) {
                 try {
@@ -791,12 +791,12 @@ public final class Storage
     public final static String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-ls] [-l] ";
     public String ac_ls_queues_$_0(Args args) {
         try {
-            boolean get=args.getOpt("get") != null;
-            boolean put=args.getOpt("put") != null;
-            boolean ls=args.getOpt("ls") != null;
-            boolean copy=args.getOpt("copy") != null;
-            boolean bring=args.getOpt("bring") != null;
-            boolean longformat = args.getOpt("l") != null;
+            boolean get=args.hasOption("get");
+            boolean put=args.hasOption("put");
+            boolean ls=args.hasOption("ls");
+            boolean copy=args.hasOption("copy");
+            boolean bring=args.hasOption("bring");
+            boolean longformat = args.hasOption("l");
             StringBuilder sb = new StringBuilder();
 
             if( !get && !put && !copy && !bring && !ls ) {
@@ -854,10 +854,10 @@ public final class Storage
         "if max_count is not specified, it is set to 50";
     public final static String hh_ls_completed= " [-get] [-put] [-copy] [-l] [max_count]";
     public String ac_ls_completed_$_0_1(Args args) throws Exception{
-        boolean get=args.getOpt("get") != null;
-        boolean put=args.getOpt("put") != null;
-        boolean copy=args.getOpt("copy") != null;
-        boolean longformat = args.getOpt("l") != null;
+        boolean get=args.hasOption("get");
+        boolean put=args.hasOption("put");
+        boolean copy=args.hasOption("copy");
+        boolean longformat = args.hasOption("l");
         int max_count=50;
         if(args.argc() == 1) {
             max_count = Integer.parseInt(args.argv(0));
@@ -995,7 +995,7 @@ public final class Storage
       public final static String hh_dir_creators_ls= " [-l] ";
       public String ac_dir_creators_ls_$_0(Args args) {
         try {
-            boolean longformat = args.getOpt("l") != null;
+            boolean longformat = args.hasOption("l");
             StringBuilder sb = new StringBuilder();
             PutCompanion.listDirectoriesWaitingForCreation(sb,longformat);
             return sb.toString();

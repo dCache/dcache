@@ -138,7 +138,7 @@ public class CopyManager extends AbstractCell
     public final static String hh_ls = "[-l] [<#transferId>]";
     public String ac_ls_$_0_1(Args args)
     {
-        boolean long_format = args.getOpt("l") != null;
+        boolean long_format = args.hasOption("l");
         if (args.argc() > 0) {
             long id = Long.parseLong(args.argv(0));
             CopyHandler transferHandler = _activeTransfers.get(id);
@@ -163,7 +163,7 @@ public class CopyManager extends AbstractCell
     public final static String hh_queue = "[-l]";
     public synchronized String ac_queue_$_0(Args args)
     {
-        boolean long_format = args.getOpt("l") != null;
+        boolean long_format = args.hasOption("l");
         StringBuilder sb = new StringBuilder();
         if (_queue.isEmpty()) {
             return "Queue is empty";

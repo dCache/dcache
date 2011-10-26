@@ -23,7 +23,7 @@ public class CellsTopologyInterpreter
     public final String hh_ls = "[-l] # list available domains";
     public String ac_ls_$_0(Args args)
     {
-        boolean detail = args.getOpt("l") != null;
+        boolean detail = args.hasOption("l");
 
         CellDomainNode [] info = _topology.getInfoMap();
         if (info == null) {

@@ -311,7 +311,7 @@ public class ChecksumModuleV1
             _scanner.stopScrubber();
         }
 
-        return (args.getOpt("v") == null) ? "" : getPolicies();
+        return !args.hasOption("v") ? "" : getPolicies();
     }
 
     public boolean getCrcFromHsm()

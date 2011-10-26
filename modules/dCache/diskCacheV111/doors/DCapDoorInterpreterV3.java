@@ -224,19 +224,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         String truncate = _args.getOpt("truncate");
         _truncateAllowed = (truncate != null) && truncate.equals("true") ;
 
-        _isAccessLatencyOverwriteAllowed = _args.getOpt("allow-access-policy-overwrite") != null ;
+        _isAccessLatencyOverwriteAllowed = _args.hasOption("allow-access-policy-overwrite") ;
         _log.debug("Allowes to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
 
-        _isRetentionPolicyOverwriteAllowed = _args.getOpt("allow-retention-policy-overwrite") != null;
+        _isRetentionPolicyOverwriteAllowed = _args.hasOption("allow-retention-policy-overwrite");
         _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
 
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
         _pinManagerStub = new CellStub(cell, new CellPath(_args.getOpt("pinManager")));
 
-        _checkStrict     = ( _args.getOpt("check") != null ) &&
+        _checkStrict     = _args.hasOption("check") &&
         ( _args.getOpt("check").equals("strict") ) ;
 
-        _strictSize      = _args.getOpt("strict-size") != null ;
+        _strictSize      = _args.hasOption("strict-size") ;
 
         _hsmManager      = _args.getOpt("hsm") ;
 
@@ -275,7 +275,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
 
-        if (_args.getOpt("readOnly") != null)
+        if (_args.hasOption("readOnly"))
             _log.debug("Door is configured as read-only");
         else
             _log.debug("Door is configured as read/write");
@@ -731,7 +731,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         info.setIoDoorEntries( list.toArray(new IoDoorEntry[list.size()]) );
-        if( args.getOpt("binary") != null )
+        if( args.hasOption("binary") )
             return info ;
         else
             return info.toString() ;
@@ -759,7 +759,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                  " but "+session.getClass().getName());
         }
 
-        ((PnfsSessionHandler) session).again( args.getOpt("weak") == null ) ;
+        ((PnfsSessionHandler) session).again( !args.hasOption("weak") ) ;
 
         return "" ;
     }
@@ -809,7 +809,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _origin = Subjects.getOrigin(_subject);
 
             _readOnly =
-                (DCapDoorInterpreterV3.this._args.getOpt("readOnly") != null);
+                (DCapDoorInterpreterV3.this._args.hasOption("readOnly"));
             for (LoginAttribute attribute: login.getLoginAttributes()) {
                 if (attribute instanceof ReadOnly) {
                     _readOnly |= ((ReadOnly) attribute).isReadOnly();
@@ -1813,7 +1813,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             StringTokenizer st = new StringTokenizer( _vargs.argv(2) , "," ) ;
 
-            _passive = args.getOpt("passive") != null;
+            _passive = args.hasOption("passive");
             if (_passive) {
                 _hosts = new String[]{_clientAddress.getHostAddress()};
             } else {
@@ -1826,7 +1826,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
 
-            _isHsmRequest = ( args.getOpt("hsm") != null  );
+            _isHsmRequest = args.hasOption("hsm");
             if( _isHsmRequest ){
                 _log.debug("Hsm Feature Requested");
                 if( _hsmManager == null )
@@ -1834,8 +1834,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     CacheException( 105 , "Hsm Support Not enabled" ) ;
             }
 
-            _overwrite      = args.getOpt("overwrite")   != null ;
-            _strictSize     = args.getOpt("strict-size") != null ;
+            _overwrite      = args.hasOption("overwrite") ;
+            _strictSize     = args.hasOption("strict-size") ;
             _checksumString = args.getOpt("checksum") ;
             _truncFile      = args.getOpt("truncate");
             _truncate       = ( _truncFile != null ) && _truncateAllowed  ;

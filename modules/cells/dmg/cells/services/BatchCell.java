@@ -57,7 +57,7 @@ public class BatchCell extends CellAdapter implements Runnable
             if (args.argc() < 1)
                 throw new IllegalArgumentException("Usage : ... <batchFilename>");
             _source = args.argv(0);
-            if (args.getOpt("jar") != null) {
+            if (args.hasOption("jar")) {
                 InputStream input =
                     ClassLoader.getSystemResourceAsStream(_source);
                 if (input == null)

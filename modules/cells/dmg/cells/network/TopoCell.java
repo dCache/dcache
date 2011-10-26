@@ -67,7 +67,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
 
    public String hh_ls = "ls [-l]" ;
    public String ac_ls_$_0( Args args ){
-       boolean detail = args.getOpt("l") != null ;
+       boolean detail = args.hasOption("l") ;
 
 
        CellDomainNode [] info = getInfoMap() ;

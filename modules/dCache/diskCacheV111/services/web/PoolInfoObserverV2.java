@@ -101,7 +101,7 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         groupClass = groupClass == null ? "default" : groupClass;
         String poolGroup = args.argv(0);
         String name      = args.argv(1);
-        if (args.getOpt("pattern") == null) {
+        if (!args.hasOption("pattern")) {
             _container.removePool(groupClass, poolGroup, name);
         } else {
             _container.removePattern(groupClass, poolGroup, name);

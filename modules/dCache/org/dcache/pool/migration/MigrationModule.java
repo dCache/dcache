@@ -446,9 +446,9 @@ public class MigrationModule
         String excludeWhen = args.getOpt("exclude-when");
         String include = args.getOpt("include");
         String includeWhen = args.getOpt("include-when");
-        boolean permanent = (args.getOpt("permanent") != null);
-        boolean eager = (args.getOpt("eager") != null);
-        boolean verify = (args.getOpt("verify") != null) || defaultVerify;
+        boolean permanent = args.hasOption("permanent");
+        boolean eager = args.hasOption("eager");
+        boolean verify = args.hasOption("verify") || defaultVerify;
         String sourceMode = args.getOpt("smode");
         String targetMode = args.getOpt("tmode");
         String select = args.getOpt("select");
@@ -881,7 +881,7 @@ public class MigrationModule
     public String ac_migration_cancel_$_1(Args args)
     {
         String id = args.argv(0);
-        boolean force = (args.getOpt("force") != null);
+        boolean force = args.hasOption("force");
         Job job = getJob(id);
         job.cancel(force);
         return getJobSummary(id);

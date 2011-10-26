@@ -1706,7 +1706,7 @@ public class PoolV4
                 throw new IllegalArgumentException(
                                                    "Hybrid inventory still active");
             _hybridInventoryActive = true;
-            new HybridInventory(args.getOpt("destroy") == null);
+            new HybridInventory(!args.hasOption("destroy"));
         }
         return "";
     }
@@ -1807,19 +1807,19 @@ public class PoolV4
         String rm = (args.argc() > 1) ? args.argv(1) : "Operator intervention";
 
         int modeBits = PoolV2Mode.DISABLED;
-        if (args.getOpt("strict") != null)
+        if (args.hasOption("strict"))
             modeBits |= PoolV2Mode.DISABLED_STRICT;
-        if (args.getOpt("stage") != null)
+        if (args.hasOption("stage"))
             modeBits |= PoolV2Mode.DISABLED_STAGE;
-        if (args.getOpt("fetch") != null)
+        if (args.hasOption("fetch"))
             modeBits |= PoolV2Mode.DISABLED_FETCH;
-        if (args.getOpt("store") != null)
+        if (args.hasOption("store"))
             modeBits |= PoolV2Mode.DISABLED_STORE;
-        if (args.getOpt("p2p-client") != null)
+        if (args.hasOption("p2p-client"))
             modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
-        if (args.getOpt("p2p-server") != null)
+        if (args.hasOption("p2p-server"))
             modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
-        if (args.getOpt("rdonly") != null)
+        if (args.hasOption("rdonly"))
             modeBits |= PoolV2Mode.DISABLED_RDONLY;
 
         disablePool(modeBits, rc, rm);
@@ -1971,7 +1971,7 @@ public class PoolV4
     {
         StringBuilder sb = new StringBuilder();
 
-        if (args.getOpt("l") != null) {
+        if (args.hasOption("l")) {
             for (IoScheduler js : _ioQueue.getSchedulers()) {
                 sb.append(js.getName())
                     .append(" ").append(js.getActiveJobs())
@@ -1988,7 +1988,7 @@ public class PoolV4
 
     public Object ac_mover_ls_$_0_1(Args args) throws NoSuchElementException {
         String queueName = args.getOpt("queue");
-        boolean binary = args.getOpt("binary") != null;
+        boolean binary = args.hasOption("binary");
 
         if (binary && args.argc() > 0) {
             int id = Integer.parseInt(args.argv(0));
@@ -2022,7 +2022,7 @@ public class PoolV4
     {
         IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
 
-        boolean binary = args.getOpt("binary") != null;
+        boolean binary = args.hasOption("binary");
         if (binary && args.argc() > 0) {
             int id = Integer.parseInt(args.argv(0));
             IoScheduler js = _ioQueue.getQueueByJobId(id);
@@ -2072,7 +2072,7 @@ public class PoolV4
         throws NoSuchElementException, NumberFormatException
     {
         int id = Integer.parseInt(args.argv(0));
-        boolean force = args.getOpt("force") != null;
+        boolean force = args.hasOption("force");
         IoScheduler js = _ioQueue.getQueueByJobId(id);
         mover_kill(js, id, force);
         return "Kill initialized";

@@ -225,7 +225,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 	    _globalLock = new File( _currentDir , "GlobalLock" ) ;
             _globalLock.deleteOnExit() ;
 
-            _nullBug = _args.getOpt("nullBug") != null ;
+            _nullBug = _args.hasOption("nullBug") ;
 
             String tmp = _args.getOpt("usePnfsManager") ;
             if( ( tmp != null ) && ( tmp.length() > 0 ) ){
@@ -499,7 +499,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
           _refreshInterval = newRefresh ;
        }
-       if( args.getOpt("wakeup") != null ){
+       if( args.hasOption("wakeup") ){
           synchronized( _sleepLock ){
               _sleepLock.notifyAll() ;
           }
@@ -523,7 +523,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
     }
     public String hh_reactivate = "<poolName> | -a" ;
     public String ac_reactivate_$_0_1( Args args ) throws Exception {
-        boolean all = args.getOpt("a") != null ;
+        boolean all = args.hasOption("a") ;
         if( ( ( ! all ) && ( args.argc() < 1 ) ) ||
             ( ( all )   && ( args.argc() > 0 ) )    )
              throw new
@@ -562,11 +562,11 @@ public class CleanerV2 extends CellAdapter implements Runnable {
     public String hh_scan = "[-init] [-force]" ;
     public String ac_scan( Args args )throws Exception {
 
-        if( args.getOpt("force") == null )getGlobalLock() ;
+        if( !args.hasOption("force") )getGlobalLock() ;
 
         try{
 
-           runNextCheck( args.getOpt("init") != null ) ;
+           runNextCheck( args.hasOption("init") ) ;
 
         }finally{
            releaseGlobalLock() ;
@@ -1189,8 +1189,8 @@ public class CleanerV2 extends CellAdapter implements Runnable {
    public String hh_ls_failed = "[-a] [-l]" ;
    public String ac_ls_failed( Args args )throws Exception {
       StringBuffer sb = new StringBuffer() ;
-      boolean detail  = args.getOpt("l") != null ;
-      boolean more    = args.getOpt("a") != null ;
+      boolean detail  = args.hasOption("l") ;
+      boolean more    = args.hasOption("a") ;
       detail = more ? true : detail ;
       String [] poolFileList = _currentDir.list(
          //

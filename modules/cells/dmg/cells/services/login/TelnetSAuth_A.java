@@ -38,7 +38,7 @@ public class      TelnetSAuth_A
       _args      = args ;
       _password  = args.getOpt("passwd") ;
       _password  = _password == null ? "elch" : _password ;
-      _localOk   = args.getOpt("localOk") != null ;
+      _localOk   = args.hasOption("localOk") ;
       _acmCell   = args.getOpt("acm") ;
 
       String pwdFile = args.getOpt( "pswdfile" ) ;

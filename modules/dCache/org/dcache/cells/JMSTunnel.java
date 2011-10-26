@@ -430,7 +430,7 @@ public class JMSTunnel
     @Deprecated
     synchronized public Object ac_ls_$_0(Args args)
     {
-    	if (args.getOpt("x") == null) {
+    	if (!args.hasOption("x")) {
     		// Throw together some meaningful output.
     		ByteArrayOutputStream os = new ByteArrayOutputStream();
     		PrintWriter pw = new PrintWriter(os);

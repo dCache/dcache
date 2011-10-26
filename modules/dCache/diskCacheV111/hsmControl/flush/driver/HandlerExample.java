@@ -50,7 +50,7 @@ public class HandlerExample implements HsmFlushSchedulable {
          for( int i = 0 ; i < args.optc() ; i++ ){
              _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
          }
-         _doNothing = args.getOpt("do-nothing") != null ;
+         _doNothing = args.hasOption("do-nothing") ;
          _properties.put( "mode" , _doNothing ? "manual" : "auto" ) ;
 
          for( Iterator i = _core.getConfiguredPoolNames().iterator() ; i.hasNext() ; ){

@@ -132,7 +132,7 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_show_parents = "<principal>" ;
     public Object ac_show_parents_$_1_( Args args )throws Exception{
         String  user     = args.argv(0) ;
-        boolean isBinary = args.getOpt("binary") != null  ;
+        boolean isBinary = args.hasOption("binary")  ;
         
         _userMetaDb.getDictionary( user ) ; // check exists
         try{
@@ -147,7 +147,7 @@ public class UserAdminCommands implements  Interpretable {
     public Object ac_show_group_$_1( Args args )throws Exception {
         Enumeration  ee  = _userDb.getElementsOf(args.argv(0)) ;
         Enumeration  ep  = _userDb.getParentsOf(args.argv(0)) ;
-        if( args.getOpt("binary") == null ){
+        if( !args.hasOption("binary") ){
            StringBuffer sb = new StringBuffer() ;
            sb.append( "Parents : \n" ) ;
            while( ep.hasMoreElements() ){
@@ -168,7 +168,7 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_show_groups = "" ;
     public Object ac_show_groups( Args args )throws Exception {
         Enumeration  e  = _userDb.getContainers() ;
-        return args.getOpt("binary") == null ?
+        return !args.hasOption("binary") ?
                (Object) sendAscii( e ) : sendBinary( e ) ;
     }
     private String sendAscii( Enumeration e ){
@@ -188,7 +188,7 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_add_access = "[-allowed|-denied] <acl> <principal>" ;
     public String ac_add_access_$_2( Args args )throws Exception {
        checkDatabase() ;
-       boolean allowed = args.getOpt("denied") == null ;
+       boolean allowed = !args.hasOption("denied") ;
        String acl   = args.argv(0) ;
        String princ = args.argv(1) ;
        checkPermission( args , "acl."+acl+".add" ) ;
@@ -226,7 +226,7 @@ public class UserAdminCommands implements  Interpretable {
     public String hh_show_acl = "<aclName> [-resolve]" ;
     public Object ac_show_acl_$_1( Args args )throws Exception {
         checkDatabase() ;
-        boolean resolve = args.getOpt("resolve") != null ;
+        boolean resolve = args.hasOption("resolve") ;
         AcDictionary dict = _aclDb.getPermissions(args.argv(0),resolve);
         Enumeration e = dict.getPrincipals() ;
         String inherits = dict.getInheritance() ;
@@ -247,7 +247,7 @@ public class UserAdminCommands implements  Interpretable {
             sb.append( user+" -> "+perm+"\n" ) ;
             hash.put( user , Boolean.valueOf( perm ) ) ;
         }
-        return args.getOpt("binary") == null ? 
+        return !args.hasOption("binary") ? 
                (Object)sb.toString() :
                (Object)hash ;
     }
@@ -255,14 +255,14 @@ public class UserAdminCommands implements  Interpretable {
     public Object ac_check_$_2( Args args )throws Exception {
         checkDatabase() ;
         boolean ok = _aclDb.check(args.argv(0),args.argv(1),_userDb);
-        if( args.getOpt("binary") != null )return Boolean.valueOf(ok) ;
+        if( args.hasOption("binary") )return Boolean.valueOf(ok) ;
         return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
     }
     public String hh_show_principal = "<principalName>" ;
     public Object ac_show_principal_$_1( Args args )throws Exception {
         UserMetaDictionary dict = _userMetaDb.getDictionary(args.argv(0)) ;
         Enumeration e = dict.keys() ;
-        if( args.getOpt( "binary" ) == null ){
+        if( !args.hasOption( "binary" ) ){
            StringBuffer sb = new StringBuffer() ;
            while( e.hasMoreElements() ){
                String user = (String)e.nextElement() ;

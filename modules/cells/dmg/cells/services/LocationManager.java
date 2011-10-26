@@ -817,7 +817,7 @@ public class LocationManager extends CellAdapter {
          _lmHandler = new LocationManagerHandler(clientPort, address, port);
          _lmHandler.start() ;
 
-         if( args.getOpt("noboot") == null ){
+         if( !args.hasOption("noboot") ){
            _whatToDo = _nucleus.newThread(this,"WhatToDo");
            _whatToDo.start() ;
          }
@@ -1130,7 +1130,7 @@ public class LocationManager extends CellAdapter {
               port = Integer.parseInt( _args.argv(1) );
               host = InetAddress.getByName( _args.argv(0) ) ;
            }
-           if( _args.getOpt("noclient") == null ){
+           if( !_args.hasOption("noclient") ){
               _client = new Client( host , port , _args ) ;
               _log.info("Client started");
            }

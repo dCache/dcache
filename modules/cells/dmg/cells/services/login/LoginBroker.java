@@ -68,12 +68,12 @@ public class LoginBroker
     public String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
     public Object ac_ls(Args args)
     {
-        boolean   binary   = args.getOpt("binary") != null;
+        boolean   binary   = args.hasOption("binary");
         String    protocols= args.getOpt("protocol");
         ArrayList list     = new ArrayList();
         StringBuffer sb    = new StringBuffer();
-        boolean   showTime = args.getOpt("l") != null;
-        boolean   showAll = args.getOpt("all") != null;
+        boolean   showTime = args.hasOption("l");
+        boolean   showAll = args.hasOption("all");
 
         Set<String> protocolSet = null;
 

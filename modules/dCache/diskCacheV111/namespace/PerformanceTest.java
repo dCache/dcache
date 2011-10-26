@@ -101,7 +101,7 @@ public class PerformanceTest extends Thread
     public static List<Operation> getOps(Args args){
         List<Operation> toReturn = new ArrayList<Operation>();
         for(Operation aOp: Operation.values()) {
-            if(args.getOpt(aOp.getUserInput()) != null) {
+            if(args.hasOption(aOp.getUserInput())) {
 		    toReturn.add(aOp);
 	    }
         }
@@ -138,7 +138,7 @@ public class PerformanceTest extends Thread
 
 	ops = getOps(args);
         int concurrency =
-            (args.getOpt("threads") != null) ? Integer.parseInt(args.getOpt("threads")) : 1;
+            (args.hasOption("threads")) ? Integer.parseInt(args.getOpt("threads")) : 1;
 
         /* Instantiate provider.
          */

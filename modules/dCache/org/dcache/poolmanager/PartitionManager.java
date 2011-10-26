@@ -267,7 +267,7 @@ public class PartitionManager
                     .append(" (")
                     .append(entry.getValue().getType())
                     .append(")\n");
-                if (args.getOpt("l") != null) {
+                if (args.hasOption("l")) {
                     printProperties(sb, entry.getValue());
                 }
             }

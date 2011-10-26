@@ -449,7 +449,7 @@ public class      UserAdminShell
        String storageClassName  = args.argv(0) ;
        String service           = args.getOpt("service");
        service = service == null ? "QuotaManager" : service ;
-       boolean extended         = args.getOpt("l") != null ;
+       boolean extended         = args.hasOption("l") ;
 
        Message msg = null ;
 
@@ -497,7 +497,7 @@ public class      UserAdminShell
              args.argv(0) ,
              args.getOpt("target") ,
              true ,
-             args.getOpt("silent") == null ? new StringBuffer() : null ) ;
+             !args.hasOption("silent") ? new StringBuffer() : null ) ;
     }
     public String hh_set_unsticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_set_unsticky_$_1( Args args ) throws Exception  {
@@ -505,7 +505,7 @@ public class      UserAdminShell
              args.argv(0) ,
              args.getOpt("target") ,
              false ,
-             args.getOpt("silent") == null ? new StringBuffer() : null ) ;
+             !args.hasOption("silent") ? new StringBuffer() : null ) ;
     }
     public String hh_uncache = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_uncache_$_1( Args args ) throws Exception {
@@ -513,7 +513,7 @@ public class      UserAdminShell
        return uncache(
              args.argv(0) ,
              args.getOpt("target") ,
-             args.getOpt("silent") == null ? new StringBuffer() : null ) ;
+             !args.hasOption("silent") ? new StringBuffer() : null ) ;
       }catch(Exception ee ){
          ee.printStackTrace();
          throw ee ;
@@ -967,13 +967,13 @@ public class      UserAdminShell
        if( enable.equals("disable") ){
 
           int modeBits = PoolV2Mode.DISABLED ;
-          if( args.getOpt("strict")     != null )modeBits |= PoolV2Mode.DISABLED_STRICT ;
-          if( args.getOpt("stage")      != null )modeBits |= PoolV2Mode.DISABLED_STAGE ;
-          if( args.getOpt("fetch")      != null )modeBits |= PoolV2Mode.DISABLED_FETCH ;
-          if( args.getOpt("store")      != null )modeBits |= PoolV2Mode.DISABLED_STORE ;
-          if( args.getOpt("p2p-client") != null )modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT ;
-          if( args.getOpt("p2p-server") != null )modeBits |= PoolV2Mode.DISABLED_P2P_SERVER ;
-          if( args.getOpt("rdonly")     != null )modeBits |= PoolV2Mode.DISABLED_RDONLY ;
+          if( args.hasOption("strict") )modeBits |= PoolV2Mode.DISABLED_STRICT ;
+          if( args.hasOption("stage") )modeBits |= PoolV2Mode.DISABLED_STAGE ;
+          if( args.hasOption("fetch") )modeBits |= PoolV2Mode.DISABLED_FETCH ;
+          if( args.hasOption("store") )modeBits |= PoolV2Mode.DISABLED_STORE ;
+          if( args.hasOption("p2p-client") )modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT ;
+          if( args.hasOption("p2p-server") )modeBits |= PoolV2Mode.DISABLED_P2P_SERVER ;
+          if( args.hasOption("rdonly") )modeBits |= PoolV2Mode.DISABLED_RDONLY ;
 
           mode.setMode(modeBits) ;
 

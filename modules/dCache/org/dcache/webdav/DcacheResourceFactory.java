@@ -910,7 +910,7 @@ public class DcacheResourceFactory
     public final static String hh_get_children = "[-binary]";
     public Object ac_get_children(Args args)
     {
-        boolean binary = args.getOpt("binary") != null;
+        boolean binary = args.hasOption("binary");
         if (binary) {
             String [] list = new String[] { _cellName };
             return new LoginManagerChildrenInfo(_cellName, _domainName, list);
@@ -935,7 +935,7 @@ public class DcacheResourceFactory
         doorInfo.setOwner("");
         doorInfo.setProcess("");
         doorInfo.setIoDoorEntries(transfers.toArray(new IoDoorEntry[0]));
-        return (args.getOpt("binary") != null) ? doorInfo : doorInfo.toString();
+        return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 
     private void initializeTransfer(HttpTransfer transfer, Subject subject)

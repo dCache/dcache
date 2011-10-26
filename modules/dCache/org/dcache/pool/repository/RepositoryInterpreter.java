@@ -49,12 +49,12 @@ public class RepositoryInterpreter
         PnfsId pnfsId = new PnfsId(args.argv(0));
         String state = args.argv(1);
         String owner = "system";
-        if (args.getOpt("o") != null) {
+        if (args.hasOption("o")) {
             owner = args.getOpt("o");
         }
 
         long expire = -1;
-        if (args.getOpt("l") != null) {
+        if (args.hasOption("l")) {
             long argValue = Long.parseLong(args.getOpt("l"));
             checkArgument(argValue > 0, "the -l option must be a positive integer.");
             expire = System.currentTimeMillis() + argValue;
@@ -214,7 +214,7 @@ public class RepositoryInterpreter
                                 // Entry deleted - no problem
                             }
                         }
-                        if (args.getOpt("sum") != null) {
+                        if (args.hasOption("sum")) {
                             long[] counter = new long[10];
                             map.put("total", counter);
                             SpaceRecord record = _repository.getSpaceRecord();
@@ -224,7 +224,7 @@ public class RepositoryInterpreter
                         }
 
                         Iterator<String> e2 = map.keySet().iterator();
-                        if (args.getOpt("binary") != null) {
+                        if (args.hasOption("binary")) {
                             Object [] result = new Object[map.size()];
                             for (int i = 0; e2.hasNext(); i++) {
                                 Object[] ex =  new Object[2];
@@ -341,7 +341,7 @@ public class RepositoryInterpreter
     public String hh_rep_rm = "<pnfsid> [-force]# removes the pnfsfile from the cache";
     public String ac_rep_rm_$_1_(Args args) throws Exception
     {
-        boolean forced = args.getOpt("force") != null;
+        boolean forced = args.hasOption("force");
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         CacheEntry entry = _repository.getEntry(pnfsId);
         int client = 0;

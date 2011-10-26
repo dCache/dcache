@@ -93,7 +93,7 @@ public class CopyManager extends CellAdapter {
    }
    public String hh_stop = "[-interrupt]  # DEBUG only" ;
    public String ac_stop( Args args ){
-       boolean inter = args.getOpt("interrupt") != null ;
+       boolean inter = args.hasOption("interrupt") ;
        synchronized( _processLock ){
            if( ! _isActive )
                throw new
@@ -130,10 +130,10 @@ public class CopyManager extends CellAdapter {
    public String hh_ls = "[-d] [-w] [-a] [pnfsId]" ;
    public String ac_ls_$_0_1( Args args ){
 
-       boolean w = args.getOpt("w") != null ;
-       boolean d = args.getOpt("d") != null ;
-       boolean a = args.getOpt("a") != null ;
-       boolean e = args.getOpt("e") != null ;
+       boolean w = args.hasOption("w") ;
+       boolean d = args.hasOption("d") ;
+       boolean a = args.hasOption("a") ;
+       boolean e = args.hasOption("e") ;
 
        PoolRepository rep = null ;
        StringBuffer   sb  = new StringBuffer() ;
@@ -251,7 +251,7 @@ public class CopyManager extends CellAdapter {
            String [] to = new String[dests] ;
            for( int i = 0 ; i < dests ; i++ )to[i] = args.argv(i+1);
 
-           resetParameter( from , to , args.getOpt("precious") != null ) ;
+           resetParameter( from , to , args.hasOption("precious") ) ;
 
            String max = args.getOpt("max") ;
            if( max != null )_parameter._maxActive = Integer.parseInt(max) ;
