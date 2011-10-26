@@ -439,6 +439,7 @@ class FsSqlDriver {
         return inode;
     }
     private static final String sqlMove = "UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=?";
+    private static final String sqlSetParent = "UPDATE t_dirs SET ipnfsid=? WHERE iparent=? AND iname='..'";
 
     /**
      * move source from srcDir into dest in destDir.
@@ -454,6 +455,7 @@ class FsSqlDriver {
     void move(Connection dbConnection, FsInode srcDir, String source, FsInode destDir, String dest) throws SQLException {
 
         PreparedStatement stMove = null;
+        PreparedStatement stParentMove = null;
 
         try {
 
@@ -483,10 +485,22 @@ class FsSqlDriver {
             stMove.setString(4, source);
             stMove.executeUpdate();
 
+            /*
+             * if moving a directory, point '..' to the new parent
+             */
+            Stat stat = stat(dbConnection, srcInode);
+            if ( (stat.getMode() & UnixPermission.S_IFDIR) != 0) {
+                stParentMove = dbConnection.prepareStatement(sqlSetParent);
+                stParentMove.setString(1, destDir.toString());
+                stParentMove.setString(2, srcInode.toString());
+                stParentMove.executeUpdate();
+            }
+
             decNlink(dbConnection, srcDir);
 
         } finally {
             SqlHelper.tryToClose(stMove);
+            SqlHelper.tryToClose(stParentMove);
         }
 
     }
