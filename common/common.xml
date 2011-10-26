@@ -206,7 +206,7 @@
       </pathconvert>
 
       <!-- Finally, generate the classpath.properties file -->
-      <property name="classpath.properties" value="${server.bin.dir}/share/defaults/classpath.properties"/>
+      <property name="classpath.properties" location="${server.bin.dir}/share/defaults/classpath.properties"/>
 
       <echo file="${classpath.properties}">#  -----------------------------------------------------------------------
 #       Location of jar files
