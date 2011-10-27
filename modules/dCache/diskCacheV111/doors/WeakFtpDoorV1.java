@@ -38,28 +38,15 @@
 
 package diskCacheV111.doors;
 
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
-import diskCacheV111.cells.*;
+import javax.security.auth.Subject;
 
-
-import dmg.cells.nucleus.*;
-import dmg.cells.network.*;
-import dmg.util.*;
-
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.lang.reflect.*;
-import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
-import org.ietf.jgss.*;
-import java.lang.Thread;
-import java.util.regex.*;
-import java.util.concurrent.ExecutionException;
 
-import javax.security.auth.Subject;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import dmg.util.Args;
+import dmg.util.StreamEngine;
 
 /**
  *
@@ -69,7 +56,6 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     /** Creates a new instance of WeakFtpDoorV1 */
     public WeakFtpDoorV1(String name, StreamEngine engine, Args args)
-        throws InterruptedException, ExecutionException
     {
         super(name,engine,args);
     }
@@ -82,22 +68,27 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         ftpDoorName = "Weak FTP";
     }
 
+    @Override
     protected void secure_reply(String answer, String code) {
     }
 
+    @Override
     public void ac_auth(String arg) {
         reply("500 Not Supported");
     }
 
+    @Override
     public void ac_adat(String arg) {
         reply("500 Not Supported");
     }
 
+    @Override
     public void secure_command(String arg, String sectype) throws dmg.util.CommandExitException {
     }
 
     private String _user;
 
+    @Override
     public void ac_user(String arg)
     {
         if (arg.equals("")){
@@ -109,6 +100,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         println("331 Password required for "+_user+".");
     }
 
+    @Override
     public void ac_pass(String arg)
     {
         Subject subject = new Subject();
