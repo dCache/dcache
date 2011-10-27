@@ -6,10 +6,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Collections;
+import com.google.common.collect.ImmutableSet;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 import javax.security.auth.Subject;
 
@@ -51,24 +52,6 @@ public class SubjectsTest
     private Subject _subject2;
     private Subject _subject3;
     private Subject _subject4;
-
-    private Set<Long> asSet(long... array)
-    {
-        Set<Long> result = new HashSet<Long>();
-        for (long l: array) {
-            result.add(l);
-        }
-        return result;
-    }
-
-    private <T> Set<T> asSet(T... array)
-    {
-        Set<T> result = new HashSet<T>();
-        for (T e: array) {
-            result.add(e);
-        }
-        return result;
-    }
 
     @Before
     public void setUp()
@@ -146,12 +129,12 @@ public class SubjectsTest
     @Test
     public void testGetUids()
     {
-        assertArrayEquals("NOBODY must not have UIDs",
-                          new long[] {}, Subjects.getUids(Subjects.NOBODY));
-        assertEquals("Subject with one UID must have that UID",
-                     asSet(UID1), asSet(Subjects.getUids(_subject1)));
-        assertEquals("Subject with several UIDs must have those UIDs",
-                     asSet(UID1, UID2), asSet(Subjects.getUids(_subject3)));
+        assertTrue("NOBODY must not have UIDs",
+                Subjects.getUids(Subjects.NOBODY).length == 0);
+        assertArrayEquals("Subject with one UID must have that UID",
+                new long[] { UID1 }, Subjects.getUids(_subject1));
+        assertArrayEquals("Subject with several UIDs must have those UIDs",
+                new long[] {UID1, UID2}, Subjects.getUids(_subject3));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -254,13 +237,13 @@ public class SubjectsTest
         assertTrue("Root must not have FQANs",
                     Subjects.getFqans(Subjects.ROOT).isEmpty());
         assertEquals("Subject with primary FQAN must have correct FQAN",
-                     asSet(FQAN1),
+                     ImmutableSet.of(FQAN1),
                      new HashSet<String>(Subjects.getFqans(_subject1)));
         assertEquals("Subject with no primary FQAN must have correct FQAN",
-                     asSet(FQAN2),
+                     ImmutableSet.of(FQAN2),
                      new HashSet<String>(Subjects.getFqans(_subject2)));
         assertEquals("Subject with multiple FQANs must have correct FQANs",
-                     asSet(FQAN1, FQAN2, FQAN3),
+                     ImmutableSet.of(FQAN1, FQAN2, FQAN3),
                      new HashSet<String>(Subjects.getFqans(_subject3)));
     }
 
