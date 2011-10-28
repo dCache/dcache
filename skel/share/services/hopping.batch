@@ -1,0 +1,3 @@
+onerror shutdown
+create diskCacheV111.services.FileHoppingManager HoppingManager \
+ "${dcache.paths.config}/HoppingManager.conf -export"
