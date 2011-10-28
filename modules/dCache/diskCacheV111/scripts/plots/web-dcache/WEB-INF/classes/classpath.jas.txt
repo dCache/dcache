@@ -1,1 +1,0 @@
-.:/home/enstore/tomcat/latest/common/lib/servlet.jar:/home/enstore/tomcat/latest/webapps/dcache/WEB-INF/lib/Acme.jar:/home/enstore/tomcat/latest/webapps/dcache/WEB-INF/lib/jas.jar:/home/enstore/tomcat/latest/webapps/dcache/WEB-INF/lib/hep.jar:/home/enstore/tomcat/latest/webapps/dcache/WEB-INF/classes/org/apache/jsp
