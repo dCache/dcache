@@ -58,9 +58,8 @@ public class InetSocketAddresses {
      * </pre>
      * @param address
      * @return socket address
-     * @throws UnknownHostException
      */
-    public static InetSocketAddress forUaddrString(String uaddr) throws UnknownHostException {
+    public static InetSocketAddress forUaddrString(String uaddr) {
 
         int secondPort = uaddr.lastIndexOf('.');
         if( secondPort == -1 ) {

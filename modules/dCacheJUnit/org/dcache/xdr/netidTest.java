@@ -31,6 +31,13 @@ public class netidTest {
     }
 
     @Test
+    public void testToInetSocketAddressIPv6() throws Exception {
+        InetSocketAddress expResult = new InetSocketAddress("0:0:0:0:0:0:0:0", 2052);
+        InetSocketAddress result = netid.toInetSocketAddress("0:0:0:0:0:0:0:0.8.4");
+        assertEquals("address decodeing missmatch", expResult, result);
+    }
+
+    @Test
     public void testGetPort() {
         int port = netid.getPort("127.0.0.2.8.4");
         assertEquals("port decodeing does not match", 2052, port);
