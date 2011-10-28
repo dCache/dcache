@@ -8,23 +8,16 @@
 <!--+
     |   This file defines how an XML file is converted into LDAP,
     |   specifically, how the XML file that describes dCache's current state
-    |   is converted into LDAP suitable for Glue v1.3.
-    |
-    |   Some of the information that Glue requires is independent of dCache;
-    |   for example, the site's "Unique ID" is something that a dCache
-    |   instance doesn't know.  For this reason, you must configure this
-    |   file to include that information.
+    |   is converted into LDAP suitable for Glue v2.0
     |
     |   The general format of this file is described in:
     |
     |       ${ourHomeDir}/share/doc/xylophone/Guide.txt
     |
     |   That document describes the semantics of the XML elements in this
-    |   file.  However, the layout of this file is designed so you shouldn't
-    |   have to refer to that guide.  Simply edit the configuration as
-    |   described in the comment immediately above.
+    |   file.
     |
-    |   A word of causion: be careful when using characters that are special
+    |   A word of caution: be careful when using characters that are special
     |   in XML.  If you wish to use the less-than (<) or the ampersand (&)
     |   symbols, be sure to write them as &lt; and &amp; respectively.
     +-->
@@ -1165,6 +1158,12 @@
                 <lookup path="."/>
               </map>
             </attr>
+
+	    <attr name="GLUE2StorageSharePath">
+	      <map name="VO-to-path">
+		<lookup path="d:metric[@name='vo']"/>
+	      </map>
+	    </attr>
 
             <attr name="GLUE2StorageShareTag">
               <lookup path="@description"/>
