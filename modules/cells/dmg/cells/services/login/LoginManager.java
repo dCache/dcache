@@ -667,7 +667,7 @@ public void cleanUp(){
               ssfConstructor = ssfClass.getConstructor(constructorArgClassA) ;
               args = new Object[2] ;
               args[0] = farctoryArgs;
-              Map map = new HashMap((Map)getDomainContext()) ;
+              Map map = new HashMap(getDomainContext()) ;
               map.put( "UserValidatable" , LoginManager.this ) ;
               args[1] = map ;
            }catch( Exception ee ){
@@ -756,7 +756,8 @@ public void cleanUp(){
                     _connectionDeniedCounter++;
                     _log.warn("Connection denied " + currentChildHash + " > " + _maxLogin);
                     _logSocketIO.warn("number of allowed logins exceeded.");
-                    new ShutdownEngine(socket);
+                    ShutdownEngine engine = new ShutdownEngine(socket);
+                    engine.start();
                     continue;
                 }
                _log.info( "Connection request from "+socket.getInetAddress() ) ;
@@ -804,12 +805,24 @@ public void cleanUp(){
          }
          _log.info( "Listen thread finished");
      }
-     public class ShutdownEngine implements Runnable {
-         private Socket _socket = null ;
-         public ShutdownEngine( Socket socket ){
-           _socket = socket ;
-           _nucleus.newThread( this , "Shutdown" ).start() ;
+
+
+     /**
+      * Class that closes the output half of a TCP socket,
+      * drains any pending input and closes the input once drained.
+      * After creation, the {@link #start} method must be called.  The activity
+      * occurs on a separate thread, allowing the start method to be
+      * non-blocking.
+      */
+     public class ShutdownEngine extends Thread {
+         private final Socket _socket;
+
+         public ShutdownEngine(Socket socket) {
+           super("Shutdown");
+           _socket = socket;
          }
+
+         @Override
          public void run(){
            InputStream inputStream = null ;
            OutputStream outputStream = null ;
@@ -840,6 +853,7 @@ public void cleanUp(){
            _log.info( "Shutdown : done");
          }
      }
+
      public synchronized void shutdown(){
 
         _log.info("Listen thread shutdown requested") ;
