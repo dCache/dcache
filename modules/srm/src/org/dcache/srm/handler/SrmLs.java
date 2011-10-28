@@ -153,19 +153,19 @@ public class SrmLs {
                 if(request.getFullDetailedList() != null) {
                         longFormat = request.getFullDetailedList().booleanValue();
                 }
-                if( request.getArrayOfSURLs() == null) {
-                        return getFailedResponse(" null Path array",
+                if(request.getArrayOfSURLs() == null ||
+                   request.getArrayOfSURLs().getUrlArray() == null ||
+                   request.getArrayOfSURLs().getUrlArray().length == 0) {
+                        return getFailedResponse("empty list of paths",
                                                  TStatusCode.SRM_INVALID_REQUEST);
                 }
-                org.apache.axis.types.URI [] surlInfos = request.getArrayOfSURLs().getUrlArray();
+
                 if (request.getOffset()!=null) {
                         if (request.getOffset().intValue()<0) {
                                 return getFailedResponse(" offset value less than 0, diallowed ",
                                                          TStatusCode.SRM_INVALID_REQUEST);
                         }
                 }
-                TMetaDataPathDetail[] metaDataPathDetails =
-                        new TMetaDataPathDetail[surlInfos.length];
                 try {
                         LsRequest r = new LsRequest(user,
                                                     credential.getId(),
