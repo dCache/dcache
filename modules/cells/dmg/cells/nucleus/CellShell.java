@@ -323,12 +323,18 @@ public class      CellShell
       return info ;
    }
    public Object ac_getcellinfos( Args args ){
-       List<String> list = _nucleus.getCellNames();
-       CellInfo[] info = new CellInfo[list.size()];
-       for (int i = 0; i < list.size(); i++) {
-           info[i] = _nucleus.getCellInfo(list.get(i));
+       List<String> names = _nucleus.getCellNames();
+
+       List<CellInfo> infoList = new ArrayList<CellInfo>(names.size());
+
+       for(String name : names) {
+           CellInfo info = _nucleus.getCellInfo(name);
+           if(info != null) {
+               infoList.add(info);
+           }
        }
-       return info;
+
+       return infoList.toArray(new CellInfo[infoList.size()]);
    }
    public Object ac_getcontext_$_0_1( Args args ) throws CommandException {
       if( args.argc() == 0 ){
