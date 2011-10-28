@@ -62,12 +62,12 @@ gridMapFilePath="/etc/grid-security/grid-mapfile"
 storageAuthzPath="/etc/grid-security/storage-authzdb"
 
 # XACML-based grid VO role mapping 
-XACMLmappingServiceUrl="https://fledgling09.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
+XACMLmappingServiceUrl="https://gums-server.example.org:8443/gums/services/GUMSXACMLAuthorizationServicePort"
 # Time in seconds to cache the mapping in memory
 xacml-vo-mapping-cache-lifetime="180"
 
 # SAML-based grid VO role mapping 
-mappingServiceUrl="https://fledgling09.fnal.gov:8443/gums/services/GUMSAuthorizationServicePort"
+mappingServiceUrl="https://gums-server.example.org:8443/gums/services/GUMSAuthorizationServicePort"
 # Time in seconds to cache the mapping in memory
 saml-vo-mapping-cache-lifetime="180"
 

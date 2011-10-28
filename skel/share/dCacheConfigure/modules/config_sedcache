@@ -1962,7 +1962,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     #echo portrangeNativeMax=${portrangeNativeMax}
     
     
-    yaim_config_file_get_value  ${file2update}  java_options  cork.desy.de
+    yaim_config_file_get_value  ${file2update}  java_options
     javaOptions=$RET
     SED="s/Dorg\.globus\.tcp\.port\.range=[0-9]*,[0-9]*/Dorg\.globus\.tcp\.port\.range=$portrangeGlobusMin,$portrangeGlobusMax/"
     javaOptions=$(echo ${javaOptions} | sed -e $SED )

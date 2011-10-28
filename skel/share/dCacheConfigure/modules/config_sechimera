@@ -70,11 +70,11 @@
 
 # Chimera command line processing.
 
-# /opt/d-cache/libexec/chimera/chimera-cli.sh Ls /pnfs/desy.de/data/owen
-# /opt/d-cache/libexec/chimera/chimera-cli.sh Mkdir /pnfs/desy.de/data/owen
-# /opt/d-cache/libexec/chimera/chimera-cli.sh Lstag /pnfs/desy.de/data/owen
-# /opt/d-cache/libexec/chimera/chimera-cli.sh Readtag /pnfs/desy.de/data/owen
-# /opt/d-cache/libexec/chimera/chimera-cli.sh Writetag /pnfs/desy.de/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Ls /pnfs/example.org/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Mkdir /pnfs/example.org/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Lstag /pnfs/example.org/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Readtag /pnfs/example.org/data/owen
+# /opt/d-cache/libexec/chimera/chimera-cli.sh Writetag /pnfs/example.org/data/owen
 
 # need permisions commands.
 
