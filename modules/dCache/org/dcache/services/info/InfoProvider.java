@@ -284,7 +284,7 @@ public class InfoProvider extends AbstractCell {
 			return;
 		}
 
-		_log.warn( "Unable to handle incoming message from: " + msg.getSourceAddress());
+		_log.debug( "Unable to handle incoming message: {}", msg);
 	}
 
 	/**
