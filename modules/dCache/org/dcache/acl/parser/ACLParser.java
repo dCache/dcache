@@ -29,12 +29,12 @@ public class ACLParser {
     /**
      * format:
      * 	rs_id:rs_type
-     * 	ace_order:who[:who_id]:access_msk[:flags]:type[:address_msk]
-     * 	ace_order:who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * 	who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * 	who[:who_id]:access_msk[:flags]:type[:address_msk]
      *
      * acl_spec example:
-     * 	0:USER:7:rlwfx:o:ALLOW:FFFF
-     * 	1:EVERYONE@:w:DENY
+     * 	USER:7:rlwfx:o:ALLOW:FFFF
+     * 	EVERYONE@:w:DENY
      *
      * @param acl_spec
      *            String representation of ACL

@@ -20,7 +20,7 @@ public class ACEParser {
 
     private static final int ACES_MIN = 1;
 
-    private static final int ACE_MIN = 4, ACE_MAX = 7;
+    private static final int ACE_MIN = 3, ACE_MAX = 6;
 
     private static final int ACE_MIN_ADM = 2, ACE_MAX_ADM = 5;
 
@@ -39,11 +39,11 @@ public class ACEParser {
 
     /**
      * ace_spec format:
-     * 	ace_order:who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * 	who[:who_id]:access_msk[:flags]:type[:address_msk]
      *
      * ace_spec examples:
-     * 	0:USER:7:rlwfx:o:ALLOW:FFFF
-     * 	1:EVERYONE@:w:DENY
+     * 	USER:7:rlwfx:o:ALLOW:FFFF
+     * 	EVERYONE@:w:DENY
      *
      * @param ace_spec
      *            String representation of ACE
@@ -63,13 +63,7 @@ public class ACEParser {
         if ( len < ACE_MIN || len > ACE_MAX )
             throw new IllegalArgumentException("Count tags invalid.");
 
-        int index = 0, order;
-        String sOrder = split[index++];
-        try {
-            order = Integer.parseInt(sOrder);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid ACE order. NumberFormatException: " + e.getMessage());
-        }
+        int index = 0;
 
         String sWho = split[index++];
         Who who = Who.fromAbbreviation(sWho);
