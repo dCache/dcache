@@ -58,6 +58,11 @@
                      excludes="infoProvider/info-based-infoProvider.sh"/>
             <filterset filtersfile="common/fhs-layout.properties"/>
         </copy>
+        <copy todir="${server.root.dir}/etc/bash_completion.d/">
+            <fileset dir="${resourcesDir}/etc/bash_completion.d/">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="install-server-fhs"
