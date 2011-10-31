@@ -42,6 +42,9 @@ public class InfoMessage implements java.io.Serializable {
    public String toString(){
       return getInfoHeader()+" "+getResult() ;
    }
+    public String getFormattedDate() {
+        return __dateFormat.format(new Date(_timestamp));
+    }
    public void setResult( int resultCode , String resultMessage ){
      _message    = resultMessage ;
      _resultCode = resultCode ;
@@ -70,4 +73,4 @@ public class InfoMessage implements java.io.Serializable {
        }
        return _transaction ;
    }
-}
+    }

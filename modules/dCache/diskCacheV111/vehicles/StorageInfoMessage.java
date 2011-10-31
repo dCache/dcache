@@ -2,6 +2,7 @@
 package diskCacheV111.vehicles ;
 import  diskCacheV111.vehicles.ProtocolInfo ;
 import  diskCacheV111.util.PnfsId ;
+import org.antlr.stringtemplate.StringTemplate;
 
 public class StorageInfoMessage extends PnfsFileInfoMessage {
    private long    _transferTime  = 0 ;
@@ -24,4 +25,15 @@ public class StorageInfoMessage extends PnfsFileInfoMessage {
              getTimeQueued()+" "+
              getResult() ;
    }
+
+    public String getFormattedMessage(String format) {
+        StringTemplate template = new StringTemplate(format);
+
+        template = setInfo(template);
+
+        template.setAttribute("transferTime", _transferTime);
+        template.setAttribute("timeQueued", getTimeQueued());
+
+        return template.toString();
+    }
 }

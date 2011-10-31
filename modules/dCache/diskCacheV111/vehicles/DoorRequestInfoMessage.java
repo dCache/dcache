@@ -1,6 +1,8 @@
 // $Id: DoorRequestInfoMessage.java,v 1.8 2006-04-11 09:47:53 tigran Exp $
 package diskCacheV111.vehicles;
 
+import org.antlr.stringtemplate.StringTemplate;
+
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
     private long _transactionTime = 0;
 
@@ -71,7 +73,19 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
 
     public String getUserInfo() {
 
-        return "[\"" + _owner + "\":" + _uid + ":" + _gid + ":" + _client + "]" ;
+        return "\"" + _owner + "\":" + _uid + ":" + _gid + ":" + _client ;
 
+    }
+
+    public String getFormattedMessage(String format) {
+        StringTemplate template = new StringTemplate(format);
+
+        template = setInfo(template);
+
+        template.setAttribute("transactionTime", _transactionTime);
+        template.setAttribute("timeQueued", getTimeQueued());
+        template.setAttribute("subject", getUserInfo());
+
+        return template.toString();
     }
 }

@@ -6,6 +6,10 @@ check -strong cell.name
 check -strong billingDb
 check billingDisableTxt
 check billingToDb
+check -strong poolTransferMessage
+check -strong poolRemoveMessage
+check -strong doorMessage
+check -strong storageMessage
 
 # Additional params, if 'billingToDb' is 'yes'
 define env billingToDb.exe endExe
@@ -41,4 +45,8 @@ create diskCacheV111.cells.BillingCell ${cell.name} \
         -printMode=2 \
         ${billingDisableTxt} \
         ${billingDbParams} \
+	-poolTransferMessage=\"${poolTransferMessage}\" \
+	-poolRemoveMessage=\"${poolRemoveMessage}\" \
+	-doorMessage=\"${doorMessage}\" \
+	-storageMessage=\"${storageMessage}\" \
        "

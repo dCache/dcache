@@ -43,6 +43,11 @@ public class BillingCell extends CellAdapter {
     private final static SimpleDateFormat directoryNameFormat
          = new SimpleDateFormat( "yyyy"+File.separator+"MM" ) ;
 
+    private final String _poolMoverInfoMessageFormat;
+    private final String _poolRemoveMessageFormat;
+    private final String _doorInfoMessageFormat;
+    private final String _storageMessageFormat;
+
     public BillingCell( String name , String  args ) throws Exception {
        super( name , BillingCell.class.getName(), args , false ) ;
        _nucleus = getNucleus() ;
@@ -76,6 +81,11 @@ public class BillingCell extends CellAdapter {
              }
           }
           _log.info("Property PrintMode="+_printMode);
+
+           _poolMoverInfoMessageFormat=_args.getOpt("poolTransferMessage");
+           _poolRemoveMessageFormat=_args.getOpt("poolRemoveMessage");
+           _doorInfoMessageFormat=_args.getOpt("doorMessage");
+           _storageMessageFormat=_args.getOpt("storageMessage");
 
           String timeoutString = _args.getOpt("timeout") ;
           if( timeoutString != null ){
@@ -244,6 +254,7 @@ public class BillingCell extends CellAdapter {
           }
        }
     }
+
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
        String output = null ;
@@ -271,11 +282,14 @@ public class BillingCell extends CellAdapter {
           }
 	  if( info.getCellType().equals("pool") )doStatistics( info ) ;
           thisDate = new Date( info.getTimestamp() ) ;
-          output   = info.toString() ;
+
+           output = getFormattedMessage(info);
+
        }else{
           thisDate = new Date() ;
           output   = formatter.format(new Date())+" "+obj.toString() ;
        }
+
        _log.info( output ) ;
        if( _sqlLog != null ) {
           try {
@@ -338,6 +352,29 @@ public class BillingCell extends CellAdapter {
           }
        }
     }
+    public String getFormattedMessage(InfoMessage msg) {
+
+        String formattedMessage;
+
+        if (msg instanceof MoverInfoMessage) {
+            formattedMessage = ((MoverInfoMessage) msg).getFormattedMessage(_poolMoverInfoMessageFormat);
+
+        } else if (msg instanceof DoorRequestInfoMessage) {
+            formattedMessage = ((DoorRequestInfoMessage) msg).getFormattedMessage(_doorInfoMessageFormat);
+
+        } else if (msg instanceof RemoveFileInfoMessage) {
+            formattedMessage = ((RemoveFileInfoMessage) msg).getFormattedMessage(_poolRemoveMessageFormat);
+
+        } else if (msg instanceof StorageInfoMessage) {
+            formattedMessage = ((StorageInfoMessage) msg).getFormattedMessage(_storageMessageFormat);
+
+        } else {
+            formattedMessage = msg.toString();
+        }
+
+        return formattedMessage;
+    }
+
     public String hh_get_poolstatus = "[<fileName>]" ;
     public String ac_get_poolstatus_$_0_1( Args args ) throws Exception {
        CollectPoolStatus status =
@@ -345,6 +382,7 @@ public class BillingCell extends CellAdapter {
        return status.getReportFile().toString()  ;
 
     }
+
     private class CollectPoolStatus implements Runnable {
        private File _report = null ;
 
