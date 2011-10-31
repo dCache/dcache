@@ -99,7 +99,7 @@ fi
 /usr/share/man/man8/dcache.8
 /var/log/dcache
 %attr(0755,root,root) /etc/rc.d/init.d/dcache-server
-%attr(0755,root,root) /etc/bash_completion.d
+%attr(0755,root,root) /etc/bash_completion.d/dcache
 %docdir /usr/share/doc/dcache-server
 %config(noreplace) /etc/dcache
 %config(noreplace) /var/lib/dcache
