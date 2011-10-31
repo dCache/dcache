@@ -1,22 +1,15 @@
 Summary: dCache Server
 Vendor: dCache.org
-Name: dcache-server
+Name: dcache
 Version: @Version@
 Release: @Release@
 BuildArch: noarch
 Prefix: /
 Packager: dCache.org <support@dcache.org>.
 
-Obsoletes: d-cache-core
-Obsoletes: d-cache-opt
-Obsoletes: dcache-core
-Obsoletes: dcache-opt
-Obsoletes: dcache-pool
-Obsoletes: dcache
 Obsoletes: dCacheConfigure
 Provides: dCachePostInstallConfigurationScripts
-Provides: d-cache-core <= @Version@
-Provides: d-cache-opt <= @Version@
+Provides: dcache-server
 AutoReqProv: no
 Requires(pre): shadow-utils
 Requires(post): chkconfig
@@ -32,6 +25,11 @@ dCache is a distributed mass storage system.
 This package contains the server components.
 
 %pre
+if [ -d /opt/d-cache/classes ]; then
+   echo "Can't update package in /opt"
+   exit 1
+fi
+
 /sbin/service dcache-server stop >/dev/null 2>&1
 
 # Make sure the administrative user exists
