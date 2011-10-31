@@ -68,24 +68,17 @@ public class ProtocolConnectionPool extends Thread {
      *
      * @param challenge
      * @return {@link SocketChannel} connected to client
+     * @throws InterruptedException if current thread was interrupted
      */
-    public SocketChannel getSocket(Object challenge) {
+    public SocketChannel getSocket(Object challenge) throws InterruptedException {
 
-        SocketChannel mySocket = null;
+        synchronized (_acceptedSockets) {
 
-        try {
-            synchronized (_acceptedSockets) {
-
-                while (_acceptedSockets.isEmpty() || !_acceptedSockets.containsKey(challenge)) {
-                    _acceptedSockets.wait();
-                }
-                mySocket = _acceptedSockets.remove(challenge);
+            while (_acceptedSockets.isEmpty() || !_acceptedSockets.containsKey(challenge)) {
+                _acceptedSockets.wait();
             }
-
-        } catch (InterruptedException e) {
-            _logSocketIO.warn("waiting for socket interrupted");
+            return  _acceptedSockets.remove(challenge);
         }
-        return mySocket;
     }
 
     /**
@@ -130,9 +123,9 @@ public class ProtocolConnectionPool extends Thread {
                 _logSocketIO.error("Accept loop", e);
                 _stop = true;
                 try {
-                    if (_logSocketIO.isDebugEnabled()) {
-                        _logSocketIO.debug("Socket SHUTDOWN local = " + _serverSocketChannel.socket().getInetAddress() + ":" + _serverSocketChannel.socket().getLocalPort());
-                    }
+                    _logSocketIO.debug("Socket SHUTDOWN local = {}:{}",
+                            _serverSocketChannel.socket().getInetAddress(),
+                            _serverSocketChannel.socket().getLocalPort());
                     _serverSocketChannel.close();
                 } catch (IOException ignored) {
                 }
