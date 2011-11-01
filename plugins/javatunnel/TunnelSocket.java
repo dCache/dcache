@@ -4,10 +4,18 @@
 
 package javatunnel;
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketImpl;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.security.auth.Subject;
 
 public class TunnelSocket extends Socket implements UserBindible {
@@ -16,10 +24,9 @@ public class TunnelSocket extends Socket implements UserBindible {
     private TunnelInputStream _in   = null;
     private Convertable _tunnel = null;
     private Subject _subject = new Subject();
-    private List<String> _roles = new ArrayList<String>();
-    private String _group = null;
+    private final List<String> _roles = new ArrayList<String>();
 
-    TunnelSocket(Convertable tunnel) throws SocketException {
+    TunnelSocket(Convertable tunnel) {
         super();
         _tunnel = tunnel;
         if ( isConnected()) {
