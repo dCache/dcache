@@ -6,7 +6,7 @@
     <taskdef name="smc" classname="net.sf.smc.ant.SmcJarWrapper" classpath="${libDir}/smc/smc-ant.jar" />
     <property name="smc.jar" location="${libDir}/smc/Smc.jar" />
 
-    <path id="maven-ant-tasks.classpath" path="${antlib.dir}/maven-ant/maven-ant-tasks-2.1.1.jar" />
+    <path id="maven-ant-tasks.classpath" path="${antlib.dir}/maven-ant/maven-ant-tasks-2.1.3.jar" />
     <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
            uri="antlib:org.apache.maven.artifact.ant"
            classpathref="maven-ant-tasks.classpath" />
