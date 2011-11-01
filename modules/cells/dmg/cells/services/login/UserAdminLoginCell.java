@@ -66,7 +66,9 @@ public class  UserAdminLoginCell extends CommandInterpreter {
           if( ( ! ( r instanceof Object [] ) ) ||
               ( ((Object[])r).length < 8   )     )return false ;
           return ((Boolean)((Object[])r)[7]).booleanValue() ;
-       }catch( Exception e ){
+       }catch( NoRouteToCellException e ){
+          return false ;
+       }catch( InterruptedException e ){
           return false ;
        }
     }
@@ -94,14 +96,16 @@ public class  UserAdminLoginCell extends CommandInterpreter {
               IllegalArgumentException( "not enough arguments" ) ;
           try{
              obj =  runCommand( (String) array[0] , array ) ;
-          }catch(Exception eee ){
+          }catch(NoRouteToCellException eee ){
+             obj = eee ;
+          }catch(InterruptedException eee ){
              obj = eee ;
           }
        }
        return obj ;
     }
     private Object runCommand( String command , Object [] args )
-       throws Exception
+            throws NoRouteToCellException, InterruptedException
    {
 
        if( command.equals( "set-dest" ) ){
@@ -122,7 +126,7 @@ public class  UserAdminLoginCell extends CommandInterpreter {
           CellMessage res = _nucleus.sendAndWait(
                    new CellMessage( _cellPath , args ) ,
                    10000 ) ;
-          if( res == null )throw new Exception("Request timed out" ) ;
+          if( res == null ) return new Exception("Request timed out" ) ;
           return res.getMessageObject() ;
        }else
           throw new

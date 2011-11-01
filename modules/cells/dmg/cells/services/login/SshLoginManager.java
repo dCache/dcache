@@ -177,7 +177,7 @@ public class       SshLoginManager
                   Object [] a = new Object[1] ;
                   a[0] = Integer.valueOf( _nucleus.getPrintoutLevel() ) ;
                   _loginPrintMethod.invoke( cell , a ) ;
-               }catch( Exception eee ){
+               }catch( NumberFormatException eee ){
                   _log.warn( "Can't setPritoutLevel of " +args[0] ) ;
                }
             }
@@ -288,7 +288,10 @@ public class       SshLoginManager
                _log.warn( "request for user >"+user+"< timed out" ) ;
                return false ;
             }
-        }catch(Exception e ){
+        }catch(NoRouteToCellException e ){
+            _log.warn( "Problem for user >"+user+"< : "+e ) ;
+            return false ;
+        }catch(InterruptedException e ){
             _log.warn( "Problem for user >"+user+"< : "+e ) ;
             return false ;
         }
@@ -383,30 +386,4 @@ public class       SshLoginManager
      return getPublicKey( "knownHosts"  , hostKey , addr , user ) ;
   }
 }
-  /*
-  private void updateKeys(){
-      SshRsaKey          hostKey , serverKey ;
-      SshRsaKeyContainer userKeys , hostKeys ;
-      Dictionary         sshContext ;
-      while( true ){
-         if( ( ( sshContext = _nucleus.getDomainContext().get( "Ssh" ) ) != null ) &&
-             ( ( hostKey    = sshContext.get( "hostIdentity" ) )   != null ) &&
-             ( ( serverKey  = sshContext.get( "serverIdentity" ) ) != null ) &&
-             ( ( hostKeys   = sshContext.get( "knownHosts" ) )     != null ) &&
-             ( ( userKeys   = sshContext.get( "knownUsers" ) )     != null )    ){
-
-            synchronized( _keyLock ){
-               _hostKey   = hostKey ;
-               _serverKey = serverKey ;
-               _hostKeys  = hostKeys ;
-               _userKeys  = userKeys ;
-            }
-
-          }
-          try{  Thread.sleep(_keyUpdateInterval*1000) ; }
-          catch( InterruptedException ie ){}
-
-      }
-  }
-  */
 

@@ -127,7 +127,7 @@ public class      SshKeyManager
                   wasUpdated = true ;
                   _log.info( "updateKeys : knownHosts updated" ) ;
                 }
-            }catch(Exception e ){
+            }catch(IOException e ){
 
             }
           }
@@ -146,7 +146,7 @@ public class      SshKeyManager
                   wasUpdated = true ;
                   _log.info( "updateKeys : knownUsers updated" ) ;
                 }
-            }catch(Exception e ){ }
+            }catch(IOException e ){ }
           }
        }
        if( ! _hostIdentity.equals( "none" ) ){
@@ -161,7 +161,7 @@ public class      SshKeyManager
                   wasUpdated = true ;
                   _log.info( "updateKeys : hostIdentity updated" ) ;
                 }
-            }catch(Exception e ){
+            }catch(IOException e ){
                 _log.warn( "updateKeys : hostIdentity failed : "+e ) ;
             }
           }
@@ -178,7 +178,7 @@ public class      SshKeyManager
                   wasUpdated = true ;
                   _log.info( "updateKeys : serverIdentity updated" ) ;
                 }
-            }catch(Exception e ){
+            }catch(IOException e ){
                 _log.warn( "updateKeys : serverIdentity failed : "+e ) ;
             }
           }
@@ -202,7 +202,7 @@ public class      SshKeyManager
                   wasUpdated = true ;
                   _log.info( "updateKeys : userPasswords updated" ) ;
                 }
-            }catch(Exception e ){ }
+            }catch(IOException e ){ }
           }
        }
        if( wasUpdated )_updateTimeUsed = System.currentTimeMillis() - start ;

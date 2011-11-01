@@ -114,23 +114,18 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    )
    public void run(){
       while( ! Thread.interrupted() ){
-         try{
             _runtime.gc() ;
             long fm = _runtime.freeMemory() ;
             long tm = _runtime.totalMemory() ;
             say( " free "+fm+ " total "+tm+" used "+(tm-fm)+
                  " "+(new Date()).toString() ) ;
-         }catch(Exception ee ){
-            _log.warn( "Problem obtaining lib info : "+ee ) ;
-            continue ;
-         }
          try{
             long update ;
             synchronized(_lock){
                  update = _update * 1000 ;
             }
             Thread.sleep( update ) ;
-         }catch(Exception e ){
+         }catch(InterruptedException e ){
             break ;
          }
       }
@@ -163,7 +158,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
        return "Maximum output filesize = "+_maxFileSize ;
    }
    public String hh_set_output = "off|on|<filename>" ;
-   public String ac_set_output_$_1( Args args )throws Exception{
+   public String ac_set_output_$_1( Args args ){
        String what = args.argv(0) ;
        if( what.equals( "off" ) ){
           _output = false ;
@@ -181,7 +176,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
                     "disabled" );
    }
    public String hh_set_update = "<updateTime/sec>" ;
-   public String ac_set_update_$_1( Args args )throws Exception {
+   public String ac_set_update_$_1( Args args )throws NumberFormatException {
      synchronized( _lock ) {
         _update = Integer.parseInt( args.argv(0) ) ;
      }

@@ -4,16 +4,8 @@ package dmg.cells.services.gui ;
 //
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.font.*;
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.filechooser.* ;
-import java.util.*;
 import java.io.* ;
 
 
@@ -31,7 +23,7 @@ public class LmSetup extends JFrame {
     private boolean     _textActive = false ;
     public LmSetup(String title ) {
         super( title ) ;
-        
+
         _draw  = new MovingPigs() ;
         _draw.setBorder( new BevelBorder(BevelBorder.LOWERED));
 
@@ -41,10 +33,10 @@ public class LmSetup extends JFrame {
         _text.setForeground( new Color( 255,255,255) ) ;
         _text.setBorder( new BevelBorder(BevelBorder.LOWERED) ) ;
         _text.setFont( new Font( "Courier" , Font.ITALIC , 24 ) ) ;
-        _text.addActionListener( 
+        _text.addActionListener(
            new ActionListener(){
               public void actionPerformed( ActionEvent event ){
-                  String string = _text.getText() ;   
+                  String string = _text.getText() ;
                   _draw.command(string) ;
                   _text.setText("");
               }
@@ -56,33 +48,33 @@ public class LmSetup extends JFrame {
         };
         addWindowListener(l);
 
-        
+
         _pane = getContentPane() ;
         BorderLayout bl = new BorderLayout() ;
         bl.setVgap(10) ;
         bl.setHgap(10) ;
         _pane.setLayout( bl ) ;
-        
+
         _pane.add("Center", _draw );
-        
+
         _fileLabel.setBorder( new BevelBorder(BevelBorder.LOWERED) ) ;
         _pane.add("North" , _fileLabel ) ;
 //        _pane.add("South" , _text ) ;
-        
+
         _bar.add( new FileActionListener() ) ;
-        
+
         _bar.add( _draw.getEditMenu() ) ;
-        
+
         JMenu menu = new JMenu("Help") ;
-        
+
         menu.add( new HelpListener() ) ;
         menu.add( new CommandMenu() ) ;
-        
+
         _bar.add( menu ) ;
-        
-         
+
+
         setJMenuBar( _bar ) ;
-        
+
     }
     private LmSetupHelp _helpMenu = null ;
     WindowListener l = new WindowAdapter() {
@@ -98,7 +90,7 @@ public class LmSetup extends JFrame {
         private CommandMenu(){
            super("Commander") ;
            addActionListener(this) ;
-           setAccelerator( 
+           setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_C,InputEvent.CTRL_MASK,false) ) ;
         }
         public void actionPerformed( ActionEvent event ){
@@ -113,8 +105,8 @@ public class LmSetup extends JFrame {
         }
     }
     private class HelpListener extends JMenuItem implements ActionListener {
-        private HelpListener(){ 
-           super( "Help") ; 
+        private HelpListener(){
+           super( "Help") ;
            addActionListener(this);
         }
         public void actionPerformed( ActionEvent event ){
@@ -146,16 +138,16 @@ public class LmSetup extends JFrame {
         private File         _directory = null ;
         private FileActionListener(){
            super("File");
-           
-           _new.setAccelerator( 
+
+           _new.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_N,InputEvent.CTRL_MASK,false) ) ;
-           _open.setAccelerator( 
+           _open.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_O,InputEvent.CTRL_MASK,false) ) ;
-           _save.setAccelerator( 
+           _save.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_S,InputEvent.CTRL_MASK,false) ) ;
-           _saveAs.setAccelerator( 
+           _saveAs.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_W,InputEvent.CTRL_MASK,false) ) ;
-           _revert.setAccelerator( 
+           _revert.setAccelerator(
                KeyStroke.getKeyStroke(KeyEvent.VK_R,InputEvent.CTRL_MASK,false) ) ;
            add( _new ) ;
            addSeparator() ;
@@ -175,7 +167,7 @@ public class LmSetup extends JFrame {
            _revert.setEnabled(false);
            _chooser.setFileFilter( new LMFileFilter() ) ;
            _chooser.setCurrentDirectory(_directory) ;
-           
+
         }
         public void actionPerformed( ActionEvent event ){
            if( event.getSource() == _new ){
@@ -227,10 +219,10 @@ public class LmSetup extends JFrame {
                try{
                   _draw.writeSetup( pw ) ;
                }finally{
-                   try{ pw.close() ; }catch(Exception eee){}
+                   pw.close() ;
                }
-           }catch(Exception ee){
-           
+           }catch(IOException ee){
+
            }
         }
         private void openAction( ActionEvent event ){
@@ -249,7 +241,7 @@ public class LmSetup extends JFrame {
                 }
               }
            ).start() ;
-           
+
         }
         private void revertAction( ActionEvent event ){
            if( _file == null )return ;
@@ -267,13 +259,13 @@ public class LmSetup extends JFrame {
                 }
               }
            ).start() ;
-           
+
         }
         private int runInterpreter( File file ){
            try{
                BufferedReader br = new BufferedReader(
                                          new FileReader( file ) ) ;
-               _draw.clear() ;                     
+               _draw.clear() ;
                try{
                   String line = null ;
                   while( ( line = br.readLine() ) != null ){
@@ -281,9 +273,11 @@ public class LmSetup extends JFrame {
                      Thread.sleep(200) ;
                   }
                }finally{
-                   try{ br.close() ; }catch(Exception ee){}
+                   try{ br.close() ; }catch(IOException ee){}
                }
-           }catch(Exception ee){
+           }catch(IOException ee){
+              return -1 ;
+           }catch(InterruptedException ee){
               return -1 ;
            }
            return 0 ;
@@ -292,23 +286,20 @@ public class LmSetup extends JFrame {
            _chooser.setCurrentDirectory( _directory ) ;
            int result = _chooser.showOpenDialog(LmSetup.this) ;
            if( result == 0 ){
-           
+
               File file  = _chooser.getSelectedFile() ;
               _directory = _chooser.getCurrentDirectory() ;
               return file ;
            }
            return null ;
         }
-        
+
     }
-    
+
     public static void main(String argv[]) {
         LmSetup f = new LmSetup("LocationManager Setup Tool");
 
         f.pack();
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int w = 200;
-        int h = 200;
         f.setLocation(100,100);
         f.setSize(600,400);
         f.setVisible(true);

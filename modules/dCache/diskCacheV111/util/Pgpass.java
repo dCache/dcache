@@ -83,7 +83,6 @@ public class Pgpass {
             }
             stdInput.close(); stdError.close(); stdOutput.close();
 
-//             System.out.println("mode: '"+reply+"'");
             if (reply==null) {
                 System.out.println("Cannot stat '"+_pwdfile+"'");
                 return null;
@@ -99,7 +98,6 @@ public class Pgpass {
                 String line, r = null;
                 while ((line = in.readLine()) != null && r == null) {
                     r = process(line, hostname, port, database, username);
-//                     System.out.println("->"+r);
                 }
                 in.close();
                 return r;
@@ -109,8 +107,7 @@ public class Pgpass {
             }
 
         }
-        catch (Exception ex) {
-//             ex.printStackTrace();
+        catch (IOException ex) {
             System.out.println("Cannot stat "+_pwdfile);
         }
         return null;

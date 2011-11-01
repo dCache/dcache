@@ -461,9 +461,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   html.add( key , list[i].getName()+File.separator+"index.html" , counter ) ;
 
               }finally{
-                 try{ br.close() ; }catch(Exception eee ){}
+                 try{ br.close() ; }catch(IOException eee ){}
               }
-          }catch(Exception ee ){
+          }catch(IOException ee ){
               continue ;
           }
 
@@ -473,7 +473,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            html.setPrintWriter(pw) ;
            html.dump() ;
       }finally{
-         try{ pw.close() ; }catch(Exception ee ){}
+          pw.close() ;
       }
 
       total[YESTERDAY]   = counter[YESTERDAY] ;
@@ -522,9 +522,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   html.add( key , list[i].getName()+File.separator+"index.html" , counter ) ;
 
               }finally{
-                 try{ br.close() ; }catch(Exception eee ){}
+                 try{ br.close() ; }catch(IOException eee ){}
               }
-          }catch(Exception ee ){
+          }catch(IOException ee ){
               continue ;
           }
 
@@ -534,7 +534,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            html.setPrintWriter(pw) ;
            html.dump() ;
       }finally{
-         try{ pw.close() ; }catch(Exception ee ){}
+           pw.close() ;
       }
 
       total[YESTERDAY]   = counter[YESTERDAY] ;
@@ -585,7 +585,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
               }finally{
                  try{ br.close() ; }catch(Exception eee ){}
               }
-          }catch(Exception ee ){
+          }catch(IOException ee ){
               continue ;
           }
 
@@ -595,7 +595,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            html.setPrintWriter(pw) ;
            html.dump() ;
       }finally{
-         try{ pw.close() ; }catch(Exception ee ){}
+           pw.close() ;
       }
 
       total[YESTERDAY]   = counter[YESTERDAY] ;
@@ -633,7 +633,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        return "";
    }
    public String hh_create_html = "[<year> [<month> [[<day>]]]" ;
-   public String ac_create_html_$_0_3( Args args )throws Exception {
+   public String ac_create_html_$_0_3( Args args )throws IOException {
 
       if( args.argc() == 3 ){
          int year  = Integer.parseInt( args.argv(0) ) ;
@@ -671,7 +671,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       return "Done" ;
    }
    public String hh_create_stat = "[<outputFileName>]";
-   public String ac_create_stat_$_0_1( Args args )throws Exception {
+   public String ac_create_stat_$_0_1( Args args ) {
       if( args.argc() == 0 ){
          _nucleus.newThread(
             new Runnable(){
@@ -748,7 +748,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        public StringBuffer getStringBuffer(){ return _sb; }
    }
    public String hh_show = "[<pattern>]" ;
-   public String ac_show_$_0_1(Args args )throws Exception {
+   public String ac_show_$_0_1(Args args ) {
        Map map = null ;
        synchronized( this ){ map = _recentPoolStatistics ; }
        if( map == null  ){
@@ -768,10 +768,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           sb.append(" ").append(counter[i]);
        return sb.toString();
    }
-   private Map doInternalRun() throws InterruptedException , Exception {
+   private Map doInternalRun() throws InterruptedException , IOException, NoRouteToCellException {
        return mergeStorageClassMaps( getPoolRepositoryStatistics() , getBillingStatistics() ) ;
    }
-   private Map createStatisticsMap() throws InterruptedException , Exception {
+   private Map createStatisticsMap() throws InterruptedException , IOException, NoRouteToCellException {
 
       Map pool    = getPoolRepositoryStatistics() ;
       Map billing = getBillingStatistics() ;
@@ -833,7 +833,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             dumpStatistics( _data , pw ) ;
 
          }finally{
-            try{ pw.close() ; }catch(Exception e ){}
+            pw.close() ;
          }
       }
       private void scanAttributes( String line  ){
@@ -992,7 +992,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            */
           printIndex( new File( dir , "index.html") , getNiceDayOfCalendar(calendar) ) ;
 
-      }catch(Exception ee ){
+      }catch(IOException ee ){
           _log.warn("Can't prepare Html directory : "+dir, ee ) ;
       }
    }
@@ -1330,7 +1330,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }catch(InterruptedException ie ){
              _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted") ;
              throw ie ;
-          }catch(Exception eee ){
+          }catch(NoRouteToCellException eee ){
              _log.warn("getPoolRepositoryStatistics : "+poolList[i]+" : "+eee ) ;
           }
        }
@@ -1342,12 +1342,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        _log.info("Resetting Billing statistics");
        CellMessage m =
            new CellMessage( new CellPath("billing") , RESET_POOL_STATISTICS ) ;
-
        try{
-
            _nucleus.sendMessage( m ) ;
-
-       }catch(Exception ee ){
+       }catch(NoRouteToCellException ee ){
            _log.warn("Couldn't reset pool statistics : "+ee);
        }
    }
@@ -1422,7 +1419,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           }catch(InterruptedException ie ){
              _log.warn("'get pool statistics' : sendAndWait interrupted") ;
              throw ie ;
-          }catch(Exception eee ){
+          }catch(NoRouteToCellException eee ){
              _log.warn("'get pool statistics' : "+poolName+" : "+eee ) ;
           }
        }

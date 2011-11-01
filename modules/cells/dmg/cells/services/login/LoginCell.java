@@ -3,7 +3,6 @@ package dmg.cells.services.login ;
 import   dmg.cells.nucleus.* ;
 import   dmg.util.* ;
 
-import java.util.* ;
 import java.io.* ;
 import java.net.* ;
 import java.lang.reflect.* ;
@@ -212,7 +211,9 @@ public class      LoginCell
             try{
                 result = m[i].invoke( obj , new Object[0] ) ;
                 println( "    "+m[i].getName() +" -> "+result.toString() ) ;
-            }catch( Exception e ){
+            }catch( IllegalAccessException e ){
+                println( "    "+m[i].getName() +" -> (???)" ) ;
+            }catch( InvocationTargetException e ){
                 println( "    "+m[i].getName() +" -> (???)" ) ;
             }
 

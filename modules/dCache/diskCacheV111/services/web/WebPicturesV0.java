@@ -82,7 +82,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                int high = Integer.parseInt( sizeRange.substring(ind+1) ) ;
 
                _dimension = new Dimension( low , high ) ;
-            }catch(Exception ee ){
+            }catch(NumberFormatException ee ){
                 _log.warn("Invalid size string (command ignored) : "+sizeRange ) ;
             }
          }
@@ -91,7 +91,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
          if( intervalString != null )
          try{
              _sleep = 1000L * (long)Integer.parseInt(intervalString)  ;
-         }catch(Exception ee ){
+         }catch(NumberFormatException ee ){
              _log.warn("Invalid 'interval' string (command ignored) : "+intervalString ) ;
          }
          _log.info("Interval (msec) : "+_sleep);
@@ -177,7 +177,6 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    }
    public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
-      try{
          if( obj instanceof RestoreHandlerInfo []  ){
              _currentInfo = (RestoreHandlerInfo[])obj ;
              _log.info("RestoreHandlerInfo ["+_currentInfo.length+"]");
@@ -187,9 +186,6 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           }else{
              _log.warn("Unknown message type arrived : "+obj.getClass().getName());
          }
-      }catch(Exception ee ){
-          _log.warn("Exception in message arrived : "+ee, ee);
-      }
    }
    public String hh_go = " # start data collection" ;
    public String ac_go( Args args )throws Exception {
@@ -247,7 +243,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
            createTransferPicture( list , "TransferHistogram2" ,      24L * 3600L * 1000L , _dimension ) ;
            createTransferPicture( list , "TransferHistogram3" ,            3600L * 1000L , _dimension ) ;
 
-       }catch(Exception ee){
+       }catch(IOException ee){
            _log.warn("Exception in scanTransferTable : "+ee, ee);
           return ;
        }
@@ -270,7 +266,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           ImageIO.write( image , "png",  outStream );
           outStream.flush();
           outStream.close();
-       }catch(Exception ee){
+       }catch(IOException ee){
            _log.warn("Exception in writing createTransferPictures : "+ee, ee);
           return ;
        }
@@ -297,7 +293,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           ImageIO.write( image , "png",  outStream );
           outStream.flush();
           outStream.close();
-       }catch(Exception ee){
+       }catch(IOException ee){
            _log.warn("Exception in writing createRestorePictures : "+ee, ee);
           return ;
        }
@@ -346,7 +342,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
         return "BinScale("+secondsPerBin+"="+unitCount+" "+unitName+")" ;
       }
    }
-   private java.util.List scanTransferTable() throws Exception {
+   private java.util.List scanTransferTable() throws IOException {
 
       String transferTable = (String)_cellContext.get("transfers.txt") ;
       if( transferTable == null )
@@ -357,7 +353,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
       return scanTransferTable( br ) ;
    }
-   static private java.util.List scanTransferTable( BufferedReader br ) throws Exception {
+   static private java.util.List scanTransferTable( BufferedReader br ) throws IOException {
 
 
       ArrayList list = new ArrayList() ;
@@ -375,7 +371,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
             if( status.equals("WaitingForDoorTransferOk") &&
                 mode.equals("No-Mover-Found") )t[1] = t[0] ;
             list.add( t ) ;
-         }catch(Exception ii ){
+         }catch(NumberFormatException ii ){
             continue ;
          }
       }
@@ -563,7 +559,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
                 g.fillRect( x , baseline - y , pixelsPerBin ,  y );
             }
          }
-         float unitPerPixel = (float)height / (float)maxDisplayArray ;
+
          //
          //  axis's
          //

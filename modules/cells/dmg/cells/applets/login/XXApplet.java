@@ -1,12 +1,6 @@
 package dmg.cells.applets.login ;
 
 import java.applet.*;
-import java.awt.* ;
-import java.awt.event.* ;
-import java.net.* ;
-import java.io.*;
-import dmg.util.* ;
-import dmg.protocols.ssh.* ;
 
 public class      XXApplet
        extends    Applet
@@ -33,7 +27,7 @@ public class      XXApplet
           try{
               synchronized(_lock){ _lock.wait(10000) ; }
               System.out.println( "Returning from sleep" ) ;
-          }catch( Exception ie ){
+          }catch( InterruptedException ie ){
               System.out.println( "System sleep interrupted" ) ;
           }
        }else if( current == _inter ){
