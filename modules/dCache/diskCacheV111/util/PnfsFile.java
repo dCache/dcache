@@ -1338,25 +1338,25 @@ public class PnfsFile extends File
                try{
                   mountId = getMountId(mp)  ;
                   System.out.println( mountId.toString() ) ;
-               }catch(Exception ee){
+               }catch(IOException ee){
                   System.out.println(ee.getMessage());
                }
                System.out.print( "  Server Name : ") ;
                try{
                   System.out.println( getServerName(mp) ) ;
-               }catch(Exception ee){
+               }catch(IOException ee){
                   System.out.println(ee.getMessage());
                }
                System.out.print( "  Server Id   : ") ;
                try{
                   System.out.println( getServerId(mp) ) ;
-               }catch(Exception ee){
+               }catch(IOException ee){
                   System.out.println(ee.getMessage());
                }
                System.out.print( "  Server Root : ") ;
                try{
                   System.out.println( getServerRoot(mp) ) ;
-               }catch(Exception ee){
+               }catch(IOException ee){
                   System.out.println(ee.getMessage());
                }
                System.out.print( "  Server Roots: ") ;
@@ -1364,7 +1364,7 @@ public class PnfsFile extends File
                try{
                   map = getServerRoots(mp) ;
                   System.out.println("");
-               }catch(Exception ee){
+               }catch(IOException ee){
                   System.out.println(ee.getMessage());
                }
                String serverMountPath = pathfinder( mp , mountId.toString() ) ;

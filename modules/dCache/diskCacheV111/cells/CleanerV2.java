@@ -239,7 +239,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
             if( tmp != null ){
                try{
                   _pnfsManagerTimeout = Long.parseLong(tmp) * 1000L ;
-               }catch(Exception ee ){
+               }catch(NumberFormatException ee ){
                   _log.warn("Problem with argument of pnfsManagerTimeout : "+tmp );
                }
             }
@@ -249,7 +249,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
                _log.info( "Using PnfsManager Timeout : "+_pnfsManagerTimeout);
             }
 	    tmp = _args.getOpt("processFilesPerRun");
-            if( tmp != null )try{ _processInOnce = Integer.parseInt(tmp) ; }catch(Exception ee ){}
+            if( tmp != null )try{ _processInOnce = Integer.parseInt(tmp) ; }catch(NumberFormatException ee ){}
 
             _log.info("Processing "+_processInOnce+" files per run");
 

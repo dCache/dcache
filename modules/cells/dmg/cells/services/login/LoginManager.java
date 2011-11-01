@@ -13,8 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.*;
 import dmg.util.*;
-import dmg.protocols.ssh.* ;
-import dmg.protocols.telnet.* ;
 
 /**
  **
@@ -622,7 +620,7 @@ public void cleanUp(){
 
         openPort() ;
      }
-     private void openPort() throws Exception {
+     private void openPort() throws Exception  {
 
         String ssf = _args.getOpt("socketfactory") ;
         String local   = _args.getOpt("listen");
@@ -844,7 +842,7 @@ public void cleanUp(){
                */
               while( inputStream.read(buffer,0,buffer.length) > 0 ) ;
               inputStream.close() ;
-           }catch(Exception ee ){
+           }catch(IOException ee ){
               _log.warn("Shutdown : "+ee.getMessage() ) ;
            }finally{
         	   try {
@@ -878,7 +876,7 @@ public void cleanUp(){
                         _serverSocket.getLocalPort());
             }
             _serverSocket.close() ; }
-        catch(Exception ee){
+        catch(IOException ee){
             _log.warn( "ServerSocket close : "+ee  ) ;
         }
 
@@ -886,7 +884,7 @@ public void cleanUp(){
             _log.info("Using faked connect to shutdown listen port");
             try {
                 new Socket("localhost", _listenPort).close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 _log.warn("ServerSocket faked connect : " + e.getMessage());
             }
         }
@@ -1009,18 +1007,21 @@ public void cleanUp(){
                                            request ) ;
 
         msg = sendAndWait( msg , 10000 ) ;
-        if( msg == null )
-           throw new
-           Exception("Pam request timed out");
+        if( msg == null ){
+                  _log.warn("Pam request timed out {}",Thread.currentThread().getStackTrace());
+        return false ;
+        }
 
         Object [] r = (Object [])msg.getMessageObject() ;
 
         return ((Boolean)r[5]).booleanValue() ;
 
-     }catch(Exception ee){
-        _log.warn(ee.toString(), ee);
-        return false ;
-     }
-
+      } catch (NoRouteToCellException ee) {
+          _log.warn(ee.toString(), ee);
+          return false;
+      } catch (InterruptedException ee) {
+          _log.warn(ee.toString(), ee);
+          return false;
+      }
   }
 }
