@@ -74,8 +74,7 @@ public class RetryTunnel implements Cell,
 
    } ;
 
-   public RetryTunnel( String cellName , Socket socket )
-          throws Exception {
+   public RetryTunnel( String cellName , Socket socket ) {
 
       _mode     = "Accepted" ;
       _socket   = socket ;
@@ -86,7 +85,7 @@ public class RetryTunnel implements Cell,
 
    }
    public RetryTunnel( String cellName , String argString )
-          throws Exception {
+          throws UnknownHostException {
 
       Args args = new Args( argString ) ;
       if( args.argc() < 2 )
@@ -100,16 +99,14 @@ public class RetryTunnel implements Cell,
                      new Integer( args.argv(1) ).intValue() ) ;
    }
    public RetryTunnel( String cellName , String host , int port )
-          throws Exception {
-      _RetryTunnel( cellName , host , port ) ;
+          throws UnknownHostException {
+      this( cellName , InetAddress.getByName( host ) , port ) ;
    }
    private void _RetryTunnel( String cellName , String host , int port )
-          throws Exception {
-
-
+          throws UnknownHostException {
       _mode    = "Connection" ;
 
-      _address = InetAddress.getByName( host ) ;
+      _address =  InetAddress.getByName( host );
       _port    = port ;
 
       _nucleus = new CellNucleus( this , cellName ) ;
@@ -119,10 +116,7 @@ public class RetryTunnel implements Cell,
 
 
    }
-   public RetryTunnel( String cellName , InetAddress address , int port )
-          throws Exception {
-
-
+   public RetryTunnel( String cellName , InetAddress address , int port ) {
       _mode    = "Connection" ;
 
       _address = address ;
@@ -132,8 +126,6 @@ public class RetryTunnel implements Cell,
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
-
-
    }
    public void run(){
       if( Thread.currentThread() == _receiverThread ){

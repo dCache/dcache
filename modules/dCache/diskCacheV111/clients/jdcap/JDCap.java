@@ -12,6 +12,7 @@ import java.io.* ;
 
 import diskCacheV111.util.* ;
 import diskCacheV111.clients.vsp.* ;
+import java.net.UnknownHostException;
 
 public class JDCap extends JFrame {
    private SetupPanel _setupPanel    = null ;
@@ -107,26 +108,24 @@ public class JDCap extends JFrame {
             long total = 0 ;
             long start = System.currentTimeMillis() ;
             long waitCycles = _setupPanel.getWaitCycles() ;
-            try{
-               while( ! Thread.currentThread().interrupted() ){
-                  if( ( size = c.read( data , 0 , data.length ) ) <= 0 )break ;
-                  total += size ;
-                  _infoBar._progress.setText(""+total);
-                  _infoBar._bar.setValue((int)total);
-                  long  diff  = System.currentTimeMillis() - start ;
-                  float speed = (float)(((double)total)/((double)diff)*1000.) ;
-                  _infoBar._speed.setValue((int)speed);
-                  _message.setText( " Total : "+total+"  "+speed) ;
-                  try{
-                     Thread.currentThread().sleep((_random.nextInt()&0xfffffff)%waitCycles) ;
-                  }catch(Exception ee){
+             while (!Thread.currentThread().interrupted()) {
+                 if ((size = c.read(data, 0, data.length)) <= 0) {
+                     break;
+                 }
+                 total += size;
+                 _infoBar._progress.setText("" + total);
+                 _infoBar._bar.setValue((int) total);
+                 long diff = System.currentTimeMillis() - start;
+                 float speed = (float) (((double) total) / ((double) diff) * 1000.);
+                 _infoBar._speed.setValue((int) speed);
+                 _message.setText(" Total : " + total + "  " + speed);
+                 try {
+                     Thread.currentThread().sleep((_random.nextInt() & 0xfffffff) % waitCycles);
+                 } catch (InterruptedException ee) {
                      _message.setText("Interrupted");
-                     break ;
-                  }
-               }
-            }catch(Exception ioe ){
-               _message.setText("IOException : "+ioe.getMessage() ) ;
-            }
+                     break;
+                 }
+             }
             try{ c.close() ; }catch(IOException eee){}
             _infoBar._button.setBackground(Color.magenta);
             vsp.close();
@@ -134,10 +133,15 @@ public class JDCap extends JFrame {
            long diff = System.currentTimeMillis() - start ;
             _message.setText( "closed with total : "+total+" and "+
                           (((double)total)/((double)diff)*1000./1024./1024.)+" MB/sec" ) ;
-         }catch(Exception iee){
-            _message.setText(iee.getMessage());
-            _infoBar._button.setBackground(Color.red);
-         }
+          } catch (IOException iee) {
+              _message.setText(iee.getMessage());
+              _infoBar._button.setBackground(Color.red);
+          } catch (CacheException ieee) {
+              _message.setText(ieee.getMessage());
+              _infoBar._button.setBackground(Color.red);
+          }
+
+
          _setupPanel.substractOne() ;
       }
       public Insets getInsets(){
@@ -168,17 +172,17 @@ public class JDCap extends JFrame {
        public int    getPort(){
          try{
             return Integer.parseInt( _serverPort.getText() ) ;
-         }catch( Exception e){ return 0 ; }
+         }catch( NumberFormatException e){ return 0 ; }
        }
        public int    getTransferSpeed(){
          try{
             return Integer.parseInt( _transferSpeed.getText() ) ;
-         }catch( Exception e){ return 200 ; }
+         }catch( NumberFormatException e){ return 200 ; }
        }
        public int    getWaitCycles(){
          try{
             return Integer.parseInt( _waitCycles.getText() ) ;
-         }catch( Exception e){ return 200 ; }
+         }catch( NumberFormatException e){ return 200 ; }
        }
        private class MyLineBorder extends LineBorder {
           public MyLineBorder( Color color , int line ){

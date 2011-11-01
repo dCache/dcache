@@ -210,7 +210,7 @@ public class HsmFlushControlManager  extends CellAdapter {
               try{
                  if(_logEnabled)_log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to "+poolName);
                  sendMessage( new CellMessage( new CellPath(poolName) , msg ) ) ;
-              }catch(Exception ee ){
+              }catch(NoRouteToCellException ee ){
                  _log.warn("sendFlushControlMessage : couldn't send _poolGroupHash to "+poolName);
               }
           }

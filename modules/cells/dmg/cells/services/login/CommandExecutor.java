@@ -57,18 +57,24 @@ public class      CommandExecutor extends CommandInterpreter {
        request[4] = action ;
        request[5] = className ;
        request[6] = instanceName ;
-       try{
-          CellPath acm = new CellPath( "acm" ) ;
-          CellMessage msg = new CellMessage( acm , request ) ;
-          msg = _nucleus.sendAndWait( msg , 4000 ) ;
-          if( msg == null )return false ;
-          Object r = msg.getMessageObject() ;
-          if( ( ! ( r instanceof Object [] ) ) ||
-              ( ((Object[])r).length < 8   )     )return false ;
-          return ((Boolean)((Object[])r)[7]).booleanValue() ;
-       }catch( Exception e ){
-          return false ;
-       }
+        try {
+            CellPath acm = new CellPath("acm");
+            CellMessage msg = new CellMessage(acm, request);
+            msg = _nucleus.sendAndWait(msg, 4000);
+            if (msg == null) {
+                return false;
+            }
+            Object r = msg.getMessageObject();
+            if ((!(r instanceof Object[])) ||
+                    (((Object[]) r).length < 8)) {
+                return false;
+            }
+            return ((Boolean) ((Object[]) r)[7]).booleanValue();
+        } catch (NoRouteToCellException e) {
+            return false;
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
     private String _prompt = " >> " ;
     public Object executeCommand( String str ){
@@ -92,17 +98,18 @@ public class      CommandExecutor extends CommandInterpreter {
           if( array.length < 2 )
               throw new
               IllegalArgumentException( "not enough arguments" ) ;
-          try{
-             obj =  runCommand( (String) array[0] , array ) ;
-          }catch(Exception eee ){
-             obj = eee ;
-          }
+           try {
+               obj = runCommand((String) array[0], array);
+           } catch (NoRouteToCellException eee) {
+               obj = eee;
+           } catch (InterruptedException eee) {
+               obj = eee;
+           }
        }
        return obj ;
     }
     private Object runCommand( String command , Object [] args )
-       throws Exception
-   {
+            throws NoRouteToCellException, InterruptedException{
 
        if( command.equals( "set-dest" ) ){
            _cellPath = new CellPath( (String)args[1] ) ;
@@ -119,7 +126,7 @@ public class      CommandExecutor extends CommandInterpreter {
           CellMessage res = _nucleus.sendAndWait(
                    new CellMessage( _cellPath , args ) ,
                    10000 ) ;
-          if( res == null )throw new Exception("Request timed out" ) ;
+          if( res == null ) return new Exception("Request timed out" ) ;
           return res.getMessageObject() ;
        }else
           throw new

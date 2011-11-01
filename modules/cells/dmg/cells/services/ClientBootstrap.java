@@ -85,13 +85,8 @@ public class ClientBootstrap
         return RST_CREATE_TUNNEL ;
 
         case RST_CREATE_TUNNEL :
-           try{
-              new RetryTunnel( "tunnel*" , _address , _port ) ;
-              return RST_TUNNEL_READY ;
-           }catch( Exception xc ){
-              return RST_TUNNEL_FAILED ;
-           }
-
+          new RetryTunnel( "tunnel*" , _address , _port ) ;
+          return RST_TUNNEL_READY ;
         case RST_TUNNEL_FAILED :
         case RST_MSG_SENT_FAILED :
         return -1 ;
@@ -107,44 +102,48 @@ public class ClientBootstrap
 
         case RST_ROUTE_READY :
         {
-          try{
-            CellPath    path = new CellPath( "config" ) ;
-            CellMessage msg  = new CellMessage(
-                   path ,
-                   "config "+_nucleus.getCellDomainName() ) ;
+            try {
+                CellPath path = new CellPath("config");
+                CellMessage msg = new CellMessage(
+                        path,
+                        "config " + _nucleus.getCellDomainName());
 
-             msg = _nucleus.sendAndWait( msg , 20000L ) ;
-             //
-             // retry after timeout ( in any case )
-             //
-             if( msg == null ){
-                _log.info( "runState : sendAndWait timed out" ) ;
-                return RST_MSG_SENT_FAILED ;
-             }
+                msg = _nucleus.sendAndWait(msg, 20000L);
+                //
+                // retry after timeout ( in any case )
+                //
+                if (msg == null) {
+                    _log.info("runState : sendAndWait timed out");
+                    return RST_MSG_SENT_FAILED;
+                }
 
-             Object answer = msg.getMessageObject() ;
-             if( answer == null ){
-                 _log.info( "runState : null object received" ) ;
-                 return RST_MSG_SENT_FAILED ;
-             }
+                Object answer = msg.getMessageObject();
+                if (answer == null) {
+                    _log.info("runState : null object received");
+                    return RST_MSG_SENT_FAILED;
+                }
 
-             if( ! ( answer instanceof String [] ) ){
-                 _log.info( "runState : answer is "+answer ) ;
-                 _engine.setState( RST_WAITING ) ;
-                 try{ Thread.sleep(5000); }
-                 catch( Exception ee){} ;
+                if (!(answer instanceof String[])) {
+                    _log.info("runState : answer is " + answer);
+                    _engine.setState(RST_WAITING);
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ee) {
+                    }
+                    ;
 
-                 return RST_ROUTE_READY ;
-             }
+                    return RST_ROUTE_READY;
+                }
 
-             _commands = (String [] ) answer ;
+                _commands = (String[]) answer;
 
-             return RST_MSG_RECV ;
+                return RST_MSG_RECV;
 
-          }catch( Exception sme ){
-             return RST_MSG_SENT_FAILED ;
-          }
-
+            } catch (NoRouteToCellException sme) {
+                return RST_MSG_SENT_FAILED;
+            } catch (InterruptedException sme) {
+                return RST_MSG_SENT_FAILED;
+            }
         }
 
         case RST_MSG_RECV :

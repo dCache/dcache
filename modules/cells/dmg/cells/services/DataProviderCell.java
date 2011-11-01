@@ -3,7 +3,6 @@ package dmg.cells.services ;
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
-import java.net.* ;
 import java.io.* ;
 import java.util.* ;
 
@@ -98,11 +97,11 @@ public class DataProviderCell extends CellAdapter {
          _requestCounter ++ ;
          _classHash.put( fileName , data ) ;
          reply( msg , data ) ;
-      }catch( Exception ee ){
+      }catch( IOException ee ){
          _errorCounter ++ ;
          return ;
       }finally {
-         try{in.close();}catch(Exception ex ){}
+         try{in.close();}catch(IOException ex ){}
       }
       return ;
    }
@@ -112,7 +111,7 @@ public class DataProviderCell extends CellAdapter {
          msg.setMessageObject( o ) ;
          msg.revertDirection() ;
          sendMessage( msg ) ;
-      }catch( Exception e ){
+      }catch( NoRouteToCellException e ){
 
       }
    }
