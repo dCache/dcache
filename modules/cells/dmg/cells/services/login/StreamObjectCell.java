@@ -16,6 +16,7 @@ import jline.ConsoleReader;
 import jline.UnixTerminal;
 import jline.History;
 import jline.ANSIBuffer;
+import jline.Completor;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellAdapter;
@@ -289,6 +290,9 @@ public class StreamObjectCell
                 history.setMaxSize(HISTORY_SIZE);
                 console.setHistory(history);
                 console.setUseHistory(true);
+                if (_commandObject instanceof Completor) {
+                    console.addCompletor((Completor) _commandObject);
+                }
                 console.addTriggeredAction(ConsoleReader.CTRL_C, new ActionListener()
                     {
                         @Override

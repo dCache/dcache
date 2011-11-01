@@ -16,6 +16,8 @@ import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jline.Completor;
+
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -68,10 +70,10 @@ import org.dcache.vehicles.FileAttributes;
  * @author Christian Bernardt, Patrick Fuhrmann
  * @version 0.2, 10 December 2010
   */
-public class      UserAdminShell
-//       extends    dmg.cells.services.login.user.MinimalAdminShell {
-       extends    CommandInterpreter {
-
+public class UserAdminShell
+    extends CommandInterpreter
+    implements Completor
+{
     private static final Logger _log =
         LoggerFactory.getLogger(UserAdminShell.class);
 
@@ -87,6 +89,7 @@ public class      UserAdminShell
     private final String      _instance ;
     private Position    _currentPosition = new Position() ;
     private final boolean     _debug    = false ;
+    private Completor _completor;
 
     private class Position {
         private CellPath    remote     = null ;
@@ -1170,6 +1173,8 @@ public class      UserAdminShell
 
        Position newPosition = null ;
 
+       _completor = null;
+
        if( path.isDomain() ){
             //
            // switch back do domain mode (hyper mode or not)
@@ -1216,7 +1221,6 @@ public class      UserAdminShell
            _currentPosition = newPosition ;
        }
 
-
        return "" ;
     }
     private void checkCdPermission( String remoteName ) throws AclException {
@@ -1262,6 +1266,24 @@ public class      UserAdminShell
        }
     }
 
+    @Override
+    public int complete(String buffer, int cursor, List candidates)
+    {
+        try {
+            if (_completor == null) {
+                Object help = executeCommand("help");
+                if (help == null) {
+                    return -1;
+                }
+                _completor = new HelpCompletor(String.valueOf(help));
+            }
+            return _completor.complete(buffer, cursor, candidates);
+        } catch (Exception e) {
+            _log.info("Completion failed: " + e.toString());
+            return -1;
+        }
+    }
+
     public Object executeCommand(String str) throws Exception
     {
        _log.info( "String command (super) "+str ) ;
@@ -1271,6 +1293,7 @@ public class      UserAdminShell
        if( str.equals("..") ){
           _currentPosition.clearHyperMode() ;
           _currentPosition.gotoLocal() ;
+          _completor = null;
           return "" ;
        }
 
