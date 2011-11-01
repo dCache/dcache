@@ -108,9 +108,12 @@ public class PnfsFile extends File
             try {
                 FileAttributes attributes = new FileAttributes();
                 readGetAttr(new File(getParent()), attributes);
-                if (attributes.getFileType() == FileType.LINK)
+                if (attributes.getFileType() == FileType.LINK) {
                     return true;
-            } catch (Exception e) {
+                }
+            } catch (CacheException ex) {
+                return false;
+            } catch (IOException ex) {
                 return false;
             }
         }
@@ -240,7 +243,6 @@ public class PnfsFile extends File
                    ".(fset)("+getName()+")(size)("+length+")" ) ;
 
          if( length == 0L ){
-//            return f.length() == 0L ? true :  f.delete() ;
             return true ;
          }else{
 
@@ -259,8 +261,6 @@ public class PnfsFile extends File
          setSizeCommand = new File( parent , ".(pset)("+_pnfsId+")(size)("+length+")" ) ;
          if( length == 0 ){
              return true ;
-//            f.delete() ; // failes if already zero
-//            return true ;
          }else{
             try{
 
@@ -680,7 +680,7 @@ public class PnfsFile extends File
             }
             mountpoints.add( mp );
          }
-      }catch( Exception e ){
+      }catch( IOException e ){
          return new String[0] ;
       }finally{
          try{ in.close()  ; }catch(IOException xioe ){}
@@ -1392,8 +1392,11 @@ public class PnfsFile extends File
                }
             }
          }
-      }catch( Exception e ){
+      }catch( IOException e ){
          e.printStackTrace() ;
+         System.exit(4) ;
+      }catch (CacheException ex){
+         ex.printStackTrace() ;
          System.exit(4) ;
       }
    }
