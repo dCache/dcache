@@ -50,8 +50,6 @@ public class BootLoader
 
     private static final char OPT_SILENT = 'q';
 
-    private static final String PATH_DELIMITER = ":";
-
     private static final String CONSOLE_APPENDER_NAME = "console";
     private static final String CONSOLE_APPENDER_PATTERN = "%-5level - %msg%n";
 

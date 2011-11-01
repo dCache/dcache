@@ -207,8 +207,50 @@ public class Domain
         throws URISyntaxException, IOException, CommandException
     {
         CellShell shell = createShellForService(system, properties);
-        URI uri = new URI(properties.getValue(PROPERTY_DOMAIN_SERVICE_URI));
+        URI uri = findBatchFile(properties);
         executeBatchFile(shell, uri);
+    }
+
+    /**
+     * Scans the service directories to locate the service batch file.
+     */
+    private URI findBatchFile(ConfigurationProperties properties)
+        throws URISyntaxException
+    {
+        String name = properties.getValue(PROPERTY_DOMAIN_SERVICE_URI);
+
+        /* Don't search if we have an absolute position.
+         */
+        URI uri = new URI(name);
+        if (uri.isAbsolute()) {
+            return uri;
+        }
+
+        File file = new File(uri.getPath());
+        if (file.isAbsolute()) {
+            return file.toURI();
+        }
+
+        /* Search in plugin directories.
+         */
+        String pluginPath = properties.getValue(PROPERTY_PLUGIN_PATH);
+        for (String s: pluginPath.split(PATH_DELIMITER)) {
+            File dir = new File(s);
+            if (dir.isDirectory()) {
+                for (File plugin: dir.listFiles()) {
+                    file = new File(plugin, name);
+                    if (file.exists()) {
+                        return file.toURI();
+                    }
+                }
+            }
+        }
+
+        /* Resolve relativ to base path.
+         */
+        URI base =
+            new URI(properties.getValue(PROPERTY_DOMAIN_SERVICE_URI_BASE));
+        return base.resolve(uri);
     }
 
     /**
