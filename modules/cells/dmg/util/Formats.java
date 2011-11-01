@@ -55,6 +55,9 @@ public class Formats {
   private final static int RP_IDLE   = 0 ;
   private final static int RP_DOLLAR = 1 ;
   private final static int RP_OPENED = 2 ;
+  private final static int RP_LITERAL = 3;
+
+  private static final char ESCAPE_CHAR = '\\';
 
     private static String replaceKeywords(String in, Replaceable cb, Stack<String> replaced)
     {
@@ -64,24 +67,39 @@ public class Formats {
         int len   = in.length() ;
         int braceCount = 0;
         boolean previousWasDollar = false;
+        boolean previousWasEscape = false;
 
         for( int i = 0 ; i < len ; i++ ){
             char c = in.charAt(i) ;
             switch( state ){
             case RP_IDLE :
-                if( c == '$' ){
-                    state = RP_DOLLAR ;
-                }else{
-                    out.append( c ) ;
+                switch(c) {
+                case '$':
+                    state = RP_DOLLAR;
+                    break;
+                case ESCAPE_CHAR:
+                    state = RP_LITERAL;
+                    break;
+                default:
+                    out.append(c);
                 }
                 break ;
+
+            case RP_LITERAL:
+                out.append(c);
+                state = RP_IDLE;
+                break;
+
             case RP_DOLLAR :
                 if( c == '{' ){
                     previousWasDollar=false;
                     state = RP_OPENED ;
                     braceCount = 0;
                     key   = new StringBuilder();
-                }else{
+                }else if(c == ESCAPE_CHAR) {
+                    out.append('$');
+                    state = RP_LITERAL;
+                } else {
                     out.append('$').append(c);
                     state = RP_IDLE ;
                 }
@@ -91,38 +109,57 @@ public class Formats {
                 switch(c) {
                 case '$':
                     key.append(c);
-                    previousWasDollar=true;
+                    if(!previousWasEscape) {
+                        previousWasDollar=true;
+                    }
+                    previousWasEscape=false;
                     break;
 
                 case '{':
                     key.append(c);
-                    if(previousWasDollar) {
+                    if(previousWasDollar && !previousWasEscape) {
                         braceCount++;
                     }
                     previousWasDollar=false;
+                    previousWasEscape=false;
                     break;
 
                 case '}':
-                    previousWasDollar=false;
-                    if(braceCount > 0) {
-                        braceCount--;
+                    if(previousWasEscape) {
                         key.append(c);
                     } else {
-                        state = RP_IDLE;
-                        String keyName = replaceKeywords(key.toString(), cb, replaced);
-                        String keyValue = cb.getReplacement(keyName);
-
-                        if (keyValue == null || replaced.contains(keyName)) {
-                            out.append( "${"+keyName+"}" );
+                        if(braceCount > 0) {
+                            braceCount--;
+                            key.append(c);
                         } else {
-                            replaced.push(keyName);
-                            out.append(replaceKeywords(keyValue, cb, replaced));
-                            replaced.pop();
+                            state = RP_IDLE;
+                            String keyName = replaceKeywords(key.toString(), cb, replaced);
+                            String keyValue = cb.getReplacement(keyName);
+
+                            if (keyValue == null || replaced.contains(keyName)) {
+                                out.append( "${"+keyName+"}" );
+                            } else {
+                                replaced.push(keyName);
+                                out.append(replaceKeywords(keyValue, cb, replaced));
+                                replaced.pop();
+                            }
                         }
                     }
+                    previousWasDollar=false;
+                    previousWasEscape=false;
+                    break;
+
+                case ESCAPE_CHAR:
+                    if(previousWasEscape) {
+                        key.append(c);
+                    }
+                    previousWasEscape=true;
+                    previousWasDollar=false;
                     break;
 
                 default:
+                    previousWasEscape=false;
+                    previousWasDollar=false;
                     key.append(c);
                     break;
                 }
@@ -130,6 +167,9 @@ public class Formats {
         }
 
         switch(state) {
+        case RP_LITERAL:
+            out.append(ESCAPE_CHAR);
+            break;
         case RP_DOLLAR:
             out.append('$');
             break;
