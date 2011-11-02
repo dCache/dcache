@@ -130,7 +130,7 @@
 
             <attr name="GLUE2ManagerID">glue:<constant id="SE-UNIQUE-ID"/>/data/m/dCache</attr>
 
-            <attr name="GLUE2StorageManagerStorageServiceForeignKey">
+            <attr name="GLUE2ManagerServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
 
@@ -150,7 +150,7 @@
                   <lookup default="UNDEFINEDVALUE"
                           path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='diskCacheV111.cells.CleanerV2']"/>
                 </lookup>
-	          </map>
+                  </map>
             </attr>
 
 
@@ -170,7 +170,7 @@
                 |       +- GLUE2DataStore
                 +-->
             <object rdn="GLUE2ResourceID"
-                    classes="GLUE2DataStore Resource">
+                    classes="GLUE2DataStore GLUE2Resource">
 
               <attr name="GLUE2ResourceID">glue:<constant
                         id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
@@ -178,6 +178,8 @@
               <attr name="GLUE2ResourceManagerForeignKey">
                 <parent-rdn rdn="GLUE2ManagerID" use="value"/>
               </attr>
+
+              <attr name="GLUE2DataStoreType">disk</attr>
 
               <attr name="GLUE2DataStoreLatency">online</attr>
 
@@ -427,13 +429,6 @@
                     path="d:protocol/d:metric[@name='version']"/>
             </attr>
 
-            <!-- FIXME a bug in current BDII GLUE2 schema results in requiring
-                       this class to publish GLUE2EndpointServiceForeignKey
-                       and GLUE2StorageEndpointStorageServiceForeignKey -->
-            <attr name="GLUE2StorageEndpointStorageServiceForeignKey">
-              <parent-rdn rdn="GLUE2ServiceID" use="value"/>
-            </attr>
-
             <attr name="GLUE2EndpointServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
@@ -560,13 +555,13 @@
                     id="SE-UNIQUE-ID"/>/data/ss/nas/<map
                     name="GlueSALocalID-BDII-workaround">
                 <lookup path="../../../../@id"/>-write-<lookup path="@name"/>
-	          </map>
+              </map>
             </attr>
 
-	        <attr name="GLUE2StorageShareDataStoreForeignKey">glue:<constant
+	    <attr name="GLUE2ShareResourceForeignKey">glue:<constant
                     id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
 
-            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+            <attr name="GLUE2ShareServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
 
@@ -685,7 +680,7 @@
                 |   :  |
                 |      +- GLUE2MappingPolicy
                 +-->
-	        <object rdn="GLUE2PolicyID"
+            <object rdn="GLUE2PolicyID"
                     classes="GLUE2MappingPolicy GLUE2Policy">
 
               <attr name="GLUE2PolicyID">
@@ -703,6 +698,35 @@
                     <lookup path="@name"/>
                   </when>
 
+                  <!-- FIXME: the following publishes a
+                       GLUE2PolicyRule attribute for each VO stored in
+                       the list default-store-unit-VO.  This works as
+                       expected provided there is at least one VO in
+                       that list.  If a site has no VOs in that list
+                       then there will be no GLUE2PolicyRule
+                       attributes.
+
+                       The GLUE2Policy class requires at least one
+                       GLUE2PolicyRule attribute is provided.
+                       Therefore, if a site has no VOs in their
+                       default-store-unit-VO then they will publish a
+                       broken object.
+
+                       The correct behaviour under these circumstances
+                       is to avoid publishing a GLUE2MappingPolicy
+                       object; i.e., supress publishing this object.
+                       This is currently not possible with Xylophone.
+
+                       When OpenLDAP's slapd daemon parses this LDIF,
+                       it will reject the object and emit a warning
+                       like:
+
+                       ldapmodify: Object class violation (65)
+                       additional info: object class 'GLUE2Policy' requires attribute 'GLUE2PolicyRule'
+
+                       Since the resulting set of objects is the
+                       desired set; fixing this problem is really
+                       about suppressing a warning message.  -->
                   <attr name="GLUE2PolicyRule"
                           list="default-store-unit-VOs">vo:<item/></attr>
                 </optionally>
@@ -737,9 +761,9 @@
               |      |
               |      +- GLUE2MappingPolicy
               +-->
-	      <object rdn="GLUE2ShareID"
-		          select="/d:dCache/d:nas/d:nas[count(d:units/d:store/d:read/d:unitref) > 0 or count(d:units/d:store/d:stage/d:unitref) > 0]"
-		          classes="GLUE2StorageShare GLUE2Share">
+          <object rdn="GLUE2ShareID"
+                  select="/d:dCache/d:nas/d:nas[count(d:units/d:store/d:read/d:unitref) > 0 or count(d:units/d:store/d:stage/d:unitref) > 0]"
+                  classes="GLUE2StorageShare GLUE2Share">
 
             <attr name="GLUE2ShareID">glue:<constant
                     id="SE-UNIQUE-ID"/>/data/ss/nas/<map
@@ -754,7 +778,7 @@
 
             <attr name="GLUE2StorageShareSharingID">nas:<lookup path="@id"/></attr>
 
-            <attr name="GLUE2StorageShareDataStoreForeignKey">glue:<constant
+            <attr name="GLUE2ShareServiceForeignKey">glue:<constant
                     id="SE-UNIQUE-ID"/>/data/ds/dCache/disk</attr>
 
             <attr name="GLUE2StorageShareServingState">production</attr>
@@ -873,6 +897,33 @@
                   <lookup path="count(d:units/d:store/d:read/d:unitref[@name='*@*']) + count(d:units/d:store/d:stage/d:unitref[@name='*@*'])"/>
                 </when>
 
+                <!-- FIXME: the following publishes a GLUE2PolicyRule
+                     attribute for each VO stored in the list
+                     default-store-unit-VO.  This works as expected
+                     provided there is at least one VO in that list.
+                     If a site has no VOs in that list then there will
+                     be no GLUE2PolicyRule attributes.
+
+                     The GLUE2Policy class requires at least one
+                     GLUE2PolicyRule attribute is provided.
+                     Therefore, if a site has no VOs in their
+                     default-store-unit-VO then they will publish a
+                     broken object.
+
+                     The correct behaviour under these circumstances
+                     is to avoid publishing a GLUE2MappingPolicy
+                     object; i.e., supress publishing this object.
+                     This is currently not possible with Xylophone.
+
+                     When OpenLDAP's slapd daemon parses this LDIF, it
+                     will reject the object and emit a warning like:
+
+                     ldapmodify: Object class violation (65)
+                     additional info: object class 'GLUE2Policy' requires attribute 'GLUE2PolicyRule'
+
+                     Since the resulting set of objects is the desired
+                     set; fixing this problem is really about
+                     suppressing a warning message.  -->
                 <attr name="GLUE2PolicyRule"
                       list="default-store-unit-VOs">vo:<item/>
                 </attr>
@@ -904,7 +955,7 @@
                     id="SE-UNIQUE-ID"/>/data/ss/tape/<lookup xml-src="tape-info" path="@id"/>
             </attr>
 
-            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+            <attr name="GLUE2ShareServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
 
@@ -1022,8 +1073,8 @@
                   list="SRM-supported-VOs"
                   classes="Glue2StorageShare GLUE2Share">
 
-	        <!-- Suppress publishing any object if there's no map entry -->
-	        <suppress test="0" check="equal">
+            <!-- Suppress publishing any object if there's no map entry -->
+            <suppress test="0" check="equal">
               <map name="VO-to-offline-disk">
                 <item/>
               </map>
@@ -1033,12 +1084,8 @@
                   id="SE-UNIQUE-ID"/>/data/ss/offline/<item/>
             </attr>
 
-            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+            <attr name="GLUE2ShareServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
-            </attr>
-
-            <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
-              <parent-rdn rdn="GLUE2ShareID" use="value"/>
             </attr>
 
             <attr name="GLUE2StorageShareAccessLatency">online</attr>
@@ -1066,6 +1113,10 @@
 
               <attr name="GLUE2StorageShareCapacityID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
+
+              <attr name="GLUE2StorageShareCapacityStorageShareForeignKey">
+                <parent-rdn rdn="GLUE2ShareID" use="value"/>
+              </attr>
 
               <attr name="GLUE2StorageShareCapacityType">installedonline</attr>
 
@@ -1130,7 +1181,7 @@
                     id="SE-UNIQUE-ID"/>/data/ss/space/<lookup path="../../@name"/>/<lookup path="@description"/>
             </attr>
 
-            <attr name="GLUE2StorageShareStorageServiceForeignKey">
+            <attr name="GLUE2ShareServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
 
