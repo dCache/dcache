@@ -78,11 +78,49 @@ public class AclNFSv4Matcher extends AclMatcher {
             break;
 
         case REMOVE:
-            allowed = isAllowed(perm1.getDefMsk(), perm1.getAllowMsk(), AccessMask.DELETE_CHILD.getValue());
-            if ( allowed == null || allowed.equals( Boolean.TRUE ) ) {
-                Boolean allowed_child = isAllowed(perm2.getDefMsk(), perm2.getAllowMsk(), AccessMask.DELETE.getValue());
-                if ( allowed_child == null || allowed_child.equals( Boolean.FALSE ) )
-                    allowed = allowed_child;
+            /* RFC 5661
+             *
+             * 6.2.1.3.2. ACE4_DELETE vs. ACE4_DELETE_CHILD
+             *
+             * Two access mask bits govern the ability to delete a
+             * directory entry: ACE4_DELETE on the object itself (the
+             * "target") and ACE4_DELETE_CHILD on the containing
+             * directory (the "parent").
+             *
+             * Many systems also take the "sticky bit" (MODE4_SVTX) on
+             * a directory to allow unlink only to a user that owns
+             * either the target or the parent; on some such systems
+             * the decision also depends on whether the target is
+             * writable.
+             *
+             * Servers SHOULD allow unlink if either ACE4_DELETE is
+             * permitted on the target, or ACE4_DELETE_CHILD is
+             * permitted on the parent.  (Note that this is true even
+             * if the parent or target explicitly denies one of these
+             * permissions.)
+             *
+             * If the ACLs in question neither explicitly ALLOW nor
+             * DENY either of the above, and if MODE4_SVTX is not set
+             * on the parent, then the server SHOULD allow the removal
+             * if and only if ACE4_ADD_FILE is permitted.  In the case
+             * where MODE4_SVTX is set, the server may also require
+             * the remover to own either the parent or the target, or
+             * may require the target to be writable.
+             */
+            allowed =
+                isAllowed(perm1.getDefMsk(), perm1.getAllowMsk(),
+                          AccessMask.DELETE_CHILD.getValue());
+            Boolean allowed2 =
+                isAllowed(perm2.getDefMsk(), perm2.getAllowMsk(),
+                          AccessMask.DELETE.getValue());
+            if (Boolean.TRUE.equals(allowed) || Boolean.TRUE.equals(allowed2)) {
+                allowed = Boolean.TRUE;
+            } else if (Boolean.FALSE.equals(allowed) || Boolean.FALSE.equals(allowed2)) {
+                allowed = Boolean.FALSE;
+            } else {
+                allowed =
+                    isAllowed(perm1.getDefMsk(), perm1.getAllowMsk(),
+                              AccessMask.ADD_FILE.getValue());
             }
             break;
 
