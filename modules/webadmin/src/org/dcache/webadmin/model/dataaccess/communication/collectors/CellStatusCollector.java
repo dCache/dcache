@@ -6,6 +6,8 @@ import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -143,13 +145,22 @@ public class CellStatusCollector extends Collector {
     }
 
     private void subtractGoneTargets() {
+        Collection<CellStatus> removables = findRemovableTargets();
+        for (CellStatus status : removables) {
+            _statusTargets.remove(status.getName());
+            _log.debug("Removed Target {}", status.getName());
+        }
+    }
+
+    private Collection<CellStatus> findRemovableTargets() {
+        Collection<CellStatus> removables = new ArrayList<CellStatus>();
         for (CellStatus status : _statusTargets.values()) {
             if ((System.currentTimeMillis() - status.getLastAliveTime()) >
                     CONSIDERED_REMOVED_TIME_MS) {
-                _statusTargets.remove(status.getName());
-                _log.debug("Removed Target {}", status.getName());
+                removables.add(status);
             }
         }
+        return removables;
     }
 
     public void setLoginBrokerName(String loginBrokerName) {
