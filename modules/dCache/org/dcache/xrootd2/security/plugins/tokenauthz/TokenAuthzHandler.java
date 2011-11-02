@@ -159,7 +159,7 @@ public class TokenAuthzHandler implements AuthorizationHandler
     @Override
     public boolean providesPFN()
     {
-        return true;
+        return (pfn != null);
     }
 
     @Override
