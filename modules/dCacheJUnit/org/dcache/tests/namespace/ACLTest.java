@@ -203,13 +203,13 @@ public class ACLTest {
                 "user with who_id=7 is allowed to WRITE file as WRITE_DATA is allowed",
                 check2);
 
-        // Action REMOVE. Undefined, expected NULL.
+        // Action REMOVE. Allowed, because parent directory has DELETE_CHILD.
         Action actionREMOVE = Action.REMOVE;
         //use Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
         //where perm1 - permission for parent directory, perm2 - permission for child (file in this case)
         Boolean check3 = AclNFSv4Matcher.isAllowed(permissionNewParentDir, permissionNew, actionREMOVE,
                 Boolean.FALSE);
-        assertNull("user who_id=7, action REMOVE is undefined", check3);
+        assertTrue("user who_id=7, action REMOVE is allowed", check3);
 
         // Action REMOVE. Allowed to remove file (For user 777, file: DELETE allowed, parentdir: DELETE_CHILD allowed).
         //use: Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
@@ -775,7 +775,7 @@ public class ACLTest {
                 checkREMOVE);
 
         //for user 222:
-        //For who_id=222 action REMOVE directory is NOT allowed, as bit DELETE_CHILD DENIED for parent directory
+        //For who_id=222 action REMOVE directory is allowed, as bit DELETE ALLOWED for child
         Permission permissionChildNextUser = AclMapper.getPermission(subjectNextUser,
                 originNew, ownerNew, childACL);
 
@@ -784,8 +784,8 @@ public class ACLTest {
 
         Boolean checkREMOVENextUser = AclNFSv4Matcher.isAllowed(permissionParentNextUser, permissionChildNextUser,
                 actionREMOVE, Boolean.TRUE);
-        assertFalse(
-                "For who_id=222 action REMOVE directory is NOT allowed, as bit DELETE_CHILD denied for parent directory ",
+        assertTrue(
+                "For who_id=222 action REMOVE directory is allowed, as bit DELETE is set for child ",
                 checkREMOVENextUser);
     }
 
@@ -889,12 +889,12 @@ public class ACLTest {
                 originNew, ownerNew, parentACL);
 
         // Check REMOVE (for file). Bits: DELETE for file denied, DELETE_CHILD for parent dir allowed.
-        // then action REMOVE must be denied
+        // then action REMOVE is allowed
         Action actionREMOVE = Action.REMOVE;
         Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionParentDir, permissionNew,
                 actionREMOVE, Boolean.FALSE);
-        assertFalse(
-                "For who_id=111 action REMOVE file is denied: bit DELETE denied",
+        assertTrue(
+                "For who_id=111 action REMOVE file is allowed: bit DELETE_CHILD allowed",
                 checkREMOVE);
 
     }
