@@ -26,33 +26,9 @@ public class FormatsTests
     }
 
     @Test
-    public void testReplaceKeywordsWithPlainWordWithEscape()
-    {
-        assertHasReplacement("key\\word", "keyword");
-    }
-
-    @Test
-    public void testReplaceKeywordsWithPlainWordWithEscapedEscape()
-    {
-        assertHasReplacement("key\\\\word", "key\\word");
-    }
-
-    @Test
-    public void testReplaceKeywordsWithTrailingEscape()
-    {
-        assertHasReplacement("keyword\\", "keyword\\");
-    }
-
-    @Test
     public void testReplaceKeywordsWithInitialDollar()
     {
         assertHasReplacement("$keyword", "$keyword");
-    }
-
-    @Test
-    public void testReplaceKeywordsWithInitialEscapedDollar()
-    {
-        assertHasReplacement("\\$keyword", "$keyword");
     }
 
     @Test
@@ -71,74 +47,6 @@ public class FormatsTests
     public void testReplaceKeywordsWithSimpleReference()
     {
         assertHasReplacement("${keyword}", "replacement");
-    }
-
-    @Test
-    public void testReplaceKeywordWithDollar()
-    {
-        _replacements.put("$foo", "bar");
-        assertHasReplacement("${\\$foo}", "bar");
-    }
-
-    @Test
-    public void testReplaceKeywordWithDollarBraceEscapedDollar()
-    {
-        _replacements.put("${foo", "bar");
-        assertHasReplacement("${\\${foo}", "bar");
-    }
-
-    @Test
-    public void testReplaceKeywordWithDollarBraceEscapedBrace()
-    {
-        _replacements.put("${foo", "bar");
-        assertHasReplacement("${$\\{foo}", "bar");
-    }
-
-    @Test
-    public void testReplaceKeywordWithDollarBraceEscapedDollarEscapedBrace()
-    {
-        _replacements.put("${foo", "bar");
-        assertHasReplacement("${\\$\\{foo}", "bar");
-    }
-
-    @Test
-    public void testReplaceKeywordWithRevBrace()
-    {
-        _replacements.put("}foo", "bar");
-        assertHasReplacement("${\\}foo}", "bar");
-    }
-
-    @Test
-    public void testReplaceKeywordWithDollarRevBraceEscapedBoth()
-    {
-        _replacements.put("$}foo", "bar");
-        assertHasReplacement("${\\$\\}foo}", "bar");
-    }
-
-    @Test
-    public void testReplaceKeywordWithSlash()
-    {
-        _replacements.put("foo\\bar", "baz");
-        assertHasReplacement("${foo\\\\\\\\bar}", "baz");
-    }
-
-    @Test
-    public void testReplaceKeywordWithDollarRevBraceEscapedRevBrace()
-    {
-        _replacements.put("$}foo", "bar");
-        assertHasReplacement("${$\\}foo}", "bar");
-    }
-
-    @Test
-    public void testEscapedDollarReplaceKeywordsWithSimpleReference()
-    {
-        assertHasReplacement("\\${keyword}", "${keyword}");
-    }
-
-    @Test
-    public void testDollarEscapedReplaceKeywordsWithSimpleReference()
-    {
-        assertHasReplacement("$\\${keyword}", "$${keyword}");
     }
 
     @Test
@@ -167,31 +75,10 @@ public class FormatsTests
     }
 
     @Test
-    public void testReplaceSimpleKeywordsWithinKeywordExistsWithEscape()
-    {
-        _replacements.put("}other", "keyword");
-        assertHasReplacement("${${\\\\}other}}", "replacement");
-    }
-
-    @Test
     public void testReplaceComplexKeywordsWithinKeywordExists()
     {
         _replacements.put("other", "wor");
         assertHasReplacement("${key${other}d}", "replacement");
-    }
-
-    @Test
-    public void testEscapeDollarReplaceComplexKeywordsWithinKeywordExists()
-    {
-        _replacements.put("other", "wor");
-        assertHasReplacement("${key\\${other}d}", "${key${other}d}");
-    }
-
-    @Test
-    public void testEscapeBraceReplaceComplexKeywordsWithinKeywordExists()
-    {
-        _replacements.put("other", "wor");
-        assertHasReplacement("${key$\\{other}d}", "${key${other}d}");
     }
 
     @Test
@@ -205,14 +92,6 @@ public class FormatsTests
     public void testReplaceSimpleKeywordsWithinKeywordInnerDoesntExists()
     {
         assertHasReplacement("${${other}}", "${${other}}");
-    }
-
-    @Test
-    public void testMultiple()
-    {
-        _replacements.put("}foo", "bar");
-        _replacements.put("bar", "baz");
-        assertHasReplacement("${${\\\\}foo}}", "baz");
     }
 
     @Test
