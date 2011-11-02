@@ -47,6 +47,21 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 		CostModulePoolInfoTable poolInfoTbl = (CostModulePoolInfoTable) msgPayload;
 		
 		Collection<PoolCostInfo> poolInfos = poolInfoTbl.poolInfos();
+
+		if(poolInfos.size() > 0) {
+		    StateUpdate update = buildUpdate(poolInfos, metricLifetime);
+		    applyUpdates( update);
+		}
+	}
+
+
+	/**
+	 * Build a StateUpdate for the supplied collection of pool information
+	 * @param poolInfos a collection of informaiton about the pools
+	 * @param metricLifetime the duration metrics should remain
+	 * @return a StateUpdate that updates the state
+	 */
+	private StateUpdate buildUpdate(Collection<PoolCostInfo> poolInfos, long metricLifetime) {
 		StatePath poolsPath = new StatePath("pools");
 		
 		StateUpdate update = new StateUpdate();
@@ -94,7 +109,7 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 			addSpaceInfo( update, pathToThisPool.newChild("space"), thisPoolInfo.getSpaceInfo(), metricLifetime);
 		}
 		
-		applyUpdates( update);
+		return update;
 	}
 	
 	
