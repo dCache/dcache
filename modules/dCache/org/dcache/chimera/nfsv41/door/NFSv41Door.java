@@ -508,6 +508,20 @@ public class NFSv41Door extends AbstractCellComponent implements
         return "Thread count: " + _rpcService.getThreadCount();
     }
 
+    public static final String fh_exports_reload = " # re-scan export file";
+    public String ac_exports_reload(Args args) throws IOException {
+        _exportFile.rescan();
+        return "Done";
+    }
+    public static final String fh_exports_ls = " # dump nfs exports";
+    public String ac_exports_ls(Args args) {
+        StringBuilder sb = new StringBuilder();
+        for(String export: _exportFile.getExports())
+                sb.append(_exportFile.getExport(export)).append("\n");
+
+        return sb.toString();
+    }
+
     private static deviceid4 deviceidOf(int id) {
         byte[] deviceidBytes = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
         Bytes.putInt(deviceidBytes, 0, id);

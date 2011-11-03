@@ -35,20 +35,18 @@ public class ExportFile {
     /**
      * The root node of pseudo fs.
      */
-    private final PseudoFsNode _pseudoFS = new PseudoFsNode(null);
-    /**
-     * Create a new empty exports list
-     */
-    public ExportFile()  {
-    }
+    private volatile PseudoFsNode _pseudoFS = new PseudoFsNode(null);
+    private final File _exportFile;
 
     public ExportFile(File file) throws IOException  {
-        parse(file);
+         _exportFile = file;
+         _pseudoFS = scanExportFile(file);
     }
 
     public List<String> getExports() {
         List<String> out = new ArrayList<String>();
-        walk(out, _pseudoFS, null);
+        PseudoFsNode pseudoFsRoot = _pseudoFS;
+        walk(out, pseudoFsRoot, null);
         return out;
     }
 
@@ -63,9 +61,10 @@ public class ExportFile {
             walk(out, next, (path == null? "": path) + "/" + next.getName());
     }
 
-    private void parse(File exportFile) throws IOException {
+    private PseudoFsNode scanExportFile(File exportFile) throws IOException {
 
         BufferedReader br = new BufferedReader(new FileReader(exportFile));
+        PseudoFsNode pseudoFsRoot = new PseudoFsNode(null);
 
         String line;
         try {
@@ -124,7 +123,7 @@ public class ExportFile {
 
                 }
 
-                pathToPseudoFs(path, export);
+                pathToPseudoFs(pseudoFsRoot, path, export);
             }
         } finally {
             try {
@@ -133,6 +132,7 @@ public class ExportFile {
                 // ignored
             }
         }
+        return pseudoFsRoot;
     }
 
 
@@ -176,9 +176,8 @@ public class ExportFile {
      * @param path
      * @param e
      */
-    private void pathToPseudoFs(String path, FsExport e) {
+    private void pathToPseudoFs(PseudoFsNode parent, String path, FsExport e) {
 
-        PseudoFsNode parent = _pseudoFS;
         Splitter splitter = Splitter.on('/').omitEmptyStrings();
         for (String s : splitter.split(path)) {
             PseudoFsNode node = parent.getNode(s);
@@ -193,5 +192,9 @@ public class ExportFile {
 
     public PseudoFsNode getPseuFsRoot() {
         return _pseudoFS;
+    }
+
+    public void rescan() throws IOException {
+        _pseudoFS = scanExportFile(_exportFile);
     }
 }

@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.dcache.chimera.nfs.PseudoFsProvider;
 
 public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
@@ -90,8 +91,9 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                     String.format("Unsupported minor version [%d]",arg1.minorversion.value) );
             }
 
+            FileSystemProvider vfs = new PseudoFsProvider(_fs, _exportFile, call$);
             CompoundContext context = new CompoundContext(v, arg1.minorversion.value,
-                _fs, _statHandler, _deviceManager, _aclHandler, call$, _idMapping,
+                vfs, _statHandler, _deviceManager, _aclHandler, call$, _idMapping,
                     _exportFile, _idProvider);
 
             for (nfs_argop4 op : arg1.argarray) {
