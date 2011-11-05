@@ -3,7 +3,7 @@ package org.dcache.poolmanager;
 import java.util.Map;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ConcurrentMap;;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.poolManager.CostModule;
