@@ -652,7 +652,7 @@
     <module>modules/gplazma2-kpwd</module>
     <module>modules/javatunnel</module>
     <module>modules/srm</module>
-    <module>modules/dCache</module>
+    <module>modules/dcache</module>
     <module>modules/webadmin</module>
     <module>modules/srmclient</module>
     <module>modules/opt</module>
