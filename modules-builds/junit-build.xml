@@ -1,68 +1,44 @@
-<!-- $Id: junit-build.xml,v 1.4 2007-10-25 14:05:31 tigran Exp $ -->
-
-<project name="junit" basedir=".">
-
-    <property name="unittest.build.dir" location="${buildDir}/junit" />
-
-    <!-- JUnit test suite -->
-
-    <path id="junit.classpath">
-        <pathelement location="${classesDir}/cells.jar" />
-        <pathelement location="${classesDir}/dcache.jar" />
-        <pathelement location="${classesDir}/dcache-common.jar" />
-        <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${classesDir}/srm.jar" />
-        <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
-        <pathelement location="${libDir}/Chimera/oncrpc.jar" />
-        <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
-        <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus-1.6.jar" />
-        <fileset dir="${libDir}/cog" includes="**/*.jar" />
-        <pathelement location="${unittest.build.dir}" />
-        <pathelement location="${webappBuildDir}/webadmin.jar" />
-        <fileset dir="${libDir}/wicket/" includes="*.jar" />
-        <pathelement location="${libDir}/jing/jing-20091111.jar" />
-        <pathelement location="${unittest.src}"/>
-        <path refid="dependency.classpath" />
-    </path>
-
-
-    <!--
-        compile junit tests
-    -->
-    <target name="-compile.junit">
-
-        <mkdir dir="${unittest.build.dir}" />
-        <javac classpathref="junit.classpath" destdir="${unittest.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}" encoding="${javac.encoding}" deprecation="on">
-            <src path="${unittest.src}:${gplazma.unittest.src}" />
-        </javac>
+<project name="junit" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+    <target name="-test-cond">
+        <condition property="test-all">
+            <not>
+                <or>
+                    <isset property="testcase"/>
+                    <isset property="testdir"/>
+                </or>
+            </not>
+        </condition>
     </target>
 
+    <target name="-test-testcase" if="testcase">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="verify"/>
+            <arg value="-Dtest=${testcase}"/>
+            <arg value="-DfailIfNoTests=false"/>
+        </artifact:mvn>
+    </target>
 
-    <!--
-        run all avalible tests, or run a single one, or run all in a package
-    -->
-    <target name="-run.junit" depends="-compile.junit">
-        <property name="testdir" value=""/>
-        <property name="tests.report.home" location="${buildDir}/junit-reports" />
-        <mkdir dir="${tests.report.home}" />
+    <target name="-test-testdir" description="Run Unit tests" if="testdir">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="verify"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="${testdir}"/>
+            <arg value="-DfailIfNoTests=false"/>
+        </artifact:mvn>
+    </target>
 
-        <junit fork="true">
-            <classpath refid="junit.classpath" />
-            <sysproperty key="logback.configurationFile" value="${unittest.log}"/>
-            <formatter type="xml" usefile="true" />
-            <formatter type="brief" usefile="false" />
-            <test name="${testcase}" if="testcase" todir="${tests.report.home}" />
-            <batchtest todir="${tests.report.home}" haltonfailure="no" unless="testcase">
-                <fileset dir="${unittest.build.dir}">
-                    <!--include only Classes ending with Test or Tests - -->
-                    <!--only these are valid testclasses, everything else are helpers -->
-                    <include name="${testdir}**/*Test.class" />
-                    <include name="${testdir}**/*Tests.class" />
-                    <!--exclude only locally running pinmanager-test-->
-                    <exclude name="org/dcache/tests/pinmanager/PinManagerTest.class" />
-                </fileset>
-            </batchtest>
-        </junit>
-
+    <target name="-test-all" description="Run Unit tests" if="test-all">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="verify"/>
+            <arg value="-Dtest=${testcase}"/>
+            <arg value="-DfailIfNoTests=false"/>
+        </artifact:mvn>
     </target>
 </project>

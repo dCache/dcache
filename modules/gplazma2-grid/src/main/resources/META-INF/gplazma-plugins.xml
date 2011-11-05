@@ -1,0 +1,18 @@
+<plugins>
+    <plugin>
+        <name>vorolemap</name>
+        <class>org.dcache.gplazma.plugins.VoRoleMapPlugin</class>
+    </plugin>
+    <plugin>
+        <name>gridmap</name>
+        <class>org.dcache.gplazma.plugins.GridMapFilePlugin</class>
+    </plugin>
+    <plugin>
+        <name>authzdb</name>
+        <class>org.dcache.gplazma.plugins.AuthzDbPlugin</class>
+    </plugin>
+    <plugin>
+        <name>x509</name>
+        <class>org.dcache.gplazma.plugins.X509Plugin</class>
+    </plugin>
+</plugins>

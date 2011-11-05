@@ -1,296 +1,246 @@
 <!-- $Id: build.xml,v 1.60 2007-10-26 12:22:06 tigran Exp $ -->
 
-<project name="dCacheBuild" default="help" basedir=".">
-
-    <property name="buildTop" location="${basedir}" />
-    <!--
-        build constants.
-        If you want to change default values use -D option in command line,
-        or modify property file
-    -->
-    <loadproperties srcfile="build.properties" />
-
-    <!--
-
-        dCache build version number composed form:
-
-
-        version = ${release.major.id}.${release.minor.id}.${patch.number}
-
-        ${release.id}-${version}-${build.id}
-
-        2.0.0-1
-
-    -->
-    <loadproperties srcFile="release.properties" />
-    <loadproperties srcFile="version.build" />
-    <loadproperties srcFile="patch.build" />
-    <property name="local.version" value="" />
-
-    <property name="version" value="${release.major.id}.${release.minor.id}.${patch.number}" />
-    <property name="build.number" value="${build.id}${local.version}" />
-
-    <property name="build.name" value="${version}-${build.number}" />
-    <echo message="Current Build version : ${build.name}" />
-
-
-    <!-- import the common part -->
-    <import file="common/common.xml" />
-
-    <!--
-        build minor version taken from stored in SCM file,
-        but updated on release builds only
-    -->
-
-    <tstamp>
-       <format property="buildtimestamp" pattern="yyyyMMddhhmmss" />
-    </tstamp>
-
-    <property name="release.version.id" value="${build.name}"/>
-    <property name="release.name" value="${release.version.id}" />
-
-    <target name="-init">
-      <mkdir dir="${buildDir}" />
-      <mkdir dir="${classesDir}" />
-    </target>
-
-    <!-- init dirs, unpack external libraries -->
-    <target name="-prepare" depends="-init" />
+<project name="dCacheBuild" default="help" basedir="."
+         xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
     <!--=======================================================================
-            import component specific build modules here
+         If you want to change default values use -D option in command
+         line, or modify property file
     -=======================================================================-->
-    <import file="modules-builds/common-build.xml"/>
-    <import file="modules-builds/cells-build.xml"/>
-    <import file="modules-builds/gplazma-build.xml"/>
-    <import file="modules-builds/dcache-core-build.xml"/>
-    <import file="modules-builds/srm-build.xml"/>
-    <import file="modules-builds/dcap-build.xml"/>
-    <import file="modules-builds/srmclient-build.xml" />
+    <property name="buildTop" location="${basedir}" />
+    <loadproperties srcfile="build.properties" />
+    <property environment="sysenv" />
+
+    <!--=======================================================================
+            load Ant Maven tasks
+    -=======================================================================-->
+    <path id="maven-ant-tasks.classpath" path="${antlib.dir}/maven-ant/maven-ant-tasks-2.1.3.jar" />
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+             uri="antlib:org.apache.maven.artifact.ant"
+             classpathref="maven-ant-tasks.classpath" />
+
+    <!--=======================================================================
+            import Maven POM properties
+    -=======================================================================-->
+    <property name="maven.home" value="/usr/share/maven2/"/>
+    <property name="maven.pom" value="pom.xml"/>
+    <artifact:pom id="pom" file="${maven.pom}" />
+
+    <exec executable="sed" inputstring="${pom.version}" outputproperty="version">
+        <arg value="s/-//g"/>
+    </exec>
+
+    <!--=======================================================================
+            Version number constants
+    -=======================================================================-->
+    <property name="local.version" value=""/>
+    <property name="build.id" value="1"/>
+    <property name="build.number" value="${build.id}${local.version}"/>
+    <property name="build.name" value="${version}-${build.number}"/>
+    <echo message="Current Build version : ${build.name}"/>
+
+    <!--=======================================================================
+            import test and packaging targets
+    -=======================================================================-->
     <import file="modules-builds/junit-build.xml" />
-    <import file="modules-builds/release-build.xml" />
-    <import file="modules-builds/webadmin-build.xml" />
-
-    <target name="common" depends="-prepare,-dcache-common.bin"
-                  description="Compile common package and create dcache-common.jar"/>
-
-    <target name="cells" depends="-prepare,-cells.bin"
-                  description="Compile cells package and create cells.jar"/>
-
-    <target name="gplazma" depends="cells,-gplazma.bin"
-                  description="Compile gPlazma package and create gplazma.jar"/>
-
-    <target name="srm" depends="common,gplazma,-srm.bin"
-                  description="Compile srm package and create srm.jar" />
-
-    <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image, webadminPackage, -compile.junit"
-                  description="Compile dcache package and create dcache.jar" />
-
-    <target name="webadmin" depends="webadminPackage"
-                 description="Compile and create webadmin.war" />
-
-    <target name="javatunnel" depends="gplazma,-javatunnel.bin"
-                  description="Compile javatunnel package and create javatunnel.jar" />
-
-    <target name="srmclient" depends="srm,-srmclient.bin"
-                  description="Compile srmclient package" />
-
-    <target name="test" depends="dcache" description="Run Unit tests" >
-        <antcall target="-run.junit" />
-    </target>
-
-    <!--
-        package type specific build modules for dcache-server
-    -->
-    <import file="modules-builds/server-opt-build.xml" />
-    <import file="modules-builds/server-fhs-build.xml" />
     <import file="modules-builds/server-rpm-build.xml" />
     <import file="modules-builds/server-tgz-build.xml" />
     <import file="modules-builds/server-deb-build.xml" />
     <import file="modules-builds/server-sol-pkg-build.xml" />
-
-    <!--
-        package type specific build modules for srmclient
-    -->
     <import file="modules-builds/srmclient-rpm-build.xml" />
 
-    <!--
-        Client RPM SRM
-    -->
-    <target name="install-srmclient" depends="srmclient"
-        description="build deploy-ready srm client"/>
+    <!--=======================================================================
+            primary build targets; most simply call Maven
+    -=======================================================================-->
+    <target name="common"
+            description="Compile common package and create dcache-common.jar">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/common"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
 
-    <target name="smc" depends="-dcache.smc"
-	    description="build Java SMC code"/>
+    <target name="cells"
+            description="Compile cells package and create cells.jar">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/cells"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
 
-    <!--
-          Find Bugs
-    -->
+    <target name="srm"
+            description="Compile srm package and create srm.jar">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/srm"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
 
-    <import file="modules-builds/findbugs-build.xml"/>
-    <import file="modules-builds/cpd-build.xml"/>
+    <target name="dcache"
+            description="Compile dcache package and create dcache.jar">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/dCache"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
 
-    <!--
-          Clean Targets
-    -->
+    <target name="webadmin"
+            description="Compile and create webadmin.war">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/webadmin"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
+
+    <target name="javatunnel"
+            description="Compile javatunnel package and create javatunnel.jar">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/javatunnel"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
+
+    <target name="srmclient"
+            description="Compile srmclient package">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/srmclient"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+    </target>
+
+    <target name="install-server-fhs"
+            description="Build deploy-ready server FHS package">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/fhs"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+        <move todir="${server.root.dir}">
+            <cutdirsmapper dirs="1"/>
+            <fileset dir="modules/fhs/target/">
+                <include name="dcache-fhs-*/**"/>
+            </fileset>
+        </move>
+    </target>
+
+    <target name="install-server"
+            description="Build deploy-ready server OPT package">
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="package"/>
+            <arg value="-am"/>
+            <arg value="-pl"/>
+            <arg value="modules/opt"/>
+            <arg value="-DskipTests"/>
+        </artifact:mvn>
+        <move todir="${server.root.dir}">
+            <cutdirsmapper dirs="1"/>
+            <fileset dir="modules/opt/target/">
+                <include name="dcache-opt-*/**"/>
+            </fileset>
+        </move>
+    </target>
+
+    <target name="test"
+            depends="-test-cond,-test-testcase,-test-testdir,-test-all"
+            description="Run unit tests"/>
 
     <target name="cleanall" depends="clean" description="Remove everything produced by me.">
-             <delete dir="${distDir}" />
+        <delete dir="${distDir}" />
     </target>
 
     <target name="clean" description="Remove temporary generated files.">
-        <delete dir="${buildDir}" />
+        <artifact:mvn pom="${maven.pom}"
+                      mavenHome="${maven.home}"
+                      fork="true">
+            <arg value="clean"/>
+        </artifact:mvn>
     </target>
 
-    <!--
-        MAKE TEST BUILD.
-
-        the revision number is used as rpm version to guarantee increased version numbers.
-        this will help some tools like yum and apt to autoinstall new builds.
-
-        current procedure contains following steps:
-
-        1. set rpm/tar name to relese id + time, e.q. production-1.8.0-b9200
-        2. build rpm and tar
-        3. publish to apt/yum repository
-    -->
-    <target name="test-build" description="Build a new version for testing">
-
-        <!-- get repository current  revision -->
-        <svn>
-            <status path="." revisionProperty="current.revision" />
-        </svn>
-
-        <echo message="new test build : ${release.id}-b${current.revision}" />
-
-        <!-- STEP 1 snd 2 : set rpm name to release id and build -->
-
-        <antcall target="srmclient.rpm">
-             <param name="build.minor.number" value="b${current.revision}" />
-             <param name="release.name" value="b${current.revision}" />
-        </antcall>
-        <antcall target="server.rpm">
-             <param name="build.minor.number" value="b${current.revision}" />
-             <param name="release.name" value="b${current.revision}" />
-        </antcall>
+    <target name="help">
+        <echo message="" />
+        <echo message="" />
+        <echo message="Defined targets:" />
+        <echo message="" />
+        <echo message="     clean             : Remove intermidiet files (.class )" />
+        <echo message="" />
+        <echo message="     cleanall          : Remove all generated files." />
+        <echo message="" />
+        <echo message="     common            : Compile common package" />
+        <echo message="" />
+        <echo message="     cells             : Compile cells package" />
+        <echo message="" />
+        <echo message="     srm               : Compile srm and dependent packages" />
+        <echo message="" />
+        <echo message="     dcache            : Compile dcache and dependent packages" />
+        <echo message="" />
+        <echo message="     webadmin          : Compile webadmin and dcache" />
+        <echo message="" />
+        <echo message="     javatunnel        : Compile javatunnel and dependent packages" />
+        <echo message="" />
+        <echo message="     install-server    : build deploy-ready server package" />
+        <echo message="                       : to overwrite default location use" />
+        <echo message="                       : -Dserver.bin.dir=/path/to/install" />
+        <echo message="" />
+        <echo message="     install-srmclient : build deploy-ready srmcleint" />
+        <echo message="                       : to overwrite default location use" />
+        <echo message="                       : -Dsrmclient.bin.dir=/path/to/install" />
+        <echo message="" />
+        <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
+        <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
+        <echo message="     server.deb        : generate dcache-server-xxx.deb" />
+        <echo message="     server.solpkg     : generate dcache-server-xxx.pkg (Solaris)" />
+        <echo message="" />
+        <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
+        <echo message="" />
+        <echo message="     test              : run all available unit tests" />
+        <echo message="                       : use -Dtestcase=name" />
+        <echo message="                       : to run tests **/name.java." />
+        <echo message="                       : use -Dtestdir=project" />
+        <echo message="                       : to run all tests in that sub-project." />
+        <echo message="" />
+        <echo message="" />
     </target>
-
-	<target name="help">
-			       <echo message="" />
-			       <echo message="" />
-			       <echo message="Defined targets:" />
-			       <echo message="" />
-			       <echo message="     clean             : Remove intermidiet files (.class )" />
-			       <echo message="" />
-			       <echo message="     cleanall          : Remove all generated files." />
-			       <echo message="" />
-			       <echo message="     common            : Compile common package" />
-			       <echo message="" />
-			       <echo message="     cells             : Compile cells package" />
-			       <echo message="" />
-			       <echo message="     gplazma           : Compile gplazma and depended packages" />
-			       <echo message="" />
-			       <echo message="     srm               : Compile srm and dependent packages" />
-			       <echo message="" />
-			       <echo message="     dcache            : Compile dcache and dependent packages" />
-			       <echo message="" />
-			       <echo message="     webadmin          : Compile webadmin and dcache" />
-			       <echo message="" />
-			       <echo message="     javatunnel        : Compile javatunnel and dependent packages" />
-			       <echo message="" />
-			       <echo message="     install-server    : build deploy-ready server package" />
-			       <echo message="                       : to overwrite default location use" />
-			       <echo message="                       : -Dserver.bin.dir=/path/to/install" />
-			       <echo message="" />
-			       <echo message="     install-srmclient : build deploy-ready srmcleint" />
-			       <echo message="                       : to overwrite default location use" />
-			       <echo message="                       : -Dsrmclient.bin.dir=/path/to/install" />
-			       <echo message="" />
-			       <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
-			       <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
-			       <echo message="     server.deb        : generate dcache-server-xxx.deb" />
-			       <echo message="     server.solpkg     : generate dcache-server-xxx.pkg (Solaris)" />
-			       <echo message="" />
-			       <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
-			       <echo message="" />
-			       <echo message="     test              : run all available unit tests" />
-			       <echo message="                       : use -Dtestcase=test.class.name" />
-			       <echo message="                       : to run single test only." />
-			       <echo message="                       : use -Dtestdir=testdir/sub/subsub/" />
-			       <echo message="                       : to run all tests in that dir/package." />
-			       <echo message="" />
-			       <echo message="     eclipse           : generate eclipse's .project and .classpath files." />
-			       <echo message="                       : Use -Declipse.project.name=XXX to set the project name." />
-			       <echo message="                       : The default value is the name of the current working directory. " />
-			       <echo message="" />
-			       <echo message="" />
-			       <echo message="" />
-			       <echo message=" Use -Dpatch.number=XXX to change default patch number value" />
-	</target>
-
-    <!--
-        Generate eclipse project files
-    -->
-    <target name="eclipse" description="creates eclipse .classpath and .project files"
-        depends="eclipse-classpath,eclipse-project,server.rpm"/>
-
-
-
-
-    <target name="eclipse-classpath" description="creates an eclipse .classpath file">
-        <pathconvert property="eclipse.entries" refid="dcache.external.classpath"
- pathsep="&quot;/&gt;&#10;    &lt;classpathentry kind=&quot;lib&quot; path=&quot;" />
-
-        <echo file=".classpath"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-<classpath>
-    <classpathentry excluding="org/dcache/commons/plot/" kind="src" path="${dcache-common.src}"/>
-    <classpathentry kind="src" path="${cells.src}"/>
-    <classpathentry kind="src" path="${gplazma.src}"/>
-    <classpathentry kind="src" path="${srm.src}"/>
-    <classpathentry kind="src" path="${srmclient.src}"/>
-    <classpathentry kind="src" path="${javatunnel.src}"/>
-    <classpathentry kind="src" path="${webadmin.src}" />
-    <classpathentry kind="src" path="${unittest.src}"/>
-    <classpathentry kind="src" path="${gplazma.unittest.src}"/>
-    <classpathentry kind="src" path="${build.dcache}"/>
-    <classpathentry excluding="${web-dcache}/classes/|${web-dcache}/classes/devel/|${web-billing.web-dcache}/src/java/|org/dcache/services/plots/" kind="src" path="modules/dCache"/>
-    <classpathentry excluding="devel/" kind="src" path="modules/dCache/${web-dcache}/classes"/>
-    <classpathentry kind="src" path="modules/dCache/diskCacheV111/scripts/plots/web-dcache/WEB-INF/classes/devel"/>
-    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-    <classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-    <classpathentry kind="lib" path="${eclipse.entries}"/>
-    <classpathentry kind="output" path="${buildDir}_eclipse"/>
-</classpath>
-]]>
-        </echo>
-     </target>
-
-    <target name="eclipse-project" description="creates eclipse .project file">
-        <basename property="eclipse.project.name" file="${basedir}"/>
-        <echo file=".project"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-<projectDescription>
-    <name>${eclipse.project.name}</name>
-    <comment></comment>
-    <projects>
-    </projects>
-    <buildSpec>
-        <buildCommand>
-            <name>org.eclipse.jdt.core.javabuilder</name>
-            <arguments>
-            </arguments>
-        </buildCommand>
-    </buildSpec>
-    <natures>
-        <nature>org.eclipse.jdt.core.javanature</nature>
-    </natures>
-</projectDescription>
-]]>
-        </echo>
-     </target>
-   <!-- ========================================================================
-            DEBUG STAFF
-   ==========================================================================-->
-
 
     <target name="debug">
         <echoproperties />

@@ -2,7 +2,7 @@
 
     <!-- RPM related constants -->
     <!-- modify values in property file ant not here -->
-    <property file="common/rpms.properties" />
+    <property file="modules-builds/rpms.properties" />
 
     <target name="server.rpm" depends="install-server" description="Build the dcache-server-xxx.rpm">
 
@@ -30,10 +30,13 @@
             </filterset>
         </copy>
 
+        <copy file="${rpmTemplateDir}/dcache.bash-completion"
+              tofile="${server.root.dir}/etc/bash_completion.d/dcache"/>
+
         <exec executable="rpmbuild" failonerror="true">
             <!-- output="${buildDir}/rpm.log" -->
             <arg value="--buildroot" />
-            <arg file="${package.root.dir}/server" />
+            <arg file="${server.root.dir}" />
             <arg value="--rcfile" />
             <arg file="/usr/lib/rpm/rpmrc:${server.rpmRcFile}" />
             <!-- some documentation claims that /usr/lib/rpm/rpmrc
@@ -79,14 +82,16 @@
             </filterset>
         </copy>
 
-        <mkdir dir="${package.root.dir}/server/etc/rc.d/init.d"/>
+        <mkdir dir="${server.root.dir}/etc/rc.d/init.d"/>
         <copy file="${rpmTemplateDir}/dcache-server.init"
-              tofile="${package.root.dir}/server/etc/rc.d/init.d/dcache-server"/>
+              tofile="${server.root.dir}/etc/rc.d/init.d/dcache-server"/>
+        <copy file="${rpmTemplateDir}/dcache.bash-completion"
+              tofile="${server.root.dir}/etc/bash_completion.d/dcache"/>
 
         <exec executable="rpmbuild" failonerror="true">
             <!-- output="${buildDir}/rpm.log" -->
             <arg value="--buildroot" />
-            <arg file="${package.root.dir}/server" />
+            <arg file="${server.root.dir}" />
             <arg value="--rcfile" />
             <arg file="/usr/lib/rpm/rpmrc:${server.rpmRcFile}" />
             <!-- some documentation claims that /usr/lib/rpm/rpmrc

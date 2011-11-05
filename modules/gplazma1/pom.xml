@@ -1,0 +1,86 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.dcache</groupId>
+    <artifactId>dcache-parent</artifactId>
+    <version>2.1-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <groupId>org.dcache</groupId>
+  <artifactId>gplazma1</artifactId>
+  <packaging>jar</packaging>
+
+  <name>gPlazma 1</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>cog-jglobus</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.glite</groupId>
+        <artifactId>glite-security-util-java</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.glite</groupId>
+        <artifactId>glite-security-voms-api-java</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>gov.fnal</groupId>
+        <artifactId>vox-alldepends</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>gov.fnal</groupId>
+        <artifactId>vox-security</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.opensciencegrid</groupId>
+        <artifactId>privilege</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.opensciencegrid</groupId>
+        <artifactId>privilege-xacml</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>opensaml</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>opensaml1</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>javax.xml</groupId>
+        <artifactId>jaxrpc-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>dcache-common</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>

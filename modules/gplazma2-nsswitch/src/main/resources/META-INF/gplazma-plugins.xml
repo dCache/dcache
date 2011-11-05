@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>nsswitch</name>
+        <class>org.dcache.gplazma.plugins.Nsswitch</class>
+    </plugin>
+</plugins>

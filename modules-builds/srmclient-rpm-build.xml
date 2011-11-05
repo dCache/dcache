@@ -1,8 +1,14 @@
 <project name="srmclient-rpm-build">
 
+    <target name="srmclient.rpm" depends="srmclient"
+            description="Build the dcache-srmclient-xxx.rpm">
 
-    <target name="srmclient.rpm" depends="install-srmclient" description="Build the dcache-srmclient-xxx.rpm">
-
+        <move todir="${srmclient.bin.dir}">
+            <cutdirsmapper dirs="1"/>
+            <fileset dir="modules/srmclient/target/">
+                <include name="srmclient-*/**"/>
+            </fileset>
+        </move>
 
         <!-- Create config files for RPM from Templates -->
 

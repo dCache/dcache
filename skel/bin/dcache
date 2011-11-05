@@ -207,7 +207,7 @@ dumpHeap() # $1=force, $2=live, $3=file, $4=pid, $5=error
 # display dCache package version
 showVersion()
 {
-    "$JAVA" -jar "$(getProperty dcache.paths.classpath.dcache)"
+    "$JAVA" -cp "$(getProperty dcache.paths.classpath)" diskCacheV111.util.Version
 }
 
 loadConfig()

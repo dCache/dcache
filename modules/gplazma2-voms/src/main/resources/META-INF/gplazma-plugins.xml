@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>voms</name>
+        <class>org.dcache.gplazma.plugins.VomsPlugin</class>
+    </plugin>
+</plugins>

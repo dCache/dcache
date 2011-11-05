@@ -10,7 +10,7 @@ hasManagedDatabase() # $1 = domain, $2 = cell
     [ -n "$(getProperty db.schema.changelog "$1" "$2")" ]
 }
 
-liquibase() # $1 = database, $2 = cell, $3+ = liquibase arguments
+liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
 {
     local url
     local user
@@ -24,10 +24,9 @@ liquibase() # $1 = database, $2 = cell, $3+ = liquibase arguments
     user=$(getProperty db.user "$1" "$2")
     password=$(getProperty db.password "$1" "$2")
     driver=$(getProperty db.driver "$1" "$2")
-    classpath=$(getProperty dcache.paths.classpath.all-compiled-code "$1" "$2"):$(getProperty dcache.paths.classpath.packaged-external "$1" "$2")
-    liquibase=$(getProperty dcache.paths.liquibase "$1" "$2")
+    classpath=$(getProperty dcache.paths.classpath "$1" "$2")
     changelog=$(getProperty db.schema.changelog "$1" "$2")
 
     shift 2
-    "$JAVA" -jar "${liquibase}" --driver="${driver}" --classpath="${classpath}" --changeLogFile="${changelog}" --url="${url}" --username="${user}" --password="${password}" "$@"
+    CLASSPATH="$classpath" "$JAVA" liquibase.integration.commandline.Main --driver="${driver}" --changeLogFile="${changelog}" --url="${url}" --username="${user}" --password="${password}" "$@"
 }

@@ -1,0 +1,147 @@
+<assembly>
+    <id>fhs</id>
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <excludes>
+                <exclude>*:*:war:*</exclude>
+                <exclude>saxon:saxon:*:*</exclude>
+            </excludes>
+            <outputDirectory>usr/share/dcache/classes</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>*:*:war:*</include>
+            </includes>
+            <outputDirectory>usr/share/dcache/classes/webapps</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>saxon:saxon:*:*</include>
+            </includes>
+            <outputDirectory>usr/share/dcache/classes/saxon</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+
+    <files>
+        <file>
+            <source>${filtered-skel}/libexec/infoProvider/info-based-infoProvider.sh</source>
+            <outputDirectory>usr/sbin</outputDirectory>
+            <destName>dcache-info-provider</destName>
+            <fileMode>775</fileMode>
+        </file>
+
+        <file>
+            <source>${filtered-skel}/bin/chimera-cli.sh</source>
+            <outputDirectory>usr/bin</outputDirectory>
+            <destName>chimera-cli</destName>
+            <fileMode>775</fileMode>
+        </file>
+
+        <file>
+            <source>${filtered-skel}/share/httpd/static/images/bg.svg</source>
+            <outputDirectory>usr/share/dcache/httpd/static/images</outputDirectory>
+        </file>
+    </files>
+
+    <fileSets>
+        <fileSet>
+            <!-- This is a different skel directory local to this
+                 sub-project. -->
+            <directory>${project.basedir}/src/main/skel</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>${filtered-skel}/bin</directory>
+            <outputDirectory>usr/bin</outputDirectory>
+            <excludes>
+                <!-- .sh files are dealt with one by one above -->
+                <exclude>*.sh</exclude>
+            </excludes>
+            <fileMode>775</fileMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}/etc</directory>
+            <outputDirectory>etc/dcache</outputDirectory>
+            <excludes>
+                <exclude>PlotConfiguration.xml</exclude>
+                <exclude>users/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}/etc/users</directory>
+            <outputDirectory>etc/dcache/admin/users</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}/share/man</directory>
+            <outputDirectory>usr/share/man</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}/share/doc</directory>
+            <outputDirectory>usr/share/doc/dcache-server</outputDirectory>
+            <excludes>
+                <exclude>dCacheConfigure/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${filtered-skel}/share/defaults</directory>
+            <outputDirectory>usr/share/dcache/defaults</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+            <directory>${filtered-skel}/share/lib</directory>
+            <outputDirectory>usr/share/dcache/lib</outputDirectory>
+            <excludes>
+                <exclude>dCacheConfigure/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${skel}/share</directory>
+            <outputDirectory>/usr/share/dcache</outputDirectory>
+            <excludes>
+                <exclude>man/**</exclude>
+                <exclude>doc/**</exclude>
+                <exclude>dCacheConfigure/**</exclude>
+                <exclude>defaults/**</exclude>
+                <exclude>lib/**</exclude>
+                <exclude>httpd/static/images/bg.svg</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${filtered-skel}/libexec</directory>
+            <outputDirectory>usr/share/dcache/lib</outputDirectory>
+            <excludes>
+                <exclude>infoProvider/info-based-infoProvider.sh</exclude>
+            </excludes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.build.directory}/chimera-sql/org/dcache/chimera</directory>
+            <outputDirectory>usr/share/dcache/chimera</outputDirectory>
+            <includes>
+                <include>sql/**</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${filtered-skel}/jobs</directory>
+            <outputDirectory>usr/share/dcache/lib</outputDirectory>
+            <fileMode>775</fileMode>
+        </fileSet>
+    </fileSets>
+</assembly>
