@@ -9,7 +9,6 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.dcache</groupId>
   <artifactId>gplazma2-nsswitch</artifactId>
   <packaging>jar</packaging>
 

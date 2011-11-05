@@ -9,7 +9,6 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.dcache</groupId>
   <artifactId>webadmin</artifactId>
   <packaging>war</packaging>
 

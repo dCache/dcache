@@ -9,7 +9,6 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.dcache</groupId>
   <artifactId>dcache-fhs</artifactId>
   <packaging>pom</packaging>
 

@@ -11,6 +11,19 @@
   <name>dCache parent</name>
   <url>http://www.dcache.org/</url>
 
+  <licenses>
+      <license>
+          <name>dCache Software License</name>
+          <url>http://www.dcache.org/manuals/dCacheSoftwareLicence.html</url>
+          <distribution>manual</distribution>
+      </license>
+  </licenses>
+
+  <organization>
+    <name>dCache.org</name>
+    <url>http://www.dcache.org/</url>
+  </organization>
+
   <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
