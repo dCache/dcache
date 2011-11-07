@@ -57,6 +57,9 @@
                  sub-project. -->
             <directory>${project.basedir}/src/main/skel</directory>
             <outputDirectory></outputDirectory>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
         </fileSet>
 
         <fileSet>
@@ -75,12 +78,16 @@
             <excludes>
                 <exclude>PlotConfiguration.xml</exclude>
                 <exclude>users/**</exclude>
+                <exclude>**/.empty-dir</exclude>
             </excludes>
         </fileSet>
 
         <fileSet>
             <directory>${skel}/etc/users</directory>
             <outputDirectory>etc/dcache/admin/users</outputDirectory>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
         </fileSet>
 
         <fileSet>

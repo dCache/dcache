@@ -41,6 +41,7 @@
                 <exclude>libexec/**/*.sh</exclude>
                 <exclude>libexec/**/*.rb</exclude>
                 <exclude>jobs/**</exclude>
+                <exclude>**/.empty-dir</exclude>
             </excludes>
         </fileSet>
 
@@ -53,6 +54,9 @@
                 <include>libexec/**/*.rb</include>
                 <include>jobs/**</include>
             </includes>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
             <fileMode>775</fileMode>
         </fileSet>
 
