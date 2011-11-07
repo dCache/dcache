@@ -250,6 +250,17 @@
         <artifactId>hsqldb</artifactId>
         <scope>test</scope>
     </dependency>
+
+    <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>activemq-all</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.xbean</groupId>
+        <artifactId>xbean-spring</artifactId>
+        <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
