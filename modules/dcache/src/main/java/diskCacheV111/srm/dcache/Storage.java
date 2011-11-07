@@ -2384,6 +2384,7 @@ public final class Storage
                 break;
             case CacheException.FILE_NOT_FOUND:
                 e = new SRMInvalidPathException(String.valueOf(error));
+                break;
             default:
                 e = new SRMException(String.format("Transfer failed: %s [%d]",
                                                    error, message.getReturnCode()));
