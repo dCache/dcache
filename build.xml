@@ -99,7 +99,7 @@
             <arg value="package"/>
             <arg value="-am"/>
             <arg value="-pl"/>
-            <arg value="modules/dCache"/>
+            <arg value="modules/dcache"/>
             <arg value="-DskipTests"/>
         </artifact:mvn>
     </target>
