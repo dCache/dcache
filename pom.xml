@@ -41,6 +41,13 @@
     </repository>
   </repositories>
 
+  <pluginRepositories>
+    <pluginRepository>
+        <id>dcache.repository</id>
+        <url>http://www.dcache.org/nexus/content/groups/public</url>
+    </pluginRepository>
+  </pluginRepositories>
+
   <dependencyManagement>
     <dependencies>
         <dependency>
