@@ -10,7 +10,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import java.util.concurrent.Future;
 import java.io.IOException;
 import org.dcache.pool.FaultListener;
 import org.slf4j.Logger;
@@ -40,7 +39,7 @@ public class PoolIORequest implements IoProcessable {
     private final static Logger _log = LoggerFactory.getLogger(PoolIORequest.class);
     private final FaultListener _faultListener;
 
-    private Future _future = null;
+    private Cancelable _mover = null;
     /**
      * Request creation time.
      */
@@ -58,6 +57,8 @@ public class PoolIORequest implements IoProcessable {
 
     /** transfer status error message */
     private volatile String _errorMessage = "";
+
+    private boolean _canceled = false;
 
     /**
      * @param transfer the read or write transfer to execute
@@ -167,18 +168,24 @@ public class PoolIORequest implements IoProcessable {
 
     public synchronized boolean kill() {
         _state = CANCELED;
-        if (_future == null) {
+        _canceled = true;
+
+        if (_mover == null) {
             return false;
         }
 
-        _future.cancel(true);
+        _mover.cancel();
         return true;
     }
 
     synchronized void transfer(MoverExecutorService moverExecutorService, CompletionHandler completionHandler) {
         _startTime = System.currentTimeMillis();
-        _state = RUNNING;
-        _future = moverExecutorService.execute(this, completionHandler);
+        if(_canceled) {
+            completionHandler.failed( new InterruptedException("Mover canceled"), null);
+        } else {
+            _state = RUNNING;
+            _mover = moverExecutorService.execute(this, completionHandler);
+        }
     }
 
     void close()

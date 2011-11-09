@@ -12,9 +12,7 @@ import java.util.NoSuchElementException;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.util.AdjustableSemaphore;
@@ -198,13 +196,29 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     public void cancel(int id) throws NoSuchElementException {
 
         PrioritizedRequest wrapper;
-        wrapper = _jobs.remove(id);
+        wrapper = _jobs.get(id);
 
         if (wrapper == null) {
             throw new NoSuchElementException("Job " + id + " not found");
         }
-        _queue.remove(wrapper);
-        wrapper.getRequest().kill();
+
+        if(_queue.remove(wrapper)) {
+            /*
+             * if request still in the queue, then we can cancel it right now.
+             */
+            _jobs.remove(id);
+            final PoolIORequest request = wrapper.getRequest();
+            request.setState(IoRequestState.DONE);
+            request.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer canceled");
+
+            /*
+             * go though standart procedure to update billing and notity door.
+             */
+            final String protocolName = protocolNameOf(request);
+            _executorServices.getPostExecutorService(protocolName).execute(request);
+        } else {
+            wrapper.getRequest().kill();
+        }
     }
 
     @Override
@@ -235,9 +249,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                     _semaphore.acquire();
 
                     final PoolIORequest request = wrapp.getRequest();
-                    final String protocolName =
-                        request.getProtocolInfo().getProtocol() + "-"
-                        + request.getProtocolInfo().getMajorVersion();
+                    final String protocolName = protocolNameOf(request);
                     request.transfer(_executorServices.getExecutorService(protocolName),
                         new CompletionHandler() {
 
@@ -284,6 +296,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             }
     }
 
+    private String protocolNameOf(PoolIORequest request) {
+        return request.getProtocolInfo().getProtocol() + "-"
+                        + request.getProtocolInfo().getMajorVersion();
+    }
     /*
      * wrapper for priority queue
      */
