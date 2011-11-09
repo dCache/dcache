@@ -1,37 +1,37 @@
 package org.dcache.auth.gplazma;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.getFirst;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.Principal;
-import java.util.Set;
-import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import org.globus.gsi.jaas.GlobusPrincipal;
-
-import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.LoginNamePrincipal;
-import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.KAuthFile;
-import org.dcache.auth.UserPwdRecord;
+import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.UserPwdRecord;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
+import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.dcache.gplazma.plugins.GPlazmaMappingPlugin;
-import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
-
-import static com.google.common.collect.Iterables.*;
-import static com.google.common.base.Preconditions.*;
+import org.globus.gsi.jaas.GlobusPrincipal;
 
 /**
  * A principal that represent an entry in a kpwd file. It identifies a
@@ -43,6 +43,7 @@ import static com.google.common.base.Preconditions.*;
 class KpwdPrincipal
     implements Principal, Serializable
 {
+    private static final long serialVersionUID = -5104794169722666904L;
     private UserAuthBase _record;
 
     public KpwdPrincipal(UserAuthBase record)
@@ -89,7 +90,7 @@ public class KpwdPlugin
     private long _cacheTime;
     private KAuthFile _cacheAuthFile;
 
-    public KpwdPlugin(Properties properties) throws IOException
+    public KpwdPlugin(Properties properties)
     {
         String path = properties.getProperty(KPWD, null);
         if (path == null) {

@@ -1,37 +1,32 @@
 package org.dcache.auth.gplazma;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
-import java.nio.charset.Charset;
 import java.net.URL;
+import java.security.Principal;
+import java.util.Set;
+
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.GroupNamePrincipal;
-import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.KAuthFile;
+import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.globus.gsi.jaas.GlobusPrincipal;
-
-import junit.framework.AssertionFailedError;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 
 public class KpwdPluginTest

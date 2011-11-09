@@ -38,7 +38,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
 
     private final String _caDir;
     private final String _vomsDir;
-    private final Map _mdcContext;
+    private final Map<?, ?> _mdcContext;
 
     private PKIVerifier _pkiVerifier;
 
@@ -62,7 +62,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
              * avoid that messages logged by the refresh thread have
              * the wrong context.
              */
-            Map map = MDC.getCopyOfContextMap();
+            Map<?, ?> map = MDC.getCopyOfContextMap();
             try {
                 MDC.setContextMap(_mdcContext);
                 _pkiVerifier =

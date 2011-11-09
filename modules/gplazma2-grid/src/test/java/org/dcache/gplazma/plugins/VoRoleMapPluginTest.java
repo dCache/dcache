@@ -100,6 +100,7 @@ public class VoRoleMapPluginTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testMultiplePrincipalsWithValidDNValidRole()
         throws AuthenticationException, IOException
     {
