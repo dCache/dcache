@@ -342,20 +342,6 @@ public class      VspClient
 
        waitForOnline() ;
 
-//       if( localFile.exists() )
-//          throw new
-//          CacheException( 6 , "Local File already exists : "+localFile ) ;
-
-        FileOutputStream s = null ;
-        try{
-           s = new FileOutputStream( localFile ) ;
-        }catch(Exception ie ){
-           throw new
-           CacheException(5,"Can't create localfile : "+localFile ) ;
-        }finally{
-           try{ s.close() ; }catch(Exception ee){}
-        }
-
         VspBaseRequest vsp = null ;
         synchronized( _requestHash ){
            vsp = new VspGetRequest( pnfsId , localFile ) ;

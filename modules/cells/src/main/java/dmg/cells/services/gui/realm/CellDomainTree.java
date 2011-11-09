@@ -75,7 +75,7 @@ public class CellDomainTree
               public void run(){
                  try{
                     Thread.sleep(5000) ;
-                 }catch(Exception ee){}
+                 }catch(InterruptedException ee){}
                  SwingUtilities.invokeLater(
                    new Runnable(){
                       public void run(){
