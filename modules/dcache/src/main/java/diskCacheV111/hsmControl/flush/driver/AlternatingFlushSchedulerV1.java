@@ -596,10 +596,6 @@ import org.slf4j.LoggerFactory;
            double db = getPoolMetric( b ) ;
            return db == da ? 0 : da > db ? -1 : 1 ;
         }
-      public int hashCode() {
-          return 1;
-      }
-        public boolean equals( Object comp ){ return true ; }
      }
      private double getPoolMetric( Pool ip ){
        return
