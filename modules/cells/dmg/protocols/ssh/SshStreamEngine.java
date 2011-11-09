@@ -38,6 +38,10 @@ public class      SshStreamEngine
    private InetAddress   _remoteAddress = null ;
    private Subject      _remoteUser    = new Subject();
 
+   private String _terminal;
+   private int _width;
+   private int _height;
+
    public final static int   SERVER_MODE = 1 ;
    public final static int   CLIENT_MODE = 2 ;
 
@@ -76,6 +80,24 @@ public class      SshStreamEngine
    public Subject      getSubject(){ return _remoteUser ; }
    public InetAddress  getInetAddress(){ return _remoteAddress ; }
    public InetAddress getLocalAddress() { return _socket.getLocalAddress();}
+
+    @Override
+    public String getTerminalType()
+    {
+        return _terminal;
+    }
+
+    @Override
+    public int getTerminalWidth()
+    {
+        return _width;
+    }
+
+    @Override
+    public int getTerminalHeight()
+    {
+        return _height;
+    }
 
    public Reader getReader(){
       if( _mode == SERVER_MODE ){
@@ -651,16 +673,28 @@ public class      SshStreamEngine
                if( state != ST_PREPARE )
                  throw new
                  SshProtocolException( "SSH_CMSG_REQUEST_PTY in not ST_PREPARE state" ) ;
+               SshCmsgRequestPty requestPty = new SshCmsgRequestPty(packet);
+               _terminal = requestPty.getTerminal();
+               _height = requestPty.getHeight();
+               _width = requestPty.getWidth();
                writePacket( ok ) ;
                printout( "SshStreamEngine : SSH_CMSG_REQUEST_PTY : o.k." ) ;
             break ;
+            case SshPacket.SSH_CMSG_WINDOW_SIZE :
+               SshCmsgWindowSize requestWindowSize =
+                   new SshCmsgWindowSize(packet);
+               _height = requestWindowSize.getHeight();
+               _width = requestWindowSize.getWidth();
+               writePacket( ok ) ;
+               printout("SSH_CMSG_WINDOW_SIZE: o.k.");
+               break;
             case SshPacket.SSH_CMSG_X11_REQUEST_FORWARDING :
                if( state != ST_PREPARE )
                  throw new
                  SshProtocolException( "SSH_CMSG_X11_REQUEST_FORWARDING in not ST_PREPARE state" ) ;
                writePacket( ok ) ;
                printout( "SshStreamEngine : SSH_CMSG_REQUEST_PTY : o.k." ) ;
-            break ;
+               break ;
             case SshPacket.SSH_CMSG_EXEC_SHELL :
                if( state != ST_PREPARE )
                  throw new

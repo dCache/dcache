@@ -498,8 +498,11 @@ public class StreamObjectCell
         }
     }
 
-    private static class StreamObjectCellTerminal extends UnixTerminal
+    private class StreamObjectCellTerminal extends UnixTerminal
     {
+        private final static int DEFAULT_WIDTH = 80;
+        private final static int DEFAULT_HEIGHT = 24;
+
         private boolean _swapNext;
 
         @Override
@@ -538,6 +541,20 @@ public class StreamObjectCell
         {
             _swapNext = true;
             return super.readVirtualKey(in);
+        }
+
+        @Override
+        public int getTerminalWidth()
+        {
+            int width = _engine.getTerminalWidth();
+            return (width == 0) ? DEFAULT_WIDTH : width;
+        }
+
+        @Override
+        public int getTerminalHeight()
+        {
+            int height = _engine.getTerminalHeight();
+            return (height == 0) ? DEFAULT_HEIGHT : height;
         }
     }
 }
