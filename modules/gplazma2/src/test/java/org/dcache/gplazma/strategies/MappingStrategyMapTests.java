@@ -321,12 +321,6 @@ public class MappingStrategyMapTests {
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
         }
-
-        public void reverseMap(SessionID sID,
-                Principal principal,
-                Set<Principal> principals)
-                throws AuthenticationException {
-        }
     }
 
     private static final class AlwaysMapToCompleteSetStrategy
@@ -343,11 +337,6 @@ public class MappingStrategyMapTests {
             authorizedPrincipals.add(gid);
             authorizedPrincipals.add(userName);
         }
-        public void reverseMap(SessionID sID,
-                Principal principal,
-                Set<Principal> principals)
-                throws AuthenticationException {
-        }
     }
 
     private static final class ThrowAuthenticationExceptionStrategy
@@ -358,11 +347,6 @@ public class MappingStrategyMapTests {
                 Set<Principal> authorizedPrincipals)
                 throws AuthenticationException {
             throw new AuthenticationException("I always fail");
-        }
-        public void reverseMap(SessionID sID,
-                Principal principal,
-                Set<Principal> principals)
-                throws AuthenticationException {
         }
     }
 
@@ -375,11 +359,6 @@ public class MappingStrategyMapTests {
                 throws AuthenticationException {
             throw new TestAuthenticationException("I always fail too");
         }
-         public void reverseMap(SessionID sID,
-                Principal principal,
-                Set<Principal> principals)
-                throws AuthenticationException {
-        }
    }
 
     private static final class ThrowRuntimeExceptionStrategy
@@ -391,22 +370,11 @@ public class MappingStrategyMapTests {
                 throws AuthenticationException {
             throw new RuntimeException("That is what I call an exception");
         }
-         public void reverseMap(SessionID sID,
-                Principal principal,
-                Set<Principal> principals)
-                throws AuthenticationException {
-        }
    }
 
     private static final class TestSessionId implements SessionID {
 
-        private Comparable sessionId;
-        public <T extends Comparable<? super T>> T getSessionID() {
-            return (T)sessionId;
-        }
-
         public <T extends Comparable<? super T>> void setSessionID(T sessID) {
-            sessionId = sessID;
         }
     }
 

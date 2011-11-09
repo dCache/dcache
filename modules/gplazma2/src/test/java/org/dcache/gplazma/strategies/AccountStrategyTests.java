@@ -1,22 +1,24 @@
 package org.dcache.gplazma.strategies;
 
-import java.security.Principal;
-import java.util.Set;
-import java.util.HashSet;
-import org.dcache.gplazma.AuthenticationException;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.OPTIONAL;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUIRED;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.REQUISITE;
+import static org.dcache.gplazma.configuration.ConfigurationItemControl.SUFFICIENT;
 import static org.junit.Assert.assertNotNull;
-import org.junit.Before;
-import org.junit.Test;
+
+import java.security.Principal;
+import java.util.List;
+import java.util.Set;
+
+import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.SessionID;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
-import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+import org.junit.Before;
+import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.collect.ImmutableList;
 
 /**
  *
@@ -313,17 +315,13 @@ public class AccountStrategyTests {
 
     private static final class TestSessionId implements SessionID {
 
-        private Comparable sessionId;
-        public <T extends Comparable<? super T>> T getSessionID() {
-            return (T)sessionId;
-        }
-
         public <T extends Comparable<? super T>> void setSessionID(T sessID) {
-            sessionId = sessID;
         }
     }
 
     private static final class TestAuthenticationException extends AuthenticationException {
+        private static final long serialVersionUID = 1L;
+
         public TestAuthenticationException(String message) {
             super(message);
         }

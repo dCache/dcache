@@ -386,13 +386,7 @@ public class AuthenticationStrategyTests {
 
     private static final class TestSessionId implements SessionID {
 
-        private Comparable sessionId;
-        public <T extends Comparable<? super T>> T getSessionID() {
-            return (T)sessionId;
-        }
-
         public <T extends Comparable<? super T>> void setSessionID(T sessID) {
-            sessionId = sessID;
         }
     }
 
