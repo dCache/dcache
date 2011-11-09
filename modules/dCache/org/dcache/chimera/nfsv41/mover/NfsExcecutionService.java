@@ -7,12 +7,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.pool.classic.Cancelable;
 import org.dcache.pool.classic.CompletionHandler;
 import org.dcache.pool.classic.MoverExecutorService;
 import org.dcache.pool.classic.PoolIORequest;
@@ -55,7 +52,7 @@ public class NfsExcecutionService implements MoverExecutorService {
     }
 
     @Override
-    public Future execute(PoolIORequest request, final CompletionHandler completionHandler) {
+    public Cancelable execute(PoolIORequest request, final CompletionHandler completionHandler) {
 
         try {
             NFS4ProtocolInfo nfs4ProtocolInfo = (NFS4ProtocolInfo) request.getTransfer().getProtocolInfo();
@@ -85,10 +82,9 @@ public class NfsExcecutionService implements MoverExecutorService {
             CellPath cellpath = nfs4ProtocolInfo.door();
             request.getCellEndpoint().sendMessage(new CellMessage(cellpath, msg));
 
-            return new Future() {
-
+            return new Cancelable() {
                 @Override
-                public boolean cancel(boolean mayInterruptIfRunning) {
+                public void cancel() {
                     _nfsIO.removeHandler(moverBridge);
                     try {
                         raf.close();
@@ -96,27 +92,6 @@ public class NfsExcecutionService implements MoverExecutorService {
                         _log.error("failed to close RAF", e);
                     }
                     completionHandler.completed(null, null);
-                    return true;
-                }
-
-                @Override
-                public boolean isCancelled() {
-                    throw new UnsupportedOperationException("Not supported yet.");
-                }
-
-                @Override
-                public boolean isDone() {
-                    throw new UnsupportedOperationException("Not supported yet.");
-                }
-
-                @Override
-                public Object get() throws InterruptedException, ExecutionException {
-                    throw new UnsupportedOperationException("Not supported yet.");
-                }
-
-                @Override
-                public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                    throw new UnsupportedOperationException("Not supported yet.");
                 }
             };
         } catch (Throwable e) {
