@@ -266,8 +266,13 @@ public class NetworkInterfaceView implements Serializable {
         @Override
         public boolean equals(Object rawOther) {
 
+
             if( rawOther == this) {
                 return true;
+            }
+
+            if (rawOther == null){
+                return false;
             }
 
             if(rawOther.getClass().equals(InterfaceAddressView.class)) {
