@@ -27,6 +27,7 @@ import org.dcache.util.IPMatcher;
 public class FsExport {
 
     private final String _path;
+    private final String _referal;
     private final List<ExportClient> _clients = new ArrayList<ExportClient>();
 
     /**
@@ -65,11 +66,11 @@ public class FsExport {
      * @param path
      * @param clients list of {@link ExportClient} which allowed to mount this export.
      */
-    public FsExport(String path, List<ExportClient> clients) {
+    public FsExport(String path, List<ExportClient> clients, String referral) {
 
         _path = path;
         _clients.addAll(clients);
-
+        _referal = referral;
     }
 
     public String getPath() {
@@ -140,5 +141,13 @@ public class FsExport {
         }
 
         return client;
+    }
+
+    public boolean isReferal() {
+        return _referal != null;
+    }
+
+    public String getReferal() {
+        return _referal;
     }
 }

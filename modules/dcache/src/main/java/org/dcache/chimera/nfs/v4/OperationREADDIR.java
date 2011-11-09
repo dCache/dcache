@@ -42,6 +42,7 @@ import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.nfs.InodeCacheEntry;
+import org.dcache.chimera.nfs.v4.xdr.*;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.posix.UnixAcl;
@@ -216,8 +217,15 @@ public class OperationREADDIR extends AbstractNFSv4Operation {
                 // keep offset
                 currentEntry.cookie = new nfs_cookie4( new uint64_t(i) );
 
-                // TODO: catch here error from getattr and reply 'fattr4_rdattr_error' to the client
-                currentEntry.attrs = OperationGETATTR.getAttributes(_args.opreaddir.attr_request, ei, context);
+                try {
+                    currentEntry.attrs = OperationGETATTR.getAttributes(_args.opreaddir.attr_request, ei, context);
+                }catch(ChimeraNFSException e) {
+                    // FIXME: propagate error
+                    currentEntry.attrs = new fattr4();
+                    currentEntry.attrs.attrmask = new bitmap4();
+                    currentEntry.attrs.attrmask.value = new uint32_t[0];
+                    currentEntry.attrs.attr_vals = new attrlist4(new byte[0]);                    
+                }
                 currentEntry.nextentry = null;
 
                 // check if writing this entry exceeds the count limit

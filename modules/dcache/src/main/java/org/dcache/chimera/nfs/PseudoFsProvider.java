@@ -1,15 +1,14 @@
 package org.dcache.chimera.nfs;
 
+import com.google.common.collect.Lists;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.dcache.chimera.ChimeraFsException;
@@ -200,17 +199,25 @@ public class PseudoFsProvider implements FileSystemProvider {
          * nfs file handle. This allowes to have permanent file handles.
          *
          */
-        FsInode inode = _inner.inodeOf(parent, name);
         if (isPseudoFs(parent)) {
             PseudoFsNode parentNode = EXPORT_CACHE.get(parent);
 
             PseudoFsNode child = parentNode.getNode(name);
+            if(child == null) {
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_ACCESS, "permission denied");
+            }
+
             if(child.isMountPoint()) {
+                if(child.getExport().isReferal()) {
+                    return new ReferralInode(this, child.getExport());
+                }
+
                 if(child.getExport().isAllowed(remoteAddressOf(_call))) {
                     /*
                      * we hit the first allowed mountpoint.
                      * This have to be enough to give client access.
                      */
+                    FsInode inode = _inner.inodeOf(parent, name);
                     return makeRealInode(inode);
                 }else{
                     if(child.isLeaf()) {
@@ -225,10 +232,10 @@ public class PseudoFsProvider implements FileSystemProvider {
             /*
              * turn inode into pseudo inode
              */
-            inode = new PseudoInode(this, inode.toString());
+            FsInode inode = new PseudoInode(this,_inner.inodeOf(parent, name).toString());
             EXPORT_CACHE.putIfAbsent(inode, child);
         }
-        return inode;
+        return _inner.inodeOf(parent, name);
     }
 
     @Override
@@ -275,11 +282,8 @@ public class PseudoFsProvider implements FileSystemProvider {
         if(isPseudoFs(dir)) {
             PseudoFsNode dirNode = EXPORT_CACHE.get(dir);
             if(!dirNode.isMountPoint()) {
-                Set<String> dirs = new HashSet<String>();
-                for( PseudoFsNode child: dirNode.getChildren()) {
-                    dirs.add(child.getName());
-                }
-                return new PsudoFsDirectoryStream(directoryEntries, dirs);
+                List<PseudoFsNode> dirs = new ArrayList<PseudoFsNode>(dirNode.getChildren());
+                return new PseudoFsDirectoryStream(directoryEntries, dirs.toArray(new PseudoFsNode[0]));
             }
         }
         return directoryEntries;
@@ -471,7 +475,7 @@ public class PseudoFsProvider implements FileSystemProvider {
          * To achive that we return a tweaked stat information.
          */
         if (isPseudoFs(inode)) {
-            return psudoInodeStat(inode);
+            return pseudoInodeStat(inode);
         }
         return _inner.stat(inode);
     }
@@ -480,7 +484,7 @@ public class PseudoFsProvider implements FileSystemProvider {
     public Stat stat(FsInode inode, int level) throws ChimeraFsException {
 
         if (isPseudoFs(inode)) {
-            return psudoInodeStat(inode);
+            return pseudoInodeStat(inode);
         }
         return _inner.stat(inode, level);
     }
@@ -526,7 +530,7 @@ public class PseudoFsProvider implements FileSystemProvider {
     private FsInode makeRealInode(FsInode inode) {
         return new FsInode(_inner, inode.toString());
     }
-    private static Stat psudoInodeStat(FsInode inode) {
+    private static Stat pseudoInodeStat(FsInode inode) {
         long now = System.currentTimeMillis();
         Stat stat = new Stat();
         stat.setIno((int) inode.id());
@@ -558,6 +562,9 @@ public class PseudoFsProvider implements FileSystemProvider {
 
     @Override
     public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
+        if(inode instanceof PseudoFsProvider.ReferralInode) {
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_MOVED, "inode is a referral");
+        }
         return _inner.inodeToBytes(inode);
     }
 
@@ -571,21 +578,45 @@ public class PseudoFsProvider implements FileSystemProvider {
         return _inner.path2inodes(path, startFrom);
     }
 
-    private class PsudoFsDirectoryStream implements DirectoryStreamB<HimeraDirectoryEntry> {
+    private class PseudoFsDirectoryStream implements DirectoryStreamB<HimeraDirectoryEntry> {
 
-        DirectoryStreamB<HimeraDirectoryEntry> _inner;
         List<HimeraDirectoryEntry> _filteredEntries;
-        public PsudoFsDirectoryStream(DirectoryStreamB<HimeraDirectoryEntry> inner, Set<String> filter) {
-            _inner = inner;
+        public PseudoFsDirectoryStream(DirectoryStreamB<HimeraDirectoryEntry> inner,
+                PseudoFsNode[] filter) {
 
-            _filteredEntries =
-                    new ArrayList<HimeraDirectoryEntry>(filter.size());
-            for(HimeraDirectoryEntry e : inner) {
-                if( filter.contains(e.getName()) )
+            List<HimeraDirectoryEntry> fsEntries = Lists.newArrayList(inner);
+            _filteredEntries = new ArrayList<HimeraDirectoryEntry>(filter.length);
+
+            for(HimeraDirectoryEntry e : fsEntries) {
+                if( inPseudoFs(filter, e.getName()) )
                     _filteredEntries.add( new HimeraDirectoryEntry(e.getName(),
                             makePseudoInode(e.getInode()),
-                            psudoInodeStat(e.getInode())));
+                            pseudoInodeStat(e.getInode())));
             }
+
+            for(PseudoFsNode pseudoNode: filter) {
+               if( pseudoNode.isMountPoint() && pseudoNode.getExport().isReferal()) {
+                    FsInode inode = new ReferralInode(_inner, pseudoNode.getExport());
+                    _filteredEntries.add(new HimeraDirectoryEntry(pseudoNode.getName(),
+                            inode, pseudoInodeStat(inode)));
+               }
+            }
+        }
+
+        private boolean inPseudoFs(PseudoFsNode[] nodes, String probe) {
+            for (PseudoFsNode node : nodes) {
+                /*
+                 * referrals handled differently
+                 */
+                if (node.isMountPoint() && node.getExport().isReferal()) {
+                    continue;
+                }
+
+                if (node.getName().equals(probe)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -595,11 +626,58 @@ public class PseudoFsProvider implements FileSystemProvider {
 
         @Override
         public void close() throws IOException {
-            _inner.close();
+            // enforced by interface
         }
     }
 
-    private static class PseudoInode extends FsInode {
+    public static class ReferralInode extends PseudoInode {
+
+        private final String _host;
+        private final String _path;
+        private final FsExport _export;
+        public ReferralInode(FileSystemProvider fs, FsExport export) {
+            super(fs, "");
+            _export = export;
+            String referral = export.getReferal();
+            int i = referral.indexOf('@');
+            _path = stripLeadingSlash(referral.substring(0, i));
+            _host = referral.substring(i+1);
+        }
+
+        @Override
+        public Stat stat() throws ChimeraFsException {
+            return PseudoFsProvider.pseudoInodeStat(this);
+        }
+
+        @Override
+        public Stat statCache() throws ChimeraFsException {
+            return this.stat();
+        }
+
+        @Override
+        public int fsId() {
+            // we have to return a fsid other than ours.
+            return super.fsId() + 1;
+        }
+
+        public String getHost() {
+            return _host;
+        }
+
+        public String getPath() {
+            return _path;
+        }
+
+        public String getExport() {
+            return stripLeadingSlash(_export.getPath());
+        }
+
+        private static String stripLeadingSlash(String s) {
+            return s.charAt(0) == '/' ? s.substring(1) : s;
+        }
+    }
+
+    public static class PseudoInode extends FsInode {
 
         public PseudoInode(FileSystemProvider fs, String id) {
             super(fs, id);
@@ -607,7 +685,7 @@ public class PseudoFsProvider implements FileSystemProvider {
 
         @Override
         public Stat stat() throws ChimeraFsException {
-            return PseudoFsProvider.psudoInodeStat(this);
+            return PseudoFsProvider.pseudoInodeStat(this);
         }
 
         @Override

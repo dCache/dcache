@@ -17,74 +17,6 @@
 
 package org.dcache.chimera.nfs.v4;
 
-import org.dcache.chimera.nfs.v4.xdr.fattr4_numlinks;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_hidden;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_system;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_aclsupport;
-import org.dcache.chimera.nfs.v4.xdr.nfs_ftype4;
-import org.dcache.chimera.nfs.v4.xdr.attrlist4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_case_insensitive;
-import org.dcache.chimera.nfs.v4.xdr.nfs_lease4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_fh4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_rawdev;
-import org.dcache.chimera.nfs.v4.xdr.utf8string;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_maxname;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_owner;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_space_used;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_maxlink;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_unique_handles;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_lease_time;
-import org.dcache.chimera.nfs.v4.xdr.uint64_t;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_fh_expire_type;
-import org.dcache.chimera.nfs.v4.xdr.int64_t;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.nfsace4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_named_attr;
-import org.dcache.chimera.nfs.v4.xdr.specdata4;
-import org.dcache.chimera.nfs.v4.xdr.bitmap4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_homogeneous;
-import org.dcache.chimera.nfs.v4.xdr.uint32_t;
-import org.dcache.chimera.nfs.v4.xdr.layouttype4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_maxread;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_fs_layout_types;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_maxwrite;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_time_create;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_files_avail;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_mounted_on_fileid;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_space_total;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_fileid;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_change;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_symlink_support;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_case_preserving;
-import org.dcache.chimera.nfs.v4.xdr.changeid4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_size;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_files_total;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_filehandle;
-import org.dcache.chimera.nfs.v4.xdr.fattr4;
-import org.dcache.chimera.nfs.v4.xdr.nfstime4;
-import org.dcache.chimera.nfs.v4.xdr.mode4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_link_support;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_time_modify;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_no_trunc;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_rdattr_error;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_files_free;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_time_metadata;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_mode;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_maxfilesize;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_acl;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_fsid;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_time_access;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_supported_attrs;
-import org.dcache.chimera.nfs.v4.xdr.utf8str_mixed;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_space_free;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_cansettime;
-import org.dcache.chimera.nfs.v4.xdr.fattr4_type;
-import org.dcache.chimera.nfs.v4.xdr.fsid4;
-import org.dcache.chimera.nfs.v4.xdr.GETATTR4resok;
-import org.dcache.chimera.nfs.v4.xdr.GETATTR4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -99,9 +31,8 @@ import org.dcache.xdr.XdrEncodingStream;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsStat;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.chimera.nfs.v4.xdr.aceflag4;
-import org.dcache.chimera.nfs.v4.xdr.acemask4;
-import org.dcache.chimera.nfs.v4.xdr.acetype4;
+import org.dcache.chimera.nfs.PseudoFsProvider;
+import org.dcache.chimera.nfs.v4.xdr.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -213,12 +144,23 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
      * Corresponding to fattr
      * @throws Exception
      */
-
-    // read/read-write
     private static XdrAble fattr2xdr( int fattr , FsInode inode, CompoundContext context) throws Exception {
 
         XdrAble ret = null;
         FsStat fsStat = null;
+
+        /*
+         * TODO:
+         *   with merge of VFS interface of NFS into dcache
+         *   nfs inodes will be different from chimera inodes
+         *   and will handle such checks internally.
+         */
+        if ( inode instanceof PseudoFsProvider.ReferralInode ) {
+            if( fattr != nfs4_prot.FATTR4_FS_LOCATIONS &&  fattr != nfs4_prot.FATTR4_FSID &&
+                    fattr != nfs4_prot.FATTR4_MOUNTED_ON_FILEID)
+
+                throw new ChimeraNFSException(nfsstat4.NFS4ERR_MOVED, "inode is a referral");
+        }
 
         switch(fattr) {
 
@@ -262,7 +204,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 break;
             case nfs4_prot.FATTR4_FSID :
                 fsid4 fsid = new fsid4();
-                fsid.major = new uint64_t(17);
+                fsid.major = new uint64_t(inode.fsId());
                 fsid.minor = new uint64_t(17);
                 fattr4_fsid id = new fattr4_fsid(fsid);
                 ret = id;
@@ -348,7 +290,31 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 ret = files_total;
                 break;
             case nfs4_prot.FATTR4_FS_LOCATIONS :
-                break;
+
+                    PseudoFsProvider.ReferralInode referral = (PseudoFsProvider.ReferralInode) inode;
+                    String myserver = referral.getHost();
+                    String rootPath = referral.getPath();
+                    String st = referral.getExport();
+
+                    //construct fs_location4 (utf8str_cis [] servers, pathname4 rootpath).
+                    fs_location4 fs_location4 = new fs_location4();
+
+                    utf8str_cis[] servers = {new utf8str_cis(new utf8string(myserver.getBytes()))};
+                    fs_location4.server = servers;
+
+                    component4[] compRootPath = {new component4(new utf8str_cs(new utf8string(rootPath.getBytes())))};
+                    fs_location4.rootpath = new pathname4(compRootPath);
+
+                    fs_locations4 fs_locations4 = new fs_locations4();
+
+                    component4[] comp = {new component4(new utf8str_cs(new utf8string(st.getBytes())))};
+                    fs_locations4.fs_root = new pathname4(comp);
+
+                    fs_location4[] locations = {fs_location4};
+                    fs_locations4.locations = locations;
+                    fattr4_fs_locations att_fs_locations = new fattr4_fs_locations(fs_locations4);
+                    ret = att_fs_locations;
+                    break;
             case nfs4_prot.FATTR4_HIDDEN :
                 fattr4_hidden hidden = new fattr4_hidden(false);
                 ret = hidden;

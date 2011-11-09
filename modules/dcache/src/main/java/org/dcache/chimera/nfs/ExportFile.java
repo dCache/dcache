@@ -91,6 +91,7 @@ public class ExportFile {
                 FsExport  export;
                 StringTokenizer st = new StringTokenizer(line);
                 String path = st.nextToken();
+                String referral = null;
 
                 if( st.hasMoreTokens() ) {
                     List<ExportClient> clients = new ArrayList<ExportClient>();
@@ -115,20 +116,21 @@ public class ExportFile {
                                 continue;
                             }
 
+                            if(option.startsWith("refer=")) {
+                                referral = option.substring("refer=".length());
+                            }
                         }
 
-                        ExportClient client = new ExportClient(host,isTrusted, rw );
+                        ExportClient client = new ExportClient(host,isTrusted, rw);
                         clients.add(client);
-
                     }
-                    export  = new FsExport(path, clients);
+                    export  = new FsExport(path, clients, referral);
                 }else{
                     ExportClient everyOne = new ExportClient("*",ExportClient.Root.NOTTRUSTED, ExportClient.IO.RO );
 
                     List<ExportClient> clients = new ArrayList<ExportClient>(1);
                     clients.add(everyOne);
-                    export = new FsExport(path, clients );
-
+                    export = new FsExport(path, clients, referral );
                 }
 
                 pathToPseudoFs(pseudoFsRoot, path, export);
@@ -148,7 +150,7 @@ public class ExportFile {
 
         Splitter splitter = Splitter.on('/').omitEmptyStrings();
         PseudoFsNode rootNode = _pseudoFS;
-        PseudoFsNode node = _pseudoFS;
+        PseudoFsNode node = null;
 
         for (String s : splitter.split(path)) {
             node = rootNode.getNode(s);
@@ -157,7 +159,7 @@ public class ExportFile {
             rootNode = node;
         }
 
-        return node.getExport();
+        return node == null? null : node.getExport();
     }
 
     // FIXME: one trusted client has an access to all tree
@@ -168,7 +170,7 @@ public class ExportFile {
         for( String path: exports ) {
 
             FsExport fsExport = getExport(path);
-            if( fsExport.isTrusted(client) ) {
+            if( fsExport != null && fsExport.isTrusted(client) ) {
                 return true;
             }
 

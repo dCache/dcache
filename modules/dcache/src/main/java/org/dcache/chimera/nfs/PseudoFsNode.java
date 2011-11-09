@@ -74,7 +74,7 @@ public class PseudoFsNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (_name != null) {
-            sb.append("/").append(_name.toString());
+            sb.append("/").append(_name);
         }
         return sb.toString();
     }
