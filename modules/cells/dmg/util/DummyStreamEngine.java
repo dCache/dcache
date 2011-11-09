@@ -133,6 +133,24 @@ public class DummyStreamEngine implements StreamEngine
         return _socket.getLocalAddress();
     }
 
+    @Override
+    public String getTerminalType()
+    {
+        return "dumb";
+    }
+
+    @Override
+    public int getTerminalWidth()
+    {
+        return 0;
+    }
+
+    @Override
+    public int getTerminalHeight()
+    {
+        return 0;
+    }
+
     /**
      * Workaround for Java bug
      * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4509080. The

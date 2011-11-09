@@ -20,6 +20,7 @@ public class SshPacket {
   public static final int SSH_CMSG_AUTH_RSA_RESPONSE =   8 ;
   public static final int SSH_CMSG_AUTH_PASSWORD     =   9 ;
   public static final int SSH_CMSG_REQUEST_PTY       =   10 ;
+  public static final int SSH_CMSG_WINDOW_SIZE       =   11 ;
   public static final int SSH_CMSG_EXEC_SHELL        =   12 ;
   public static final int SSH_CMSG_EXEC_CMD          =   13 ;
   public static final int SSH_SMSG_SUCCESS           =   14 ;
