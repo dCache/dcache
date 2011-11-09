@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 public final class TransferRetryPolicies
 {
     public final static long RETRY_PERIOD = TimeUnit.SECONDS.toMillis(30);
-    public final static long MOVER_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
+    public final static long MOVER_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
 
     /* no instances allowed */
     private TransferRetryPolicies() {}
