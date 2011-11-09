@@ -51,12 +51,6 @@
   <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.3.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.6.1</version>
@@ -556,6 +550,12 @@
   </dependencyManagement>
 
   <dependencies>
+      <dependency>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+          <version>4.3.1</version>
+          <scope>test</scope>
+      </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
           <artifactId>logback-test-config</artifactId>

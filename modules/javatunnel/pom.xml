@@ -16,10 +16,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.dcache</groupId>
       <artifactId>cells</artifactId>
       <version>${project.version}</version>
