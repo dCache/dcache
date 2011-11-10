@@ -72,6 +72,9 @@ domainStart() # $1 = domain
     local PID_JAVA
     local PID_DAEMON
     local JAVA_OPTIONS
+    local plugins
+    local jar
+    local plugin
 
     domain="$1"
 
@@ -83,6 +86,25 @@ domainStart() # $1 = domain
 
     # Build classpath
     classpath="$(getProperty dcache.paths.classpath "$domain")"
+    plugins="$(getProperty dcache.paths.plugins "$domain")"
+    while [ -n "$plugins" ]; do
+        # plugins is a colon separated path of directories
+        case "$plugins" in
+            *:*)
+                plugin="${plugins%%:*}"
+                plugins="${plugins#*:}"
+                ;;
+            *)
+                plugin="$plugins"
+                plugins=
+                ;;
+        esac
+        if [ -d "$plugin" ]; then
+            for jar in "$plugin"/*/*.jar; do
+                classpath="${classpath}:${jar}"
+            done
+        fi
+    done
 
     # LD_LIBRARY_PATH override
     JAVA_LIBRARY_PATH="$(getProperty dcache.java.library.path "$domain")"
