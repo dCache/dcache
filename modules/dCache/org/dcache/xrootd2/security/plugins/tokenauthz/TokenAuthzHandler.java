@@ -1,13 +1,14 @@
 package org.dcache.xrootd2.security.plugins.tokenauthz;
 
 import java.security.GeneralSecurityException;
-
+import java.security.AccessControlException;
 import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+import java.io.File;
 import java.net.InetSocketAddress;
 
 import org.dcache.xrootd2.protocol.XrootdProtocol;
@@ -18,58 +19,40 @@ import org.dcache.xrootd2.security.plugins.tokenauthz.Envelope.GridFile;
 public class TokenAuthzHandler implements AuthorizationHandler
 {
     private final Map keystore;
-    private String pfn = null;
-    // the envelope will be initialised during checkAuthz()
+    private String pfn;
     private Envelope env;
-    private String noStrongAuthz;
 
-    public TokenAuthzHandler(String noStrongAuthz, Map keystore)
+    public TokenAuthzHandler(Map keystore)
     {
         this.keystore = keystore;
-        this.noStrongAuthz = noStrongAuthz;
     }
 
     @Override
-    public boolean checkAuthz(String pathToOpen, Map<String,String> options,
-                              XrootdProtocol.FilePerm mode,
-                              InetSocketAddress endpoint)
-        throws GeneralSecurityException
+    public void check(int requestId,
+                      String pathToOpen,
+                      Map<String,String> opaque,
+                      XrootdProtocol.FilePerm mode,
+                      InetSocketAddress endpoint)
+        throws SecurityException, GeneralSecurityException
     {
         if (pathToOpen == null) {
             throw new IllegalArgumentException("the lfn string must not be null");
         }
 
-        String authzTokenString;
-        if ((authzTokenString = (String) options.get("authz")) == null) {
+        // Historically we did not apply the check to stat requests
+        if (requestId == XrootdProtocol.kXR_stat ||
+            requestId == XrootdProtocol.kXR_statx) {
+            return;
+        }
 
-            // dirty hack for ALICE: skip authorization if no token
-            // arrives and configuration says ok (this will be soon
-            // deprecated)
-            if ("always".equalsIgnoreCase(noStrongAuthz)) {
-                setPfn(pathToOpen);
-                return true;
-            }
-
-            if ("read".equalsIgnoreCase(noStrongAuthz) &&
-                mode == FilePerm.READ) {
-                setPfn(pathToOpen);
-                return true;
-            }
-
-            if ("write".equalsIgnoreCase(noStrongAuthz) &&
-                mode == FilePerm.WRITE) {
-                setPfn(pathToOpen);
-                return true;
-            }
-
+        String authzTokenString = opaque.get("authz");
+        if (authzTokenString == null) {
             throw new GeneralSecurityException("No authorization token found in open request, access denied.");
         }
 
         // get the VO-specific keypair or the default keypair if VO
         // was not specified
-        KeyPair keypair = getKeys((String) options.get("vo"));
-
-
+        KeyPair keypair = getKeys((String) opaque.get("vo"));
 
         // decode the envelope from the token using the keypair
         // (Remote publicm key, local private key)
@@ -113,16 +96,15 @@ public class TokenAuthzHandler implements AuthorizationHandler
         int grantedPermission = file.getAccess();
         if (mode == FilePerm.WRITE) {
             if (grantedPermission < FilePerm.WRITE_ONCE.ordinal()) {
-                return false;
+                throw new AccessControlException("Token lacks authorization for requested operation");
             }
         } else if (mode == FilePerm.DELETE) {
             if (grantedPermission < FilePerm.DELETE.ordinal()) {
-                return false;
+                throw new AccessControlException("Token lacks authorization for requested operation");
             }
         }
 
         setPfn(file.getTurlPath());
-        return true;
     }
 
     private GridFile findFile(String pathToOpen, Envelope env)

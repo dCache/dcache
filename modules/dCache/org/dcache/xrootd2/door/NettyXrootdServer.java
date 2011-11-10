@@ -19,6 +19,7 @@ import org.dcache.xrootd2.core.XrootdHandshakeHandler;
 import org.dcache.xrootd2.core.ConnectionTracker;
 import org.dcache.xrootd2.protocol.XrootdProtocol;
 import org.dcache.xrootd2.security.AbstractAuthenticationFactory;
+import org.dcache.xrootd2.security.AuthorizationFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ public class NettyXrootdServer
     private Executor _requestExecutor;
     private XrootdDoor _door;
     private AbstractAuthenticationFactory _authenticationFactory;
+    private AuthorizationFactory _authorizationFactory;
     private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
 
@@ -84,8 +86,25 @@ public class NettyXrootdServer
     }
 
     @Required
-    public void setAuthenticationFactory(AbstractAuthenticationFactory factory) {
+    public void setAuthenticationFactory(AbstractAuthenticationFactory factory)
+    {
         _authenticationFactory = factory;
+    }
+
+    public AbstractAuthenticationFactory getAuthenticationFactory()
+    {
+        return _authenticationFactory;
+    }
+
+    @Required
+    public void setAuthorizationFactory(AuthorizationFactory factory)
+    {
+        _authorizationFactory = factory;
+    }
+
+    public AuthorizationFactory getAuthorizationFactory()
+    {
+        return _authorizationFactory;
     }
 
     public void init()
@@ -109,7 +128,8 @@ public class NettyXrootdServer
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                     pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
                     pipeline.addLast("redirector", new XrootdRedirectHandler(_door,
-                                                                             _authenticationFactory));
+                                                                             _authenticationFactory,
+                                                                             _authorizationFactory));
                     return pipeline;
                 }
             });

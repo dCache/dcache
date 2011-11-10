@@ -25,7 +25,6 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
-import org.dcache.xrootd2.security.AbstractAuthorizationFactory;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Transfer;
@@ -93,8 +92,6 @@ public class XrootdDoor
 
     private String _cellName;
     private String _domainName;
-
-    private AbstractAuthorizationFactory _authzFactory;
 
     /** authorization decisions */
     private LoginStrategy _strategy;
@@ -196,19 +193,6 @@ public class XrootdDoor
     public List<FsPath> getReadPathsList()
     {
         return _readPaths;
-    }
-
-    /**
-     *
-     */
-    public void setAuthorizationFactory(AbstractAuthorizationFactory factory)
-    {
-        _authzFactory = factory;
-    }
-
-    public AbstractAuthorizationFactory getAuthorizationFactory()
-    {
-        return _authzFactory;
     }
 
     public void setPnfsHandler(PnfsHandler pnfs)

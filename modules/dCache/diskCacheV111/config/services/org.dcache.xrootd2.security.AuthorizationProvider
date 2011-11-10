@@ -1,0 +1,2 @@
+org.dcache.xrootd2.security.plugins.tokenauthz.NoAuthorizationProvider
+org.dcache.xrootd2.security.plugins.tokenauthz.TokenAuthorizationProvider
