@@ -42,6 +42,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>dcache-pnfs</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
         <groupId>com.jolbox</groupId>
         <artifactId>bonecp</artifactId>
     </dependency>

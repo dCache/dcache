@@ -34,7 +34,6 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.StorageInfoExtractable;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;

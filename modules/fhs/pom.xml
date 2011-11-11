@@ -29,6 +29,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>dcache-pnfs</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>dcache-ftp</artifactId>
         <version>${project.version}</version>
     </dependency>
