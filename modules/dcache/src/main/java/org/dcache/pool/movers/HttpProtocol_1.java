@@ -8,7 +8,7 @@ package org.dcache.pool.movers;
 
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsFile;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HttpConnectionHandler;
 import diskCacheV111.util.HttpByteRange;
@@ -131,10 +131,10 @@ public class HttpProtocol_1 implements MoverProtocol
                 String path = url.getPath();
                 say("url returned path : "+path);
 
-                PnfsFile transferfile = new PnfsFile(url.getPath());
-                PnfsFile requestedfile = new PnfsFile(httpProtocolInfo.getPath());
+                FsPath transferfile = new FsPath(url.getPath());
+                FsPath requestedfile = new FsPath(httpProtocolInfo.getPath());
 
-                if(!transferfile.equals (requestedfile))
+                if(!transferfile.equals(requestedfile))
                     {
                         say("incorrect file requested : "+url.getPath());
                         String error_string = "incorrect path : "+url.getPath();
