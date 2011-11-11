@@ -101,6 +101,7 @@ public class HttpProtocol_1 implements MoverProtocol
         say(" runIO() cellpath="+cellpath);
         HttpDoorUrlInfoMessage httpDoorMessage =
             new HttpDoorUrlInfoMessage(pnfsId.getId (),targetUrl);
+        httpDoorMessage.setId(httpProtocolInfo.getSessionId());
         say(" runIO() created message");
         _cell.sendMessage (new CellMessage(cellpath,httpDoorMessage));
 
