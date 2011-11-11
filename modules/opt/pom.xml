@@ -30,6 +30,16 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>dcache-ftp</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>dcache-webdav</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-argus</artifactId>
         <version>${project.version}</version>
     </dependency>

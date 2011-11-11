@@ -684,6 +684,8 @@
     <module>modules/javatunnel</module>
     <module>modules/srm</module>
     <module>modules/dcache</module>
+    <module>modules/dcache-ftp</module>
+    <module>modules/dcache-webdav</module>
     <module>modules/webadmin</module>
     <module>modules/srmclient</module>
     <module>modules/opt</module>
