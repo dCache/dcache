@@ -19,6 +19,7 @@
       <skel>${project.basedir}/../../skel</skel>
       <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
       <resources>${project.basedir}/../../resources</resources>
+      <opt.outputDirectory>${projet.build.directory}</opt.outputDirectory>
   </properties>
 
   <dependencies>
@@ -174,6 +175,7 @@
                       <descriptor>src/main/assembly/opt.xml</descriptor>
                   </descriptors>
                   <appendAssemblyId>false</appendAssemblyId>
+                  <outputDirectory>${opt.outputDirectory}</outputDirectory>
               </configuration>
               <executions>
                   <execution>

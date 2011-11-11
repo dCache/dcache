@@ -18,6 +18,7 @@
       <modules>${project.basedir}/..</modules>
       <skel>${project.basedir}/../../skel</skel>
       <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
+      <fhs.outputDirectory>${projet.build.directory}</fhs.outputDirectory>
   </properties>
 
   <dependencies>
@@ -172,6 +173,7 @@
                       <descriptor>src/main/assembly/fhs.xml</descriptor>
                   </descriptors>
                   <appendAssemblyId>false</appendAssemblyId>
+                  <outputDirectory>${fhs.outputDirectory}</outputDirectory>
               </configuration>
               <executions>
                   <execution>
