@@ -19,7 +19,7 @@
       <skel>${project.basedir}/../../skel</skel>
       <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
       <resources>${project.basedir}/../../resources</resources>
-      <opt.outputDirectory>${projet.build.directory}</opt.outputDirectory>
+      <opt.outputDirectory>${project.build.directory}</opt.outputDirectory>
   </properties>
 
   <dependencies>

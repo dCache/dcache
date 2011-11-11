@@ -18,7 +18,7 @@
       <modules>${project.basedir}/..</modules>
       <skel>${project.basedir}/../../skel</skel>
       <filtered-skel>${project.basedir}/target/filtered-skel</filtered-skel>
-      <fhs.outputDirectory>${projet.build.directory}</fhs.outputDirectory>
+      <fhs.outputDirectory>${project.build.directory}</fhs.outputDirectory>
   </properties>
 
   <dependencies>
