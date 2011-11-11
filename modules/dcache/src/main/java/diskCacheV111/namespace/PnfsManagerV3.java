@@ -7,7 +7,6 @@ import org.dcache.vehicles.PnfsSetFileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
-import diskCacheV111.namespace.provider.*;
 
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
