@@ -32,6 +32,12 @@ public class FormatsTests
     }
 
     @Test
+    public void testReplaceKeywordsWithInitialEscapedDollar()
+    {
+        assertHasReplacement("$$keyword", "$keyword");
+    }
+
+    @Test
     public void testReplaceKeywordsWithFinalDollar()
     {
         assertHasReplacement("keyword$", "keyword$");
@@ -47,6 +53,32 @@ public class FormatsTests
     public void testReplaceKeywordsWithSimpleReference()
     {
         assertHasReplacement("${keyword}", "replacement");
+    }
+
+    @Test
+    public void testReplaceKeywordWithDollar()
+    {
+        _replacements.put("$foo", "bar");
+        assertHasReplacement("${$$foo}", "bar");
+    }
+
+    @Test
+    public void testReplaceKeywordWithDollarBraceEscapedDollar()
+    {
+        _replacements.put("${foo", "bar");
+        assertHasReplacement("${$${foo}", "bar");
+    }
+
+    @Test
+    public void testEscapedDollarReplaceKeywordsWithSimpleReference()
+    {
+        assertHasReplacement("$$${keyword}", "$replacement");
+    }
+
+    @Test
+    public void testDollarEscapedReplaceKeywordsWithSimpleReference()
+    {
+        assertHasReplacement("$$$${keyword}", "$${keyword}");
     }
 
     @Test
@@ -75,10 +107,45 @@ public class FormatsTests
     }
 
     @Test
+    public void testReplaceSimpleKeywordsWithDollarWithinKeywordExistsNoEscape()
+    {
+        _replacements.put("$other", "keyword");
+        assertHasReplacement("${${$other}}", "replacement");
+    }
+
+    @Test
+    public void testReplaceSimpleKeywordsWithDollarWithinKeywordExistsWithSingleEscape()
+    {
+        _replacements.put("$other", "keyword");
+        assertHasReplacement("${${$$other}}", "replacement");
+    }
+
+    @Test
+    public void testReplaceSimpleKeywordsWithDollarWithinKeywordExistsWithDoubleEscape()
+    {
+        _replacements.put("$other", "keyword");
+        assertHasReplacement("${${$$$$other}}", "replacement");
+    }
+
+    @Test
+    public void testReplaceSimpleKeywordsWithDollarBraceWithinKeywordExistsWithDoubleEscape()
+    {
+        _replacements.put("${other", "keyword");
+        assertHasReplacement("${${$$$${other}}", "replacement");
+    }
+
+    @Test
     public void testReplaceComplexKeywordsWithinKeywordExists()
     {
         _replacements.put("other", "wor");
         assertHasReplacement("${key${other}d}", "replacement");
+    }
+
+    @Test
+    public void testEscapeDollarReplaceComplexKeywordsWithinKeywordExists()
+    {
+        _replacements.put("other", "wor");
+        assertHasReplacement("${key$${other}d}", "${key${other}d}");
     }
 
     @Test

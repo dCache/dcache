@@ -63,25 +63,36 @@ public class Formats {
         int state = RP_IDLE ;
         int len   = in.length() ;
         int braceCount = 0;
-        boolean previousWasDollar = false;
+        boolean startOfReference = false;
 
         for( int i = 0 ; i < len ; i++ ){
             char c = in.charAt(i) ;
             switch( state ){
             case RP_IDLE :
-                if( c == '$' ){
-                    state = RP_DOLLAR ;
-                }else{
-                    out.append( c ) ;
+                switch(c) {
+                case '$':
+                    state = RP_DOLLAR;
+                    break;
+                default:
+                    out.append(c);
                 }
                 break ;
+
             case RP_DOLLAR :
-                if( c == '{' ){
-                    previousWasDollar=false;
+                switch(c) {
+                case '{':
+                    startOfReference=false;
                     state = RP_OPENED ;
                     braceCount = 0;
                     key   = new StringBuilder();
-                }else{
+                    break;
+
+                case '$':
+                    out.append('$');
+                    state = RP_IDLE;
+                    break;
+
+                default:
                     out.append('$').append(c);
                     state = RP_IDLE ;
                 }
@@ -90,20 +101,22 @@ public class Formats {
             case RP_OPENED :
                 switch(c) {
                 case '$':
-                    key.append(c);
-                    previousWasDollar=true;
+                    if(!startOfReference) {
+                        key.append(c);
+                    }
+                    startOfReference = !startOfReference;
                     break;
 
                 case '{':
                     key.append(c);
-                    if(previousWasDollar) {
+                    if(startOfReference) {
                         braceCount++;
+                        startOfReference=false;
                     }
-                    previousWasDollar=false;
                     break;
 
                 case '}':
-                    previousWasDollar=false;
+                    startOfReference=false;
                     if(braceCount > 0) {
                         braceCount--;
                         key.append(c);
