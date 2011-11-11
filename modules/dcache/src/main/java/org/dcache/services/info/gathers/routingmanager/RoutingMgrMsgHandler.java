@@ -1,4 +1,4 @@
-package org.dcache.services.info.gathers;
+package org.dcache.services.info.gathers.routingmanager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +10,9 @@ import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
+import org.dcache.services.info.gathers.CellMessageHandlerSkel;
+import org.dcache.services.info.gathers.MessageMetadataRepository;
+import org.dcache.services.info.gathers.cells.CellInfoMsgHandler;
 
 import dmg.cells.nucleus.UOID;
 

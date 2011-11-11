@@ -1,5 +1,7 @@
-package org.dcache.services.info.gathers;
+package org.dcache.services.info.gathers.srm;
 
+import org.dcache.services.info.gathers.MessageSender;
+import org.dcache.services.info.gathers.SkelPeriodicActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

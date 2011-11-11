@@ -1,4 +1,4 @@
-package org.dcache.services.info.gathers;
+package org.dcache.services.info.gathers.loginbroker;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -13,6 +13,8 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
+import org.dcache.services.info.gathers.CellMessageHandlerSkel;
+import org.dcache.services.info.gathers.MessageMetadataRepository;
 
 import dmg.cells.nucleus.UOID;
 import dmg.cells.services.login.LoginBrokerInfo;

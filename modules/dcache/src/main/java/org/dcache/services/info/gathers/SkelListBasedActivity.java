@@ -30,7 +30,7 @@ import org.dcache.services.info.stateInfo.ListVisitor;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract class SkelListBasedActivity implements Schedulable {
+abstract public class SkelListBasedActivity implements Schedulable {
 
 	private static final Logger _log = LoggerFactory.getLogger( SkelListBasedActivity.class);
 
@@ -170,7 +170,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	/**
 	 * @return the next item off the list if there is one, or null otherwise.
 	 */
-	String getNextItem() {
+	public String getNextItem() {
 		if( _outstandingWork.empty())
 			return null;
 
@@ -181,7 +181,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	/**
 	 * @return an appropriate lifetime for a metric, in seconds.
 	 */
-	long getMetricLifetime() {
+	public long getMetricLifetime() {
 		return _metricLifetime;
 	}
 }

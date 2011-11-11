@@ -1,4 +1,4 @@
-package org.dcache.services.info.gathers;
+package org.dcache.services.info.gathers.poolmanager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,6 +6,8 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
+import org.dcache.services.info.gathers.CellMessageHandlerSkel;
+import org.dcache.services.info.gathers.MessageMetadataRepository;
 
 import dmg.cells.nucleus.UOID;
 

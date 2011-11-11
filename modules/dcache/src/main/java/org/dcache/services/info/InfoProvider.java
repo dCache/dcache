@@ -243,7 +243,7 @@ public class InfoProvider extends AbstractCell {
 	{
 	    _scheduler = new DataGatheringScheduler( _sum);
 
-	    _scheduler.addDefaultActivity( exhibitor, _msgHandlerChain, _msgHandlerChain);
+	    _scheduler.addActivity( exhibitor, _msgHandlerChain, _msgHandlerChain);
 
         Thread ict = new Thread( _scheduler);
         ict.setName("DGA-Scheduler");

@@ -3,12 +3,12 @@ package org.dcache.services.info.gathers;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.ServiceLoader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.dcache.commons.util.NDC;
 import org.dcache.services.info.base.StateExhibitor;
-import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdateManager;
 
 import dmg.cells.nucleus.UOID;
@@ -388,40 +388,13 @@ public class DataGatheringScheduler implements Runnable {
 	/**
 	 * Add hard-coded, default activity
 	 */
-	public void addDefaultActivity( StateExhibitor exhibitor, MessageSender sender, MessageMetadataRepository<UOID> msgMetaRepo) {
-
-		addActivity( new SingleMessageDga( sender, "PoolManager", "psux ls pool", new StringListMsgHandler( _sum, msgMetaRepo, "pools"), 60));
-		addActivity( new SingleMessageDga( sender, "PoolManager", "psux ls pgroup", new StringListMsgHandler( _sum, msgMetaRepo, "poolgroups"), 60));
-		addActivity( new SingleMessageDga( sender, "PoolManager", "psux ls unit", new StringListMsgHandler( _sum, msgMetaRepo, "units"), 60));
-		addActivity( new SingleMessageDga( sender, "PoolManager", "psux ls ugroup", new StringListMsgHandler( _sum, msgMetaRepo, "unitgroups"), 60));
-
-		addActivity( new SingleMessageDga( sender, "PoolManager", "xcm ls", new PoolCostMsgHandler( _sum, msgMetaRepo), 60));
-
-		addActivity( new SingleMessageDga( sender, "PoolManager", "psux ls link -x -resolve", new LinkInfoMsgHandler( _sum, msgMetaRepo), 60));
-
-		LoginBrokerLsMsgHandler msgHandler = new LoginBrokerLsMsgHandler( _sum, msgMetaRepo);
-		addActivity( new SingleMessageDga( sender, "LoginBroker",     "ls -binary", msgHandler, 60));
-		addActivity( new SingleMessageDga( sender, "srm-LoginBroker", "ls -binary", msgHandler, 60));
-
-		// Add SRM DGAs..
-		// We don't use LinkgroupListDga as it provides the wrong information, and isn't needed as
-		// LinkgroupDetailsDga (mistakenly) provides all information about all linkgroups.
-		//addActivity( new LinkgroupListDga( 60));
-		addActivity( new LinkgroupDetailsDga( sender, 300)); // every five minutes, as this may be a heavy-weight operation.
-		addActivity( new SrmSpaceDetailsDga( sender, 300)); // every five minutes, as this may be a heavy-weight operation.
-
-		// Pick up domains
-		addActivity( new SingleMessageDga( sender, "topo", "gettopomap", new TopoMapHandler( _sum, msgMetaRepo), 120));
-		// Pick up cell information
-		addActivity( new CellInfoDga( exhibitor, sender, new CellInfoMsgHandler( _sum, msgMetaRepo)));
-
-		// Pick up a domain's routing information.
-		addActivity( new RoutingMgrDga( exhibitor, sender, new RoutingMgrMsgHandler( _sum, msgMetaRepo)));
-
-		addActivity( new ListBasedMessageDga( exhibitor, sender, new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler( _sum, msgMetaRepo)));
-		addActivity( new ListBasedMessageDga( exhibitor, sender, new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler( _sum, msgMetaRepo)));
-		addActivity( new ListBasedMessageDga( exhibitor, sender, new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler( _sum, msgMetaRepo)));
-		addActivity( new ListBasedMessageDga( exhibitor, sender, new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler( _sum, msgMetaRepo)));
+	public void addActivity( StateExhibitor exhibitor, MessageSender sender, MessageMetadataRepository<UOID> msgMetaRepo) {
+		ServiceLoader<DgaFactoryService> loader = ServiceLoader.load(DgaFactoryService.class);
+		for (DgaFactoryService ds : loader) {
+		    for(Schedulable dga : ds.createDgas(exhibitor, sender, _sum, msgMetaRepo)) {
+		        addActivity(dga);
+		    }
+		}
 	}
 
 

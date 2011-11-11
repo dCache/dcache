@@ -14,6 +14,7 @@ import org.dcache.services.info.base.QueuingStateUpdateManager;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
+import org.dcache.services.info.gathers.cells.CellInfoMsgHandler;
 import org.junit.Before;
 import org.junit.Test;
 

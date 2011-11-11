@@ -1,5 +1,7 @@
-package org.dcache.services.info.gathers;
+package org.dcache.services.info.gathers.srm;
 
+import org.dcache.services.info.gathers.MessageSender;
+import org.dcache.services.info.gathers.SkelPeriodicActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +53,7 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
 		if( _log.isInfoEnabled())
 			_log.info( "Sending linkgroup details request message");
 
-		_sender.sendMessage( _metricLifetime, _cp, new GetLinkGroupsMessage());
+		_sender.sendMessage(_metricLifetime, _cp, new GetLinkGroupsMessage());
 	}
 
 
