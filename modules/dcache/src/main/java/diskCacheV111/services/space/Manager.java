@@ -4965,7 +4965,7 @@ public final class Manager
                                 authRecord=null;
                         }
                         else {
-                                authRecord=Subjects.getAuthorizationRecord(subject);
+                                authRecord = new AuthorizationRecord(subject);
                         }
                         if (defaultSpaceToken==null) {
                                 if(reserveSpaceForNonSRMTransfers && authRecord != null) {

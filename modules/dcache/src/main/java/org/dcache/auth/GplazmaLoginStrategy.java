@@ -65,7 +65,7 @@ public class GplazmaLoginStrategy implements LoginStrategy
         AuthorizationRecord authrec =
             RecordConvert.gPlazmaToAuthorizationRecord(map);
         LoginReply reply =
-            new LoginReply(Subjects.getSubject(authrec), new HashSet<LoginAttribute>());
+            new LoginReply(authrec.toSubject(), new HashSet<LoginAttribute>());
         reply.getLoginAttributes().add(new HomeDirectory(authrec.getHome()));
         reply.getLoginAttributes().add(new RootDirectory(authrec.getRoot()));
         reply.getLoginAttributes().add(new ReadOnly(authrec.isReadOnly()));

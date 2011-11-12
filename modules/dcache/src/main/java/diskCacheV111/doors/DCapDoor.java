@@ -16,7 +16,7 @@ import dmg.util.Args;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
-import dmg.util.Subjects;
+import org.dcache.auth.Subjects;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;

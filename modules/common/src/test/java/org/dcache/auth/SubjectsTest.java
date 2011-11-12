@@ -1,4 +1,4 @@
-package org.dcache.tests.auth;
+package org.dcache.auth;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -14,13 +14,6 @@ import java.util.NoSuchElementException;
 
 import javax.security.auth.Subject;
 
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.Subjects;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.UserNamePrincipal;
 import org.globus.gsi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
@@ -268,88 +261,6 @@ public class SubjectsTest
     {
         assertNull("Subject must not have a primary FQAN",
                    Subjects.getPrimaryFqan(_subject2));
-    }
-
-    @Test
-    public void testGetAuthorizationRecord1()
-    {
-        AuthorizationRecord record =
-            Subjects.getAuthorizationRecord(_subject1);
-        assertEquals("UID must be preserved",
-                     UID1, record.getUid());
-        assertEquals("GID must be preserved",
-                     GID1, record.getGid());
-        assertEquals("User name must be preserved",
-                     USERNAME1, record.getIdentity());
-        assertEquals("DN must be preserved",
-                     DN1, record.getName());
-        assertEquals("VO group must be FQAN",
-                     FQAN1, record.getVoGroup());
-        assertNull("Must not have VO role",
-                   record.getVoRole());
-    }
-
-    @Test
-    public void testGetAuthorizationRecord2()
-    {
-        AuthorizationRecord record =
-            Subjects.getAuthorizationRecord(_subject2);
-        assertEquals("UID must be preserved",
-                     UID2, record.getUid());
-        assertEquals("GID must be preserved",
-                     GID2, record.getGid());
-        assertEquals("User name must be preserved",
-                     USERNAME2, record.getIdentity());
-        assertEquals("Name must be DN",
-                     DN2, record.getName());
-        assertEquals("VO group must be user name if there is no primary group",
-                     USERNAME2, record.getVoGroup());
-        assertNull("Must not have VO role",
-                   record.getVoRole());
-    }
-
-    @Test
-    public void testGetAuthorizationRecord4()
-    {
-        AuthorizationRecord record =
-            Subjects.getAuthorizationRecord(_subject4);
-        assertEquals("UID must be preserved",
-                     UID1, record.getUid());
-        assertEquals("GID must be preserved",
-                     GID2, record.getGid());
-        assertEquals("User name must be preserved",
-                     USERNAME1, record.getIdentity());
-        assertEquals("DN must be preserved",
-                     DN1, record.getName());
-        assertEquals("VO group must be FQAN",
-                     FQAN2, record.getVoGroup());
-        assertEquals("VO role must be role of primary FQAN",
-                     ROLE, record.getVoRole());
-    }
-
-    @Test
-    public void testAuthorizationRecordRoundTrip()
-    {
-        assertEquals(_subject1, Subjects.getSubject(Subjects.getAuthorizationRecord(_subject1)));
-
-        assertEquals(Subjects.ROOT, Subjects.getSubject(Subjects.getAuthorizationRecord(Subjects.ROOT)));
-
-        /* We cannot preserve that subject2 does not have a primary GID.
-         */
-        assertFalse(_subject2.equals(Subjects.getSubject(Subjects.getAuthorizationRecord(_subject2))));
-
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetAuthorizationRecordWithNoUid()
-    {
-        Subjects.getAuthorizationRecord(Subjects.NOBODY);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testGetAuthorizationRecordWithTwoUids()
-    {
-        Subjects.getAuthorizationRecord(_subject3);
     }
 
     @Test

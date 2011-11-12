@@ -92,7 +92,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Date;
 import java.util.EnumSet;
-import org.dcache.auth.Subjects;
 import javax.security.auth.Subject;
 import org.dcache.namespace.PermissionHandler;
 import static org.dcache.namespace.FileType.*;
@@ -548,7 +547,7 @@ public final class PutCompanion extends AbstractMessageCallback<PnfsMessage>
                     " FileRequest does not specify path!!!");
         }
         PnfsMapPathMessage message = new PnfsMapPathMessage(pnfsPath);
-        Subject userSubject = Subjects.getSubject(user);
+        Subject userSubject = user.toSubject();
         message.setSubject(userSubject);
         PutCompanion companion = new PutCompanion(
             user,

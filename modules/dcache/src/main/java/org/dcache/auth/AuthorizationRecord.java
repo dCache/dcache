@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.Serializable;
@@ -182,6 +183,48 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         }
 
         setId();
+    }
+
+    /**
+     * Converts this AuthorizationRecord to a Subject. The Subject
+     * will contain the UID (UidPrincipal), any GIDs (GidPrincipal),
+     * the mapped user name (UserNamePrincipal), the DN
+     * (GlobusPrincipal), and any FQANs (FQANPrincipal) of the
+     * AuthorizationRecord object.
+     *
+     * Note that the Subject will represent a subset of the
+     * information stored in this AuthorizationRecord.
+     */
+    public Subject toSubject()
+    {
+        Subject subject = new Subject();
+        Set<Principal> principals = subject.getPrincipals();
+        principals.add(new UidPrincipal(getUid()));
+
+        String identity = getIdentity();
+        if (identity != null && !identity.isEmpty()) {
+            principals.add(new UserNamePrincipal(identity));
+        }
+
+        boolean primary = true;
+        for (GroupList list : getGroupLists()) {
+            String fqan = list.getAttribute();
+            if (fqan != null && !fqan.isEmpty()) {
+                principals.add(new FQANPrincipal(fqan, primary));
+            }
+            for (Group group: list.getGroups()) {
+                principals.add(new GidPrincipal(group.getGid(), primary));
+                primary = false;
+            }
+            primary = false;
+        }
+
+        String dn = getName();
+        if (dn != null && !dn.isEmpty()) {
+            principals.add(new GlobusPrincipal(dn));
+        }
+
+        return subject;
     }
 
     /**
@@ -510,11 +553,6 @@ public class AuthorizationRecord implements Serializable, SRMUser{
             gidIntArray[i] = gids.get(i);
         }
         return gidIntArray;
-    }
-
-    @Transient
-    public Subject getSubject() {
-        return Subjects.getSubject(this);
     }
 
     /**

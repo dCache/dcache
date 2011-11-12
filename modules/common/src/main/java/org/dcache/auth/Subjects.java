@@ -8,11 +8,26 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
 
-public class Subjects extends dmg.util.Subjects
+public class Subjects
 {
+    public static final String UNKNOWN = "<unknown>";
+
+    /**
+     * Ordered list of principals considered as displayable.
+     */
+    private static final Class<? extends Principal>[] DISPLAYABLE = new Class[]
+    {
+        UserNamePrincipal.class,
+        GlobusPrincipal.class,
+        KerberosPrincipal.class,
+        Origin.class,
+        Principal.class
+    };
+
     /**
      * The subject representing the root user, that is, a user that is
      * empowered to do everything.
@@ -34,7 +49,8 @@ public class Subjects extends dmg.util.Subjects
      * Returns true if and only if the subject is root, that is, has
      * the user ID 0.
      */
-    public static boolean isRoot(Subject subject) {
+    public static boolean isRoot(Subject subject)
+    {
         return hasUid(subject, 0);
     }
 
@@ -47,7 +63,8 @@ public class Subjects extends dmg.util.Subjects
      * authentication mechanism. However the subject could not be
      * assigned an internal identity in dCache.
      */
-    public static boolean isNobody(Subject subject) {
+    public static boolean isNobody(Subject subject)
+    {
         for (Principal principal: subject.getPrincipals()) {
             if (principal instanceof UidPrincipal) {
                 return false;
@@ -59,7 +76,8 @@ public class Subjects extends dmg.util.Subjects
     /**
      * Returns true if and only if the subject has the given user ID.
      */
-    public static boolean hasUid(Subject subject, long uid) {
+    public static boolean hasUid(Subject subject, long uid)
+    {
         Set<UidPrincipal> principals =
                 subject.getPrincipals(UidPrincipal.class);
         for (UidPrincipal principal : principals) {
@@ -73,7 +91,8 @@ public class Subjects extends dmg.util.Subjects
     /**
      * Returns true if and only if the subject has the given group ID.
      */
-    public static boolean hasGid(Subject subject, long gid) {
+    public static boolean hasGid(Subject subject, long gid)
+    {
         Set<GidPrincipal> principals =
                 subject.getPrincipals(GidPrincipal.class);
         for (GidPrincipal principal : principals) {
@@ -87,7 +106,8 @@ public class Subjects extends dmg.util.Subjects
     /**
      * Returns the users IDs of a subject.
      */
-    public static long[] getUids(Subject subject) {
+    public static long[] getUids(Subject subject)
+    {
         Set<UidPrincipal> principals =
                 subject.getPrincipals(UidPrincipal.class);
         long[] uids = new long[principals.size()];
@@ -242,11 +262,10 @@ public class Subjects extends dmg.util.Subjects
     /**
      * Returns the collection of FQANs of a subject.
      */
-    public static Collection<String> getFqans(Subject subject) {
-
+    public static Collection<String> getFqans(Subject subject)
+    {
         Collection<String> fqans = new ArrayList<String>();
-        for (Principal principal : subject.getPrincipals()) {
-
+        for (Principal principal: subject.getPrincipals()) {
             if (principal instanceof FQANPrincipal) {
                 fqans.add(principal.getName());
             }
@@ -283,48 +302,18 @@ public class Subjects extends dmg.util.Subjects
     }
 
     /**
-     * Converts an AuthorizationRecord to a Subject. The Subject will
-     * contain the UID (UidPrincipal), GID (GidPrincipal), the mapped
-     * user name (UserNamePrincipal), the DN (GlobusPrincipal), and
-     * FQAN (FQANPrincipal) of the AuthorizationRecord object.
-     *
-     * Notice that the Subject will represent a subset of the
-     * information stored in the record.
+     * Returns a displayable name derived from one of the principals
+     * of the Subject.
      */
-    public static Subject getSubject(AuthorizationRecord record) {
-        Subject subject = new Subject();
-        Set<Principal> principals = subject.getPrincipals();
-        principals.add(new UidPrincipal(record.getUid()));
-
-        String identity = record.getIdentity();
-        if (identity != null && !identity.isEmpty()) {
-            principals.add(new UserNamePrincipal(identity));
-        }
-
-        boolean primary = true;
-        for (GroupList list : record.getGroupLists()) {
-            String fqan = list.getAttribute();
-            if (fqan != null && !fqan.isEmpty()) {
-                principals.add(new FQANPrincipal(fqan, primary));
-            }
-            for (Group group: list.getGroups()) {
-                principals.add(new GidPrincipal(group.getGid(), primary));
-                primary = false;
-            }
-            primary = false;
-        }
-
-        String dn = record.getName();
-        if (dn != null && !dn.isEmpty()) {
-            principals.add(new GlobusPrincipal(dn));
-        }
-
-        return subject;
-    }
-
-    public static AuthorizationRecord getAuthorizationRecord(Subject subject)
+    public static String getDisplayName(Subject subject)
     {
-        return new AuthorizationRecord(subject);
+        for (Class<? extends Principal> clazz: DISPLAYABLE) {
+            Set<? extends Principal> principals = subject.getPrincipals(clazz);
+            if (!principals.isEmpty()) {
+                return principals.iterator().next().getName();
+            }
+        }
+        return UNKNOWN;
     }
 
     /**
@@ -336,7 +325,8 @@ public class Subjects extends dmg.util.Subjects
      * @param user UserAuthBase to convert
      * @param primary Whether the groups of user are the primary groups
      */
-    public final static Subject getSubject(UserAuthBase user, boolean primary) {
+    public final static Subject getSubject(UserAuthBase user, boolean primary)
+    {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(user.UID));
@@ -368,7 +358,8 @@ public class Subjects extends dmg.util.Subjects
      *
      * @param user UserAuthRecord to convert
      */
-    public final static Subject getSubject(UserAuthRecord user) {
+    public final static Subject getSubject(UserAuthRecord user)
+    {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(user.UID));
@@ -406,8 +397,8 @@ public class Subjects extends dmg.util.Subjects
      * @param gid
      * @param gids
      */
-    public static Subject of(int uid, int gid, int[] gids) {
-
+    public static Subject of(int uid, int gid, int[] gids)
+    {
         Subject subject = new Subject();
         subject.getPrincipals().add(new UidPrincipal(uid));
         subject.getPrincipals().add(new GidPrincipal(gid, true));

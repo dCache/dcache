@@ -201,7 +201,6 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
-import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -1055,7 +1054,7 @@ public final class Storage
                         PinCallbacks callbacks)
     {
         try {
-            PinCompanion.pinFile(Subjects.getSubject((AuthorizationRecord)user),
+            PinCompanion.pinFile(((AuthorizationRecord)user).toSubject(),
                                  getPath(surl),
                                  clientHost,
                                  callbacks,
@@ -1079,7 +1078,7 @@ public final class Storage
             return;
         }
 
-        UnpinCompanion.unpinFile(Subjects.getSubject((AuthorizationRecord) user),
+        UnpinCompanion.unpinFile(((AuthorizationRecord) user).toSubject(),
                                  new PnfsId(fileId), Long.parseLong(pinId), callbacks,_pinManagerStub);
     }
 
@@ -1087,12 +1086,12 @@ public final class Storage
                                         UnpinCallbacks callbacks,
                                         long srmRequestId)
     {
-        UnpinCompanion.unpinFileBySrmRequestId(Subjects.getSubject((AuthorizationRecord) user), new PnfsId(fileId), srmRequestId, callbacks, _pinManagerStub);
+        UnpinCompanion.unpinFileBySrmRequestId(((AuthorizationRecord) user).toSubject(), new PnfsId(fileId), srmRequestId, callbacks, _pinManagerStub);
     }
 
     public void unPinFile(SRMUser user, String fileId, UnpinCallbacks callbacks)
     {
-        UnpinCompanion.unpinFile(Subjects.getSubject((AuthorizationRecord) user),
+        UnpinCompanion.unpinFile(((AuthorizationRecord) user).toSubject(),
                                  new PnfsId(fileId), callbacks, _pinManagerStub);
     }
 
@@ -1638,7 +1637,7 @@ public final class Storage
     {
         AuthorizationRecord duser = (AuthorizationRecord) user;
         PnfsHandler handler =
-            new PnfsHandler(_pnfs, Subjects.getSubject(duser));
+            new PnfsHandler(_pnfs, duser.toSubject());
 
         try {
             if (!(fmd instanceof DcacheFileMetaData)) {
@@ -1676,7 +1675,7 @@ public final class Storage
         FsPath path = getPath(surl);
         AuthorizationRecord duser = (AuthorizationRecord) user;
         PnfsHandler handler =
-            new PnfsHandler(_pnfs, Subjects.getSubject(duser));
+            new PnfsHandler(_pnfs, duser.toSubject());
         try {
             /* Fetch file attributes.
              */
@@ -1790,7 +1789,7 @@ public final class Storage
                                        id,
                                        config.getBuffer_size(),
                                        config.getTcp_buffer_size());
-            copyRequest.setSubject(Subjects.getSubject((AuthorizationRecord) user));
+            copyRequest.setSubject(((AuthorizationRecord) user).toSubject());
             _copyManagerStub.sendAndWait(copyRequest);
         } catch (TimeoutCacheException e) {
             _log.error("CopyManager is unavailable");
@@ -1917,7 +1916,7 @@ public final class Storage
     {
         _log.debug("Storage.createDirectory");
 
-        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        Subject subject = ((AuthorizationRecord) user).toSubject();
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
 
         try {
@@ -1946,7 +1945,7 @@ public final class Storage
     public void moveEntry(SRMUser user, URI from, URI to)
         throws SRMException
     {
-        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        Subject subject = ((AuthorizationRecord) user).toSubject();
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
         FsPath fromPath = getPath(from);
         FsPath toPath = getPath(to);
@@ -2225,7 +2224,7 @@ public final class Storage
                                          CopyCallbacks callbacks)
         throws SRMException
     {
-        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        Subject subject = ((AuthorizationRecord) user).toSubject();
 
         _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
         if (!verifyUserPathIsRootSubpath(actualFilePath,user)) {
@@ -2528,7 +2527,7 @@ public final class Storage
         throws SRMException
     {
         AuthorizationRecord duser = (AuthorizationRecord) user;
-        Subject subject = Subjects.getSubject(duser);
+        Subject subject = duser.toSubject();
 
         FsPath path = getPath(surl);
         try {
@@ -2574,7 +2573,7 @@ public final class Storage
         final FsPath path = getPath(surl);
         final List<URI> result = new ArrayList<URI>();
         final String base = addTrailingSlash(surl.toString());
-        Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+        Subject subject = ((AuthorizationRecord) user).toSubject();
         DirectoryListPrinter printer =
             new DirectoryListPrinter()
             {
@@ -2620,7 +2619,7 @@ public final class Storage
     {
         try {
             FsPath path = getPath(surl);
-            Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+            Subject subject = ((AuthorizationRecord) user).toSubject();
             FmdListPrinter printer =
                 verbose ? new VerboseListPrinter() : new FmdListPrinter();
             _listSource.printDirectory(subject, printer, path, null,
@@ -3057,7 +3056,7 @@ public final class Storage
         throws SRMException
     {
         try {
-            Subject subject = Subjects.getSubject((AuthorizationRecord) user);
+            Subject subject = ((AuthorizationRecord) user).toSubject();
             FsPath path = getPath(surl);
             PnfsHandler handler = new PnfsHandler(_pnfs, subject);
             handler.getFileAttributes(path.toString(),
@@ -3149,7 +3148,7 @@ public final class Storage
             attributes.setPnfsId(pnfsId);
             PinManagerExtendPinMessage extendLifetime =
                 new PinManagerExtendPinMessage(attributes, Long.parseLong(pinId), newPinLifetime);
-            extendLifetime.setSubject(Subjects.getSubject((AuthorizationRecord) user));
+            extendLifetime.setSubject(((AuthorizationRecord) user).toSubject());
             extendLifetime = _pinManagerStub.sendAndWait(extendLifetime);
             return extendLifetime.getLifetime();
         } catch (IllegalArgumentException e) {

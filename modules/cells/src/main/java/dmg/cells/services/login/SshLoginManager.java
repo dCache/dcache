@@ -157,7 +157,7 @@ public class       SshLoginManager
        _log.info( "acceptThread ("+t+"): creating protocol engine" ) ;
        SshStreamEngine engine = new SshStreamEngine( socket , this ) ;
 
-       String userPrincipal = Subjects.getUserName(engine.getSubject());
+       String userPrincipal = engine.getName();
        _log.info( "acceptThread ("+t+"): connection created for user "+userPrincipal ) ;
        Object [] args ;
        if( _loginConType == 0 ){

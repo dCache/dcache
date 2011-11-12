@@ -86,7 +86,6 @@ import org.dcache.cells.AbstractMessageCallback;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.Subjects;
 import org.dcache.srm.RemoveFileCallbacks;
 import diskCacheV111.util.CacheException;
 
@@ -129,7 +128,7 @@ public class RemoveFileCompanion
             new RemoveFileCompanion(user, path, callbacks, endpoint);
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
-        message.setSubject(Subjects.getSubject(user));
+        message.setSubject(user.toSubject());
         pnfsStub.send(message, PnfsDeleteEntryMessage.class, companion);
     }
 

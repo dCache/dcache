@@ -13,13 +13,12 @@ import java.util.Random;
 
 import dmg.security.digest.Md5;
 import dmg.util.StreamEngine;
-import dmg.util.Subjects;
 import java.security.Principal;
 import javax.security.auth.Subject;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.auth.Subjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class      SshStreamEngine
        extends    SshCoreEngine
@@ -79,7 +78,7 @@ public class      SshStreamEngine
    public Socket       getSocket(){ return _socket ; }
    public InputStream  getInputStream() { return new SshInputStream( this ) ; }
    public OutputStream getOutputStream(){ return new SshOutputStream( this ) ; }
-   public String       getName(){ return Subjects.getUserName(_remoteUser); }
+   public String getName() { return Subjects.getUserName(_remoteUser); }
    public Subject      getSubject(){ return _remoteUser ; }
    public InetAddress  getInetAddress(){ return _remoteAddress ; }
    public InetAddress getLocalAddress() { return _socket.getLocalAddress();}

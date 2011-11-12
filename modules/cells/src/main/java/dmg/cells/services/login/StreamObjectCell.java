@@ -26,10 +26,12 @@ import dmg.util.CommandExitException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.StreamEngine;
 import javax.security.auth.Subject;
-import dmg.util.Subjects;
+import org.dcache.auth.Subjects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.google.common.base.Objects.firstNonNull;
 
 public class StreamObjectCell
     extends CellAdapter
@@ -218,7 +220,7 @@ public class StreamObjectCell
         switch (commandConstMode) {
         case 0:
             args = new Object[3];
-            args[0] = Subjects.getUserName(_subject);
+            args[0] = firstNonNull(Subjects.getUserName(_subject), Subjects.UNKNOWN);
             args[1] = getNucleus();
             args[2] = extArgs;
             break;
