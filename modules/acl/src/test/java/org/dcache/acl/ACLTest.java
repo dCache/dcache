@@ -1,4 +1,4 @@
-package org.dcache.tests.namespace;
+package org.dcache.acl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,15 +15,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import org.dcache.acl.ACE;
-import org.dcache.acl.ACL;
-import org.dcache.acl.Owner;
-import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Action;
@@ -34,7 +31,6 @@ import org.dcache.acl.enums.Who;
 import org.dcache.acl.handler.singleton.AclHandler;
 import org.dcache.acl.mapper.AclMapper;
 import org.dcache.acl.matcher.AclNFSv4Matcher;
-import org.dcache.chimera.InodeId;
 
 import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
@@ -68,7 +64,7 @@ public class ACLTest {
         StringBuilder sql = new StringBuilder();
 
         BufferedReader dataStr =
-            new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream("org/dcache/chimera/sql/create-hsqldb.sql")));
+            new BufferedReader(new InputStreamReader(ClassLoader.getSystemResourceAsStream("org/dcache/acl/create-hsqldb.sql")));
         String inLine = null;
 
         while ((inLine = dataStr.readLine()) != null) {
@@ -1494,9 +1490,10 @@ public class ACLTest {
 
     }
 
-    protected String genRsID() throws Exception {
-        String rsID = InodeId.newID(0);
-        return rsID;
+    protected String genRsID()
+    {
+        UUID id = UUID.randomUUID();
+        return String.format("0000%016X%016X", id.getMostSignificantBits(), id.getLeastSignificantBits());
     }
 
     static void tryToClose(Statement o) {
