@@ -690,6 +690,7 @@
     <module>modules/webadmin</module>
     <module>modules/srmclient</module>
     <module>modules/acl</module>
+    <module>modules/chimera</module>
     <module>modules/chimera-migration</module>
     <module>modules/opt</module>
     <module>modules/fhs</module>
