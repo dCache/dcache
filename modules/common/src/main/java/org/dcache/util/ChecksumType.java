@@ -58,12 +58,4 @@ public enum ChecksumType  {
     public String getName() {
         return name;
     }
-
-    // this is what we need to correctly implement
-    // serialization of the singleton
-    public Object readResolve()
-    		throws java.io.ObjectStreamException {
-        return getChecksumType(type);
-    }
-
 }
