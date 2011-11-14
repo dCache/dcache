@@ -28,11 +28,6 @@
         <artifactId>cog-jglobus</artifactId>
     </dependency>
     <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <scope>test</scope>
-    </dependency>
-    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-common</artifactId>
         <version>${project.version}</version>
