@@ -752,4 +752,20 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.path2inode("/some/nonexisting/path");
         fail("Expected exception not thrown");
     }
+
+    @Test
+    public void testMoveSubdirectory() throws Exception {
+        FsInode dir01 = _rootInode.mkdir("dir01", 0, 0, 0755);
+        FsInode dir02 = dir01.mkdir("dir02", 0, 0, 0755);
+        FsInode dir03 = dir02.mkdir("dir03", 0, 0, 0755);
+
+        FsInode dir11 = _rootInode.mkdir("dir11", 0, 0, 0755);
+        FsInode dir12 = dir11.mkdir("dir12", 0, 0, 0755);
+        FsInode dir13 = dir12.mkdir("dir13", 0, 0, 0755);
+
+        _fs.move(dir01, "dir02", dir13, "dir14");
+
+        FsInode newInode = _fs.inodeOf(dir13, "dir14");
+        assertEquals("Invalid parent", dir13, newInode.inodeOf(".."));
+    }
 }

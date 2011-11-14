@@ -887,7 +887,9 @@ public class JMSTunnel
         {
             CellRoute cr = (CellRoute) ce.getSource();
             if (cr.getRouteType() == CellRoute.WELLKNOWN) {
-                _names.add(cr.getCellName());
+                if (_names.add(cr.getCellName())) {
+                    register();
+                }
             }
         }
 
@@ -896,7 +898,9 @@ public class JMSTunnel
         {
             CellRoute cr = (CellRoute) ce.getSource();
             if (cr.getRouteType() == CellRoute.WELLKNOWN) {
-                _names.remove(cr.getCellName());
+                if (_names.remove(cr.getCellName())) {
+                    register();
+                }
             }
         }
 
@@ -904,15 +908,18 @@ public class JMSTunnel
         synchronized public void cellDied(CellEvent ce)
         {
             String name = (String) ce.getSource();
-            _names.remove(name);
+            if (_names.remove(name)) {
+                register();
+            }
         }
 
         @Override
         synchronized public void cellExported(CellEvent ce)
         {
             String name = (String) ce.getSource();
-            _names.add(name);
-            register();
+            if (_names.add(name)) {
+                register();
+            }
         }
 
         @Override

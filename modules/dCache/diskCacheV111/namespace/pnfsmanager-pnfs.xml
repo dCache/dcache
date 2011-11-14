@@ -40,7 +40,6 @@
           </bean>
       </constructor-arg>
       <property name="permissionHandler" ref="permission-handler"/>
-      <property name="cacheLocationProvider" ref="name-space-provider"/>
   </bean>
 
 </beans>

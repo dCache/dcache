@@ -311,7 +311,13 @@ public abstract class AbstractFtpDoorV1
         // "DCAU"
     };
 
-    private final int DEFAULT_DATA_PORT = 20;
+    private final static int DEFAULT_DATA_PORT = 20;
+
+    /**
+     * The maximum number of retries done on write. Must be one to
+     * avoid that empty replicas are left on pools.
+     */
+    private final static int MAX_RETRIES_WRITE = 1;
 
     /**
      * Time stamp format as defined in RFC 3659.
@@ -606,7 +612,8 @@ public abstract class AbstractFtpDoorV1
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
     protected CellStub _poolStub;
-    protected TransferRetryPolicy _retryPolicy;
+    protected TransferRetryPolicy _readRetryPolicy;
+    protected TransferRetryPolicy _writeRetryPolicy;
 
     /** Tape Protection */
     protected CheckStagePermission _checkStagePermission;
@@ -1223,8 +1230,11 @@ public abstract class AbstractFtpDoorV1
         _poolStub =
             new CellStub(this, null, _poolTimeout * 1000);
 
-        _retryPolicy =
+        _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
+                                    Long.MAX_VALUE, _poolTimeout * 1000);
+        _writeRetryPolicy =
+            new TransferRetryPolicy(MAX_RETRIES_WRITE, 0,
                                     Long.MAX_VALUE, _poolTimeout * 1000);
 
         adminCommandListener = new AdminCommandListener();
@@ -2556,7 +2566,7 @@ public abstract class AbstractFtpDoorV1
             enableInterrupt();
             try {
                 transfer.createAdapter();
-                transfer.selectPoolAndStartMover(_ioQueueName, _retryPolicy);
+                transfer.selectPoolAndStartMover(_ioQueueName, _readRetryPolicy);
             } finally {
                 disableInterrupt();
             }
@@ -2663,8 +2673,7 @@ public abstract class AbstractFtpDoorV1
             enableInterrupt();
             try {
                 transfer.createAdapter();
-                transfer.selectPoolAndStartMover(_ioQueueName,
-                                                 TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE));
+                transfer.selectPoolAndStartMover(_ioQueueName, _writeRetryPolicy);
             } finally {
                 disableInterrupt();
             }
