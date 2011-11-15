@@ -47,12 +47,12 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>xdr</artifactId>
+      <artifactId>chimera</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>chimera</artifactId>
+      <artifactId>nfs</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
