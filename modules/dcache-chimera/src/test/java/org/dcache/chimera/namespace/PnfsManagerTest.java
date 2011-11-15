@@ -1,4 +1,4 @@
-package org.dcache.tests.namespace;
+package org.dcache.chimera.namespace;
 
 import static org.junit.Assert.*;
 

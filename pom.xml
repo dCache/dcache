@@ -684,6 +684,7 @@
     <module>modules/javatunnel</module>
     <module>modules/srm</module>
     <module>modules/dcache</module>
+    <module>modules/dcache-chimera</module>
     <module>modules/dcache-pnfs</module>
     <module>modules/dcache-ftp</module>
     <module>modules/dcache-webdav</module>

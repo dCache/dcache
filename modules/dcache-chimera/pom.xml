@@ -9,10 +9,10 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>chimera-migration</artifactId>
+  <artifactId>dcache-chimera</artifactId>
   <packaging>jar</packaging>
 
-  <name>PNFS to Chimera Migration Verification Tool</name>
+  <name>dCache Chimera name space provider</name>
 
   <dependencies>
     <dependency>
@@ -20,20 +20,8 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jul-to-slf4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>log4j-over-slf4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
 
     <dependency>
@@ -43,12 +31,12 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>dcache-pnfs</artifactId>
+      <artifactId>chimera</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>dcache-chimera</artifactId>
+      <artifactId>acl</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -58,6 +46,12 @@
     <dependency>
         <groupId>postgresql</groupId>
         <artifactId>postgresql</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>hsqldb</groupId>
+        <artifactId>hsqldb</artifactId>
+        <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
