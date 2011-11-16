@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
+import dmg.util.HttpException;
 import java.nio.charset.Charset;
 
 public class HttpRequestHandler extends IdleStateAwareChannelHandler
@@ -256,13 +257,13 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     protected List<HttpByteRange> parseHttpRange(HttpRequest request,
                                            long lowerRange,
                                            long upperRange)
-        throws ParseException, IOException {
+        throws HttpException, IOException {
         String rangeHeader = request.getHeader(RANGE);
 
         if (rangeHeader != null) {
             try {
                 return HttpByteRange.parseRanges(rangeHeader, lowerRange, upperRange);
-            } catch (ParseException e) {
+            } catch (HttpException e) {
                 /*
                  * ignore errors in the range, if the If-Range header is present
                  */

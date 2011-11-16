@@ -16,14 +16,13 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.util.PortRange;
 
 import dmg.cells.nucleus.*;
+import dmg.util.HttpException;
 import java.io.*;
 import java.net.URL;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.InetAddress;
-import java.nio.channels.FileChannel;
 import java.util.List;
-import java.text.ParseException;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
@@ -149,7 +148,7 @@ public class HttpProtocol_1 implements MoverProtocol
                     String rangeHeader = httpconnection.getHeaderValue("range");
                     if(rangeHeader != null)
                         ranges =  HttpByteRange.parseRanges(rangeHeader,0,fileChannel.size()-1);
-                }catch(ParseException e)
+                }catch(HttpException e)
                     {
                     say("(HttpProtocol_1) " + e.getMessage());
                  }
