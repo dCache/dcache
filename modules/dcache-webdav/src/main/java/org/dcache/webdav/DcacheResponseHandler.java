@@ -197,9 +197,13 @@ public class DcacheResponseHandler extends DefaultWebDavResponseHandler
 
         template.setAttribute("path", base);
         template.setAttribute("static", _staticContentPath);
-        template.setAttribute("subject", Subject.getSubject(AccessController.getContext()).getPrincipals().toString());
         template.setAttribute("errorcode", status.toString());
         template.setAttribute("errormessage", ERRORS.get(status));
+
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        if (subject != null) {
+            template.setAttribute("subject", subject.getPrincipals().toString());
+        }
 
         return template.toString();
     }
