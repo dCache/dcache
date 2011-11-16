@@ -1,20 +1,18 @@
 package diskCacheV111.util;
 
+import dmg.util.HttpException;
 import java.util.List;
-import java.text.ParseException;
+import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
-
-import diskCacheV111.util.HttpByteRange;
-
 
 public class HttpByteRangeTests{
     private final long LOWER=0;
     private final long UPPER=9999;
 
     @Test
-    public void tryRFC2086Tests() throws ParseException{
+    public void tryRFC2086Tests() throws HttpException{
         String rangeString;
         List<HttpByteRange> ranges;
 
@@ -77,7 +75,7 @@ public class HttpByteRangeTests{
     }
 
     @Test
-    public void otherTests() throws ParseException{
+    public void otherTests() throws HttpException{
         String rangeString;
         List<HttpByteRange> ranges;
 
@@ -93,8 +91,8 @@ public class HttpByteRangeTests{
 
     // Negative tests
 
-    @Test(expected=ParseException.class)
-    public void emtpyRangeTest() throws ParseException{
+    @Test(expected=HttpException.class)
+    public void emtpyRangeTest() throws HttpException{
         String rangeString;
         List<HttpByteRange> ranges;
 
@@ -103,8 +101,8 @@ public class HttpByteRangeTests{
         //Expected
     }
 
-    @Test(expected=ParseException.class)
-    public void emptySuffixTest() throws ParseException{
+    @Test(expected=HttpException.class)
+    public void emptySuffixTest() throws HttpException{
         String rangeString;
         List<HttpByteRange> ranges;
 
@@ -112,13 +110,25 @@ public class HttpByteRangeTests{
         ranges = HttpByteRange.parseRanges(rangeString,LOWER,UPPER);
     }
 
-    @Test(expected=ParseException.class)
-    public void invalidRangesTest() throws ParseException{
+    @Test(expected=HttpException.class)
+    public void invalidRangesTest() throws HttpException{
         String rangeString;
         List<HttpByteRange> ranges;
 
         rangeString = "bytes=500700, -4d, ";
         ranges = HttpByteRange.parseRanges(rangeString,LOWER,UPPER);
     }
+
+    @Test
+    public void behindUpperLimitTest() throws HttpException {
+        String rangeString = "bytes=" + (UPPER + 1) + "-" + (UPPER + 2);
+        try {
+            List<HttpByteRange> ranges = HttpByteRange.parseRanges(rangeString, LOWER, UPPER);
+            fail("invalid range not detected");
+        }catch (HttpException e) {
+            assertEquals(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE, e.getErrorCode());
+        }
+    }
+
 }
 
