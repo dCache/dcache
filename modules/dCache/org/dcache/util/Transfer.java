@@ -814,6 +814,10 @@ public class Transfer implements Comparable<Transfer>
     public IoJobInfo queryMoverInfo()
         throws CacheException, InterruptedException
     {
+        if (!hasMover()) {
+            throw new IllegalStateException("Transfer has no mover");
+        }
+
         return _pool.sendAndWait(new CellPath(getPool()),
                                  "mover ls -binary " + getMoverId(),
                                  IoJobInfo.class);
