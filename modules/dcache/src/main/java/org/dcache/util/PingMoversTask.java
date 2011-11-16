@@ -6,12 +6,18 @@ import java.util.HashSet;
 
 import diskCacheV111.util.CacheException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Task that queries the pools for a set of movers. Will eventually
  * terminate a transfer if the mover is missing or does not respond.
  */
 public class PingMoversTask<T extends Transfer> implements Runnable
 {
+    private static final Logger _log =
+        LoggerFactory.getLogger(PingMoversTask.class);
+
     private final Collection<T> _transfers;
 
     /**
@@ -39,11 +45,25 @@ public class PingMoversTask<T extends Transfer> implements Runnable
 
             for (Transfer transfer: _transfers) {
                 try {
-                    transfer.queryMoverInfo();
+                    if (transfer.hasMover()) {
+                        transfer.queryMoverInfo();
+                        _log.debug("Mover {}/{} is alive",
+                                   transfer.getPool(), transfer.getMoverId());
+                    }
+                } catch (IllegalStateException e) {
+                    // The transfer terminated before we could query it.
+                    _log.debug(e.toString());
                 } catch (CacheException e) {
+                    _log.info("Failed to check status of mover {}/{}: {}",
+                              new Object[] { transfer.getPool(),
+                                             transfer.getMoverId(),
+                                             e.getMessage() });
                     if (missingLastTime.contains(transfer)) {
                         transfer.finished(CacheException.TIMEOUT,
-                                          "Mover timeout");
+                                          String.format("Transfer killed by door due to failure for mover %s/%d: %s",
+                                                        transfer.getPool(),
+                                                        transfer.getMoverId(),
+                                                        e.getMessage()));
                     } else {
                         _missing.add(transfer);
                     }
