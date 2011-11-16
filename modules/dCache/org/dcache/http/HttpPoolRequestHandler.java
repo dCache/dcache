@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.HttpByteRange;
 import diskCacheV111.util.TimeoutCacheException;
+import dmg.util.HttpException;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * HttpPoolRequestHandler - handle HTTP client - server communication and pass
@@ -166,8 +168,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 sendHTTPMultipartEnd(context, event);
             }
 
-        } catch (java.text.ParseException pe) {
-            future = sendHTTPError(context, event, BAD_REQUEST, pe.getMessage());
+        } catch (HttpException e) {
+            future = sendHTTPError(context, event, HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage());
         } catch (TimeoutCacheException tcex) {
             future = sendHTTPError(context,
                                    event,
