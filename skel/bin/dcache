@@ -489,7 +489,10 @@ case "$1" in
                             if [ "$service" = "pool" ]; then
                                 name=$(getProperty name "$domain" "$cell")
                                 path=$(getProperty path "$domain" "$cell")
-                                max=$(getProperty maxDiskSpace "$domain" "$cell")
+                                getPoolSetting "$path" "set max diskspace" max
+                                if [ -z "$max" ]; then
+                                    max=$(getProperty maxDiskSpace "$domain" "$cell")
+                                fi
                                 if [ "$max" = "Infinity" ]; then
                                     max="-"
                                 fi
