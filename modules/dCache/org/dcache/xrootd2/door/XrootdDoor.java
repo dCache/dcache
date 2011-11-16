@@ -115,7 +115,7 @@ public class XrootdDoor
     private ScheduledExecutorService _dirlistTimeoutExecutor;
 
     /**
-     * Transfers with a mover.
+     * Current xrootd transfers. The key is the xrootd file handle.
      */
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<Integer,XrootdTransfer>();
