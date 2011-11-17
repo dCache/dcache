@@ -177,7 +177,7 @@
                                    assembly. -->
                               <artifactItem>
                                   <groupId>org.dcache</groupId>
-                                  <artifactId>dcache-core</artifactId>
+                                  <artifactId>chimera</artifactId>
                                   <version>${project.version}</version>
                                   <type>jar</type>
                                   <overWrite>true</overWrite>
