@@ -39,6 +39,12 @@
         <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
     </bean>
 
+    <bean id="RestoreHandlerCollectorCellStub"
+        class="org.dcache.webadmin.model.dataaccess.impl.ServletContextCellStub">
+        <constructor-arg type="java.lang.String" value="#{ ConfigHolder.poolManagerName }"/>
+        <property name="timeout" value="#{ ConfigHolder.collectorTimeout }"/>
+    </bean>
+
     <bean id="PageInfoCache"
         class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache">
         <constructor-arg value="#{ ConfigHolder.threadFactory }"/>
@@ -65,6 +71,11 @@
                 <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector">
                     <property name="cellStub" ref="SpaceTokenCollectorCellStub"/>
                     <property name="name" value="SpaceToken Collector"/>
+                </bean>
+                <bean id="RestoreHandlerCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.RestoreHandlerCollector">
+                    <property name="cellStub" ref="RestoreHandlerCollectorCellStub"/>
+                    <property name="name" value="RestoreHandler Collector"/>
+                    <property name="poolManagerName" value="#{ ConfigHolder.poolManagerName }"/>
                 </bean>
             </list>
         </constructor-arg>

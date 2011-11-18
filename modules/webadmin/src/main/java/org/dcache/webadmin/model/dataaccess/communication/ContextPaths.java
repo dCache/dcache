@@ -11,4 +11,5 @@ public interface ContextPaths {
     public static final String POOLMONITOR = "PoolMonitor";
     public static final String SPACETOKENS = "Spacetokens";
     public static final String LINKGROUPS = "LinkGroups";
+    public static final String RESTORE_INFOS = "Restores";
 }
