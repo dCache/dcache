@@ -253,6 +253,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
 
             res.resok.access = new uint32(realAccess);
         } catch (ChimeraNFSException hne) {
+            _log.error("ACCESS: {}", hne.toString());
             res.status = hne.getStatus();
             res.resfail = new ACCESS3resfail();
             res.resfail.obj_attributes = defaultPostOpAttr();
@@ -268,11 +269,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.obj_attributes = defaultPostOpAttr();
         }
 
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("Access failed : {}", HimeraNfsUtils.nfsErr2String(res.status));
-        }
         return res;
-
     }
 
     @Override
@@ -396,11 +393,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.dir_wcc = defaultWccData();
         }
 
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("create failed : {}", HimeraNfsUtils.nfsErr2String(res.status));
-        }
         return res;
-
     }
 
     @Override
@@ -462,11 +455,6 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.obj_attributes = defaultPostOpAttr();
         }
 
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("FSinfo failed : {}", HimeraNfsUtils.nfsErr2String(res.status));
-        }
-
-
         return res;
     }
 
@@ -511,12 +499,6 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.obj_attributes = defaultPostOpAttr();
         }
 
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("FSSTAT ({}) failed: {}",
-                    new Object[]{new String(arg1.fsroot.data),
-                        HimeraNfsUtils.nfsErr2String(res.status)
-                    });
-        }
         return res;
 
     }
@@ -539,6 +521,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             HimeraNfsUtils.fill_attributes(inode.stat(), res.resok.obj_attributes);
 
         } catch (FileNotFoundHimeraFsException fnf) {
+            _log.debug("GETATTR: file does not exists: {}", fnf.toString());
             res.status = nfsstat3.NFS3ERR_NOENT;
         } catch (ChimeraFsException e) {
             _log.error("GETATTR", e);
@@ -546,10 +529,6 @@ public class NfsServerV3 extends nfs3_protServerStub {
         } catch (Exception e) {
             _log.error("GETATTR", e);
             res.status = nfsstat3.NFS3ERR_SERVERFAULT;
-        }
-
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("Getattr failed : {}", HimeraNfsUtils.nfsErr2String(res.status));
         }
 
         return res;
@@ -671,6 +650,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             HimeraNfsUtils.fill_attributes(parent.stat(), res.resok.dir_attributes.attributes);
 
         } catch (ChimeraNFSException hne) {
+            _log.debug("lookup {}", hne.toString());
             res.status = hne.getStatus();
             res.resfail = new LOOKUP3resfail();
             res.resfail.dir_attributes = defaultPostOpAttr();
@@ -686,14 +666,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.dir_attributes = defaultPostOpAttr();
         }
 
-        _log.debug("LOOKUP for {} in {}: {}",
-                new Object[]{name, parent.toString(), inode});
-
-        if ((res.status != nfsstat3.NFS3_OK) && (res.status != nfsstat3.NFS3ERR_NOENT)) {
-            _log.error("lookup {}", HimeraNfsUtils.nfsErr2String(res.status));
-        }
         return res;
-
     }
 
     @Override
@@ -994,6 +967,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resok.reply.eof = true;
 
         } catch (ChimeraNFSException hne) {
+            _log.debug("READDIRPLUS3 status: {}", hne.toString());
             res.resfail = new READDIRPLUS3resfail();
             res.resfail.dir_attributes = defaultPostOpAttr();
             res.status = hne.getStatus();
@@ -1009,9 +983,6 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.dir_attributes = defaultPostOpAttr();
         }
 
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("READDIRPLUS3 status - {}", HimeraNfsUtils.nfsErr2String(res.status));
-        }
         return res;
     }
 
@@ -1130,6 +1101,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resok.reply.eof = true;
 
         } catch (ChimeraNFSException hne) {
+            _log.error("READDIR: {}", hne.toString());
             res.resfail = new READDIR3resfail();
             res.resfail.dir_attributes = defaultPostOpAttr();
             res.status = hne.getStatus();
@@ -1145,11 +1117,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resfail.dir_attributes = defaultPostOpAttr();
         }
 
-        if (res.status != nfsstat3.NFS3_OK) {
-            _log.error("READDIR status - {}", HimeraNfsUtils.nfsErr2String(res.status));
-        }
         return res;
-
     }
 
     @Override
