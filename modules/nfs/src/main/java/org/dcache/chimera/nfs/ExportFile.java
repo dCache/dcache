@@ -148,6 +148,9 @@ public class ExportFile {
 
     public FsExport getExport(String path) {
 
+        if(path.equals("/"))
+            return _pseudoFS.getExport();
+
         Splitter splitter = Splitter.on('/').omitEmptyStrings();
         PseudoFsNode rootNode = _pseudoFS;
         PseudoFsNode node = null;

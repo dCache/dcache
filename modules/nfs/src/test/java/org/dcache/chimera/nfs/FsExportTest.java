@@ -100,4 +100,8 @@ public class FsExportTest {
         assertFalse("Deny host not recognized", export.isAllowed(deny2));
     }
 
+    @Test
+    public void testGetRootExport() throws UnknownHostException {
+        assertNotNull(_exportFile.getExport("/"));
+    }
 }
