@@ -35,4 +35,9 @@ public class ChimeraNFSException extends ChimeraFsException {
     public int getStatus() {
         return nfsStatus;
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + " NFS status: " + nfsStatus;
+    }
 }

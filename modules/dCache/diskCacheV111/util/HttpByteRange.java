@@ -1,8 +1,9 @@
 package diskCacheV111.util;
 
-import java.text.ParseException;
+import dmg.util.HttpException;
 import java.util.List;
 import java.util.ArrayList;
+import javax.servlet.http.HttpServletResponse;
 
 import org.dcache.util.Interval;
 
@@ -31,12 +32,13 @@ public class HttpByteRange extends Interval{
     public static List<HttpByteRange> parseRanges(String rangeString,
                                                 long lower,
                                                 long upper)
-                                        throws ParseException{
+                                        throws HttpException {
 
 
         String []splitEquals=rangeString.split("=");
         if(splitEquals.length != 2 || !"bytes".equals(splitEquals[0]))
-            throw new ParseException("Invalid definition of ranges",-1);
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid definition of ranges");
 
         String[] csl = splitEquals[1].split(",");
 
@@ -46,7 +48,7 @@ public class HttpByteRange extends Interval{
                 // byte-range-set may contain "optional linear whitespace"
                 rangeSpec = rangeSpec.trim();
                 ret.add(parseRange(rangeSpec,lower,upper));
-            }catch(ParseException e){
+            }catch(HttpException e){
                 //RFC:  The recipient of an invalid byte-range-spec
                 //      must ignore it.
                 //The RFC doesn't seem to say anything about invalid suffix-range-specs
@@ -55,7 +57,8 @@ public class HttpByteRange extends Interval{
         }
 
         if(ret.size() == 0)
-            throw new ParseException("Invalid (empty) list of valid ranges",-1);
+            throw new HttpException(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
+                    "Invalid (empty) list of valid ranges");
 
         return ret;
     }
@@ -67,11 +70,12 @@ public class HttpByteRange extends Interval{
     private static HttpByteRange parseRange(String rangeSpec,
                                             long lower,
                                             long upper)
-                                    throws ParseException{
+                                    throws HttpException{
         HttpByteRange ret;
 
         if(rangeSpec.isEmpty())
-            throw new ParseException("Invalid (empty) range",-1);
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid (empty) range");
 
         if(Character.isDigit(rangeSpec.charAt(0))){
             ret = parseRangeSpec(   rangeSpec,
@@ -82,7 +86,7 @@ public class HttpByteRange extends Interval{
                                         lower,
                                         upper);
         }else
-            throw new ParseException("Invalid range",-1);
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST, "Invalid range");
 
         return ret;
     }
@@ -91,11 +95,12 @@ public class HttpByteRange extends Interval{
     private static HttpByteRange parseRangeSpec(String rangeSpec,
                                             long lower,
                                             long upper)
-                                    throws ParseException{
+                                    throws HttpException {
 
         String[] bounds = rangeSpec.split("-");
         if(bounds.length > 2)
-            throw new ParseException("Invalid number of range components" ,-1);
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid number of range components");
 
         HttpByteRange ret;
 
@@ -108,9 +113,11 @@ public class HttpByteRange extends Interval{
             if(lowerV >= lower && lowerV<=upperV)
                 ret = new HttpByteRange(lowerV, upperV);
             else
-                throw new ParseException("Invalid range bounds", -1);
+                throw new HttpException(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
+                        "Invalid range bounds");
         }catch(NumberFormatException e){
-            throw new ParseException("Invalid numeric value", -1);
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid numeric value");
         }
 
         return ret;
@@ -120,19 +127,21 @@ public class HttpByteRange extends Interval{
     private static HttpByteRange parseSuffixRangeSpec(String rangeSpec,
                                                     long lower,
                                                     long upper)
-                                    throws ParseException{
+                                    throws HttpException {
         String bound = rangeSpec.substring(1);
 
         HttpByteRange ret;
         try{
             long suffix = Long.valueOf(bound)-1;
             if(suffix < 0)
-                throw new ParseException("Invalid suffix range", -1);
+                throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid suffix range");
 
              long lowerV = Math.max(upper - suffix,lower);
             ret = new HttpByteRange(lowerV,upper);
         }catch(NumberFormatException e){
-            throw new ParseException("Invalid numeric value", -1);
+            throw new HttpException(HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid numeric value");
         }
 
         return ret;
