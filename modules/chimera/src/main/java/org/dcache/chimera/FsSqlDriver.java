@@ -286,12 +286,11 @@ class FsSqlDriver {
 
     private boolean removeFile(Connection dbConnection, FsInode parent, FsInode inode, String name) throws ChimeraFsException, SQLException {
 
+        boolean removed;
         boolean isLast = inode.stat().getNlink() == 1;
 
         decNlink(dbConnection, inode);
         removeEntryInParent(dbConnection, parent, name);
-        decNlink(dbConnection, parent);
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
 
         if (isLast) {
             // it's the last reference
@@ -303,11 +302,20 @@ class FsSqlDriver {
                 removeInodeLevel(dbConnection, inode, i);
             }
 
-            return removeInode(dbConnection, inode);
+            removed = removeInode(dbConnection, inode);
+        } else {
+            removed = true;
         }
 
-        return true;
+        /* During bulk deletion of files in the same directory,
+         * updating the parent inode is often a contention point. The
+         * link count on the parent is updated last to reduce the time
+         * in which the directory inode is locked by the database.
+         */
+        decNlink(dbConnection, parent);
+        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
 
+        return removed;
     }
 
     boolean remove(Connection dbConnection, FsInode parent, FsInode inode) throws ChimeraFsException, SQLException {
