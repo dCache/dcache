@@ -25,6 +25,7 @@ import org.dcache.chimera.nfs.v4.xdr.layoutreturn_type4;
 import org.dcache.chimera.nfs.v4.xdr.layoutreturn_stateid;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.LAYOUTRETURN4res;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ public class OperationLAYOUTRETURN extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
 
 	    LAYOUTRETURN4res res = new LAYOUTRETURN4res();
 
@@ -68,9 +69,7 @@ public class OperationLAYOUTRETURN extends AbstractNFSv4Operation {
             _log.error("LAYOUTRETURN: ", e);
         }
       _result.oplayoutreturn = res;
-
-            context.processedOperations().add(_result);
-            return res.lorr_status == nfsstat4.NFS4_OK;
+            return _result;
 	}
 
 }

@@ -17,6 +17,7 @@
 
 package org.dcache.chimera.nfs.v4;
 
+import java.util.Collections;
 import java.util.List;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
@@ -49,19 +50,19 @@ public class SessionSlot {
      * @return true if retransmit is detected and cached reply available.
      * @throws ChimeraNFSException
      */
-    boolean update(int sequence, List<nfs_resop4> reply, boolean cacheThis) throws ChimeraNFSException {
+    List<nfs_resop4> checkSlotSequence(int sequence, boolean checkCache) throws ChimeraNFSException {
 
         if( sequence == _sequence ) {
+
             _log.info("retransmit detected");
             if( _reply != null ) {
-                _log.info("using cached reply");
-                reply.clear();
-                reply.addAll(_reply);
-                return true;
-            }else{
+                return _reply;
+            }
+
+            if(checkCache)
                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_RETRY_UNCACHED_REP,
                         "Uncached reply retry");
-            }
+            return null;
         }
         /*
          * According to spec.
@@ -85,16 +86,11 @@ public class SessionSlot {
         }
 
         _sequence = sequence;
-        if( cacheThis ){
-            _reply = reply;
-        }else{
-            _reply = null;
-        }
-        return false;
+        _reply = null;
+        return null;
     }
 
-    List<nfs_resop4> reply() {
-        return _reply;
+    void update(List<nfs_resop4> reply) {
+        _reply = reply;
     }
-
 }

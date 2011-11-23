@@ -26,6 +26,7 @@ import org.dcache.chimera.nfs.v4.xdr.utf8string;
 import org.dcache.chimera.nfs.v4.xdr.READLINK4res;
 import org.dcache.chimera.nfs.v4.xdr.READLINK4resok;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class OperationREADLINK extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
         READLINK4res res = new READLINK4res();
 
         try {
@@ -65,9 +66,7 @@ public class OperationREADLINK extends AbstractNFSv4Operation {
         }
 
       _result.opreadlink = res;
-
-            context.processedOperations().add(_result);
-            return res.status == nfsstat4.NFS4_OK;
+            return _result;
 	}
 
 }

@@ -9,12 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.CompoundContext;
-import org.dcache.chimera.nfs.v4.xdr.READ4res;
-import org.dcache.chimera.nfs.v4.xdr.READ4resok;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
+import org.dcache.chimera.nfs.v4.xdr.*;
 import org.dcache.pool.repository.RepositoryChannel;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
@@ -29,7 +24,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
         READ4res res = new READ4res();
 
         try {
@@ -78,8 +73,6 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
         }
 
        _result.opread = res;
-
-        context.processedOperations().add(_result);
-        return res.status == nfsstat4.NFS4_OK;
+        return _result;
     }
 }

@@ -26,6 +26,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.VERIFY4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import java.util.Arrays;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class OperationVERIFY extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
 
         VERIFY4res res = new VERIFY4res();
 
@@ -75,9 +76,7 @@ public class OperationVERIFY extends AbstractNFSv4Operation {
         }
 
        _result.opverify = res;
-
-            context.processedOperations().add(_result);
-            return res.status == nfsstat4.NFS4_OK;
+            return _result;
 	}
 
 

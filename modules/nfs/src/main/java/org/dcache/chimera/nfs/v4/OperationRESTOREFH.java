@@ -22,6 +22,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.RESTOREFH4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class OperationRESTOREFH extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
 
         RESTOREFH4res res = new RESTOREFH4res();
 
@@ -50,8 +51,6 @@ public class OperationRESTOREFH extends AbstractNFSv4Operation {
         }
 
         _result.oprestorefh = res;
-
-        context.processedOperations().add(_result);
-        return res.status == nfsstat4.NFS4_OK;
+        return _result;
     }
 }

@@ -26,6 +26,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.LINK4resok;
 import org.dcache.chimera.nfs.v4.xdr.LINK4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.posix.UnixAcl;
@@ -41,7 +42,7 @@ public class OperationLINK extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
 
 		_result.oplink = new LINK4res();
 
@@ -70,9 +71,7 @@ public class OperationLINK extends AbstractNFSv4Operation {
 			_log.error("LINK: ", e);
 		    _result.oplink.status = nfsstat4.NFS4ERR_RESOURCE;
 		}
-
-            context.processedOperations().add(_result);
-            return _result.oplink.status == nfsstat4.NFS4_OK;
+            return _result;
 
 	}
 

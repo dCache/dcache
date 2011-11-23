@@ -37,7 +37,7 @@ public abstract class AbstractNFSv4Operation {
 
     /**
      * Process current operation.
-     * @return <code>true</code> if next operation may continue.
+     * @return result of operation
      */
-    public abstract boolean process(CompoundContext context);
+    public abstract nfs_resop4 process(CompoundContext context);
 }

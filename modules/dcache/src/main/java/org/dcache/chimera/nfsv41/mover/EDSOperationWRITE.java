@@ -8,17 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.v4.CompoundContext;
-import org.dcache.chimera.nfs.v4.xdr.WRITE4res;
-import org.dcache.chimera.nfs.v4.xdr.WRITE4resok;
-import org.dcache.chimera.nfs.v4.xdr.count4;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
-import org.dcache.chimera.nfs.v4.xdr.stable_how4;
-import org.dcache.chimera.nfs.v4.xdr.stateid4;
-import org.dcache.chimera.nfs.v4.xdr.uint32_t;
-import org.dcache.chimera.nfs.v4.xdr.verifier4;
+import org.dcache.chimera.nfs.v4.xdr.*;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
 
@@ -37,7 +27,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
 
         WRITE4res res = new WRITE4res();
 
@@ -93,8 +83,6 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         }
 
        _result.opwrite = res;
-
-        context.processedOperations().add(_result);
-        return res.status == nfsstat4.NFS4_OK;
+        return _result;
     }
 }

@@ -23,6 +23,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.LOOKUPP4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class OperationLOOKUPP extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
         LOOKUPP4res res = new LOOKUPP4res();
 
         try {
@@ -61,9 +62,7 @@ public class OperationLOOKUPP extends AbstractNFSv4Operation {
         }
 
         _result.oplookupp = res;
-
-            context.processedOperations().add(_result);
-            return res.status == nfsstat4.NFS4_OK;
+            return _result;
 	}
 
 }

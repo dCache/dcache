@@ -26,6 +26,7 @@ import org.dcache.chimera.nfs.v4.xdr.READ4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.posix.UnixAcl;
@@ -41,7 +42,7 @@ public class OperationREAD extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
         READ4res res = new READ4res();
 
 
@@ -110,9 +111,7 @@ public class OperationREAD extends AbstractNFSv4Operation {
 
 
        _result.opread = res;
-
-            context.processedOperations().add(_result);
-            return res.status == nfsstat4.NFS4_OK;
+            return _result;
 	}
 
 }

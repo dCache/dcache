@@ -25,6 +25,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.CLOSE4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ public class OperationCLOSE extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
         CLOSE4res res = new CLOSE4res();
 
         try {
@@ -65,8 +66,6 @@ public class OperationCLOSE extends AbstractNFSv4Operation {
             res.status = he.getStatus();
         }
         _result.opclose = res;
-
-        context.processedOperations().add(_result);
-        return res.status == nfsstat4.NFS4_OK;
+        return _result;
     }
 }

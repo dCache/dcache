@@ -68,9 +68,9 @@ public class NFSv41Session {
         return _slots.length - 1;
     }
 
-    public boolean updateSlot(int slot, int sequence, boolean cacheThis, List<nfs_resop4> reply)
+    public List<nfs_resop4> checkCacheSlot(int slot, int sequence, boolean checkCache)
             throws ChimeraNFSException {
-        return getSlot(slot).update(sequence, reply, cacheThis);
+        return getSlot(slot).checkSlotSequence(sequence, checkCache);
     }
 
     /**
@@ -108,5 +108,9 @@ public class NFSv41Session {
             sb.append(Integer.toHexString(b));
         }
         return sb.toString();
+    }
+
+    public void updateSlotCache(int slot, List<nfs_resop4> reply) throws ChimeraNFSException {
+        getSlot(slot).update(reply);
     }
 }

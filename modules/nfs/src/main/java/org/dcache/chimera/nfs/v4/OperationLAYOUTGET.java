@@ -31,7 +31,7 @@ public class OperationLAYOUTGET extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
 
     LAYOUTGET4res res = new LAYOUTGET4res();
 
@@ -104,9 +104,7 @@ public class OperationLAYOUTGET extends AbstractNFSv4Operation {
     }
 
     _result.oplayoutget = res;
-
-        context.processedOperations().add(_result);
-        return res.logr_status == nfsstat4.NFS4_OK;
+        return _result;
 
     }
 

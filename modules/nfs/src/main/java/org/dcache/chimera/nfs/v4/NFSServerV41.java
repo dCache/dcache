@@ -20,12 +20,6 @@ package org.dcache.chimera.nfs.v4;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.ExportFile;
-import org.dcache.chimera.nfs.v4.xdr.COMPOUND4args;
-import org.dcache.chimera.nfs.v4.xdr.COMPOUND4res;
-import org.dcache.chimera.nfs.v4.xdr.nfs4_prot_NFS4_PROGRAM_ServerStub;
-import org.dcache.chimera.nfs.v4.xdr.nfs_argop4;
-import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
-import org.dcache.chimera.nfs.v4.xdr.nfsstat4;
 import org.dcache.chimera.posix.AclHandler;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.RpcCall;
@@ -38,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.dcache.chimera.nfs.PseudoFsProvider;
+import org.dcache.chimera.nfs.v4.xdr.*;
 
 public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
@@ -82,38 +77,60 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                     call$.getTransport().getRemoteSocketAddress(),
                     new String(arg1.tag.value.value));
 
-            MDC.put(NfsMdc.TAG, new String(arg1.tag.value.value) );
+            /*
+             * here we have to checkfor utf8, but it's too much work to keep
+             * spec happy.
+             */
+            MDC.put(NfsMdc.TAG, arg1.tag.toString());
             MDC.put(NfsMdc.CLIENT, call$.getTransport().getRemoteSocketAddress().toString());
-
-            List<nfs_resop4> v = new ArrayList<nfs_resop4>(arg1.argarray.length);
-            if (arg1.minorversion.value > 1) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_MINOR_VERS_MISMATCH,
-                    String.format("Unsupported minor version [%d]",arg1.minorversion.value) );
-            }
+            int minorversion = arg1.minorversion.value;
+            if ( minorversion > 1) {
+                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_MINOR_VERS_MISMATCH,
+                     String.format("Unsupported minor version [%d]",arg1.minorversion.value) );
+             }
 
             FileSystemProvider vfs = new PseudoFsProvider(_fs, _exportFile, call$);
-            CompoundContext context = new CompoundContext(v, arg1.minorversion.value,
+            CompoundContext context = new CompoundContext(arg1.minorversion.value,
                 vfs, _statHandler, _deviceManager, _aclHandler, call$, _idMapping,
-                    _exportFile, _idProvider);
+                    _exportFile, _idProvider, arg1.argarray.length);
 
+            res.status = nfsstat4.NFS4_OK;
+            res.resarray = new ArrayList<nfs_resop4>(arg1.argarray.length);
+            res.tag = arg1.tag;
+
+            boolean retransmit = false;
             for (nfs_argop4 op : arg1.argarray) {
+                context.nextOperation();
 
-                if (!_operationFactory.getOperation(op).process(context)) {
+                int position = context.getOperationPosition();
+                if (minorversion > 0) {
+                    checkOpPosition(op.argop, position);
+                    if (position == 1) {
+                        /*
+                         * at this point we already have to have a session
+                         */
+                        List<nfs_resop4> cache = context.getCache();
+                        if (cache != null) {
+                            res.resarray.addAll(cache.subList(position, cache.size()));
+                            res.status = statusOfLastOperation(cache);
+                            retransmit = true;
+                            break;
+                        }
+                    }
+                }
+
+                nfs_resop4 opResult = _operationFactory.getOperation(op).process(context);
+                res.resarray.add(opResult);
+                res.status = opResult.getStatus();
+                if (res.status != nfsstat4.NFS4_OK) {
                     break;
                 }
             }
 
-            res.resarray = context.processedOperations();
-            // result  status must be equivalent
-            // to the status of the last operation that
-            // was executed within the COMPOUND procedure
-            if (!v.isEmpty()) {
-                res.status = res.resarray.get(res.resarray.size() - 1).getStatus();
-            } else {
-                res.status = nfsstat4.NFS4_OK;
+            if (!retransmit && context.cacheThis()) {
+                context.getSession().updateSlotCache(context.getSlotId(), res.resarray);
             }
 
-            res.tag = arg1.tag;
             _log.debug( "OP: [{}] status: {}", res.tag, res.status);
 
         } catch (ChimeraNFSException e) {
@@ -141,5 +158,49 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
      */
     public List<NFS4Client> getClients() {
         return _statHandler.getClients();
+    }
+
+    /*
+     *
+     * from NFSv4.1 spec:
+     *
+     * SEQUENCE MUST appear as the first operation of any COMPOUND in which
+     * it appears.  The error NFS4ERR_SEQUENCE_POS will be returned when it
+     * is found in any position in a COMPOUND beyond the first.  Operations
+     * other than SEQUENCE, BIND_CONN_TO_SESSION, EXCHANGE_ID,
+     * CREATE_SESSION, and DESTROY_SESSION, MUST NOT appear as the first
+     * operation in a COMPOUND.  Such operations MUST yield the error
+     * NFS4ERR_OP_NOT_IN_SESSION if they do appear at the start of a
+     * COMPOUND.
+     *
+     */
+    private static void checkOpPosition(int opCode, int position) throws ChimeraNFSException {
+
+        /*
+         * special case of illegal operations.
+         */
+        if(opCode > nfs_opnum4.OP_RECLAIM_COMPLETE || opCode < nfs_opnum4.OP_ACCESS)
+            return;
+
+        if(position == 0 ) {
+            switch(opCode) {
+                case nfs_opnum4.OP_SEQUENCE:
+                case nfs_opnum4.OP_CREATE_SESSION:
+                case nfs_opnum4.OP_EXCHANGE_ID:
+                case nfs_opnum4.OP_DESTROY_SESSION:
+                    break;
+                default:
+                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_OP_NOT_IN_SESSION, "not in session");
+            }
+        } else {
+            switch (opCode) {
+                case nfs_opnum4.OP_SEQUENCE:
+                    throw new ChimeraNFSException(nfsstat4.NFS4ERR_SEQUENCE_POS, "not a first operation");
+            }
+        }
+    }
+
+    private static int statusOfLastOperation(List<nfs_resop4> ops) {
+        return ops.get(ops.size() -1).getStatus();
     }
 }

@@ -45,7 +45,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
 
         GETATTR4res res = new GETATTR4res();
 
@@ -65,9 +65,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
 
         _result.opgetattr = res;
-
-            context.processedOperations().add(_result);
-            return res.status == nfsstat4.NFS4_OK;
+            return _result;
 
 	}
 

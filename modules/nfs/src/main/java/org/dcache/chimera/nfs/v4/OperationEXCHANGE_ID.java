@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import diskCacheV111.util.Version;
 
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_DOMAIN;
 import static org.dcache.chimera.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_ID;
 import static org.dcache.chimera.nfs.v4.HimeraNFS4Utils.string2utf8str_cis;
@@ -66,7 +67,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
 
         EXCHANGE_ID4res res = new EXCHANGE_ID4res();
 
@@ -236,8 +237,7 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
         }
 
        _result.opexchange_id = res;
-        context.processedOperations().add(_result);
-        return res.eir_status == nfsstat4.NFS4_OK;
+        return _result;
     }
 
 }

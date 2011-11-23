@@ -25,6 +25,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.CREATE_SESSION4resok;
 import org.dcache.chimera.nfs.v4.xdr.CREATE_SESSION4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
 	}
 
 	@Override
-	public boolean process(CompoundContext context) {
+	public nfs_resop4 process(CompoundContext context) {
     	CREATE_SESSION4res res = new CREATE_SESSION4res();
 
     	Long clientId = Long.valueOf(_args.opcreate_session.csa_clientid.value.value);
@@ -131,9 +132,7 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
     	}
 
        _result.opcreate_session = res;
-
-            context.processedOperations().add(_result);
-            return res.csr_status == nfsstat4.NFS4_OK;
+            return _result;
 	}
 
 }

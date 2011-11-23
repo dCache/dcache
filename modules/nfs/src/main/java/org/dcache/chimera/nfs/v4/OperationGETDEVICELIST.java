@@ -33,7 +33,7 @@ public class OperationGETDEVICELIST extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
 
     GETDEVICELIST4res res = new GETDEVICELIST4res();
 
@@ -90,9 +90,7 @@ public class OperationGETDEVICELIST extends AbstractNFSv4Operation {
     }
 
     _result.opgetdevicelist = res;
-
-        context.processedOperations().add(_result);
-        return res.gdlr_status == nfsstat4.NFS4_OK;
+        return _result;
 
     }
 }

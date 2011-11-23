@@ -41,28 +41,10 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
        SEQUENCE4res res = new SEQUENCE4res();
-       boolean cached = false;
 
         try {
-            /*
-             *
-             * from NFSv4.1 spec:
-             *
-             * This operation MUST appear as the first operation of any COMPOUND in which it appears.
-             * The error NFS4ERR_SEQUENCE_POS will be returned when if it is found in any position in
-             * a COMPOUND beyond the first. Operations other than SEQUENCE, BIND_CONN_TO_SESSION,
-             * EXCHANGE_ID, CREATE_SESSION, and DESTROY_SESSION, may not appear as the first operation
-             * in a COMPOUND. Such operations will get the error NFS4ERR_OP_NOT_IN_SESSION if they do
-             * appear at the start of a COMPOUND.
-             *
-             */
-
-
-            if(context.processedOperations().size() != 0 ) {
-                throw new ChimeraNFSException(nfsstat4.NFS4ERR_SEQUENCE_POS, "SEQUENCE not a first operation");
-            }
 
             res.sr_resok4 = new SEQUENCE4resok();
 
@@ -85,15 +67,16 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
                 throw new ChimeraNFSException(nfsstat4.NFS4ERR_BADSESSION, "client not found");
             }
 
+            int opCount = context.getTotalOperationCount();
+            context.setCache( session.checkCacheSlot(_args.opsequence.sa_slotid.value.value,
+                    _args.opsequence.sa_sequenceid.value.value, opCount > 1)
+                );
 
-            List<nfs_resop4> reply = context.processedOperations();
-            cached = session.updateSlot(_args.opsequence.sa_slotid.value.value,
-                    _args.opsequence.sa_sequenceid.value.value,
-                    _args.opsequence.sa_cachethis, reply);
-
+            context.setCacheThis(_args.opsequence.sa_cachethis);
             session.getClient().updateLeaseTime(NFSv4Defaults.NFS4_LEASE_TIME);
 
             context.setSession(session);
+            context.setSlotId(_args.opsequence.sa_slotid.value.value);
 
             //res.sr_resok4.sr_sequenceid = new sequenceid4( new uint32_t( session.nextSequenceID()) );
             res.sr_resok4.sr_sequenceid = _args.opsequence.sa_sequenceid;
@@ -110,13 +93,7 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
         }
 
         _result.opsequence = res;
-        if (cached) {
-            context.processedOperations().set(0, _result);
-            return false;
-        }
-
-        context.processedOperations().add(_result);
-        return res.sr_status == nfsstat4.NFS4_OK;
+        return _result;
     }
 
 }

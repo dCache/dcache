@@ -25,6 +25,7 @@ import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.v4.xdr.SECINFO4resok;
 import org.dcache.chimera.nfs.v4.xdr.SECINFO4res;
 import org.dcache.chimera.nfs.ChimeraNFSException;
+import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
 import org.dcache.xdr.RpcAuthType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public class OperationSECINFO extends AbstractNFSv4Operation {
     }
 
     @Override
-    public boolean process(CompoundContext context) {
+    public nfs_resop4 process(CompoundContext context) {
 
         SECINFO4res res = new SECINFO4res();
 
@@ -62,9 +63,7 @@ public class OperationSECINFO extends AbstractNFSv4Operation {
         }
 
         _result.opsecinfo = res;
-
-        context.processedOperations().add(_result);
-        return res.status == nfsstat4.NFS4_OK;
+        return _result;
 
     }
 }
