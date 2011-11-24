@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>nis</name>
+        <class>org.dcache.gplazma.plugins.Nis</class>
+    </plugin>
+</plugins>
