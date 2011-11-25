@@ -36,6 +36,7 @@ import org.dcache.webadmin.controller.LogInService;
 import org.dcache.webadmin.controller.PoolAdminService;
 import org.dcache.webadmin.controller.PoolGroupService;
 import org.dcache.webadmin.controller.PoolQueuesService;
+import org.dcache.webadmin.controller.TapeTransfersService;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
@@ -45,6 +46,7 @@ import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
+import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
 import org.dcache.webadmin.view.util.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +68,7 @@ public class WebAdminInterface extends WebApplication {
     private CellAdminService _cellAdminService;
     private LinkGroupsService _linkGroupsService;
     private ActiveTransfersService _activeTransfersService;
+    private TapeTransfersService _tapeTransfersService;
     private int _httpPort;
     private int _httpsPort;
     private boolean _authenticatedMode;
@@ -95,6 +98,7 @@ public class WebAdminInterface extends WebApplication {
         mountBookmarkablePage("celladmin", CellAdmin.class);
         mountBookmarkablePage("infoxml", InfoXml.class);
         mountBookmarkablePage("transfers", ActiveTransfers.class);
+        mountBookmarkablePage("tapetransfers", TapeTransferQueue.class);
     }
 
     private void markAdminOnlyPages() {
@@ -214,6 +218,14 @@ public class WebAdminInterface extends WebApplication {
 
     public void setActiveTransfersService(ActiveTransfersService activeTransfersService) {
         _activeTransfersService = activeTransfersService;
+    }
+
+    public TapeTransfersService getTapeTransfersService() {
+        return _tapeTransfersService;
+    }
+
+    public void setTapeTransfersService(TapeTransfersService tapeTransfersService) {
+        _tapeTransfersService = tapeTransfersService;
     }
 
     public void setDcacheName(String dCacheName) {

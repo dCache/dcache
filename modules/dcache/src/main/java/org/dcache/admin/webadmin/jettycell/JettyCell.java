@@ -168,8 +168,8 @@ public class JettyCell extends AbstractCell {
             _log.debug("starting server");
             _server.start();
         } catch (NamingException ex) {
-            _log.error("Namingcontext couldn't initialise (jndi-lib in classpath?) " +
-                    ex.getMessage());
+            _log.error("Namingcontext couldn't initialise (jndi-lib in classpath?) "
+                    + ex.getMessage());
         } catch (Exception e) {
             _log.error("Jettyserver threw Exception: " + e.getMessage());
             _server.destroy();
@@ -281,11 +281,14 @@ public class JettyCell extends AbstractCell {
         private final String QUEUEINFO_CONTEXT = "/queueInfo";
         private final String USAGEINFO_CONTEXT = "/usageInfo";
         private final String POOLGROUPS_CONTEXT = "/pools";
+        private final String RESTORE_CONTEXT = "/poolinfo/restoreHandler/*";
+        private final String RESTORE_LAZY_CONTEXT = "/poolinfo/restoreHandler/lazy";
         private final String WEBADMIN_INFO_CONTEXT = "/webadmin/info?statepath=";
         private final String WEBADMIN_CELLINFO_CONTEXT = "/webadmin/cellinfo";
         private final String WEBADMIN_QUEUEINFO_CONTEXT = "/webadmin/queueinfo";
         private final String WEBADMIN_USAGEINFO_CONTEXT = "/webadmin/usageinfo";
         private final String WEBADMIN_POOLGROUPS_CONTEXT = "/webadmin/poolgroups";
+        private final String WEBADMIN_RESTORE_CONTEXT = "/webadmin/tapetransfers";
         private final int CONTEXT_INDEX = 1;
         private Map<String, String> legacyContextToNewContext = new HashMap<String, String>();
 
@@ -302,6 +305,8 @@ public class JettyCell extends AbstractCell {
             legacyContextToNewContext.put(QUEUEINFO_CONTEXT, WEBADMIN_QUEUEINFO_CONTEXT);
             legacyContextToNewContext.put(USAGEINFO_CONTEXT, WEBADMIN_USAGEINFO_CONTEXT);
             legacyContextToNewContext.put(POOLGROUPS_CONTEXT, WEBADMIN_POOLGROUPS_CONTEXT);
+            legacyContextToNewContext.put(RESTORE_CONTEXT, WEBADMIN_RESTORE_CONTEXT);
+            legacyContextToNewContext.put(RESTORE_LAZY_CONTEXT, WEBADMIN_RESTORE_CONTEXT);
         }
 
         @Override
