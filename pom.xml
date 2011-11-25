@@ -695,6 +695,7 @@
     <module>modules/dcache-pnfs</module>
     <module>modules/dcache-ftp</module>
     <module>modules/dcache-webdav</module>
+    <module>modules/dcache-jms</module>
     <module>modules/webadmin</module>
     <module>modules/srmclient</module>
     <module>modules/acl</module>

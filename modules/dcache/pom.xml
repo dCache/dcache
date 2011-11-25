@@ -98,24 +98,12 @@
         <artifactId>netty</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.glassfish.grizzly</groupId>
-        <artifactId>grizzly-framework</artifactId>
-    </dependency>
-    <dependency>
         <groupId>toplink.essentials</groupId>
         <artifactId>toplink-essentials</artifactId>
     </dependency>
     <dependency>
         <groupId>com.sleepycat</groupId>
         <artifactId>je</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.sun.messaging.mq</groupId>
-        <artifactId>jms</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>com.sun.messaging.mq</groupId>
-        <artifactId>imq</artifactId>
     </dependency>
     <dependency>
         <groupId>javax.jdo</groupId>
@@ -245,10 +233,6 @@
         <artifactId>statemap</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.acplt</groupId>
-        <artifactId>oncrpc</artifactId>
-    </dependency>
-    <dependency>
         <groupId>com.thaiopensource</groupId>
         <artifactId>jing</artifactId>
     </dependency>
@@ -257,17 +241,6 @@
         <groupId>hsqldb</groupId>
         <artifactId>hsqldb</artifactId>
         <scope>test</scope>
-    </dependency>
-
-    <dependency>
-        <groupId>org.apache.activemq</groupId>
-        <artifactId>activemq-all</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.xbean</groupId>
-        <artifactId>xbean-spring</artifactId>
-        <scope>runtime</scope>
     </dependency>
   </dependencies>
 
