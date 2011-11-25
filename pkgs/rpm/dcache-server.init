@@ -26,7 +26,17 @@ case "$1" in
     status)
         /usr/bin/dcache status
         ;;
+    start)
+        /usr/bin/dcache "$@"
+        ;;
+    stop)
+        /usr/bin/dcache "$@"
+        ;;
+    restart)
+        /usr/bin/dcache "$@"
+        ;;
     *)
-        /usr/bin/dcache "$1"
+        echo "Usage: $0 {start|stop|restart|force-reload|status|try-restart}"
+        exit 1
         ;;
 esac

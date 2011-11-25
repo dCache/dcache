@@ -18,7 +18,20 @@ case "$1" in
     force-reload)
         /usr/bin/dcache condrestart
         ;;
+    status)
+        /usr/bin/dcache status
+        ;;
+    restart)
+        /usr/bin/dcache "$@"
+        ;;
+    start)
+        /usr/bin/dcache "$@"
+        ;;
+    stop)
+        /usr/bin/dcache "$@"
+        ;;
     *)
-        /usr/bin/dcache "$1"
+        echo "Usage: $0 {start|stop|restart|force-reload|status|try-restart}"
+        exit 1
         ;;
 esac
